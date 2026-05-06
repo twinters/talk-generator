@@ -54,6 +54,16 @@ def pexels_auth():
     return {"pexels_key": env.str("PEXELS_KEY", "")}
 
 
+def is_source_disabled(name: str) -> bool:
+    """Check whether a content source is disabled via env (DISABLE_<NAME>=1).
+
+    Used by individual source modules (sources/reddit.py, sources/unsplash.py, ...)
+    to skip themselves when the operator has flagged them off — useful on resource-
+    constrained deployments or when a source's API has gone stale.
+    """
+    return env.bool(f"DISABLE_{name.upper()}", False)
+
+
 def _get_missing_keys(key_variables):
     missing = []
     for key_name in key_variables:
@@ -88,7 +98,7 @@ def print_env_file_warning():
 
     Which keys?
     -------------
-    Take a look at https://github.com/korymath/talk-generator#setting-up-required-authentication
+    Take a look at https://github.com/twinters/talk-generator#setting-up-required-authentication
 
     Creating an .env file
     -------------

@@ -162,8 +162,7 @@ def get_related_wikihow_actions_advanced_search(seed_word):
 
 
 def get_related_wikihow_actions(seed_word):
-    """ Uses the advanced search unless it doesn't return anything """
-    # actions = get_related_wikihow_actions_advanced_search(seed_word)
-    # if actions:
-    #     return actions
+    """Uses the basic search (advanced search is disabled because it requires login)."""
+    if settings.is_source_disabled("WIKIHOW"):
+        return []
     return get_related_wikihow_actions_basic_search(seed_word)

@@ -30,15 +30,15 @@ with open('requirements.txt') as f:
 
 setup(
     name="talkgenerator",
-    version="3.0",
+    version="3.1.0",
     description="Automatically generating presentation slide decks based on a given topic for improvised presentations",
-    long_description="Check our GitHub repository on https://github.com/korymath/talk-generator for more information!",
+    long_description="Check our GitHub repository on https://github.com/twinters/talk-generator for more information!",
     author="Thomas Winters, Kory Mathewson",
     author_email="info@thomaswinters.be",
-    url="https://github.com/korymath/talk-generator",
+    url="https://github.com/twinters/talk-generator",
     license="MIT License",
-    platforms=["Mac", "Linux"],
-    packages=find_packages(),  # auto-discovery submodules ["talkgenerator"],
+    python_requires=">=3.10",
+    packages=find_packages(),
     package_dir={"talkgenerator": "talkgenerator"},
     data_files=[
         ("images", [DATA_PATH + "images/black-transparent.png"]),
