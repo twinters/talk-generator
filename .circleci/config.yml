@@ -1,12 +1,8 @@
-# Python CircleCI 2.0 configuration file
-#
-# Check https://circleci.com/docs/2.0/language-python/ for more details
-#
 version: 2
 jobs:
   build:
     docker:
-      - image: circleci/python:latest
+      - image: circleci/python:3.8.6
 
     working_directory: ~/talkgenerator
 
@@ -26,7 +22,7 @@ jobs:
             python3 -m venv venv
             . venv/bin/activate
             pip install --upgrade pip setuptools
-            python3 -m pip install -r requirements.txt --use-feature=2020-resolver
+            python3 -m pip install -r requirements.txt
             python run_nltk_download.py
 
       - save_cache:
@@ -40,10 +36,7 @@ jobs:
           command: |
             python3 -m venv venv
             . venv/bin/activate
-            pip install --upgrade pip setuptools
-            pip install pytest
-            pip install pytest-cov
-            pip install codecov
+            pip install --upgrade pip setuptools pytest-cov codecov
             pytest --cov=talkgenerator tests/
             codecov --token=e25ce249-b3da-4d80-b8d3-074f7d288969
 
