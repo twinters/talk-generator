@@ -19,6 +19,7 @@ logger = logging.getLogger("talkgenerator")
 
 API_URL = "https://api.openverse.org/v1/images/"
 _MIN_LONG_SIDE = 800  # smaller images look blurry on a slide
+_TIMEOUT_SECONDS = 8
 
 _cooldown = http_util.Cooldown("Openverse")
 
@@ -53,9 +54,11 @@ def search_photos(query: str) -> list[ImageData]:
     response = http_util.get(
         API_URL,
         params={"q": query, "page_size": 20, "license_type": "commercial", "mature": "false"},
-        timeout=15,
+        timeout=_TIMEOUT_SECONDS,
     )
     if response is None:
+        # Openverse can be slow; don't let every slide wait for it
+        _cooldown.trigger(10 * 60, f"no answer within {_TIMEOUT_SECONDS} seconds")
         return []
     if response.status_code == 429:
         _cooldown.trigger(15 * 60, "rate limit reached")

@@ -217,14 +217,14 @@ copyright_free_generator = CombinedGenerator(
     (1, generate_unsplash_image),
     (1, generate_pixabay_image),
     (1, generate_pexels_image),
-    (0.5, generate_openverse_image),
+    (0.1, generate_openverse_image),
     (0.01, generate_random_unsplash_image),
 )
 copyright_free_generator_from_word = CombinedGenerator(
     (1, generate_unsplash_image_from_word),
     (1, generate_pixabay_image_from_word),
     (1, generate_pexels_image_from_word),
-    (0.5, generate_openverse_image_from_word),
+    (0.1, generate_openverse_image_from_word),
     (0.01, generate_random_unsplash_image_from_word),
 )
 
