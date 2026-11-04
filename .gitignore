@@ -129,3 +129,12 @@ venv3/
 
 tmp/
 old_output/
+
+# Tooling caches
+.ruff_cache/
+
+# Personal AI-assistant files: keep these out of this public repository
+CLAUDE.md
+CLAUDE.local.md
+.claude/
+.mcp.json

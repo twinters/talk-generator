@@ -1,8 +1,7 @@
 # Talk Powerpoint Generator
 
-[![CircleCI](https://circleci.com/gh/korymath/talk-generator.svg?style=svg&circle-token=dcba7d5a9ff7953cff0526e201990c0b811b3aae)](https://circleci.com/gh/korymath/talk-generator)
-[![codecov](https://codecov.io/gh/korymath/talk-generator/branch/master/graph/badge.svg?token=gqkCyuXop0)](https://codecov.io/gh/korymath/talk-generator)
-[![License](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/korymath/britbot/blob/master/LICENSE.md)
+[![CI](https://github.com/twinters/talk-generator/actions/workflows/ci.yml/badge.svg)](https://github.com/twinters/talk-generator/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/twinters/talk-generator.svg)](LICENSE)
 
 This program automatically generates PowerPoints about any topic.
 These presentation slide decks can be used by improvisers for the improvisational comedy format *"Improvised TED talk"* or *"Powerpoint Karaoke"*.
@@ -10,66 +9,100 @@ In such games, the actors have to present an unseen presentation slide deck, but
 
 ## Demo
 
-Ty out this generator on our online platform: [talkgenerator.com](http://talkgenerator.com/).
+Try out this generator on our online platform: [talkgenerator.com](https://talkgenerator.com/).
 
 ### Example
 
 ![Automatically Generated](https://media.giphy.com/media/MXXe522nIAA9JZjExI/giphy.gif)
 
-## Easy Install and Run
+## Install and run
 
-Our program relies on certain APIs that require authentication in order to use it.
-Create a file named `.env` (don't forget the period) in your project directory, and fill this with the correct API keys as described on our [wiki page about this](https://github.com/korymath/talk-generator/wiki/Setting-Up-API-Keys).
+You need Python 3.10 or newer. With [uv](https://docs.astral.sh/uv/):
 
 ```sh
-# Make a new Python 3 virtual environment
-python3 -m venv venv;
+# Install the dependencies into .venv
+uv sync
 
-# Activate the virtual environment
-source venv/bin/activate;
+# Generate a 10 slide talk about peanuts (saved in ./output and opened afterwards)
+uv run talkgenerator --topic "peanuts" --num_slides 10
+```
 
-# Upgrade pip and install  requirements
-pip install --upgrade pip setuptools;
-python3 -m pip install -r requirements.txt;
+Or with plain pip:
 
-# Download NLTK dependencies
-python run_nltk_download.py;
-
-# Install the Talk Generator
-pip install -e .;
-
-# Generate a 10 slide talk with topic peanuts
+```sh
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -e .
 talkgenerator --topic "peanuts" --num_slides 10
 ```
 
+On its first run, the generator downloads the NLTK data it needs (about 30 MB).
+For deployments, you can prepare it up front with `python run_nltk_download.py --data-dir <folder>` and point `NLTK_DATA` to that folder.
+
+### API keys
+
+Images come from several services, some of which need a (free) API key.
+Copy `.env.example` to `.env` in the folder you run the generator from, and fill in the keys you have.
+Every key is optional: sources without a key are skipped, and the other sources fill in.
+
+| Source | Used for | Keys | Where to get them |
+| --- | --- | --- | --- |
+| Reddit | memes, gifs, weird and vintage pictures, charts | `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_USER_AGENT` | [create a "script" app](https://www.reddit.com/prefs/apps) |
+| Unsplash | photos | `UNSPLASH_ACCESS_KEY` | [Unsplash developers](https://unsplash.com/oauth/applications) (new apps are limited to 50 requests per hour until approved) |
+| Pixabay | photos | `PIXABAY_KEY` | [Pixabay API](https://pixabay.com/api/docs/) |
+| Pexels | photos | `PEXELS_KEY` | [Pexels API](https://www.pexels.com/api/) |
+
+These sources need no key: [Datamuse](https://www.datamuse.com/api/) and WordNet (related words), Goodreads (quotes), WikiHow (actions), InspiroBot and ShitpostBot 5000 (images).
+Related words used to come from [ConceptNet](https://conceptnet.io/), whose public API has been down since late 2025.
+The generator still tries it (or a self-hosted copy set with `CONCEPTNET_API_URL`), and falls back to Datamuse and WordNet when it doesn't answer.
+
+Any source can be switched off with `DISABLE_<SOURCE>=1`, e.g. `DISABLE_WIKIHOW=1` (see `.env.example`).
+
 ### Run arguments
 
-| Argument               | Description               |
-| ---------------------- | ------------------------- |
-| `topic` | The topic of the generator. This works best if it is a common, well-known noun. Use comma-separated words to generate a slide deck about multiple topics |
-| `slides` | The number of slides in the generated presentation (*default: 10*) |
-| `schema` | The presentation schema to use when generating the presentation. Currently, only two modes are implemented, being `default` and `test` (for testing during development) |
-| `title` | Title of the presentation. Either `topic` or this one should to be set in order to generate a slide deck (just setting `topic` is usually more fun though)  |
-| `presenter` | The name that will be present on the first slide. Leave blank for an automatically generated name |
-| `output_folder` | The folder to output the generated presentations (*default: `./output/`*) |
-| `save_ppt` | If this flag is true(*default*), the generated powerpoint will be saved on the computer in the `output_folder`|
-| `open_ppt` | If this flag is true (*default*), the generated powerpoint will automatically open after generating|
-| `parallel` | If this flag is true (*default*), the generator will generate all slides in parallel |
+| Argument | Description |
+| --- | --- |
+| `--topic` | The topic of the generator. This works best if it is a common, well-known noun. Use comma-separated words to generate a slide deck about multiple topics |
+| `--num_slides` | The number of slides in the generated presentation (*default: 10*) |
+| `--schema` | The presentation schema to use: `default`, `ted` (only copyright-free images), `interview` (no "about me" slides) or `test` |
+| `--title` | Title of the presentation. Either `topic` or this one should be set (just setting `topic` is usually more fun though). With only a title, its rarest word becomes the topic |
+| `--presenter` | The name that will be present on the first slide. Leave blank for an automatically generated name |
+| `--output_folder` | The folder to output the generated presentations (*default: `./output/`*) |
+| `--save_ppt` | If this flag is true (*default*), the generated powerpoint will be saved in the `output_folder` |
+| `--open_ppt` | If this flag is true (*default*), the generated powerpoint will automatically open after generating |
+| `--parallel` | If this flag is true (*default*), the generator will generate all slides in parallel |
+| `--int_seed` | Seed for the random generator, to make runs more reproducible |
+| `--print_logs` / `--verbose` | Print progress (*default: true*); `--verbose` adds debug logs |
+
+### Using it from Python
+
+```python
+from talkgenerator import generator
+
+presentation, slide_deck, output_file = generator.generate_presentation(
+    schema="default",
+    slides=8,
+    topic="peanuts",
+    output_folder="output",
+    open_ppt=False,
+)
+```
 
 ## Program structure
 
-See the [wiki](https://github.com/korymath/talk-generator/wiki/Program-structure) to know more about the inner implementation.
+See the [wiki](https://github.com/twinters/talk-generator/wiki/Program-structure) to know more about the inner implementation.
 
 ## Tests
 
-Test files are `tests/*.py`, prefixed with `test_`. Test files use the `unittest` module.
-They can easily be run all together when using PyCharm by right clicking on `talk-generator` and pressing *Run 'Unittests in talk-generator'*
+Tests live in `tests/`. Many of them talk to the live APIs, and are marked as `network` tests:
 
 ```sh
-coverage run -m pytest; coverage html
+uv run pytest                     # everything (tests needing missing API keys are skipped)
+uv run pytest -m "not network"    # only the offline tests, as in CI
+uv run ruff check . && uv run ruff format --check .
 ```
 
-Test coverage is automatically handled by `codecov`. Tests are automatically run with CircleCI based on the `.yml` file in the `.circleci` directory.
+GitHub Actions runs the linter and the offline tests on every push and pull request.
 
 ## Credits
 
