@@ -56,6 +56,7 @@ class PresentationSchema:
         parallel: bool = False,
         int_seed: int = None,
         save_ppt: bool = True,
+        debug_notes: bool = False,
     ) -> tuple[Presentation, SlideDeck]:
         """Generate a presentation about a certain topic with a certain number of slides"""
 
@@ -111,7 +112,7 @@ class PresentationSchema:
 
         if save_ppt:
             presentation = self._powerpoint_creator()
-            slide_deck.save_to_powerpoint(presentation)
+            slide_deck.save_to_powerpoint(presentation, debug_notes=debug_notes)
             return presentation, slide_deck
 
         return None, slide_deck

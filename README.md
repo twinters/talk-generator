@@ -78,6 +78,7 @@ Set `TALKGENERATOR_CACHE_DIR` to put the cache elsewhere, or `DISABLE_CACHE=1` t
 | `--parallel` | If this flag is true (*default*), the generator will generate all slides in parallel |
 | `--int_seed` | Seed for the random generator, to make runs more reproducible |
 | `--print_logs` / `--verbose` | Print progress (*default: true*); `--verbose` adds debug logs |
+| `--debug_notes` | Explain in each slide's speaker notes how it was generated. Off by default, since presenters see the notes |
 
 ### Using it from Python
 

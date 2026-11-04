@@ -18,12 +18,12 @@ class SlideDeck:
     def is_complete(self):
         return len(self._slides) >= self._size and (None not in self._slides)
 
-    def save_to_powerpoint(self, prs_template):
+    def save_to_powerpoint(self, prs_template, debug_notes: bool = False):
         """Should generate a slide in the powerpoint"""
         if not self.is_complete():
             logger.error("ERROR: SOME SLIDES WERE NOT GENERATED: {}".format(self._slides))
             self._slides = [slide for slide in self._slides if slide is not None]
-        return [slide.create_powerpoint_slide(prs_template) for slide in self._slides]
+        return [slide.create_powerpoint_slide(prs_template, debug_notes=debug_notes) for slide in self._slides]
 
     def to_slide_deck_dictionary(self) -> list[dict]:
         return [slide.to_slide_dictionary() for slide in self._slides]

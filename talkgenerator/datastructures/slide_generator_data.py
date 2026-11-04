@@ -83,7 +83,7 @@ class SlideGeneratorData:
                     return None
 
                 if slide:
-                    # Add notes about the generation
+                    # Remember how the slide was made (only shown in the speaker notes with debug_notes)
                     slide.set_note(
                         "Seed: "
                         + presentation_context["seed"]

@@ -45,6 +45,7 @@ def generate_presentation_using_cli_arguments(args) -> tuple[Presentation, Slide
         save_ppt=args.save_ppt,
         output_folder=getattr(args, "output_folder", None) or DEFAULT_OUTPUT_FOLDER,
         open_ppt=args.open_ppt,
+        debug_notes=getattr(args, "debug_notes", False),
     )
 
 
@@ -60,7 +61,9 @@ def generate_presentation(
     output_folder: str = DEFAULT_OUTPUT_FOLDER,
     open_ppt: bool = False,
     print_logs=False,
+    debug_notes: bool = False,
 ) -> tuple[Presentation, SlideDeck, str]:
+    """Generate a talk. With debug_notes, every slide's speaker notes explain how it was generated."""
     if print_logs:
         os_util.show_logs(logger)
     logger.info("**************************")
@@ -103,6 +106,7 @@ def generate_presentation(
         parallel=parallel,
         int_seed=int_seed,
         save_ppt=save_ppt,
+        debug_notes=debug_notes,
     )
 
     logger.info("**************************")
@@ -220,6 +224,11 @@ def get_argument_parser():
         "-v",
         action="store_true",
         help="Print debug logs as well (very chatty).",
+    )
+    parser.add_argument(
+        "--debug_notes",
+        action="store_true",
+        help="Explain in each slide's speaker notes how it was generated (presenters can see these!).",
     )
     parser.add_argument(
         "--output_folder",

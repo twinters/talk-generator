@@ -20,14 +20,17 @@ class Slide:
             self._sources.append(source)
 
     def set_note(self, note: str):
+        """Debug information about how the slide was generated."""
         self._note = note
 
-    def create_powerpoint_slide(self, prs):
-        """Should generate a slide in the powerpoint"""
+    def create_powerpoint_slide(self, prs, debug_notes: bool = False):
+        """Add this slide to the presentation. With debug_notes, the speaker notes explain how it was generated
+        (off by default: presenters see the notes, and they spoil the surprise)."""
         ppt_slide = self._ppt_slide_creator(prs, **self._arguments)
         try:
             if ppt_slide:
-                ppt_slide.notes_slide.notes_text_frame.text = self._note
+                if debug_notes and self._note:
+                    ppt_slide.notes_slide.notes_text_frame.text = self._note
 
                 if len(self._sources):
                     powerpoint_slide_creator.add_sources_note(ppt_slide, self._sources)
