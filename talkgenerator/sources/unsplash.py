@@ -7,6 +7,7 @@ and a download is registered when a photo ends up on a slide. New Unsplash apps 
 """
 
 import logging
+from typing import Any
 
 from talkgenerator import settings
 from talkgenerator.datastructures.image_data import ImageData
@@ -71,7 +72,13 @@ def _map_to_image_data(photo) -> ImageData | None:
     source = user["name"] + " (via Unsplash)" if user.get("name") else "Unsplash"
     download_location = (photo.get("links") or {}).get("download_location")
     on_use = (lambda: _track_download(download_location)) if download_location else None
-    return ImageData(image_url=image_url, source=source, on_use=on_use)
+    return ImageData(image_url=image_url, source=source, on_use=on_use, source_url=_profile_link(user))
+
+
+def _profile_link(user: dict[str, Any]) -> str:
+    """Link to the photographer's profile, tagged the way Unsplash's attribution guidelines ask."""
+    profile = (user.get("links") or {}).get("html") or "https://unsplash.com/"
+    return http_util.with_query_params(profile, utm_source=settings.unsplash_app_name(), utm_medium="referral")
 
 
 def random(_=None) -> ImageData | None:

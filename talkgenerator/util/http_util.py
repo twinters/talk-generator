@@ -39,6 +39,17 @@ CACHE_EXPIRY = {
     "pixabay.com/api": timedelta(hours=24),  # Pixabay's API terms ask to cache requests for 24 hours
     "api.pexels.com": timedelta(hours=24),
     "api.unsplash.com/search": timedelta(hours=24),
+    "api.openverse.org/v1/images": timedelta(hours=24),
+    "commons.wikimedia.org/w/api.php": timedelta(days=7),
+    "api.artic.edu/api/v1": timedelta(days=30),
+    "api.giphy.com/v1/gifs/search": timedelta(hours=24),
+    "en.wikiquote.org/w/api.php": timedelta(days=30),
+}
+
+# Extra headers some hosts ask for. The Art Institute of Chicago wants API clients to identify
+# themselves in AIC-User-Agent, and refuses image requests without it.
+_HOST_HEADERS = {
+    "artic.edu": {"AIC-User-Agent": USER_AGENT},
 }
 _CONCEPTNET_CACHE_EXPIRY = timedelta(days=30)
 CACHE_FILE_NAME = "http_cache.sqlite"
@@ -146,8 +157,20 @@ def with_query_params(url: str, **params: Any) -> str:
     return urlunsplit(parts._replace(query=urlencode(query)))
 
 
+def _host_headers(url: str) -> dict[str, str]:
+    host = urlsplit(url).hostname or ""
+    headers: dict[str, str] = {}
+    for domain, extra_headers in _HOST_HEADERS.items():
+        if host == domain or host.endswith("." + domain):
+            headers.update(extra_headers)
+    return headers
+
+
 def get(url: str, *, timeout: float = DEFAULT_TIMEOUT, **kwargs: Any) -> requests.Response | None:
     """GET a URL. Returns None instead of raising on connection errors and timeouts."""
+    extra_headers = _host_headers(url)
+    if extra_headers:
+        kwargs["headers"] = {**extra_headers, **(kwargs.get("headers") or {})}
     try:
         return get_session().get(url, timeout=timeout, **kwargs)
     except requests.RequestException as e:

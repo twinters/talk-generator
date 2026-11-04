@@ -23,6 +23,7 @@ jobs:
       UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
       PIXABAY_KEY: ${{ secrets.PIXABAY_KEY }}
       PEXELS_KEY: ${{ secrets.PEXELS_KEY }}
+      GIPHY_API_KEY: ${{ secrets.GIPHY_API_KEY }}
       DISABLE_CACHE: "1"
     steps:
       - uses: actions/checkout@v7

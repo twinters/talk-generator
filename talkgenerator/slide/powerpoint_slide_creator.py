@@ -144,8 +144,24 @@ def _print_all_placeholders(slide):
         print("%d %s" % (shape.placeholder_format.idx, shape.name))
 
 
-def add_sources_note(slide, _sources: list[str]):
-    return _add_text(slide, SOURCES_PLACEHOLDER, "[Image sources: " + ", ".join(_sources) + "]")
+def add_sources_note(slide, sources: list[str], source_urls: list[str | None] | None = None):
+    """Credit the image sources on the slide, each linking to its page (photographer, photo, post...)."""
+    if not sources:
+        return None
+    urls = list(source_urls or [])
+    urls += [None] * (len(sources) - len(urls))
+    text_frame = slide.placeholders[SOURCES_PLACEHOLDER].text_frame
+    text_frame.text = "[Image sources: "
+    paragraph = text_frame.paragraphs[0]
+    for index, (source, url) in enumerate(zip(sources, urls, strict=True)):
+        if index:
+            paragraph.add_run().text = ", "
+        run = paragraph.add_run()
+        run.text = source
+        if url:
+            run.hyperlink.address = url
+    paragraph.add_run().text = "]"
+    return True
 
 
 # FORMAT GENERATORS

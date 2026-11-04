@@ -51,8 +51,11 @@ Every key is optional: sources without a key are skipped, and the other sources 
 | Unsplash | photos | `UNSPLASH_ACCESS_KEY` | [Unsplash developers](https://unsplash.com/oauth/applications) (new apps are limited to 50 requests per hour until approved) |
 | Pixabay | photos | `PIXABAY_KEY` | [Pixabay API](https://pixabay.com/api/docs/) |
 | Pexels | photos | `PEXELS_KEY` | [Pexels API](https://www.pexels.com/api/) |
+| GIPHY | gifs, next to Reddit's | `GIPHY_API_KEY` | [GIPHY developers](https://developers.giphy.com/dashboard/) |
 
-These sources need no key: [Datamuse](https://www.datamuse.com/api/) and WordNet (related words), Goodreads (quotes), WikiHow (actions), InspiroBot and ShitpostBot 5000 (images).
+These sources need no key: [Datamuse](https://www.datamuse.com/api/) and WordNet (related words), Goodreads and [Wikiquote](https://en.wikiquote.org/) (quotes), WikiHow (actions), [Openverse](https://openverse.org/) (openly licensed photos), [Wikimedia Commons](https://commons.wikimedia.org/) (old photos), the [Art Institute of Chicago](https://api.artic.edu/docs/) (public domain artworks), InspiroBot and ShitpostBot 5000 (images).
+Most kinds of content come from more than one source, so a source that is down or rate limited leaves no holes: the others fill in.
+Image credits on the slides link to the photographer's or the image's page.
 Related words used to come from [ConceptNet](https://conceptnet.io/), whose public API has been down since late 2025.
 The generator still tries it (or a self-hosted copy set with `CONCEPTNET_API_URL`), and falls back to Datamuse and WordNet when it doesn't answer.
 
@@ -111,7 +114,7 @@ uv run ruff check . && uv run ruff format --check .
 
 GitHub Actions runs the linter and the offline tests on every push and pull request.
 A weekly "canary" workflow runs the network tests against the live APIs, and opens an issue when one of them broke.
-It uses the API keys stored as repository secrets (`REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_USER_AGENT`, `UNSPLASH_ACCESS_KEY`, `PIXABAY_KEY`, `PEXELS_KEY`); tests whose keys are missing are skipped.
+It uses the API keys stored as repository secrets (`REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_USER_AGENT`, `UNSPLASH_ACCESS_KEY`, `PIXABAY_KEY`, `PEXELS_KEY`, `GIPHY_API_KEY`); tests whose keys are missing are skipped.
 
 ## Credits
 

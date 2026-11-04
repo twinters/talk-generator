@@ -5,7 +5,7 @@ This file contains structures that are helpful for certain content generators, b
 import random
 
 from talkgenerator.datastructures.image_data import ImageData
-from talkgenerator.sources import conceptnet, goodreads, reddit, text_generator, wikihow
+from talkgenerator.sources import conceptnet, goodreads, reddit, text_generator, wikihow, wikiquote
 from talkgenerator.util import os_util
 from talkgenerator.util.generator_util import (
     BackupGenerator,
@@ -38,6 +38,18 @@ class GoodReadsQuoteGenerator:
         return FromListGenerator(SeededGenerator(generator))(presentation_context)
 
 
+# WIKIQUOTE QUOTES
+class WikiquoteQuoteGenerator:
+    def __init__(self, max_quote_length):
+        self._max_quote_length = max_quote_length
+
+    def __call__(self, presentation_context):
+        def generator(seed):
+            return [quote for quote in wikiquote.search_quotes(seed) if len(quote) <= self._max_quote_length]
+
+        return FromListGenerator(SeededGenerator(generator))(presentation_context)
+
+
 # REDDIT
 
 
@@ -54,7 +66,10 @@ class RedditImageSearcher:
         results = reddit.search_images(self._subreddit, str(seed or ""))
         if not results:
             return None
-        return [ImageData(image_url=image_url, source=source) for image_url, source in results]
+        return [
+            ImageData(image_url=image_url, source=source, source_url=post_url)
+            for image_url, source, post_url in results
+        ]
 
 
 class RedditImageGenerator:

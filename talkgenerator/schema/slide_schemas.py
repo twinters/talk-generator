@@ -103,7 +103,7 @@ history_slide_generators = _register(
                 cg.historical_name_generator,
                 cg.vintage_person_generator,
                 NoneGenerator(),
-                cg.goodreads_quote_generator,
+                cg.quote_generator,
             ),
             weight_function=PeakedWeight((2, 3), 20, 0.3),
             allowed_repeated_elements=0,
@@ -133,9 +133,9 @@ history_slide_generators_copyright_free = _register(
             slide_generator_types.TwoColumnImageSlideGenerator.of(
                 cg.history_and_history_person_title_generator,
                 cg.historical_name_generator,
-                cg.copyright_free_prefixed_generator(["historic person", "person", "man", "woman"]),
+                cg.historic_person_copyright_free_generator,
                 NoneGenerator(),
-                cg.goodreads_short_quote_generator,
+                cg.short_quote_generator,
             ),
             weight_function=PeakedWeight((1, 2), 20, 0.3),
             allowed_repeated_elements=2,
@@ -147,8 +147,8 @@ history_slide_generators_copyright_free = _register(
             slide_generator_types.TwoColumnImageSlideGenerator.of_images_and_tupled_captions(
                 cg.history_title_generator,
                 cg.historic_double_captions_generator,
-                cg.copyright_free_prefixed_generator(["vintage", "historic", "old", "ancient"]),
-                cg.copyright_free_prefixed_generator(["vintage", "historic", "old", "ancient"]),
+                cg.historic_copyright_free_generator,
+                cg.historic_copyright_free_generator,
             ),
             weight_function=PeakedWeight((1, 2), 12, 0.1),
             allowed_repeated_elements=2,
@@ -209,11 +209,11 @@ single_image_slide_generators_copyright_free = _register(
         SlideGeneratorData(
             slide_generator_types.LarqeQuoteSlideGenerator.of(
                 NoneGenerator(),
-                cg.goodreads_short_quote_generator,
+                cg.short_quote_generator,
                 cg.generate_horizontal_pixabay_image,
             ),
             tags=["full_image", "quote"],
-            name="Full Screen Pixabay Goodreads",
+            name="Full Screen Pixabay Quote",
         ),
         SlideGeneratorData(
             slide_generator_types.ImageSlideGenerator.of(cg.default_slide_title_generator, cg.copyright_free_generator),
@@ -245,12 +245,12 @@ statement_slide_generators = _register(
         SlideGeneratorData(
             slide_generator_types.LarqeQuoteSlideGenerator.of(
                 title_generator=NoneGenerator(),
-                text_generator=cg.goodreads_quote_generator,
+                text_generator=cg.quote_generator,
                 background_image_generator=cg.generate_horizontal_pixabay_image,
             ),
             weight_function=ConstantWeightFunction(1),
             tags=["quote", "statement"],
-            name="Goodreads Quote",
+            name="Quote",
         ),
         SlideGeneratorData(
             slide_generator_types.LarqeQuoteSlideGenerator.of(
@@ -280,11 +280,11 @@ statement_slide_generators_copyright_free = _register(
         SlideGeneratorData(
             slide_generator_types.LarqeQuoteSlideGenerator.of(
                 title_generator=NoneGenerator(),
-                text_generator=cg.goodreads_quote_generator,
+                text_generator=cg.quote_generator,
                 background_image_generator=cg.generate_horizontal_pixabay_image,
             ),
             tags=["quote", "statement"],
-            name="Goodreads Quote (CRF)",
+            name="Quote (CRF)",
         ),
         SlideGeneratorData(
             slide_generator_types.LarqeQuoteSlideGenerator.of(

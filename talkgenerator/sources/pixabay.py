@@ -62,6 +62,7 @@ def search_photos(query, orientation="all") -> list[ImageData]:
         ImageData(
             image_url=photo["largeImageURL"],
             source=photo["user"] + " (via Pixabay)" if photo.get("user") else "Pixabay",
+            source_url=photo.get("pageURL"),
         )
         for photo in hits
         if photo.get("largeImageURL")

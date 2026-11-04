@@ -14,10 +14,13 @@ class Slide:
         self._arguments = arguments
         self._note = ""
         self._sources = []
+        self._source_urls = []
 
-    def add_source(self, source: str):
+    def add_source(self, source: str, url: str | None = None):
+        """Credit an image source; the credit links to the url (if given) in the PowerPoint."""
         if source is not None:
             self._sources.append(source)
+            self._source_urls.append(url)
 
     def set_note(self, note: str):
         """Debug information about how the slide was generated."""
@@ -33,7 +36,7 @@ class Slide:
                     ppt_slide.notes_slide.notes_text_frame.text = self._note
 
                 if len(self._sources):
-                    powerpoint_slide_creator.add_sources_note(ppt_slide, self._sources)
+                    powerpoint_slide_creator.add_sources_note(ppt_slide, self._sources, self._source_urls)
 
                 powerpoint_slide_creator.remove_empty_placeholders(ppt_slide)
 
@@ -45,6 +48,7 @@ class Slide:
         slide_dict = dict(self._arguments)
         slide_dict["type"] = self._type_name
         slide_dict["sources"] = self._sources
+        slide_dict["source_urls"] = self._source_urls
         return slide_dict
 
 

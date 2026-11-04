@@ -59,12 +59,12 @@ def _search_images(name, query, sort, limit):
             continue
         image_url = get_image_url(submission)
         if image_url:
-            images.append((image_url, get_source_name(submission)))
+            images.append((image_url, get_source_name(submission), get_post_url(submission)))
     return tuple(images)
 
 
 def search_images(name, query, sort="relevance", limit=100):
-    """(image URL, credit) pairs of safe-for-work image posts in (a "+"-joined list of) subreddits.
+    """(image URL, credit, post URL) triples of safe-for-work image posts in (a "+"-joined list of) subreddits.
 
     Searches for the query, or takes the current hot posts if there's no query. Returns None without
     Reddit access or when Reddit fails.
@@ -110,6 +110,11 @@ def get_image_url(submission) -> str | None:
         if preview_url:
             return html.unescape(preview_url)
     return None
+
+
+def get_post_url(submission) -> str | None:
+    permalink = vars(submission).get("permalink")
+    return "https://www.reddit.com" + permalink if permalink else None
 
 
 def get_source_name(submission) -> str:

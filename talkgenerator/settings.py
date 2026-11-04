@@ -27,6 +27,7 @@ required_keys = {
     "Unsplash": ["UNSPLASH_ACCESS_KEY"],
     "Pixabay": ["PIXABAY_KEY"],
     "Pexels": ["PEXELS_KEY"],
+    "GIPHY": ["GIPHY_API_KEY"],
 }
 
 
@@ -48,6 +49,15 @@ def pixabay_auth():
 
 def pexels_auth():
     return {"pexels_key": env.str("PEXELS_KEY", "")}
+
+
+def giphy_auth():
+    return {"giphy_api_key": env.str("GIPHY_API_KEY", "")}
+
+
+def unsplash_app_name() -> str:
+    """The app name Unsplash knows you by, used in the utm_source of links back to Unsplash."""
+    return env.str("UNSPLASH_APP_NAME", "talkgenerator")
 
 
 def cache_dir() -> str:

@@ -18,4 +18,4 @@ def get_random_inspirobot_image(_=None):
     image_url = response.text.strip() if response is not None and response.ok else ""
     if not image_url.startswith("https://"):
         image_url = _legacy_random_image_url()
-    return ImageData(image_url=image_url, source="InspiroBot")
+    return ImageData(image_url=image_url, source="InspiroBot", source_url="https://inspirobot.me")

@@ -6,12 +6,23 @@ from talkgenerator.schema.content_generator_structures import (
     GoodReadsQuoteGenerator,
     JobPrefixApplier,
     SplitCaptionsGenerator,
+    WikiquoteQuoteGenerator,
     create_reddit_image_generator,
     create_templated_text_generator,
     create_tracery_generator,
     generate_wikihow_bold_statement,
 )
-from talkgenerator.sources import inspirobot, pexels, pixabay, shitpostbot, unsplash
+from talkgenerator.sources import (
+    art_institute,
+    giphy,
+    inspirobot,
+    openverse,
+    pexels,
+    pixabay,
+    shitpostbot,
+    unsplash,
+    wikimedia_commons,
+)
 from talkgenerator.util.generator_util import (
     BackupGenerator,
     CombinedGenerator,
@@ -79,9 +90,9 @@ wikihow_bold_statement_generator = generate_wikihow_bold_statement
 
 anecdote_prompt_generator = create_templated_text_generator("data/text-templates/anecdote_prompt.txt")
 
-# QUOTES
-goodreads_quote_generator = GoodReadsQuoteGenerator(250)
-goodreads_short_quote_generator = GoodReadsQuoteGenerator(140)
+# QUOTES: mostly Goodreads, with Wikiquote for variety and as a backup when one of them fails
+quote_generator = CombinedGenerator((3, GoodReadsQuoteGenerator(250)), (1, WikiquoteQuoteGenerator(250)))
+short_quote_generator = CombinedGenerator((3, GoodReadsQuoteGenerator(140)), (1, WikiquoteQuoteGenerator(140)))
 
 # DOUBLE CAPTIONS
 
@@ -113,8 +124,9 @@ inspirobot_image_generator = inspirobot.get_random_inspirobot_image
 # GIFS
 
 reddit_gif_generator = create_reddit_image_generator("gifs", "gif", "gifextra", "nonononoYES")
+giphy_gif_generator = SeededGenerator(ExternalImageListGenerator(giphy.search_gifs))
 
-combined_gif_generator = CombinedGenerator((1, reddit_gif_generator))
+combined_gif_generator = CombinedGenerator((1, reddit_gif_generator), (1, giphy_gif_generator))
 
 # REDDIT
 
@@ -190,18 +202,29 @@ generate_pixabay_image = SeededGenerator(generate_pixabay_image_from_word)
 generate_pexels_image_from_word = ExternalImageListGenerator(pexels.search_photos)
 generate_pexels_image = SeededGenerator(generate_pexels_image_from_word)
 
+# OPENVERSE (openly licensed photos from Flickr, museums, Wikimedia, ...)
+generate_openverse_image_from_word = ExternalImageListGenerator(openverse.search_photos)
+generate_openverse_image = SeededGenerator(generate_openverse_image_from_word)
+
+# WIKIMEDIA COMMONS & ART INSTITUTE OF CHICAGO (old photos and public domain artworks)
+generate_historic_photo_from_word = ExternalImageListGenerator(wikimedia_commons.search_historic_photos)
+generate_artwork_from_word = ExternalImageListGenerator(art_institute.search_artworks)
+generate_portrait_artwork_from_word = PrefixedGenerator("portrait", generate_artwork_from_word)
+
 # COPYRIGHT FREE
 
 copyright_free_generator = CombinedGenerator(
     (1, generate_unsplash_image),
     (1, generate_pixabay_image),
     (1, generate_pexels_image),
+    (0.5, generate_openverse_image),
     (0.01, generate_random_unsplash_image),
 )
 copyright_free_generator_from_word = CombinedGenerator(
     (1, generate_unsplash_image_from_word),
     (1, generate_pixabay_image_from_word),
     (1, generate_pexels_image_from_word),
+    (0.5, generate_openverse_image_from_word),
     (0.01, generate_random_unsplash_image_from_word),
 )
 
@@ -245,9 +268,27 @@ neutral_image_generator_from_word = CombinedGenerator(
 
 neutral_or_weird_image_generator = CombinedGenerator((1, neutral_image_generator), (1, weird_punchline_image_generator))
 
-# OLD/VINTAGE
-vintage_person_generator = create_reddit_image_generator("OldSchoolCool")
-vintage_picture_generator = create_reddit_image_generator("TheWayWeWere", "100yearsago", "ColorizedHistory")
+# OLD/VINTAGE: Reddit's vintage subreddits, with old photos and artworks as reliable alternatives
+vintage_person_generator = CombinedGenerator(
+    (3, create_reddit_image_generator("OldSchoolCool")),
+    (1, SeededGenerator(generate_portrait_artwork_from_word)),
+)
+vintage_picture_generator = CombinedGenerator(
+    (3, create_reddit_image_generator("TheWayWeWere", "100yearsago", "ColorizedHistory")),
+    (1, SeededGenerator(generate_historic_photo_from_word)),
+    (1, SeededGenerator(generate_artwork_from_word)),
+)
+
+# Copyright-free versions (ted schema)
+historic_person_copyright_free_generator = CombinedGenerator(
+    (2, copyright_free_prefixed_generator(["historic person", "person", "man", "woman"])),
+    (1, SeededGenerator(generate_portrait_artwork_from_word)),
+)
+historic_copyright_free_generator = CombinedGenerator(
+    (2, copyright_free_prefixed_generator(["vintage", "historic", "old", "ancient"])),
+    (1, SeededGenerator(generate_historic_photo_from_word)),
+    (1, SeededGenerator(generate_artwork_from_word)),
+)
 
 reddit_book_cover_generator = create_reddit_image_generator("BookCovers", "fakebookcovers", "coverdesign", "bookdesign")
 
