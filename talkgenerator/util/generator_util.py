@@ -2,17 +2,12 @@
 Light, commonly used, non-specific generators that are helpful shortcuts for creating
 certain types of (content) generators
 """
-import os
-import sys
 import random
 import logging
-import inspect
 from typing import Callable, Optional, Dict, Union, Tuple
 
-import requests
-
 from talkgenerator.datastructures.image_data import ImageData
-from talkgenerator.util import random_util, os_util
+from talkgenerator.util import image_util, random_util
 
 logger = logging.getLogger("talkgenerator")
 
@@ -34,9 +29,7 @@ def fullname(o):
 
 class Generator(object):
     def __call__(self, seed: str):
-        raise NotImplemented(
-            str(self) + " has not provided an implementation for the generator"
-        )
+        raise NotImplementedError(str(self) + " has not provided an implementation for the generator")
 
 
 class PrefixedGenerator(Generator):
@@ -193,45 +186,53 @@ seeded_titled_identity_generator = SeededGenerator(TitledIdentityGenerator)
 
 
 class ExternalImageListGenerator(Generator):
+    """Picks a random image from a list of candidates (optionally weighted by (weight, image) pairs).
+
+    With check_image_validness, candidates are downloaded and checked first, so that dead links
+    and "image removed" placeholders are skipped instead of ending up as holes in the deck.
+    """
+
+    max_attempts = 8
+
     def __init__(
-        self, image_generator, check_image_validness=True, weighted=False,
+        self,
+        image_generator,
+        check_image_validness=True,
+        weighted=False,
     ):
         self._image_generator = image_generator
         self._check_image_validness = check_image_validness
         self._weighted = weighted
 
     def __call__(self, presentation_context) -> Optional[ImageData]:
-        logger.debug('Calling generator_util.ExternalImageListGenerator')
-        logger.debug('self._image_generator: {}'.format(self._image_generator))
-        logger.debug('self._check_image_validness: {}'.format(self._check_image_validness))
-        logger.debug('self._weighted: {}'.format(self._weighted))
-        logger.debug('module where function def: {}'.format(self._image_generator.__module__))
-        logger.debug('****************************************************************')
         images = self._image_generator(presentation_context)
-        # logger.debug('images: {}'.format(images))
-        logger.debug('****************************************************************')
+        if not images:
+            return None
+        # Work on a copy: the list may come straight out of a cache
+        candidates = list(images)
 
-        while bool(images) and len(images) > 0:
-            original_chosen_image = (
-                random_util.weighted_random([image for image in images if image[0] > 0])
-                if self._weighted
-                else random.choice(images)
-            )
-            if isinstance(original_chosen_image, str):
-                chosen_image = ImageData(image_url=original_chosen_image)
-            elif isinstance(original_chosen_image, ImageData):
-                chosen_image = original_chosen_image
+        for _ in range(self.max_attempts):
+            if self._weighted:
+                candidates = [entry for entry in candidates if entry[0] > 0]
+            if not candidates:
+                return None
+            if self._weighted:
+                entry = random.choices(candidates, weights=[entry[0] for entry in candidates])[0]
+                chosen = entry[1]
             else:
-                logger.warning(
-                    "INVALID IMAGE INPUT FOR EXTERNAL IMAGE GENERATOR / "
-                    + str(original_chosen_image)
-                    + " / "
-                    + str(type(original_chosen_image))
-                )
-                images.remove(original_chosen_image)
+                entry = chosen = random.choice(candidates)
+            candidates.remove(entry)
+
+            if isinstance(chosen, str):
+                chosen_image = ImageData(image_url=chosen)
+            elif isinstance(chosen, ImageData):
+                chosen_image = chosen
+            else:
+                logger.warning("Invalid image input for external image generator: %r", chosen)
                 continue
 
-            return chosen_image
+            if not self._check_image_validness or image_util.is_usable_image(chosen_image.get_image_url()):
+                return chosen_image
         return None
 
 

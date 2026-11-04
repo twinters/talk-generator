@@ -62,21 +62,10 @@ class RedditImageSearcher(object):
         self._subreddit = subreddit
 
     def __call__(self, seed: str):
-        results = reddit.search_subreddit(
-            self._subreddit, str(seed) + " nsfw:no (url:.jpg OR url:.png OR url:.gif)"
-        )
-        if bool(results):
-            return [
-                ImageData(
-                    image_url=post.url,
-                    source="u/"
-                    + post.author.name
-                    + " (on "
-                    + post.subreddit_name_prefixed
-                    + ")",
-                )
-                for post in results
-            ]
+        results = reddit.search_images(self._subreddit, str(seed or ""))
+        if not results:
+            return None
+        return [ImageData(image_url=image_url, source=source) for image_url, source in results]
 
 
 class RedditImageGenerator:

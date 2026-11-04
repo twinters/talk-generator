@@ -1,20 +1,14 @@
-import os
-import sys
 import logging
 from functools import lru_cache
 from io import BytesIO
 from pathlib import Path
 from typing import List
 
-import requests
-import PIL
-from PIL import Image
-from PIL import UnidentifiedImageError
 from lxml.etree import XMLSyntaxError
 from pptx import Presentation
 
 from talkgenerator.datastructures.image_data import ImageData
-from talkgenerator.util import os_util
+from talkgenerator.util import http_util, image_util, os_util
 
 # Location of powerpoint template
 _POWERPOINT_TEMPLATE_FILE = "data/powerpoint/template.pptx"
@@ -47,48 +41,6 @@ LAYOUT_THREE_TITLE_AND_IMAGE = 15
 LAYOUT_TITLE_AND_CHART = 16
 
 
-# = HELPERS =
-class FileLikeImage:
-    def get_file_like(self):
-        raise NotImplementedError()
-
-    def image(self):
-        raise NotImplementedError()
-
-
-class ExternalImage(FileLikeImage):
-    def __init__(self, url):
-        self._url = url
-
-    @lru_cache()
-    def get_bytes_io(self):
-        response = requests.get(self._url)
-        tmp_img = BytesIO(response.content)
-        return tmp_img
-
-    def get_file_like(self):
-        return self.get_bytes_io()
-
-    def image(self):
-        open_image = None
-        try:
-            open_image = Image.open(self.get_bytes_io())
-        except PIL.UnidentifiedImageError as e:
-            logging.error(e)
-            logging.error('PIL.UnidentifiedImageError')
-        return open_image
-
-
-class InternalImage(FileLikeImage):
-    def __init__(self, file_location):
-        self._file_location = file_location
-
-    def get_file_like(self):
-        return self._file_location
-
-    def image(self):
-        return Image.open(self._file_location())
-
 # CREATION
 def _create_slide(prs, slide_type):
     """ Creates a new slide in the given presentation using the slide_type template """
@@ -114,60 +66,66 @@ def is_external_url(url: str):
     return url.startswith("http")
 
 
-def _add_image(
-    slide, placeholder_id: int, image: ImageData, original_image_size: bool = True
-):
-    if isinstance(image, ImageData):
-        image_url = image.get_image_url()
-    else:
-        image_url = image
+def _remove_shape(shape):
+    """Remove an unfilled placeholder, so the deck doesn't show an empty "click to add picture" frame."""
+    element = shape._element
+    parent = element.getparent()
+    if parent is not None:
+        parent.remove(element)
 
-    if is_external_url(image_url):
-        image_ref = ExternalImage(image_url)
-    else:
-        path = Path(image_url).absolute()
-        image_ref = InternalImage(str(path))
+
+def remove_empty_placeholders(slide):
+    """Drop placeholders that never got content (e.g. no title, or no image sources), so they don't
+    show up as "Click to add text" boxes when the deck is edited."""
+    for placeholder in list(slide.placeholders):
+        if placeholder.has_text_frame and not placeholder.text_frame.text.strip():
+            _remove_shape(placeholder)
+
+
+def _add_image(slide, placeholder_id: int, image: ImageData, original_image_size: bool = True):
+    image_url = image.get_image_url() if isinstance(image, ImageData) else image
+    if not is_external_url(image_url):
+        image_url = str(Path(image_url).absolute())
 
     placeholder = slide.placeholders[placeholder_id]
-    if original_image_size:
-        # Calculate the image size of the image
-        try:
-            # Insert the picture
-            try:
-                width, height = image_ref.image().size
-                # Make sure the placeholder doesn't zoom in
-                placeholder.height = height
-                placeholder.width = width
-                placeholder = placeholder.insert_picture(image_ref.get_file_like())
-                # Calculate ratios and compare
-                image_ratio = width / height
-                placeholder_ratio = placeholder.width / placeholder.height
-                ratio_difference = placeholder_ratio - image_ratio
-                # Placeholder width too wide:
-                if ratio_difference > 0:
-                    difference_on_each_side = ratio_difference / 2
-                    placeholder.crop_left = -difference_on_each_side
-                    placeholder.crop_right = -difference_on_each_side
-                # Placeholder height too high
-                else:
-                    difference_on_each_side = -ratio_difference / 2
-                    placeholder.crop_bottom = -difference_on_each_side
-                    placeholder.crop_top = -difference_on_each_side
-                return placeholder
-            except (ValueError, XMLSyntaxError, AttributeError) as e:
-                logger.error("_add_image error: {}".format(e))
-                return None
+    image_bytes = image_util.fetch_image(image_url)
+    if image_bytes is None:
+        logger.warning("Leaving out image %s: it could not be downloaded or used", http_util.describe_url(image_url))
+        _remove_shape(placeholder)
+        return None
 
-        except FileNotFoundError as fnfe:
-            logger.error("_add_image file not found: {}".format(fnfe))
-            return None
-    else:
-        try:
-            return placeholder.insert_picture(image_ref.get_file_like())
-        except (OSError, ValueError) as e:
-            logger.error(e)
-            logger.error("Unexpected error inserting image: {}:{}".format(image, sys.exc_info()[0]))
-            return None
+    try:
+        if original_image_size:
+            width, height = image_util.get_image_size(image_bytes)
+            # Make the placeholder match the image, so that python-pptx doesn't crop (zoom in on) it
+            placeholder.height = height
+            placeholder.width = width
+            picture = placeholder.insert_picture(BytesIO(image_bytes))
+            # Then pad the picture so it fits inside the layout's frame with its own aspect ratio
+            image_ratio = width / height
+            placeholder_ratio = picture.width / picture.height
+            ratio_difference = placeholder_ratio - image_ratio
+            # Placeholder width too wide:
+            if ratio_difference > 0:
+                difference_on_each_side = ratio_difference / 2
+                picture.crop_left = -difference_on_each_side
+                picture.crop_right = -difference_on_each_side
+            # Placeholder height too high
+            else:
+                difference_on_each_side = -ratio_difference / 2
+                picture.crop_bottom = -difference_on_each_side
+                picture.crop_top = -difference_on_each_side
+        else:
+            picture = placeholder.insert_picture(BytesIO(image_bytes))
+    except (ValueError, XMLSyntaxError, AttributeError, OSError, KeyError) as e:
+        logger.error("Could not insert image %s: %s", http_util.describe_url(image_url), e)
+        if placeholder._element.getparent() is not None:
+            _remove_shape(placeholder)
+        return None
+
+    if isinstance(image, ImageData):
+        image.mark_used()
+    return picture
 
 
 def _add_chart(slide, placeholder_id, chart_type, chart_data):

@@ -1,6 +1,12 @@
 import unittest
 from talkgenerator.sources import unsplash
 
+import pytest
+
+from tests.support import requires_keys
+
+pytestmark = [pytest.mark.network, requires_keys("UNSPLASH_ACCESS_KEY")]
+
 
 class UnsplashTest(unittest.TestCase):
     def test_unsplash_access(self):

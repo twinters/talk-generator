@@ -2,6 +2,10 @@ import unittest
 
 from talkgenerator.sources import goodreads
 
+import pytest
+
+pytestmark = pytest.mark.network
+
 
 class GoodReadsTest(unittest.TestCase):
     def test_cat_search(self):

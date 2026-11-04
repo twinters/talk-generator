@@ -1,73 +1,81 @@
-import random
+"""End-to-end generation tests. These talk to all the live content sources."""
+
 import logging
-import unittest
-from unittest import mock
+import random
 
-from talkgenerator.schema import slide_schemas
+import pytest
+
 from talkgenerator import generator
+from talkgenerator.schema import slide_schemas
 from talkgenerator.slide import powerpoint_slide_creator
-from talkgenerator.util import os_util
+
+pytestmark = pytest.mark.network
 
 
-class TestTalkGenerator(unittest.TestCase):
-    def setUp(self):
-        random.seed(1)
-        self.default_args = mock.Mock()
-        self.default_args.configure_mock(topic="cat")
-        self.default_args.configure_mock(num_slides=3)
-        self.default_args.configure_mock(schema="default")
-        self.default_args.configure_mock(title=None)
-        self.default_args.configure_mock(parallel=True)
-        self.default_args.configure_mock(
-            output_folder=os_util.to_actual_file("../output/test/")
-        )
-        self.default_args.configure_mock(open_ppt=False)
-        self.default_args.configure_mock(save_ppt=True)
-        self.default_args.configure_mock(int_seed=123)
-
-    def test_serial(self):
-        self.default_args.configure_mock(parallel=False)
-        ppt, _, _ = generator.generate_presentation_using_cli_arguments(
-            self.default_args
-        )
-
-        self.assertEqual(3, len(ppt.slides))
-
-    def test_to_dictionary(self):
-        _, slide_deck, _ = generator.generate_presentation(
-            schema="default",
-            slides=3,
-            topic="cat",
-            title=None,
-            presenter=None,
-            parallel=True,
-            int_seed=123,
-            save_ppt=False,
-            open_ppt=False,
-            print_logs=False,
-        )
-        slides_dict = slide_deck.to_slide_deck_dictionary()
-        logging.info(slides_dict)
-        self.assertIsNotNone(slides_dict)
-
-    def test_all_slide_generators(self):
-        basic_presentation_context = {
-            "topic": "dog",
-            "seed": "cat",
-            "presenter": "An O. Nymous",
-            "title": "Mock title",
-        }
-
-        presentation = powerpoint_slide_creator.create_new_powerpoint()
-
-        for slide_generator in slide_schemas.all_slide_generators:
-            logging.info("Testing Slide Generator: {}".format(slide_generator))
-            random.seed(123)
-            slide, _ = slide_generator.generate(
-                basic_presentation_context, []
-            )
-            slide.create_powerpoint_slide(presentation)
+def _cli_args(tmp_path, *extra):
+    return generator.get_argument_parser().parse_args(
+        [
+            "--topic",
+            "cat",
+            "--num_slides",
+            "3",
+            "--int_seed",
+            "123",
+            "--open_ppt",
+            "false",
+            "--print_logs",
+            "false",
+            "--output_folder",
+            str(tmp_path),
+            *extra,
+        ]
+    )
 
 
-if __name__ == "__main__":
-    unittest.main()
+def test_serial(tmp_path):
+    ppt, _, output_file = generator.generate_presentation_using_cli_arguments(
+        _cli_args(tmp_path, "--parallel", "false")
+    )
+    assert len(ppt.slides) == 3
+    assert output_file.startswith(str(tmp_path))
+
+
+def test_parallel_multiple_topics(tmp_path):
+    ppt, _, _ = generator.generate_presentation_using_cli_arguments(
+        _cli_args(tmp_path, "--topic", "cat, dog, bread, house", "--num_slides", "6")
+    )
+    assert len(ppt.slides) == 6
+
+
+def test_to_dictionary():
+    _, slide_deck, _ = generator.generate_presentation(
+        schema="default",
+        slides=3,
+        topic="cat",
+        parallel=True,
+        int_seed=123,
+        save_ppt=False,
+    )
+    slides_dict = slide_deck.to_slide_deck_dictionary()
+    assert len(slides_dict) == 3
+
+
+def test_all_slide_generators():
+    basic_presentation_context = {
+        "topic": "dog",
+        "seed": "cat",
+        "presenter": "An O. Nymous",
+        "title": "Mock title",
+    }
+    presentation = powerpoint_slide_creator.create_new_powerpoint()
+    failed = []
+    for slide_generator in slide_schemas.all_slide_generators:
+        logging.info("Testing Slide Generator: %s", slide_generator)
+        random.seed(123)
+        result = slide_generator.generate(basic_presentation_context, [])
+        if not result:
+            failed.append(str(slide_generator))
+            continue
+        slide, _ = result
+        slide.create_powerpoint_slide(presentation)
+    assert not failed, f"These slide generators produced nothing: {failed}"

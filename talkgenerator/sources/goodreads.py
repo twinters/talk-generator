@@ -1,40 +1,36 @@
+"""Quotes scraped from Goodreads' quote search."""
+
 from functools import lru_cache
-from pathlib import Path
 
-import requests
 from bs4 import BeautifulSoup
-# from cachier import cachier
 
-from talkgenerator.util import scraper_util
+from talkgenerator.util import http_util, scraper_util
 
-quote_search_url = (
-    "https://www.goodreads.com/search?page={}&q={"
-    "}&search%5Bsource%5D=goodreads&search_type=quotes&tab=quotes "
-)
+_QUOTE_SEARCH_URL = "https://www.goodreads.com/search"
 
 
-@lru_cache(maxsize=20)
-# @cachier(cache_dir=Path("..", "tmp").absolute())
+@lru_cache(maxsize=64)
 def _search_quotes_page(search_term, page):
-    url = quote_search_url.format(page, search_term.replace(" ", "+"))
-    try:
-        page = requests.get(url, timeout=5)
-    except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout) as e:
+    params = {
+        "page": page,
+        "q": search_term,
+        "search[source]": "goodreads",
+        "search_type": "quotes",
+        "tab": "quotes",
+    }
+    response = http_util.get(_QUOTE_SEARCH_URL, params=params, timeout=8)
+    if response is None or not response.ok:
         return None
-    if page:
-        soup = BeautifulSoup(page.content, "html.parser")
-        # Replace breaks with new lines
-        for br in soup.find_all("br"):
-            br.replace_with("\n")
 
-        # Extract the right text parts
-        quote_elements = soup.find_all("div", class_="quoteText")
-        quotes = [
-            " ".join([part.strip() for part in quote.get_text().split("—")][0:-1])
-            for quote in quote_elements
-        ]
+    soup = BeautifulSoup(response.content, "html.parser")
+    # Replace breaks with new lines
+    for br in soup.find_all("br"):
+        br.replace_with("\n")
 
-        return quotes
+    # The quote is the text before the em dash that precedes the author's name
+    quote_elements = soup.find_all("div", class_="quoteText")
+    quotes = [" ".join([part.strip() for part in quote.get_text().split("—")][0:-1]) for quote in quote_elements]
+    return [quote for quote in quotes if quote]
 
 
 search_quotes = scraper_util.create_page_scraper(_search_quotes_page)

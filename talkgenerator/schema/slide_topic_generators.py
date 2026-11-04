@@ -4,7 +4,7 @@ import logging
 from functools import lru_cache
 from typing import List, Collection
 
-from talkgenerator.sources import conceptnet, phrasefinder
+from talkgenerator.sources import conceptnet
 from talkgenerator.util import language_util, random_util
 
 # == TOPIC GENERATORS ==
@@ -129,15 +129,7 @@ def _fill_in(seeds, i, distance=1):
 def normalise_seed(seed):
     normalised = conceptnet.normalise(seed).lower()
     normalised = language_util.replace_non_alphabetical_characters(normalised)
-    # if " " in normalised:
-    #     rarest_word = phrasefinder.get_rarest_word(normalised)
-    #     if rarest_word is not None:
-    #         normalised = rarest_word
-    #     else:
-    #         last_word = normalised.split(" ")[-1]
-    #         normalised = last_word
-
-    logger.info("Mapping seed '" + seed + "' => " + normalised)
+    logger.debug("Mapping seed '%s' => %s", seed, normalised)
     return normalised
 
 

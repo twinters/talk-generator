@@ -1,46 +1,82 @@
-""" Module providing language-related operations to manipulate strings"""
+"""Module providing language-related operations to manipulate strings"""
+
 import logging
 import re
 import string
+from functools import lru_cache
+from pathlib import Path
 
 import inflect
 import nltk
 
 logger = logging.getLogger("talkgenerator")
 
+# (resource path, downloadable package name). NLTK 3.9 replaced the pickled `punkt` and
+# `averaged_perceptron_tagger` models by `punkt_tab` and `averaged_perceptron_tagger_eng`.
+REQUIRED_NLTK_RESOURCES = (
+    ("tokenizers/punkt_tab", "punkt_tab"),
+    ("taggers/averaged_perceptron_tagger_eng", "averaged_perceptron_tagger_eng"),
+    ("corpora/wordnet", "wordnet"),
+)
+
 
 def check_and_download():
-    required_corpus_list = ["tokenizers/punkt", "taggers/averaged_perceptron_tagger"]
+    """Make sure the NLTK resources we use are available, downloading missing ones."""
     try:
-        for corpus in required_corpus_list:
-            _check_and_download_corpus(corpus, corpus.split("/")[1])
+        for resource_path, package in REQUIRED_NLTK_RESOURCES:
+            _check_and_download_corpus(resource_path, package)
     except Exception as e:
-        logging.error(e)
+        logger.error("Could not prepare NLTK data: %s", e)
         print_corpus_download_warning()
         return False
-
     return True
 
 
-def _check_and_download_corpus(corpus_fullname, corpus_shortname):
+def _is_available(resource_path):
     try:
-        nltk.data.find(corpus_fullname)
-    except LookupError as le:
-        logging.error(le)
-        nltk.download(corpus_shortname)
+        nltk.data.find(resource_path)
+        return True
+    except LookupError:
+        try:
+            nltk.data.find(resource_path + ".zip")
+            return True
+        except LookupError:
+            return False
+
+
+def _check_and_download_corpus(resource_path, package):
+    if _is_available(resource_path):
+        return
+    logger.info("Downloading NLTK resource '%s'...", package)
+    if _download(package):
+        return
+    # The default download folder can be unusable (read-only, or redirected by a sandbox such as an
+    # MSIX-packaged app). ~/nltk_data is on NLTK's search path on every platform, so try that next.
+    fallback_dir = Path.home() / "nltk_data"
+    if _download(package, str(fallback_dir)) and _is_available(resource_path):
+        return
+    raise LookupError(f"NLTK resource '{package}' is missing and could not be downloaded")
+
+
+def _download(package, download_dir=None):
+    try:
+        return bool(nltk.download(package, download_dir=download_dir, quiet=True, raise_on_error=True))
+    except Exception as e:
+        logger.warning("Downloading NLTK resource '%s' to %s failed: %s", package, download_dir or "default folder", e)
+        return False
 
 
 def print_corpus_download_warning():
-    corpus_warning = """
+    packages = " ".join(package for _, package in REQUIRED_NLTK_RESOURCES)
+    corpus_warning = f"""
     Hmm...
     ---------------------
 
-    We had some trouble downloading the NLTK corpuses..
+    We had some trouble downloading the NLTK corpora.
     Try running the following from a command line. This should
-    download the needed packages.. but it might also tell you if
-    there is another issue.
+    download the needed packages, or tell you what the issue is.
 
-    $ python3 -m nltk.downloader punkt averaged_perceptron_tagger
+    $ python -m nltk.downloader {packages}
     """
     logger.warning(corpus_warning)
 
@@ -49,9 +85,7 @@ def print_corpus_download_warning():
 
 
 def _replace_word_one_case(sentence, word, replacement, flags=0):
-    return re.sub(
-        r"(^|\W)" + word + r"(\W|$)", r"\1" + replacement + r"\2", sentence, flags=flags
-    )
+    return re.sub(r"(^|\W)" + word + r"(\W|$)", r"\1" + replacement + r"\2", sentence, flags=flags)
 
 
 def replace_word(sentence, word, replacement):
@@ -63,10 +97,9 @@ def replace_word(sentence, word, replacement):
 
 
 def get_pos_tags(word):
-    """ Returns all possible POS tags for a given word according to nltk """
+    """Returns all possible POS tags for a given word according to nltk"""
     tags = nltk.pos_tag(nltk.word_tokenize(word))
     tags_strings = [tag[1] for tag in tags]
-    # print(word, ":", tags_strings)
     return tags_strings
 
 
@@ -96,13 +129,7 @@ def apply_function_to_verb(action, func):
     first_word = func(words[verb_index])
     if len(words) == 1:
         return first_word
-    return (
-        " ".join(words[:verb_index])
-        + " "
-        + first_word
-        + " "
-        + " ".join(words[verb_index + 1 :])
-    ).strip()
+    return (" ".join(words[:verb_index]) + " " + first_word + " " + " ".join(words[verb_index + 1 :])).strip()
 
 
 def to_present_participle(action):
@@ -158,14 +185,21 @@ inflect_engine = inflect.engine()
 
 
 def is_singular(word):
+    # inflect >= 7 type-checks its arguments and rejects empty strings
+    if not word or not word.strip():
+        return True
     return inflect_engine.singular_noun(word) is False
 
 
 def is_plural(word):
+    if not word or not word.strip():
+        return False
     return bool(inflect_engine.singular_noun(word))
 
 
 def to_plural(word):
+    if not word or not word.strip():
+        return word
     if is_singular(word):
         if word.startswith("a "):
             word = word[2:]
@@ -183,12 +217,7 @@ def add_article(word):
     # TODO: Maybe more checks, some u's cause "an", or some big letters in case it's an abbreviation
     word_lower = word.lower()
     article = "a"
-    if (
-        word_lower.startswith("a")
-        or word_lower.startswith("e")
-        or word_lower.startswith("i")
-        or word_lower.startswith("o")
-    ):
+    if word_lower.startswith(("a", "e", "i", "o")):
         article = "an"
     return article + " " + word
 
@@ -205,6 +234,7 @@ def second_to_first_pronouns(sentence):
 
 # POS tag checkers
 
+
 # TODO: These don't work well, but might be useful features in our text generation language
 def is_noun(word):
     return "NN" in get_pos_tags(word)
@@ -212,6 +242,43 @@ def is_noun(word):
 
 def is_verb(word):
     return "VB" in get_pos_tags(word)
+
+
+# Places (WordNet)
+
+# WordNet categories whose members make sense as an answer to "where can you find X?".
+# Countries and regions are left out on purpose: they're rarely related to the topic.
+_PLACE_CATEGORIES = frozenset(
+    {
+        "structure.n.01",  # buildings, bridges, pens, ...
+        "room.n.01",
+        "container.n.01",  # boxes, bags, bottles, tins, ...
+        "furniture.n.01",
+        "body_of_water.n.01",
+        "geological_formation.n.01",
+        "establishment.n.04",  # shops, hotels, ...
+        "facility.n.01",
+        "tract.n.01",  # fields, gardens, parks, forests, ...
+        "way.n.06",  # roads, paths, streets, ...
+    }
+)
+
+
+@lru_cache(maxsize=2048)
+def is_place(word: str) -> bool:
+    """Whether the most common meaning of a noun is a place or a container, according to WordNet."""
+    from nltk.corpus import wordnet
+
+    try:
+        synsets = wordnet.synsets(word.strip().replace(" ", "_"), pos=wordnet.NOUN)
+    except LookupError:
+        logger.warning("WordNet is not available; can't recognise places")
+        return False
+    if not synsets:
+        return False
+    # Only the first (most common) sense: rarer senses give false positives such as "amphibian" (a vehicle)
+    categories = {hypernym.name() for path in synsets[0].hypernym_paths() for hypernym in path}
+    return bool(categories & _PLACE_CATEGORIES)
 
 
 # Special operators
@@ -243,7 +310,7 @@ def replace_non_alphabetical_characters(text):
 
 
 def is_vowel(character):
-    return character in ["a", "e", "i", "o,", "u"]
+    return character in ["a", "e", "i", "o", "u"]
 
 
 def is_consonant(character):

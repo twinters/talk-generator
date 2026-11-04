@@ -3,6 +3,10 @@ import unittest
 
 from talkgenerator.schema.slide_topic_generators import SideTrackingTopicGenerator
 
+import pytest
+
+pytestmark = pytest.mark.network
+
 
 class SlideTopicGeneratorsTest(unittest.TestCase):
     def setUp(self) -> None:

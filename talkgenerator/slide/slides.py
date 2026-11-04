@@ -35,8 +35,10 @@ class Slide(metaclass=ABCMeta):
                 if len(self._sources):
                     powerpoint_slide_creator.add_sources_note(ppt_slide, self._sources)
 
-        except AttributeError as e:
-            logger.error("attribute error on create slide {}".format(e))
+                powerpoint_slide_creator.remove_empty_placeholders(ppt_slide)
+
+        except (AttributeError, KeyError) as e:
+            logger.error("Error while finishing slide: {}".format(e))
         return ppt_slide
 
     def to_slide_dictionary(self) -> dict:

@@ -1,6 +1,10 @@
 import unittest
 from talkgenerator.sources import wikihow
 
+import pytest
+
+pytestmark = pytest.mark.network
+
 
 class WikiHowTest(unittest.TestCase):
     def test_wrong_wikihow_links_regression_test(self):

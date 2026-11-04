@@ -6,9 +6,7 @@ along with some other metadata.
 """
 import time
 import logging
-import multiprocessing
 from multiprocessing.pool import ThreadPool
-multiprocessing.set_start_method('spawn')
 import random
 from typing import List, Collection, Callable, Dict, Union, Optional, Tuple
 
@@ -23,6 +21,8 @@ from talkgenerator.slide.slide_deck import SlideDeck
 from talkgenerator.util import random_util
 
 logger = logging.getLogger("talkgenerator")
+
+MAX_PARALLEL_GENERATION_ROUNDS = 6
 
 
 class PresentationSchema:
@@ -131,8 +131,10 @@ class PresentationSchema:
 
         generated_results = [None] * num_slides
 
-        while len(slide_nrs_to_generate) > 0:
-            if len(slide_nrs_to_generate) < num_slides:
+        for round_nr in range(MAX_PARALLEL_GENERATION_ROUNDS):
+            if len(slide_nrs_to_generate) == 0:
+                break
+            if round_nr > 0:
                 logger.info(
                     "Regenerating the following slides: " + str(slide_nrs_to_generate)
                 )
@@ -178,7 +180,11 @@ class PresentationSchema:
                             num_slides,
                         )
                         if not success:
+                            generated_results[i] = None
                             slide_nrs_to_generate.append(i)
+        else:
+            if slide_nrs_to_generate:
+                logger.error("Gave up on generating slides %s", [nr + 1 for nr in slide_nrs_to_generate])
 
         return slide_deck
 
@@ -212,7 +218,8 @@ class PresentationSchema:
                 success = self._update_slide_deck_with_generated_result(
                     slide_deck, slide_results, used_elements, used_tags, num_slides
                 )
-                assert success
+                if not success:
+                    logger.warning("Slide %s was rejected because it repeats too much", slide_nr + 1)
 
         return slide_deck
 
@@ -265,7 +272,11 @@ class PresentationSchema:
             prohibited_generators = set()
 
         # Select the slide generator to generate with
-        generator = self._select_generator(slide_nr, num_slides, prohibited_generators)
+        try:
+            generator = self._select_generator(slide_nr, num_slides, prohibited_generators)
+        except ValueError as e:
+            logger.error("Could not generate slide %s about '%s': %s", slide_nr + 1, presentation_context["seed"], e)
+            return None
         logger.debug('Generator: {}'.format(generator))
 
         start_time = time.time()
@@ -275,7 +286,12 @@ class PresentationSchema:
                     slide_nr + 1, presentation_context["seed"], generator
                 )
             )
-            slide_result = generator.generate(presentation_context, used_elements)
+            try:
+                slide_result = generator.generate(presentation_context, used_elements)
+            except Exception:
+                # One misbehaving source (an API that changed, a scraper that broke...) shouldn't sink the talk
+                logger.exception("Slide generator %s crashed; trying another one", generator)
+                slide_result = None
             logger.debug('Slide result: {}'.format(slide_result))
 
             # Try again if slide is None, and prohibit generator for generating for this topic
@@ -308,22 +324,16 @@ class PresentationSchema:
             )
             return slide, generated_elements, generator, slide_nr
         else:
-            logger.warning(
-                "No generator found to generate about ",
-                presentation_context["Presentation"],
-            )
+            logger.warning("No generator found to generate slide %s about '%s'", slide_nr + 1, presentation_context["seed"])
 
     def _select_generator(self, slide_nr, total_slides, prohibited_generators):
         """Select a generator for a certain slide number"""
-        logging.debug('presentation_schema._select_generator self._slide_generators: {}'.format(
-                self._slide_generators))
-        logging.debug('self._ignore_weights: {}'.format(self._ignore_weights))
         if self._ignore_weights:
             return random_util.choice_optional(self._slide_generators)
         _selected_generator = random_util.weighted_random(
-            self._get_weighted_generators_for_slide_nr(
-                slide_nr, total_slides, prohibited_generators))
-        logging.debug('_selected_generator: {}'.format(_selected_generator))
+            self._get_weighted_generators_for_slide_nr(slide_nr, total_slides, prohibited_generators)
+        )
+        logger.debug('_selected_generator: {}'.format(_selected_generator))
         return _selected_generator
 
     def _get_weighted_generators_for_slide_nr(

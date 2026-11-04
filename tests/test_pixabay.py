@@ -1,5 +1,11 @@
 import unittest
-from talkgenerator.sources import unsplash, pixabay
+from talkgenerator.sources import pixabay
+
+import pytest
+
+from tests.support import requires_keys
+
+pytestmark = [pytest.mark.network, requires_keys("PIXABAY_KEY")]
 
 
 class PixabayTest(unittest.TestCase):

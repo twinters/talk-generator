@@ -2,6 +2,12 @@ import unittest
 
 from talkgenerator.sources import pexels
 
+import pytest
+
+from tests.support import requires_keys
+
+pytestmark = [pytest.mark.network, requires_keys("PEXELS_KEY")]
+
 
 class PexelsTest(unittest.TestCase):
     def test_pexels_access(self):

@@ -1,6 +1,8 @@
 import random
 import unittest
 
+import pytest
+
 from talkgenerator.schema.content_generator_structures import (
     create_tracery_generator,
     create_templated_text_generator,
@@ -50,11 +52,13 @@ class SpecificTextGeneratorTest(unittest.TestCase):
     def test_talk_subtitle_generator(self):
         self._tracery_tester("data/text-templates/talk_subtitle.json", "job")
 
+    @pytest.mark.network  # uses WikiHow
     def test_anecdote_prompt_generator(self):
         self._templated_text_generator_tester(
             "data/text-templates/anecdote_prompt.txt", True
         )
 
+    @pytest.mark.network  # uses WikiHow
     def test_captions_generator(self):
         generations = self._templated_text_generator_tester(
             "data/text-templates/double_captions.txt",

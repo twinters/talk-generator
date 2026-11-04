@@ -1,6 +1,10 @@
 import unittest
 from talkgenerator.sources import shitpostbot
 
+import pytest
+
+pytestmark = pytest.mark.network
+
 
 class ShitPostBot(unittest.TestCase):
     def test_shitpostbot_search(self):

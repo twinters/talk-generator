@@ -1,20 +1,30 @@
-import time
+"""Related concepts for a word: ConceptNet when it's reachable, Datamuse + WordNet otherwise.
+
+The public ConceptNet API (api.conceptnet.io) has been answering with HTTP 502 since late 2025
+(https://github.com/commonsense/conceptnet5/issues/341). When a request fails, this module
+stops calling ConceptNet for a while and answers the same questions with Datamuse instead, so
+the functions below always return a (possibly empty) list and never None.
+
+Settings (environment variables or .env):
+    CONCEPTNET_API_URL    Base URL of a (self-hosted) ConceptNet API (default: https://api.conceptnet.io)
+    DISABLE_CONCEPTNET=1  Skip ConceptNet altogether and always use the fallback
+"""
+
 import logging
+import time
 from functools import lru_cache
-from pathlib import Path
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 
-import requests
-
-# from cachier import cachier
-
-from talkgenerator.util import generator_util, cache_util
-
-URL = "http://api.conceptnet.io/c/en/{}?"
+from talkgenerator import settings
+from talkgenerator.sources import datamuse
+from talkgenerator.util import cache_util, generator_util, http_util
 
 _LOCATION_ARGUMENTS = cache_util.HashableDict(rel="/r/AtLocation", limit=100)
 _HASA_ARGUMENTS = cache_util.HashableDict(rel="/r/HasA", limit=200)
 _DEFAULT_ARGUMENTS = cache_util.HashableDict(limit=200)
+
+_UNAVAILABLE_COOLDOWN_SECONDS = 15 * 60
+_REQUEST_TIMEOUT_SECONDS = 8
 
 # HELPERS
 _PROHIBITED_SEARCH_TERMS = (
@@ -33,6 +43,12 @@ _PROHIBITED_SEARCH_TERMS = (
 )
 
 logger = logging.getLogger("talkgenerator.conceptnet")
+
+_cooldown = http_util.Cooldown("ConceptNet API")
+
+
+class _ConceptNetUnavailable(Exception):
+    pass
 
 
 # Helpers
@@ -72,63 +88,50 @@ def remove_containing(entries, prohibited_word):
 
 def remove_nones(entries):
     if entries:
-        result = []
-        for entry in entries:
-            if entry:
-                result.append(entry)
-        return result
+        return [entry for entry in entries if entry]
     return []
 
 
 # RETRIEVING DATA
 
 
-@lru_cache(maxsize=20)
-# @cachier(cache_dir=Path("..", "tmp").absolute())
-def _get_data(word, arguments=None):
-    if not arguments:
-        arguments = _DEFAULT_ARGUMENTS
-    splitted_word = _remove_prohibited_words(word)
-    search_term = "_".join(splitted_word)
-    url = URL.format(search_term) + urlencode(arguments, False, "/")
-    start = time.perf_counter()
-    try:
-        result = requests.get(url).json()
-    except Exception as e:
-        logger.warning("conceptnet _get_data timeout: {}".format(e))
-        result = None
-    end = time.perf_counter()
-    logger.info(
-        "Took {} seconds to poll Conceptnet for '{}'".format(str(end - start), word)
+def _conceptnet_enabled():
+    return not settings.is_source_disabled("CONCEPTNET") and not _cooldown.active
+
+
+@lru_cache(maxsize=256)
+def _fetch_edges(word, arguments):
+    """Edges of a ConceptNet node. Failures raise instead of returning, so they aren't cached."""
+    search_term = "_".join(_remove_prohibited_words(word.lower()))
+    url = "{}/c/en/{}?{}".format(
+        settings.conceptnet_api_url(), quote(search_term), urlencode(arguments, safe="/")
     )
-    return result
-
-
-def create_self_node(word: str):
-    """ In case ConceptNet errors, just use word itself"""
-    return {
-        "weight": 1,
-        "rel": {"label": "IsA"},
-        "start": {"label": word},
-        "end": {"label": word},
-    }
+    start = time.perf_counter()
+    response = http_util.get(url, timeout=_REQUEST_TIMEOUT_SECONDS)
+    logger.debug("Took %.2f seconds to poll ConceptNet for '%s'", time.perf_counter() - start, word)
+    if response is None:
+        raise _ConceptNetUnavailable("no response")
+    if not response.ok:
+        raise _ConceptNetUnavailable(f"HTTP {response.status_code}")
+    try:
+        data = response.json()
+    except ValueError:
+        raise _ConceptNetUnavailable("invalid JSON response") from None
+    if "error" in data:
+        logger.info("ConceptNet has no result for '%s': %s", word, data["error"])
+        return ()
+    return tuple(data.get("edges", ()))
 
 
 def _get_edges(word, arguments=None):
-    data = _get_data(word, arguments)
-    if data:
-        if "error" in data:
-            logger.error("ConceptNet seems to be down!\nError: " + str(data))
-            return [create_self_node(word)]
-        if "edges" in data:
-            return data["edges"]
-        else:
-            logger.error(
-                "ConceptNet does not return a result for {}!\nError: {}".format(
-                    word, str(data)
-                )
-            )
-            return [create_self_node(word)]
+    """ConceptNet edges for a word, or None if ConceptNet can't be used right now."""
+    if not word or not word.strip() or not _conceptnet_enabled():
+        return None
+    try:
+        return _fetch_edges(word, arguments or _DEFAULT_ARGUMENTS)
+    except _ConceptNetUnavailable as e:
+        _cooldown.trigger(_UNAVAILABLE_COOLDOWN_SECONDS, f"{e}; using Datamuse and WordNet instead")
+        return None
 
 
 def _get_weight_and_word(edge, word):
@@ -143,11 +146,7 @@ def _get_relation_label(edge):
 
 def _get_from_relation(word, edges, relation_name):
     return remove_nones(
-        [
-            _get_weight_and_word(edge, word)
-            for edge in edges
-            if _get_relation_label(edge) == relation_name
-        ]
+        [_get_weight_and_word(edge, word) for edge in edges if _get_relation_label(edge) == relation_name]
     )
 
 
@@ -155,17 +154,19 @@ def _get_from_relation(word, edges, relation_name):
 
 
 def is_english(node):
-    return node and (not "language" in node or node["language"] == "en")
+    return node and ("language" not in node or node["language"] == "en")
 
 
 def is_different_enough_label(edge, word):
     label = edge["label"].lower()
     word_lower = word.lower()
-    return not label in word_lower and not word_lower in label
+    return label not in word_lower and word_lower not in label
 
 
 def get_weighted_related_words(word, limit=50):
     edges = _get_edges(word, cache_util.HashableDict(limit=limit))
+    if edges is None:
+        return datamuse.related_words(word, limit)
     starts = [
         (edge["weight"], edge["start"]["label"])
         for edge in edges
@@ -176,44 +177,43 @@ def get_weighted_related_words(word, limit=50):
         for edge in edges
         if is_different_enough_label(edge["end"], word) and is_english(edge["end"])
     ]
-    result = starts + ends
-    return result
+    return starts + ends
 
 
 def get_weighted_related_locations(word):
     edges = _get_edges(word, _LOCATION_ARGUMENTS)
+    if edges is None:
+        return datamuse.places(word)
     return _get_from_relation(word, edges, "AtLocation")
 
 
 def get_weighted_has(word):
     edges = _get_edges(word, _HASA_ARGUMENTS)
+    if edges is None:
+        return datamuse.parts(word)
     return _get_from_relation(word, edges, "HasA")
 
 
 def get_weighted_properties(word):
     edges = _get_edges(word)
+    if edges is None:
+        return datamuse.describing_adjectives(word)
     return _get_from_relation(word, edges, "HasProperty")
 
 
 def get_weighted_antonyms(word):
     edges = _get_edges(word)
+    if edges is None:
+        return datamuse.antonyms(word)
     return _get_from_relation(word, edges, "Antonym")
 
 
 # Weighted
-weighted_location_generator = generator_util.WeightedGenerator(
-    get_weighted_related_locations
-)
+weighted_location_generator = generator_util.WeightedGenerator(get_weighted_related_locations)
 weighted_antonym_generator = generator_util.WeightedGenerator(get_weighted_antonyms)
-weighted_related_word_generator = generator_util.WeightedGenerator(
-    get_weighted_related_words
-)
+weighted_related_word_generator = generator_util.WeightedGenerator(get_weighted_related_words)
 
 # Unweighted
-unweighted_location_generator = generator_util.UnweightedGenerator(
-    get_weighted_related_locations
-)
+unweighted_location_generator = generator_util.UnweightedGenerator(get_weighted_related_locations)
 unweighted_antonym_generator = generator_util.UnweightedGenerator(get_weighted_antonyms)
-unweighted_related_word_generator = generator_util.UnweightedGenerator(
-    get_weighted_related_words
-)
+unweighted_related_word_generator = generator_util.UnweightedGenerator(get_weighted_related_words)

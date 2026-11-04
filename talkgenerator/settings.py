@@ -1,24 +1,31 @@
-import logging
-from environs import Env
+"""Configuration through environment variables, optionally loaded from a `.env` file.
 
+The `.env` file is looked up in the current working directory first, and then next to the
+package and in its parent folders (which covers editable installs from a git checkout).
+Variables that are already set in the environment always win.
+
+See `.env.example` for every supported variable.
+"""
+
+import logging
+from pathlib import Path
+
+from environs import Env, EnvError
 
 logger = logging.getLogger("talkgenerator")
+
 env = Env()
+_cwd_env_file = Path.cwd() / ".env"
+if _cwd_env_file.is_file():
+    env.read_env(str(_cwd_env_file), recurse=False)
 env.read_env()
 
-reddit_keys = ["REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET", "REDDIT_USER_AGENT"]
-wikihow_keys = ["WIKIHOW_USERNAME", "WIKIHOW_PASSWORD"]
-unsplash_keys = [
-    "UNSPLASH_ACCESS_KEY",
-    "UNSPLASH_SECRET_KEY",
-    "UNSPLASH_REDIRECT_URI",
-    "UNSPLASH_CODE",
-]
-
-all_keys_to_check = {
-    "Reddit": reddit_keys,
-    "WikiHow": wikihow_keys,
-    "Unsplash": unsplash_keys,
+# Keys needed per source. Sources without their keys skip themselves; the other sources fill in.
+required_keys = {
+    "Reddit": ["REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET", "REDDIT_USER_AGENT"],
+    "Unsplash": ["UNSPLASH_ACCESS_KEY"],
+    "Pixabay": ["PIXABAY_KEY"],
+    "Pexels": ["PEXELS_KEY"],
 }
 
 
@@ -30,20 +37,8 @@ def reddit_auth():
     }
 
 
-def wikihow_auth():
-    return {
-        "username": env.str("WIKIHOW_USERNAME", ""),
-        "password": env.str("WIKIHOW_PASSWORD", ""),
-    }
-
-
 def unsplash_auth():
-    return {
-        "unsplash_access_key": env.str("UNSPLASH_ACCESS_KEY", ""),
-        "unsplash_secret_key": env.str("UNSPLASH_SECRET_KEY", ""),
-        "unsplash_redirect_uri": env.str("UNSPLASH_REDIRECT_URI", ""),
-        "unsplash_code": env.str("UNSPLASH_CODE", ""),
-    }
+    return {"unsplash_access_key": env.str("UNSPLASH_ACCESS_KEY", "")}
 
 
 def pixabay_auth():
@@ -54,59 +49,50 @@ def pexels_auth():
     return {"pexels_key": env.str("PEXELS_KEY", "")}
 
 
-def is_source_disabled(name: str) -> bool:
-    """Check whether a content source is disabled via env (DISABLE_<NAME>=1).
+def conceptnet_api_url() -> str:
+    """Base URL of the ConceptNet API; point it at a self-hosted instance if you have one."""
+    return env.str("CONCEPTNET_API_URL", "https://api.conceptnet.io").rstrip("/")
 
-    Used by individual source modules (sources/reddit.py, sources/unsplash.py, ...)
-    to skip themselves when the operator has flagged them off — useful on resource-
-    constrained deployments or when a source's API has gone stale.
+
+def is_source_disabled(name: str) -> bool:
+    """Check whether a content source is switched off via DISABLE_<NAME>=1.
+
+    Useful on resource-constrained deployments, or when a source's API has gone stale.
     """
-    return env.bool(f"DISABLE_{name.upper()}", False)
+    try:
+        return env.bool(f"DISABLE_{name.upper()}", False)
+    except EnvError:
+        logger.warning("Ignoring DISABLE_%s: expected a boolean such as 1 or 0.", name.upper())
+        return False
 
 
 def _get_missing_keys(key_variables):
-    missing = []
-    for key_name in key_variables:
-        if len(env.str(key_name, "").strip()) == 0:
-            missing.append(key_name)
-    return missing
+    return [key_name for key_name in key_variables if not env.str(key_name, "").strip()]
 
 
 def check_keys(key_variables, name):
     missing = _get_missing_keys(key_variables)
-    if len(missing) > 0:
-        logger.warning("Missing keys for {}: {}".format(name, missing))
+    if missing:
+        logger.warning("No %s credentials (missing %s): %s content is skipped.", name, ", ".join(missing), name)
         return False
     return True
 
 
 def check_environment_variables():
-    print("CHECKING ENVIRONMENT VARIABLES")
-    valid_env_file = all(
-        check_keys(all_keys_to_check[element], element) for element in all_keys_to_check
-    )
-
+    """Report which keyed sources can't be used. Generation still works with the remaining sources."""
+    sources_to_check = {name: keys for name, keys in required_keys.items() if not is_source_disabled(name)}
+    results = [check_keys(keys, name) for name, keys in sources_to_check.items()]
+    valid_env_file = all(results)
     if not valid_env_file:
         print_env_file_warning()
-
     return valid_env_file
 
 
 def print_env_file_warning():
     env_message = """
-    Hi! Before you can run talkgenerator you need to set some secret keys in an .env file.
+    Some API keys are missing, so talkgenerator will use fewer image sources.
 
-    Which keys?
-    -------------
-    Take a look at https://github.com/twinters/talk-generator#setting-up-required-authentication
-
-    Creating an .env file
-    -------------
-    $ touch .env
-    $ echo VARIABLE_NEEDED=VALUE >> .env
-    $ echo OTHER_VARIABLE_NEEDED=VALUE >> .env
-
-    or you can use your favorite text editor (vi, nano, etc) to create it.
+    Copy .env.example to .env (in the folder you run talkgenerator from) and fill in the keys.
+    See https://github.com/twinters/talk-generator#api-keys for where to get them.
     """
-
-    logger.error(env_message)
+    logger.warning(env_message)

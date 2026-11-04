@@ -2,14 +2,13 @@
 import json
 import random
 import re
-from functools import lru_cache
 
 import tracery
 from tracery.modifiers import base_english
 
 from talkgenerator.sources import conceptnet
-from talkgenerator.sources import phrasefinder
 from talkgenerator.sources import wikihow
+from talkgenerator.sources import word_frequency
 from talkgenerator.util import language_util
 from talkgenerator.util import os_util
 from talkgenerator.util import random_util
@@ -39,7 +38,7 @@ known_functions = {
     # Conceptnet
     "conceptnet_location": conceptnet.weighted_location_generator,
     "conceptnet_related": conceptnet.weighted_related_word_generator,
-    "conceptnet_related_single_word": lambda word: phrasefinder.get_rarest_word(
+    "conceptnet_related_single_word": lambda word: word_frequency.get_rarest_word(
         conceptnet.weighted_related_word_generator(word)
     ),
     # Checkers
@@ -87,11 +86,10 @@ class TemplatedTextGenerator(AbstractTextGenerator):
 
 class TraceryTextGenerator(AbstractTextGenerator):
     def __init__(self, tracery_json, variable="origin"):
-        with open(os_util.to_actual_file(tracery_json)) as grammar_file:
-            grammar = get_tracery_grammar(grammar_file)
-            grammar.add_modifiers(base_english)
-            self._grammar = grammar
-            self._variable = variable
+        grammar = get_tracery_grammar(os_util.to_actual_file(tracery_json))
+        grammar.add_modifiers(base_english)
+        self._grammar = grammar
+        self._variable = variable
 
     def generate(self, variables_dictionary=None):
         """ Generates a text from internal tracery grammar using the given variables dictionary"""
@@ -108,9 +106,10 @@ class TraceryTextGenerator(AbstractTextGenerator):
                     return result
 
 
-@lru_cache(maxsize=20)
-def get_tracery_grammar(grammar_file):
-    return tracery.Grammar(json.load(grammar_file))
+def get_tracery_grammar(grammar_path):
+    # Deliberately not cached: tracery grammars keep state while expanding, so every generator gets its own
+    with open(grammar_path, encoding="utf-8") as grammar_file:
+        return tracery.Grammar(json.load(grammar_file))
 
 
 def can_format_with(template, variables_dictionary):
