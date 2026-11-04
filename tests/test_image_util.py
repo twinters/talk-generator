@@ -50,3 +50,13 @@ def test_local_assets_are_used_as_is():
     path = os_util.to_actual_file("data/images/black-transparent.png")
     with open(path, "rb") as file:
         assert image_util.fetch_image(path) == file.read()
+
+
+def test_formats_we_dont_need_are_never_parsed():
+    # A valid TIFF, which Pillow would happily open, is refused: only common web formats get parsed
+    tiff = _image_bytes(image_format="TIFF")
+    with Image.open(io.BytesIO(tiff)) as image:
+        assert image.format == "TIFF"
+    assert image_util.prepare_image_bytes(tiff) is None
+    assert "TIFF" not in image_util.accepted_formats()
+    assert {"JPEG", "PNG", "GIF", "WEBP"} <= set(image_util.accepted_formats())

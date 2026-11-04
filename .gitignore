@@ -141,3 +141,6 @@ CLAUDE.local.md
 
 # On-disk API cache, in case TALKGENERATOR_CACHE_DIR points inside the repository
 http_cache.sqlite*
+
+# Dependency audit list written by CI
+installed-requirements.txt

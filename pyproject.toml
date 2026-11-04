@@ -13,7 +13,7 @@ authors = [
     { name = "Thomas Winters", email = "info@thomaswinters.be" },
     { name = "Kory Mathewson" },
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Topic :: Multimedia :: Graphics :: Presentation",
@@ -24,7 +24,7 @@ dependencies = [
     "environs>=11.0",
     "inflect>=7.0",
     "nltk>=3.9",
-    "Pillow>=10.1",
+    "Pillow>=13.0",  # 13.0 fixes ~40 vulnerabilities; it needs Python 3.11+
     "platformdirs>=4",
     "praw>=7.7",
     "python-pptx>=1.0",
@@ -72,7 +72,7 @@ log_format = "[%(levelname)s %(asctime)s %(filename)s:%(lineno)s] %(message)s"
 log_date_format = "%Y-%m-%d %H:%M:%S"
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 files = ["talkgenerator"]
 # Libraries without type information (tracery, nltk, wordfreq, ...) are treated as Any
 ignore_missing_imports = true
@@ -120,7 +120,7 @@ source = ["talkgenerator"]
 
 [tool.ruff]
 line-length = 120
-target-version = "py310"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B"]

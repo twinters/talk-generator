@@ -26,7 +26,11 @@ MAX_GIF_BYTES = 8 * 1024 * 1024
 MAX_DIMENSION = 2400  # pixels; larger photos are scaled down to keep decks small
 MAX_UNCONVERTED_BYTES = 3 * 1024 * 1024
 MIN_DIMENSION = 50  # anything smaller is an icon or a tracking pixel
-_POWERPOINT_FORMATS = {"JPEG", "PNG", "GIF", "BMP", "TIFF"}
+_POWERPOINT_FORMATS = {"JPEG", "PNG", "GIF", "BMP"}
+# The only formats we open. Pillow recognises a file's format from its contents, so without this
+# list a downloaded "image" could reach parsers we never need (EPS through Ghostscript, PDF, TIFF,
+# FlashPix, ...), which is where most of Pillow's security fixes have been.
+_ACCEPTED_FORMATS = ("JPEG", "MPO", "PNG", "GIF", "WEBP", "AVIF", "BMP")
 _NOT_AN_IMAGE_CONTENT_TYPES = ("text/", "application/json", "application/xml", "application/xhtml")
 
 _PROHIBITED_IMAGES_DIR = "data/prohibited_images/"
@@ -103,10 +107,17 @@ def _download(url: str) -> bytes | None:
         return b"".join(chunks)
 
 
+@lru_cache(maxsize=1)
+def accepted_formats() -> tuple[str, ...]:
+    """The accepted image formats that this Pillow build can open."""
+    Image.init()
+    return tuple(name for name in _ACCEPTED_FORMATS if name in Image.OPEN)
+
+
 def prepare_image_bytes(data: bytes, description: str = "image") -> bytes | None:
     """Check that the bytes are a real, allowed image and convert them into something PowerPoint can show."""
     try:
-        with Image.open(io.BytesIO(data)) as image:
+        with Image.open(io.BytesIO(data), formats=accepted_formats()) as image:
             image_format = image.format
             width, height = image.size
             if width < MIN_DIMENSION or height < MIN_DIMENSION:
@@ -142,7 +153,7 @@ def prepare_image_bytes(data: bytes, description: str = "image") -> bytes | None
 
 
 def get_image_size(data: bytes) -> tuple[int, int]:
-    with Image.open(io.BytesIO(data)) as image:
+    with Image.open(io.BytesIO(data), formats=accepted_formats()) as image:
         width, height = image.size
         return int(width), int(height)
 

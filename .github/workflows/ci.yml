@@ -24,13 +24,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.12", "3.14"]
+        python-version: ["3.11", "3.12", "3.14"]
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.3.3
         with:
           python-version: ${{ matrix.python-version }}
       - run: uv sync --locked
+      - name: Check the installed dependencies for known vulnerabilities
+        run: |
+          uv pip freeze --exclude-editable > installed-requirements.txt
+          uvx pip-audit --requirement installed-requirements.txt --no-deps --disable-pip --progress-spinner off
       - run: uv run python run_nltk_download.py
       # Tests that call the live APIs need keys and are flaky by nature; run those locally with `uv run pytest`
       - run: uv run pytest -m "not network" --cov --cov-report=term

@@ -17,7 +17,7 @@ Try out this generator on our online platform: [talkgenerator.com](https://talkg
 
 ## Install and run
 
-You need Python 3.10 or newer. With [uv](https://docs.astral.sh/uv/):
+You need Python 3.11 or newer. With [uv](https://docs.astral.sh/uv/):
 
 ```sh
 # Install the dependencies into .venv
@@ -116,7 +116,7 @@ uv run mypy                       # type checking
 Type checking is gradual: mypy checks the whole package, and the modules listed under `[[tool.mypy.overrides]]` in `pyproject.toml` must be fully annotated.
 Add a module to that list once you've typed it.
 
-GitHub Actions runs the linter and the offline tests on every push and pull request.
+GitHub Actions runs the linter, the type checker and the offline tests on every push and pull request, and checks the installed dependencies for known vulnerabilities with `pip-audit`.
 A weekly "canary" workflow runs the network tests against the live APIs, and opens an issue when one of them broke.
 It uses the API keys stored as repository secrets (`REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_USER_AGENT`, `UNSPLASH_ACCESS_KEY`, `PIXABAY_KEY`, `PEXELS_KEY`, `GIPHY_API_KEY`); tests whose keys are missing are skipped.
 

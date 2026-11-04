@@ -29,6 +29,10 @@ jobs:
             exit 1
           fi
       - run: uv sync --locked
+      - name: Check the installed dependencies for known vulnerabilities
+        run: |
+          uv pip freeze --exclude-editable > installed-requirements.txt
+          uvx pip-audit --requirement installed-requirements.txt --no-deps --disable-pip --progress-spinner off
       - run: uv run python run_nltk_download.py
       - run: uv run pytest -m "not network"
       - run: uv build

@@ -31,6 +31,10 @@ jobs:
         with:
           python-version: "3.12"
       - run: uv sync --locked
+      - name: Check the installed dependencies for known vulnerabilities
+        run: |
+          uv pip freeze --exclude-editable > installed-requirements.txt
+          uvx pip-audit --requirement installed-requirements.txt --no-deps --disable-pip --progress-spinner off
       - run: uv run python run_nltk_download.py
       # Retry failures twice, so a website having a bad minute doesn't open an issue
       - run: uv run pytest -m network -rs --reruns 2 --reruns-delay 30
