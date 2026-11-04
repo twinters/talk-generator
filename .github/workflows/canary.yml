@@ -1,0 +1,47 @@
+name: Live API canary
+
+# Every week, run the tests that talk to the real APIs and websites, so we hear about a source
+# that died or changed (like ConceptNet, PhraseFinder or Reddit's search) before the decks degrade.
+# API keys come from repository secrets; tests whose keys aren't configured are skipped.
+
+on:
+  schedule:
+    - cron: "23 6 * * 1" # Mondays, 06:23 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  live-apis:
+    runs-on: ubuntu-latest
+    env:
+      REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+      REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
+      REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT }}
+      UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
+      PIXABAY_KEY: ${{ secrets.PIXABAY_KEY }}
+      PEXELS_KEY: ${{ secrets.PEXELS_KEY }}
+      DISABLE_CACHE: "1"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          python-version: "3.12"
+      - run: uv sync --locked
+      - run: uv run python run_nltk_download.py
+      # Retry failures twice, so a website having a bad minute doesn't open an issue
+      - run: uv run pytest -m network -rs --reruns 2 --reruns-delay 30
+
+      - name: Open an issue when a source broke
+        if: failure() && github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh label create canary --color FBCA04 --description "Live API canary failures" 2>/dev/null || true
+          if [ -z "$(gh issue list --label canary --state open --json number --jq '.[].number')" ]; then
+            gh issue create --label canary --title "Live API canary failed" \
+              --body "The weekly run against the live APIs failed, so a content source may have died or changed. Details: $RUN_URL"
+          fi

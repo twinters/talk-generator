@@ -8,6 +8,7 @@ import pytest
 from talkgenerator import generator
 from talkgenerator.schema import slide_schemas
 from talkgenerator.slide import powerpoint_slide_creator
+from tests.support import requires_keys
 
 pytestmark = pytest.mark.network
 
@@ -60,7 +61,16 @@ def test_to_dictionary():
     assert len(slides_dict) == 3
 
 
+@requires_keys(
+    "REDDIT_CLIENT_ID",
+    "REDDIT_CLIENT_SECRET",
+    "REDDIT_USER_AGENT",
+    "UNSPLASH_ACCESS_KEY",
+    "PIXABAY_KEY",
+    "PEXELS_KEY",
+)
 def test_all_slide_generators():
+    """Every slide generator must produce a slide (some only use keyed sources such as Reddit)."""
     basic_presentation_context = {
         "topic": "dog",
         "seed": "cat",

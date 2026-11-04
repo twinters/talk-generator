@@ -109,6 +109,8 @@ uv run ruff check . && uv run ruff format --check .
 ```
 
 GitHub Actions runs the linter and the offline tests on every push and pull request.
+A weekly "canary" workflow runs the network tests against the live APIs, and opens an issue when one of them broke.
+It uses the API keys stored as repository secrets (`REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_USER_AGENT`, `UNSPLASH_ACCESS_KEY`, `PIXABAY_KEY`, `PEXELS_KEY`); tests whose keys are missing are skipped.
 
 ## Credits
 
