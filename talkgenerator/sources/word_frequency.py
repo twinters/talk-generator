@@ -17,7 +17,7 @@ def get_frequency(word: str) -> float:
     return zipf_frequency(word, "en")
 
 
-def get_rarest_word(sentence):
+def get_rarest_word(sentence: str | None) -> str | None:
     """The least common word of a sentence (unknown words count as the rarest), or None if it has no words."""
     if not sentence:
         return None

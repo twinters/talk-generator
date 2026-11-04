@@ -4,6 +4,7 @@ Talks directly to the REST API (the old `pexels-api` wrapper is unmaintained).
 """
 
 import logging
+from typing import Any
 
 from talkgenerator import settings
 from talkgenerator.datastructures.image_data import ImageData
@@ -17,13 +18,13 @@ _IMAGE_WIDTH = 1920
 _cooldown = http_util.Cooldown("Pexels")
 
 
-def _api_key():
+def _api_key() -> str | None:
     if settings.is_source_disabled("PEXELS"):
         return None
     return settings.pexels_auth()["pexels_key"] or None
 
 
-def _search_pexels(query):
+def _search_pexels(query: str) -> Any:
     api_key = _api_key()
     if not api_key or _cooldown.active:
         return None
@@ -45,7 +46,7 @@ def _search_pexels(query):
         return None
 
 
-def _map_to_image_data(photo):
+def _map_to_image_data(photo: dict[str, Any]) -> ImageData | None:
     original = (photo.get("src") or {}).get("original")
     if not original:
         return None
@@ -55,7 +56,7 @@ def _map_to_image_data(photo):
     return ImageData(image_url=image_url, source=source, source_url=photo.get("url"))
 
 
-def search_photos(query) -> list[ImageData]:
+def search_photos(query: str | None) -> list[ImageData]:
     if not query:
         return []
     results = _search_pexels(query)

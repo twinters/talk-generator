@@ -3,6 +3,7 @@
 import logging
 import re
 import string
+from collections.abc import Callable
 from functools import lru_cache
 from pathlib import Path
 
@@ -20,7 +21,7 @@ REQUIRED_NLTK_RESOURCES = (
 )
 
 
-def check_and_download():
+def check_and_download() -> bool:
     """Make sure the NLTK resources we use are available, downloading missing ones."""
     try:
         for resource_path, package in REQUIRED_NLTK_RESOURCES:
@@ -32,7 +33,7 @@ def check_and_download():
     return True
 
 
-def _is_available(resource_path):
+def _is_available(resource_path: str) -> bool:
     try:
         nltk.data.find(resource_path)
         return True
@@ -44,7 +45,7 @@ def _is_available(resource_path):
             return False
 
 
-def _check_and_download_corpus(resource_path, package):
+def _check_and_download_corpus(resource_path: str, package: str) -> None:
     if _is_available(resource_path):
         return
     logger.info("Downloading NLTK resource '%s'...", package)
@@ -58,7 +59,7 @@ def _check_and_download_corpus(resource_path, package):
     raise LookupError(f"NLTK resource '{package}' is missing and could not be downloaded")
 
 
-def _download(package, download_dir=None):
+def _download(package: str, download_dir: str | None = None) -> bool:
     try:
         return bool(nltk.download(package, download_dir=download_dir, quiet=True, raise_on_error=True))
     except Exception as e:
@@ -66,7 +67,7 @@ def _download(package, download_dir=None):
         return False
 
 
-def print_corpus_download_warning():
+def print_corpus_download_warning() -> None:
     packages = " ".join(package for _, package in REQUIRED_NLTK_RESOURCES)
     corpus_warning = f"""
     Hmm...
@@ -84,11 +85,11 @@ def print_corpus_download_warning():
 # Helpers
 
 
-def _replace_word_one_case(sentence, word, replacement, flags=0):
+def _replace_word_one_case(sentence: str, word: str, replacement: str, flags: int = 0) -> str:
     return re.sub(r"(^|\W)" + word + r"(\W|$)", r"\1" + replacement + r"\2", sentence, flags=flags)
 
 
-def replace_word(sentence, word, replacement):
+def replace_word(sentence: str, word: str, replacement: str) -> str:
     lowered = _replace_word_one_case(sentence, word.lower(), replacement.lower())
     upper = _replace_word_one_case(lowered, word.upper(), replacement.upper())
     titled = _replace_word_one_case(upper, word.title(), replacement.title())
@@ -96,7 +97,7 @@ def replace_word(sentence, word, replacement):
     return result
 
 
-def get_pos_tags(word):
+def get_pos_tags(word: str) -> list[str]:
     """Returns all possible POS tags for a given word according to nltk"""
     tags = nltk.pos_tag(nltk.word_tokenize(word))
     tags_strings = [tag[1] for tag in tags]
@@ -106,7 +107,7 @@ def get_pos_tags(word):
 # Verbs
 
 
-def get_verb_index(words):
+def get_verb_index(words: list[str]) -> int:
     seen_adverb = False
     for i in range(len(words)):
         tags = get_pos_tags(words[i])
@@ -123,7 +124,7 @@ def get_verb_index(words):
     return 0
 
 
-def apply_function_to_verb(action, func):
+def apply_function_to_verb(action: str, func: Callable[[str], str]) -> str:
     words = action.split(" ")
     verb_index = get_verb_index(words)
     first_word = func(words[verb_index])
@@ -132,12 +133,12 @@ def apply_function_to_verb(action, func):
     return (" ".join(words[:verb_index]) + " " + first_word + " " + " ".join(words[verb_index + 1 :])).strip()
 
 
-def to_present_participle(action):
+def to_present_participle(action: str) -> str:
     return apply_function_to_verb(action, to_ing_form)
 
 
 # From https://github.com/arsho/46-Simple-Python-Exercises-Solutions/blob/master/problem_25.py
-def _make_ing_form(passed_string):
+def _make_ing_form(passed_string: str) -> str:
     passed_string = passed_string.lower()
     letter = list(string.ascii_lowercase)
     vowel = ["a", "e", "i", "o", "u"]
@@ -170,7 +171,7 @@ def _make_ing_form(passed_string):
         return passed_string + "ing"
 
 
-def to_ing_form(passed_string):
+def to_ing_form(passed_string: str) -> str:
     result = _make_ing_form(passed_string)
     if passed_string.islower():
         return result.lower()
@@ -184,20 +185,20 @@ def to_ing_form(passed_string):
 inflect_engine = inflect.engine()
 
 
-def is_singular(word):
+def is_singular(word: str) -> bool:
     # inflect >= 7 type-checks its arguments and rejects empty strings
     if not word or not word.strip():
         return True
     return inflect_engine.singular_noun(word) is False
 
 
-def is_plural(word):
+def is_plural(word: str) -> bool:
     if not word or not word.strip():
         return False
     return bool(inflect_engine.singular_noun(word))
 
 
-def to_plural(word):
+def to_plural(word: str) -> str:
     if not word or not word.strip():
         return word
     if is_singular(word):
@@ -207,13 +208,14 @@ def to_plural(word):
     return word
 
 
-def to_singular(word):
+def to_singular(word: str) -> str:
     if is_plural(word):
-        return inflect_engine.singular_noun(word)
+        singular = inflect_engine.singular_noun(word)
+        return singular if singular else word
     return word
 
 
-def add_article(word):
+def add_article(word: str) -> str:
     # TODO: Maybe more checks, some u's cause "an", or some big letters in case it's an abbreviation
     word_lower = word.lower()
     article = "a"
@@ -225,7 +227,7 @@ def add_article(word):
 # Pronouns
 
 
-def second_to_first_pronouns(sentence):
+def second_to_first_pronouns(sentence: str) -> str:
     sentence = replace_word(sentence, "yours", "mine")
     sentence = replace_word(sentence, "your", "my")
     sentence = replace_word(sentence, "you", "me")
@@ -236,11 +238,11 @@ def second_to_first_pronouns(sentence):
 
 
 # TODO: These don't work well, but might be useful features in our text generation language
-def is_noun(word):
+def is_noun(word: str) -> bool:
     return "NN" in get_pos_tags(word)
 
 
-def is_verb(word):
+def is_verb(word: str) -> bool:
     return "VB" in get_pos_tags(word)
 
 
@@ -284,34 +286,34 @@ def is_place(word: str) -> bool:
 # Special operators
 
 
-def get_last_noun_and_article(sentence):
+def get_last_noun_and_article(sentence: str) -> str | None:
     tokens = nltk.word_tokenize(sentence)
     tags = nltk.pos_tag(tokens)
 
-    noun = None
+    noun: str | None = None
     for tag in reversed(tags):
         if "NN" in tag[1]:
             if noun:
-                noun = (tag[0] + " " + noun).strip()
+                noun = (str(tag[0]) + " " + noun).strip()
             else:
-                noun = tag[0]
+                noun = str(tag[0])
 
         # If encountering an article while there is a noun found
-        elif bool(noun):
+        elif noun:
             if "DT" in tag[1] or "PRP$" in tag[1]:
-                return tag[0] + " " + noun
+                return str(tag[0]) + " " + noun
             return noun
 
     return None
 
 
-def replace_non_alphabetical_characters(text):
+def replace_non_alphabetical_characters(text: str) -> str:
     return re.sub(r"[^A-Za-z\s\b -]+", "", text)
 
 
-def is_vowel(character):
+def is_vowel(character: str) -> bool:
     return character in ["a", "e", "i", "o", "u"]
 
 
-def is_consonant(character):
+def is_consonant(character: str) -> bool:
     return not is_vowel(character)

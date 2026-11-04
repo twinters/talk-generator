@@ -6,6 +6,7 @@ certain types of (content) generators
 import logging
 import random
 from collections.abc import Callable
+from typing import Any
 
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.util import image_util, random_util
@@ -54,7 +55,7 @@ class PrefixedPresentationContextGenerator(Generator):
 
 
 class CombinedGenerator(Generator):
-    def __init__(self, *weighted_generators: tuple[int | float, Generator]):
+    def __init__(self, *weighted_generators: tuple[float, Callable[[Any], Any]]):
         self._weighted_generators = weighted_generators
 
     def __call__(self, seed: str | dict[str, str]):
@@ -63,6 +64,8 @@ class CombinedGenerator(Generator):
         logger.debug("current_weighted_generators: {}".format(current_weighted_generators))
         while len(current_weighted_generators) > 0:
             generator = random_util.weighted_random(current_weighted_generators)
+            if generator is None:
+                return None
             logger.debug("current generator: {}".format(generator))
             logger.debug("generator seed: {}".format(seed))
             generated = generator(seed)

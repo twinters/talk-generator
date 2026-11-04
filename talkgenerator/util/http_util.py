@@ -24,6 +24,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 import requests
 import requests_cache
 from requests.adapters import HTTPAdapter
+from requests_cache.policy.expiration import ExpirationPatterns
 from urllib3.util.retry import Retry
 
 from talkgenerator import __version__, settings
@@ -34,7 +35,7 @@ USER_AGENT = f"talkgenerator/{__version__} (+https://github.com/twinters/talk-ge
 DEFAULT_TIMEOUT = 10  # seconds
 
 # How long successful responses are reused, per URL prefix. Anything else is never cached.
-CACHE_EXPIRY = {
+CACHE_EXPIRY: ExpirationPatterns = {
     "api.datamuse.com": timedelta(days=30),
     "pixabay.com/api": timedelta(hours=24),  # Pixabay's API terms ask to cache requests for 24 hours
     "api.pexels.com": timedelta(hours=24),
@@ -72,9 +73,11 @@ _cache_backend: requests_cache.SQLiteCache | None = None
 _cache_unavailable = False
 
 
-def _cache_expiry_patterns() -> dict[str, timedelta]:
+def _cache_expiry_patterns() -> ExpirationPatterns:
     conceptnet = urlsplit(settings.conceptnet_api_url())
-    return {**CACHE_EXPIRY, conceptnet.netloc + conceptnet.path: _CONCEPTNET_CACHE_EXPIRY}
+    patterns: ExpirationPatterns = dict(CACHE_EXPIRY)
+    patterns[conceptnet.netloc + conceptnet.path] = _CONCEPTNET_CACHE_EXPIRY
+    return patterns
 
 
 def _get_cache_backend() -> requests_cache.SQLiteCache | None:
@@ -138,7 +141,7 @@ def reset_sessions() -> None:
         _cache_unavailable = False
 
 
-def redact(text: str) -> str:
+def redact(text: object) -> str:
     """Remove API keys and tokens from URLs and error messages before logging them."""
     return _SECRET_PARAMS.sub(r"\1REDACTED", str(text))
 

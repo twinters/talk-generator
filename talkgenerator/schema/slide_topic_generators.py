@@ -1,6 +1,6 @@
 import logging
 import random
-from collections.abc import Collection
+from collections.abc import Sequence
 from functools import lru_cache
 
 from talkgenerator.sources import conceptnet
@@ -23,7 +23,7 @@ class SideTrackingTopicGenerator(SlideSeedGenerator):
         self._topics = topics
         self._num_slides = num_slides
 
-        seeds: list[str] = [None] * num_slides
+        seeds: list[str | None] = [None] * num_slides
 
         # Make it begin and end with the topic
         if num_slides > 0:
@@ -51,9 +51,9 @@ class SideTrackingTopicGenerator(SlideSeedGenerator):
             previous = seeds.copy()
 
         # Convert None's to literal none's for debugging purposes
-        seeds = [seed if seed else "None" for seed in seeds]
+        filled_seeds = [seed if seed else "None" for seed in seeds]
 
-        self._seeds = seeds
+        self._seeds: list[str] = filled_seeds
 
     def get_seed(self, slide_nr: int) -> str:
         return self._seeds[slide_nr]
@@ -130,7 +130,7 @@ def normalise_seed(seed):
 class IdentityTopicGenerator(SlideSeedGenerator):
     """Generates always the given topic as the seed for each slide"""
 
-    def __init__(self, topics: Collection[str], _):
+    def __init__(self, topics: Sequence[str], _):
         self._topics = topics
 
     def get_seed(self, _) -> str:

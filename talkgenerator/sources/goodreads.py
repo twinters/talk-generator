@@ -10,7 +10,7 @@ _QUOTE_SEARCH_URL = "https://www.goodreads.com/search"
 
 
 @lru_cache(maxsize=64)
-def _search_quotes_page(search_term, page):
+def _search_quotes_page(search_term: str, page: int) -> list[str] | None:
     params = {
         "page": page,
         "q": search_term,

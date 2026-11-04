@@ -6,7 +6,7 @@ import random
 import subprocess
 import sys
 
-from pptx import Presentation
+from pptx.presentation import Presentation
 
 from talkgenerator import runtime_checker
 from talkgenerator.schema.content_generators import full_name_generator
@@ -22,7 +22,7 @@ MAX_PRESENTATION_SAVE_TRIES = 100
 logger = logging.getLogger("talkgenerator")
 
 
-def generate_presentation_using_cli_arguments(args) -> tuple[Presentation, SlideDeck, str]:
+def generate_presentation_using_cli_arguments(args) -> tuple[Presentation | None, SlideDeck, str | None]:
     """Make a talk with the given topic."""
     if getattr(args, "print_logs", False):
         os_util.show_logs(logger, logging.DEBUG if getattr(args, "verbose", False) else logging.INFO)
@@ -52,17 +52,17 @@ def generate_presentation_using_cli_arguments(args) -> tuple[Presentation, Slide
 def generate_presentation(
     schema: str,
     slides: int,
-    topic: str | list[str] = None,
-    title: str = None,
-    presenter: str = None,
+    topic: str | list[str] | None = None,
+    title: str | None = None,
+    presenter: str | None = None,
     parallel: bool = True,
-    int_seed: int = None,
+    int_seed: int | None = None,
     save_ppt: bool = True,
     output_folder: str = DEFAULT_OUTPUT_FOLDER,
     open_ppt: bool = False,
     print_logs=False,
     debug_notes: bool = False,
-) -> tuple[Presentation, SlideDeck, str]:
+) -> tuple[Presentation | None, SlideDeck, str | None]:
     """Generate a talk. With debug_notes, every slide's speaker notes explain how it was generated."""
     if print_logs:
         os_util.show_logs(logger)
@@ -84,10 +84,10 @@ def generate_presentation(
         topic = (word_frequency.get_rarest_word(title) if title else None) or DEFAULT_PRESENTATION_TOPIC
 
     # Extract topics from given (possibly comma separated) topic
-    if type(topic) in [list, tuple]:
-        topics = topic
+    if isinstance(topic, (list, tuple)):
+        topics = list(topic)
     else:
-        topics = [topic.strip() for topic in topic.split(",")]
+        topics = [part.strip() for part in topic.split(",")]
 
     logger.info("Presentation topics: {}".format(topics))
     logger.info("Presentation num_slides: {}".format(slides))

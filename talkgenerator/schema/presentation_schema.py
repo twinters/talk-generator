@@ -11,7 +11,7 @@ import time
 from collections.abc import Callable, Collection
 from multiprocessing.pool import ThreadPool
 
-from pptx import Presentation
+from pptx.presentation import Presentation
 
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.datastructures.slide_generator_data import SlideGeneratorData, _filter_generated_elements
@@ -56,12 +56,12 @@ class PresentationSchema:
         topics: list[str],
         num_slides: int,
         presenter=None,
-        title: str = None,
+        title: str | None = None,
         parallel: bool = False,
-        int_seed: int = None,
+        int_seed: int | None = None,
         save_ppt: bool = True,
         debug_notes: bool = False,
-    ) -> tuple[Presentation, SlideDeck]:
+    ) -> tuple[Presentation | None, SlideDeck]:
         """Generate a presentation about a certain topic with a certain number of slides"""
 
         logger.info("Made it to presentation_schema...")
@@ -89,8 +89,8 @@ class PresentationSchema:
             "title": title,
         }
 
-        used_tags = {}
-        used_elements = set()
+        used_tags: dict[str, int] = {}
+        used_elements: set = set()
 
         # Generate
         if parallel:
@@ -129,10 +129,10 @@ class PresentationSchema:
         seed_generator: SlideSeedGenerator,
         used_elements,
         used_tags: dict[str, int],
-        int_seed: int,
+        int_seed: int | None,
     ):
         logger.info("Generating the slide deck in parallel")
-        slide_nrs_to_generate = range(num_slides)
+        slide_nrs_to_generate = list(range(num_slides))
 
         generated_results = [None] * num_slides
 

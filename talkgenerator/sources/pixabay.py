@@ -14,21 +14,21 @@ _MAX_QUERY_LENGTH = 100  # imposed by the Pixabay API
 _cooldown = http_util.Cooldown("Pixabay")
 
 
-def get_pixabay_session():
+def get_pixabay_session() -> str | None:
     if settings.is_source_disabled("PIXABAY"):
         return None
     return settings.pixabay_auth()["pixabay_key"] or None
 
 
-def search_horizontal(query):
+def search_horizontal(query: str) -> list[ImageData]:
     return search_photos(query, orientation="horizontal")
 
 
-def search_vertical(query):
+def search_vertical(query: str) -> list[ImageData]:
     return search_photos(query, orientation="vertical")
 
 
-def search_photos(query, orientation="all") -> list[ImageData]:
+def search_photos(query: str | None, orientation: str = "all") -> list[ImageData]:
     api_key = get_pixabay_session()
     if not api_key or not query or _cooldown.active:
         return []

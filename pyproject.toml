@@ -44,10 +44,12 @@ talkgenerator = "talkgenerator.run:main_cli"
 
 [dependency-groups]
 dev = [
+    "mypy>=1.13",
     "pytest>=8.0",
     "pytest-cov>=5.0",
     "pytest-rerunfailures>=14",
     "ruff>=0.12",
+    "types-requests>=2.33.0.20261030",
 ]
 
 [tool.setuptools.packages.find]
@@ -68,6 +70,50 @@ markers = [
 log_level = "INFO"
 log_format = "[%(levelname)s %(asctime)s %(filename)s:%(lineno)s] %(message)s"
 log_date_format = "%Y-%m-%d %H:%M:%S"
+
+[tool.mypy]
+python_version = "3.10"
+files = ["talkgenerator"]
+# Libraries without type information (tracery, nltk, wordfreq, ...) are treated as Any
+ignore_missing_imports = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+
+# Gradual typing: the modules below are fully annotated and checked strictly. The rest of the
+# package is checked leniently (only what's annotated). Add a module here once it's typed.
+[[tool.mypy.overrides]]
+module = [
+    "talkgenerator.datastructures.image_data",
+    "talkgenerator.schema.registry",
+    "talkgenerator.settings",
+    "talkgenerator.sources.art_institute",
+    "talkgenerator.sources.datamuse",
+    "talkgenerator.sources.giphy",
+    "talkgenerator.sources.goodreads",
+    "talkgenerator.sources.inspirobot",
+    "talkgenerator.sources.openverse",
+    "talkgenerator.sources.pexels",
+    "talkgenerator.sources.pixabay",
+    "talkgenerator.sources.reddit",
+    "talkgenerator.sources.shitpostbot",
+    "talkgenerator.sources.unsplash",
+    "talkgenerator.sources.wikihow",
+    "talkgenerator.sources.wikimedia_commons",
+    "talkgenerator.sources.wikiquote",
+    "talkgenerator.sources.word_frequency",
+    "talkgenerator.util.cache_util",
+    "talkgenerator.util.http_util",
+    "talkgenerator.util.image_util",
+    "talkgenerator.util.language_util",
+    "talkgenerator.util.os_util",
+    "talkgenerator.util.random_util",
+    "talkgenerator.util.scraper_util",
+]
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+warn_return_any = true
 
 [tool.coverage.run]
 source = ["talkgenerator"]

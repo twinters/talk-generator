@@ -31,7 +31,7 @@ required_keys = {
 }
 
 
-def reddit_auth():
+def reddit_auth() -> dict[str, str]:
     return {
         "client_id": env.str("REDDIT_CLIENT_ID", ""),
         "client_secret": env.str("REDDIT_CLIENT_SECRET", ""),
@@ -39,19 +39,19 @@ def reddit_auth():
     }
 
 
-def unsplash_auth():
+def unsplash_auth() -> dict[str, str]:
     return {"unsplash_access_key": env.str("UNSPLASH_ACCESS_KEY", "")}
 
 
-def pixabay_auth():
+def pixabay_auth() -> dict[str, str]:
     return {"pixabay_key": env.str("PIXABAY_KEY", "")}
 
 
-def pexels_auth():
+def pexels_auth() -> dict[str, str]:
     return {"pexels_key": env.str("PEXELS_KEY", "")}
 
 
-def giphy_auth():
+def giphy_auth() -> dict[str, str]:
     return {"giphy_api_key": env.str("GIPHY_API_KEY", "")}
 
 
@@ -82,11 +82,11 @@ def is_source_disabled(name: str) -> bool:
         return False
 
 
-def _get_missing_keys(key_variables):
+def _get_missing_keys(key_variables: list[str]) -> list[str]:
     return [key_name for key_name in key_variables if not env.str(key_name, "").strip()]
 
 
-def check_keys(key_variables, name):
+def check_keys(key_variables: list[str], name: str) -> bool:
     missing = _get_missing_keys(key_variables)
     if missing:
         logger.warning("No %s credentials (missing %s): %s content is skipped.", name, ", ".join(missing), name)
@@ -94,7 +94,7 @@ def check_keys(key_variables, name):
     return True
 
 
-def check_environment_variables():
+def check_environment_variables() -> bool:
     """Report which keyed sources can't be used. Generation still works with the remaining sources."""
     sources_to_check = {name: keys for name, keys in required_keys.items() if not is_source_disabled(name)}
     results = [check_keys(keys, name) for name, keys in sources_to_check.items()]
@@ -104,7 +104,7 @@ def check_environment_variables():
     return valid_env_file
 
 
-def print_env_file_warning():
+def print_env_file_warning() -> None:
     env_message = """
     Some API keys are missing, so talkgenerator will use fewer image sources.
 

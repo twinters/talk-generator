@@ -110,7 +110,11 @@ Tests live in `tests/`. Many of them talk to the live APIs, and are marked as `n
 uv run pytest                     # everything (tests needing missing API keys are skipped)
 uv run pytest -m "not network"    # only the offline tests, as in CI
 uv run ruff check . && uv run ruff format --check .
+uv run mypy                       # type checking
 ```
+
+Type checking is gradual: mypy checks the whole package, and the modules listed under `[[tool.mypy.overrides]]` in `pyproject.toml` must be fully annotated.
+Add a module to that list once you've typed it.
 
 GitHub Actions runs the linter and the offline tests on every push and pull request.
 A weekly "canary" workflow runs the network tests against the live APIs, and opens an issue when one of them broke.

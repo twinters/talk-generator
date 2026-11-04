@@ -17,6 +17,7 @@ jobs:
       - uses: astral-sh/setup-uv@v10.3.3
       - run: uv run --locked ruff check .
       - run: uv run --locked ruff format --check .
+      - run: uv run --locked mypy
 
   test:
     runs-on: ubuntu-latest

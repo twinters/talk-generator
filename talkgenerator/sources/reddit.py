@@ -9,6 +9,7 @@ import html
 import logging
 import threading
 from functools import lru_cache
+from typing import Any
 from urllib.parse import urlsplit
 
 import praw
@@ -22,7 +23,7 @@ _IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".gif")
 _thread_local = threading.local()
 
 
-def _has_credentials():
+def _has_credentials() -> bool:
     return not settings.is_source_disabled("REDDIT") and all(settings.reddit_auth().values())
 
 
@@ -32,24 +33,29 @@ def get_reddit() -> praw.Reddit | None:
         return None
     reddit = getattr(_thread_local, "reddit", None)
     if reddit is None:
-        reddit = praw.Reddit(**settings.reddit_auth())
+        credentials = settings.reddit_auth()
+        reddit = praw.Reddit(
+            client_id=credentials["client_id"],
+            client_secret=credentials["client_secret"],
+            user_agent=credentials["user_agent"],
+        )
         reddit.read_only = True
         _thread_local.reddit = reddit
     return reddit
 
 
-def has_reddit_access():
+def has_reddit_access() -> bool:
     return get_reddit() is not None
 
 
-def get_subreddit(name):
+def get_subreddit(name: str) -> Any:
     reddit = get_reddit()
     if reddit:
         return reddit.subreddit(name)
 
 
 @lru_cache(maxsize=128)
-def _search_images(name, query, sort, limit):
+def _search_images(name: str, query: str, sort: str, limit: int) -> tuple[tuple[str, str, str | None], ...]:
     # Raises on API errors, so that failures don't end up in the cache
     subreddit = get_subreddit(name)
     submissions = subreddit.search(query, sort=sort, limit=limit) if query else subreddit.hot(limit=limit)
@@ -63,7 +69,9 @@ def _search_images(name, query, sort, limit):
     return tuple(images)
 
 
-def search_images(name, query, sort="relevance", limit=100):
+def search_images(
+    name: str, query: str | None, sort: str = "relevance", limit: int = 100
+) -> list[tuple[str, str, str | None]] | None:
     """(image URL, credit, post URL) triples of safe-for-work image posts in (a "+"-joined list of) subreddits.
 
     Searches for the query, or takes the current hot posts if there's no query. Returns None without
@@ -79,7 +87,7 @@ def search_images(name, query, sort="relevance", limit=100):
         return None
 
 
-def get_image_url(submission) -> str | None:
+def get_image_url(submission: Any) -> str | None:
     """The URL of the image a post shows, if it shows one."""
     # Read the raw data: PRAW would make an extra request for every missing attribute otherwise
     data = vars(submission)
@@ -112,12 +120,12 @@ def get_image_url(submission) -> str | None:
     return None
 
 
-def get_post_url(submission) -> str | None:
+def get_post_url(submission: Any) -> str | None:
     permalink = vars(submission).get("permalink")
     return "https://www.reddit.com" + permalink if permalink else None
 
 
-def get_source_name(submission) -> str:
+def get_source_name(submission: Any) -> str:
     data = vars(submission)
     author = data.get("author")
     subreddit = data.get("subreddit_name_prefixed") or "Reddit"

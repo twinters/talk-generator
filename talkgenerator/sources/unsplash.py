@@ -27,7 +27,7 @@ def _access_key() -> str | None:
     return settings.unsplash_auth()["unsplash_access_key"] or None
 
 
-def _api_get(path, params=None):
+def _api_get(path: str, params: dict[str, Any] | None = None) -> Any:
     access_key = _access_key()
     if not access_key or _cooldown.active:
         return None
@@ -54,12 +54,12 @@ def _api_get(path, params=None):
         return None
 
 
-def _track_download(download_location):
+def _track_download(download_location: str) -> None:
     """Unsplash asks API users to register downloads: https://help.unsplash.com/en/articles/2511258"""
     _api_get(download_location.replace(API_URL, ""))
 
 
-def _map_to_image_data(photo) -> ImageData | None:
+def _map_to_image_data(photo: dict[str, Any]) -> ImageData | None:
     urls = photo.get("urls") or {}
     image_url = urls.get("raw")
     if image_url:
@@ -81,7 +81,7 @@ def _profile_link(user: dict[str, Any]) -> str:
     return http_util.with_query_params(profile, utm_source=settings.unsplash_app_name(), utm_medium="referral")
 
 
-def random(_=None) -> ImageData | None:
+def random(_: object = None) -> ImageData | None:
     photo = _api_get("/photos/random")
     if not photo:
         logger.info("Couldn't get a random Unsplash image")
@@ -89,12 +89,12 @@ def random(_=None) -> ImageData | None:
     return _map_to_image_data(photo)
 
 
-def random_as_list(_=None) -> list[ImageData]:
+def random_as_list(_: object = None) -> list[ImageData]:
     result = random(_)
     return [result] if result else []
 
 
-def search_photos(query) -> list[ImageData]:
+def search_photos(query: str | None) -> list[ImageData]:
     if not query:
         return random_as_list()
     if not _access_key():

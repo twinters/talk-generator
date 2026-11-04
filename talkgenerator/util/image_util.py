@@ -143,7 +143,8 @@ def prepare_image_bytes(data: bytes, description: str = "image") -> bytes | None
 
 def get_image_size(data: bytes) -> tuple[int, int]:
     with Image.open(io.BytesIO(data)) as image:
-        return image.size
+        width, height = image.size
+        return int(width), int(height)
 
 
 # Placeholder images that hosts serve instead of removed content

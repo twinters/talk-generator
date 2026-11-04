@@ -19,7 +19,7 @@ slide_generators: Registry[SlideGeneratorData] = Registry("slide generator")
 
 def _register(group: str, generators: list[SlideGeneratorData]) -> list[SlideGeneratorData]:
     for generator in generators:
-        slide_generators.register(generator.name, generator, group=group)
+        slide_generators.register(generator.name or "", generator, group=group)
     return generators
 
 

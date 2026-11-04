@@ -4,7 +4,7 @@ import logging
 import random
 from functools import lru_cache
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 from talkgenerator import settings
 from talkgenerator.util import http_util, scraper_util
@@ -16,12 +16,12 @@ _SEARCH_URL = "https://www.shitpostbot.com/gallery/sourceimages"
 source_image_prefix = "https://www.shitpostbot.com/img/sourceimages/"
 
 
-def _search_shitpostbot_page(search_term, page):
+def _search_shitpostbot_page(search_term: str, page: int) -> list[str]:
     return [element[1] for element in _search_shitpostbot_page_rated(search_term, page)]
 
 
 @lru_cache(maxsize=64)
-def _search_shitpostbot_page_rated(search_term, page):
+def _search_shitpostbot_page_rated(search_term: str, page: int) -> list[tuple[int, str]]:
     if settings.is_source_disabled("SHITPOSTBOT"):
         return []
     params = {
@@ -38,36 +38,41 @@ def _search_shitpostbot_page_rated(search_term, page):
     soup = BeautifulSoup(response.content, "html.parser")
     image_urls = []
     for entry in soup.find_all("div", class_="col-md-4"):
-        try:
-            # Check if author doesn't have the search term (False positive)
-            user = entry.find("div", class_="caption").find_all("p")[1].find("a").get_text()
-            if bool(search_term) and search_term in user:
-                continue
+        # Skip false positives: images found because the search term is in the uploader's name
+        caption = entry.find("div", class_="caption")
+        paragraphs = caption.find_all("p") if isinstance(caption, Tag) else []
+        uploader = paragraphs[1].find("a") if len(paragraphs) > 1 else None
+        if search_term and isinstance(uploader, Tag) and search_term in uploader.get_text():
+            continue
 
-            # Get real image url
-            image_url = _get_source_image(entry.find("img").get("src"))
-            rating_span = entry.find("span", class_="rating")
-            rating = int(rating_span.text if rating_span else 1)
-        except (AttributeError, IndexError, TypeError, ValueError):
+        image = entry.find("img")
+        source = image.get("src") if isinstance(image, Tag) else None
+        if not isinstance(source, str):
             logger.debug("Skipping unexpected ShitpostBot gallery entry")
             continue
+        image_url = _get_source_image(source)
+        rating_span = entry.find("span", class_="rating")
+        try:
+            rating = int(rating_span.get_text()) if isinstance(rating_span, Tag) else 1
+        except ValueError:
+            rating = 1
         if rating > 0:
             image_urls.append((rating, image_url))
     return image_urls
 
 
-def _get_source_image(image_url):
+def _get_source_image(image_url: str) -> str:
     image_url = image_url.replace("%2F", "/")
     last_slash_idx = image_url.rfind("/")
     image_file_name = image_url[last_slash_idx + 1 :]
     return source_image_prefix + image_file_name
 
 
-def get_random_images(_):
+def get_random_images(_: object) -> list[str]:
     return _search_shitpostbot_page("", random.choice(range(1, _MAX_RANDOM_PAGE)))
 
 
-def get_random_images_rated(_):
+def get_random_images_rated(_: object) -> list[tuple[int, str]]:
     return _search_shitpostbot_page_rated("", random.choice(range(1, _MAX_RANDOM_PAGE)))
 
 
@@ -75,9 +80,9 @@ _search_image_function = scraper_util.create_page_scraper(_search_shitpostbot_pa
 _search_image_function_rated = scraper_util.create_page_scraper(_search_shitpostbot_page_rated)
 
 
-def search_images(search_term, number=50):
+def search_images(search_term: str, number: int = 50) -> list[str]:
     return _search_image_function(search_term, number)
 
 
-def search_images_rated(search_term, number=50):
+def search_images_rated(search_term: str, number: int = 50) -> list[tuple[int, str]]:
     return _search_image_function_rated(search_term, number)

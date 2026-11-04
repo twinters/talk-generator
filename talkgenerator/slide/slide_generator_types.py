@@ -25,7 +25,7 @@ class SlideGenerator(metaclass=ABCMeta):
     def of(cls, *generators):
         return cls(CombinedSlideGenerator(*generators))
 
-    def generate_slide(self, presentation_context, used) -> (slides.Slide, list):
+    def generate_slide(self, presentation_context, used) -> tuple[slides.Slide, list] | None:
         """Generates the slide using the given generators."""
         logger.debug("slide_generator_types.generate_slide")
         logger.debug("presentation_context: {}".format(presentation_context))
@@ -34,6 +34,7 @@ class SlideGenerator(metaclass=ABCMeta):
         logger.debug("generated: {}".format(generated))
         if is_different_enough(generated, used):
             return self.slide_type(*generated), generated
+        return None
 
 
 class TitleSlideGenerator(SlideGenerator):

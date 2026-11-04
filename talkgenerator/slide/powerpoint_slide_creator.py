@@ -3,8 +3,9 @@ from functools import lru_cache
 from io import BytesIO
 from pathlib import Path
 
+import pptx
 from lxml.etree import XMLSyntaxError
-from pptx import Presentation
+from pptx.presentation import Presentation
 
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.util import http_util, image_util, os_util
@@ -170,7 +171,7 @@ def add_sources_note(slide, sources: list[str], source_urls: list[str | None] | 
 
 
 def create_new_powerpoint() -> Presentation:
-    return Presentation(get_powerpoint_template_file())
+    return pptx.Presentation(get_powerpoint_template_file())
 
 
 def create_title_slide(prs, title, subtitle):

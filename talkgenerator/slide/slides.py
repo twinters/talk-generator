@@ -13,8 +13,8 @@ class Slide:
         self._ppt_slide_creator = ppt_slide_creator
         self._arguments = arguments
         self._note = ""
-        self._sources = []
-        self._source_urls = []
+        self._sources: list[str] = []
+        self._source_urls: list[str | None] = []
 
     def add_source(self, source: str, url: str | None = None):
         """Credit an image source; the credit links to the url (if given) in the PowerPoint."""
