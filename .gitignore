@@ -138,3 +138,6 @@ CLAUDE.md
 CLAUDE.local.md
 .claude/
 .mcp.json
+
+# On-disk API cache, in case TALKGENERATOR_CACHE_DIR points inside the repository
+http_cache.sqlite*

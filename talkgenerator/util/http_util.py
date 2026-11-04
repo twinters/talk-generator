@@ -3,6 +3,11 @@
 Every outgoing request goes through here, so they all get a descriptive User-Agent,
 a timeout (no more hanging forever on a dead host), a couple of retries on flaky 5xx
 responses, and log lines that never contain API keys.
+
+Responses of the search APIs are also cached on disk (see `CACHE_EXPIRY`): repeated topics
+generate faster, rate limits last longer, and Pixabay asks API users to cache for 24 hours.
+Images and HTML pages aren't cached. Set DISABLE_CACHE=1 to switch the cache off, or
+TALKGENERATOR_CACHE_DIR to choose where it lives.
 """
 
 from __future__ import annotations
@@ -11,22 +16,74 @@ import logging
 import re
 import threading
 import time
+from datetime import timedelta
+from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import requests
+import requests_cache
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from talkgenerator import __version__
+from talkgenerator import __version__, settings
 
 logger = logging.getLogger("talkgenerator")
 
 USER_AGENT = f"talkgenerator/{__version__} (+https://github.com/twinters/talk-generator)"
 DEFAULT_TIMEOUT = 10  # seconds
 
+# How long successful responses are reused, per URL prefix. Anything else is never cached.
+CACHE_EXPIRY = {
+    "api.datamuse.com": timedelta(days=30),
+    "pixabay.com/api": timedelta(hours=24),  # Pixabay's API terms ask to cache requests for 24 hours
+    "api.pexels.com": timedelta(hours=24),
+    "api.unsplash.com/search": timedelta(hours=24),
+}
+_CONCEPTNET_CACHE_EXPIRY = timedelta(days=30)
+CACHE_FILE_NAME = "http_cache.sqlite"
+
+# Kept out of the cache keys and redacted from what's stored on disk
+_CACHE_IGNORED_PARAMETERS = (
+    "Authorization",
+    "Proxy-Authorization",
+    "X-API-Key",
+    "access_token",
+    "api_key",
+    "client_id",
+    "key",
+)
+
 _SECRET_PARAMS = re.compile(r"((?:key|client_id|api_key|token|access_token)=)[^&\s'\"]+", re.IGNORECASE)
 _thread_local = threading.local()
+_cache_lock = threading.Lock()
+_cache_backend: requests_cache.SQLiteCache | None = None
+_cache_unavailable = False
+
+
+def _cache_expiry_patterns() -> dict[str, timedelta]:
+    conceptnet = urlsplit(settings.conceptnet_api_url())
+    return {**CACHE_EXPIRY, conceptnet.netloc + conceptnet.path: _CONCEPTNET_CACHE_EXPIRY}
+
+
+def _get_cache_backend() -> requests_cache.SQLiteCache | None:
+    """The on-disk cache shared by all threads, or None if it's disabled or can't be used."""
+    global _cache_backend, _cache_unavailable
+    if settings.is_source_disabled("CACHE"):
+        return None
+    with _cache_lock:
+        if _cache_backend is None and not _cache_unavailable:
+            cache_dir = Path(settings.cache_dir())
+            try:
+                cache_dir.mkdir(parents=True, exist_ok=True)
+                backend = requests_cache.SQLiteCache(cache_dir / CACHE_FILE_NAME, wal=True)
+                backend.delete(expired=True, vacuum=False)
+                _cache_backend = backend
+                logger.debug("Caching API responses in %s", cache_dir / CACHE_FILE_NAME)
+            except Exception as e:
+                _cache_unavailable = True
+                logger.warning("Not caching API responses: can't use a cache in %s (%s)", cache_dir, e)
+        return _cache_backend
 
 
 def get_session() -> requests.Session:
@@ -42,12 +99,32 @@ def get_session() -> requests.Session:
             raise_on_status=False,
         )
         adapter = HTTPAdapter(max_retries=retry, pool_maxsize=16)
-        session = requests.Session()
+        cache_backend = _get_cache_backend()
+        if cache_backend is not None:
+            session = requests_cache.CachedSession(
+                backend=cache_backend,
+                expire_after=requests_cache.DO_NOT_CACHE,
+                urls_expire_after=_cache_expiry_patterns(),
+                allowable_codes=(200,),
+                allowable_methods=("GET",),
+                ignored_parameters=_CACHE_IGNORED_PARAMETERS,
+            )
+        else:
+            session = requests.Session()
         session.mount("https://", adapter)
         session.mount("http://", adapter)
         session.headers["User-Agent"] = USER_AGENT
         _thread_local.session = session
     return session
+
+
+def reset_sessions() -> None:
+    """Forget the sessions and cache, so they're rebuilt with the current settings."""
+    global _thread_local, _cache_backend, _cache_unavailable
+    with _cache_lock:
+        _thread_local = threading.local()
+        _cache_backend = None
+        _cache_unavailable = False
 
 
 def redact(text: str) -> str:

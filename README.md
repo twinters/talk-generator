@@ -58,6 +58,11 @@ The generator still tries it (or a self-hosted copy set with `CONCEPTNET_API_URL
 
 Any source can be switched off with `DISABLE_<SOURCE>=1`, e.g. `DISABLE_WIKIHOW=1` (see `.env.example`).
 
+Search API responses (Datamuse, ConceptNet, Pixabay, Pexels, Unsplash) are cached on disk for one to thirty days, in your user cache folder.
+That keeps you within rate limits and is what Pixabay's API terms ask for.
+API keys are never stored in the cache.
+Set `TALKGENERATOR_CACHE_DIR` to put the cache elsewhere, or `DISABLE_CACHE=1` to turn it off.
+
 ### Run arguments
 
 | Argument | Description |

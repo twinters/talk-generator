@@ -10,6 +10,7 @@ See `.env.example` for every supported variable.
 import logging
 from pathlib import Path
 
+import platformdirs
 from environs import Env, EnvError
 
 logger = logging.getLogger("talkgenerator")
@@ -47,6 +48,11 @@ def pixabay_auth():
 
 def pexels_auth():
     return {"pexels_key": env.str("PEXELS_KEY", "")}
+
+
+def cache_dir() -> str:
+    """Folder of the on-disk cache of API responses (default: the user's cache folder)."""
+    return env.str("TALKGENERATOR_CACHE_DIR", "") or platformdirs.user_cache_dir("talkgenerator", appauthor=False)
 
 
 def conceptnet_api_url() -> str:
