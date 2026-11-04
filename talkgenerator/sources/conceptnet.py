@@ -103,9 +103,7 @@ def _conceptnet_enabled():
 def _fetch_edges(word, arguments):
     """Edges of a ConceptNet node. Failures raise instead of returning, so they aren't cached."""
     search_term = "_".join(_remove_prohibited_words(word.lower()))
-    url = "{}/c/en/{}?{}".format(
-        settings.conceptnet_api_url(), quote(search_term), urlencode(arguments, safe="/")
-    )
+    url = "{}/c/en/{}?{}".format(settings.conceptnet_api_url(), quote(search_term), urlencode(arguments, safe="/"))
     start = time.perf_counter()
     response = http_util.get(url, timeout=_REQUEST_TIMEOUT_SECONDS)
     logger.debug("Took %.2f seconds to poll ConceptNet for '%s'", time.perf_counter() - start, word)

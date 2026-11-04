@@ -175,7 +175,9 @@ def is_prohibited(image: Image.Image) -> bool:
             continue
         if fingerprint is None:
             fingerprint = _fingerprint(image)
-        difference = sum(abs(a - b) for a, b in zip(fingerprint, prohibited_fingerprint)) / len(fingerprint)
+        difference = sum(abs(a - b) for a, b in zip(fingerprint, prohibited_fingerprint, strict=True)) / len(
+            fingerprint
+        )
         if difference < _MAX_FINGERPRINT_DIFFERENCE:
             return True
     return False

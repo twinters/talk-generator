@@ -11,7 +11,7 @@ class RandomUtilTest(unittest.TestCase):
     def test_weighted_random_all_appear(self):
         possibilities = (1, "one"), (4, "four"), (6, "six"), (7, "seven")
         results = set()
-        for i in range(10000):
+        for _ in range(10000):
             if len(results) == len(possibilities):
                 break
             results.add(random_util.weighted_random(possibilities))

@@ -1,10 +1,8 @@
-from talkgenerator.schema.slide_schemas import *
+from talkgenerator.datastructures.slide_generator_data import ConstantWeightFunction, SlideGeneratorData
 from talkgenerator.schema import slide_topic_generators
 from talkgenerator.schema.presentation_schema import PresentationSchema
-from talkgenerator.datastructures.slide_generator_data import ConstantWeightFunction
-from talkgenerator.datastructures.slide_generator_data import SlideGeneratorData
-from talkgenerator.slide import powerpoint_slide_creator
-from talkgenerator.slide import slide_generator_types
+from talkgenerator.schema.slide_schemas import *
+from talkgenerator.slide import powerpoint_slide_creator, slide_generator_types
 
 # ==================================
 # =====  PRESENTATION SCHEMAS  =====
@@ -57,9 +55,7 @@ test_schema = PresentationSchema(
     + [
         SlideGeneratorData(
             # slide_templates.generate_image_slide(
-            slide_generator_types.ImageSlideGenerator.of(
-                inspiration_title_generator, generate_unsplash_image
-            ),
+            slide_generator_types.ImageSlideGenerator.of(inspiration_title_generator, generate_unsplash_image),
             weight_function=ConstantWeightFunction(8),
             allowed_repeated_elements=10,
             name="Test sourcing",
@@ -75,7 +71,7 @@ ted_schema = PresentationSchema(
     powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
     # Topic per slide generator
     seed_generator=lambda topics, num_slides: slide_topic_generators.SideTrackingTopicGenerator(
-        topics=topics, num_slides=num_slides, topic_return_period_range=range(2,4)
+        topics=topics, num_slides=num_slides, topic_return_period_range=range(2, 4)
     ),
     # Title of the presentation
     title_generator=talk_ted_title_generator,

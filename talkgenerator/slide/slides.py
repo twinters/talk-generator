@@ -1,17 +1,14 @@
 import logging
-from abc import ABCMeta
-from typing import Dict
 
 from talkgenerator.slide import powerpoint_slide_creator
 
 logger = logging.getLogger("talkgenerator")
 
 
-class Slide(metaclass=ABCMeta):
-    """ Class representing a slide object that could be used to export to Powerpoint pptx or other representations later
-    """
+class Slide:
+    """Class representing a slide object that could be used to export to Powerpoint pptx or other representations later"""
 
-    def __init__(self, type_name: str, ppt_slide_creator, arguments: Dict):
+    def __init__(self, type_name: str, ppt_slide_creator, arguments: dict):
         self._type_name = type_name
         self._ppt_slide_creator = ppt_slide_creator
         self._arguments = arguments
@@ -26,7 +23,7 @@ class Slide(metaclass=ABCMeta):
         self._note = note
 
     def create_powerpoint_slide(self, prs):
-        """ Should generate a slide in the powerpoint """
+        """Should generate a slide in the powerpoint"""
         ppt_slide = self._ppt_slide_creator(prs, **self._arguments)
         try:
             if ppt_slide:
@@ -49,7 +46,7 @@ class Slide(metaclass=ABCMeta):
 
 
 class TitleSlide(Slide):
-    def __init__(self, title:str, subtitle:str):
+    def __init__(self, title: str, subtitle: str):
         super().__init__(
             type_name="title",
             ppt_slide_creator=powerpoint_slide_creator.create_title_slide,
@@ -58,7 +55,7 @@ class TitleSlide(Slide):
 
 
 class LarqeQuoteSlide(Slide):
-    def __init__(self, title:str, text:str, background_image=None):
+    def __init__(self, title: str, text: str, background_image=None):
         super().__init__(
             type_name="large_quote",
             ppt_slide_creator=powerpoint_slide_creator.create_large_quote_slide,

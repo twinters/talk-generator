@@ -1,17 +1,14 @@
 import logging
+from collections.abc import Callable, Collection
 from functools import lru_cache
-from typing import Collection, Union, Set, Callable, Tuple
 
 from talkgenerator.datastructures.image_data import ImageData
-
 
 logger = logging.getLogger("talkgenerator")
 
 
-class PeakedWeight(object):
-    def __init__(
-        self, peak_values: Tuple[int, ...], weight: float, other_weight: float
-    ):
+class PeakedWeight:
+    def __init__(self, peak_values: tuple[int, ...], weight: float, other_weight: float):
         self._peak_values = peak_values
         self._weight = weight
         self._other_weight = other_weight
@@ -28,7 +25,7 @@ def fix_indices(values: Collection[int], num_slides: int):
     return [value % num_slides if value < 0 else value for value in values]
 
 
-class ConstantWeightFunction(object):
+class ConstantWeightFunction:
     def __init__(self, weight):
         self._weight = weight
 
@@ -40,7 +37,7 @@ class ConstantWeightFunction(object):
 
 
 class SlideGeneratorData:
-    """ Responsible for providing the slide generator and other attributes, such as its name and weight"""
+    """Responsible for providing the slide generator and other attributes, such as its name and weight"""
 
     def __init__(
         self,
@@ -62,24 +59,24 @@ class SlideGeneratorData:
 
     def generate(self, presentation_context, used_elements):
         """Generate a slide for a given presentation using the given seed."""
-        logger.debug('slide_generator_data.generate()')
-        logger.debug('presentation_context: {}'.format(presentation_context))
-        logger.debug('used_elements: {}'.format(used_elements))
-        logger.debug('self._allowed_repeated_elements: {}'.format(self._allowed_repeated_elements))
+        logger.debug("slide_generator_data.generate()")
+        logger.debug("presentation_context: {}".format(presentation_context))
+        logger.debug("used_elements: {}".format(used_elements))
+        logger.debug("self._allowed_repeated_elements: {}".format(self._allowed_repeated_elements))
 
         # Try a certain amount of times
         for i in range(self._retries):
-            logger.debug('retry: {}'.format(i))
-            logger.debug('self._generator: {}'.format(self._generator))
+            logger.debug("retry: {}".format(i))
+            logger.debug("self._generator: {}".format(self._generator))
             slide_results = self._generator.generate_slide(
                 presentation_context, (used_elements, self._allowed_repeated_elements)
             )
-            logger.debug('slide_results: {}'.format(slide_results))
+            logger.debug("slide_results: {}".format(slide_results))
 
             if slide_results:
                 (slide, generated_elements) = slide_results
-                logger.debug('slide: {}'.format(slide))
-                logger.debug('generated_elements: {}'.format(generated_elements))
+                logger.debug("slide: {}".format(slide))
+                logger.debug("generated_elements: {}".format(generated_elements))
 
                 # If the generated content is nothing, don't try again
                 if _has_not_generated_something(generated_elements):
@@ -113,7 +110,7 @@ class SlideGeneratorData:
     def get_allowed_repeated_elements(self) -> int:
         return self._allowed_repeated_elements
 
-    def get_tags(self) -> Set[str]:
+    def get_tags(self) -> set[str]:
         return self._tags
 
     def __str__(self):
@@ -131,7 +128,7 @@ def _has_not_generated_something(generated_elements) -> bool:
     return len(generated_elements) == 0
 
 
-def _filter_generated_elements(generated_elements: Set[Union[str, bool, None]]):
+def _filter_generated_elements(generated_elements: set[str | bool | None]):
     if "" in generated_elements:
         generated_elements.remove("")
     if None in generated_elements:

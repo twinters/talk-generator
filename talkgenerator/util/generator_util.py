@@ -2,9 +2,10 @@
 Light, commonly used, non-specific generators that are helpful shortcuts for creating
 certain types of (content) generators
 """
-import random
+
 import logging
-from typing import Callable, Optional, Dict, Union, Tuple
+import random
+from collections.abc import Callable
 
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.util import image_util, random_util
@@ -13,21 +14,21 @@ logger = logging.getLogger("talkgenerator")
 
 
 def fullname(o):
-  # o.__module__ + "." + o.__class__.__qualname__ is an example in
-  # this context of H.L. Mencken's "neat, plausible, and wrong."
-  # Python makes no guarantees as to whether the __module__ special
-  # attribute is defined, so we take a more circumspect approach.
-  # Alas, the module name is explicitly excluded from __qualname__
-  # in Python 3.
+    # o.__module__ + "." + o.__class__.__qualname__ is an example in
+    # this context of H.L. Mencken's "neat, plausible, and wrong."
+    # Python makes no guarantees as to whether the __module__ special
+    # attribute is defined, so we take a more circumspect approach.
+    # Alas, the module name is explicitly excluded from __qualname__
+    # in Python 3.
 
-  module = o.__class__.__module__
-  if module is None or module == str.__class__.__module__:
-    return o.__class__.__name__  # Avoid reporting __builtin__
-  else:
-    return module + '.' + o.__class__.__name__
+    module = o.__class__.__module__
+    if module is None or module == str.__class__.__module__:
+        return o.__class__.__name__  # Avoid reporting __builtin__
+    else:
+        return module + "." + o.__class__.__name__
 
 
-class Generator(object):
+class Generator:
     def __call__(self, seed: str):
         raise NotImplementedError(str(self) + " has not provided an implementation for the generator")
 
@@ -53,11 +54,11 @@ class PrefixedPresentationContextGenerator(Generator):
 
 
 class CombinedGenerator(Generator):
-    def __init__(self, *weighted_generators: Tuple[Union[int, float], Generator]):
+    def __init__(self, *weighted_generators: tuple[int | float, Generator]):
         self._weighted_generators = weighted_generators
 
-    def __call__(self, seed: Union[str, Dict[str, str]]):
-        logger.debug('Calling generator_util.CombinedGenerator')
+    def __call__(self, seed: str | dict[str, str]):
+        logger.debug("Calling generator_util.CombinedGenerator")
         current_weighted_generators = list(self._weighted_generators)
         logger.debug("current_weighted_generators: {}".format(current_weighted_generators))
         while len(current_weighted_generators) > 0:
@@ -91,20 +92,18 @@ class MappedGenerator(Generator):
 
 
 class TupledGenerator(Generator):
-    """ Creates a tuple generator that generates every tuple value independent from the others"""
+    """Creates a tuple generator that generates every tuple value independent from the others"""
 
     def __init__(self, *generators):
         self._generators = generators
 
     def __call__(self, presentation_context):
         # print("TupledGenerator generator using", presentation_context)
-        return tuple(
-            [generator(presentation_context) for generator in self._generators]
-        )
+        return tuple([generator(presentation_context) for generator in self._generators])
 
 
 class InspiredTupleGenerator(Generator):
-    """ The second generator will get the generator 1 as input, outputting the tuple """
+    """The second generator will get the generator 1 as input, outputting the tuple"""
 
     def __init__(self, generator_1, generator_2):
         self._generator_1 = generator_1
@@ -125,9 +124,9 @@ class SeededGenerator(Generator):
         self._simple_generator = simple_generator
 
     def __call__(self, presentation_context):
-        logger.debug('Calling generator_util.SeededGenerator')
-        logger.debug('presentation_context: {}'.format(presentation_context))
-        logger.debug('self._simple_generator: {}'.format(self._simple_generator))
+        logger.debug("Calling generator_util.SeededGenerator")
+        logger.debug("presentation_context: {}".format(presentation_context))
+        logger.debug("self._simple_generator: {}".format(self._simple_generator))
         return self._simple_generator(presentation_context["seed"])
 
 
@@ -204,7 +203,7 @@ class ExternalImageListGenerator(Generator):
         self._check_image_validness = check_image_validness
         self._weighted = weighted
 
-    def __call__(self, presentation_context) -> Optional[ImageData]:
+    def __call__(self, presentation_context) -> ImageData | None:
         images = self._image_generator(presentation_context)
         if not images:
             return None
@@ -264,13 +263,11 @@ class UnweightedGenerator(Generator):
     def __call__(self, argument):
         weighted_list = self._weighted_list_creator(argument)
         if weighted_list:
-            return random_util.choice_optional(
-                [element[1] for element in weighted_list]
-            )
+            return random_util.choice_optional([element[1] for element in weighted_list])
 
 
 class WalkingGenerator(Generator):
-    """ This type of generator uses its output as input for a next step, taking concepts a few steps away """
+    """This type of generator uses its output as input for a next step, taking concepts a few steps away"""
 
     def __init__(self, inner_generator, steps):
         self._inner_generator = inner_generator
@@ -280,7 +277,7 @@ class WalkingGenerator(Generator):
         history = set()
         history.add(seed)
         current = seed
-        for i in range(self._steps):
+        for _ in range(self._steps):
             generated = self._inner_generator(current)
             if generated:
                 current = generated
@@ -303,12 +300,10 @@ class UnsourcedImageGenerator(ImageGenerator):
 
 
 class RelatedMappingGenerator(Generator):
-    def __init__(
-        self, related_word_generator: Callable[[str], str], generator: Generator
-    ):
+    def __init__(self, related_word_generator: Callable[[str], str], generator: Generator):
         self._related_word_generator = related_word_generator
         self._generator = generator
 
-    def __call__(self, seed: str) -> Optional[str]:
+    def __call__(self, seed: str) -> str | None:
         mapped_seed = self._related_word_generator(seed)
         return self._generator(mapped_seed)

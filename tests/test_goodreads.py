@@ -1,8 +1,8 @@
 import unittest
 
-from talkgenerator.sources import goodreads
-
 import pytest
+
+from talkgenerator.sources import goodreads
 
 pytestmark = pytest.mark.network
 

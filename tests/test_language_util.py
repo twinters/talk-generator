@@ -47,9 +47,7 @@ class LanguageUtilTest(unittest.TestCase):
         #                  language_util.apply_function_to_verb("kitten proof your house", str.upper))
 
     def test_to_present_participle(self):
-        self.assertEqual(
-            "acting like a cat", language_util.to_present_participle("act like a cat")
-        )
+        self.assertEqual("acting like a cat", language_util.to_present_participle("act like a cat"))
         self.assertEqual(
             "quitly acting like a cat",
             language_util.to_present_participle("quitly act like a cat"),
@@ -62,9 +60,7 @@ class LanguageUtilTest(unittest.TestCase):
         )
         self.assertEqual(
             "test if morphed, before comma",
-            language_util.replace_word(
-                "test if changed, before comma", "changed", "morphed"
-            ),
+            language_util.replace_word("test if changed, before comma", "changed", "morphed"),
         )
         self.assertEqual(
             "Success capital",
@@ -72,9 +68,7 @@ class LanguageUtilTest(unittest.TestCase):
         )
         self.assertEqual(
             "Your test is testing if your, is changed",
-            language_util.replace_word(
-                "My test is testing if my, is changed", "my", "your"
-            ),
+            language_util.replace_word("My test is testing if my, is changed", "my", "your"),
         )
         self.assertEqual(
             "Last word is morphed",
@@ -90,12 +84,8 @@ class LanguageUtilTest(unittest.TestCase):
             "the family",
             language_util.get_last_noun_and_article("show your cat to the family"),
         )
-        self.assertEqual(
-            "my cat", language_util.get_last_noun_and_article("What to do with my cat")
-        )
-        self.assertEqual(
-            "your cat", language_util.get_last_noun_and_article("do you like your cat")
-        )
+        self.assertEqual("my cat", language_util.get_last_noun_and_article("What to do with my cat"))
+        self.assertEqual("your cat", language_util.get_last_noun_and_article("do you like your cat"))
 
     def test_replace_pronouns(self):
         self.assertEqual(

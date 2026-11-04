@@ -1,7 +1,8 @@
 import unittest
-from talkgenerator.sources import wikihow
 
 import pytest
+
+from talkgenerator.sources import wikihow
 
 pytestmark = pytest.mark.network
 

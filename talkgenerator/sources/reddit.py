@@ -9,7 +9,6 @@ import html
 import logging
 import threading
 from functools import lru_cache
-from typing import Optional
 from urllib.parse import urlsplit
 
 import praw
@@ -27,7 +26,7 @@ def _has_credentials():
     return not settings.is_source_disabled("REDDIT") and all(settings.reddit_auth().values())
 
 
-def get_reddit() -> Optional[praw.Reddit]:
+def get_reddit() -> praw.Reddit | None:
     """A read-only Reddit client, one per thread (PRAW isn't thread-safe), or None without credentials."""
     if not _has_credentials():
         return None
@@ -80,7 +79,7 @@ def search_images(name, query, sort="relevance", limit=100):
         return None
 
 
-def get_image_url(submission) -> Optional[str]:
+def get_image_url(submission) -> str | None:
     """The URL of the image a post shows, if it shows one."""
     # Read the raw data: PRAW would make an extra request for every missing attribute otherwise
     data = vars(submission)

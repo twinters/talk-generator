@@ -2,7 +2,6 @@ import logging
 from functools import lru_cache
 from io import BytesIO
 from pathlib import Path
-from typing import List
 
 from lxml.etree import XMLSyntaxError
 from pptx import Presentation
@@ -43,12 +42,12 @@ LAYOUT_TITLE_AND_CHART = 16
 
 # CREATION
 def _create_slide(prs, slide_type):
-    """ Creates a new slide in the given presentation using the slide_type template """
+    """Creates a new slide in the given presentation using the slide_type template"""
     return prs.slides.add_slide(prs.slide_layouts[slide_type])
 
 
 def _add_title(slide, title):
-    """ Adds the given title to the slide if the title is present"""
+    """Adds the given title to the slide if the title is present"""
     if title:
         title_object = slide.shapes.title
         title_object.text = title
@@ -145,10 +144,8 @@ def _print_all_placeholders(slide):
         print("%d %s" % (shape.placeholder_format.idx, shape.name))
 
 
-def add_sources_note(slide, _sources: List[str]):
-    return _add_text(
-        slide, SOURCES_PLACEHOLDER, "[Image sources: " + ", ".join(_sources) + "]"
-    )
+def add_sources_note(slide, _sources: list[str]):
+    return _add_text(slide, SOURCES_PLACEHOLDER, "[Image sources: " + ", ".join(_sources) + "]")
 
 
 # FORMAT GENERATORS
@@ -184,18 +181,14 @@ def create_large_quote_slide(prs, title, text, background_image=None):
 
 
 def create_image_slide(prs, title=None, image_url=None, original_image_size=True):
-    """ Creates a slide with an image covering the whole slide"""
+    """Creates a slide with an image covering the whole slide"""
     # TODO debug this: the image can not be set!
-    return _create_single_image_slide(
-        prs, title, image_url, LAYOUT_TITLE_AND_PICTURE, original_image_size
-    )
+    return _create_single_image_slide(prs, title, image_url, LAYOUT_TITLE_AND_PICTURE, original_image_size)
 
 
 def create_full_image_slide(prs, title=None, image_url=None, original_image_size=True):
-    """ Creates a slide with an image covering the whole slide"""
-    return _create_single_image_slide(
-        prs, title, image_url, LAYOUT_FULL_PICTURE, original_image_size
-    )
+    """Creates a slide with an image covering the whole slide"""
+    return _create_single_image_slide(prs, title, image_url, LAYOUT_FULL_PICTURE, original_image_size)
 
 
 def create_two_column_images_slide(

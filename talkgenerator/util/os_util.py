@@ -2,7 +2,6 @@ import logging
 import os
 import sys
 from functools import lru_cache
-from typing import Union
 
 from talkgenerator.datastructures.image_data import ImageData
 
@@ -27,7 +26,7 @@ def read_lines(filename):
 
 
 @lru_cache(maxsize=20)
-def is_image(content: Union[str, ImageData]):
+def is_image(content: str | ImageData):
     if isinstance(content, ImageData):
         return True
     else:

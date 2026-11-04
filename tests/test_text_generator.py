@@ -20,69 +20,49 @@ class TextGeneratorTest(unittest.TestCase):
         )
         self.assertEqual(
             {"test"},
-            text_generator.get_format_variables(
-                "this {test} is testing if {test} only appears once"
-            ),
+            text_generator.get_format_variables("this {test} is testing if {test} only appears once"),
         )
         self.assertEqual(
             set(),
-            text_generator.get_format_variables(
-                "this test only has {} some {} empty names"
-            ),
+            text_generator.get_format_variables("this test only has {} some {} empty names"),
         )
 
     def test_variable_extraction_with_commands(self):
         self.assertEqual(
             {"test", "adjective"},
-            text_generator.get_format_variables(
-                "this {test.title.s} is going {adjective.lower}"
-            ),
+            text_generator.get_format_variables("this {test.title.s} is going {adjective.lower}"),
         )
         self.assertEqual(
             {"test", "one"},
-            text_generator.get_format_variables(
-                "this {test.title} is testing for {one}"
-            ),
+            text_generator.get_format_variables("this {test.title} is testing for {one}"),
         )
         self.assertEqual(
             {"test"},
-            text_generator.get_format_variables(
-                "this {test.title} is testing for {} empty"
-            ),
+            text_generator.get_format_variables("this {test.title} is testing for {} empty"),
         )
 
     def test_not_using_unusable_template(self):
-        """ Tests if the generator is not raising an error when variables are missing to generate, and only uses other
-        generator """
+        """Tests if the generator is not raising an error when variables are missing to generate, and only uses other
+        generator"""
         possible_templates = ["This is {adjective}", "This is {noun}"]
-        templated_text_generator = text_generator.TemplatedTextGenerator(
-            templates_list=possible_templates
-        )
+        templated_text_generator = text_generator.TemplatedTextGenerator(templates_list=possible_templates)
         for _ in range(100):
             self.assertEqual(
                 "This is possible",
                 templated_text_generator.generate({"adjective": "possible"}),
             )
         for _ in range(100):
-            self.assertEqual(
-                "This is a test", templated_text_generator.generate({"noun": "a test"})
-            )
+            self.assertEqual("This is a test", templated_text_generator.generate({"noun": "a test"}))
 
     def test_all_possible_outcomes(self):
         possible_templates = ["This is {adjective}", "This is {noun}"]
-        templated_text_generator = text_generator.TemplatedTextGenerator(
-            templates_list=possible_templates
-        )
+        templated_text_generator = text_generator.TemplatedTextGenerator(templates_list=possible_templates)
         expected = {"This is possible", "This is a test"}
         all_generations = set()
         for _ in range(10000):
             if all_generations == expected:
                 break
-            all_generations.add(
-                templated_text_generator.generate(
-                    {"adjective": "possible", "noun": "a test"}
-                )
-            )
+            all_generations.add(templated_text_generator.generate({"adjective": "possible", "noun": "a test"}))
 
         self.assertEqual(expected, all_generations)
 
@@ -96,37 +76,29 @@ class TextGeneratorTest(unittest.TestCase):
         )
 
     def test_functions_on_variables(self):
-        template_text_generator = text_generator.TemplatedTextGenerator(
-            templates_list=["this is a {test.title}"]
-        )
+        template_text_generator = text_generator.TemplatedTextGenerator(templates_list=["this is a {test.title}"])
         result = template_text_generator.generate({"test": "something"})
         self.assertEqual("this is a Something", result)
 
     def test_functions_on_multiple_variables(self):
         template_text_generator = text_generator.TemplatedTextGenerator(
-            templates_list=[
-                "this is a {test.title} using multiple {variable.plural.title}"
-            ]
+            templates_list=["this is a {test.title} using multiple {variable.plural.title}"]
         )
-        result = template_text_generator.generate(
-            {"test": "something", "variable": "instance"}
-        )
+        result = template_text_generator.generate({"test": "something", "variable": "instance"})
         self.assertEqual("this is a Something using multiple Instances", result)
 
     def test_tracery_grammar(self):
         tracery = text_generator.TraceryTextGenerator("data/text-templates/name.json")
-        for i in range(5):
+        for _ in range(5):
             self.assertTrue(tracery.generate())
 
     def test_ted_title(self):
-        tracery = text_generator.TraceryTextGenerator(
-            "data/text-templates/talk_title.json", "ted_title"
-        )
+        tracery = text_generator.TraceryTextGenerator("data/text-templates/talk_title.json", "ted_title")
         words = list(os_util.read_lines("data/eval/common_words.txt"))
         random.shuffle(words)
         words = words[0:10]
         generations = set()
-        for i in range(100):
+        for _ in range(100):
             topic = random.choice(words)
             generated = tracery.generate({"seed": topic})
             generations.add(generated)

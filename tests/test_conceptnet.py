@@ -1,4 +1,3 @@
-# coding=utf-8
 """Live tests of related-concept lookups (ConceptNet, or its Datamuse fallback while ConceptNet is down)."""
 
 import unittest

@@ -33,7 +33,9 @@ def conceptnet_down(monkeypatch):
     monkeypatch.setattr(http_util, "get", fake_get)
     monkeypatch.setattr(conceptnet, "_cooldown", http_util.Cooldown("ConceptNet API (test)"))
     conceptnet._fetch_edges.cache_clear()
-    monkeypatch.setattr(datamuse, "_query", lambda relation, word, max_results: _DATAMUSE_ANSWERS.get((relation, word), ()))
+    monkeypatch.setattr(
+        datamuse, "_query", lambda relation, word, max_results: _DATAMUSE_ANSWERS.get((relation, word), ())
+    )
     return calls
 
 

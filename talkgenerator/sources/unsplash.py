@@ -7,7 +7,6 @@ and a download is registered when a photo ends up on a slide. New Unsplash apps 
 """
 
 import logging
-from typing import List, Optional
 
 from talkgenerator import settings
 from talkgenerator.datastructures.image_data import ImageData
@@ -21,7 +20,7 @@ _IMAGE_WIDTH = 1920
 _cooldown = http_util.Cooldown("Unsplash")
 
 
-def _access_key() -> Optional[str]:
+def _access_key() -> str | None:
     if settings.is_source_disabled("UNSPLASH"):
         return None
     return settings.unsplash_auth()["unsplash_access_key"] or None
@@ -59,7 +58,7 @@ def _track_download(download_location):
     _api_get(download_location.replace(API_URL, ""))
 
 
-def _map_to_image_data(photo) -> Optional[ImageData]:
+def _map_to_image_data(photo) -> ImageData | None:
     urls = photo.get("urls") or {}
     image_url = urls.get("raw")
     if image_url:
@@ -75,7 +74,7 @@ def _map_to_image_data(photo) -> Optional[ImageData]:
     return ImageData(image_url=image_url, source=source, on_use=on_use)
 
 
-def random(_=None) -> Optional[ImageData]:
+def random(_=None) -> ImageData | None:
     photo = _api_get("/photos/random")
     if not photo:
         logger.info("Couldn't get a random Unsplash image")
@@ -83,12 +82,12 @@ def random(_=None) -> Optional[ImageData]:
     return _map_to_image_data(photo)
 
 
-def random_as_list(_=None) -> List[ImageData]:
+def random_as_list(_=None) -> list[ImageData]:
     result = random(_)
     return [result] if result else []
 
 
-def search_photos(query) -> List[ImageData]:
+def search_photos(query) -> list[ImageData]:
     if not query:
         return random_as_list()
     if not _access_key():

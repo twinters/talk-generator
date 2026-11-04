@@ -4,7 +4,6 @@ Talks directly to the REST API (the old `pexels-api` wrapper is unmaintained).
 """
 
 import logging
-from typing import List
 
 from talkgenerator import settings
 from talkgenerator.datastructures.image_data import ImageData
@@ -56,7 +55,7 @@ def _map_to_image_data(photo):
     return ImageData(image_url=image_url, source=source)
 
 
-def search_photos(query) -> List[ImageData]:
+def search_photos(query) -> list[ImageData]:
     if not query:
         return []
     results = _search_pexels(query)

@@ -1,6 +1,5 @@
 import logging
-from abc import ABCMeta
-from abc import abstractmethod
+from abc import ABCMeta, abstractmethod
 
 from talkgenerator.slide import slides
 from talkgenerator.util import generator_util
@@ -9,17 +8,17 @@ logger = logging.getLogger("talkgenerator")
 
 
 class SlideGenerator(metaclass=ABCMeta):
-    """ Generating Slide objects using a list of generators """
+    """Generating Slide objects using a list of generators"""
 
     def __init__(self, slide_content_generator):
-        """ The given content_providers is a function that when called,
+        """The given content_providers is a function that when called,
         generates all of the arguments for the slide creator"""
         self._slide_content_generator = slide_content_generator
 
     @property
     @abstractmethod
     def slide_type(self):
-        """ The function converting it to a Slide object """
+        """The function converting it to a Slide object"""
         pass
 
     @classmethod
@@ -27,12 +26,12 @@ class SlideGenerator(metaclass=ABCMeta):
         return cls(CombinedSlideGenerator(*generators))
 
     def generate_slide(self, presentation_context, used) -> (slides.Slide, list):
-        """ Generates the slide using the given generators."""
-        logger.debug('slide_generator_types.generate_slide')
-        logger.debug('presentation_context: {}'.format(presentation_context))
-        logger.debug('self._slide_content_generator: {}'.format(self._slide_content_generator))
+        """Generates the slide using the given generators."""
+        logger.debug("slide_generator_types.generate_slide")
+        logger.debug("presentation_context: {}".format(presentation_context))
+        logger.debug("self._slide_content_generator: {}".format(self._slide_content_generator))
         generated = self._slide_content_generator(presentation_context)
-        logger.debug('generated: {}'.format(generated))
+        logger.debug("generated: {}".format(generated))
         if is_different_enough(generated, used):
             return self.slide_type(*generated), generated
 
@@ -56,11 +55,7 @@ class LarqeQuoteSlideGenerator(SlideGenerator):
 
     @classmethod
     def of(cls, title_generator, text_generator, background_image_generator):
-        return cls(
-            CombinedSlideGenerator(
-                title_generator, text_generator, background_image_generator
-            )
-        )
+        return cls(CombinedSlideGenerator(title_generator, text_generator, background_image_generator))
 
     @property
     def slide_type(self):
@@ -83,16 +78,14 @@ class ImageSlideGenerator(SlideGenerator):
 
     @classmethod
     def of_tupled_captioned_image(cls, tuple_1_generator, original_image_size=True):
-        return cls(
-            TupledCaptionedImageGenerator(tuple_1_generator, original_image_size)
-        )
+        return cls(TupledCaptionedImageGenerator(tuple_1_generator, original_image_size))
 
     @property
     def slide_type(self):
         return slides.ImageSlide
 
 
-class TupledCaptionedImageGenerator(object):
+class TupledCaptionedImageGenerator:
     def __init__(self, tuple_1_generator, original_image_size=True):
         self._tuple_1_generator = tuple_1_generator
         self._original_image_size = original_image_size
@@ -228,7 +221,7 @@ class TwoImagesAndTupledCaptions(SlideGenerator):
         original_image_size=True,
     ):
         super().__init__(self)
-        logger.debug('initializing TwoImagesAndTupledCaptions')
+        logger.debug("initializing TwoImagesAndTupledCaptions")
         self._title_generator = title_generator
         self._captions_generator = captions_generator
         self._image_1_generator = image_1_generator
@@ -236,26 +229,26 @@ class TwoImagesAndTupledCaptions(SlideGenerator):
         self._original_image_size = original_image_size
 
     def __call__(self, presentation_context):
-        logger.debug('Calling TwoImagesAndTupledCaptions')
-        logger.debug('**********************************')
-        logger.debug('presentation_context: {}'.format(presentation_context))
-        logger.debug('captions_generator: {}'.format(self._captions_generator))
-        logger.debug('original_image_size: {}'.format(self._original_image_size))
+        logger.debug("Calling TwoImagesAndTupledCaptions")
+        logger.debug("**********************************")
+        logger.debug("presentation_context: {}".format(presentation_context))
+        logger.debug("captions_generator: {}".format(self._captions_generator))
+        logger.debug("original_image_size: {}".format(self._original_image_size))
 
         generated_tuple = self._captions_generator(presentation_context)
-        logger.debug('generated_tuple: {}'.format(generated_tuple))
+        logger.debug("generated_tuple: {}".format(generated_tuple))
 
-        logger.debug('title_generator: {}'.format(self._title_generator))
+        logger.debug("title_generator: {}".format(self._title_generator))
         _title = self._title_generator(presentation_context)
-        logger.debug('_title: {}'.format(_title))
+        logger.debug("_title: {}".format(_title))
 
-        logger.debug('image_1_generator: {}'.format(self._image_1_generator))
+        logger.debug("image_1_generator: {}".format(self._image_1_generator))
         _image1 = self._image_1_generator(presentation_context)
-        logger.debug('_image1: {}'.format(_image1))
+        logger.debug("_image1: {}".format(_image1))
 
-        logger.debug('image_2_generator: {}'.format(self._image_2_generator))
+        logger.debug("image_2_generator: {}".format(self._image_2_generator))
         _image2 = self._image_2_generator(presentation_context)
-        logger.debug('_image2: {}'.format(_image2))
+        logger.debug("_image2: {}".format(_image2))
 
         return (
             _title,
@@ -446,7 +439,7 @@ class ChartSlideGenerator(SlideGenerator):
 # HELPERS
 
 
-class CombinedSlideGenerator(object):
+class CombinedSlideGenerator:
     def __init__(self, *generators):
         # print("CombinedGenerator:", self, generators)
         self._generators = generators
@@ -461,14 +454,10 @@ class CombinedSlideGenerator(object):
 
 def is_different_enough(generated, used):
     (used_elements, allowed_repeated_elements) = used
-    return is_different_enough_for_allowed_repeated(
-        generated, used_elements, allowed_repeated_elements
-    )
+    return is_different_enough_for_allowed_repeated(generated, used_elements, allowed_repeated_elements)
 
 
-def is_different_enough_for_allowed_repeated(
-    generated, used_elements, allowed_repeated_elements
-):
+def is_different_enough_for_allowed_repeated(generated, used_elements, allowed_repeated_elements):
     if generated:
         if not used_elements:
             return True

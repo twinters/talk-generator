@@ -34,8 +34,9 @@ def run_time_test(start_idx, end_idx):
         timing = end - start
         clock_timing = clock_end - clock_start
         print(
-            "It took {} seconds to generate the presentation"
-            + ", and {} seconds system-wide ".format(str(timing), str(clock_timing))
+            ("It took {} seconds to generate the presentation" + ", and {} seconds system-wide").format(
+                str(timing), str(clock_timing)
+            )
         )
         result_file.write(topic + ", " + str(timing) + ", " + str(clock_timing) + "\n")
         result_file.flush()

@@ -1,18 +1,17 @@
 import argparse
+import logging
 import os
 import pathlib
 import random
 import subprocess
 import sys
-import logging
-from typing import List, Union, Tuple, Optional
 
 from pptx import Presentation
 
-from talkgenerator.slide.slide_deck import SlideDeck
+from talkgenerator import runtime_checker
 from talkgenerator.schema.content_generators import full_name_generator
 from talkgenerator.schema.presentation_schema_types import get_schema
-from talkgenerator import runtime_checker
+from talkgenerator.slide.slide_deck import SlideDeck
 from talkgenerator.sources import word_frequency
 from talkgenerator.util import os_util
 
@@ -23,7 +22,7 @@ MAX_PRESENTATION_SAVE_TRIES = 100
 logger = logging.getLogger("talkgenerator")
 
 
-def generate_presentation_using_cli_arguments(args) -> Tuple[Presentation, SlideDeck, str]:
+def generate_presentation_using_cli_arguments(args) -> tuple[Presentation, SlideDeck, str]:
     """Make a talk with the given topic."""
     if getattr(args, "print_logs", False):
         os_util.show_logs(logger, logging.DEBUG if getattr(args, "verbose", False) else logging.INFO)
@@ -52,7 +51,7 @@ def generate_presentation_using_cli_arguments(args) -> Tuple[Presentation, Slide
 def generate_presentation(
     schema: str,
     slides: int,
-    topic: Union[str, List[str]] = None,
+    topic: str | list[str] = None,
     title: str = None,
     presenter: str = None,
     parallel: bool = True,
@@ -61,18 +60,18 @@ def generate_presentation(
     output_folder: str = DEFAULT_OUTPUT_FOLDER,
     open_ppt: bool = False,
     print_logs=False,
-) -> Tuple[Presentation, SlideDeck, str]:
+) -> tuple[Presentation, SlideDeck, str]:
     if print_logs:
         os_util.show_logs(logger)
-    logger.info('**************************')
-    logger.info('Generating presentation...')
+    logger.info("**************************")
+    logger.info("Generating presentation...")
 
     if int_seed is not None:
         random.seed(int_seed)
 
     # Retrieve the schema to generate the presentation with
     presentation_schema = get_schema(schema)
-    logger.info('Presentation schema: {}'.format(presentation_schema))
+    logger.info("Presentation schema: {}".format(presentation_schema))
 
     # Generate random presenter name if no presenter name given
     if not presenter:
@@ -87,13 +86,13 @@ def generate_presentation(
     else:
         topics = [topic.strip() for topic in topic.split(",")]
 
-    logger.info('Presentation topics: {}'.format(topics))
-    logger.info('Presentation num_slides: {}'.format(slides))
-    logger.info('Presentation presenter: {}'.format(presenter))
-    logger.info('Presentation title: {}'.format(title))
-    logger.info('Presentation parallel: {}'.format(parallel))
-    logger.info('Presentation int_seed: {}'.format(int_seed))
-    logger.info('Presentation save_ppt: {}'.format(save_ppt))
+    logger.info("Presentation topics: {}".format(topics))
+    logger.info("Presentation num_slides: {}".format(slides))
+    logger.info("Presentation presenter: {}".format(presenter))
+    logger.info("Presentation title: {}".format(title))
+    logger.info("Presentation parallel: {}".format(parallel))
+    logger.info("Presentation int_seed: {}".format(int_seed))
+    logger.info("Presentation save_ppt: {}".format(save_ppt))
 
     # Generate the presentation object
     presentation, slide_deck = presentation_schema.generate_presentation(
@@ -106,23 +105,19 @@ def generate_presentation(
         save_ppt=save_ppt,
     )
 
-    logger.info('**************************')
-    logger.info('Presentation generated: {}'.format(presentation))
-    logger.info('Slide deck generated: {}'.format(slide_deck))
+    logger.info("**************************")
+    logger.info("Presentation generated: {}".format(presentation))
+    logger.info("Slide deck generated: {}".format(slide_deck))
 
     cleaned_topics = ",".join(topics).replace(" ", "").replace(",", "_")
     file_name = "".join(e for e in cleaned_topics if e.isalnum() or e == "_")
 
-    logger.info(
-        "Slide deck structured data: {}".format(slide_deck.get_structured_data())
-    )
+    logger.info("Slide deck structured data: {}".format(slide_deck.get_structured_data()))
 
     # Save presentation
     presentation_file = None
     if save_ppt:
-        presentation_file = save_presentation_to_pptx(
-            output_folder, file_name, presentation
-        )
+        presentation_file = save_presentation_to_pptx(output_folder, file_name, presentation)
 
         # Open the presentation
         if open_ppt and presentation_file is not None:
@@ -132,7 +127,7 @@ def generate_presentation(
     return presentation, slide_deck, presentation_file
 
 
-def save_presentation_to_pptx(output_folder: str, file_name: str, prs, index=0) -> Optional[str]:
+def save_presentation_to_pptx(output_folder: str, file_name: str, prs, index=0) -> str | None:
     """Save the talk."""
     if index > MAX_PRESENTATION_SAVE_TRIES:
         return None
@@ -212,10 +207,7 @@ def get_argument_parser():
         "--parallel",
         default=True,
         type=str2bool,
-        help=(
-            "Generated powerpoint will generate in parallel "
-            + "faster but drops some conditions)"
-        ),
+        help=("Generated powerpoint will generate in parallel " + "faster but drops some conditions)"),
     )
     parser.add_argument(
         "--print_logs",

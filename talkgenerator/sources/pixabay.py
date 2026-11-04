@@ -1,7 +1,6 @@
 """Photos from Pixabay (https://pixabay.com/api/docs/). Needs PIXABAY_KEY."""
 
 import logging
-from typing import List
 
 from talkgenerator import settings
 from talkgenerator.datastructures.image_data import ImageData
@@ -29,7 +28,7 @@ def search_vertical(query):
     return search_photos(query, orientation="vertical")
 
 
-def search_photos(query, orientation="all") -> List[ImageData]:
+def search_photos(query, orientation="all") -> list[ImageData]:
     api_key = get_pixabay_session()
     if not api_key or not query or _cooldown.active:
         return []

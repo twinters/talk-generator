@@ -1,5 +1,5 @@
 import logging
-from typing import Callable, Optional
+from collections.abc import Callable
 
 logger = logging.getLogger("talkgenerator")
 
@@ -8,8 +8,8 @@ class ImageData:
     def __init__(
         self,
         image_url: str,
-        source: Optional[str] = None,
-        on_use: Optional[Callable[[], None]] = None,
+        source: str | None = None,
+        on_use: Callable[[], None] | None = None,
     ):
         self._image_url = image_url
         self._source = source
@@ -19,7 +19,7 @@ class ImageData:
     def get_image_url(self) -> str:
         return self._image_url
 
-    def get_source(self) -> Optional[str]:
+    def get_source(self) -> str | None:
         return self._source
 
     def mark_used(self) -> None:

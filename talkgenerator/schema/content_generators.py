@@ -1,10 +1,7 @@
-from typing import Collection, Union
+from collections.abc import Collection
 
-from talkgenerator.sources import pixabay, pexels
 from talkgenerator.schema.content_generator_structures import *
-from talkgenerator.sources import inspirobot
-from talkgenerator.sources import shitpostbot
-from talkgenerator.sources import unsplash
+from talkgenerator.sources import inspirobot, pexels, pixabay, shitpostbot, unsplash
 from talkgenerator.util.generator_util import *
 
 # ===============================
@@ -15,12 +12,8 @@ from talkgenerator.util.generator_util import *
 
 # TITLES
 talk_title_generator = create_tracery_generator("data/text-templates/talk_title.json")
-talk_ted_title_generator = create_tracery_generator(
-    "data/text-templates/talk_title.json", "ted_title"
-)
-talk_subtitle_generator = create_tracery_generator(
-    "data/text-templates/talk_subtitle.json"
-)
+talk_ted_title_generator = create_tracery_generator("data/text-templates/talk_title.json", "ted_title")
+talk_subtitle_generator = create_tracery_generator("data/text-templates/talk_subtitle.json")
 
 
 def talk_title_generator_if_not_generated(presentation_context):
@@ -29,70 +22,38 @@ def talk_title_generator_if_not_generated(presentation_context):
     return talk_title_generator(presentation_context)
 
 
-default_slide_title_generator = create_templated_text_generator(
-    "data/text-templates/default_slide_title.txt"
-)
-deep_abstract_generator = create_templated_text_generator(
-    "data/text-templates/deep_abstract.txt"
-)
+default_slide_title_generator = create_templated_text_generator("data/text-templates/default_slide_title.txt")
+deep_abstract_generator = create_templated_text_generator("data/text-templates/deep_abstract.txt")
 
-default_or_no_title_generator = CombinedGenerator(
-    (1, default_slide_title_generator), (1, NoneGenerator())
-)
+default_or_no_title_generator = CombinedGenerator((1, default_slide_title_generator), (1, NoneGenerator()))
 
-anticipation_title_generator = create_templated_text_generator(
-    "data/text-templates/anticipation_title.txt"
-)
+anticipation_title_generator = create_templated_text_generator("data/text-templates/anticipation_title.txt")
 
-conclusion_title_generator = create_templated_text_generator(
-    "data/text-templates/conclusion_title.txt"
-)
-inspiration_title_generator = create_templated_text_generator(
-    "data/text-templates/inspiration.txt"
-)
-anecdote_title_generator = create_templated_text_generator(
-    "data/text-templates/anecdote_title.txt"
-)
-history_title_generator = create_templated_text_generator(
-    "data/text-templates/history.txt"
-)
-history_person_title_generator = create_templated_text_generator(
-    "data/text-templates/history_person.txt"
-)
+conclusion_title_generator = create_templated_text_generator("data/text-templates/conclusion_title.txt")
+inspiration_title_generator = create_templated_text_generator("data/text-templates/inspiration.txt")
+anecdote_title_generator = create_templated_text_generator("data/text-templates/anecdote_title.txt")
+history_title_generator = create_templated_text_generator("data/text-templates/history.txt")
+history_person_title_generator = create_templated_text_generator("data/text-templates/history_person.txt")
 history_and_history_person_title_generator = CombinedGenerator(
     (4, history_title_generator), (6, history_person_title_generator)
 )
-about_me_title_generator = create_templated_text_generator(
-    "data/text-templates/about_me_title.txt"
-)
+about_me_title_generator = create_templated_text_generator("data/text-templates/about_me_title.txt")
 
 # NAMES
-historical_name_generator = create_tracery_generator(
-    "data/text-templates/name.json", "title_name"
-)
-full_name_generator = create_tracery_generator(
-    "data/text-templates/name.json", "full_name"
-)
+historical_name_generator = create_tracery_generator("data/text-templates/name.json", "title_name")
+full_name_generator = create_tracery_generator("data/text-templates/name.json", "full_name")
 
 # ABOUT ME
 _about_me_facts_grammar = "data/text-templates/about_me_facts.json"
-book_description_generator = create_tracery_generator(
-    _about_me_facts_grammar, "book_description"
-)
-location_description_generator = create_tracery_generator(
-    _about_me_facts_grammar, "location_description"
-)
-hobby_description_generator = create_tracery_generator(
-    _about_me_facts_grammar, "hobby_description"
-)
+book_description_generator = create_tracery_generator(_about_me_facts_grammar, "book_description")
+location_description_generator = create_tracery_generator(_about_me_facts_grammar, "location_description")
+hobby_description_generator = create_tracery_generator(_about_me_facts_grammar, "hobby_description")
 job_generator = create_tracery_generator(_about_me_facts_grammar, "job")
 country_generator = create_tracery_generator(_about_me_facts_grammar, "country")
 
 # PROMPTS & CHALLENGES
 
-anecdote_prompt_generator = create_templated_text_generator(
-    "data/text-templates/anecdote_prompt.txt"
-)
+anecdote_prompt_generator = create_templated_text_generator("data/text-templates/anecdote_prompt.txt")
 
 # QUOTES
 goodreads_quote_generator = GoodReadsQuoteGenerator(250)
@@ -100,25 +61,15 @@ goodreads_short_quote_generator = GoodReadsQuoteGenerator(140)
 
 # DOUBLE CAPTIONS
 
-_double_image_captions_generator = create_templated_text_generator(
-    "data/text-templates/double_captions.txt"
-)
-_triple_image_captions_generator = create_templated_text_generator(
-    "data/text-templates/triple_captions.txt"
-)
+_double_image_captions_generator = create_templated_text_generator("data/text-templates/double_captions.txt")
+_triple_image_captions_generator = create_templated_text_generator("data/text-templates/triple_captions.txt")
 _historic_double_captions_generator = create_templated_text_generator(
     "data/text-templates/historic_double_captions.txt"
 )
 
-double_image_captions_generator = SplitCaptionsGenerator(
-    _double_image_captions_generator
-)
-triple_image_captions_generator = SplitCaptionsGenerator(
-    _triple_image_captions_generator
-)
-historic_double_captions_generator = SplitCaptionsGenerator(
-    _historic_double_captions_generator
-)
+double_image_captions_generator = SplitCaptionsGenerator(_double_image_captions_generator)
+triple_image_captions_generator = SplitCaptionsGenerator(_triple_image_captions_generator)
+historic_double_captions_generator = SplitCaptionsGenerator(_historic_double_captions_generator)
 
 # Conclusions
 _conclusions_tuple_grammar = "data/text-templates/conclusion_tuple.json"
@@ -137,9 +88,7 @@ inspirobot_image_generator = inspirobot.get_random_inspirobot_image
 
 # GIFS
 
-reddit_gif_generator = create_reddit_image_generator(
-    "gifs", "gif", "gifextra", "nonononoYES"
-)
+reddit_gif_generator = create_reddit_image_generator("gifs", "gif", "gifextra", "nonononoYES")
 
 combined_gif_generator = CombinedGenerator((1, reddit_gif_generator))
 
@@ -182,11 +131,7 @@ neutral_reddit_image_generator = create_reddit_image_generator(
 )
 
 shitpostbot_image_generator = ExternalImageListGenerator(
-    SeededGenerator(
-        BackupGenerator(
-            shitpostbot.search_images_rated, shitpostbot.get_random_images_rated
-        )
-    ),
+    SeededGenerator(BackupGenerator(shitpostbot.search_images_rated, shitpostbot.get_random_images_rated)),
     weighted=True,
 )
 
@@ -205,22 +150,16 @@ weird_punchline_image_generator = CombinedGenerator(
 
 
 # UNSPLASH
-generate_unsplash_image_from_word = ExternalImageListGenerator(
-    unsplash.search_photos, check_image_validness=False
-)
+generate_unsplash_image_from_word = ExternalImageListGenerator(unsplash.search_photos, check_image_validness=False)
 generate_random_unsplash_image_from_word = ExternalImageListGenerator(
     unsplash.random_as_list, check_image_validness=False
 )
 generate_unsplash_image = SeededGenerator(generate_unsplash_image_from_word)
-generate_random_unsplash_image = SeededGenerator(
-    generate_random_unsplash_image_from_word
-)
+generate_random_unsplash_image = SeededGenerator(generate_random_unsplash_image_from_word)
 
 # PIXABAY
 generate_pixabay_image_from_word = ExternalImageListGenerator(pixabay.search_photos)
-generate_horizontal_pixabay_image_from_word = ExternalImageListGenerator(
-    pixabay.search_horizontal
-)
+generate_horizontal_pixabay_image_from_word = ExternalImageListGenerator(pixabay.search_horizontal)
 generate_pixabay_image = SeededGenerator(generate_pixabay_image_from_word)
 # PEXELS
 
@@ -248,30 +187,22 @@ generate_horizontal_pixabay_image = CombinedGenerator(
     (0.01, copyright_free_generator),
 )
 
-copyright_free_related_generator_from_word = ConceptNetMapper(
-    copyright_free_generator_from_word
-)
-copyright_free_related_generator = SeededGenerator(
-    copyright_free_related_generator_from_word
-)
+copyright_free_related_generator_from_word = ConceptNetMapper(copyright_free_generator_from_word)
+copyright_free_related_generator = SeededGenerator(copyright_free_related_generator_from_word)
 
 
-def copyright_free_prefixed_generator(prefixes: Union[str, Collection[str]]):
+def copyright_free_prefixed_generator(prefixes: str | Collection[str]):
     return SeededGenerator(copyright_free_prefixed_generator_from_word(prefixes))
 
 
-def copyright_free_prefixed_generator_from_word(prefixes: Union[str, Collection[str]]):
+def copyright_free_prefixed_generator_from_word(prefixes: str | Collection[str]):
     if isinstance(prefixes, str):
         return PrefixedGenerator(prefixes, copyright_free_generator_from_word)
-    generators = [
-        (1, PrefixedGenerator(p, copyright_free_generator_from_word)) for p in prefixes
-    ]
+    generators = [(1, PrefixedGenerator(p, copyright_free_generator_from_word)) for p in prefixes]
     return CombinedGenerator(*generators)
 
 
-weird_copyright_free_generator = copyright_free_prefixed_generator(
-    ["weird", "humor", "funny"]
-)
+weird_copyright_free_generator = copyright_free_prefixed_generator(["weird", "humor", "funny"])
 normal_or_weird_copyright_free_generator = CombinedGenerator(
     (1, copyright_free_generator), (1, weird_copyright_free_generator)
 )
@@ -279,7 +210,8 @@ normal_or_weird_copyright_free_generator = CombinedGenerator(
 # NEUTRAL
 
 neutral_image_generator = CombinedGenerator(
-    (1000, copyright_free_generator), (300, neutral_reddit_image_generator),
+    (1000, copyright_free_generator),
+    (300, neutral_reddit_image_generator),
 )
 
 neutral_image_generator_from_word = CombinedGenerator(
@@ -287,19 +219,13 @@ neutral_image_generator_from_word = CombinedGenerator(
     (300, UnseededGenerator(neutral_reddit_image_generator)),
 )
 
-neutral_or_weird_image_generator = CombinedGenerator(
-    (1, neutral_image_generator), (1, weird_punchline_image_generator)
-)
+neutral_or_weird_image_generator = CombinedGenerator((1, neutral_image_generator), (1, weird_punchline_image_generator))
 
 # OLD/VINTAGE
 vintage_person_generator = create_reddit_image_generator("OldSchoolCool")
-vintage_picture_generator = create_reddit_image_generator(
-    "TheWayWeWere", "100yearsago", "ColorizedHistory"
-)
+vintage_picture_generator = create_reddit_image_generator("TheWayWeWere", "100yearsago", "ColorizedHistory")
 
-reddit_book_cover_generator = create_reddit_image_generator(
-    "BookCovers", "fakebookcovers", "coverdesign", "bookdesign"
-)
+reddit_book_cover_generator = create_reddit_image_generator("BookCovers", "fakebookcovers", "coverdesign", "bookdesign")
 
 reddit_location_image_generator = create_reddit_image_generator(
     "evilbuildings", "itookapicture", "SkyPorn", "EarthPorn"
@@ -307,20 +233,12 @@ reddit_location_image_generator = create_reddit_image_generator(
 
 # TUPLED ABOUT ME
 
-about_me_hobby_tuple_generator = TupledGenerator(
-    hobby_description_generator, weird_punchline_image_generator
-)
-about_me_book_tuple_generator = TupledGenerator(
-    book_description_generator, reddit_book_cover_generator
-)
-about_me_location_tuple_generator = TupledGenerator(
-    location_description_generator, reddit_location_image_generator
-)
+about_me_hobby_tuple_generator = TupledGenerator(hobby_description_generator, weird_punchline_image_generator)
+about_me_book_tuple_generator = TupledGenerator(book_description_generator, reddit_book_cover_generator)
+about_me_location_tuple_generator = TupledGenerator(location_description_generator, reddit_location_image_generator)
 
 about_me_job_tuple_generator = MappedGenerator(
-    InspiredTupleGenerator(
-        MappedGenerator(job_generator, str.title), neutral_image_generator_from_word
-    ),
+    InspiredTupleGenerator(MappedGenerator(job_generator, str.title), neutral_image_generator_from_word),
     JobPrefixApplier(),
 )
 
@@ -335,6 +253,4 @@ about_me_location_or_country_tuple_generator = CombinedGenerator(
 
 # Charts
 
-reddit_chart_generator = create_reddit_image_generator(
-    "dataisbeautiful", "funnycharts", "charts"
-)
+reddit_chart_generator = create_reddit_image_generator("dataisbeautiful", "funnycharts", "charts")

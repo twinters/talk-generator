@@ -1,8 +1,8 @@
 import unittest
 
-from talkgenerator.sources.inspirobot import get_random_inspirobot_image
-
 import pytest
+
+from talkgenerator.sources.inspirobot import get_random_inspirobot_image
 
 pytestmark = pytest.mark.network
 
@@ -14,5 +14,5 @@ class InspirobotTest(unittest.TestCase):
         print(image)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -1,7 +1,8 @@
 import unittest
-from talkgenerator.sources import shitpostbot
 
 import pytest
+
+from talkgenerator.sources import shitpostbot
 
 pytestmark = pytest.mark.network
 

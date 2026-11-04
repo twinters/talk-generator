@@ -1,11 +1,8 @@
 import math
 import random
 
-from pptx.chart.data import ChartData
-from pptx.chart.data import XyChartData
-from pptx.enum.chart import XL_CHART_TYPE
-from pptx.enum.chart import XL_LABEL_POSITION
-from pptx.enum.chart import XL_TICK_MARK
+from pptx.chart.data import ChartData, XyChartData
+from pptx.enum.chart import XL_CHART_TYPE, XL_LABEL_POSITION, XL_TICK_MARK
 
 from talkgenerator.sources import conceptnet, text_generator
 from talkgenerator.util import generator_util
@@ -35,16 +32,11 @@ def add_noise_to_points(max_noise_ratio, datapoints):
 
 
 def add_noise_to_point(max_noise_ratio, datapoint):
-    return max(
-        0, datapoint + (datapoint * random.uniform(-max_noise_ratio, max_noise_ratio))
-    )
+    return max(0, datapoint + (datapoint * random.uniform(-max_noise_ratio, max_noise_ratio)))
 
 
 def add_gaussian_noise_to_multidim_points(max_noise_ratio, datapoints):
-    return [
-        _add_gaussian_noise_to_multidim_point(max_noise_ratio, point)
-        for point in datapoints
-    ]
+    return [_add_gaussian_noise_to_multidim_point(max_noise_ratio, point) for point in datapoints]
 
 
 def _add_gaussian_noise_to_multidim_point(max_noise_ratio, datapoint):
@@ -57,7 +49,7 @@ def normalise_data(datapoints):
 
 
 def is_too_similar_for_axes(word1, word2):
-    """ Checks if the words contain each other """
+    """Checks if the words contain each other"""
     return word1 in word2 or word2 in word1
 
 
@@ -66,10 +58,10 @@ def create_interesting_curve_function():
 
     # random small integer
     a = random.uniform(-10, 10)
-    b = random.uniform(0.001, 10)
+    _b = random.uniform(0.001, 10)
 
     # random relative
-    r = random.uniform(0, 1)
+    _r = random.uniform(0, 1)
 
     interesting_functions = [
         lambda x: a * x,
@@ -98,9 +90,7 @@ def create_interesting_curve_function():
 # DATA SET CREATION
 
 
-def create_equal_data_with_outlier_end(
-    size, noise_factor, normal_min, normal_max, outlier_min_size, outlier_max_size
-):
+def create_equal_data_with_outlier_end(size, noise_factor, normal_min, normal_max, outlier_min_size, outlier_max_size):
     # Create data with same number between normal_min and normal_max everywhere
     datapoints = [random.uniform(normal_min, normal_max) for _ in range(0, size)]
 
@@ -135,9 +125,7 @@ def _set_pie_label_positions(chart, series, chart_data, label_position):
     for i in range(len(chart_data.categories)):
         point = series.points[i]
         value = series.values[i]
-        point.data_label.text_frame.text = "{} ({:.0%})".format(
-            chart_data.categories[i].label, value
-        )
+        point.data_label.text_frame.text = "{} ({:.0%})".format(chart_data.categories[i].label, value)
         if label_position:
             point.data_label.position = label_position
 
@@ -165,9 +153,7 @@ def set_pie_properties(chart, chart_data):
         series = chart.series[0]
         # Check if there are small values that can't be contained on the pie piece
         label_position = (
-            XL_LABEL_POSITION.OUTSIDE_END
-            if any(t < 0.10 for t in series.values)
-            else XL_LABEL_POSITION.CENTER
+            XL_LABEL_POSITION.OUTSIDE_END if any(t < 0.10 for t in series.values) else XL_LABEL_POSITION.CENTER
         )
 
         # set labels to contain category and value
@@ -184,8 +170,6 @@ def set_doughnut_properties(chart, chart_data):
 def create_set_scatter_properties(x_label, y_label):
     def set_scatter_properties(chart, chart_data):
         chart.has_legend = False
-        x_axis = chart.category_axis
-        y_axis = chart.value_axis
 
         # TODO: Fix it so that this actually has a title
         # x_axis.has_title = True
@@ -210,9 +194,7 @@ def generate_yes_no_large_funny_answer_chart_data(presentation_context):
     presentation_context["chart_title"] = title
 
     categories = ["Yes", "No", funny_yes_no_answer_generator(presentation_context)]
-    series_data = normalise_data(
-        create_equal_data_with_outlier_end(len(categories), 0.2, 1, 2.5, 1, 20)
-    )
+    series_data = normalise_data(create_equal_data_with_outlier_end(len(categories), 0.2, 1, 2.5, 1, 20))
 
     chart_data = ChartData()
     chart_data.categories = categories
@@ -220,9 +202,7 @@ def generate_yes_no_large_funny_answer_chart_data(presentation_context):
     return title, chart_data
 
 
-def _generate_conceptnet_data(
-    presentation_context, title_generator, conceptnet_function
-):
+def _generate_conceptnet_data(presentation_context, title_generator, conceptnet_function):
     seed = presentation_context["seed"]
     title = title_generator(presentation_context)
 
@@ -269,9 +249,7 @@ def generate_property_data(presentation_context):
 
 
 def generate_yes_no_pie(presentation_context):
-    title, chart_data = generate_yes_no_large_funny_answer_chart_data(
-        presentation_context
-    )
+    title, chart_data = generate_yes_no_large_funny_answer_chart_data(presentation_context)
     chart_type, chart_modifier = random.choice(_YES_NO_CHART_TYPES)
     return title, chart_type, chart_data, chart_modifier
 
@@ -321,18 +299,14 @@ def generate_correlation_curve(presentation_context):
     serie = chart_data.add_series("Model")
 
     # Generate some Xs, with chance of exponential differences in size between generated x axes
-    xs = generate_random_x(
-        0, 2 ** random.uniform(1, 10), int(2 ** random.uniform(3, 8))
-    )
+    xs = generate_random_x(0, 2 ** random.uniform(1, 10), int(2 ** random.uniform(3, 8)))
 
     # Generate y
     data_points = generate_y(xs, create_interesting_curve_function())
 
     max_x = max(xs)
 
-    data_points = add_gaussian_noise_to_multidim_points(
-        1.5 * random.uniform(0, max_x / 10), data_points
-    )
+    data_points = add_gaussian_noise_to_multidim_points(1.5 * random.uniform(0, max_x / 10), data_points)
 
     # Remove negatives
     data_points = [(abs(datapoint[0]), abs(datapoint[1])) for datapoint in data_points]

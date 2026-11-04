@@ -1,4 +1,5 @@
-""" This module helps out with generating text using templates """
+"""This module helps out with generating text using templates"""
+
 import json
 import random
 import re
@@ -6,12 +7,8 @@ import re
 import tracery
 from tracery.modifiers import base_english
 
-from talkgenerator.sources import conceptnet
-from talkgenerator.sources import wikihow
-from talkgenerator.sources import word_frequency
-from talkgenerator.util import language_util
-from talkgenerator.util import os_util
-from talkgenerator.util import random_util
+from talkgenerator.sources import conceptnet, wikihow, word_frequency
+from talkgenerator.util import language_util, os_util, random_util
 
 known_functions = {
     "title": str.title,
@@ -19,21 +16,15 @@ known_functions = {
     "upper": str.upper,
     "dashes": lambda words: words.replace(" ", "-"),
     "first_letter": lambda words: words[0],
-    "last_letter_is_vowel": lambda word: word
-    if language_util.is_vowel(word[-1])
-    else None,
-    "last_letter_is_consonant": lambda word: word
-    if language_util.is_consonant(word[-1])
-    else None,
+    "last_letter_is_vowel": lambda word: word if language_util.is_vowel(word[-1]) else None,
+    "last_letter_is_consonant": lambda word: word if language_util.is_consonant(word[-1]) else None,
     "a": lambda word: language_util.add_article(word),
     "ing": language_util.to_present_participle,
     "plural": language_util.to_plural,
     "singular": language_util.to_singular,
     # "synonym": generator_util.FromListGenerator(language_util.get_synonyms),
     "2_to_1_pronouns": language_util.second_to_first_pronouns,
-    "wikihow_action": lambda seed: random_util.choice_optional(
-        wikihow.get_related_wikihow_actions(seed)
-    ),
+    "wikihow_action": lambda seed: random_util.choice_optional(wikihow.get_related_wikihow_actions(seed)),
     "get_last_noun_and_article": language_util.get_last_noun_and_article,
     # Conceptnet
     "conceptnet_location": conceptnet.weighted_location_generator,
@@ -49,7 +40,7 @@ known_functions = {
 }
 
 
-class AbstractTextGenerator(object):
+class AbstractTextGenerator:
     def generate(self, variables_dictionary):
         raise NotImplementedError()
 
@@ -68,13 +59,13 @@ class TemplatedTextGenerator(AbstractTextGenerator):
         self._templates = tuple(templates)
 
     def generate(self, variables_dictionary=None):
-        """ Generates a text from the templates using the given variables dictionary"""
+        """Generates a text from the templates using the given variables dictionary"""
         # Set empty dictionary if none is given
         if not bool(variables_dictionary):
             variables_dictionary = {}
         # Create a mutable copy of the templates list
         possible_templates = list(self._templates)
-        for i in range(len(possible_templates)):
+        for _ in range(len(possible_templates)):
             template = random.choice(possible_templates)
             if can_format_with(template, variables_dictionary):
                 result = apply_variables_to_template(template, variables_dictionary)
@@ -92,13 +83,13 @@ class TraceryTextGenerator(AbstractTextGenerator):
         self._variable = variable
 
     def generate(self, variables_dictionary=None):
-        """ Generates a text from internal tracery grammar using the given variables dictionary"""
+        """Generates a text from internal tracery grammar using the given variables dictionary"""
         # Set empty dictionary if none is given
         if not bool(variables_dictionary):
             variables_dictionary = {}
 
         # Generate
-        for i in range(100):  # TODO prune the grammar instead of retrying
+        for _ in range(100):  # TODO prune the grammar instead of retrying
             template = self._grammar.flatten("#" + self._variable + "#")
             if can_format_with(template, variables_dictionary):
                 result = apply_variables_to_template(template, variables_dictionary)
@@ -113,36 +104,34 @@ def get_tracery_grammar(grammar_path):
 
 
 def can_format_with(template, variables_dictionary):
-    """ Checks if the template can be fully formatted by the given variable dictionary without errors"""
+    """Checks if the template can be fully formatted by the given variable dictionary without errors"""
     format_variables = get_format_variables(template)
-    return (len(format_variables) == 0 and len(variables_dictionary) == 0) or set(
-        format_variables
-    ) <= set(variables_dictionary.keys())
+    return (len(format_variables) == 0 and len(variables_dictionary) == 0) or set(format_variables) <= set(
+        variables_dictionary.keys()
+    )
 
 
 def get_format_variables(template):
-    """ Finds all the names of the variables used in the template """
+    """Finds all the names of the variables used in the template"""
     return {x[0] for x in get_format_variables_and_functions(template)}
 
 
 def get_format_variables_and_functions(template):
-    """ Finds all the names of the variables used in the template with their functions in a large tuple"""
+    """Finds all the names of the variables used in the template with their functions in a large tuple"""
     matches = re.findall(r"{(\w+)((?:[.]\w+)*)}", template)
     return set(matches)
 
 
 def apply_variables_to_template(template, variables_dictionary):
     variables_and_functions = get_format_variables_and_functions(template)
-    applied = apply_functions_to_variables(
-        template, variables_dictionary, variables_and_functions
-    )
+    applied = apply_functions_to_variables(template, variables_dictionary, variables_and_functions)
     if applied:
         (template, variables_dictionary) = applied
         return template.format(**variables_dictionary)
 
 
 def apply_functions(variable, functions):
-    """ Applies a list of functions to a variable """
+    """Applies a list of functions to a variable"""
     result = variable
     for func in functions:
         # Check if it transformed the result into None
@@ -163,11 +152,9 @@ def apply_functions(variable, functions):
     return result
 
 
-def apply_functions_to_variables(
-    template, variables_dictionary, variables_and_functions
-):
-    """ Applies the functions of the variables_and_functions tuple and stores them in the variable dictionary and
-    updates the template """
+def apply_functions_to_variables(template, variables_dictionary, variables_and_functions):
+    """Applies the functions of the variables_and_functions tuple and stores them in the variable dictionary and
+    updates the template"""
     variables_and_functions = list(variables_and_functions)
     variables_and_functions.sort(key=lambda a: len(a), reverse=True)
 
@@ -192,5 +179,5 @@ def apply_functions_to_variables(
 
 
 def read_lines(filename):
-    """ Reads all the string lines from a file """
+    """Reads all the string lines from a file"""
     return os_util.read_lines(filename)

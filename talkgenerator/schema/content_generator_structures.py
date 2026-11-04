@@ -1,25 +1,19 @@
 """
 This file contains structures that are helpful for certain content generators, but not general enough for generator_util
 """
-import os
+
 import random
-from typing import Tuple
 
-from talkgenerator.sources import conceptnet
-from talkgenerator.sources import goodreads, text_generator, reddit, wikihow
-from talkgenerator.util.generator_util import (
-    ExternalImageListGenerator,
-    RelatedMappingGenerator,
-)
-from talkgenerator.util.generator_util import FromListGenerator
-from talkgenerator.util.generator_util import (
-    SeededGenerator,
-    BackupGenerator,
-)
-
-
-# = TEXT GENERATORS=
 from talkgenerator.datastructures.image_data import ImageData
+from talkgenerator.sources import conceptnet, goodreads, reddit, text_generator, wikihow
+from talkgenerator.util import os_util
+from talkgenerator.util.generator_util import (
+    BackupGenerator,
+    ExternalImageListGenerator,
+    FromListGenerator,
+    RelatedMappingGenerator,
+    SeededGenerator,
+)
 
 
 def create_templated_text_generator(filename):
@@ -33,23 +27,18 @@ def create_tracery_generator(filename, main="origin"):
 
 
 # GOODREAD QUOTES
-class GoodReadsQuoteGenerator(object):
+class GoodReadsQuoteGenerator:
     def __init__(self, max_quote_length):
         self._max_quote_length = max_quote_length
 
     def __call__(self, presentation_context):
         def generator(seed):
-            return [
-                quote
-                for quote in goodreads.search_quotes(seed, 50)
-                if len(quote) <= self._max_quote_length
-            ]
+            return [quote for quote in goodreads.search_quotes(seed, 50) if len(quote) <= self._max_quote_length]
 
         return FromListGenerator(SeededGenerator(generator))(presentation_context)
 
 
 # REDDIT
-from talkgenerator.util import os_util
 
 
 def create_reddit_image_generator(*name):
@@ -57,7 +46,7 @@ def create_reddit_image_generator(*name):
     return BackupGenerator(reddit_generator.generate, reddit_generator.generate_random)
 
 
-class RedditImageSearcher(object):
+class RedditImageSearcher:
     def __init__(self, subreddit: str):
         self._subreddit = subreddit
 
@@ -86,12 +75,8 @@ class RedditImageGenerator:
 # ABOUT ME
 
 _about_me_facts_grammar = "data/text-templates/about_me_facts.json"
-job_description_generator = create_tracery_generator(
-    _about_me_facts_grammar, "job_description"
-)
-country_description_generator = create_tracery_generator(
-    _about_me_facts_grammar, "country_description"
-)
+job_description_generator = create_tracery_generator(_about_me_facts_grammar, "job_description")
+country_description_generator = create_tracery_generator(_about_me_facts_grammar, "country_description")
 
 
 def _apply_country_prefix(country_name):
@@ -100,11 +85,11 @@ def _apply_country_prefix(country_name):
     return country_description_generator() + country_name
 
 
-class CountryPrefixApplier(object):
+class CountryPrefixApplier:
     def __init__(self):
         pass
 
-    def __call__(self, x: Tuple[str, str]):
+    def __call__(self, x: tuple[str, str]):
         return _apply_country_prefix(x[0]), x[1]
 
 
@@ -114,18 +99,18 @@ def _apply_job_prefix(job_name):
     return job_description_generator() + ": " + job_name
 
 
-class JobPrefixApplier(object):
+class JobPrefixApplier:
     def __init__(self):
         pass
 
-    def __call__(self, x: Tuple[str, str]):
+    def __call__(self, x: tuple[str, str]):
         return _apply_job_prefix(x[0]), x[1]
 
 
 # SPLITTER
 
 
-class SplitCaptionsGenerator(object):
+class SplitCaptionsGenerator:
     def __init__(self, generator):
         self._generator = generator
 
@@ -137,12 +122,8 @@ class SplitCaptionsGenerator(object):
 
 # BOLD STATEMENT
 
-bold_statement_templated_file = os_util.to_actual_file(
-    "data/text-templates/bold_statements.txt"
-)
-bold_statement_templated_generator = create_templated_text_generator(
-    bold_statement_templated_file
-)
+bold_statement_templated_file = os_util.to_actual_file("data/text-templates/bold_statements.txt")
+bold_statement_templated_generator = create_templated_text_generator(bold_statement_templated_file)
 
 
 def generate_wikihow_bold_statement(presentation_context):

@@ -1,12 +1,12 @@
-from talkgenerator.schema.content_generators import *
 from talkgenerator.datastructures.slide_generator_data import (
-    SlideGeneratorData,
-    PeakedWeight,
     ConstantWeightFunction,
+    PeakedWeight,
+    SlideGeneratorData,
 )
+from talkgenerator.schema.content_generators import *
 from talkgenerator.slide import slide_generator_types
 from talkgenerator.sources import chart
-from talkgenerator.util.generator_util import NoneGenerator, CombinedGenerator
+from talkgenerator.util.generator_util import CombinedGenerator, NoneGenerator
 
 # ==============================
 # =====  SLIDE GENERATORS  =====
@@ -16,9 +16,7 @@ from talkgenerator.util.generator_util import NoneGenerator, CombinedGenerator
 # TITLE SLIDE
 title_slide_generators = [
     SlideGeneratorData(
-        slide_generator_types.TitleSlideGenerator.of(
-            talk_title_generator_if_not_generated, talk_subtitle_generator
-        ),
+        slide_generator_types.TitleSlideGenerator.of(talk_title_generator_if_not_generated, talk_subtitle_generator),
         allowed_repeated_elements=3,
         weight_function=PeakedWeight((0,), 100000, 0),
         tags=["title"],
@@ -68,9 +66,7 @@ about_me_slide_generators = [
     ),
     SlideGeneratorData(
         # slide_templates.generate_image_slide_tuple(
-        slide_generator_types.ImageSlideGenerator.of_tupled_captioned_image(
-            about_me_hobby_tuple_generator
-        ),
+        slide_generator_types.ImageSlideGenerator.of_tupled_captioned_image(about_me_hobby_tuple_generator),
         PeakedWeight((1, 2), 3, 0),
         allowed_repeated_elements=0,
         tags=["about_me"],
@@ -114,9 +110,7 @@ history_slide_generators_copyright_free = [
         slide_generator_types.TwoColumnImageSlideGenerator.of(
             history_and_history_person_title_generator,
             historical_name_generator,
-            copyright_free_prefixed_generator(
-                ["historic person", "person", "man", "woman"]
-            ),
+            copyright_free_prefixed_generator(["historic person", "person", "man", "woman"]),
             NoneGenerator(),
             goodreads_short_quote_generator,
         ),
@@ -130,12 +124,8 @@ history_slide_generators_copyright_free = [
         slide_generator_types.TwoColumnImageSlideGenerator.of_images_and_tupled_captions(
             history_title_generator,
             historic_double_captions_generator,
-            copyright_free_prefixed_generator(
-                ["vintage", "historic", "old", "ancient"]
-            ),
-            copyright_free_prefixed_generator(
-                ["vintage", "historic", "old", "ancient"]
-            ),
+            copyright_free_prefixed_generator(["vintage", "historic", "old", "ancient"]),
+            copyright_free_prefixed_generator(["vintage", "historic", "old", "ancient"]),
         ),
         weight_function=PeakedWeight((1, 2), 12, 0.1),
         allowed_repeated_elements=2,
@@ -149,34 +139,26 @@ history_slide_generators_copyright_free = [
 single_image_slide_generators = [
     SlideGeneratorData(
         # slide_templates.generate_full_image_slide(
-        slide_generator_types.FullImageSlideGenerator.of(
-            anticipation_title_generator, combined_gif_generator
-        ),
+        slide_generator_types.FullImageSlideGenerator.of(anticipation_title_generator, combined_gif_generator),
         tags=["full_image", "gif"],
         name="Full Screen Gif",
     ),
     SlideGeneratorData(
         # slide_templates.generate_image_slide(
-        slide_generator_types.ImageSlideGenerator.of(
-            default_slide_title_generator, combined_gif_generator
-        ),
+        slide_generator_types.ImageSlideGenerator.of(default_slide_title_generator, combined_gif_generator),
         tags=["single_image", "gif"],
         name="Single Image Gif",
     ),
     SlideGeneratorData(
         # slide_templates.generate_full_image_slide(
-        slide_generator_types.FullImageSlideGenerator.of(
-            NoneGenerator(), meme_reddit_image_generator
-        ),
+        slide_generator_types.FullImageSlideGenerator.of(NoneGenerator(), meme_reddit_image_generator),
         tags=["full_image", "meme"],
         name="Full Screen Meme",
     ),
     SlideGeneratorData(
         # slide_templates.generate_full_image_slide(
         slide_generator_types.FullImageSlideGenerator.of(
-            CombinedGenerator((1,NoneGenerator()),
-                              (1,default_slide_title_generator)),
-            neutral_image_generator
+            CombinedGenerator((1, NoneGenerator()), (1, default_slide_title_generator)), neutral_image_generator
         ),
         tags=["full_image", "neutral"],
         name="Full Screen Neutral Images",
@@ -202,9 +184,7 @@ single_image_slide_generators_copyright_free = [
         name="Full Screen Pixabay Goodreads",
     ),
     SlideGeneratorData(
-        slide_generator_types.ImageSlideGenerator.of(
-            default_slide_title_generator, copyright_free_generator
-        ),
+        slide_generator_types.ImageSlideGenerator.of(default_slide_title_generator, copyright_free_generator),
         tags=["single_image"],
         name="Single Image Copyright free",
     ),
@@ -213,9 +193,7 @@ single_image_slide_generators_copyright_free = [
 # WISE STATEMENTS
 statement_slide_generators = [
     SlideGeneratorData(
-        slide_generator_types.ImageSlideGenerator.of(
-            inspiration_title_generator, inspirobot_image_generator
-        ),
+        slide_generator_types.ImageSlideGenerator.of(inspiration_title_generator, inspirobot_image_generator),
         weight_function=ConstantWeightFunction(0.6),
         tags=["inspiration", "statement"],
         name="Inspirobot",
@@ -396,9 +374,7 @@ own_chart_generators = [
 
 chart_slide_generators = [
     SlideGeneratorData(
-        slide_generator_types.FullImageSlideGenerator.of(
-            NoneGenerator(), reddit_chart_generator
-        ),
+        slide_generator_types.FullImageSlideGenerator.of(NoneGenerator(), reddit_chart_generator),
         weight_function=ConstantWeightFunction(4),
         allowed_repeated_elements=0,
         tags=["chart"],

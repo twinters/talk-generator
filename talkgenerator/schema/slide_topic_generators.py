@@ -1,8 +1,7 @@
-import multiprocessing
-import random
 import logging
+import random
+from collections.abc import Collection
 from functools import lru_cache
-from typing import List, Collection
 
 from talkgenerator.sources import conceptnet
 from talkgenerator.util import language_util, random_util
@@ -18,15 +17,13 @@ class SlideSeedGenerator:
 
 
 class SideTrackingTopicGenerator(SlideSeedGenerator):
-    """ This generator will make small side tracks around topics, but keeps returning every X slides"""
+    """This generator will make small side tracks around topics, but keeps returning every X slides"""
 
-    def __init__(
-        self, topics: List[str], num_slides: int, topic_return_period_range=range(3, 6)
-    ):
+    def __init__(self, topics: list[str], num_slides: int, topic_return_period_range=range(3, 6)):
         self._topics = topics
         self._num_slides = num_slides
 
-        seeds: List[str] = [None] * num_slides
+        seeds: list[str] = [None] * num_slides
 
         # Make it begin and end with the topic
         if num_slides > 0:
@@ -90,7 +87,6 @@ def normalise_weighted_word(weighted_word):
 
 def _fill_in(seeds, i, distance=1):
     if seeds[i] is None:
-
         # Check for neighbours
         if i - distance >= 0 and seeds[i - distance]:
             neighbour = seeds[i - distance]
@@ -98,9 +94,7 @@ def _fill_in(seeds, i, distance=1):
             try:
                 related = conceptnet.get_weighted_related_words(neighbour, 25)
                 if len(related) == 0:
-                    related = conceptnet.get_weighted_related_words(
-                        normalise_seed(neighbour), 25
-                    )
+                    related = conceptnet.get_weighted_related_words(normalise_seed(neighbour), 25)
 
             except Exception as e:
                 logger.info("Conceptnet related words failing: {}".format(e))
@@ -114,7 +108,7 @@ def _fill_in(seeds, i, distance=1):
             filtered_related = [
                 weighted_word
                 for weighted_word in normalised_related
-                if not weighted_word[1] in seeds and len(weighted_word[1]) > 2
+                if weighted_word[1] not in seeds and len(weighted_word[1]) > 2
             ]
 
             if len(filtered_related) > 0:
@@ -134,7 +128,7 @@ def normalise_seed(seed):
 
 
 class IdentityTopicGenerator(SlideSeedGenerator):
-    """ Generates always the given topic as the seed for each slide """
+    """Generates always the given topic as the seed for each slide"""
 
     def __init__(self, topics: Collection[str], _):
         self._topics = topics

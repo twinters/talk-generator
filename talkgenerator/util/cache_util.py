@@ -1,7 +1,7 @@
 # from https://stackoverflow.com/questions/1151658/python-hashable-dicts
 class HashableDict(dict):
-    """ A hashable version of a dictionary, useful for when a function needs to be cached but uses a dict as an
-    argument """
+    """A hashable version of a dictionary, useful for when a function needs to be cached but uses a dict as an
+    argument"""
 
     def __key(self):
         return tuple((k, self[k]) for k in sorted(self))
