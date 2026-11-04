@@ -1,8 +1,29 @@
 from collections.abc import Collection
 
-from talkgenerator.schema.content_generator_structures import *
+from talkgenerator.schema.content_generator_structures import (
+    ConceptNetMapper,
+    CountryPrefixApplier,
+    GoodReadsQuoteGenerator,
+    JobPrefixApplier,
+    SplitCaptionsGenerator,
+    create_reddit_image_generator,
+    create_templated_text_generator,
+    create_tracery_generator,
+    generate_wikihow_bold_statement,
+)
 from talkgenerator.sources import inspirobot, pexels, pixabay, shitpostbot, unsplash
-from talkgenerator.util.generator_util import *
+from talkgenerator.util.generator_util import (
+    BackupGenerator,
+    CombinedGenerator,
+    ExternalImageListGenerator,
+    InspiredTupleGenerator,
+    MappedGenerator,
+    NoneGenerator,
+    PrefixedGenerator,
+    SeededGenerator,
+    TupledGenerator,
+    UnseededGenerator,
+)
 
 # ===============================
 # =====  CONTENT GENERATORS =====
@@ -50,6 +71,9 @@ location_description_generator = create_tracery_generator(_about_me_facts_gramma
 hobby_description_generator = create_tracery_generator(_about_me_facts_grammar, "hobby_description")
 job_generator = create_tracery_generator(_about_me_facts_grammar, "job")
 country_generator = create_tracery_generator(_about_me_facts_grammar, "country")
+
+# BOLD STATEMENTS
+wikihow_bold_statement_generator = generate_wikihow_bold_statement
 
 # PROMPTS & CHALLENGES
 

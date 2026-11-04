@@ -110,6 +110,10 @@ class SlideGeneratorData:
     def get_allowed_repeated_elements(self) -> int:
         return self._allowed_repeated_elements
 
+    @property
+    def name(self) -> str | None:
+        return self._name
+
     def get_tags(self) -> set[str]:
         return self._tags
 

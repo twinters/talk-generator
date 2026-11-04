@@ -47,6 +47,10 @@ class PresentationSchema:
         self._ignore_weights = ignore_weights
         self._title_generator = title_generator
 
+    @property
+    def slide_generators(self) -> list[SlideGeneratorData]:
+        return list(self._slide_generators)
+
     def generate_presentation(
         self,
         topics: list[str],

@@ -10,7 +10,7 @@ from pptx import Presentation
 
 from talkgenerator import runtime_checker
 from talkgenerator.schema.content_generators import full_name_generator
-from talkgenerator.schema.presentation_schema_types import get_schema
+from talkgenerator.schema.presentation_schema_types import get_schema, schemas
 from talkgenerator.slide.slide_deck import SlideDeck
 from talkgenerator.sources import word_frequency
 from talkgenerator.util import os_util
@@ -163,6 +163,16 @@ def _open_file(filename: str):
         subprocess.call([opener, filename])
 
 
+def describe_schemas() -> str:
+    """A readable overview of the registered presentation schemas and the slide generators they use."""
+    lines = []
+    for name in schemas.names():
+        generators = schemas.get(name).slide_generators
+        lines.append(f"{name} ({len(generators)} slide generators)")
+        lines.extend(f"    {generator}" for generator in generators)
+    return "\n".join(lines)
+
+
 def str2bool(v):
     # stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
     if v.lower() in ("yes", "true", "t", "y", "1"):
@@ -193,7 +203,13 @@ def get_argument_parser():
         "--schema",
         default="default",
         type=str,
-        help="The presentation schema to generate the presentation with",
+        choices=schemas.names(),
+        help="The presentation schema to generate the presentation with (see --list)",
+    )
+    parser.add_argument(
+        "--list",
+        action="store_true",
+        help="List the presentation schemas and their slide generators, then exit.",
     )
     parser.add_argument(
         "--presenter",

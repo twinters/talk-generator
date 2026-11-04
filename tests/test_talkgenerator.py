@@ -79,7 +79,7 @@ def test_all_slide_generators():
     }
     presentation = powerpoint_slide_creator.create_new_powerpoint()
     failed = []
-    for slide_generator in slide_schemas.all_slide_generators:
+    for slide_generator in slide_schemas.slide_generators:
         logging.info("Testing Slide Generator: %s", slide_generator)
         random.seed(123)
         result = slide_generator.generate(basic_presentation_context, [])

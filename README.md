@@ -70,6 +70,7 @@ Set `TALKGENERATOR_CACHE_DIR` to put the cache elsewhere, or `DISABLE_CACHE=1` t
 | `--topic` | The topic of the generator. This works best if it is a common, well-known noun. Use comma-separated words to generate a slide deck about multiple topics |
 | `--num_slides` | The number of slides in the generated presentation (*default: 10*) |
 | `--schema` | The presentation schema to use: `default`, `ted` (only copyright-free images), `interview` (no "about me" slides) or `test` |
+| `--list` | List the schemas and the slide generators each one uses, then exit |
 | `--title` | Title of the presentation. Either `topic` or this one should be set (just setting `topic` is usually more fun though). With only a title, its rarest word becomes the topic |
 | `--presenter` | The name that will be present on the first slide. Leave blank for an automatically generated name |
 | `--output_folder` | The folder to output the generated presentations (*default: `./output/`*) |
