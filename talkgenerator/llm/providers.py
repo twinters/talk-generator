@@ -2,7 +2,7 @@
 
 TALKGENERATOR_LLM sets the spec (`settings.llm_spec`); without it, or with DISABLE_LLM=1, it's "none", and talks
 are classic. The providers that talk to real models (OpenRouter, Anthropic, OpenAI, ...) register here with
-`register` as they arrive (docs/v5-plan.md, 5.0.0a2).
+`register` as they arrive (docs/v5-plan.md, milestone 2).
 """
 
 from __future__ import annotations

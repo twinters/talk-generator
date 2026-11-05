@@ -2,7 +2,7 @@
 
 An error is a broken talk: a slide without what it needs, or template code on a slide. A warning is worth a look,
 such as an image without a credit, or one that comes back on another slide. Checks of contrast and overflowing text
-follow with the themes (5.0.0a3).
+follow with the themes (docs/v5-plan.md, milestone 3).
 """
 
 from __future__ import annotations
@@ -116,7 +116,7 @@ def check_images(deck: Deck) -> list[Finding]:
 
 
 def deck_metrics(deck: Deck) -> dict[str, Any]:
-    """Numbers to follow from one pre-release to the next, which aren't right or wrong on their own."""
+    """Numbers to follow from one milestone to the next, which aren't right or wrong on their own."""
     types = [slide.type for slide in deck.slides]
     return {
         "slides": len(deck.slides),

@@ -93,7 +93,7 @@ class DeckSlide(_Data):
 
 class Deck(_Data):
     deck_version: Literal[1] = DECK_VERSION
-    generator: str  # what made the deck, such as "talkgenerator 5.0.0a1"
+    generator: str  # what made the deck, such as "talkgenerator 5.0.0"
     title: str | None = None
     topics: tuple[str, ...] = ()
     presenter: str | None = None

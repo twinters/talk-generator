@@ -1,7 +1,7 @@
 # talk-generator v5: design and roadmap
 
-Status: approved on 2026-11-05 ([section 17](#17-decisions-and-open-questions) lists the decisions); work on
-5.0.0a1 has started.
+Status: approved on 2026-11-05 ([section 17](#17-decisions-and-open-questions) lists the decisions). Milestone 1,
+the groundwork, is done; milestone 2 is next ([section 16](#16-milestones)). Nothing ships until 5.0.0.
 
 v4.0.0 is the modernized version of the 2019 generator from the EvoMUSART paper. v5 brings it up to 2026
 standards: LLM-written talks, generated images, more sources, themes and talk formats, and slides that stream
@@ -57,8 +57,9 @@ until 5.0 is ready.
 - **talkgenerator.com at $0.** LLM talks by default on OpenRouter's free models, with a switch for the classic 2019
   generator, which also takes over when the free quota runs out. Visitors can bring their own OpenRouter account,
   Anthropic key or OpenAI key for more, AI images included.
-- **Releases.** `5.0.0aN` pre-releases from a long-lived `v5` branch, while 4.x stays on `master`. TED-like talks
-  get every improvement first, and new talk formats come after. Once 5.0 ships, 4.x gets no more fixes.
+- **One release.** The work collects milestone by milestone on a long-lived `v5` branch, and ships as one 5.0.0
+  once the plan is done; 4.x stays on `master` until then. TED-like talks get every improvement first, and new
+  talk formats come after. Once 5.0 ships, 4.x gets no more fixes.
 
 ## 2. Goals, constraints and non-goals
 
@@ -85,7 +86,7 @@ until 5.0 is ready.
 - **4.x keeps working until 5.0:** the site pins `talkgenerator==4.0.x` from PyPI, and 4.x fixes keep shipping
   from `master` until 5.0 is out.
 - **A deterministic no-LLM mode** for tests, reproducible seeds, and the paper's method as a runnable baseline.
-- **The quality bar** (decided): automated checks on every pre-release ([section 14](#14-automated-quality-checks)).
+- **The quality bar** (decided): automated checks at every milestone ([section 14](#14-automated-quality-checks)).
 
 ### Non-goals for 5.0
 
@@ -157,7 +158,7 @@ pydantic models for structured outputs):
 | `TalkPlan` | the spine (title, subtitle, thesis, persona, running gag, callbacks) and one `SlidePlan` per slide: type, layout hint, concept, text fields, image slots, chart or diagram spec |
 | `Deck` | `deck_version`; metadata (request, seed, planner, model, timings, usage); the resolved theme; slides with positioned elements (text, image, chart, shape, diagram) on a 1920×1080 canvas; credits |
 
-Proposed package layout. v4's `schema/` and `slide/` modules move over step by step, and 5.0.0a1 keeps them
+Proposed package layout. v4's `schema/` and `slide/` modules move over step by step, and milestone 1 keeps them
 working:
 
 ```
@@ -407,7 +408,8 @@ rendering the deck.
   as typed tools to apps that have no shell or aren't Claude, such as Claude Desktop's chat and other MCP clients,
   and writes the deck straight onto the user's disk. Its tool descriptions sit in every conversation where it's
   enabled, and installing it means a config entry or a one-click Claude Desktop extension bundle (to check). Both
-  wrap the same `render` functions, so the Skill comes first (a2) and the MCP server is a thin layer on top (a3).
+  wrap the same `render` functions, so the Skill comes first (milestone 2) and the MCP server is a thin layer on
+  top (milestone 3).
 - The same plan-in, deck-out path can later let talkgenerator.com accept plans written in the visitor's browser
   with the visitor's own key, so that key never reaches the server.
 
@@ -437,9 +439,9 @@ schema (only copyright-free images) becomes `ted` with the `open` license policy
 Timing variants work with any format: Pecha Kucha (20 slides of 20 seconds) and Ignite (20 slides of 15 seconds),
 with auto-advance in the browser view.
 
-Decided: TED-like talks get every improvement first, and the new formats come after them: in the last alpha
-(5.0.0a7), or in 5.1 if the TED work takes longer. The format machinery itself exists from 5.0.0a2, since the
-TED talk is a format too. Every format also works in classic mode through its content pack
+Decided: TED-like talks get every improvement first, and the new formats come after them: in milestone 7, or in
+5.1 if the TED work takes longer. The format machinery itself exists from milestone 2, since the TED talk is a
+format too. Every format also works in classic mode through its content pack
 ([section 11](#11-text-sources-and-content-packs)), so formats cost nothing without an LLM.
 
 ## 8. Slide types and variety
@@ -687,7 +689,8 @@ browser ([section 13.1](#131-streaming-slides-into-the-browser)) and the filters
   should mention.
 - **Concurrency:** LLM calls mostly wait, so the single slot can become several streams that share a few image
   workers (gunicorn threads), once memory use has been measured.
-- **A preview deployment** (on a subdomain) runs the 5.0.0a releases while production stays on 4.0.x.
+- **A preview deployment** (on a subdomain) runs `v5`, installed from git by commit, while production stays on
+  4.0.x: no release is needed for that.
 
 ### 13.2 Running at $0
 
@@ -712,9 +715,9 @@ browser ([section 13.1](#131-streaming-slides-into-the-browser)) and the filters
 
 ## 14. Automated quality checks
 
-Decided: automated checks on every pre-release, offline in CI wherever possible. They run on a fixed benchmark of
+Decided: automated checks at every milestone, offline in CI wherever possible. They run on a fixed benchmark of
 about 50 topics (common nouns, rare words, phrases, names, plurals, and a few edgy topics for the safety checks) ×
-the formats × 3 seeds, in classic mode with replay and, for release candidates, live on OpenRouter's free models
+the formats × 3 seeds, in classic mode with replay and, at every milestone, live on OpenRouter's free models
 (at $0).
 
 | Area | Check | Proposed bar |
@@ -723,15 +726,15 @@ the formats × 3 seeds, in classic mode with replay and, for release candidates,
 | Text | no template leftovers (`{seed}`, `#tag#`, `None`); fits its box at the minimum font size or above; within its length limits | 100% |
 | Contrast | text against its background, or against the photo behind it after dimming | at least 4.5:1 for body text, 3:1 for titles |
 | Images | loads; not enlarged beyond 1.3×; no near-duplicates within a talk; credited with its license; license policy respected | 100% |
-| Variety | distinct slide types and layouts per talk, no layout twice in a row; across seeds, the share of distinct titles and images | targets per format, set from a1's measurements |
+| Variety | distinct slide types and layouts per talk, no layout twice in a row; across seeds, the share of distinct titles and images | targets per format, set from milestone 1's measurements |
 | Determinism | the same seed with replay gives an identical deck JSON; serial equals parallel | 100% |
 | Safety | blocklist hits in the output; edgy topics screened or falling back | no hits |
 | Language | the text is in the requested language (stopword ratio) | every slide |
-| Speed | time to first slide and total time, on the site's configuration | targets to calibrate in a1 and a4 |
+| Speed | time to first slide and total time, on the site's configuration | targets to calibrate in milestones 1 and 4 |
 | Requests and cost | LLM requests and estimated cost per talk | on the site's configuration: $0, at most one request per talk |
 | Memory | peak memory for a 20-slide talk on the site's configuration | under 450 MB |
 
-Each run writes a JSON report, compared with the previous pre-release's, and an HTML contact sheet of thumbnails
+Each run writes a JSON report, compared with the previous milestone's, and an HTML contact sheet of thumbnails
 for a quick look. These checks catch broken, cramped, unreadable and repetitive decks; they can't tell whether a
 deck is funny. Human or LLM-judged ratings are out of scope for now, and could later run on the same benchmark.
 
@@ -741,15 +744,14 @@ deck is funny. Human or LLM-judged ratings are out of scope for now, and could l
   into `v5` through pull requests. Until then `master` stays on 4.x: fixes land there first, and `master` gets
   merged into `v5` regularly. At 5.0.0, `v5` merges into `master` and 4.x is done (decided): no more 4.x fixes,
   though its releases and tags stay available.
-- **Versions:** 5.0.0a1, a2 and so on, then b1, rc1 and 5.0.0. pip skips pre-releases unless asked (`--pre`, or
-  an exact pin), so `pip install talkgenerator` and the site's `talkgenerator==4.0.x` pin stay on 4.x. GitHub
-  releases of pre-releases are marked as such, so "latest" keeps pointing at 4.x.
-- **Release tooling**, owned by the session that hardens `scripts/release.py` and `.github/` (noted for it):
-  the `bump` command of `release.py` (on `dev`) accepts only X.Y.Z versions, and its patch, minor and major levels
-  stop working once the current version is a pre-release, so it needs to learn versions like 5.0.0a1; the publish
-  commands it prints move `master` (`git branch -f master HEAD`), which must not happen from `v5`;
-  `gh release create` needs `--prerelease` for pre-releases; and CI only runs on pushes to `master` and `dev`, so
-  `v5` needs adding. The release workflow's tag check already handles tags like `v5.0.0a1`.
+- **One release** (decided 2026-11-05): no pre-releases. `v5` collects the work milestone by milestone, and
+  5.0.0 ships once, when the plan is done. Until then `pip install talkgenerator` and the site's
+  `talkgenerator==4.0.x` pin stay on 4.x, and the changelog's `[Unreleased]` section collects what 5.0.0 brings.
+- **Release tooling:** 5.0.0 is released from `master` once `v5` has merged into it, which the release script and
+  workflow already handle (an X.Y.Z version, released from `master`). Pull requests into `v5` already run CI;
+  adding `v5` to CI's push branches would check direct pushes too.
+- **Trying v5 out before 5.0.0:** install it from the branch (`pip install git+https://github.com/twinters/talk-generator@v5`,
+  or a commit), which is also how a preview deployment of talkgenerator.com runs it (section 13.1).
 - **Compatibility:** `generator.generate_presentation()` stays as a shim, with a deprecation warning, throughout
   5.x (the site calls it). `--schema default|ted|interview|test` maps to formats and license policies.
   `SlideDeck.to_slide_deck_dictionary()` gives way to deck JSON, a breaking change for the changelog. Python 3.11
@@ -758,20 +760,20 @@ deck is funny. Human or LLM-judged ratings are out of scope for now, and could l
 
 ## 16. Milestones
 
-Pre-releases in the agreed order: LLM talks and the Skill right after the groundwork, and every TED-like
-improvement before the new formats.
+Milestones in the agreed order: LLM talks and the Skill right after the groundwork, and every TED-like improvement
+before the new formats. A milestone is a checkpoint on `v5`, not a release; only 5.0.0 ships.
 
-| Release | Focus | Contents | Done when |
+| Milestone | Focus | Contents | Done when |
 | --- | --- | --- | --- |
-| 5.0.0a1 | Groundwork | deck JSON and the models; pptx renderer from deck JSON (classic look); seeded random streams in `GenerationContext`; the classic engine on the new model; `-o deck.json`; usage ledger; `replay` and `none` providers; checks for completeness, template leftovers and determinism | classic talks look like v4's; the same seed gives the same deck, serial or parallel; v4's offline tests pass |
-| 5.0.0a2 | LLM TED talks and the Claude Skill | TalkPlan schema; the LLM planner (one streamed call, dice, per-slide fallback, safety); `openrouter`, `anthropic` and `openai` adapters; languages, Dutch first; `render plan.json`, `schema`, `formats`; `skill/` with SKILL.md; `login openrouter`; the `chatgpt` adapter (may slip to a3); checks for requests, cost, speed and language | on the benchmark with OpenRouter's free models: no holes, no leftovers, $0 and one request per talk; Dutch talks pass the language check; Claude Code makes a deck end to end with the Skill |
-| 5.0.0a3 | Themes and layouts | theme tokens and families, extremes on by default; procedural palettes and font pairs; layout variants; text fitting; image treatments; the `classic` theme; thumbnails and contact sheet in CI; the local MCP server | contrast and overflow checks pass on every theme |
-| 5.0.0a4 | Streaming and the web view | `stream_talk()`, display policies, probe validation; in talk-generator-web: the SSE endpoint, the Angular renderer, LLM talks by default with the classic switch, a language choice, Connect OpenRouter and pasted keys, .pptx on download, a preview deployment | first slide on screen within the calibrated target on the VPS; a 20-slide talk under the memory bar; the downloaded .pptx matches the web view |
-| 5.0.0a5 | Images | slots, aesthetic profiles and flavour packs, local analysis, license classes; new open and weird sources; AI image generation with the user's own keys; the optional vision pick | license policies enforced; profile checks pass (such as the grayscale share for `vintage`); generated images credited |
-| 5.0.0a6 | More slide types for TED-like talks | native diagrams, big numbers, quiz, memes with live captions, social posts and more; a much larger, curated TED content pack | every new slide type passes the checks in classic and LLM mode |
-| 5.0.0a7 | New talk formats | pitch, academic, corporate, keynote and Pecha Kucha timing, with their content packs (or in 5.1 if the TED work takes longer) | every format works in classic and LLM mode and passes the checks |
-| 5.0.0b1 | Integration | the site moves to 5.x behind a switch; Sign in with ChatGPT on the site, if OpenAI has admitted it; docs and deprecation warnings | the site runs b1 for a week without quota or memory incidents |
-| 5.0.0rc1, 5.0.0 | Release | freeze and fix; merge `v5` into `master`; 4.x ends | |
+| 1 (done, 2026-11-05) | Groundwork | deck JSON and the models; pptx renderer from deck JSON (classic look); seeded random streams (`random_util`), with parallel generation giving the one-by-one talk; the classic engine on the new model; `--save_json`; usage ledger and budgets; `replay` and `none` providers; `talkgenerator check` for completeness, template leftovers and determinism | classic talks look like v4's; the same seed gives the same deck, serial or parallel; v4's offline tests pass |
+| 2 | LLM TED talks and the Claude Skill | TalkPlan schema; the LLM planner (one streamed call, dice, per-slide fallback, safety); `openrouter`, `anthropic` and `openai` adapters; languages, Dutch first; `render plan.json`, `schema`, `formats`; `skill/` with SKILL.md; `login openrouter`; the `chatgpt` adapter (may slip to milestone 3); checks for requests, cost, speed and language | on the benchmark with OpenRouter's free models: no holes, no leftovers, $0 and one request per talk; Dutch talks pass the language check; Claude Code makes a deck end to end with the Skill |
+| 3 | Themes and layouts | theme tokens and families, extremes on by default; procedural palettes and font pairs; layout variants; text fitting; image treatments; the `classic` theme; thumbnails and contact sheet in CI; the local MCP server | contrast and overflow checks pass on every theme |
+| 4 | Streaming and the web view | `stream_talk()`, display policies, probe validation; in talk-generator-web: the SSE endpoint, the Angular renderer, LLM talks by default with the classic switch, a language choice, Connect OpenRouter and pasted keys, .pptx on download, a preview deployment that installs `v5` from git | first slide on screen within the calibrated target on the VPS; a 20-slide talk under the memory bar; the downloaded .pptx matches the web view |
+| 5 | Images | slots, aesthetic profiles and flavour packs, local analysis, license classes; new open and weird sources; AI image generation with the user's own keys; the optional vision pick | license policies enforced; profile checks pass (such as the grayscale share for `vintage`); generated images credited |
+| 6 | More slide types for TED-like talks | native diagrams, big numbers, quiz, memes with live captions, social posts and more; a much larger, curated TED content pack | every new slide type passes the checks in classic and LLM mode |
+| 7 | New talk formats | pitch, academic, corporate, keynote and Pecha Kucha timing, with their content packs (or in 5.1 if the TED work takes longer) | every format works in classic and LLM mode and passes the checks |
+| 8 | Integration | the site runs `v5` on the preview, then in production behind a switch; Sign in with ChatGPT on the site, if OpenAI has admitted it; docs and deprecation warnings | the site runs `v5` for a week without quota or memory incidents |
+| 5.0.0 | The release | freeze and fix; merge `v5` into `master`; release 5.0.0 with the release script; the site pins `talkgenerator==5.0.0`; 4.x ends | |
 
 Running alongside the milestones: new sources (each a small pull request with offline tests and a canary test),
 content packs (the TED pack first, then one per format), and the checks (growing with every milestone).
@@ -790,11 +792,11 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D6 | No global randomness: one seeded generator per talk with derived streams, plus replay fixtures. |
 | D7 | talkgenerator.com runs at $0: free tiers only, and AI images only on the visitor's own account or key. |
 | D8 | After the groundwork, LLM talks and the Claude Skill come first. |
-| D9 | The quality bar is automated checks on every pre-release. |
+| D9 | The quality bar is automated checks at every milestone. |
 | D10 | Themes are tokens on a layout engine; the pptx renderer draws shapes; v4's template becomes the `classic` theme. |
 | D11 | Images are requested through slots, with an aesthetic profile and license classes. |
 | D12 | Plans carry queries and prompts, never image URLs. |
-| D13 | A long-lived `v5` branch with 5.0.0aN pre-releases; `master` stays 4.x and gets merged forward. |
+| D13 | No pre-releases: a long-lived `v5` branch collects the work, and merges into `master` for one 5.0.0 release when the plan is done. `master` stays 4.x until then, and gets merged forward. |
 | D14 | pydantic v2 for the models and their JSON Schemas. |
 | D15 | talkgenerator.com's OpenRouter account has $10 of credits, which lifts the free cap from 50 to 1,000 requests a day. |
 | D16 | On talkgenerator.com, LLM talks are the default, with a switch for the classic 2019 generator. |
@@ -807,9 +809,9 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D23 | Reddit memes stay, and we look for more weird and flavoured sources like them. |
 | D24 | No 4.x fixes once 5.0 ships. |
 | D25 | Dutch talks on talkgenerator.com may use the site's free OpenRouter quota; once it runs out, they get a classic English talk with a notice. |
-| D26 | The new talk formats come in 5.0.0a7, or move to 5.1 if the TED work takes longer. |
+| D26 | The new talk formats come in milestone 7, or move to 5.1 if the TED work takes longer. |
 
-D7 to D9 and D15 to D26 were settled on 2026-11-05; the others follow from the design.
+D7 to D9, D13 and D15 to D26 were settled on 2026-11-05; the others follow from the design.
 
 ### Open questions
 

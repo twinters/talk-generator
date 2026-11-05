@@ -2,7 +2,7 @@
 
 Every talk is generated in parallel (the CLI's default), checked (talkgenerator.checks.deck), and generated again one
 by one with the same seed, which has to give the same deck. The JSON report holds every finding, how long each talk
-took and what it asked of language models, to compare with the report of the previous pre-release.
+took and what it asked of language models, to compare with the report of an earlier run.
 
 With live sources, a talk can also come out differently because a source answered differently between the two runs;
 the on-disk cache of API responses makes that rare.

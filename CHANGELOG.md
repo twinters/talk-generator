@@ -19,7 +19,7 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   `replay` provider that records answers on a cassette and replays them, for offline tests and for making a
   recorded talk again; a ledger of every talk's requests, tokens and cost; budgets (a $0 budget lets only free
   models through); and list prices. `TALKGENERATOR_LLM` picks the provider (`none` by default; the real ones
-  follow in 5.0.0a2), and a deck tells what its talk asked of language models.
+  follow), and a deck tells what its talk asked of language models.
 - `talkgenerator check`: generates talks on a set of topics (10 by default, `--quick` for 3, `--all` for 30),
   checks every deck, generates every talk again one by one with its seed to see that it comes out the same, and
   writes a JSON report. The checks, in `talkgenerator.checks`: every slide has what its type needs, no template
