@@ -255,8 +255,9 @@ of explanations, a deadpan expert voice, callbacks, and room for the presenter t
 
 ```python
 class TextProvider(Protocol):
-    id: str                      # "openrouter:<model>", "anthropic:claude-opus-5-5", ...
-    capabilities: Capabilities   # structured output, streaming, vision, output limits
+    id: str  # "openrouter:<model>", "anthropic:claude-opus-5-5", ...
+    capabilities: Capabilities  # structured output, streaming, vision, output limits
+
     def stream(self, request: TextRequest) -> Iterator[TextChunk]: ...
     def complete(self, request: TextRequest) -> TextResponse: ...  # text or parsed JSON, usage, cost, stop reason
 ```
