@@ -27,6 +27,7 @@ dependencies = [
     "Pillow>=13.0",  # 13.0 fixes ~40 vulnerabilities; it needs Python 3.11+
     "platformdirs>=4",
     "praw>=7.7",
+    "pydantic>=2.7",
     "python-pptx>=1.0",
     "requests>=2.32",
     "requests-cache>=1.2",
@@ -85,6 +86,9 @@ warn_unused_ignores = true
 [[tool.mypy.overrides]]
 module = [
     "talkgenerator.datastructures.image_data",
+    "talkgenerator.models.classic",
+    "talkgenerator.models.deck",
+    "talkgenerator.render.powerpoint",
     "talkgenerator.schema.registry",
     "talkgenerator.settings",
     "talkgenerator.sources.art_institute",

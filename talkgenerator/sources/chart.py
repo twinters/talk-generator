@@ -2,8 +2,9 @@ import math
 import random
 
 from pptx.chart.data import ChartData, XyChartData
-from pptx.enum.chart import XL_CHART_TYPE, XL_LABEL_POSITION, XL_TICK_MARK
+from pptx.enum.chart import XL_CHART_TYPE
 
+from talkgenerator.render.charts import set_doughnut_properties, set_histogram_properties, set_pie_properties
 from talkgenerator.sources import conceptnet, text_generator
 from talkgenerator.util import generator_util
 
@@ -120,51 +121,8 @@ def add_data_to_series(serie, data_points):
         serie.add_data_point(x, y)
 
 
-def _set_pie_label_positions(chart, series, chart_data, label_position):
-    chart.plots[0].has_data_labels = True
-    for i in range(len(chart_data.categories)):
-        point = series.points[i]
-        value = series.values[i]
-        point.data_label.text_frame.text = "{} ({:.0%})".format(chart_data.categories[i].label, value)
-        if label_position:
-            point.data_label.position = label_position
-
-
-def set_histogram_properties(chart, chart_data):
-    value_axis = chart.value_axis
-    value_axis.mayor_tick_mark = XL_TICK_MARK.NONE
-    value_axis.minor_tick_mark = XL_TICK_MARK.NONE
-    value_axis.has_mayor_gridlines = False
-    value_axis.has_minor_gridlines = False
-    # value_axis.visible = False
-
-    tick_labels = value_axis.tick_labels
-    tick_labels.number_format = "0%"
-
-    return chart
-
-
-def set_pie_properties(chart, chart_data):
-    if chart and chart_data:
-        chart.has_legend = False
-        chart.has_title = False
-
-        # Data points
-        series = chart.series[0]
-        # Check if there are small values that can't be contained on the pie piece
-        label_position = (
-            XL_LABEL_POSITION.OUTSIDE_END if any(t < 0.10 for t in series.values) else XL_LABEL_POSITION.CENTER
-        )
-
-        # set labels to contain category and value
-        _set_pie_label_positions(chart, series, chart_data, label_position)
-
-
-def set_doughnut_properties(chart, chart_data):
-    if chart and chart_data:
-        chart.has_legend = False
-        series = chart.series[0]
-        _set_pie_label_positions(chart, series, chart_data, None)
+# The pie, doughnut and histogram styles live in talkgenerator.render.charts now: the renderer styles every chart
+# by its type, so that a chart drawn from a deck looks the same as one drawn straight from its slide.
 
 
 def create_set_scatter_properties(x_label, y_label):

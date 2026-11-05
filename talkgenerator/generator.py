@@ -9,6 +9,7 @@ import sys
 from pptx.presentation import Presentation
 
 from talkgenerator import runtime_checker, settings
+from talkgenerator.models.deck import Deck
 from talkgenerator.schema.content_generators import full_name_generator
 from talkgenerator.schema.presentation_schema_types import get_schema, schemas
 from talkgenerator.slide.slide_deck import SlideDeck
@@ -46,6 +47,7 @@ def generate_presentation_using_cli_arguments(args) -> tuple[Presentation | None
         output_folder=getattr(args, "output_folder", None) or DEFAULT_OUTPUT_FOLDER,
         open_ppt=args.open_ppt,
         debug_notes=getattr(args, "debug_notes", False),
+        save_json=getattr(args, "save_json", False),
     )
 
 
@@ -62,8 +64,13 @@ def generate_presentation(
     open_ppt: bool = False,
     print_logs=False,
     debug_notes: bool = False,
+    save_json: bool = False,
 ) -> tuple[Presentation | None, SlideDeck, str | None]:
-    """Generate a talk. With debug_notes, every slide's speaker notes explain how it was generated."""
+    """Generate a talk. With debug_notes, every slide's speaker notes explain how it was generated.
+
+    With save_json, the talk is also saved as a deck (see talkgenerator.models.deck): as JSON, next to the PowerPoint
+    and with the same name, or on its own in output_folder when save_ppt is off. slide_deck.to_deck() gives the same
+    deck as an object."""
     if print_logs:
         os_util.show_logs(logger)
     logger.info("**************************")
@@ -125,12 +132,35 @@ def generate_presentation(
     if save_ppt:
         presentation_file = save_presentation_to_pptx(output_folder, file_name, presentation)
 
-        # Open the presentation
-        if open_ppt and presentation_file is not None:
-            path = os.path.realpath(presentation_file)
-            _open_file(path)
+    if save_json:
+        save_deck_to_json(slide_deck.to_deck(schema_name=schema), output_folder, file_name, next_to=presentation_file)
+
+    # Open the presentation
+    if save_ppt and open_ppt and presentation_file is not None:
+        path = os.path.realpath(presentation_file)
+        _open_file(path)
 
     return presentation, slide_deck, presentation_file
+
+
+def save_deck_to_json(deck: Deck, output_folder: str, file_name: str, next_to: str | None = None) -> str:
+    """Save the deck as JSON: next to the given .pptx with the same name, or else as a new file in output_folder."""
+    if next_to:
+        path = pathlib.Path(next_to).with_suffix(".json")
+    else:
+        path = _unused_path(pathlib.Path(output_folder), file_name, ".json")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(deck.to_json(), encoding="utf-8")
+    logger.info("Saved the deck as JSON to {}".format(path))
+    return str(path)
+
+
+def _unused_path(folder: pathlib.Path, file_name: str, extension: str) -> pathlib.Path:
+    for index in range(MAX_PRESENTATION_SAVE_TRIES + 1):
+        path = folder / (file_name + ("_" + str(index) if index > 0 else "") + extension)
+        if not path.exists():
+            return path
+    raise FileExistsError(f"Every name for {file_name}{extension} in {folder} is taken")
 
 
 def save_presentation_to_pptx(output_folder: str, file_name: str, prs, index=0) -> str | None:
@@ -259,6 +289,12 @@ def get_argument_parser():
         default=True,
         type=str2bool,
         help="If this flag is true, the generated powerpoint will be saved",
+    )
+    parser.add_argument(
+        "--save_json",
+        default=False,
+        type=str2bool,
+        help="Also save the talk as a deck in JSON, next to the PowerPoint and with the same name",
     )
     parser.add_argument(
         "--open_ppt",

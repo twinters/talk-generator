@@ -74,7 +74,7 @@ class PresentationSchema:
         logger.info("Generate talk title: {}".format(title))
 
         # Create new presentation
-        slide_deck = SlideDeck(num_slides)
+        slide_deck = SlideDeck(num_slides, title=title, topics=topics, presenter=presenter, seed=int_seed)
         logger.info("Slide deck: {}".format(slide_deck))
 
         # Create the topic-for-each-slide generator

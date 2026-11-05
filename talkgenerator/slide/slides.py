@@ -1,11 +1,12 @@
-import logging
 from collections.abc import Sequence
 
 from talkgenerator.datastructures.image_data import CreditPart, ImageData
+from talkgenerator.models import classic
+from talkgenerator.models import deck as model
+from talkgenerator.render import charts
+from talkgenerator.render.powerpoint import render_slide
 from talkgenerator.slide import powerpoint_slide_creator
 from talkgenerator.util import image_util, os_util
-
-logger = logging.getLogger("talkgenerator")
 
 
 class Slide:
@@ -59,21 +60,37 @@ class Slide:
 
     def create_powerpoint_slide(self, prs, debug_notes: bool = False):
         """Add this slide to the presentation. With debug_notes, the speaker notes explain how it was generated
-        (off by default: presenters see the notes, and they spoil the surprise)."""
-        ppt_slide = self._ppt_slide_creator(prs, **self._arguments)
-        try:
-            if ppt_slide:
-                if debug_notes and self._note:
-                    ppt_slide.notes_slide.notes_text_frame.text = self._note
+        (off by default: presenters see the notes, and they spoil the surprise).
 
-                if self._credits:
-                    powerpoint_slide_creator.add_sources_note(ppt_slide, self._credits)
+        The slide is drawn from its deck form (see to_deck_slide), like every slide of a deck."""
+        return render_slide(prs, self.to_deck_slide(), debug_notes=debug_notes, images=self.image_store())
 
-                powerpoint_slide_creator.remove_empty_placeholders(ppt_slide)
+    def to_deck_slide(self) -> model.DeckSlide:
+        """The slide as deck data (see talkgenerator.models.deck): its content as elements, its credits and notes."""
+        fit: model.ImageFit = "contain" if self._arguments.get("original_image_size", True) else "cover"
+        elements = []
+        for argument, role in classic.CLASSIC_ROLES[self._type_name].items():
+            element = _to_element(role, self._arguments.get(argument), "cover" if role in classic.COVER_ROLES else fit)
+            if element is not None:
+                elements.append(element)
+        return self._deck_slide(tuple(elements))
 
-        except (AttributeError, KeyError) as e:
-            logger.error("Error while finishing slide: {}".format(e))
-        return ppt_slide
+    def _deck_slide(
+        self, elements: tuple[model.TextElement | model.ImageElement | model.ChartElement, ...]
+    ) -> model.DeckSlide:
+        credits = tuple(tuple(model.CreditPart(text=text, url=url) for text, url in credit) for credit in self._credits)
+        return model.DeckSlide(
+            type=self._type_name,
+            layout=classic.layout_id(self._type_name),
+            elements=elements,
+            credits=credits,
+            notes=self._note,
+        )
+
+    def image_store(self) -> dict[str, ImageData]:
+        """The slide's images by URL, with the bytes downloaded while checking them (so they aren't downloaded
+        again) and what to do once they end up on a slide (such as Unsplash's download tracking)."""
+        return {value.get_image_url(): value for value in self._arguments.values() if isinstance(value, ImageData)}
 
     def to_slide_dictionary(self) -> dict:
         slide_dict = dict(self._arguments)
@@ -81,6 +98,28 @@ class Slide:
         slide_dict["sources"] = self._sources
         slide_dict["source_urls"] = self._source_urls
         return slide_dict
+
+
+def _to_element(role: str, value: object, fit: model.ImageFit) -> model.TextElement | model.ImageElement | None:
+    """A slide argument as a deck element: an image, a text, or nothing when it's empty."""
+    if value is None:
+        return None
+    if role not in classic.TEXT_ROLES:
+        if isinstance(value, ImageData):
+            return model.ImageElement(role=role, image=_to_image_asset(value), fit=fit)
+        if isinstance(value, str) and os_util.is_image(value):
+            return model.ImageElement(role=role, image=model.ImageAsset(url=value), fit=fit)
+    text = str(value)
+    return model.TextElement(role=role, text=text) if text.strip() else None
+
+
+def _to_image_asset(image: ImageData) -> model.ImageAsset:
+    return model.ImageAsset(
+        url=image.get_image_url(),
+        source=image.get_source(),
+        source_url=image.get_source_url(),
+        credit=tuple(model.CreditPart(text=text, url=url) for text, url in image.get_credit()),
+    )
 
 
 def _has_content(value) -> bool:
@@ -221,3 +260,16 @@ class ChartSlide(Slide):
                 "chart_modifier": chart_modifier,
             },
         )
+
+    def to_deck_slide(self) -> model.DeckSlide:
+        """The chart's numbers go into the deck; the renderer styles the chart by its type (the chart_modifier
+        stays out: a deck holds data, not functions)."""
+        elements: list[model.TextElement | model.ImageElement | model.ChartElement] = []
+        title = _to_element("title", self._arguments.get("title"), "contain")
+        if title is not None:
+            elements.append(title)
+        chart_data = self._arguments.get("chart_data")
+        if chart_data is not None:
+            chart = charts.chart_spec(self._arguments["chart_type"], chart_data)
+            elements.append(model.ChartElement(role="chart", chart=chart))
+        return self._deck_slide(tuple(elements))

@@ -1,16 +1,33 @@
 import logging
+from collections.abc import Sequence
 
+from talkgenerator import __version__
+from talkgenerator.datastructures.image_data import ImageData
+from talkgenerator.models.deck import Deck
+from talkgenerator.render.powerpoint import render_slide
 from talkgenerator.slide.slides import Slide
 
 logger = logging.getLogger("talkgenerator")
 
 
 class SlideDeck:
-    """Represents a deck of Slide objects"""
+    """Represents a deck of Slide objects, and what the talk is about"""
 
-    def __init__(self, size):
+    def __init__(
+        self,
+        size,
+        *,
+        title: str | None = None,
+        topics: Sequence[str] = (),
+        presenter: str | None = None,
+        seed: int | None = None,
+    ):
         self._size = size
-        self._slides: list[Slide] = [None] * size
+        self._slides: list[Slide | None] = [None] * size
+        self._title = title
+        self._topics = tuple(topics)
+        self._presenter = presenter
+        self._seed = seed
 
     def add_slide(self, slide_index: int, slide):
         self._slides[slide_index] = slide
@@ -19,14 +36,40 @@ class SlideDeck:
         return len(self._slides) >= self._size and (None not in self._slides)
 
     def save_to_powerpoint(self, prs_template, debug_notes: bool = False):
-        """Should generate a slide in the powerpoint"""
+        """Add the slides to the presentation, drawn from the deck (see to_deck). Returns the PowerPoint slides."""
         if not self.is_complete():
             logger.error("ERROR: SOME SLIDES WERE NOT GENERATED: {}".format(self._slides))
             self._slides = [slide for slide in self._slides if slide is not None]
-        return [slide.create_powerpoint_slide(prs_template, debug_notes=debug_notes) for slide in self._slides]
+        images = self.image_store()
+        return [
+            render_slide(prs_template, deck_slide, debug_notes=debug_notes, images=images)
+            for deck_slide in self.to_deck().slides
+        ]
+
+    def to_deck(self, schema_name: str | None = None) -> Deck:
+        """The talk as a deck: plain data that renders the same PowerPoint, and that can be saved as JSON."""
+        return Deck(
+            generator=f"talkgenerator {__version__}",
+            title=self._title,
+            topics=self._topics,
+            presenter=self._presenter,
+            schema_name=schema_name,
+            seed=self._seed,
+            slides=tuple(slide.to_deck_slide() for slide in self._slides if slide is not None),
+        )
+
+    def image_store(self) -> dict[str, ImageData]:
+        """The images on the slides by URL, with their downloaded bytes (see Slide.image_store)."""
+        images: dict[str, ImageData] = {}
+        for slide in self._slides:
+            if slide is not None:
+                for url, image in slide.image_store().items():
+                    images.setdefault(url, image)
+        return images
 
     def to_slide_deck_dictionary(self) -> list[dict]:
-        return [slide.to_slide_dictionary() for slide in self._slides]
+        """The slides as JSON-ready dictionaries: the slides of the deck format (see to_deck)."""
+        return [slide.model_dump(mode="json") for slide in self.to_deck().slides]
 
     def get_structured_data(self):
         """Return slide deck as structured data for alternative presentation"""

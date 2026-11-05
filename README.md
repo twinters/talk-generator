@@ -78,6 +78,7 @@ Set `TALKGENERATOR_CACHE_DIR` to put the cache elsewhere, or `DISABLE_CACHE=1` t
 | `--output_folder` | The folder to output the generated presentations (*default: `./output/`*) |
 | `--save_ppt` | If this flag is true (*default*), the generated powerpoint will be saved in the `output_folder` |
 | `--open_ppt` | If this flag is true (*default*), the generated powerpoint will automatically open after generating |
+| `--save_json` | Also save the talk as a deck in JSON (the data the PowerPoint is drawn from), next to the PowerPoint (*default: false*) |
 | `--parallel` | If this flag is true (*default*), the generator will generate all slides in parallel |
 | `--int_seed` | Seed for the random generator, to make runs more reproducible |
 | `--print_logs` / `--verbose` | Print progress (*default: true*); `--verbose` adds debug logs |

@@ -8,6 +8,24 @@ and the project follows [Semantic Versioning](https://semver.org/).
 
 <!-- Add changes here as you merge them; release.py moves them under the new version at release time. -->
 
+The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
+
+### Added
+
+- The deck format: a generated talk as plain, versioned JSON data (`talkgenerator.models.deck`), which the
+  PowerPoint renderer (`talkgenerator.render.powerpoint`) draws. `--save_json` (or `save_json=True`) saves it
+  next to the PowerPoint, `slide_deck.to_deck()` returns it, and a saved deck renders again on its own.
+
+### Changed
+
+- Every slide is now drawn from its deck form, so a .pptx and its deck JSON always match. Slides look the same
+  as before.
+- `SlideDeck.to_slide_deck_dictionary()` returns the deck format's slides, which are JSON-ready, instead of
+  dictionaries holding image and chart objects.
+- The classic chart styles moved from `talkgenerator.sources.chart` to `talkgenerator.render.charts` (the old
+  names still work).
+- New dependency: pydantic.
+
 ## [4.0.1] - 2026-11-05
 
 ### Fixed
