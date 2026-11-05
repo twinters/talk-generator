@@ -4,6 +4,10 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+<!-- Add changes here as you merge them; release.py moves them under the new version at release time. -->
+
 ## [4.0.0] - 2026-11-05
 
 First release published to [PyPI](https://pypi.org/project/talkgenerator/)
@@ -55,5 +59,6 @@ Historical snapshot of the version accompanying the paper *"Automatically Genera
 Engaging Presentation Slide Decks"* (Winters &amp; Mathewson, EvoMUSART 2019). Preserved
 as the `Alpha` git tag; not published to PyPI and not maintained for current Python.
 
+[Unreleased]: https://github.com/twinters/talk-generator/compare/v4.0.0...HEAD
 [4.0.0]: https://github.com/twinters/talk-generator/compare/Alpha...v4.0.0
 [Alpha]: https://github.com/twinters/talk-generator/tree/Alpha

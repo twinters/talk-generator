@@ -144,3 +144,6 @@ http_cache.sqlite*
 
 # Dependency audit list written by CI
 installed-requirements.txt
+
+# Release notes staged by scripts/release.py
+.release-notes.md

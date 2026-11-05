@@ -18,6 +18,8 @@ jobs:
       - run: uv run --locked ruff check .
       - run: uv run --locked ruff format --check .
       - run: uv run --locked mypy
+      - name: Versions agree (pyproject.toml == CITATION.cff)
+        run: uv run --locked python scripts/release.py check
 
   test:
     runs-on: ubuntu-latest
