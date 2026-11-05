@@ -1,16 +1,16 @@
 """InspiroBot (https://inspirobot.me): AI-generated "inspirational" quote posters."""
 
-import random
-
 from talkgenerator.datastructures.image_data import ImageData
-from talkgenerator.util import http_util
+from talkgenerator.util import http_util, random_util
 
 _GENERATE_URL = "https://inspirobot.me/api?generate=true"
 
 
 def _legacy_random_image_url() -> str:
     # Older posters still live at predictable URLs; used when the generate API doesn't answer.
-    return "https://generated.inspirobot.me/0{:02d}/aXm{}xjU.jpg".format(random.randint(1, 73), random.randint(0, 9998))
+    return "https://generated.inspirobot.me/0{:02d}/aXm{}xjU.jpg".format(
+        random_util.randint(1, 73), random_util.randint(0, 9998)
+    )
 
 
 def get_random_inspirobot_image(_: object = None) -> ImageData:

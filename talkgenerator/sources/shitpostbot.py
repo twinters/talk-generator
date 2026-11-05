@@ -1,13 +1,12 @@
 """Source images scraped from the ShitpostBot 5000 gallery (https://www.shitpostbot.com)."""
 
 import logging
-import random
 from functools import lru_cache
 
 from bs4 import BeautifulSoup, Tag
 
 from talkgenerator import settings
-from talkgenerator.util import http_util, scraper_util
+from talkgenerator.util import http_util, random_util, scraper_util
 
 logger = logging.getLogger("talkgenerator")
 
@@ -69,11 +68,11 @@ def _get_source_image(image_url: str) -> str:
 
 
 def get_random_images(_: object) -> list[str]:
-    return _search_shitpostbot_page("", random.choice(range(1, _MAX_RANDOM_PAGE)))
+    return _search_shitpostbot_page("", random_util.choice(range(1, _MAX_RANDOM_PAGE)))
 
 
 def get_random_images_rated(_: object) -> list[tuple[int, str]]:
-    return _search_shitpostbot_page_rated("", random.choice(range(1, _MAX_RANDOM_PAGE)))
+    return _search_shitpostbot_page_rated("", random_util.choice(range(1, _MAX_RANDOM_PAGE)))
 
 
 _search_image_function = scraper_util.create_page_scraper(_search_shitpostbot_page)

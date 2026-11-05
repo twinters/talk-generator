@@ -9,10 +9,9 @@ so they mix well with ConceptNet edge weights.
 from __future__ import annotations
 
 import logging
-import random
 from functools import lru_cache
 
-from talkgenerator.util import http_util, language_util
+from talkgenerator.util import http_util, language_util, random_util
 
 API_URL = "https://api.datamuse.com/words"
 
@@ -103,5 +102,5 @@ def places(word: str, limit: int = 50) -> list[tuple[float, str]]:
             found.append((weight, candidate))
     if len(found) < 4:
         padding = [place for place in _GENERIC_PLACES if place not in seen]
-        found += [(round(random.uniform(1, 4), 3), place) for place in random.sample(padding, 4 - len(found))]
+        found += [(round(random_util.uniform(1, 4), 3), place) for place in random_util.sample(padding, 4 - len(found))]
     return found[:limit]

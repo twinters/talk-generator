@@ -4,7 +4,6 @@ certain types of (content) generators
 """
 
 import logging
-import random
 from collections.abc import Callable
 from typing import Any
 
@@ -219,10 +218,10 @@ class ExternalImageListGenerator(Generator):
             if not candidates:
                 return None
             if self._weighted:
-                entry = random.choices(candidates, weights=[entry[0] for entry in candidates])[0]
+                entry = random_util.choices(candidates, weights=[entry[0] for entry in candidates])[0]
                 chosen = entry[1]
             else:
-                entry = chosen = random.choice(candidates)
+                entry = chosen = random_util.choice(candidates)
             candidates.remove(entry)
 
             if isinstance(chosen, str):

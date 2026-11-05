@@ -2,7 +2,6 @@ import argparse
 import logging
 import os
 import pathlib
-import random
 import subprocess
 import sys
 
@@ -14,7 +13,7 @@ from talkgenerator.schema.content_generators import full_name_generator
 from talkgenerator.schema.presentation_schema_types import get_schema, schemas
 from talkgenerator.slide.slide_deck import SlideDeck
 from talkgenerator.sources import word_frequency
-from talkgenerator.util import os_util
+from talkgenerator.util import os_util, random_util
 
 DEFAULT_PRESENTATION_TOPIC = "cat"
 DEFAULT_OUTPUT_FOLDER = "output"
@@ -78,8 +77,9 @@ def generate_presentation(
     # Without some API keys, fewer image sources are used: say so (once), as it explains a lot about the results
     settings.report_missing_keys()
 
-    if int_seed is not None:
-        random.seed(int_seed)
+    # The talk's random choices all come from its seed (a random one if none is given), see random_util
+    rng = random_util.Rng(int_seed)
+    logger.info("Presentation seed: {} (pass it as int_seed to make this talk again)".format(rng.root_seed))
 
     # Retrieve the schema to generate the presentation with
     presentation_schema = get_schema(schema)
@@ -87,7 +87,8 @@ def generate_presentation(
 
     # Generate random presenter name if no presenter name given
     if not presenter:
-        presenter = full_name_generator()
+        with random_util.use(rng.child("presenter")):
+            presenter = full_name_generator()
 
     if not topic:
         topic = (word_frequency.get_rarest_word(title) if title else None) or DEFAULT_PRESENTATION_TOPIC
@@ -116,6 +117,7 @@ def generate_presentation(
         int_seed=int_seed,
         save_ppt=save_ppt,
         debug_notes=debug_notes,
+        rng=rng,
     )
 
     logger.info("**************************")
@@ -229,7 +231,8 @@ def get_argument_parser():
         "--int_seed",
         default=None,
         type=int,
-        help="Seed used for random.seed(int_seed). Fill in any number to add more consistency between runs.",
+        help="Seed for the talk's random choices: the same seed gives the same talk, in parallel or not (as long as "
+        "the sources give the same answers). Without one, a random seed is picked, and logged.",
     )
     parser.add_argument(
         "--schema",

@@ -25,6 +25,20 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
 - The classic chart styles moved from `talkgenerator.sources.chart` to `talkgenerator.render.charts` (the old
   names still work).
 - New dependency: pydantic.
+- A talk without a seed gets a random one, which the logs and the deck JSON mention, so any talk can be made
+  again.
+- Randomness comes from `talkgenerator.util.random_util`: every slide draws from its own streams of the talk's
+  seed. A lint rule keeps the package from using the `random` module directly.
+
+### Fixed
+
+- `--int_seed` gives the same talk every time, also with `--parallel` (the default), with seed 0, and in every
+  Python process. Slides generated in parallel are settled in order, so a talk comes out the same as when its
+  slides are generated one by one.
+- Template variables that share a start, like `{seed.plural}` and `{seed.plural.title}`, are filled in longest
+  first: in an unlucky order, the longer one used to come out as garbage.
+- Tracery grammars no longer keep growing in long-running processes such as the web app: every text gets a
+  fresh grammar.
 
 ## [4.0.1] - 2026-11-05
 

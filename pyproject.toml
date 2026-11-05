@@ -127,7 +127,7 @@ line-length = 120
 target-version = "py311"
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "UP", "B"]
+select = ["E", "F", "W", "I", "UP", "B", "TID251"]
 ignore = [
     "E501",  # long lines are left to the formatter
     "UP031",  # %-formatting in older code
@@ -135,4 +135,11 @@ ignore = [
     "B006",  # mutable defaults that are never mutated
     "B008",  # function calls in defaults (weight functions)
 ]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"random".msg = "Draw from talkgenerator.util.random_util instead, so that a talk's seed decides all its random choices"
+
+[tool.ruff.lint.per-file-ignores]
+"talkgenerator/util/random_util.py" = ["TID251"]  # the one place that wraps the random module
+"tests/**" = ["TID251"]
 

@@ -1,12 +1,11 @@
 import math
-import random
 
 from pptx.chart.data import ChartData, XyChartData
 from pptx.enum.chart import XL_CHART_TYPE
 
 from talkgenerator.render.charts import set_doughnut_properties, set_histogram_properties, set_pie_properties
 from talkgenerator.sources import conceptnet, text_generator
-from talkgenerator.util import generator_util
+from talkgenerator.util import generator_util, random_util
 
 yes_no_question_generator = text_generator.TraceryTextGenerator(
     "data/text-templates/chart_texts.json", "yes_no_question"
@@ -33,7 +32,7 @@ def add_noise_to_points(max_noise_ratio, datapoints):
 
 
 def add_noise_to_point(max_noise_ratio, datapoint):
-    return max(0, datapoint + (datapoint * random.uniform(-max_noise_ratio, max_noise_ratio)))
+    return max(0, datapoint + (datapoint * random_util.uniform(-max_noise_ratio, max_noise_ratio)))
 
 
 def add_gaussian_noise_to_multidim_points(max_noise_ratio, datapoints):
@@ -41,7 +40,7 @@ def add_gaussian_noise_to_multidim_points(max_noise_ratio, datapoints):
 
 
 def _add_gaussian_noise_to_multidim_point(max_noise_ratio, datapoint):
-    return [value * random.gauss(1, max_noise_ratio) for value in datapoint]
+    return [value * random_util.gauss(1, max_noise_ratio) for value in datapoint]
 
 
 def normalise_data(datapoints):
@@ -58,11 +57,11 @@ def create_interesting_curve_function():
     # Build an optional list
 
     # random small integer
-    a = random.uniform(-10, 10)
-    _b = random.uniform(0.001, 10)
+    a = random_util.uniform(-10, 10)
+    _b = random_util.uniform(0.001, 10)
 
     # random relative
-    _r = random.uniform(0, 1)
+    _r = random_util.uniform(0, 1)
 
     interesting_functions = [
         lambda x: a * x,
@@ -74,16 +73,16 @@ def create_interesting_curve_function():
         lambda x: math.sin(x),
     ]
 
-    chosen = random.choice(interesting_functions)
+    chosen = random_util.choice(interesting_functions)
 
     # Add chance of adding another function
-    # random_number = random.uniform(0, 1)
+    # random_number = random_util.uniform(0, 1)
     # if random_number < 0.4:
-    #     chosen = lambda x: random.choice(interesting_functions)(chosen(x))
+    #     chosen = lambda x: random_util.choice(interesting_functions)(chosen(x))
     # elif random_number < 0.8:
-    #     chosen = lambda x: random.choice(interesting_functions)(x) * chosen(x)
+    #     chosen = lambda x: random_util.choice(interesting_functions)(x) * chosen(x)
     # else:
-    #     chosen = lambda x: random.choice(interesting_functions)(x) + chosen(x)
+    #     chosen = lambda x: random_util.choice(interesting_functions)(x) + chosen(x)
 
     return chosen
 
@@ -93,10 +92,10 @@ def create_interesting_curve_function():
 
 def create_equal_data_with_outlier_end(size, noise_factor, normal_min, normal_max, outlier_min_size, outlier_max_size):
     # Create data with same number between normal_min and normal_max everywhere
-    datapoints = [random.uniform(normal_min, normal_max) for _ in range(0, size)]
+    datapoints = [random_util.uniform(normal_min, normal_max) for _ in range(0, size)]
 
     # Make last number an outlier
-    datapoints[-1] = random.uniform(outlier_min_size, outlier_max_size)
+    datapoints[-1] = random_util.uniform(outlier_min_size, outlier_max_size)
 
     # Apply noise
     datapoints = add_noise_to_points(noise_factor, datapoints)
@@ -105,7 +104,7 @@ def create_equal_data_with_outlier_end(size, noise_factor, normal_min, normal_ma
 
 
 def generate_random_x(lower_bound, upper_bound, number):
-    return [random.uniform(lower_bound, upper_bound) for _ in range(number)]
+    return [random_util.uniform(lower_bound, upper_bound) for _ in range(number)]
 
 
 def generate_y(xs, function):
@@ -171,9 +170,9 @@ def _generate_conceptnet_data(presentation_context, title_generator, conceptnet_
     if conceptnet_relations:
         conceptnet_relations = conceptnet.remove_duplicates(conceptnet_relations)
         conceptnet_relations = conceptnet.remove_containing(conceptnet_relations, seed)
-        random.shuffle(conceptnet_relations)
+        random_util.shuffle(conceptnet_relations)
 
-        conceptnet_relations = conceptnet_relations[0 : random.randint(2, 5)]
+        conceptnet_relations = conceptnet_relations[0 : random_util.randint(2, 5)]
         categories = [location[1] for location in conceptnet_relations]
         values = [float(location[0]) ** 2 for location in conceptnet_relations]
 
@@ -208,7 +207,7 @@ def generate_property_data(presentation_context):
 
 def generate_yes_no_pie(presentation_context):
     title, chart_data = generate_yes_no_large_funny_answer_chart_data(presentation_context)
-    chart_type, chart_modifier = random.choice(_YES_NO_CHART_TYPES)
+    chart_type, chart_modifier = random_util.choice(_YES_NO_CHART_TYPES)
     return title, chart_type, chart_data, chart_modifier
 
 
@@ -216,7 +215,7 @@ def generate_location_pie(presentation_context):
     result = generate_location_data(presentation_context)
     if result:
         title, chart_data = result
-        chart_type, chart_modifier = random.choice(_YES_NO_CHART_TYPES)
+        chart_type, chart_modifier = random_util.choice(_YES_NO_CHART_TYPES)
         return title, chart_type, chart_data, chart_modifier
 
 
@@ -224,7 +223,7 @@ def generate_property_pie(presentation_context):
     result = generate_property_data(presentation_context)
     if result:
         title, chart_data = result
-        chart_type, chart_modifier = random.choice(_YES_NO_CHART_TYPES)
+        chart_type, chart_modifier = random_util.choice(_YES_NO_CHART_TYPES)
         return title, chart_type, chart_data, chart_modifier
 
 
@@ -257,14 +256,14 @@ def generate_correlation_curve(presentation_context):
     serie = chart_data.add_series("Model")
 
     # Generate some Xs, with chance of exponential differences in size between generated x axes
-    xs = generate_random_x(0, 2 ** random.uniform(1, 10), int(2 ** random.uniform(3, 8)))
+    xs = generate_random_x(0, 2 ** random_util.uniform(1, 10), int(2 ** random_util.uniform(3, 8)))
 
     # Generate y
     data_points = generate_y(xs, create_interesting_curve_function())
 
     max_x = max(xs)
 
-    data_points = add_gaussian_noise_to_multidim_points(1.5 * random.uniform(0, max_x / 10), data_points)
+    data_points = add_gaussian_noise_to_multidim_points(1.5 * random_util.uniform(0, max_x / 10), data_points)
 
     # Remove negatives
     data_points = [(abs(datapoint[0]), abs(datapoint[1])) for datapoint in data_points]

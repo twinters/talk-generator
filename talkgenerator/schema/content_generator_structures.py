@@ -2,11 +2,9 @@
 This file contains structures that are helpful for certain content generators, but not general enough for generator_util
 """
 
-import random
-
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.sources import conceptnet, goodreads, reddit, text_generator, wikihow, wikiquote
-from talkgenerator.util import os_util
+from talkgenerator.util import os_util, random_util
 from talkgenerator.util.generator_util import (
     BackupGenerator,
     ExternalImageListGenerator,
@@ -95,7 +93,7 @@ country_description_generator = create_tracery_generator(_about_me_facts_grammar
 
 
 def _apply_country_prefix(country_name):
-    if random.uniform(0, 1) < 0.55:
+    if random_util.uniform(0, 1) < 0.55:
         return country_name
     return country_description_generator() + country_name
 
@@ -109,7 +107,7 @@ class CountryPrefixApplier:
 
 
 def _apply_job_prefix(job_name):
-    if random.uniform(0, 1) < 0.55:
+    if random_util.uniform(0, 1) < 0.55:
         return job_name
     return job_description_generator() + ": " + job_name
 
@@ -146,7 +144,7 @@ def generate_wikihow_bold_statement(presentation_context):
     template_values = presentation_context
     related_actions = wikihow.get_related_wikihow_actions(seed)
     if related_actions:
-        action = random.choice(related_actions)
+        action = random_util.choice(related_actions)
         template_values.update({"action": action.title(), "seed": seed})
 
     return bold_statement_templated_generator(template_values)

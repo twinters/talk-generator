@@ -1,7 +1,6 @@
 """This module helps out with generating text using templates"""
 
 import json
-import random
 import re
 
 import tracery
@@ -66,7 +65,7 @@ class TemplatedTextGenerator(AbstractTextGenerator):
         # Create a mutable copy of the templates list
         possible_templates = list(self._templates)
         for _ in range(len(possible_templates)):
-            template = random.choice(possible_templates)
+            template = random_util.choice(possible_templates)
             if can_format_with(template, variables_dictionary):
                 result = apply_variables_to_template(template, variables_dictionary)
                 if result:
@@ -75,11 +74,14 @@ class TemplatedTextGenerator(AbstractTextGenerator):
             possible_templates.remove(template)
 
 
+# Tracery picks its rules with random.choice, the only random function it uses: make it draw from the talk's random
+# generator (see random_util), so that a seed gives the same texts.
+tracery.random = random_util
+
+
 class TraceryTextGenerator(AbstractTextGenerator):
     def __init__(self, tracery_json, variable="origin"):
-        grammar = get_tracery_grammar(os_util.to_actual_file(tracery_json))
-        grammar.add_modifiers(base_english)
-        self._grammar = grammar
+        self._rules = load_tracery_rules(os_util.to_actual_file(tracery_json))
         self._variable = variable
 
     def generate(self, variables_dictionary=None):
@@ -88,19 +90,31 @@ class TraceryTextGenerator(AbstractTextGenerator):
         if not bool(variables_dictionary):
             variables_dictionary = {}
 
-        # Generate
+        # A grammar of its own for every text: tracery grammars collect state while they expand (every rule they
+        # picked, every error), which would keep growing in a long-running server, and which threads can't share
+        grammar = new_tracery_grammar(self._rules)
         for _ in range(100):  # TODO prune the grammar instead of retrying
-            template = self._grammar.flatten("#" + self._variable + "#")
+            template = grammar.flatten("#" + self._variable + "#")
             if can_format_with(template, variables_dictionary):
                 result = apply_variables_to_template(template, variables_dictionary)
                 if result:
                     return result
 
 
-def get_tracery_grammar(grammar_path):
-    # Deliberately not cached: tracery grammars keep state while expanding, so every generator gets its own
+def load_tracery_rules(grammar_path):
     with open(grammar_path, encoding="utf-8") as grammar_file:
-        return tracery.Grammar(json.load(grammar_file))
+        return json.load(grammar_file)
+
+
+def new_tracery_grammar(rules):
+    """A tracery grammar with English modifiers. Grammars can share their rules: tracery never changes them."""
+    grammar = tracery.Grammar(rules)
+    grammar.add_modifiers(base_english)
+    return grammar
+
+
+def get_tracery_grammar(grammar_path):
+    return new_tracery_grammar(load_tracery_rules(grammar_path))
 
 
 def can_format_with(template, variables_dictionary):
@@ -155,8 +169,10 @@ def apply_functions(variable, functions):
 def apply_functions_to_variables(template, variables_dictionary, variables_and_functions):
     """Applies the functions of the variables_and_functions tuple and stores them in the variable dictionary and
     updates the template"""
-    variables_and_functions = list(variables_and_functions)
-    variables_and_functions.sort(key=lambda a: len(a), reverse=True)
+    # Longest first, so that renaming {seed.plural} can't break {seed.plural.title}; then alphabetically, so that the
+    # functions (some of which draw random numbers) run in the same order in every process, whatever the order of
+    # the set they come in
+    variables_and_functions = sorted(variables_and_functions, key=lambda vf: (-len(vf[0] + vf[1]), vf[0] + vf[1]))
 
     for var_func in variables_and_functions:
         # Check if it has functions to apply

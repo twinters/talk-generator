@@ -1,5 +1,4 @@
 import logging
-import random
 from collections.abc import Sequence
 from functools import lru_cache
 
@@ -35,7 +34,7 @@ class SideTrackingTopicGenerator(SlideSeedGenerator):
             idx = 0
             while idx < num_slides:
                 seeds[idx] = topics[0]
-                idx += random.choice(topic_return_period_range)
+                idx += random_util.choice(topic_return_period_range)
         else:
             # Disperse all topics over the slides if multiple topics given
             _disperse(seeds, topics, 0, num_slides - 1)
@@ -134,7 +133,7 @@ class IdentityTopicGenerator(SlideSeedGenerator):
         self._topics = topics
 
     def get_seed(self, _) -> str:
-        return random.choice(self._topics)
+        return random_util.choice(self._topics)
 
 
 # class SynonymTopicGenerator:
@@ -157,7 +156,7 @@ class IdentityTopicGenerator(SlideSeedGenerator):
 #             synonyms = numpy.tile(synonyms, number_of_repeats)
 #
 #         # Take random `number_of_slides` elements
-#         random.shuffle(synonyms)
+#         random_util.shuffle(synonyms)
 #         self._seeds = synonyms[0: number_of_slides]
 #
 #     def generate_seed(self, slide_nr):

@@ -80,7 +80,7 @@ Set `TALKGENERATOR_CACHE_DIR` to put the cache elsewhere, or `DISABLE_CACHE=1` t
 | `--open_ppt` | If this flag is true (*default*), the generated powerpoint will automatically open after generating |
 | `--save_json` | Also save the talk as a deck in JSON (the data the PowerPoint is drawn from), next to the PowerPoint (*default: false*) |
 | `--parallel` | If this flag is true (*default*), the generator will generate all slides in parallel |
-| `--int_seed` | Seed for the random generator, to make runs more reproducible |
+| `--int_seed` | Seed for the talk's random choices: the same seed gives the same talk, with or without `--parallel` (as long as the sources answer the same). Without one, a random seed is picked, which the logs and the deck JSON mention |
 | `--print_logs` / `--verbose` | Print progress (*default: true*); `--verbose` adds debug logs |
 | `--debug_notes` | Explain in each slide's speaker notes how it was generated. Off by default, since presenters see the notes |
 
