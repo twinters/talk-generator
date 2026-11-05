@@ -79,6 +79,14 @@ def conceptnet_api_url() -> str:
     return env.str("CONCEPTNET_API_URL", "https://api.conceptnet.io").rstrip("/")
 
 
+def llm_spec() -> str:
+    """The language model to write talks with, as "provider:model" (see talkgenerator.llm.providers). Without one,
+    or with DISABLE_LLM=1, it's "none": talks are then classic, as the 2019 generator made them."""
+    if is_source_disabled("LLM"):
+        return "none"
+    return env.str("TALKGENERATOR_LLM", "").strip() or "none"
+
+
 def is_source_disabled(name: str) -> bool:
     """Check whether a content source is switched off via DISABLE_<NAME>=1.
 

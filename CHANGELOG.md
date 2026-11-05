@@ -15,6 +15,11 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
 - The deck format: a generated talk as plain, versioned JSON data (`talkgenerator.models.deck`), which the
   PowerPoint renderer (`talkgenerator.render.powerpoint`) draws. `--save_json` (or `save_json=True`) saves it
   next to the PowerPoint, `slide_deck.to_deck()` returns it, and a saved deck renders again on its own.
+- `talkgenerator.llm`, the groundwork for LLM-written talks: one interface for every language model provider; a
+  `replay` provider that records answers on a cassette and replays them, for offline tests and for making a
+  recorded talk again; a ledger of every talk's requests, tokens and cost; budgets (a $0 budget lets only free
+  models through); and list prices. `TALKGENERATOR_LLM` picks the provider (`none` by default; the real ones
+  follow in 5.0.0a2), and a deck tells what its talk asked of language models.
 
 ### Changed
 

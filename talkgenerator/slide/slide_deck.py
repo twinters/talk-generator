@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from talkgenerator import __version__
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.models.deck import Deck
+from talkgenerator.models.usage import Usage
 from talkgenerator.render.powerpoint import render_slide
 from talkgenerator.slide.slides import Slide
 
@@ -28,6 +29,8 @@ class SlideDeck:
         self._topics = tuple(topics)
         self._presenter = presenter
         self._seed = seed
+        # What the talk asked of language models (see talkgenerator.llm), for the deck to tell
+        self.usage = Usage()
 
     def add_slide(self, slide_index: int, slide):
         self._slides[slide_index] = slide
@@ -56,6 +59,7 @@ class SlideDeck:
             schema_name=schema_name,
             seed=self._seed,
             slides=tuple(slide.to_deck_slide() for slide in self._slides if slide is not None),
+            usage=self.usage,
         )
 
     def image_store(self) -> dict[str, ImageData]:

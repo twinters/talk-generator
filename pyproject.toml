@@ -86,8 +86,16 @@ warn_unused_ignores = true
 [[tool.mypy.overrides]]
 module = [
     "talkgenerator.datastructures.image_data",
+    "talkgenerator.llm",
+    "talkgenerator.llm.base",
+    "talkgenerator.llm.ledger",
+    "talkgenerator.llm.prices",
+    "talkgenerator.llm.providers",
+    "talkgenerator.llm.replay",
+    "talkgenerator.models.base",
     "talkgenerator.models.classic",
     "talkgenerator.models.deck",
+    "talkgenerator.models.usage",
     "talkgenerator.render.powerpoint",
     "talkgenerator.schema.registry",
     "talkgenerator.settings",

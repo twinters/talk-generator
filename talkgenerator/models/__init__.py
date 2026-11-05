@@ -12,6 +12,7 @@ from talkgenerator.models.deck import (
     ImageElement,
     TextElement,
 )
+from talkgenerator.models.usage import Usage
 
 __all__ = [
     "DECK_VERSION",
@@ -24,4 +25,5 @@ __all__ = [
     "ImageAsset",
     "ImageElement",
     "TextElement",
+    "Usage",
 ]

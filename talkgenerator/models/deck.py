@@ -12,18 +12,15 @@ from __future__ import annotations
 
 from typing import Annotated, Any, Final, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
+
+from talkgenerator.models.base import Data as _Data
+from talkgenerator.models.usage import Usage
 
 DECK_VERSION: Final = 1
 
 ImageFit = Literal["contain", "cover"]
 ChartType = Literal["pie", "doughnut", "column", "scatter"]
-
-
-class _Data(BaseModel):
-    """Immutable and strict: unknown fields are an error instead of being dropped without a word."""
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
 
 
 class CreditPart(_Data):
@@ -104,6 +101,7 @@ class Deck(_Data):
     seed: int | None = None
     theme: str = "classic"
     slides: tuple[DeckSlide, ...] = ()
+    usage: Usage = Usage()  # what the talk asked of language models, and what that cost
 
     def to_json(self, indent: int | None = 2) -> str:
         """The deck as JSON. The same deck always gives the same text: no timestamps, fields in a fixed order."""
