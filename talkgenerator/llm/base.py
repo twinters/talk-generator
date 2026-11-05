@@ -33,10 +33,14 @@ class TextRequest(Data):
         return cls(purpose=purpose, messages=(Message(role="user", content=prompt),), **options)
 
 
+# How an answer ended: whole, cut off (by its length limit, or a stream that broke off), or refused by the model
+Finish = Literal["complete", "truncated", "refused"]
+
+
 class TextResponse(Data):
     text: str
     data: Any = None  # the parsed JSON, when the request asked for JSON
-    finish: Literal["complete", "truncated", "refused"] = "complete"
+    finish: Finish = "complete"
     model: str = ""  # the model that answered, as "provider:model" (it can differ from the one asked for)
     input_tokens: int = 0
     cached_input_tokens: int = 0
@@ -89,6 +93,16 @@ class TextProvider(ABC):
         if response.text:
             on_text(response.text)
         return response
+
+    def possible_models(self) -> tuple[str, ...]:
+        """Every model ("provider:model") that may answer a request: more than one when the provider falls back to
+        other models. Budgets check them all."""
+        return (self.id,)
+
+    def max_output_tokens(self, request: TextRequest) -> int:
+        """The most output tokens a request may be billed for: its answer, plus room for thinking on models that
+        think before they write."""
+        return request.max_output_tokens
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self.id!r})"

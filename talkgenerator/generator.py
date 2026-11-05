@@ -243,6 +243,15 @@ def describe_schemas() -> str:
     return "\n".join(lines)
 
 
+def _llm_spec(spec: str) -> str:
+    """--llm's value, once it's known to name a language model provider."""
+    try:
+        provider_from_spec(spec)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError(str(error)) from error
+    return spec
+
+
 def str2bool(v):
     # stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
     if v.lower() in ("yes", "true", "t", "y", "1"):
@@ -341,9 +350,10 @@ def get_argument_parser():
     parser.add_argument(
         "--llm",
         default=None,
-        type=str,
-        help="The language model that writes the talk, as provider:model (default: TALKGENERATOR_LLM's); "
-        "'none' makes a classic talk",
+        type=_llm_spec,
+        help="The language model that writes the talk, as provider:model: openrouter[:<model>], anthropic[:<model>] "
+        "or openai:<model>; 'none' makes a classic talk (default: TALKGENERATOR_LLM's, or else OpenRouter's free "
+        "models when OPENROUTER_API_KEY is set)",
     )
     parser.add_argument(
         "--language",

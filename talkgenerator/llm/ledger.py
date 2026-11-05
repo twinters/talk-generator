@@ -70,13 +70,14 @@ class Budget:
     max_requests: int | None = None
     max_cost_usd: float | None = None
 
-    def check(self, ledger: Ledger, model: str, request: TextRequest) -> None:
-        """Raise BudgetExceeded if the request could take the talk over its budget."""
+    def check(self, ledger: Ledger, model: str, request: TextRequest, max_output_tokens: int | None = None) -> None:
+        """Raise BudgetExceeded if the request could take the talk over its budget (with at most max_output_tokens
+        of output, or else the request's own allowance)."""
         spent = ledger.total()
         if self.max_requests is not None and spent.requests >= self.max_requests:
             raise BudgetExceeded(f"the talk already made its {self.max_requests} language model requests")
         if self.max_cost_usd is not None:
-            worst_case = prices.worst_case_cost(model, request)
+            worst_case = prices.worst_case_cost(model, request, max_output_tokens)
             if worst_case is None:
                 raise BudgetExceeded(f"{model} has no known price, and the talk may spend at most ${self.max_cost_usd}")
             if spent.cost_usd + worst_case > self.max_cost_usd:
@@ -102,8 +103,16 @@ class MeteredProvider(TextProvider):
     def stream(self, request: TextRequest, on_text: Callable[[str], None]) -> TextResponse:
         return self._metered(request, lambda: self.provider.stream(request, on_text))
 
+    def possible_models(self) -> tuple[str, ...]:
+        return self.provider.possible_models()
+
+    def max_output_tokens(self, request: TextRequest) -> int:
+        return self.provider.max_output_tokens(request)
+
     def _metered(self, request: TextRequest, call: Callable[[], TextResponse]) -> TextResponse:
-        self.budget.check(self.ledger, self.id, request)
+        # Every model that may answer has to fit the budget: a free model can fall back to a paid one
+        for model in self.possible_models():
+            self.budget.check(self.ledger, model, request, self.max_output_tokens(request))
         start = time.monotonic()
         try:
             response = call()

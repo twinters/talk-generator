@@ -9,15 +9,20 @@ import io
 import json
 import re
 
+import anthropic
+import httpx2
+import openai
 import pytest
 from PIL import Image
 from pptx.chart.data import ChartData
 from pptx.enum.chart import XL_CHART_TYPE
 
 from talkgenerator import generator, llm
+from talkgenerator.checks import benchmark
 from talkgenerator.checks.deck import check_deck
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.datastructures.slide_generator_data import ConstantWeightFunction, PeakedWeight, SlideGeneratorData
+from talkgenerator.llm import providers
 from talkgenerator.llm.base import Capabilities, TextProvider, TextResponse
 from talkgenerator.models.deck import Deck
 from talkgenerator.plan import prompt
@@ -316,6 +321,90 @@ def test_the_language_and_a_given_title_reach_the_prompt(schema):
     assert "write the slides in Dutch" in user_prompt
     assert "Title: Over katten" in user_prompt
     assert deck.title == "Over katten"
+
+
+# THROUGH THE PROVIDERS' APIS (FAKED AT THE HTTP LEVEL)
+
+
+def _event_stream(body):
+    return httpx2.Response(200, headers={"content-type": "text/event-stream"}, content=body.encode())
+
+
+class _OpenRouterApi:
+    """OpenRouter's Chat Completions API, answering any talk request in pieces, as a free model would."""
+
+    def __init__(self):
+        self.bodies = []
+
+    def __call__(self, request):
+        self.bodies.append(request.content.decode())
+        text = json.dumps(_answer(json.loads(request.content)["response_format"]["json_schema"]["schema"]))
+        chunk = {"id": "gen-1", "object": "chat.completion.chunk", "created": 1, "model": "vendor/model:free"}
+        pieces = [text[start : start + 7] for start in range(0, len(text), 7)]
+        chunks = [{**chunk, "choices": [{"index": 0, "delta": {"content": piece}}]} for piece in pieces]
+        usage = {"prompt_tokens": 2000, "completion_tokens": 900, "total_tokens": 2900, "cost": 0}
+        chunks.append({**chunk, "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}], "usage": usage})
+        return _event_stream("".join(f"data: {json.dumps(chunk)}\n\n" for chunk in chunks) + "data: [DONE]\n\n")
+
+
+def test_a_talk_written_through_openrouter(schema):
+    api = _OpenRouterApi()
+    http_client = openai.DefaultHttpxClient(transport=httpx2.MockTransport(api))
+    client = openai.OpenAI(api_key="test", base_url=llm.openrouter.API_URL, max_retries=0, http_client=http_client)
+    deck = _talk(llm.OpenRouterProvider(client=client), budget=llm.Budget(max_cost_usd=0))
+
+    assert all(_planned(deck))
+    assert check_deck(deck, NUM_SLIDES) == []
+    assert (deck.usage.requests, deck.usage.cost_usd, deck.usage.unpriced_requests) == (1, 0.0, 0)
+    assert len(api.bodies) == 1 and "Ann Example" not in api.bodies[0]
+
+
+def _claude_api_that_declines_halfway(request):
+    text = json.dumps(_answer(json.loads(request.content)["output_config"]["format"]["schema"]))
+    message = {
+        "id": "msg_1",
+        "type": "message",
+        "role": "assistant",
+        "model": "claude-opus-5-5",
+        "content": [],
+        "stop_reason": None,
+        "stop_sequence": None,
+        "usage": {"input_tokens": 2000, "output_tokens": 1},
+    }
+    events = [
+        {"type": "message_start", "message": message},
+        {"type": "content_block_start", "index": 0, "content_block": {"type": "text", "text": ""}},
+        {"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": text[: len(text) // 2]}},
+        {"type": "content_block_stop", "index": 0},
+        {"type": "message_delta", "delta": {"stop_reason": "refusal"}, "usage": {"output_tokens": 400}},
+        {"type": "message_stop"},
+    ]
+    return _event_stream("".join(f"event: {event['type']}\ndata: {json.dumps(event)}\n\n" for event in events))
+
+
+def test_the_check_replays_what_the_model_answered(schema, monkeypatch):
+    # A model that never answers the same twice: the second run of the check has to replay the first one's answer
+    model = FakeModel()
+    model.change = lambda answer: answer.update(title=f"Take {len(model.requests)}")
+    monkeypatch.setitem(providers._FACTORIES, "fake", lambda argument: model)
+    report = benchmark.check_talk("cats", 1, schema="fake", slides=NUM_SLIDES, llm="fake")
+    assert report.deterministic is True
+    assert report.findings == []
+    assert len(model.requests) == 1
+    assert report.metrics["usage"]["requests"] == 1
+
+
+def test_a_talk_claude_declines_halfway_is_classic(schema):
+    transport = httpx2.MockTransport(_claude_api_that_declines_halfway)
+    client = anthropic.Anthropic(
+        api_key="test", max_retries=0, http_client=anthropic.DefaultHttpxClient(transport=transport)
+    )
+    deck = _talk(llm.ClaudeProvider(client=client))
+    # What Claude wrote before it declined isn't used: not the title, nor the slides it got to
+    assert deck.title.startswith("A classic title")
+    assert not any(_planned(deck))
+    assert len(deck.slides) == NUM_SLIDES
+    assert deck.usage.requests == 1
 
 
 # THE REQUEST

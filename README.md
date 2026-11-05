@@ -65,6 +65,24 @@ That keeps you within rate limits and is what Pixabay's API terms ask for.
 API keys are never stored in the cache.
 Set `TALKGENERATOR_CACHE_DIR` to put the cache elsewhere, or `DISABLE_CACHE=1` to turn it off.
 
+### Language models
+
+A language model can write the talk: the generator still picks the slides (with the talk's seed), and the model writes what goes on them, as one talk with a thesis, callbacks to earlier slides and a made-up job for the presenter.
+A slide the model gets wrong comes from the classic generator instead, and so does the whole talk when the model isn't available.
+The presenter's name is never sent to the model.
+
+| Provider | `--llm` | Key | Install | Cost |
+| --- | --- | --- | --- | --- |
+| [OpenRouter](https://openrouter.ai/)'s free models | `openrouter` (the default when there's a key), or `openrouter:<model>[,<fallback model>...]` | `OPENROUTER_API_KEY` ([free](https://openrouter.ai/settings/keys)) | `pip install 'talkgenerator[openai]'` | free: 50 talks a day, or 1,000 once the account has bought $10 of credits |
+| Claude | `anthropic` (Claude Opus 5.5), or `anthropic:<model>`, such as `anthropic:claude-haiku-5-5` | `ANTHROPIC_API_KEY` | `pip install 'talkgenerator[anthropic]'` | a few cents a talk with Claude Opus 5.5 |
+| OpenAI | `openai:<model>` | `OPENAI_API_KEY` | `pip install 'talkgenerator[openai]'` | depends on the model |
+
+Only OpenRouter's free models write talks without being asked: other models write them when `--llm` or `TALKGENERATOR_LLM` names them.
+`--llm none` (or `DISABLE_LLM=1`) makes a classic talk, as the 2019 generator did.
+`TALKGENERATOR_LLM_EFFORT` (such as `low` or `medium`) sets how hard the model thinks before it writes, for the models that take it; Claude thinks at `low` unless it's set.
+`--language nl` has the model write the talk in Dutch (or in another language); the image searches stay in English.
+After every talk, the logs tell how many requests it made and what they cost, and so does the talk's deck JSON.
+
 ### Run arguments
 
 | Argument | Description |
@@ -83,7 +101,7 @@ Set `TALKGENERATOR_CACHE_DIR` to put the cache elsewhere, or `DISABLE_CACHE=1` t
 | `--int_seed` | Seed for the talk's random choices: the same seed gives the same talk, with or without `--parallel` (as long as the sources answer the same). Without one, a random seed is picked, which the logs and the deck JSON mention |
 | `--print_logs` / `--verbose` | Print progress (*default: true*); `--verbose` adds debug logs |
 | `--debug_notes` | Explain in each slide's speaker notes how it was generated. Off by default, since presenters see the notes |
-| `--llm` | The language model that writes the slides, as `provider:model`. `none` (*default*, unless the `TALKGENERATOR_LLM` setting names one) makes a classic talk |
+| `--llm` | The language model that writes the slides, as `provider:model` (see [Language models](#language-models)). `none` makes a classic talk (*default: what `TALKGENERATOR_LLM` says, or else OpenRouter's free models when there's an `OPENROUTER_API_KEY`, or else `none`*) |
 | `--language` | The language of the slides, such as `nl`, for talks a language model writes (classic talks are in English) (*default: en*) |
 
 ### Using it from Python

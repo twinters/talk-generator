@@ -1,0 +1,135 @@
+"""OpenRouter: many models behind one key, free ones among them (docs/v5-plan.md, section 5.5), through its
+OpenAI-compatible Chat Completions API and the openai SDK (pip install 'talkgenerator[openai]').
+
+Without a model, OpenRouter's free router (openrouter/free) picks one of the free models: they cost nothing, with
+20 requests a minute and 50 a day (1,000 once the account has bought $10 of credits). Models after the first are
+fallbacks, tried in order when the one before fails (rate limited, down, or flagged by moderation). A request is
+billed at the price of the model that answered it, so only `:free` models are sure to cost nothing; the answer says
+what it cost, and the talk's ledger keeps that.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Callable, Sequence
+from typing import Any, Final
+
+from talkgenerator import settings
+from talkgenerator.llm.base import (
+    Capabilities,
+    Finish,
+    ProviderError,
+    ProviderUnavailable,
+    TextProvider,
+    TextRequest,
+    TextResponse,
+)
+from talkgenerator.llm.sdk import MAX_RETRIES, TIMEOUT_SECONDS, import_sdk, parse_json, provider_error
+
+API_URL: Final = "https://openrouter.ai/api/v1"
+DEFAULT_MODEL: Final = "openrouter/free"
+# Which app sends the requests, for the key owner's activity page and OpenRouter's app rankings
+APP_HEADERS: Final = {
+    "HTTP-Referer": "https://github.com/twinters/talk-generator",
+    "X-OpenRouter-Title": "talkgenerator",
+}
+# Most free models think before they write, which counts as output: room for that on top of the answer
+_THINKING_TOKENS: Final = 8000
+_FINISH: Final[dict[str, Finish]] = {"stop": "complete", "length": "truncated", "content_filter": "refused"}
+
+
+class OpenRouterProvider(TextProvider):
+    """A model at OpenRouter, with fallbacks: `models` in the order to try them."""
+
+    capabilities = Capabilities(structured_output=True, streaming=True)
+
+    def __init__(self, models: Sequence[str] = (), *, client: Any = None) -> None:
+        self.models = tuple(model.strip() for model in models if model.strip()) or (DEFAULT_MODEL,)
+        self.id = f"openrouter:{self.models[0]}"
+        self._client = client
+
+    def possible_models(self) -> tuple[str, ...]:
+        return tuple(f"openrouter:{model}" for model in self.models)
+
+    def max_output_tokens(self, request: TextRequest) -> int:
+        return request.max_output_tokens + _THINKING_TOKENS
+
+    def complete(self, request: TextRequest) -> TextResponse:
+        return self.stream(request, lambda text: None)
+
+    def stream(self, request: TextRequest, on_text: Callable[[str], None]) -> TextResponse:
+        sdk = import_sdk("openai", "openai")
+        client = self._client or self._new_client(sdk)
+        parts: list[str] = []
+        model = finish = usage = None
+        try:
+            for chunk in client.chat.completions.create(**self.arguments(request)):
+                model = chunk.model or model
+                usage = chunk.usage or usage
+                for choice in chunk.choices:
+                    if choice.delta.content:
+                        parts.append(choice.delta.content)
+                        on_text(choice.delta.content)
+                    finish = choice.finish_reason or finish
+        except sdk.OpenAIError as error:  # also an error in the middle of the stream
+            raise provider_error(error, sdk, "OpenRouter") from error
+        if finish == "error":
+            raise ProviderError("OpenRouter: the model broke off its answer with an error")
+
+        text = "".join(parts)
+        prompt_tokens = getattr(usage, "prompt_tokens", 0) or 0
+        cached_tokens = getattr(getattr(usage, "prompt_tokens_details", None), "cached_tokens", 0) or 0
+        cost = getattr(usage, "cost", None)  # OpenRouter's own field: what the request cost, in dollars
+        # Without a reason to finish, the stream broke off
+        ending: Finish = _FINISH.get(finish, "complete") if finish else "truncated"
+        return TextResponse(
+            text=text,
+            data=parse_json(text) if request.json_schema is not None else None,
+            finish=ending,
+            model=f"openrouter:{model or self.models[0]}",
+            input_tokens=max(prompt_tokens - cached_tokens, 0),
+            cached_input_tokens=cached_tokens,
+            output_tokens=getattr(usage, "completion_tokens", 0) or 0,
+            cost_usd=float(cost) if isinstance(cost, int | float) else None,
+        )
+
+    def arguments(self, request: TextRequest) -> dict[str, Any]:
+        """The request, as OpenRouter's Chat Completions API takes it."""
+        messages = [{"role": "system", "content": request.system}] if request.system else []
+        messages += [{"role": message.role, "content": message.content} for message in request.messages]
+        arguments: dict[str, Any] = {
+            "model": self.models[0],
+            "messages": messages,
+            "max_tokens": self.max_output_tokens(request),
+            "stream": True,
+        }
+        extra: dict[str, Any] = {}
+        if len(self.models) > 1:
+            extra["models"] = list(self.models[1:])
+        if request.json_schema is not None:
+            arguments["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {"name": "answer", "strict": True, "schema": request.json_schema},
+            }
+            # Only to providers that hold their answer to the schema
+            extra["provider"] = {"require_parameters": True}
+        effort = settings.llm_effort()
+        if effort:
+            extra["reasoning"] = {"effort": effort}
+        if extra:
+            arguments["extra_body"] = extra
+        return arguments
+
+    def _new_client(self, sdk: Any) -> Any:
+        key = settings.openrouter_api_key()
+        if not key:
+            raise ProviderUnavailable(
+                "OpenRouter needs a key: set OPENROUTER_API_KEY (free at https://openrouter.ai/settings/keys)"
+            )
+        self._client = sdk.OpenAI(
+            api_key=key,
+            base_url=API_URL,
+            default_headers=APP_HEADERS,
+            timeout=TIMEOUT_SECONDS,
+            max_retries=MAX_RETRIES,
+        )
+        return self._client

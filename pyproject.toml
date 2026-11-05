@@ -35,6 +35,12 @@ dependencies = [
     "wordfreq>=3.1",
 ]
 
+[project.optional-dependencies]
+# Language models that write talks (see talkgenerator.llm); without them, talks are classic
+anthropic = ["anthropic>=2.1"]
+openai = ["openai>=3.37"]  # for OpenRouter and OpenAI
+llm = ["talkgenerator[anthropic,openai]"]
+
 [project.urls]
 Homepage = "https://github.com/twinters/talk-generator"
 Demo = "https://talkgenerator.com"
@@ -45,6 +51,9 @@ talkgenerator = "talkgenerator.run:main_cli"
 
 [dependency-groups]
 dev = [
+    # The optional language model SDKs, so their adapters get tested and type-checked
+    "anthropic>=2.1",
+    "openai>=3.37",
     "mypy>=1.13",
     "pytest>=8.0",
     "pytest-cov>=5.0",

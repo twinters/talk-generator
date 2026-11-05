@@ -299,7 +299,11 @@ class PresentationSchema:
             response = llm.stream(request, read)
             if not read_anything:
                 read(response.text)
-            if response.finish != "complete":
+            if response.finish == "refused":
+                # What a model wrote before it declined isn't to be used
+                logger.warning("The language model declined to write the talk: it's classic")
+                talk.drop()
+            elif response.finish != "complete":
                 logger.warning(
                     "The language model's answer was %s: slides it didn't write are classic", response.finish
                 )

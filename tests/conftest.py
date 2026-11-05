@@ -25,5 +25,6 @@ def _offline_tests_use_no_real_credentials(request, monkeypatch):
     credentials |= {"OPENVERSE_CLIENT_ID", "OPENVERSE_CLIENT_SECRET"}
     # No language model either, unless a test brings its own: offline talks are classic
     credentials |= {"TALKGENERATOR_LLM", "OPENROUTER_API_KEY", "ANTHROPIC_API_KEY", "OPENAI_API_KEY"}
+    credentials |= {"TALKGENERATOR_LLM_EFFORT", "DISABLE_LLM"}
     for name in sorted(credentials):
         monkeypatch.delenv(name, raising=False)

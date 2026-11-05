@@ -4,6 +4,9 @@ Every talk is generated in parallel (the CLI's default), checked (talkgenerator.
 by one with the same seed, which has to give the same deck. The JSON report holds every finding, how long each talk
 took and what it asked of language models, to compare with the report of an earlier run.
 
+Talks are classic unless a language model is given (--llm). A model doesn't give the same answer twice, so the
+second run replays the answers the first run got: the same answers have to give the same talk.
+
 With live sources, a talk can also come out differently because a source answered differently between the two runs;
 the on-disk cache of API responses makes that rare.
 """
@@ -14,6 +17,7 @@ import argparse
 import json
 import logging
 import statistics
+import tempfile
 import time
 from collections.abc import Callable, Sequence
 from dataclasses import asdict, dataclass, field
@@ -22,6 +26,9 @@ from typing import Any, Final
 
 from talkgenerator import __version__, generator
 from talkgenerator.checks.deck import Finding, check_deck, deck_metrics
+from talkgenerator.llm.base import TextProvider
+from talkgenerator.llm.providers import provider_from_spec
+from talkgenerator.llm.replay import ReplayProvider
 from talkgenerator.models.deck import Deck
 from talkgenerator.util import os_util
 
@@ -82,30 +89,47 @@ class TalkReport:
         return [finding for finding in self.findings if finding.severity == "warning"]
 
 
-def generate_deck(topic: str, seed: int, schema: str, slides: int, parallel: bool) -> Deck:
+def generate_deck(
+    topic: str, seed: int, schema: str, slides: int, parallel: bool, llm: TextProvider | str = "none"
+) -> Deck:
     _, slide_deck, _ = generator.generate_presentation(
-        schema=schema, slides=slides, topic=topic, int_seed=seed, parallel=parallel, save_ppt=False
+        schema=schema, slides=slides, topic=topic, int_seed=seed, parallel=parallel, save_ppt=False, llm=llm
     )
     return slide_deck.to_deck(schema_name=schema)
 
 
 def check_talk(
-    topic: str, seed: int, schema: str = "default", slides: int = 10, determinism: bool = True
+    topic: str,
+    seed: int,
+    schema: str = "default",
+    slides: int = 10,
+    determinism: bool = True,
+    llm: str = "none",
 ) -> TalkReport:
-    """Generate a talk and check it; with determinism, generate it again one by one, which has to give the same."""
-    start = time.monotonic()
-    try:
-        deck = generate_deck(topic, seed, schema, slides, parallel=True)
-    except Exception as error:  # a talk should never fail: if it does, that's what the check found
-        logger.exception("Generating a talk about %r crashed", topic)
-        crash = Finding("generation", "error", f"generating the talk crashed: {error!r}")
-        return TalkReport(topic, seed, time.monotonic() - start, [crash])
-    report = TalkReport(topic, seed, time.monotonic() - start, check_deck(deck, slides), deck_metrics(deck))
-    if determinism:
-        again = generate_deck(topic, seed, schema, slides, parallel=False)
-        report.deterministic = again.to_json() == deck.to_json()
-        if not report.deterministic:
-            report.findings.append(Finding("determinism", "error", _differences(deck, again)))
+    """Generate a talk and check it; with determinism, generate it again one by one, which has to give the same.
+
+    With a language model (a spec, see talkgenerator.llm.providers), its answers are recorded, and the second run
+    replays them."""
+    with tempfile.TemporaryDirectory(prefix="talkgenerator-check-") as folder:
+        cassette = Path(folder) / "answers.json"
+        recording: TextProvider | str = llm
+        if llm != "none":
+            recording = ReplayProvider(cassette, record=provider_from_spec(llm))
+        start = time.monotonic()
+        try:
+            deck = generate_deck(topic, seed, schema, slides, parallel=True, llm=recording)
+        except Exception as error:  # a talk should never fail: if it does, that's what the check found
+            logger.exception("Generating a talk about %r crashed", topic)
+            crash = Finding("generation", "error", f"generating the talk crashed: {error!r}")
+            return TalkReport(topic, seed, time.monotonic() - start, [crash])
+        report = TalkReport(topic, seed, time.monotonic() - start, check_deck(deck, slides), deck_metrics(deck))
+        if determinism:
+            replaying: TextProvider | str = ReplayProvider(cassette) if llm != "none" else "none"
+            again = generate_deck(topic, seed, schema, slides, parallel=False, llm=replaying)
+            # What the talks asked of language models differs (the second one replayed); their slides may not
+            report.deterministic = again.model_copy(update={"usage": deck.usage}).to_json() == deck.to_json()
+            if not report.deterministic:
+                report.findings.append(Finding("determinism", "error", _differences(deck, again)))
     return report
 
 
@@ -116,23 +140,25 @@ def run(
     slides: int = 10,
     determinism: bool = True,
     on_talk: Callable[[TalkReport], None] | None = None,
+    llm: str = "none",
 ) -> dict[str, Any]:
     """Check a talk for every topic and seed, and return the report."""
     talks = []
     for topic in topics:
         for seed in seeds:
-            talk = check_talk(topic, seed, schema, slides, determinism)
+            talk = check_talk(topic, seed, schema, slides, determinism, llm)
             talks.append(talk)
             if on_talk is not None:
                 on_talk(talk)
-    return _report(talks, schema, slides, seeds)
+    return _report(talks, schema, slides, seeds, llm)
 
 
-def _report(talks: list[TalkReport], schema: str, slides: int, seeds: Sequence[int]) -> dict[str, Any]:
+def _report(talks: list[TalkReport], schema: str, slides: int, seeds: Sequence[int], llm: str) -> dict[str, Any]:
     seconds = [talk.seconds for talk in talks]
     checked = [talk for talk in talks if talk.deterministic is not None]
     return {
         "generator": f"talkgenerator {__version__}",
+        "llm": llm,
         "schema": schema,
         "slides": slides,
         "seeds": list(seeds),
@@ -190,6 +216,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--schema", default="default", help="the presentation schema (default: default)")
     parser.add_argument("--slides", type=int, default=10, help="slides per talk (default: 10)")
     parser.add_argument(
+        "--llm",
+        default="none",
+        help="the language model that writes the talks, as provider:model (default: none, for classic talks)",
+    )
+    parser.add_argument(
         "--no_determinism",
         dest="determinism",
         action="store_false",
@@ -206,6 +237,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         seeds = [int(seed) for seed in args.seeds.split(",")]
         generator.get_schema(args.schema)
+        provider_from_spec(args.llm)
     except (ValueError, KeyError) as error:
         parser.error(str(error))
     if args.verbose:
@@ -219,7 +251,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         for finding in talk.findings:
             print(f"    {finding}")
 
-    report = run(topics, seeds, args.schema, args.slides, args.determinism, on_talk=print_talk)
+    report = run(topics, seeds, args.schema, args.slides, args.determinism, on_talk=print_talk, llm=args.llm)
     summary = report["summary"]
     print(
         f"\n{_count(summary['talks'], 'talk')}: {_count(summary['errors'], 'error')},"

@@ -18,8 +18,8 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
 - `talkgenerator.llm`, the groundwork for LLM-written talks: one interface for every language model provider; a
   `replay` provider that records answers on a cassette and replays them, for offline tests and for making a
   recorded talk again; a ledger of every talk's requests, tokens and cost; budgets (a $0 budget lets only free
-  models through); and list prices. `TALKGENERATOR_LLM` picks the provider (`none` by default; the real ones
-  follow), and a deck tells what its talk asked of language models.
+  models through); and list prices. `TALKGENERATOR_LLM` picks the provider, and a deck tells what its talk asked
+  of language models.
 - Talks a language model writes: Python still picks every slide's generator, and the model writes what goes on
   those slides, in one streamed request whose JSON schema is made for the talk (its title, the presenter's job,
   its thesis, then every slide in order), so slides get ready while the answer comes in. A slide that comes out
@@ -30,6 +30,21 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   recipe (`talkgenerator.plan.kinds`) that tells the model what to write for it; the plans it writes
   (`talkgenerator.models.plan`) are the format that talks written elsewhere, such as by a Claude Skill, will use
   too.
+- Language model providers, with their SDKs as optional extras (`talkgenerator[openai]`,
+  `talkgenerator[anthropic]`, or `talkgenerator[llm]` for both):
+  - `openrouter`: OpenRouter's free models (its free router by default), with your `OPENROUTER_API_KEY`. They
+    write talks whenever there's a key, at no cost; models listed after the first
+    (`openrouter:<model>,<fallback>`) are fallbacks, and only providers that hold to the talk's schema get the
+    request.
+  - `anthropic`: Claude, Claude Opus 5.5 by default, with your `ANTHROPIC_API_KEY`: structured outputs, thinking
+    at low effort (`TALKGENERATOR_LLM_EFFORT` changes it), and server-side fallbacks when a request is declined.
+  - `openai:<model>`: OpenAI's models through the Responses API, with your `OPENAI_API_KEY`.
+
+  Paid models only write talks when `--llm` or `TALKGENERATOR_LLM` names them. A talk that a model declines,
+  even halfway, is classic. Budgets check every model a request may end up at, and leave room for thinking. Keys
+  never show up in logs or error messages.
+- `talkgenerator check --llm provider:model` checks talks a language model writes; to check that the same answers
+  give the same talk, the second run replays what the first one got.
 - `talkgenerator check`: generates talks on a set of topics (10 by default, `--quick` for 3, `--all` for 30),
   checks every deck, generates every talk again one by one with its seed to see that it comes out the same, and
   writes a JSON report. The checks, in `talkgenerator.checks`: every slide has what its type needs, no template
@@ -43,7 +58,7 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   dictionaries holding image and chart objects.
 - The classic chart styles moved from `talkgenerator.sources.chart` to `talkgenerator.render.charts` (the old
   names still work).
-- New dependency: pydantic.
+- New dependency: pydantic. New optional dependencies: anthropic and openai (see the language model providers).
 - A talk without a seed gets a random one, which the logs and the deck JSON mention, so any talk can be made
   again.
 - Randomness comes from `talkgenerator.util.random_util`: every slide draws from its own streams of the talk's

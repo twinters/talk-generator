@@ -80,11 +80,35 @@ def conceptnet_api_url() -> str:
 
 
 def llm_spec() -> str:
-    """The language model to write talks with, as "provider:model" (see talkgenerator.llm.providers). Without one,
-    or with DISABLE_LLM=1, it's "none": talks are then classic, as the 2019 generator made them."""
+    """The language model to write talks with, as "provider:model" (see talkgenerator.llm.providers).
+
+    Without TALKGENERATOR_LLM, OpenRouter's free models write the talks when there's an OPENROUTER_API_KEY (they
+    cost nothing), and talks are classic otherwise: a paid model only writes talks when it's asked for. With
+    DISABLE_LLM=1, it's "none": talks are then classic, as the 2019 generator made them."""
     if is_source_disabled("LLM"):
         return "none"
-    return env.str("TALKGENERATOR_LLM", "").strip() or "none"
+    spec = env.str("TALKGENERATOR_LLM", "").strip()
+    if spec:
+        return spec
+    return "openrouter" if openrouter_api_key() else "none"
+
+
+def openrouter_api_key() -> str:
+    return env.str("OPENROUTER_API_KEY", "").strip()
+
+
+def anthropic_api_key() -> str:
+    return env.str("ANTHROPIC_API_KEY", "").strip()
+
+
+def openai_api_key() -> str:
+    return env.str("OPENAI_API_KEY", "").strip()
+
+
+def llm_effort() -> str | None:
+    """How hard a language model thinks before it writes (TALKGENERATOR_LLM_EFFORT: low, medium, high, ...), for
+    the models that take it. None leaves it to the provider's adapter."""
+    return env.str("TALKGENERATOR_LLM_EFFORT", "").strip().lower() or None
 
 
 def is_source_disabled(name: str) -> bool:

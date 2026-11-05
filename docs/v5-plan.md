@@ -265,7 +265,7 @@ class TextProvider(Protocol):
 
 | Adapter | Library | For | Notes |
 | --- | --- | --- | --- |
-| `openrouter` | `openai` SDK, on OpenRouter's OpenAI-compatible API | the site's default (free `:free` models), and anyone with an OpenRouter key or sign-in | free models come and go, so it sends an ordered fallback list; structured output support varies per model (JSON Lines otherwise) |
+| `openrouter` | `openai` SDK, on OpenRouter's OpenAI-compatible API | the site's default (free `:free` models), and anyone with an OpenRouter key or sign-in | free models come and go, so the default is OpenRouter's free router (`openrouter/free`), and models listed after the first are fallbacks; only providers that hold to the schema get the request (`require_parameters`) |
 | `anthropic` | `anthropic` SDK | your own Anthropic key | default model `claude-opus-5-5` (configurable); structured outputs, streaming, an explicit `effort`, prompt caching, refusal handling (section 5.5) |
 | `openai` | `openai` SDK | your own OpenAI key | Responses API with structured outputs |
 | `chatgpt` | `openai` SDK and OAuth | Sign in with ChatGPT, in the local CLI | runs on the user's ChatGPT plan allowance |
@@ -338,8 +338,10 @@ image ([section 10.5](#105-generated-images)).
 ### 5.7 Keys, tokens and logs
 
 - Settings follow v4's environment variables: `TALKGENERATOR_LLM` (such as `openrouter:<model>:free` or
-  `anthropic:claude-opus-5-5`), `TALKGENERATOR_LLM_FALLBACKS`, `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`,
-  `OPENAI_API_KEY`, and `DISABLE_LLM=1` next to the existing `DISABLE_<SOURCE>` switches.
+  `anthropic:claude-opus-5-5`), `TALKGENERATOR_LLM_FALLBACKS`, `TALKGENERATOR_LLM_EFFORT`, `OPENROUTER_API_KEY`,
+  `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, and `DISABLE_LLM=1` next to the existing `DISABLE_<SOURCE>` switches.
+  (Built so far: all but `TALKGENERATOR_LLM_FALLBACKS`; OpenRouter's fallbacks go in its spec, as
+  `openrouter:<model>,<fallback>`.)
 - `talkgenerator login openrouter|chatgpt` keeps OAuth tokens in the user's config folder (through platformdirs,
   readable only by the user), or in the OS keyring when available.
 - Keys and tokens never end up in logs, the HTTP cache, deck JSON or error messages: `http_util.redact` gets
@@ -766,7 +768,7 @@ before the new formats. A milestone is a checkpoint on `v5`, not a release; only
 | Milestone | Focus | Contents | Done when |
 | --- | --- | --- | --- |
 | 1 (done, 2026-11-05) | Groundwork | deck JSON and the models; pptx renderer from deck JSON (classic look); seeded random streams (`random_util`), with parallel generation giving the one-by-one talk; the classic engine on the new model; `--save_json`; usage ledger and budgets; `replay` and `none` providers; `talkgenerator check` for completeness, template leftovers and determinism | classic talks look like v4's; the same seed gives the same deck, serial or parallel; v4's offline tests pass |
-| 2 (under way: the TalkPlan schema and the planner are in) | LLM TED talks and the Claude Skill | TalkPlan schema; the LLM planner (one streamed call, dice, per-slide fallback, safety); `openrouter`, `anthropic` and `openai` adapters; languages, Dutch first; `render plan.json`, `schema`, `formats`; `skill/` with SKILL.md; `login openrouter`; the `chatgpt` adapter (may slip to milestone 3); checks for requests, cost, speed and language | on the benchmark with OpenRouter's free models: no holes, no leftovers, $0 and one request per talk; Dutch talks pass the language check; Claude Code makes a deck end to end with the Skill |
+| 2 (under way: the TalkPlan schema, the planner, and the `openrouter`, `anthropic` and `openai` adapters are in) | LLM TED talks and the Claude Skill | TalkPlan schema; the LLM planner (one streamed call, dice, per-slide fallback, safety); `openrouter`, `anthropic` and `openai` adapters; languages, Dutch first; `render plan.json`, `schema`, `formats`; `skill/` with SKILL.md; `login openrouter`; the `chatgpt` adapter (may slip to milestone 3); checks for requests, cost, speed and language | on the benchmark with OpenRouter's free models: no holes, no leftovers, $0 and one request per talk; Dutch talks pass the language check; Claude Code makes a deck end to end with the Skill |
 | 3 | Themes and layouts | theme tokens and families, extremes on by default; procedural palettes and font pairs; layout variants; text fitting; image treatments; the `classic` theme; thumbnails and contact sheet in CI; the local MCP server | contrast and overflow checks pass on every theme |
 | 4 | Streaming and the web view | `stream_talk()`, display policies, probe validation; in talk-generator-web: the SSE endpoint, the Angular renderer, LLM talks by default with the classic switch, a language choice, Connect OpenRouter and pasted keys, .pptx on download, a preview deployment that installs `v5` from git | first slide on screen within the calibrated target on the VPS; a 20-slide talk under the memory bar; the downloaded .pptx matches the web view |
 | 5 | Images | slots, aesthetic profiles and flavour packs, local analysis, license classes; new open and weird sources; AI image generation with the user's own keys; the optional vision pick | license policies enforced; profile checks pass (such as the grayscale share for `vintage`); generated images credited |
@@ -810,6 +812,7 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D24 | No 4.x fixes once 5.0 ships. |
 | D25 | Dutch talks on talkgenerator.com may use the site's free OpenRouter quota; once it runs out, they get a classic English talk with a notice. |
 | D26 | The new talk formats come in milestone 7, or move to 5.1 if the TED work takes longer. |
+| D27 | Without `TALKGENERATOR_LLM`, OpenRouter's free models write talks when there's an OpenRouter key, and talks are classic otherwise: a paid model only writes talks when it's asked for, since a key alone (an `ANTHROPIC_API_KEY` set for other tools, say) shouldn't make talks cost money. |
 
 D7 to D9, D13 and D15 to D26 were settled on 2026-11-05; the others follow from the design.
 

@@ -1,8 +1,12 @@
-"""Choosing a language model provider: from a spec such as "none" or "replay:<cassette>".
+"""Choosing a language model provider, from a spec: the provider's name, and after a colon what it needs.
 
-TALKGENERATOR_LLM sets the spec (`settings.llm_spec`); without it, or with DISABLE_LLM=1, it's "none", and talks
-are classic. The providers that talk to real models (OpenRouter, Anthropic, OpenAI, ...) register here with
-`register` as they arrive (docs/v5-plan.md, milestone 2).
+- "openrouter" (OpenRouter's free models), or "openrouter:<model>[,<fallback model>...]"
+- "anthropic" (Claude Opus 5.5), or "anthropic:<model>"
+- "openai:<model>"
+- "replay:<cassette.json>": answers recorded earlier (talkgenerator.llm.replay)
+- "none": no language model; talks are classic
+
+TALKGENERATOR_LLM sets the spec (see `settings.llm_spec` for the default), and DISABLE_LLM=1 makes it "none".
 """
 
 from __future__ import annotations
@@ -11,6 +15,9 @@ from collections.abc import Callable
 
 from talkgenerator import settings
 from talkgenerator.llm.base import Capabilities, ProviderUnavailable, TextProvider, TextRequest, TextResponse
+from talkgenerator.llm.claude import ClaudeProvider
+from talkgenerator.llm.openai_responses import OpenAIProvider
+from talkgenerator.llm.openrouter import OpenRouterProvider
 from talkgenerator.llm.replay import ReplayProvider
 
 
@@ -62,3 +69,6 @@ def _replay(cassette: str) -> TextProvider:
 
 register("none", lambda _: NoneProvider())
 register("replay", _replay)
+register("openrouter", lambda models: OpenRouterProvider(models.split(",")))
+register("anthropic", lambda model: ClaudeProvider(model))
+register("openai", lambda model: OpenAIProvider(model))

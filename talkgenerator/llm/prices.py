@@ -36,7 +36,15 @@ PRICES: Final[dict[str, Price]] = {
     "anthropic:claude-haiku-5-5": Price(
         0.10, 0.50, cached_input=0.01, long_prompt_tokens=100_000, long_input=0.50, long_output=2.50
     ),
+    # The models that server-side fallbacks may hand a declined request to (cache prices: a tenth of the input)
+    "anthropic:claude-opus-5": Price(5.00, 25.00, cached_input=0.50),
+    "anthropic:claude-opus-4-8": Price(5.00, 25.00, cached_input=0.50),
+    "anthropic:claude-sonnet-5": Price(2.00, 10.00, cached_input=0.20),
 }
+
+
+# OpenRouter's router that sends every request to one of its free models
+OPENROUTER_FREE_ROUTER: Final = "openrouter:openrouter/free"
 
 
 def price_of(model: str) -> Price | None:
@@ -46,7 +54,7 @@ def price_of(model: str) -> Price | None:
     provider = model.split(":", 1)[0]
     if provider in ("none", "replay"):
         return FREE
-    if provider == "openrouter" and model.endswith(":free"):
+    if provider == "openrouter" and (model.endswith(":free") or model == OPENROUTER_FREE_ROUTER):
         return FREE
     return None
 
@@ -63,10 +71,12 @@ def estimate_cost(model: str, input_tokens: int, cached_input_tokens: int, outpu
     return (input_tokens * input_price + cached_input_tokens * cached_price + output_tokens * output_price) / 1e6
 
 
-def worst_case_cost(model: str, request: TextRequest) -> float | None:
+def worst_case_cost(model: str, request: TextRequest, max_output_tokens: int | None = None) -> float | None:
     """The most a request can cost: all its text as uncached input, at a generous three characters per token, and
-    its whole output allowance. None if the model's price isn't known."""
+    its whole output allowance (the request's, or a larger one that leaves room for thinking). None if the model's
+    price isn't known."""
     characters = len(request.system) + sum(len(message.content) for message in request.messages)
     if request.json_schema is not None:
         characters += len(json.dumps(request.json_schema))
-    return estimate_cost(model, math.ceil(characters / 3), 0, request.max_output_tokens)
+    output_tokens = request.max_output_tokens if max_output_tokens is None else max_output_tokens
+    return estimate_cost(model, math.ceil(characters / 3), 0, output_tokens)
