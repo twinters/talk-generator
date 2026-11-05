@@ -116,6 +116,9 @@ uv run mypy                       # type checking
 Type checking is gradual: mypy checks the whole package, and the modules listed under `[[tool.mypy.overrides]]` in `pyproject.toml` must be fully annotated.
 Add a module to that list once you've typed it.
 
+To check the talks themselves, `uv run talkgenerator check` generates talks on a set of topics with the live sources (`--quick` for 3 topics, `--all` for 30), checks them, generates each again with its seed to see that it comes out the same, and writes a report to `output/check-report.json`.
+It exits with an error when a talk is broken: a slide without what it needs, or template code such as `{seed}` on a slide.
+
 GitHub Actions runs the linter, the type checker and the offline tests on every push and pull request, and checks the installed dependencies for known vulnerabilities with `pip-audit`.
 A weekly "canary" workflow runs the network tests against the live APIs, and opens an issue when one of them broke.
 It uses the API keys stored as repository secrets (`REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_USER_AGENT`, `UNSPLASH_ACCESS_KEY`, `PIXABAY_KEY`, `PEXELS_KEY`, `GIPHY_API_KEY`); tests whose keys are missing are skipped.

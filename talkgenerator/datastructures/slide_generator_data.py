@@ -92,7 +92,7 @@ class SlideGeneratorData:
                         + " \n Context: "
                         + str(presentation_context)
                         + " \n Generated Elements: "
-                        + str(generated_elements)
+                        + describe_elements(generated_elements)
                     )
 
                     # Add all sources of generated elements
@@ -128,6 +128,19 @@ class SlideGeneratorData:
         if name == "<lambda>":
             name = "Unnamed Generator"
         return "SlideGenerator[" + name + "]"
+
+
+def describe_elements(generated_elements) -> str:
+    """The generated elements as they read in a slide's notes: the same in every run, so without the memory
+    addresses in the default repr of objects such as python-pptx's chart data, or of functions."""
+
+    def describe(element: object) -> str:
+        if callable(element) and hasattr(element, "__qualname__"):
+            return f"<{element.__qualname__}>"
+        text = repr(element)
+        return f"<{type(element).__qualname__}>" if " at 0x" in text else text
+
+    return "(" + ", ".join(describe(element) for element in generated_elements) + ")"
 
 
 def _has_not_generated_something(generated_elements) -> bool:

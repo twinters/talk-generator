@@ -20,6 +20,10 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   recorded talk again; a ledger of every talk's requests, tokens and cost; budgets (a $0 budget lets only free
   models through); and list prices. `TALKGENERATOR_LLM` picks the provider (`none` by default; the real ones
   follow in 5.0.0a2), and a deck tells what its talk asked of language models.
+- `talkgenerator check`: generates talks on a set of topics (10 by default, `--quick` for 3, `--all` for 30),
+  checks every deck, generates every talk again one by one with its seed to see that it comes out the same, and
+  writes a JSON report. The checks, in `talkgenerator.checks`: every slide has what its type needs, no template
+  leftovers such as `{seed}` or `#symbol#` reach a slide, and images are credited and don't come back.
 
 ### Changed
 
@@ -44,6 +48,8 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   first: in an unlucky order, the longer one used to come out as garbage.
 - Tracery grammars no longer keep growing in long-running processes such as the web app: every text gets a
   fresh grammar.
+- The notes of chart slides no longer hold memory addresses (of their chart data and style), which made the
+  same talk's deck differ from one run to the next. `talkgenerator check` found it.
 
 ## [4.0.1] - 2026-11-05
 

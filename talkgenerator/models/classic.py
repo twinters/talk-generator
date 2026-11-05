@@ -33,6 +33,17 @@ CLASSIC_ROLES: Final[dict[str, dict[str, str]]] = {
     "chart": {"title": "title", "chart_data": "chart"},
 }
 
+# The roles a slide of each type can't do without: its Slide class's required_arguments, as roles
+REQUIRED_ROLES: Final[dict[str, tuple[str, ...]]] = {
+    "title": ("title",),
+    "large_quote": ("text", "background"),
+    "image": ("content",),
+    "full_image": ("content",),
+    "two_column_image": ("content_1", "content_2"),
+    "three_column_image": ("content_1", "content_2", "content_3"),
+    "chart": ("chart",),
+}
+
 # Roles that only ever hold text, even when the text looks like an image's file name
 TEXT_ROLES: Final = frozenset({"title", "subtitle", "text", "caption_1", "caption_2", "caption_3"})
 

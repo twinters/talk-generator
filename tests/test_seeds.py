@@ -15,9 +15,12 @@ import time
 from pathlib import Path
 
 import pytest
+from pptx.chart.data import ChartData
+from pptx.enum.chart import XL_CHART_TYPE
 
 from talkgenerator import generator
 from talkgenerator.datastructures.slide_generator_data import ConstantWeightFunction, PeakedWeight, SlideGeneratorData
+from talkgenerator.render import charts
 from talkgenerator.schema import presentation_schema
 from talkgenerator.schema.presentation_schema import PresentationSchema
 from talkgenerator.schema.slide_topic_generators import IdentityTopicGenerator
@@ -169,6 +172,23 @@ def test_a_single_slide_is_the_same_for_the_same_seed():
 
     assert slide_3(0) == slide_3(0)
     assert slide_3(7) == slide_3(7)
+
+
+def test_notes_are_the_same_in_every_run():
+    """A chart slide's notes used to hold the memory addresses of its chart data and chart style, found by
+    `talkgenerator check`: they differ in every run, and so did the deck."""
+
+    def chart_content(context):
+        data = ChartData()
+        data.categories = ["Yes", "No"]
+        data.add_series("", [0.5, 0.5])
+        return "Do cats dream?", XL_CHART_TYPE.PIE, data, charts.set_pie_properties
+
+    slide_generator = SlideGeneratorData(slide_generator_types.ChartSlideGenerator(chart_content), name="Chart")
+    notes = [slide_generator.generate({"seed": "cat"}, set())[0].to_deck_slide().notes for _ in range(2)]
+    assert notes[0] == notes[1]
+    assert "0x" not in notes[0]
+    assert "<set_pie_properties>" in notes[0]
 
 
 # THE STREAMS

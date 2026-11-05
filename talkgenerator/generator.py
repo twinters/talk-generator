@@ -218,7 +218,10 @@ def str2bool(v):
 
 
 def get_argument_parser():
-    parser = argparse.ArgumentParser(description="Quickly build a slide deck.")
+    parser = argparse.ArgumentParser(
+        description="Quickly build a slide deck.",
+        epilog="To check generated talks on a set of topics: talkgenerator check --help",
+    )
     parser.add_argument("--topic", default="", type=str, help="Topic of presentation.")
     parser.add_argument(
         "--num_slides",

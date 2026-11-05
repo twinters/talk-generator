@@ -85,6 +85,9 @@ warn_unused_ignores = true
 # package is checked leniently (only what's annotated). Add a module here once it's typed.
 [[tool.mypy.overrides]]
 module = [
+    "talkgenerator.checks",
+    "talkgenerator.checks.benchmark",
+    "talkgenerator.checks.deck",
     "talkgenerator.datastructures.image_data",
     "talkgenerator.llm",
     "talkgenerator.llm.base",
