@@ -3,16 +3,21 @@
 
 Commands
 --------
-  uv run python scripts/release.py bump <patch|minor|major|X.Y.Z> [--dry-run]
-      Prepare a release, locally and reversibly:
-        * set the new version in pyproject.toml (via ``uv version``)
-        * sync CITATION.cff (version + date-released)
-        * roll the [Unreleased] section of CHANGELOG.md into a dated section
-        * refresh uv.lock
-        * commit those files and create the annotated tag vX.Y.Z
-      It then PRINTS the commands that actually publish (push + GitHub release);
-      it never pushes or publishes by itself. ``--dry-run`` previews the version
-      change and writes nothing.
+  uv run python scripts/release.py bump <patch|minor|major|X.Y.Z> [--dry-run] [--trailer TEXT]
+      Prepare a release on the current branch, locally and reversibly. It first checks
+      that there are no uncommitted changes, that the branch isn't behind its upstream,
+      that the tag is free (locally and on origin) and that CHANGELOG.md has an
+      [Unreleased] section, and stops before changing anything if one of those fails.
+      Then it:
+        * sets the new version in pyproject.toml (via ``uv version``)
+        * syncs CITATION.cff (version + date-released)
+        * rolls the [Unreleased] section of CHANGELOG.md into a dated section
+        * refreshes uv.lock
+        * commits those files and creates the annotated tag vX.Y.Z
+      It then PRINTS the commands that publish (one atomic push + the GitHub release);
+      it never pushes or publishes by itself. ``--dry-run`` runs the checks and shows
+      the version change without writing anything. ``--trailer`` adds a trailer such
+      as "Co-Authored-By: ..." to the release commit (repeatable).
 
   uv run python scripts/release.py check
       Fail if pyproject.toml and CITATION.cff disagree on the version. Run in CI
@@ -39,10 +44,16 @@ REPO = "https://github.com/twinters/talk-generator"
 UNRELEASED_PLACEHOLDER = (
     "<!-- Add changes here as you merge them; release.py moves them under the new version at release time. -->"
 )
+UNRELEASED_SECTION = re.compile(r"## \[Unreleased\]\n(?P<body>.*?)(?=\n## \[|\Z)", re.DOTALL)
 
 
 def run(*args: str) -> None:
     subprocess.run(args, cwd=ROOT, check=True, text=True)
+
+
+def git(*args: str) -> subprocess.CompletedProcess[str]:
+    """Run a git command and capture its output, without raising when it fails."""
+    return subprocess.run(["git", *args], cwd=ROOT, text=True, capture_output=True)
 
 
 def pyproject_version() -> str:
@@ -85,6 +96,38 @@ def check() -> int:
     return 0
 
 
+def preflight(branch: str, tag: str) -> list[str]:
+    """Everything that stops a release from starting right now; empty when it can start."""
+    problems: list[str] = []
+    if branch == "HEAD":
+        problems.append("not on a branch (detached HEAD)")
+    status = git("status", "--porcelain", "--untracked-files=no")
+    if status.returncode != 0:
+        return [*problems, f"git status failed: {status.stderr.strip()}"]
+    if status.stdout.strip():
+        problems.append("there are uncommitted changes; commit or stash them first")
+    if not UNRELEASED_SECTION.search(CHANGELOG.read_text(encoding="utf-8")):
+        problems.append("CHANGELOG.md has no '## [Unreleased]' section")
+    if git("rev-parse", "--quiet", "--verify", f"refs/tags/{tag}").returncode == 0:
+        problems.append(f"tag {tag} already exists locally")
+    if git("remote", "get-url", "origin").returncode == 0:
+        remote = git("ls-remote", "--tags", "origin", f"refs/tags/{tag}")
+        if remote.returncode != 0:
+            problems.append(f"couldn't check origin for tag {tag}: {remote.stderr.strip()}")
+        elif remote.stdout.strip():
+            problems.append(f"tag {tag} already exists on origin")
+    upstream = git("rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}")
+    if upstream.returncode == 0:
+        name = upstream.stdout.strip()
+        remote_name = name.split("/", 1)[0]
+        if git("remote", "get-url", remote_name).returncode == 0:
+            git("fetch", "--quiet", remote_name)
+        behind = git("rev-list", "--count", "HEAD..@{upstream}").stdout.strip()
+        if behind not in ("", "0"):
+            problems.append(f"this branch is {behind} commit(s) behind {name}; pull first")
+    return problems
+
+
 def sync_citation(version: str, today: str) -> None:
     text = CITATION.read_text(encoding="utf-8")
     text = re.sub(r"^version:.*$", f"version: {version}", text, count=1, flags=re.MULTILINE)
@@ -94,7 +137,7 @@ def sync_citation(version: str, today: str) -> None:
 
 def roll_changelog(version: str, today: str) -> str:
     text = CHANGELOG.read_text(encoding="utf-8")
-    m = re.search(r"## \[Unreleased\]\n(?P<body>.*?)(?=\n## \[|\Z)", text, re.DOTALL)
+    m = UNRELEASED_SECTION.search(text)
     if not m:
         sys.exit("CHANGELOG.md has no '## [Unreleased]' section")
     body = "\n".join(ln for ln in m.group("body").splitlines() if ln.strip() != UNRELEASED_PLACEHOLDER).strip("\n")
@@ -123,16 +166,23 @@ def roll_changelog(version: str, today: str) -> str:
     return body
 
 
-def bump(spec: str, dry_run: bool) -> int:
+def bump(spec: str, dry_run: bool, trailers: list[str]) -> int:
     current = pyproject_version()
     target = next_version(current, spec)
+    tag = f"v{target}"
     today = date.today().isoformat()
-    print(f"current: {current}\ntarget:  {target}\ndate:    {today}")
+    branch = git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
+    print(f"branch:  {branch}\ncurrent: {current}\ntarget:  {target}\ndate:    {today}", flush=True)
+
+    problems = preflight(branch, tag)
+    if problems:
+        print("\nNot releasing:", *(f"  - {p}" for p in problems), sep="\n", file=sys.stderr)
+        return 1
     if dry_run:
-        print("\n--dry-run: nothing written, committed or tagged.")
+        print("\n--dry-run: all checks passed; nothing written, committed or tagged.")
         return 0
 
-    run("uv", "version", target)
+    run("uv", "version", target, "--no-sync")
     got = pyproject_version()
     if got != target:
         sys.exit(f"uv set the version to {got!r}, expected {target!r}; aborting")
@@ -142,21 +192,23 @@ def bump(spec: str, dry_run: bool) -> int:
     NOTES.write_text((body or f"talkgenerator {target}.") + "\n", encoding="utf-8")
 
     run("git", "add", "pyproject.toml", "uv.lock", "CITATION.cff", "CHANGELOG.md")
-    run("git", "commit", "-m", f"Release {target}")
-    run("git", "tag", "-a", f"v{target}", "-m", f"talkgenerator {target}")
+    commit = ["git", "commit", "-m", f"Release {target}"]
+    for trailer in trailers:
+        commit += ["--trailer", trailer]
+    run(*commit)
+    run("git", "tag", "-a", tag, "-m", f"talkgenerator {target}")
 
     print(
         "\n".join(
             [
-                f"\nPrepared v{target}: committed and tagged locally, nothing pushed.",
+                f"\nPrepared {tag} on {branch}: committed and tagged locally, nothing pushed.",
                 "",
                 "Publish it:",
-                "  git branch -f master HEAD                     # point master at the release (when on dev)",
-                "  git push origin HEAD master --follow-tags     # push the branch, master and the tag",
-                f'  gh release create v{target} --verify-tag --title "talkgenerator {target}" --notes-file .release-notes.md',
+                f"  git push --atomic origin HEAD refs/tags/{tag}",
+                f'  gh release create {tag} --verify-tag --title "talkgenerator {target}" --notes-file .release-notes.md',
                 "",
                 "Publishing the GitHub release builds, tests and uploads to PyPI (after your approval).",
-                f"Undo before pushing:  git tag -d v{target} && git reset --hard HEAD~1",
+                f"Undo before pushing:  git tag -d {tag} && git reset --hard HEAD~1",
             ]
         )
     )
@@ -168,12 +220,19 @@ def main() -> int:
     sub = parser.add_subparsers(dest="cmd", required=True)
     b = sub.add_parser("bump", help="prepare a release (version, changelog, tag)")
     b.add_argument("spec", help="patch | minor | major | explicit X.Y.Z")
-    b.add_argument("--dry-run", action="store_true", help="preview the version change, write nothing")
+    b.add_argument("--dry-run", action="store_true", help="run the checks and show the new version, write nothing")
+    b.add_argument(
+        "--trailer",
+        action="append",
+        default=[],
+        metavar="TEXT",
+        help='trailer for the release commit, e.g. "Co-Authored-By: Name <email>" (repeatable)',
+    )
     sub.add_parser("check", help="verify pyproject.toml and CITATION.cff agree (for CI)")
     args = parser.parse_args()
     if args.cmd == "check":
         return check()
-    return bump(args.spec, args.dry_run)
+    return bump(args.spec, args.dry_run, args.trailer)
 
 
 if __name__ == "__main__":
