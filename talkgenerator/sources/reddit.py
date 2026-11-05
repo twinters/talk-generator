@@ -3,6 +3,7 @@
 Reddit's search no longer supports the `url:` operators we used to filter on image links (such
 queries now return nothing), so we search on the plain topic and pick the image out of each post
 ourselves: direct image links, the first image of a gallery, or the preview image Reddit made.
+Images that posts link to on other hosts (such as Imgur) are downloaded from Reddit's preview copy.
 """
 
 import html
@@ -127,8 +128,13 @@ def get_image_url(submission: Any) -> str | None:
         return None
 
     url = data.get("url_overridden_by_dest") or data.get("url") or ""
-    if urlsplit(url).path.lower().endswith(_IMAGE_EXTENSIONS):
-        return url
+    link = urlsplit(url)
+    if link.path.lower().endswith(_IMAGE_EXTENSIONS):
+        if link.hostname == "i.redd.it":
+            return url
+        # Hosted elsewhere: download Reddit's copy instead, since other hosts can refuse us (i.imgur.com
+        # answers talkgenerator.com's server with HTTP 429). A gif without an animated copy keeps its link.
+        return _preview_url(data, animated_only=link.path.lower().endswith(".gif")) or url
 
     media_metadata = data.get("media_metadata") or {}
     if data.get("is_gallery") and media_metadata:
@@ -142,14 +148,23 @@ def get_image_url(submission: Any) -> str | None:
                 if gallery_url:
                     return html.unescape(gallery_url)
 
+    return _preview_url(data)
+
+
+def _preview_url(data: dict[str, Any], animated_only: bool = False) -> str | None:
+    """The preview Reddit made of a post's image, on preview.redd.it or external-preview.redd.it.
+
+    That's a copy of the whole image, and for gifs the animated variant. With animated_only, a preview
+    without one doesn't count: its plain source image is a still of the first frame.
+    """
     preview_images = (data.get("preview") or {}).get("images") or []
-    if preview_images:
-        preview = preview_images[0]
-        gif_url = (((preview.get("variants") or {}).get("gif") or {}).get("source") or {}).get("url")
-        preview_url = gif_url or (preview.get("source") or {}).get("url")
-        if preview_url:
-            return html.unescape(preview_url)
-    return None
+    if not preview_images:
+        return None
+    preview = preview_images[0]
+    preview_url = (((preview.get("variants") or {}).get("gif") or {}).get("source") or {}).get("url")
+    if not preview_url and not animated_only:
+        preview_url = (preview.get("source") or {}).get("url")
+    return html.unescape(preview_url) if preview_url else None
 
 
 def get_post_url(submission: Any) -> str | None:
