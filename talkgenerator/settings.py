@@ -56,6 +56,14 @@ def giphy_auth() -> dict[str, str]:
     return {"giphy_api_key": env.str("GIPHY_API_KEY", "")}
 
 
+def openverse_auth() -> dict[str, str]:
+    """A registered Openverse app's credentials. Optional: without them, Openverse is searched anonymously."""
+    return {
+        "client_id": env.str("OPENVERSE_CLIENT_ID", "").strip(),
+        "client_secret": env.str("OPENVERSE_CLIENT_SECRET", "").strip(),
+    }
+
+
 def unsplash_app_name() -> str:
     """The app name Unsplash knows you by, used in the utm_source of links back to Unsplash."""
     return env.str("UNSPLASH_APP_NAME", "talkgenerator")

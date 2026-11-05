@@ -15,9 +15,16 @@ class _Handler(http.server.BaseHTTPRequestHandler):
     hits: dict[str, int] = {}
 
     def do_GET(self):
+        self._answer(b'{"ok": true}')
+
+    def do_POST(self):
+        # Like a sign-in, which answers with an access token
+        self.rfile.read(int(self.headers.get("Content-Length") or 0))
+        self._answer(b'{"access_token": "TOKEN-FROM-THE-SERVER", "expires_in": 36000}')
+
+    def _answer(self, body):
         path = self.path.split("?")[0]
         _Handler.hits[path] = _Handler.hits.get(path, 0) + 1
-        body = b'{"ok": true}'
         self.send_response(404 if path.endswith("/missing") else 200)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
@@ -76,6 +83,20 @@ def test_api_keys_stay_out_of_the_cache(server, cache_dir):
     stored = b"".join(path.read_bytes() for path in cache_dir.iterdir() if path.is_file())
     assert b"SECRET-ONE" not in stored
     assert b"SECRET-TWO" not in stored
+
+
+def test_sign_ins_and_access_tokens_stay_out_of_the_cache(server, cache_dir):
+    # How Openverse is searched with a registered app's credentials
+    sign_in = {"grant_type": "client_credentials", "client_id": "CLIENT-ID", "client_secret": "CLIENT-SECRET"}
+    token = http_util.post(f"http://{server}/api/token", data=sign_in).json()["access_token"]
+    http_util.post(f"http://{server}/api/token", data=sign_in)
+    assert _Handler.hits["/api/token"] == 2  # never answered from the cache
+    headers = {"Authorization": f"Bearer {token}"}
+    http_util.get(f"http://{server}/api/images?q=cat", headers=headers)
+    assert http_util.get(f"http://{server}/api/images?q=cat", headers=headers).from_cache
+    stored = b"".join(path.read_bytes() for path in cache_dir.iterdir() if path.is_file())
+    assert b"CLIENT-SECRET" not in stored
+    assert b"TOKEN-FROM-THE-SERVER" not in stored
 
 
 def test_cache_can_be_disabled(monkeypatch):

@@ -1,4 +1,4 @@
-"""Live tests of the sources that need no API key (except GIPHY)."""
+"""Live tests of the sources that need no API key (except GIPHY, and Openverse's registered app)."""
 
 import pytest
 
@@ -16,6 +16,12 @@ def _assert_credited_images(images):
 
 def test_openverse():
     _assert_credited_images(openverse.search_photos("volcano"))
+
+
+@requires_keys("OPENVERSE_CLIENT_ID", "OPENVERSE_CLIENT_SECRET")
+def test_openverse_as_a_registered_app():
+    assert openverse._access_token.get(), "signing in failed: see the logged warning"
+    _assert_credited_images(openverse.search_photos("lighthouse"))
 
 
 def test_wikimedia_commons_historic_photos():

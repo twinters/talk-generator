@@ -52,8 +52,9 @@ Every key is optional: sources without a key are skipped, and the other sources 
 | Pixabay | photos | `PIXABAY_KEY` | [Pixabay API](https://pixabay.com/api/docs/) |
 | Pexels | photos | `PEXELS_KEY` | [Pexels API](https://www.pexels.com/api/) |
 | GIPHY | gifs, next to Reddit's | `GIPHY_API_KEY` | [GIPHY developers](https://developers.giphy.com/dashboard/) |
+| [Openverse](https://openverse.org/) | openly licensed photos | `OPENVERSE_CLIENT_ID`, `OPENVERSE_CLIENT_SECRET` (optional: without them, Openverse is searched anonymously, at lower rate limits) | [register an app](https://api.openverse.org/v1/#tag/auth/operation/register), then verify its email address |
 
-These sources need no key: [Datamuse](https://www.datamuse.com/api/) and WordNet (related words), Goodreads and [Wikiquote](https://en.wikiquote.org/) (quotes), WikiHow (actions), [Openverse](https://openverse.org/) (openly licensed photos), [Wikimedia Commons](https://commons.wikimedia.org/) (old photos), the [Art Institute of Chicago](https://api.artic.edu/docs/) (public domain artworks), InspiroBot and ShitpostBot 5000 (images).
+These sources need no key: [Datamuse](https://www.datamuse.com/api/) and WordNet (related words), Goodreads and [Wikiquote](https://en.wikiquote.org/) (quotes), WikiHow (actions), [Wikimedia Commons](https://commons.wikimedia.org/) (old photos), the [Art Institute of Chicago](https://api.artic.edu/docs/) (public domain artworks), InspiroBot and ShitpostBot 5000 (images).
 Most kinds of content come from more than one source, so a source that is down or rate limited leaves no holes: the others fill in.
 A slide that still can't get all its images (say, a gif slide without Reddit or GIPHY) is replaced by another kind of slide, and the generator logs which sources it skips for lack of keys.
 Image credits on the slides link to the photographer's or the image's page.

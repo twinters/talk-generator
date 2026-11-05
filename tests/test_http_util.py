@@ -5,6 +5,7 @@ def test_redact_hides_keys():
     message = "Max retries exceeded with url: /api/?key=SECRET123&q=cat (Caused by timeout)"
     assert "SECRET123" not in http_util.redact(message)
     assert "q=cat" in http_util.redact(message)
+    assert "SECRET456" not in http_util.redact("grant_type=client_credentials&client_secret=SECRET456")
 
 
 def test_describe_url_drops_query():

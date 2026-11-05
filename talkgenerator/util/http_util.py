@@ -64,10 +64,11 @@ _CACHE_IGNORED_PARAMETERS = (
     "access_token",
     "api_key",
     "client_id",
+    "client_secret",
     "key",
 )
 
-_SECRET_PARAMS = re.compile(r"((?:key|client_id|api_key|token|access_token)=)[^&\s'\"]+", re.IGNORECASE)
+_SECRET_PARAMS = re.compile(r"((?:key|client_id|client_secret|api_key|token|access_token)=)[^&\s'\"]+", re.IGNORECASE)
 _thread_local = threading.local()
 _cache_lock = threading.Lock()
 _cache_backend: requests_cache.SQLiteCache | None = None
@@ -172,11 +173,20 @@ def _host_headers(url: str) -> dict[str, str]:
 
 def get(url: str, *, timeout: float = DEFAULT_TIMEOUT, **kwargs: Any) -> requests.Response | None:
     """GET a URL. Returns None instead of raising on connection errors and timeouts."""
+    return _request("GET", url, timeout=timeout, **kwargs)
+
+
+def post(url: str, *, timeout: float = DEFAULT_TIMEOUT, **kwargs: Any) -> requests.Response | None:
+    """POST to a URL, like get. POSTs are never cached, and aren't retried after server errors or timeouts."""
+    return _request("POST", url, timeout=timeout, **kwargs)
+
+
+def _request(method: str, url: str, *, timeout: float, **kwargs: Any) -> requests.Response | None:
     extra_headers = _host_headers(url)
     if extra_headers:
         kwargs["headers"] = {**extra_headers, **(kwargs.get("headers") or {})}
     try:
-        return get_session().get(url, timeout=timeout, **kwargs)
+        return get_session().request(method, url, timeout=timeout, **kwargs)
     except requests.RequestException as e:
         logger.warning("Request to %s failed: %s", describe_url(url), redact(e))
         return None
