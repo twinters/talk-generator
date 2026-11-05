@@ -1,0 +1,47 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite both the software and the paper under preferred-citation."
+title: "talk-generator"
+abstract: >-
+  Automatically generates presentation slide decks about any topic, for improvised
+  presentations such as Improvised TED talks and PowerPoint Karaoke.
+type: software
+authors:
+  - given-names: Thomas
+    family-names: Winters
+  - given-names: Kory W.
+    family-names: Mathewson
+version: 4.0.0
+date-released: "2026-11-05"
+license: MIT
+repository-code: "https://github.com/twinters/talk-generator"
+url: "https://talkgenerator.com"
+keywords:
+  - computational creativity
+  - presentation generation
+  - improvised comedy
+  - slide generation
+preferred-citation:
+  type: conference-paper
+  title: "Automatically Generating Engaging Presentation Slide Decks"
+  authors:
+    - given-names: Thomas
+      family-names: Winters
+    - given-names: Kory W.
+      family-names: Mathewson
+  year: 2019
+  collection-title: "Computational Intelligence in Music, Sound, Art and Design. EvoMUSART 2019"
+  collection-type: proceedings
+  volume: 11453
+  start: 127
+  end: 141
+  publisher:
+    name: "Springer International Publishing"
+  isbn: "978-3-030-16667-0"
+  doi: "10.1007/978-3-030-16667-0_9"
+  editors:
+    - given-names: Anikó
+      family-names: Ekárt
+    - given-names: Antonios
+      family-names: Liapis
+    - given-names: María Luz
+      family-names: Castro Pena
