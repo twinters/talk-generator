@@ -233,7 +233,7 @@ class ExternalImageListGenerator(Generator):
                 logger.warning("Invalid image input for external image generator: %r", chosen)
                 continue
 
-            if not self._check_image_validness or image_util.is_usable_image(chosen_image.get_image_url()):
+            if not self._check_image_validness or image_util.fetch_image_data(chosen_image) is not None:
                 return chosen_image
         return None
 

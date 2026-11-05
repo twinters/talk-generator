@@ -33,6 +33,7 @@ logger = logging.getLogger("talkgenerator")
 
 USER_AGENT = f"talkgenerator/{__version__} (+https://github.com/twinters/talk-generator)"
 DEFAULT_TIMEOUT = 10  # seconds
+OUTAGE_COOLDOWN_SECONDS = 5 * 60
 
 # How long successful responses are reused, per URL prefix. Anything else is never cached.
 CACHE_EXPIRY: ExpirationPatterns = {
@@ -226,3 +227,9 @@ class Cooldown:
                 reason,
                 round(seconds / 60),
             )
+
+    def trigger_outage(self, response: requests.Response | None) -> None:
+        """The service didn't answer (even after retries) or had a server error. Every request would wait
+        for its timeouts and retries again, so skip the service for a while and let other sources fill in."""
+        reason = "no answer" if response is None else f"HTTP {response.status_code}"
+        self.trigger(OUTAGE_COOLDOWN_SECONDS, reason)

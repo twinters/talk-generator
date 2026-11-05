@@ -36,7 +36,8 @@ def _api_get(path: str, params: dict[str, Any] | None = None) -> Any:
         params=params,
         headers={"Authorization": "Client-ID " + access_key, "Accept-Version": "v1"},
     )
-    if response is None:
+    if response is None or response.status_code >= 500:
+        _cooldown.trigger_outage(response)
         return None
     if response.status_code == 401:
         _cooldown.trigger(60 * 60, "UNSPLASH_ACCESS_KEY was rejected")

@@ -186,10 +186,8 @@ weird_punchline_image_generator = CombinedGenerator(
 
 
 # UNSPLASH
-generate_unsplash_image_from_word = ExternalImageListGenerator(unsplash.search_photos, check_image_validness=False)
-generate_random_unsplash_image_from_word = ExternalImageListGenerator(
-    unsplash.random_as_list, check_image_validness=False
-)
+generate_unsplash_image_from_word = ExternalImageListGenerator(unsplash.search_photos)
+generate_random_unsplash_image_from_word = ExternalImageListGenerator(unsplash.random_as_list)
 generate_unsplash_image = SeededGenerator(generate_unsplash_image_from_word)
 generate_random_unsplash_image = SeededGenerator(generate_random_unsplash_image_from_word)
 
@@ -267,6 +265,13 @@ neutral_image_generator_from_word = CombinedGenerator(
 )
 
 neutral_or_weird_image_generator = CombinedGenerator((1, neutral_image_generator), (1, weird_punchline_image_generator))
+
+# WITH BACKUPS: Reddit and GIPHY need keys, and Reddit can be blocked or rate limited. These use them when
+# they can, and otherwise fall back to sources that need no key, so that slides needing them stay possible.
+weird_image_with_backup_generator = BackupGenerator(
+    weird_reddit_image_generator, shitpostbot_image_generator, weird_copyright_free_generator
+)
+gif_with_backup_generator = BackupGenerator(combined_gif_generator, weird_image_with_backup_generator)
 
 # OLD/VINTAGE: Reddit's vintage subreddits, with old photos and artworks as reliable alternatives
 vintage_person_generator = CombinedGenerator(

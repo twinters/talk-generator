@@ -26,15 +26,29 @@ class SlideGenerator(metaclass=ABCMeta):
         return cls(CombinedSlideGenerator(*generators))
 
     def generate_slide(self, presentation_context, used) -> tuple[slides.Slide, list] | None:
-        """Generates the slide using the given generators."""
+        """Generates the slide using the given generators.
+
+        Returns None when the content repeats too much of what's used already, or when the slide misses
+        content (say, an image that no source could deliver), so that it's tried again or another kind of
+        slide takes its place instead of leaving a hole in the deck."""
         logger.debug("slide_generator_types.generate_slide")
         logger.debug("presentation_context: {}".format(presentation_context))
         logger.debug("self._slide_content_generator: {}".format(self._slide_content_generator))
         generated = self._slide_content_generator(presentation_context)
         logger.debug("generated: {}".format(generated))
-        if is_different_enough(generated, used):
-            return self.slide_type(*generated), generated
-        return None
+        if not is_different_enough(generated, used):
+            return None
+        slide = self.slide_type(*generated)
+        missing = slide.missing_content()
+        if missing:
+            logger.info(
+                "No usable %s for a %s slide about '%s'",
+                " or ".join(missing),
+                slide.type_name,
+                presentation_context.get("seed"),
+            )
+            return None
+        return slide, generated
 
 
 class TitleSlideGenerator(SlideGenerator):

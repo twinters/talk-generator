@@ -41,7 +41,8 @@ def search_photos(query: str | None, orientation: str = "all") -> list[ImageData
         "per_page": 50,
     }
     response = http_util.get(API_URL, params=params)
-    if response is None:
+    if response is None or response.status_code >= 500:
+        _cooldown.trigger_outage(response)
         return []
     if response.status_code == 429:
         _cooldown.trigger(60, "rate limit reached")

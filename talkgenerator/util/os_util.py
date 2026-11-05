@@ -25,7 +25,6 @@ def read_lines(filename: str) -> list[str]:
         return [line.rstrip("\n") for line in file]
 
 
-@lru_cache(maxsize=20)
 def is_image(content: str | ImageData) -> bool:
     if isinstance(content, ImageData):
         return True

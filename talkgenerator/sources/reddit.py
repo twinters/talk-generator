@@ -13,14 +13,26 @@ from typing import Any
 from urllib.parse import urlsplit
 
 import praw
-from prawcore.exceptions import PrawcoreException
+from prawcore.exceptions import (
+    OAuthException,
+    PrawcoreException,
+    RequestException,
+    ResponseException,
+    ServerError,
+    TooManyRequests,
+)
 
 from talkgenerator import settings
+from talkgenerator.util import http_util
 
 logger = logging.getLogger("talkgenerator")
 
 _IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".gif")
 _thread_local = threading.local()
+
+# When Reddit as a whole fails (bad credentials, rate limit, outage), skip it for a while instead of paying
+# PRAW's timeouts and retries on every search. Errors about one subreddit (private, banned...) don't count.
+_cooldown = http_util.Cooldown("Reddit")
 
 
 def _has_credentials() -> bool:
@@ -80,11 +92,31 @@ def search_images(
     if not has_reddit_access():
         logger.debug("No Reddit access")
         return None
+    if _cooldown.active:
+        return None
     try:
         return list(_search_images(name, (query or "").strip(), sort, limit))
     except PrawcoreException as err:
-        logger.error("Exception with accessing Reddit: %s", err)
+        cooldown = _cooldown_for(err)
+        if cooldown:
+            _cooldown.trigger(*cooldown)
+        else:
+            logger.warning("Reddit search in r/%s failed: %s", name, err)
         return None
+
+
+def _cooldown_for(error: PrawcoreException) -> tuple[float, str] | None:
+    """How long to skip Reddit after this error (and why), or None if only this search failed."""
+    status = error.response.status_code if isinstance(error, ResponseException) else None
+    if isinstance(error, OAuthException) or status == 401:
+        return 60 * 60, f"the REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET were rejected: {error}"
+    if isinstance(error, TooManyRequests):
+        return 10 * 60, "rate limit reached"
+    if isinstance(error, ServerError):
+        return 5 * 60, f"HTTP {status}"
+    if isinstance(error, RequestException):
+        return 5 * 60, f"no connection: {error}"
+    return None
 
 
 def get_image_url(submission: Any) -> str | None:

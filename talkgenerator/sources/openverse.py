@@ -60,8 +60,15 @@ def search_photos(query: str) -> list[ImageData]:
         # Openverse can be slow; don't let every slide wait for it
         _cooldown.trigger(10 * 60, f"no answer within {_TIMEOUT_SECONDS} seconds")
         return []
+    if response.status_code >= 500:
+        _cooldown.trigger_outage(response)
+        return []
     if response.status_code == 429:
         _cooldown.trigger(15 * 60, "rate limit reached")
+        return []
+    if response.status_code == 403:
+        # Openverse refuses some networks outright (talkgenerator.com's server, for one): asking again won't help
+        _cooldown.trigger(60 * 60, "HTTP 403: it refuses requests from this network")
         return []
     if not response.ok:
         logger.warning("Openverse returned HTTP %s", response.status_code)

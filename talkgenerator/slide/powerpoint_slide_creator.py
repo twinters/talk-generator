@@ -88,7 +88,10 @@ def _add_image(slide, placeholder_id: int, image: ImageData, original_image_size
         image_url = str(Path(image_url).absolute())
 
     placeholder = slide.placeholders[placeholder_id]
-    image_bytes = image_util.fetch_image(image_url)
+    # An ImageData that was checked while generating already holds its bytes
+    image_bytes = image_util.fetch_image_data(image) if isinstance(image, ImageData) else None
+    if image_bytes is None:
+        image_bytes = image_util.fetch_image(image_url)
     if image_bytes is None:
         logger.warning("Leaving out image %s: it could not be downloaded or used", http_util.describe_url(image_url))
         _remove_shape(placeholder)

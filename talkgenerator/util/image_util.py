@@ -17,6 +17,7 @@ from pathlib import Path
 
 from PIL import Image, ImageOps, UnidentifiedImageError
 
+from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.util import http_util, os_util
 
 logger = logging.getLogger("talkgenerator")
@@ -63,6 +64,15 @@ def fetch_image(url: str) -> bytes | None:
 
 def is_usable_image(url: str) -> bool:
     return fetch_image(url) is not None
+
+
+def fetch_image_data(image: ImageData) -> bytes | None:
+    """Like fetch_image, for an ImageData, which keeps the bytes once they're downloaded. That way the
+    image that was checked while generating a slide is the one embedded in the PowerPoint, even if it
+    dropped out of the download cache in between."""
+    if image.data is None:
+        image.data = fetch_image(image.get_image_url())
+    return image.data
 
 
 def _load(url: str) -> bytes | None:

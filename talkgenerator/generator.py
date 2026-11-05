@@ -8,7 +8,7 @@ import sys
 
 from pptx.presentation import Presentation
 
-from talkgenerator import runtime_checker
+from talkgenerator import runtime_checker, settings
 from talkgenerator.schema.content_generators import full_name_generator
 from talkgenerator.schema.presentation_schema_types import get_schema, schemas
 from talkgenerator.slide.slide_deck import SlideDeck
@@ -68,6 +68,8 @@ def generate_presentation(
         os_util.show_logs(logger)
     logger.info("**************************")
     logger.info("Generating presentation...")
+    # Without some API keys, fewer image sources are used: say so (once), as it explains a lot about the results
+    settings.report_missing_keys()
 
     if int_seed is not None:
         random.seed(int_seed)

@@ -7,7 +7,7 @@ logger = logging.getLogger("talkgenerator")
 
 
 def check_runtime_environment():
-    check_env = talkgenerator.settings.check_environment_variables()
+    check_env = talkgenerator.settings.report_missing_keys()
     if check_env:
         logger.info("Successful check: Environment variables")
 

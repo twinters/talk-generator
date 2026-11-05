@@ -7,6 +7,7 @@ Variables that are already set in the environment always win.
 See `.env.example` for every supported variable.
 """
 
+import functools
 import logging
 from pathlib import Path
 
@@ -102,6 +103,12 @@ def check_environment_variables() -> bool:
     if not valid_env_file:
         print_env_file_warning()
     return valid_env_file
+
+
+@functools.cache
+def report_missing_keys() -> bool:
+    """check_environment_variables, once per process: a web server generating many talks logs it only once."""
+    return check_environment_variables()
 
 
 def print_env_file_warning() -> None:

@@ -1,12 +1,17 @@
 import logging
 
+from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.slide import powerpoint_slide_creator
+from talkgenerator.util import image_util, os_util
 
 logger = logging.getLogger("talkgenerator")
 
 
 class Slide:
     """Class representing a slide object that could be used to export to Powerpoint pptx or other representations later"""
+
+    # The arguments a slide can't do without: without them, the slide would show an empty frame (or no slide at all)
+    required_arguments: tuple[str, ...] = ()
 
     def __init__(self, type_name: str, ppt_slide_creator, arguments: dict):
         self._type_name = type_name
@@ -15,6 +20,10 @@ class Slide:
         self._note = ""
         self._sources: list[str] = []
         self._source_urls: list[str | None] = []
+
+    @property
+    def type_name(self) -> str:
+        return self._type_name
 
     def add_source(self, source: str, url: str | None = None):
         """Credit an image source; the credit links to the url (if given) in the PowerPoint."""
@@ -25,6 +34,24 @@ class Slide:
     def set_note(self, note: str):
         """Debug information about how the slide was generated."""
         self._note = note
+
+    def missing_content(self) -> list[str]:
+        """The required arguments that are empty, hold an image that can't be downloaded or used, or repeat an
+        image shown elsewhere on the slide.
+
+        Checking an image downloads it, and its ImageData keeps the bytes for when the slide is added to the
+        PowerPoint (see image_util.fetch_image_data).
+        """
+        missing = []
+        images_on_slide: set[ImageData] = set()
+        for name in self.required_arguments:
+            value = self._arguments.get(name)
+            repeated = isinstance(value, ImageData) and value in images_on_slide
+            if repeated or not _has_content(value):
+                missing.append(name)
+            elif isinstance(value, ImageData):
+                images_on_slide.add(value)
+        return missing
 
     def create_powerpoint_slide(self, prs, debug_notes: bool = False):
         """Add this slide to the presentation. With debug_notes, the speaker notes explain how it was generated
@@ -52,7 +79,21 @@ class Slide:
         return slide_dict
 
 
+def _has_content(value) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, ImageData):
+        return image_util.fetch_image_data(value) is not None
+    if isinstance(value, str):
+        if os_util.is_image(value):  # the URL or path of an image
+            return image_util.is_usable_image(value)
+        return bool(value.strip())
+    return True
+
+
 class TitleSlide(Slide):
+    required_arguments = ("title",)
+
     def __init__(self, title: str, subtitle: str):
         super().__init__(
             type_name="title",
@@ -62,6 +103,8 @@ class TitleSlide(Slide):
 
 
 class LarqeQuoteSlide(Slide):
+    required_arguments = ("text", "background_image")
+
     def __init__(self, title: str, text: str, background_image=None):
         super().__init__(
             type_name="large_quote",
@@ -75,6 +118,8 @@ class LarqeQuoteSlide(Slide):
 
 
 class ImageSlide(Slide):
+    required_arguments = ("image_url",)
+
     def __init__(self, title=None, image_url=None, original_image_size=True):
         super().__init__(
             type_name="image",
@@ -88,6 +133,8 @@ class ImageSlide(Slide):
 
 
 class FullImageSlide(Slide):
+    required_arguments = ("image_url",)
+
     def __init__(self, title=None, image_url=None, original_image_size=True):
         super().__init__(
             type_name="full_image",
@@ -101,6 +148,8 @@ class FullImageSlide(Slide):
 
 
 class TwoColumnImageSlide(Slide):
+    required_arguments = ("image_or_text_1", "image_or_text_2")
+
     def __init__(
         self,
         title=None,
@@ -125,6 +174,8 @@ class TwoColumnImageSlide(Slide):
 
 
 class ThreeColumnImageSlide(Slide):
+    required_arguments = ("image_or_text_1", "image_or_text_2", "image_or_text_3")
+
     def __init__(
         self,
         title=None,
@@ -153,6 +204,8 @@ class ThreeColumnImageSlide(Slide):
 
 
 class ChartSlide(Slide):
+    required_arguments = ("chart_type", "chart_data")
+
     def __init__(self, title, chart_type, chart_data, chart_modifier=None):
         super().__init__(
             type_name="chart",

@@ -45,7 +45,8 @@ def search_gifs(query: str) -> list[ImageData]:
         API_URL,
         params={"api_key": api_key, "q": query[:50], "limit": 25, "rating": "pg-13", "lang": "en"},
     )
-    if response is None:
+    if response is None or response.status_code >= 500:
+        _cooldown.trigger_outage(response)
         return []
     if response.status_code in (401, 403):
         _cooldown.trigger(60 * 60, "GIPHY_API_KEY was rejected")

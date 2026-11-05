@@ -29,7 +29,8 @@ def _search_pexels(query: str) -> Any:
     if not api_key or _cooldown.active:
         return None
     response = http_util.get(API_URL, params={"query": query, "per_page": 40}, headers={"Authorization": api_key})
-    if response is None:
+    if response is None or response.status_code >= 500:
+        _cooldown.trigger_outage(response)
         return None
     if response.status_code == 401:
         _cooldown.trigger(60 * 60, "PEXELS_KEY was rejected")
