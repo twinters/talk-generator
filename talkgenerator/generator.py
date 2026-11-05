@@ -63,7 +63,11 @@ def generate_presentation(
     print_logs=False,
     debug_notes: bool = False,
 ) -> tuple[Presentation | None, SlideDeck, str | None]:
-    """Generate a talk. With debug_notes, every slide's speaker notes explain how it was generated."""
+    """Generate a talk. With debug_notes, every slide's speaker notes explain how it was generated.
+
+    With an int_seed, every run makes the same random choices: the slides are then generated one by one, whatever
+    parallel says. Live sources can still return other images and texts from one run to the next.
+    """
     if print_logs:
         os_util.show_logs(logger)
     logger.info("**************************")
@@ -199,7 +203,8 @@ def get_argument_parser():
         "--int_seed",
         default=None,
         type=int,
-        help="Seed used for random.seed(int_seed). Fill in any number to add more consistency between runs.",
+        help="Seed used for random.seed(int_seed). Fill in any number to make the same random choices on every run "
+        "(the slides are then generated one by one, whatever --parallel says).",
     )
     parser.add_argument(
         "--schema",
@@ -229,7 +234,7 @@ def get_argument_parser():
         "--parallel",
         default=True,
         type=str2bool,
-        help=("Generated powerpoint will generate in parallel " + "faster but drops some conditions)"),
+        help="Generate the slides in parallel: faster, but drops some conditions. Ignored with --int_seed.",
     )
     parser.add_argument(
         "--print_logs",

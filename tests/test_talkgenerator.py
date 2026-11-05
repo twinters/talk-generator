@@ -20,8 +20,6 @@ def _cli_args(tmp_path, *extra):
             "cat",
             "--num_slides",
             "3",
-            "--int_seed",
-            "123",
             "--open_ppt",
             "false",
             "--print_logs",
@@ -35,13 +33,14 @@ def _cli_args(tmp_path, *extra):
 
 def test_serial(tmp_path):
     ppt, _, output_file = generator.generate_presentation_using_cli_arguments(
-        _cli_args(tmp_path, "--parallel", "false")
+        _cli_args(tmp_path, "--parallel", "false", "--int_seed", "123")
     )
     assert len(ppt.slides) == 3
     assert output_file.startswith(str(tmp_path))
 
 
 def test_parallel_multiple_topics(tmp_path):
+    # Without --int_seed, which would generate the slides one by one
     ppt, _, _ = generator.generate_presentation_using_cli_arguments(
         _cli_args(tmp_path, "--topic", "cat, dog, bread, house", "--num_slides", "6")
     )

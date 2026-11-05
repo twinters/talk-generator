@@ -62,7 +62,11 @@ class PresentationSchema:
         save_ppt: bool = True,
         debug_notes: bool = False,
     ) -> tuple[Presentation | None, SlideDeck]:
-        """Generate a presentation about a certain topic with a certain number of slides"""
+        """Generate a presentation about a certain topic with a certain number of slides.
+
+        With an int_seed, the slides are generated one by one, even if parallel is set: parallel threads would share
+        the global random generator in whatever order they happen to run, so the same seed could give another talk.
+        """
 
         logger.info("Made it to presentation_schema...")
         # Generate random talk title
@@ -93,6 +97,9 @@ class PresentationSchema:
         used_elements: set = set()
 
         # Generate
+        if parallel and int_seed is not None:
+            logger.debug("int_seed is set: generating the slides one by one instead of in parallel")
+            parallel = False
         if parallel:
             self._generate_slide_deck_parallel(
                 slide_deck,
@@ -391,7 +398,7 @@ class SlideGeneratorContext:
         self.int_seed = int_seed
 
     def __call__(self, slide_nr):
-        if self and self.int_seed and self.int_seed is not None:
+        if self.int_seed is not None:
             random.seed(self.int_seed + slide_nr)
 
         return self.presentation_schema.generate_slide(

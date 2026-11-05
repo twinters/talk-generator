@@ -8,6 +8,13 @@ and the project follows [Semantic Versioning](https://semver.org/).
 
 <!-- Add changes here as you merge them; release.py moves them under the new version at release time. -->
 
+### Fixed
+
+- `--int_seed` (`int_seed` in Python) now makes the same random choices on every run, also
+  with `--parallel` (the default). Seeded runs generate their slides one by one: parallel
+  threads shared one random generator, and skipped reseeding it for seed 0. Live sources
+  can still return other images and texts from one run to the next.
+
 ## [4.0.1] - 2026-11-05
 
 ### Fixed
