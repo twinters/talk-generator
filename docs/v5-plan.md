@@ -1,8 +1,8 @@
 # talk-generator v5: design and roadmap
 
-Status: draft for discussion, 2026-11-05. Nothing in here is implemented yet.
-To review it, answer the open questions in [section 17](#17-decisions-and-open-questions) or comment anywhere;
-the first pre-release starts once the plan is agreed.
+Status: draft, 2026-11-05, with the first round of open questions answered
+([section 17](#17-decisions-and-open-questions)). Nothing in here is implemented yet; the first pre-release starts
+once the plan is approved.
 
 v4.0.0 is the modernized version of the 2019 generator from the EvoMUSART paper. v5 brings it up to 2026
 standards: LLM-written talks, generated images, more sources, themes and talk formats, and slides that stream
@@ -45,16 +45,21 @@ until 5.0 is ready.
 - **Provider-neutral.** A small text-provider interface, with adapters for OpenRouter (the site's free default),
   your own Anthropic or OpenAI key, Sign in with ChatGPT (local CLI), any OpenAI-compatible server (local models),
   and `replay` and `none` for tests and classic mode.
-- **Claude as a planner.** An importable Skill lets Claude write the talk plan on the user's own Claude usage;
-  `talkgenerator render plan.json` turns it into a deck with licensed, credited images.
+- **Claude as a planner.** An importable Skill, and a local MCP server, let Claude write the talk plan on the
+  user's own Claude usage and image keys; `talkgenerator render plan.json` turns it into a deck with licensed,
+  credited images.
 - **Classic stays.** The v4 algorithm remains the no-LLM default, the per-slide fallback, the deterministic test
   mode and the paper baseline.
-- **Design and images.** Themes built from tokens (palettes, font pairs, decoration, image treatments), extreme
-  ones included; layout variants per slide type; native diagrams; image slots with aesthetic profiles and
-  license classes; more open image sources; AI image generation with the user's own keys.
-- **talkgenerator.com at $0.** OpenRouter's free models and free image sources, and the classic engine when the
-  free quota runs out. Visitors can connect their own OpenRouter account or key for more, AI images included.
-- **Releases.** `5.0.0aN` pre-releases from a long-lived `v5` branch, while 4.x continues on `master`.
+- **Design and images.** Themes built from tokens (palettes, font pairs, decoration, image treatments), with the
+  extreme ones on by default; layout variants per slide type; native diagrams; image slots with aesthetic
+  profiles and license classes; more open sources, and more weird ones like Reddit's memes; AI image generation
+  with the user's own keys.
+- **Languages.** Dutch, and later other languages, whenever an LLM is available; the classic engine stays English.
+- **talkgenerator.com at $0.** LLM talks by default on OpenRouter's free models, with a switch for the classic 2019
+  generator, which also takes over when the free quota runs out. Visitors can bring their own OpenRouter account,
+  Anthropic key or OpenAI key for more, AI images included.
+- **Releases.** `5.0.0aN` pre-releases from a long-lived `v5` branch, while 4.x stays on `master`. TED-like talks
+  get every improvement first, and new talk formats come after. Once 5.0 ships, 4.x gets no more fixes.
 
 ## 2. Goals, constraints and non-goals
 
@@ -67,8 +72,10 @@ until 5.0 is ready.
 4. Talk formats beyond the TED talk: pitch, academic, corporate, keynote and more.
 5. Design: themes with randomized fonts and color schemes (extremes included), more layouts, more variety per
    slide type.
-6. Images: more sources, filters that get a particular look per slide and talk type, AI-generated images.
+6. Images: more sources (weird and flavoured ones like Reddit's memes above all), filters that get a particular
+   look per slide and talk type, AI-generated images.
 7. talkgenerator.com shows each slide in the browser as soon as it's ready.
+8. Talks in Dutch, and later other languages, whenever an LLM is available.
 
 ### Constraints
 
@@ -76,7 +83,8 @@ until 5.0 is ready.
   account or key.
 - **A small server:** talk-generator-web runs on a shared Hetzner box, capped at one CPU core and about 600 MB,
   with one generation slot (see its [README](https://github.com/twinters/talk-generator-web)).
-- **4.x keeps working:** the site pins `talkgenerator==4.0.x` from PyPI, and 4.x fixes keep shipping from `master`.
+- **4.x keeps working until 5.0:** the site pins `talkgenerator==4.0.x` from PyPI, and 4.x fixes keep shipping
+  from `master` until 5.0 is out.
 - **A deterministic no-LLM mode** for tests, reproducible seeds, and the paper's method as a runnable baseline.
 - **The quality bar** (decided): automated checks on every pre-release ([section 14](#14-automated-quality-checks)).
 
@@ -347,6 +355,23 @@ image ([section 10.5](#105-generated-images)).
   content for the affected slides, never to an error page.
 - The final text goes through the same blocklist the checks use.
 
+### 5.9 Languages
+
+Decided: talks in Dutch, and later other languages, whenever an LLM is available. The classic engine and its
+grammars stay English.
+
+- `TalkRequest.language` defaults to `en`. For another language, the LLM writes the talk in that language
+  directly instead of translating English output, so the wordplay works. Image search queries stay English, which
+  the stock sources handle best.
+- Without an LLM (none configured, the quota used up, or a failure), a non-English request falls back to a
+  classic English talk and says so.
+- Sources that speak the language join in: Dutch Wikipedia and Wikiquote, Dutch-language meme subreddits.
+  Datamuse only knows English, so in other languages the LLM picks the related concepts too.
+- Safety per language: a Dutch blocklist next to the English one, and the provider's own moderation.
+- The checks verify the output language with NLTK's stopword lists, which include Dutch (one small extra NLTK
+  download, no new dependency).
+- On talkgenerator.com, the site's free OpenRouter quota counts as an available LLM (open question Q1).
+
 ## 6. Agent mode: talkgenerator as a Claude Skill
 
 Claude can be the planner, on the user's own Claude usage (in Claude Code, Claude Desktop or claude.ai), while
@@ -366,8 +391,14 @@ rendering the deck.
   straight from this repository, copied into `~/.claude/skills/`, or uploaded to claude.ai as a zip. To verify
   for claude.ai: whether its code-execution sandbox can install talkgenerator and reach the image APIs. If it
   can't, claude.ai can only draft plans, and Claude Code is the main target.
-- Later, optionally: `talkgenerator mcp`, a local MCP server with tools such as `list_formats`, `find_images`
-  and `render_talk`, for Claude Desktop and other MCP clients.
+- `talkgenerator mcp`, decided to be local only: an MCP server with tools such as `list_formats`, `find_images`
+  and `render_talk`, for Claude Desktop and other MCP clients. The client starts it on the user's own computer
+  (over stdio) with the user's own keys, so its requests never touch talkgenerator.com or our keys, and there's
+  nothing of ours to exploit or overload. We don't host an MCP endpoint: that would put our server, our OpenRouter
+  quota and our Unsplash allowance within reach of every MCP client, which a $0 site can't police.
+- Keys: the Skill encourages users to get their own free keys (Unsplash, Pexels, Pixabay, GIPHY, Reddit), walks
+  them through setting up `.env`, and still works without any, with fewer sources. Neither the package nor the
+  Skill ever ships our keys.
 - The same plan-in, deck-out path can later let talkgenerator.com accept plans written in the visitor's browser
   with the visitor's own key, so that key never reaches the server.
 
@@ -397,9 +428,10 @@ schema (only copyright-free images) becomes `ted` with the `open` license policy
 Timing variants work with any format: Pecha Kucha (20 slides of 20 seconds) and Ignite (20 slides of 15 seconds),
 with auto-advance in the browser view.
 
-Proposal for 5.0: TED, interview, pitch, academic, corporate and keynote, plus Pecha Kucha timing. Every format
-also works in classic mode through its content pack ([section 11](#11-text-sources-and-content-packs)), so formats
-cost nothing without an LLM.
+Decided: TED-like talks get every improvement first, and the new formats come after them: in the last alpha, or
+in 5.1 if the TED work takes longer (open question Q2). The format machinery itself exists from 5.0.0a2, since the
+TED talk is a format too. Every format also works in classic mode through its content pack
+([section 11](#11-text-sources-and-content-packs)), so formats cost nothing without an LLM.
 
 ## 8. Slide types and variety
 
@@ -440,7 +472,8 @@ optional memory of recently shown quotes and images, so popular topics don't kee
 - **Families**, each with random members: clean keynote, corporate, academic, startup, vintage paper, kids, dark
   minimal, brutalist, neon. And extremes for laughs: "1997 WordArt", "Comic Sans everywhere", "clip-art
   corporate", and "chaos", where every slide gets its own theme. A `style_chaos` setting goes from one consistent
-  theme (0) to a new theme per slide (1).
+  theme (0) to a new theme per slide (1). Extreme themes are on by default (decided), since explaining a
+  ridiculous deck is half the fun; a switch leaves them out for serious occasions.
 - **Procedural themes:** a base hue from the seed, a harmony rule per family (analogous, complementary,
   triadic), lightness limits, and a contrast check (WCAG: at least 4.5:1 for body text, 3:1 for titles) that
   repairs failing colors. Font pairs come from a curated list per family.
@@ -502,6 +535,13 @@ A profile is a named look, attached to formats and slide types:
 | `calm-backdrop` | stock sources | for text over a photo: little detail where the text goes, darker or blurred |
 | `illustration` | Openverse, Pixabay illustrations, icon sets | |
 
+Weird content gets profiles too, as flavour packs: curated sets of subreddits and other sources per mood, such
+as `cursed` (cursed and blursed images, "hmmm"), `wholesome` (wholesome memes, animals with jobs),
+`corporate-cringe` (LinkedIn-style posts, how-do-you-do-fellow-kids marketing), `bad-charts` (badly made and
+funny charts), `liminal` (empty, eerie spaces), `retro-futurism`, `medieval` (weird medieval art),
+`accidental-art` (accidental Renaissance paintings, symmetrical Wes Anderson-like scenes) and `pareidolia` (faces
+in things). Slide types and formats ask for flavours, and v4's NSFW filter stays on.
+
 Filters, cheapest first:
 
 1. **API parameters:** Unsplash `color` and `orientation`; Pexels `color`, `orientation` and `size`; Pixabay
@@ -534,6 +574,17 @@ Candidates, each to be checked for terms and rate limits before it gets added:
 | Iconify | none | per icon set (MIT, Apache, CC BY...) | icon grids, diagrams |
 | Flag images | none | generally public domain | about me, travel |
 | Imgflip meme templates | none (to list templates) | fair use | memes with live captions |
+
+Reddit stays one of the best sources (decided), and the hunt is on for more like it. Weird and flavoured
+candidates, each with its terms still to check:
+
+- more subreddits, grouped into the flavour packs above, plus Dutch-language ones for Dutch talks;
+- GIPHY stickers (transparent animated stickers, for decoration and absurd overlays), with the existing GIPHY key;
+- Flickr Commons' big public domain uploads: the British Library's and the Internet Archive's millions of old
+  book illustrations, which are odd and free to use;
+- the Wellcome Collection and NYPL Digital Collections, for strange historical imagery;
+- Openclipart (CC0 clip art, for the "clip-art corporate" theme; check that it's up);
+- Imgflip's meme templates (in the table above), captioned by the LLM or the grammars.
 
 They join the existing Unsplash, Pexels, Pixabay, Openverse, Wikimedia Commons, Art Institute of Chicago,
 Reddit, GIPHY, InspiroBot and ShitpostBot. Each source declares its license class, its display policy in the
@@ -571,6 +622,8 @@ browser ([section 13.1](#131-streaming-slides-into-the-browser)) and the filters
 - **New, keyless candidates:** Wikipedia's REST API (summaries, and "on this day" for history slides), Wikidata
   (dates, places and people, for timelines, maps and "true fact, absurd twist" slides), Open Trivia DB (quiz
   slides) and REST Countries (about-me and travel facts). Terms to check for each.
+- **Weird text, for flavour:** random useless facts (for did-you-know slides), dad jokes, advice slips. Small free
+  APIs, each to check for terms and uptime, and always optional.
 - **Grounding:** in LLM mode, a few retrieved facts (a Wikipedia summary, some dates) go into the prompt, so
   history and did-you-know slides mix real facts with nonsense. That's funnier, and less made up.
 - **Content packs:** the classic grammars and templates become versioned data per format and slide type
@@ -611,16 +664,16 @@ browser ([section 13.1](#131-streaming-slides-into-the-browser)) and the filters
 - **The Angular renderer** places the elements from the deck JSON on a 16:9 stage (canvas units become
   percentages), turns the theme tokens into CSS variables, loads the theme's web fonts, and has a presenter mode:
   fullscreen, keyboard or clicker, auto-advance for Pecha Kucha, and a download button.
-- **Images in the browser:** each source declares a display policy, which the deck JSON carries. `hotlink` means
-  the browser loads the source's own URL: Unsplash requires that for its images (it's also what its production
-  review looks for), and Wikimedia and GIPHY allow it. `proxy` means `GET /api/talks/<id>/img/<n>` serves
-  the image from the job folder, which the .pptx export then reuses. Candidates for the proxy: the Art Institute
-  of Chicago, whose image server refused our requests without an `AIC-User-Agent` header that an `<img>` tag
-  can't send (see `http_util.py`; to test from a browser), and Pixabay, whose API terms ask not to hotlink images
-  permanently (to verify).
+- **Images in the browser** (decided): the browser loads each image from its source, and the server caches no
+  images. Unsplash requires this anyway (it's also what its production review looks for), and Wikimedia and
+  GIPHY allow it. Sources that can't be loaded that way either go through a pass-through proxy that stores
+  nothing, or stay out of the web view: the Art Institute of Chicago, whose image server refused our requests
+  without an `AIC-User-Agent` header that an `<img>` tag can't send (see `http_util.py`; to test from a browser),
+  and Pixabay, whose API terms ask not to hotlink images permanently (to verify). Each source declares its display
+  policy, and the deck JSON carries it.
 - **Lighter validation:** while streaming, an image gets checked with a probe (its headers and first bytes, for
-  type and size) instead of a full download, which saves memory on the 600 MB box. The .pptx export downloads
-  images in full.
+  type and size) instead of a full download, which saves memory on the 600 MB box. The .pptx is only built when
+  someone downloads it, and it's kept no longer than today's outputs (7 days).
 - **Privacy:** hotlinked images let those services see visitors' IP addresses, which the site's privacy page
   should mention.
 - **Concurrency:** LLM calls mostly wait, so the single slot can become several streams that share a few image
@@ -629,19 +682,21 @@ browser ([section 13.1](#131-streaming-slides-into-the-browser)) and the filters
 
 ### 13.2 Running at $0
 
-- **Text:** OpenRouter's free models with an ordered fallback list, one request per talk and one per regenerated
-  slide. With the $10 of credits on the account, that's up to 1,000 requests a day, and at most 20 a minute.
+- **Text:** LLM talks by default (decided), on OpenRouter's free models with an ordered fallback list: one request
+  per talk and one per regenerated slide. With the $10 of credits on the account, that's up to 1,000 requests a
+  day, and at most 20 a minute. A visible switch picks the classic 2019 generator instead.
 - **When the quota or the rate limit runs out, or a model fails,** the classic engine takes over without fuss
-  (the page can say "classic mode"). There's never a paid fallback on the site's key.
+  (the page says "classic mode"). There's never a paid fallback on the site's key.
 - **Fair sharing:** per-visitor caps (a few LLM talks per hour per IP address or session; classic talks as
   today), nginx `limit_req` on the API, quota counters in a small SQLite file, and Cloudflare Turnstile only if
   bots show up.
 - **Images:** stock and open sources, as now (Unsplash stays at 50 requests an hour until its production review
   passes), and no AI images on the site's budget.
-- **Upgrades paid by the visitor:** "Connect OpenRouter" (OAuth PKCE: the visitor's own free quota or credits,
-  and their choice of model, image models included), or an Anthropic or OpenAI key for one talk (sent over HTTPS
-  with that request, used once, never stored or logged). Sign in with ChatGPT needs OpenAI's waitlist for a
-  hosted site.
+- **Upgrades paid by the visitor** (decided: all of them): "Connect OpenRouter" (OAuth PKCE: the visitor's own
+  free quota or credits, and their choice of model, image models included); an Anthropic or OpenAI key for one
+  talk (sent over HTTPS with that request, used once, never stored or logged); and Sign in with ChatGPT once
+  OpenAI admits the site, through the interest form linked from
+  [OpenAI's Sign in with ChatGPT docs](https://developers.openai.com/siwc).
 - **Switches:** `DISABLE_LLM=1`, `DISABLE_IMAGE_GENERATION=1`, and `DISABLE_<PROVIDER>=1` per provider.
 - **Visibility:** one usage line per talk in the logs (requests, tokens, estimated cost, which must stay $0 on the
   site's own key, fallbacks taken, time to first slide), and a daily summary.
@@ -662,6 +717,7 @@ the formats × 3 seeds, in classic mode with replay and, for release candidates,
 | Variety | distinct slide types and layouts per talk, no layout twice in a row; across seeds, the share of distinct titles and images | targets per format, set from a1's measurements |
 | Determinism | the same seed with replay gives an identical deck JSON; serial equals parallel | 100% |
 | Safety | blocklist hits in the output; edgy topics screened or falling back | no hits |
+| Language | the text is in the requested language (stopword ratio) | every slide |
 | Speed | time to first slide and total time, on the site's configuration | targets to calibrate in a1 and a4 |
 | Requests and cost | LLM requests and estimated cost per talk | on the site's configuration: $0, at most one request per talk |
 | Memory | peak memory for a 20-slide talk on the site's configuration | under 450 MB |
@@ -673,9 +729,9 @@ deck is funny. Human or LLM-judged ratings are out of scope for now, and could l
 ## 15. Branches, releases and compatibility
 
 - **Branches:** a long-lived `v5` branch from `master`, created once this plan is approved; feature branches go
-  into `v5` through pull requests. `master` stays on 4.x: fixes land there first, and `master` gets merged into
-  `v5` regularly. At 5.0.0, `v5` merges into `master`, and a `4.x` branch from the last 4.x tag takes any later
-  4.x fixes.
+  into `v5` through pull requests. Until then `master` stays on 4.x: fixes land there first, and `master` gets
+  merged into `v5` regularly. At 5.0.0, `v5` merges into `master` and 4.x is done (decided): no more 4.x fixes,
+  though its releases and tags stay available.
 - **Versions:** 5.0.0a1, a2 and so on, then b1, rc1 and 5.0.0. pip skips pre-releases unless asked (`--pre`, or
   an exact pin), so `pip install talkgenerator` and the site's `talkgenerator==4.0.x` pin stay on 4.x. GitHub
   releases of pre-releases are marked as such, so "latest" keeps pointing at 4.x.
@@ -693,21 +749,23 @@ deck is funny. Human or LLM-judged ratings are out of scope for now, and could l
 
 ## 16. Milestones
 
-Pre-releases in the agreed order, with LLM talks and the Skill right after the groundwork:
+Pre-releases in the agreed order: LLM talks and the Skill right after the groundwork, and every TED-like
+improvement before the new formats.
 
 | Release | Focus | Contents | Done when |
 | --- | --- | --- | --- |
 | 5.0.0a1 | Groundwork | deck JSON and the models; pptx renderer from deck JSON (classic look); seeded random streams in `GenerationContext`; the classic engine on the new model; `-o deck.json`; usage ledger; `replay` and `none` providers; checks for completeness, template leftovers and determinism | classic talks look like v4's; the same seed gives the same deck, serial or parallel; v4's offline tests pass |
-| 5.0.0a2 | LLM talks and the Claude Skill | TalkPlan schema; the LLM planner (one streamed call, dice, per-slide fallback, safety); `openrouter`, `anthropic` and `openai` adapters; `render plan.json`, `schema`, `formats`; `skill/` with SKILL.md; `login openrouter`; the `chatgpt` adapter (may slip to a3); checks for requests, cost and speed | on the benchmark with OpenRouter's free models: no holes, no leftovers, $0 and one request per talk; Claude Code makes a deck end to end with the Skill |
-| 5.0.0a3 | Themes and layouts | theme tokens and families (extremes included), procedural palettes and font pairs, layout variants, text fitting, image treatments, the `classic` theme; thumbnails and contact sheet in CI | contrast and overflow checks pass on every theme |
-| 5.0.0a4 | Streaming and the web view | `stream_talk()`, display policies, probe validation; in talk-generator-web: the SSE endpoint, the Angular renderer, .pptx on download, the image proxy, a preview deployment | first slide on screen within the calibrated target on the VPS; a 20-slide talk under the memory bar; the downloaded .pptx matches the web view |
-| 5.0.0a5 | Formats and slide types | talk formats (pitch, academic, corporate, keynote, Pecha Kucha timing); native diagrams, big numbers, quiz, meme, social post and more; content packs v1 | every format works in classic and LLM mode and passes the checks |
-| 5.0.0a6 | Images | slots, aesthetic profiles, local analysis, license classes; new sources; AI image generation with the user's own keys; the optional vision pick | license policies enforced; profile checks pass (such as the grayscale share for `vintage`); generated images credited |
-| 5.0.0b1 | Integration | the site moves to 5.x behind a switch; docs and deprecation warnings; optionally the MCP server | the site runs b1 for a week without quota or memory incidents |
-| 5.0.0rc1, 5.0.0 | Release | freeze and fix; merge `v5` into `master`; the `4.x` branch | |
+| 5.0.0a2 | LLM TED talks and the Claude Skill | TalkPlan schema; the LLM planner (one streamed call, dice, per-slide fallback, safety); `openrouter`, `anthropic` and `openai` adapters; languages, Dutch first; `render plan.json`, `schema`, `formats`; `skill/` with SKILL.md; `login openrouter`; the `chatgpt` adapter (may slip to a3); checks for requests, cost, speed and language | on the benchmark with OpenRouter's free models: no holes, no leftovers, $0 and one request per talk; Dutch talks pass the language check; Claude Code makes a deck end to end with the Skill |
+| 5.0.0a3 | Themes and layouts | theme tokens and families, extremes on by default; procedural palettes and font pairs; layout variants; text fitting; image treatments; the `classic` theme; thumbnails and contact sheet in CI; the local MCP server | contrast and overflow checks pass on every theme |
+| 5.0.0a4 | Streaming and the web view | `stream_talk()`, display policies, probe validation; in talk-generator-web: the SSE endpoint, the Angular renderer, LLM talks by default with the classic switch, a language choice, Connect OpenRouter and pasted keys, .pptx on download, a preview deployment | first slide on screen within the calibrated target on the VPS; a 20-slide talk under the memory bar; the downloaded .pptx matches the web view |
+| 5.0.0a5 | Images | slots, aesthetic profiles and flavour packs, local analysis, license classes; new open and weird sources; AI image generation with the user's own keys; the optional vision pick | license policies enforced; profile checks pass (such as the grayscale share for `vintage`); generated images credited |
+| 5.0.0a6 | More slide types for TED-like talks | native diagrams, big numbers, quiz, memes with live captions, social posts and more; a much larger, curated TED content pack | every new slide type passes the checks in classic and LLM mode |
+| 5.0.0a7 | New talk formats | pitch, academic, corporate, keynote and Pecha Kucha timing, with their content packs (or in 5.1, open question Q2) | every format works in classic and LLM mode and passes the checks |
+| 5.0.0b1 | Integration | the site moves to 5.x behind a switch; Sign in with ChatGPT on the site, if OpenAI has admitted it; docs and deprecation warnings | the site runs b1 for a week without quota or memory incidents |
+| 5.0.0rc1, 5.0.0 | Release | freeze and fix; merge `v5` into `master`; 4.x ends | |
 
 Running alongside the milestones: new sources (each a small pull request with offline tests and a canary test),
-content packs (growing with each format), and the checks (growing with every milestone).
+content packs (the TED pack first, then one per format), and the checks (growing with every milestone).
 
 ## 17. Decisions and open questions
 
@@ -721,29 +779,33 @@ content packs (growing with each format), and the checks (growing with every mil
 | D4 | A provider-neutral interface: OpenRouter, Anthropic and OpenAI first, then Sign in with ChatGPT (CLI), OpenAI-compatible servers, `replay` and `none`. The SDKs are optional extras. |
 | D5 | The classic engine stays: the no-LLM default, the fallback, the test mode and the paper baseline. |
 | D6 | No global randomness: one seeded generator per talk with derived streams, plus replay fixtures. |
-| D7 | talkgenerator.com runs at $0: free tiers only, and AI images only on the visitor's own account or key (decided 2026-11-05). |
-| D8 | After the groundwork, LLM talks and the Claude Skill come first (decided 2026-11-05). |
-| D9 | The quality bar is automated checks on every pre-release (decided 2026-11-05). |
+| D7 | talkgenerator.com runs at $0: free tiers only, and AI images only on the visitor's own account or key. |
+| D8 | After the groundwork, LLM talks and the Claude Skill come first. |
+| D9 | The quality bar is automated checks on every pre-release. |
 | D10 | Themes are tokens on a layout engine; the pptx renderer draws shapes; v4's template becomes the `classic` theme. |
 | D11 | Images are requested through slots, with an aesthetic profile and license classes. |
 | D12 | Plans carry queries and prompts, never image URLs. |
 | D13 | A long-lived `v5` branch with 5.0.0aN pre-releases; `master` stays 4.x and gets merged forward. |
 | D14 | pydantic v2 for the models and their JSON Schemas. |
-| D15 | talkgenerator.com's OpenRouter account has $10 of credits, which lifts the free cap from 50 to 1,000 requests a day (done before 2026-11-05). |
+| D15 | talkgenerator.com's OpenRouter account has $10 of credits, which lifts the free cap from 50 to 1,000 requests a day. |
+| D16 | On talkgenerator.com, LLM talks are the default, with a switch for the classic 2019 generator. |
+| D17 | Visitors can bring their own OpenRouter account, their own Anthropic or OpenAI key, and, once OpenAI admits the site, their ChatGPT plan. |
+| D18 | TED-like talks get every improvement first; new talk formats come after them. |
+| D19 | Dutch, and later other languages, whenever an LLM is available; the classic engine stays English. |
+| D20 | The Skill encourages users to get their own keys; an MCP server runs only locally, on the user's computer with the user's keys; we host no MCP endpoint. |
+| D21 | Extreme themes are on by default. |
+| D22 | Browsers load images from their sources; the server caches no images (only the small search-API responses, as v4 does). |
+| D23 | Reddit memes stay, and we look for more weird and flavoured sources like them. |
+| D24 | No 4.x fixes once 5.0 ships. |
+
+D7 to D9 and D15 to D24 were settled on 2026-11-05; the others follow from the design.
 
 ### Open questions
 
 | # | Question | Proposal |
 | --- | --- | --- |
-| Q1 | The site's default: an LLM talk whenever free quota is left, or classic with the LLM as an opt-in? | LLM when available, plus a visible "classic (2019)" option |
-| Q2 | Which upgrades paid by the visitor go into 5.0: "Connect OpenRouter", pasted Anthropic or OpenAI keys, and applying for the Sign in with ChatGPT waitlist for the site? | Connect OpenRouter first, keys later; ask OpenAI now, since asking is free |
-| Q3 | Which formats first? | TED, interview, pitch, academic, corporate and keynote, plus Pecha Kucha timing |
-| Q4 | Other languages? LLM mode can write Dutch or French cheaply; the classic grammars are English. | English in 5.0, LLM-mode languages as an experiment in a5 |
-| Q5 | The Skill as a Claude Code plugin and a claude.ai zip only, or the MCP server in 5.0 too? | the Skill in a2, the MCP server after 5.0 unless wanted earlier |
-| Q6 | Extreme themes (Comic Sans, WordArt, chaos) on the site by default, or opt-in? | mixed in at a low rate, plus a "chaos" switch |
-| Q7 | Let browsers load images straight from Unsplash, Wikimedia and GIPHY (those services then see visitors' IP addresses) and proxy only where needed, or proxy everything? | hotlink where allowed, proxy the rest |
-| Q8 | Keep Reddit memes and the "weird" subreddits on the site, given the moderation risk? | keep them, with the NSFW filter, the safety checks and the switch |
-| Q9 | How long do 4.x fixes continue after 5.0.0? | security and breakage fixes for 6 months |
+| Q1 | Dutch talks on talkgenerator.com: may they use the site's free OpenRouter quota, or only a visitor's own key? | the free quota counts; once it runs out, a classic English talk with a notice |
+| Q2 | The new talk formats: the last alpha of 5.0, or 5.1? | 5.0.0a7, moving to 5.1 if the TED work takes longer |
 
 ## 18. Sources
 
