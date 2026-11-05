@@ -1,7 +1,7 @@
 # Talk Powerpoint Generator
 
 [![CI](https://github.com/twinters/talk-generator/actions/workflows/ci.yml/badge.svg)](https://github.com/twinters/talk-generator/actions/workflows/ci.yml)
-[![License](https://img.shields.io/github/license/twinters/talk-generator.svg)](LICENSE)
+[![License](https://img.shields.io/github/license/twinters/talk-generator.svg)](https://github.com/twinters/talk-generator/blob/master/LICENSE)
 
 This program automatically generates PowerPoints about any topic.
 These presentation slide decks can be used by improvisers for the improvisational comedy format *"Improvised TED talk"* or *"Powerpoint Karaoke"*.
@@ -17,32 +17,29 @@ Try out this generator on our online platform: [talkgenerator.com](https://talkg
 
 ## Install and run
 
-You need Python 3.11 or newer. With [uv](https://docs.astral.sh/uv/):
+You need Python 3.11 or newer. Install the generator from [PyPI](https://pypi.org/project/talkgenerator/), ideally in a virtual environment:
 
 ```sh
-# Install the dependencies into .venv
-uv sync
+pip install talkgenerator
 
 # Generate a 10 slide talk about peanuts (saved in ./output and opened afterwards)
-uv run talkgenerator --topic "peanuts" --num_slides 10
-```
-
-Or with plain pip:
-
-```sh
-python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -e .
 talkgenerator --topic "peanuts" --num_slides 10
 ```
 
+To work on the generator itself, clone this repository and use [uv](https://docs.astral.sh/uv/):
+
+```sh
+uv sync                                                   # install the dependencies into .venv
+uv run talkgenerator --topic "peanuts" --num_slides 10
+```
+
 On its first run, the generator downloads the NLTK data it needs (about 30 MB).
-For deployments, you can prepare it up front with `python run_nltk_download.py --data-dir <folder>` and point `NLTK_DATA` to that folder.
+For deployments, you can prepare it up front with `python run_nltk_download.py --data-dir <folder>` (from a clone of this repository) and point `NLTK_DATA` to that folder.
 
 ### API keys
 
 Images come from several services, some of which need a (free) API key.
-Copy `.env.example` to `.env` in the folder you run the generator from, and fill in the keys you have.
+Copy [`.env.example`](https://github.com/twinters/talk-generator/blob/master/.env.example) to `.env` in the folder you run the generator from, and fill in the keys you have.
 Every key is optional: sources without a key are skipped, and the other sources fill in.
 
 | Source | Used for | Keys | Where to get them |
@@ -124,7 +121,7 @@ It uses the API keys stored as repository secrets (`REDDIT_CLIENT_ID`, `REDDIT_C
 
 ## Releasing
 
-New versions are published to PyPI from GitHub; see [RELEASING.md](RELEASING.md).
+New versions are published to PyPI from GitHub; see [RELEASING.md](https://github.com/twinters/talk-generator/blob/master/RELEASING.md).
 
 ## Credits
 

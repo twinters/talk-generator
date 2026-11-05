@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [master, dev]
+    branches: [master]
   pull_request:
   workflow_dispatch:
 
@@ -18,6 +18,8 @@ jobs:
       - run: uv run --locked ruff check .
       - run: uv run --locked ruff format --check .
       - run: uv run --locked mypy
+      - name: Versions agree (pyproject.toml == CITATION.cff)
+        run: uv run --locked python scripts/release.py check
 
   test:
     runs-on: ubuntu-latest
