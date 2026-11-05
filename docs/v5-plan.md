@@ -1,8 +1,7 @@
 # talk-generator v5: design and roadmap
 
-Status: draft, 2026-11-05, with the first round of open questions answered
-([section 17](#17-decisions-and-open-questions)). Nothing in here is implemented yet; the first pre-release starts
-once the plan is approved.
+Status: approved on 2026-11-05 ([section 17](#17-decisions-and-open-questions) lists the decisions); work on
+5.0.0a1 has started.
 
 v4.0.0 is the modernized version of the 2019 generator from the EvoMUSART paper. v5 brings it up to 2026
 standards: LLM-written talks, generated images, more sources, themes and talk formats, and slides that stream
@@ -358,7 +357,8 @@ image ([section 10.5](#105-generated-images)).
 ### 5.9 Languages
 
 Decided: talks in Dutch, and later other languages, whenever an LLM is available. The classic engine and its
-grammars stay English.
+grammars stay English: translating them would mean keeping parallel grammars in step for every language, a lot of
+upkeep for a mode that only matters when no LLM is around.
 
 - `TalkRequest.language` defaults to `en`. For another language, the LLM writes the talk in that language
   directly instead of translating English output, so the wordplay works. Image search queries stay English, which
@@ -370,7 +370,8 @@ grammars stay English.
 - Safety per language: a Dutch blocklist next to the English one, and the provider's own moderation.
 - The checks verify the output language with NLTK's stopword lists, which include Dutch (one small extra NLTK
   download, no new dependency).
-- On talkgenerator.com, the site's free OpenRouter quota counts as an available LLM (open question Q1).
+- On talkgenerator.com, the site's free OpenRouter quota counts as an available LLM (decided); once it runs out, a
+  Dutch request gets a classic English talk with a notice.
 
 ## 6. Agent mode: talkgenerator as a Claude Skill
 
@@ -399,6 +400,13 @@ rendering the deck.
 - Keys: the Skill encourages users to get their own free keys (Unsplash, Pexels, Pixabay, GIPHY, Reddit), walks
   them through setting up `.env`, and still works without any, with fewer sources. Neither the package nor the
   Skill ever ships our keys.
+- Why both, and which comes first: the Skill carries the know-how (what makes a good karaoke plan, the formats,
+  examples, the render-and-fix loop) and runs the CLI wherever Claude has a shell, as in Claude Code. It only
+  enters the conversation when it's needed, and it installs as a plugin. The MCP server offers the same functions
+  as typed tools to apps that have no shell or aren't Claude, such as Claude Desktop's chat and other MCP clients,
+  and writes the deck straight onto the user's disk. Its tool descriptions sit in every conversation where it's
+  enabled, and installing it means a config entry or a one-click Claude Desktop extension bundle (to check). Both
+  wrap the same `render` functions, so the Skill comes first (a2) and the MCP server is a thin layer on top (a3).
 - The same plan-in, deck-out path can later let talkgenerator.com accept plans written in the visitor's browser
   with the visitor's own key, so that key never reaches the server.
 
@@ -428,8 +436,8 @@ schema (only copyright-free images) becomes `ted` with the `open` license policy
 Timing variants work with any format: Pecha Kucha (20 slides of 20 seconds) and Ignite (20 slides of 15 seconds),
 with auto-advance in the browser view.
 
-Decided: TED-like talks get every improvement first, and the new formats come after them: in the last alpha, or
-in 5.1 if the TED work takes longer (open question Q2). The format machinery itself exists from 5.0.0a2, since the
+Decided: TED-like talks get every improvement first, and the new formats come after them: in the last alpha
+(5.0.0a7), or in 5.1 if the TED work takes longer. The format machinery itself exists from 5.0.0a2, since the
 TED talk is a format too. Every format also works in classic mode through its content pack
 ([section 11](#11-text-sources-and-content-packs)), so formats cost nothing without an LLM.
 
@@ -760,7 +768,7 @@ improvement before the new formats.
 | 5.0.0a4 | Streaming and the web view | `stream_talk()`, display policies, probe validation; in talk-generator-web: the SSE endpoint, the Angular renderer, LLM talks by default with the classic switch, a language choice, Connect OpenRouter and pasted keys, .pptx on download, a preview deployment | first slide on screen within the calibrated target on the VPS; a 20-slide talk under the memory bar; the downloaded .pptx matches the web view |
 | 5.0.0a5 | Images | slots, aesthetic profiles and flavour packs, local analysis, license classes; new open and weird sources; AI image generation with the user's own keys; the optional vision pick | license policies enforced; profile checks pass (such as the grayscale share for `vintage`); generated images credited |
 | 5.0.0a6 | More slide types for TED-like talks | native diagrams, big numbers, quiz, memes with live captions, social posts and more; a much larger, curated TED content pack | every new slide type passes the checks in classic and LLM mode |
-| 5.0.0a7 | New talk formats | pitch, academic, corporate, keynote and Pecha Kucha timing, with their content packs (or in 5.1, open question Q2) | every format works in classic and LLM mode and passes the checks |
+| 5.0.0a7 | New talk formats | pitch, academic, corporate, keynote and Pecha Kucha timing, with their content packs (or in 5.1 if the TED work takes longer) | every format works in classic and LLM mode and passes the checks |
 | 5.0.0b1 | Integration | the site moves to 5.x behind a switch; Sign in with ChatGPT on the site, if OpenAI has admitted it; docs and deprecation warnings | the site runs b1 for a week without quota or memory incidents |
 | 5.0.0rc1, 5.0.0 | Release | freeze and fix; merge `v5` into `master`; 4.x ends | |
 
@@ -797,15 +805,14 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D22 | Browsers load images from their sources; the server caches no images (only the small search-API responses, as v4 does). |
 | D23 | Reddit memes stay, and we look for more weird and flavoured sources like them. |
 | D24 | No 4.x fixes once 5.0 ships. |
+| D25 | Dutch talks on talkgenerator.com may use the site's free OpenRouter quota; once it runs out, they get a classic English talk with a notice. |
+| D26 | The new talk formats come in 5.0.0a7, or move to 5.1 if the TED work takes longer. |
 
-D7 to D9 and D15 to D24 were settled on 2026-11-05; the others follow from the design.
+D7 to D9 and D15 to D26 were settled on 2026-11-05; the others follow from the design.
 
 ### Open questions
 
-| # | Question | Proposal |
-| --- | --- | --- |
-| Q1 | Dutch talks on talkgenerator.com: may they use the site's free OpenRouter quota, or only a visitor's own key? | the free quota counts; once it runs out, a classic English talk with a notice |
-| Q2 | The new talk formats: the last alpha of 5.0, or 5.1? | 5.0.0a7, moving to 5.1 if the TED work takes longer |
+None right now; new ones go here.
 
 ## 18. Sources
 
