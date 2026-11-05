@@ -4,7 +4,7 @@ import pytest
 
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.slide import powerpoint_slide_creator, slides
-from talkgenerator.sources import art_institute, giphy, openverse, wikimedia_commons, wikiquote
+from talkgenerator.sources import art_institute, giphy, openverse, unsplash, wikimedia_commons, wikiquote
 from talkgenerator.util import http_util
 
 
@@ -179,17 +179,40 @@ def test_wikiquote_extracts_quotes_without_attributions():
 
 def test_image_credits_link_to_their_pages():
     slide = slides.ImageSlide(title="Cats", image_url=None)
-    slide.add_source("Ann (via Unsplash)", "https://unsplash.com/@ann?utm_source=talkgenerator&utm_medium=referral")
+    slide.add_source("Ann (via Pexels)", "https://www.pexels.com/photo/cat-123/")
     slide.add_source("u/bob (on r/pics)", None)
     ppt_slide = slide.create_powerpoint_slide(powerpoint_slide_creator.create_new_powerpoint())
     runs = [
         run for shape in ppt_slide.shapes if shape.has_text_frame for p in shape.text_frame.paragraphs for run in p.runs
     ]
     text = "".join(run.text for run in runs)
-    assert "[Image sources: Ann (via Unsplash), u/bob (on r/pics)]" in text
+    assert "[Image sources: Ann (via Pexels), u/bob (on r/pics)]" in text
     linked = {run.text: run.hyperlink.address for run in runs if run.hyperlink.address}
-    assert linked == {"Ann (via Unsplash)": "https://unsplash.com/@ann?utm_source=talkgenerator&utm_medium=referral"}
+    assert linked == {"Ann (via Pexels)": "https://www.pexels.com/photo/cat-123/"}
     assert slide.to_slide_dictionary()["source_urls"][1] is None
+
+
+def test_unsplash_credit_links_the_photographer_and_unsplash():
+    # The attribution Unsplash's API guidelines ask for: "Photo by <photographer> on Unsplash", linking both
+    photo = {
+        "urls": {"raw": "https://images.unsplash.com/photo-1?ixid=abc"},
+        "user": {"name": "Annie Spratt", "links": {"html": "https://unsplash.com/@anniespratt"}},
+        "links": {"download_location": "https://api.unsplash.com/photos/1/download?ixid=abc"},
+    }
+    image = unsplash._map_to_image_data(photo)
+    slide = slides.ImageSlide(title="Cats", image_url=None)
+    slide.add_source(image.get_source(), image.get_source_url(), image.get_credit())
+    ppt_slide = slide.create_powerpoint_slide(powerpoint_slide_creator.create_new_powerpoint())
+    runs = [
+        run for shape in ppt_slide.shapes if shape.has_text_frame for p in shape.text_frame.paragraphs for run in p.runs
+    ]
+    assert "[Image sources: Photo by Annie Spratt on Unsplash]" in "".join(run.text for run in runs)
+    linked = {run.text: run.hyperlink.address for run in runs if run.hyperlink.address}
+    assert linked == {
+        "Annie Spratt": "https://unsplash.com/@anniespratt?utm_source=talkgenerator&utm_medium=referral",
+        "Unsplash": "https://unsplash.com/?utm_source=talkgenerator&utm_medium=referral",
+    }
+    assert image.get_source() == "Photo by Annie Spratt on Unsplash"
 
 
 def test_image_data_keeps_its_link():

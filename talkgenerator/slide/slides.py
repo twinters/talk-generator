@@ -1,6 +1,7 @@
 import logging
+from collections.abc import Sequence
 
-from talkgenerator.datastructures.image_data import ImageData
+from talkgenerator.datastructures.image_data import CreditPart, ImageData
 from talkgenerator.slide import powerpoint_slide_creator
 from talkgenerator.util import image_util, os_util
 
@@ -20,16 +21,19 @@ class Slide:
         self._note = ""
         self._sources: list[str] = []
         self._source_urls: list[str | None] = []
+        self._credits: list[tuple[CreditPart, ...]] = []
 
     @property
     def type_name(self) -> str:
         return self._type_name
 
-    def add_source(self, source: str, url: str | None = None):
-        """Credit an image source; the credit links to the url (if given) in the PowerPoint."""
+    def add_source(self, source: str, url: str | None = None, credit: Sequence[CreditPart] | None = None):
+        """Credit an image source. In the PowerPoint, the credit links to the url (if given), or reads as the
+        given credit parts, each linking to its own page."""
         if source is not None:
             self._sources.append(source)
             self._source_urls.append(url)
+            self._credits.append(tuple(credit) if credit else ((source, url),))
 
     def set_note(self, note: str):
         """Debug information about how the slide was generated."""
@@ -62,8 +66,8 @@ class Slide:
                 if debug_notes and self._note:
                     ppt_slide.notes_slide.notes_text_frame.text = self._note
 
-                if len(self._sources):
-                    powerpoint_slide_creator.add_sources_note(ppt_slide, self._sources, self._source_urls)
+                if self._credits:
+                    powerpoint_slide_creator.add_sources_note(ppt_slide, self._credits)
 
                 powerpoint_slide_creator.remove_empty_placeholders(ppt_slide)
 

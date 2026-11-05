@@ -10,12 +10,13 @@ import logging
 from typing import Any
 
 from talkgenerator import settings
-from talkgenerator.datastructures.image_data import ImageData
+from talkgenerator.datastructures.image_data import CreditPart, ImageData
 from talkgenerator.util import http_util
 
 logger = logging.getLogger("talkgenerator")
 
 API_URL = "https://api.unsplash.com"
+UNSPLASH_URL = "https://unsplash.com/"
 _IMAGE_WIDTH = 1920
 
 _cooldown = http_util.Cooldown("Unsplash")
@@ -70,16 +71,28 @@ def _map_to_image_data(photo: dict[str, Any]) -> ImageData | None:
     if not image_url:
         return None
     user = photo.get("user") or {}
-    source = user["name"] + " (via Unsplash)" if user.get("name") else "Unsplash"
+    name = user.get("name")
+    profile = _profile_link(user)
+    # The attribution Unsplash asks for: "Photo by <photographer> on Unsplash", linking both
+    credit: tuple[CreditPart, ...]
+    if name:
+        source = f"Photo by {name} on Unsplash"
+        credit = (("Photo by ", None), (name, profile), (" on ", None), ("Unsplash", _with_referral(UNSPLASH_URL)))
+    else:
+        source, credit = "Unsplash", (("Unsplash", _with_referral(UNSPLASH_URL)),)
     download_location = (photo.get("links") or {}).get("download_location")
     on_use = (lambda: _track_download(download_location)) if download_location else None
-    return ImageData(image_url=image_url, source=source, on_use=on_use, source_url=_profile_link(user))
+    return ImageData(image_url=image_url, source=source, on_use=on_use, source_url=profile, credit=credit)
 
 
 def _profile_link(user: dict[str, Any]) -> str:
     """Link to the photographer's profile, tagged the way Unsplash's attribution guidelines ask."""
-    profile = (user.get("links") or {}).get("html") or "https://unsplash.com/"
-    return http_util.with_query_params(profile, utm_source=settings.unsplash_app_name(), utm_medium="referral")
+    return _with_referral((user.get("links") or {}).get("html") or UNSPLASH_URL)
+
+
+def _with_referral(url: str) -> str:
+    # Unsplash's guidelines: every link back to Unsplash says which app it comes from
+    return http_util.with_query_params(url, utm_source=settings.unsplash_app_name(), utm_medium="referral")
 
 
 def random(_: object = None) -> ImageData | None:

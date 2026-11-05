@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Sequence
 from functools import lru_cache
 from io import BytesIO
 from pathlib import Path
@@ -7,7 +8,7 @@ import pptx
 from lxml.etree import XMLSyntaxError
 from pptx.presentation import Presentation
 
-from talkgenerator.datastructures.image_data import ImageData
+from talkgenerator.datastructures.image_data import CreditPart, ImageData
 from talkgenerator.util import http_util, image_util, os_util
 
 # Location of powerpoint template
@@ -148,22 +149,22 @@ def _print_all_placeholders(slide):
         print("%d %s" % (shape.placeholder_format.idx, shape.name))
 
 
-def add_sources_note(slide, sources: list[str], source_urls: list[str | None] | None = None):
-    """Credit the image sources on the slide, each linking to its page (photographer, photo, post...)."""
-    if not sources:
+def add_sources_note(slide, credits: Sequence[Sequence[CreditPart]]):
+    """Credit the image sources on the slide. Each credit is a sequence of (text, link) parts, so that it can
+    link to its pages (the photographer, the photo, the post, Unsplash...)."""
+    if not credits:
         return None
-    urls = list(source_urls or [])
-    urls += [None] * (len(sources) - len(urls))
     text_frame = slide.placeholders[SOURCES_PLACEHOLDER].text_frame
     text_frame.text = "[Image sources: "
     paragraph = text_frame.paragraphs[0]
-    for index, (source, url) in enumerate(zip(sources, urls, strict=True)):
+    for index, credit in enumerate(credits):
         if index:
             paragraph.add_run().text = ", "
-        run = paragraph.add_run()
-        run.text = source
-        if url:
-            run.hyperlink.address = url
+        for text, url in credit:
+            run = paragraph.add_run()
+            run.text = text
+            if url:
+                run.hyperlink.address = url
     paragraph.add_run().text = "]"
     return True
 

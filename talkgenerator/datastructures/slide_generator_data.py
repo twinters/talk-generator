@@ -98,7 +98,11 @@ class SlideGeneratorData:
                     # Add all sources of generated elements
                     for generated_element in generated_elements:
                         if isinstance(generated_element, ImageData):
-                            slide.add_source(generated_element.get_source(), generated_element.get_source_url())
+                            slide.add_source(
+                                generated_element.get_source(),
+                                generated_element.get_source_url(),
+                                generated_element.get_credit(),
+                            )
 
                     return slide, generated_elements
 

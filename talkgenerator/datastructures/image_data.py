@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 
 logger = logging.getLogger("talkgenerator")
+
+# A part of an image credit as it reads on a slide: its text, and the page it links to (if any)
+CreditPart = tuple[str, str | None]
 
 
 class ImageData:
@@ -13,6 +16,7 @@ class ImageData:
         source: str | None = None,
         on_use: Callable[[], None] | None = None,
         source_url: str | None = None,
+        credit: Sequence[CreditPart] | None = None,
     ) -> None:
         self._image_url = image_url
         self._source = source
@@ -20,6 +24,8 @@ class ImageData:
         self._on_use = on_use
         # Page that the credit links to (the photographer's profile, the photo's page, ...)
         self._source_url = source_url
+        # The credit in parts, for credits that link more than one page (the photographer and Unsplash, say)
+        self._credit = tuple(credit) if credit else None
         # The checked bytes to embed, once downloaded (see image_util.fetch_image_data)
         self.data: bytes | None = None
 
@@ -31,6 +37,12 @@ class ImageData:
 
     def get_source_url(self) -> str | None:
         return self._source_url
+
+    def get_credit(self) -> tuple[CreditPart, ...]:
+        """The credit as it reads on a slide: by default the source, linking to the source's page."""
+        if self._credit:
+            return self._credit
+        return ((self._source, self._source_url),) if self._source else ()
 
     def mark_used(self) -> None:
         callback, self._on_use = self._on_use, None
