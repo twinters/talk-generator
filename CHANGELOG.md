@@ -8,6 +8,8 @@ and the project follows [Semantic Versioning](https://semver.org/).
 
 <!-- Add changes here as you merge them; release.py moves them under the new version at release time. -->
 
+## [4.0.1] - 2026-11-05
+
 ### Fixed
 
 - The README now starts with `pip install talkgenerator`, and its links work on the
@@ -71,7 +73,8 @@ Historical snapshot of the version accompanying the paper *"Automatically Genera
 Engaging Presentation Slide Decks"* (Winters & Mathewson, EvoMUSART 2019). Preserved
 as the `Alpha` git tag; it isn't on PyPI and isn't maintained for current Python.
 
-[Unreleased]: https://github.com/twinters/talk-generator/compare/v4.0.0...HEAD
+[Unreleased]: https://github.com/twinters/talk-generator/compare/v4.0.1...HEAD
+[4.0.1]: https://github.com/twinters/talk-generator/releases/tag/v4.0.1
 [4.0.0]: https://github.com/twinters/talk-generator/compare/Alpha...v4.0.0
 [2.1.4]: https://pypi.org/project/talkgenerator/2.1.4/
 [Alpha]: https://github.com/twinters/talk-generator/tree/Alpha
