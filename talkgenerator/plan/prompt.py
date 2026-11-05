@@ -1,0 +1,184 @@
+"""Asking a language model for a talk's plan (docs/v5-plan.md, sections 5.2 and 5.3).
+
+Python picks the slides (see PresentationSchema); the model writes what goes on them, in one request. The response is
+one JSON object, whose schema is built for this talk's slides: its spine (title, the presenter's job, the thesis)
+first, then one property per slide, in order, so the slides can be read while the model writes them. Seeded
+"dice" (a persona for the presenter and an angle on the topic) make every seed give its own talk, where current
+models take no sampling temperature.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any, Final
+
+from talkgenerator.llm.base import Message, TextRequest
+from talkgenerator.models.plan import SlidePlan
+from talkgenerator.plan.kinds import KINDS, Recipe
+from talkgenerator.util import random_util
+
+LANGUAGES: Final = {
+    "en": "English",
+    "nl": "Dutch",
+    "fr": "French",
+    "de": "German",
+    "es": "Spanish",
+    "it": "Italian",
+    "pt": "Portuguese",
+}
+
+SYSTEM_PROMPT: Final = """\
+You write the slides of talks for improv theatre, for formats such as PowerPoint karaoke and improvised TED talks. A \
+performer presents your slides without having seen them before, and has to make them work: the fun is in watching \
+them explain every slide as if they had planned it all.
+
+So write slides that give the presenter something to work with, rather than finished jokes:
+- Keep it short. Titles have a few words, captions one to four. No paragraphs, no bullet points, no explanations.
+- Play it straight. Write like a confident expert giving a serious talk, however absurd the content. The audience \
+laughs at the presenter making sense of it, not at puns on the slides.
+- Leave gaps. A good slide raises a question the presenter has to answer: an odd juxtaposition, a suspiciously \
+specific claim, something that needs backing up. Don't explain the joke, or the image.
+- Build one talk. The slides follow one thread, the talk's thesis. Later slides call back to earlier ones (a running \
+gag, a recurring character, a strange claim from before), and the conclusions call back to several of them.
+- Wander and come back. Every slide starts from the word it's given, which may wander away from the topic: follow \
+it, and tie it back to the talk's thread.
+- Image search queries say what the image should show, in two to six plain English words, for stock photo and gif \
+sites: concrete things rather than ideas ("a cat wearing sunglasses", not "coolness").
+
+Never write:
+- quotes attributed to real people (quotes on the slides belong to made-up people, or to no one),
+- anything about real private persons, or the presenter's name (talkgenerator adds it),
+- slurs, sexual content, or anything that mocks people for who they are,
+- markup, emoji, hashtags, or placeholders in curly braces.
+
+If the topic asks for something hateful or harmful, set "safe_topic" to false, and keep everything else short.
+Answer with one JSON object in the shape you're given, and nothing else."""
+
+_PERSONAS: Final = (
+    "a world-leading expert who is slightly too passionate about the topic",
+    "a startup founder who has pivoted eleven times",
+    "a retired lighthouse keeper with strong opinions",
+    "a motivational speaker who just lost a bet",
+    "a scientist whose research was never peer reviewed",
+    "an influencer with exactly 31 followers",
+    "a professor who has studied this for forty years",
+    "a former athlete turned philosopher",
+    "a consultant who bills by the slide",
+    "a time traveller trying not to give too much away",
+    "a medieval historian who sees the Middle Ages in everything",
+    "a life coach who is suspiciously calm",
+)
+_ANGLES: Final = (
+    "the topic's hidden history",
+    "why everyone gets the topic wrong",
+    "how the topic will change the future",
+    "the presenter's personal journey with the topic",
+    "the economics of the topic that nobody talks about",
+    "the topic as a metaphor for life",
+    "a scientific breakthrough about the topic",
+    "mastering the topic in five steps",
+    "the dark side of the topic",
+    "a love letter to the topic",
+)
+
+
+@dataclass(frozen=True, eq=False)
+class PlannedSlide:
+    """A slide the model writes: its place in the talk, and what to write."""
+
+    number: int  # counted from 1
+    generator: str  # the name of the slide generator it stands in for
+    recipe: Recipe
+    seed: str  # the word the slide starts from (from the schema's topic generator)
+
+    @property
+    def key(self) -> str:
+        return f"slide_{self.number}"
+
+
+def talk_request(
+    topics: list[str],
+    planned: list[PlannedSlide],
+    rng: random_util.Rng,
+    language: str = "en",
+    title: str | None = None,
+) -> TextRequest:
+    with random_util.use(rng.child("dice")):
+        persona, angle = random_util.choice(_PERSONAS), random_util.choice(_ANGLES)
+    topic = topics[0] + (f" (and {', '.join(topics[1:])})" if len(topics) > 1 else "")
+    lines = [
+        f"Topic: {topic}",
+        f"Title: {title}" if title else "Title: come up with one",
+        f"Language: write the slides in {LANGUAGES.get(language, language)}, and the image search queries in English",
+        f"The presenter: {persona}",
+        f"The angle: {angle}",
+        "",
+        "The slides, in order (slide 1 is the title slide):",
+    ]
+    for slide in planned:
+        brief = slide.recipe.brief or KINDS[slide.recipe.kind].description
+        lines.append(f"- {slide.key}: {brief}. It starts from: {slide.seed}")
+    return TextRequest(
+        purpose="talk plan",
+        system=SYSTEM_PROMPT,
+        messages=(Message(role="user", content="\n".join(lines)),),
+        json_schema=response_schema(planned),
+        max_output_tokens=1000 + 300 * len(planned),
+    )
+
+
+def response_schema(planned: list[PlannedSlide]) -> dict[str, Any]:
+    """The JSON Schema of the answer: every property required, nothing else allowed (as strict structured outputs
+    want), the spine first and the slides in order."""
+    properties: dict[str, Any] = {
+        "safe_topic": {"type": "boolean", "description": "false if the topic asks for something hateful or harmful"},
+        "thesis": {"type": "string", "description": "the talk's thesis, its absurd claim in one sentence (not shown)"},
+        "title": {"type": "string", "description": "the talk's title (at most 80 characters)"},
+        "presenter_job": {
+            "type": "string",
+            "description": "the presenter's grand, made-up job, for the title slide, such as 'Professor of Applied "
+            "Sock Theory' (at most 60 characters)",
+        },
+    }
+    for slide in planned:
+        properties[slide.key] = slide_schema(slide.recipe)
+    return _object(properties)
+
+
+def slide_schema(recipe: Recipe) -> dict[str, Any]:
+    properties: dict[str, Any] = {
+        "concept": {"type": "string", "description": "what this slide is about, in a few words"},
+    }
+    for text in recipe.written_fields():
+        description = recipe.hints.get(text.name, text.description)
+        limit = f"at most {text.max_length} characters" + (", or empty for none" if text.optional else "")
+        properties[text.name] = {"type": "string", "description": f"{description} ({limit})"}
+    for slot in recipe.image_queries():
+        properties[f"{slot}_query"] = {"type": "string", "description": f"the image search query for the {slot}"}
+    return _object(properties)
+
+
+def _object(properties: dict[str, Any]) -> dict[str, Any]:
+    return {"type": "object", "properties": properties, "required": list(properties), "additionalProperties": False}
+
+
+def slide_plan(slide: PlannedSlide, value: Any) -> SlidePlan | None:
+    """The plan of a slide, from its part of the model's answer (None if that isn't an object)."""
+    if not isinstance(value, dict):
+        return None
+    texts = {
+        text.name: value[text.name] for text in slide.recipe.written_fields() if isinstance(value.get(text.name), str)
+    }
+    queries = {
+        slot: value[f"{slot}_query"]
+        for slot in slide.recipe.image_queries()
+        if isinstance(value.get(f"{slot}_query"), str)
+    }
+    concept = value.get("concept")
+    return SlidePlan(
+        kind=slide.recipe.kind,
+        recipe=slide.generator,
+        concept=concept if isinstance(concept, str) else "",
+        texts=texts,
+        images=queries,
+    )

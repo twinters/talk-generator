@@ -43,6 +43,11 @@ _LEFTOVERS: tuple[tuple[re.Pattern[str], str], ...] = (
 _NONE = re.compile(r"\S\s+None\b|^None$")
 
 
+def leftovers_in(text: str) -> list[str]:
+    """The bits of generator machinery in a text: what they are, and the bit itself."""
+    return [f"{what}: {found.group(0)!r}" for pattern, what in _LEFTOVERS if (found := pattern.search(text))]
+
+
 def check_deck(deck: Deck, expected_slides: int | None = None) -> list[Finding]:
     """Every check of a deck."""
     return [*check_completeness(deck, expected_slides), *check_leftovers(deck), *check_images(deck)]

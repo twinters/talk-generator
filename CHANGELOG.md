@@ -20,6 +20,16 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   recorded talk again; a ledger of every talk's requests, tokens and cost; budgets (a $0 budget lets only free
   models through); and list prices. `TALKGENERATOR_LLM` picks the provider (`none` by default; the real ones
   follow), and a deck tells what its talk asked of language models.
+- Talks a language model writes: Python still picks every slide's generator, and the model writes what goes on
+  those slides, in one streamed request whose JSON schema is made for the talk (its title, the presenter's job,
+  its thesis, then every slide in order), so slides get ready while the answer comes in. A slide that comes out
+  wrong, whose images can't be found, or that repeats what came before, is classic; so is the whole talk when
+  the model fails or turns the topic down. The presenter's name never reaches the model, and the same seed with
+  the same answers gives the same talk. `--llm provider:model` (or `llm=`, or `TALKGENERATOR_LLM`) picks the
+  model, `--language` the language it writes in, and `budget=` what it may cost. Every slide generator has a
+  recipe (`talkgenerator.plan.kinds`) that tells the model what to write for it; the plans it writes
+  (`talkgenerator.models.plan`) are the format that talks written elsewhere, such as by a Claude Skill, will use
+  too.
 - `talkgenerator check`: generates talks on a set of topics (10 by default, `--quick` for 3, `--all` for 30),
   checks every deck, generates every talk again one by one with its seed to see that it comes out the same, and
   writes a JSON report. The checks, in `talkgenerator.checks`: every slide has what its type needs, no template

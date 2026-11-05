@@ -1,6 +1,7 @@
 """The presentation schemas: which groups of slide generators a talk is made of, and how many of each kind."""
 
 from talkgenerator.datastructures.slide_generator_data import ConstantWeightFunction, SlideGeneratorData
+from talkgenerator.plan.kinds import Recipe
 from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema import slide_topic_generators
 from talkgenerator.schema.presentation_schema import PresentationSchema
@@ -67,6 +68,7 @@ _test_sourcing_slide_generator = slide_generators.register(
         weight_function=ConstantWeightFunction(8),
         allowed_repeated_elements=10,
         name="Test sourcing",
+        llm=Recipe("image", (cg.generate_unsplash_image,), brief="A photo with a title"),
     ),
     group="test",
 )

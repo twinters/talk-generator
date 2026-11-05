@@ -47,6 +47,7 @@ class SlideGeneratorData:
         allowed_repeated_elements: int = 0,
         tags=None,
         name=None,
+        llm=None,
     ):
         self._generator = generator
         self._weight_function = weight_function
@@ -56,6 +57,9 @@ class SlideGeneratorData:
         if not tags:
             tags = set()
         self._tags = tags
+        # How a language model fills this kind of slide (a talkgenerator.plan.kinds.Recipe): which slide shape, which
+        # image sources, and what to write. Without one, the slide is always classic.
+        self.llm = llm
 
     def generate(self, presentation_context, used_elements):
         """Generate a slide for a given presentation using the given seed."""

@@ -83,6 +83,8 @@ Set `TALKGENERATOR_CACHE_DIR` to put the cache elsewhere, or `DISABLE_CACHE=1` t
 | `--int_seed` | Seed for the talk's random choices: the same seed gives the same talk, with or without `--parallel` (as long as the sources answer the same). Without one, a random seed is picked, which the logs and the deck JSON mention |
 | `--print_logs` / `--verbose` | Print progress (*default: true*); `--verbose` adds debug logs |
 | `--debug_notes` | Explain in each slide's speaker notes how it was generated. Off by default, since presenters see the notes |
+| `--llm` | The language model that writes the slides, as `provider:model`. `none` (*default*, unless the `TALKGENERATOR_LLM` setting names one) makes a classic talk |
+| `--language` | The language of the slides, such as `nl`, for talks a language model writes (classic talks are in English) (*default: en*) |
 
 ### Using it from Python
 

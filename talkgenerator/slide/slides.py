@@ -28,7 +28,7 @@ class Slide:
     def type_name(self) -> str:
         return self._type_name
 
-    def add_source(self, source: str, url: str | None = None, credit: Sequence[CreditPart] | None = None):
+    def add_source(self, source: str | None, url: str | None = None, credit: Sequence[CreditPart] | None = None):
         """Credit an image source. In the PowerPoint, the credit links to the url (if given), or reads as the
         given credit parts, each linking to its own page."""
         if source is not None:
@@ -137,7 +137,7 @@ def _has_content(value) -> bool:
 class TitleSlide(Slide):
     required_arguments = ("title",)
 
-    def __init__(self, title: str, subtitle: str):
+    def __init__(self, title: str, subtitle: str | None):
         super().__init__(
             type_name="title",
             ppt_slide_creator=powerpoint_slide_creator.create_title_slide,
@@ -148,7 +148,7 @@ class TitleSlide(Slide):
 class LarqeQuoteSlide(Slide):
     required_arguments = ("text", "background_image")
 
-    def __init__(self, title: str, text: str, background_image=None):
+    def __init__(self, title: str | None, text: str, background_image=None):
         super().__init__(
             type_name="large_quote",
             ppt_slide_creator=powerpoint_slide_creator.create_large_quote_slide,

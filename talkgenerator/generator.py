@@ -8,6 +8,9 @@ import sys
 from pptx.presentation import Presentation
 
 from talkgenerator import runtime_checker, settings
+from talkgenerator.llm.base import TextProvider
+from talkgenerator.llm.ledger import Budget, Ledger, MeteredProvider
+from talkgenerator.llm.providers import NoneProvider, from_settings, provider_from_spec
 from talkgenerator.models.deck import Deck
 from talkgenerator.schema.content_generators import full_name_generator
 from talkgenerator.schema.presentation_schema_types import get_schema, schemas
@@ -47,6 +50,8 @@ def generate_presentation_using_cli_arguments(args) -> tuple[Presentation | None
         open_ppt=args.open_ppt,
         debug_notes=getattr(args, "debug_notes", False),
         save_json=getattr(args, "save_json", False),
+        llm=getattr(args, "llm", None),
+        language=getattr(args, "language", None) or "en",
     )
 
 
@@ -64,12 +69,19 @@ def generate_presentation(
     print_logs=False,
     debug_notes: bool = False,
     save_json: bool = False,
+    llm: TextProvider | str | None = None,
+    language: str = "en",
+    budget: Budget | None = None,
 ) -> tuple[Presentation | None, SlideDeck, str | None]:
     """Generate a talk. With debug_notes, every slide's speaker notes explain how it was generated.
 
     With save_json, the talk is also saved as a deck (see talkgenerator.models.deck): as JSON, next to the PowerPoint
     and with the same name, or on its own in output_folder when save_ppt is off. slide_deck.to_deck() gives the same
-    deck as an object."""
+    deck as an object.
+
+    llm is the language model that writes the talk: a provider, a spec such as "anthropic:claude-opus-5-5", or None
+    for the one TALKGENERATOR_LLM sets (without one, talks are classic). It writes in the given language, and the
+    budget limits what it may cost; the deck tells what it used."""
     if print_logs:
         os_util.show_logs(logger)
     logger.info("**************************")
@@ -107,6 +119,14 @@ def generate_presentation(
     logger.info("Presentation int_seed: {}".format(int_seed))
     logger.info("Presentation save_ppt: {}".format(save_ppt))
 
+    # The language model that writes the talk, if any; every request it gets is written down in the talk's ledger
+    provider = _language_model(llm)
+    ledger = Ledger()
+    if provider is not None:
+        logger.info("Language model: {}".format(provider.id))
+    elif language != "en":
+        logger.warning("Talks in other languages than English need a language model: this one is in English")
+
     # Generate the presentation object
     presentation, slide_deck = presentation_schema.generate_presentation(
         topics=topics,
@@ -118,7 +138,12 @@ def generate_presentation(
         save_ppt=save_ppt,
         debug_notes=debug_notes,
         rng=rng,
+        llm=MeteredProvider(provider, ledger, budget or Budget()) if provider is not None else None,
+        language=language,
     )
+    slide_deck.usage = ledger.total()
+    if provider is not None:
+        logger.info(ledger.summary())
 
     logger.info("**************************")
     logger.info("Presentation generated: {}".format(presentation))
@@ -143,6 +168,17 @@ def generate_presentation(
         _open_file(path)
 
     return presentation, slide_deck, presentation_file
+
+
+def _language_model(llm: TextProvider | str | None) -> TextProvider | None:
+    """The provider to write a talk with, or None for a classic talk."""
+    if llm is None:
+        provider = from_settings()
+    elif isinstance(llm, str):
+        provider = provider_from_spec(llm)
+    else:
+        provider = llm
+    return None if isinstance(provider, NoneProvider) else provider
 
 
 def save_deck_to_json(deck: Deck, output_folder: str, file_name: str, next_to: str | None = None) -> str:
@@ -301,6 +337,19 @@ def get_argument_parser():
         default=False,
         type=str2bool,
         help="Also save the talk as a deck in JSON, next to the PowerPoint and with the same name",
+    )
+    parser.add_argument(
+        "--llm",
+        default=None,
+        type=str,
+        help="The language model that writes the talk, as provider:model (default: TALKGENERATOR_LLM's); "
+        "'none' makes a classic talk",
+    )
+    parser.add_argument(
+        "--language",
+        default="en",
+        type=str,
+        help="The language of the talk, such as en or nl (only with a language model: classic talks are English)",
     )
     parser.add_argument(
         "--open_ppt",
