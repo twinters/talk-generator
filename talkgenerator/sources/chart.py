@@ -30,6 +30,22 @@ ranking_title_generator = text_generator.TraceryTextGenerator(
 trend_event_generator = text_generator.TraceryTextGenerator(
     "data/text-templates/chart_texts.json", "trend_event"
 ).generate
+x_axis_title_generator = text_generator.TraceryTextGenerator(
+    "data/text-templates/chart_texts.json", "x_axis_title"
+).generate
+y_axis_title_generator = text_generator.TraceryTextGenerator(
+    "data/text-templates/chart_texts.json", "y_axis_title"
+).generate
+# How often a classic chart goes without axis titles, for the presenter to explain
+BARE_CHARTS: Final = 1 / 3
+
+
+def axis_titles(presentation_context: dict[str, Any]) -> tuple[str | None, str | None]:
+    """Funny titles for the axes of a classic chart, from templates about its x_label and y_label, or none (for a
+    third of the charts)."""
+    if random_util.random() < BARE_CHARTS:
+        return None, None
+    return x_axis_title_generator(presentation_context), y_axis_title_generator(presentation_context)
 
 
 # DATA POINTS HELPERS
@@ -278,13 +294,14 @@ def generate_correlation_curve(presentation_context):
 
     add_data_to_series(serie, data_points)
 
+    x_title, y_title = axis_titles(presentation_context)
     return (
         title,
         XL_CHART_TYPE.XY_SCATTER,
         chart_data,
         create_set_scatter_properties(x_label, y_label),
-        x_label,
-        y_label,
+        x_title,
+        y_title,
     )
 
 
@@ -359,7 +376,8 @@ def generate_trend_chart(presentation_context: dict[str, Any]) -> tuple[Any, ...
     shape, values = trend_values(None)
     event = trend_event_generator(presentation_context) if random_util.random() < 0.5 else None
     labels = ((0, trend_turn(shape), event),) if event else ()
-    return title, XL_CHART_TYPE.LINE, trend_chart_data([("", values)]), None, x_label, y_label, "all", labels
+    x_title, y_title = axis_titles(presentation_context)
+    return title, XL_CHART_TYPE.LINE, trend_chart_data([("", values)]), None, x_title, y_title, "all", labels
 
 
 # RANKINGS: bars, the last of which, the punchline, wins by far

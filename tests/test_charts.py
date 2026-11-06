@@ -162,15 +162,28 @@ def test_the_reference_lists_the_options():
 
 def test_the_classic_trend_chart(monkeypatch):
     monkeypatch.setattr(chart, "correlation_title_generator", lambda context: f"{context['y_label']} over time")
+    monkeypatch.setattr(chart, "axis_titles", lambda context: (f"Love of {context['x_label']}", context["y_label"]))
     with random_util.use(random_util.Rng(4)):
         content = chart.generate_trend_chart({"topic": "cats", "seed": "naps"})
     title, chart_type, _, _, x_title, y_title, _, _ = content
-    assert (title, chart_type, x_title, y_title) == ("naps over time", XL_CHART_TYPE.LINE, "cats", "naps")
+    assert (title, chart_type, x_title, y_title) == ("naps over time", XL_CHART_TYPE.LINE, "Love of cats", "naps")
     spec = _spec(slides.ChartSlide(*content))
-    assert (spec.chart_type, spec.x_title, spec.y_title) == ("line", "cats", "naps")
+    assert (spec.chart_type, spec.x_title, spec.y_title) == ("line", "Love of cats", "naps")
 
     with random_util.use(random_util.Rng(4)):
-        assert chart.generate_trend_chart({"topic": "cat", "seed": "cats"})[4] == "time"  # axes too alike
+        assert chart.generate_trend_chart({"topic": "cat", "seed": "cats"})[4] == "Love of time"  # axes too alike
+
+
+def test_classic_charts_have_funny_axis_titles_or_none():
+    titles = []
+    with random_util.use(random_util.Rng(11)):
+        for _ in range(30):
+            titles.append(chart.axis_titles({"x_label": "cat", "y_label": "nap"}))
+    bare = [pair for pair in titles if pair == (None, None)]
+    assert 4 <= len(bare) <= 16  # about a third
+    named = [pair for pair in titles if pair != (None, None)]
+    assert all("cat" in x.lower() and "nap" in y.lower() for x, y in named)
+    assert len({x for x, _ in named}) > 3 and all("{" not in x + y for x, y in named)
 
 
 def test_a_moment_on_a_trend_is_marked_where_the_line_turns():
@@ -277,6 +290,35 @@ def test_point_names_are_checked_for_leftovers():
     deck = Deck(generator="test", slides=(slide.to_deck_slide(),))
     (finding,) = check_leftovers(deck)
     assert "chart label" in finding.message
+
+
+def test_a_chart_recipe_comes_out_as_one_of_its_variants():
+    recipe = next(
+        generator.llm for generator in get_schema("default").slide_generators if generator.name == "Trend Chart"
+    )
+    varied = []
+    for seed in range(40):
+        varied.append(recipe.varied(random_util.Rng(seed)))
+    assert all(not version.variants for version in varied)
+    bare = [version for version in varied if "x_axis" in version.omit]
+    labelled = [version for version in varied if not version.omit]
+    assert bare and labelled and len(bare) < len(labelled)
+    assert all("bare" in version.brief for version in bare)
+    # A bare trend's slide asks for no axis titles and no names
+    properties = prompt.slide_schema(bare[0])["properties"]
+    assert "x_axis" not in properties and "line" not in properties and "title" in properties
+    assert "funny" in labelled[0].brief and recipe.varied(random_util.Rng(3)).brief == varied[3].brief
+    plain = Recipe("chart_trend")
+    assert plain.varied(random_util.Rng(1)) is plain  # (no variants: as it is)
+
+
+def test_a_bare_trend_has_no_axis_titles():
+    with random_util.use(random_util.Rng(12)):
+        slide = KINDS["chart_trend"].build({"title": "Why I'm always tired"}, {}, ENGLISH)
+    spec = _spec(slide)
+    assert (spec.x_title, spec.y_title, [series.name for series in spec.series]) == ("", "", [""])
+    _, drawn = _drawn(slide)
+    assert not drawn.category_axis.has_title and not drawn.value_axis.has_title
 
 
 # THE FORMATS

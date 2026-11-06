@@ -145,8 +145,8 @@ A line chart of a made-up trend along two odd axes; a second line, if any, draws
 | Text | At most | What to write |
 | --- | --- | --- |
 | `title` | 90 | the chart's claim, as its title |
-| `x_axis` | 40 | what the chart goes along, such as 'Hours since the meeting started' |
-| `y_axis` | 40 | what the line measures, such as 'Times someone said synergy' |
+| `x_axis` | 40 | what the chart goes along, such as 'Hours since the meeting started' (or empty, for none) |
+| `y_axis` | 40 | what the line measures, such as 'Times someone said synergy' (or empty, for none) |
 | `shape` | 20 | how the line goes: `rising`, `falling`, `exponential`, `diminishing`, `hockey stick`, `peak`, `crash`, `plateau`, `rollercoaster`, `dip`, `flat` (or empty, for any) |
 | `line` | 30 | the line's name in the legend, such as 'Me' (or empty, for none) |
 | `second_line` | 30 | a second line's name in the legend, such as 'My cat'; it appears on a click, as the punchline (or empty, for none) |

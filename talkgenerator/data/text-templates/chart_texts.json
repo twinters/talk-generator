@@ -78,5 +78,25 @@
     "Someone mentioned {y_label.plural}",
     "{y_label.plural.title} went viral",
     "The {y_label} summit"
+  ],
+  "x_axis_title": [
+    "Hours spent thinking about {x_label.plural}",
+    "Distance to the nearest {x_label}",
+    "{x_label.plural.title} per capita",
+    "Exposure to {x_label.plural}",
+    "Amount of {x_label}",
+    "Years since the first {x_label}",
+    "Number of {x_label.plural} in the room",
+    "Trust in {x_label.plural}"
+  ],
+  "y_axis_title": [
+    "Number of {y_label.plural}",
+    "Public opinion of {y_label.plural}",
+    "Chance of {y_label.plural}",
+    "{y_label.plural.title} per square metre",
+    "Average {y_label} level",
+    "Interest in {y_label.plural}",
+    "{y_label.plural.title} (in thousands)",
+    "How much we talk about {y_label.plural}"
   ]
 }

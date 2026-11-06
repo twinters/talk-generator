@@ -8,6 +8,7 @@ hints), which fields it leaves out, and which texts come from classic sources in
 
 from __future__ import annotations
 
+import dataclasses
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from typing import Any, Final
@@ -44,6 +45,16 @@ class Kind:
     build: Builder
 
 
+@dataclass(frozen=True)
+class Variant:
+    """A way a recipe's slide can come out, which the talk's dice pick by weight: the text fields it does without,
+    and a note for the language model (added to the slide's brief)."""
+
+    weight: float
+    omit: frozenset[str] = frozenset()
+    note: str = ""
+
+
 # A v4 content generator: a presentation context (with the "seed" to search for) in, an image (or None) out
 ContentSource = Callable[[dict[str, Any]], Any]
 
@@ -56,6 +67,7 @@ class Recipe:
     hints: Mapping[str, str] = field(default_factory=dict)  # per text field: what to write here, instead of the kind's
     omit: frozenset[str] = frozenset()  # text fields, or "<slot>_query" image queries, that this slide does without
     texts_from: Mapping[str, ContentSource] = field(default_factory=dict)  # texts found by classic sources instead
+    variants: tuple[Variant, ...] = ()  # ways a slide can come out, such as a chart with or without labels
 
     def written_fields(self) -> list[TextField]:
         """The text fields the language model writes for this slide."""
@@ -66,6 +78,22 @@ class Recipe:
     def image_queries(self) -> list[str]:
         """The image slots the language model writes a search query for."""
         return [slot for slot in KINDS[self.kind].images if f"{slot}_query" not in self.omit]
+
+    def varied(self, rng: random_util.Rng) -> Recipe:
+        """The recipe as one of its variants, picked by weight with the random stream (itself, without variants)."""
+        if not self.variants:
+            return self
+        with random_util.use(rng):
+            variant = random_util.weighted_random([(variant.weight, variant) for variant in self.variants])
+        if variant is None:
+            return self
+        brief = (self.brief or KINDS[self.kind].description).rstrip(".")
+        return dataclasses.replace(
+            self,
+            omit=self.omit | variant.omit,
+            brief=f"{brief}, {variant.note}" if variant.note else brief,
+            variants=(),
+        )
 
 
 def _title(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
@@ -140,8 +168,8 @@ def _chart_trend(texts: Mapping[str, str | None], images: Mapping[str, Any], lan
         texts["title"],
         XL_CHART_TYPE.LINE,
         chart.trend_chart_data(lines),
-        x_title=texts["x_axis"],
-        y_title=texts["y_axis"],
+        x_title=texts.get("x_axis"),
+        y_title=texts.get("y_axis"),
         reveal="series" if second else "all",
         point_labels=((0, chart.trend_turn(shape), event),) if event else (),
     )
@@ -293,8 +321,10 @@ KINDS: Final[dict[str, Kind]] = {
             "click, as the punchline.",
             (
                 TextField("title", "the chart's claim, as its title", 90),
-                TextField("x_axis", "what the chart goes along, such as 'Hours since the meeting started'", 40),
-                TextField("y_axis", "what the line measures, such as 'Times someone said synergy'", 40),
+                TextField(
+                    "x_axis", "what the chart goes along, such as 'Hours since the meeting started'", 40, optional=True
+                ),
+                TextField("y_axis", "what the line measures, such as 'Times someone said synergy'", 40, optional=True),
                 TextField("shape", "how the line goes", 20, optional=True, options=tuple(chart.TREND_SHAPES)),
                 TextField("line", "the line's name in the legend, such as 'Me'", 30, optional=True),
                 TextField(

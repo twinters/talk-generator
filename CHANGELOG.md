@@ -71,6 +71,12 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   correlation can have one outlier far above the others ("Me"): a big dot with its name. A field of a slide kind
   can be a choice (`TextField.options`, such as a trend's shape), which the language model picks from a list,
   and which the Skill's reference lists.
+- Charts come labelled in funny ways, or bare, for the presenter to explain. A slide generator's recipe can have
+  variants (`kinds.Variant`), which the talk's seed picks like the slides themselves: a language model writes
+  a trend with funny axis titles and named lines, with axis titles only, or bare; a correlation with or without
+  axis titles; a ranking with or without a title on its axis. Classic charts get axis titles from templates
+  ("Hours spent thinking about cats", "Public opinion of naps"), and a third of them none. A trend's axes may
+  stay empty in a plan too.
 - Charts with axes get axis titles: the correlation curves now show the two things they correlate (v4 left
   them out), and a language model or a plan can name them (`x_axis` and `y_axis`). A deck's chart says its axis
   titles and whether its series appear one by one (`reveal`).

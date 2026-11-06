@@ -324,7 +324,13 @@ class PresentationSchema:
         num_slides = len(seeds)
         picks = self._pick_generators(num_slides, rng, language)
         planned = {
-            slide_nr: PlannedSlide(slide_nr + 1, pick.name or str(pick), pick.llm, seeds[slide_nr])
+            # (a recipe with variants comes out as one of them, such as a chart with labels or without)
+            slide_nr: PlannedSlide(
+                slide_nr + 1,
+                pick.name or str(pick),
+                pick.llm.varied(rng.child("slide", slide_nr, "variant")),
+                seeds[slide_nr],
+            )
             for slide_nr, pick in enumerate(picks)
             if pick is not None and pick.llm is not None and pick.llm.kind != "title"
         }

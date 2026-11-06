@@ -3,7 +3,7 @@ from talkgenerator.datastructures.slide_generator_data import (
     PeakedWeight,
     SlideGeneratorData,
 )
-from talkgenerator.plan.kinds import Recipe
+from talkgenerator.plan.kinds import Recipe, Variant
 from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema.registry import Registry
 from talkgenerator.slide import slide_generator_types
@@ -547,6 +547,9 @@ captioned_images_slide_generators_copyright_free = _register(
 )
 
 # CHART GENERATORS
+# Charts with funny labels, and bare ones for the presenter to explain: what a trend or correlation does without
+_NAMES_ON_A_TREND = frozenset({"line", "second_line", "second_shape", "event"})
+_BARE_CORRELATION = frozenset({"x_axis", "y_axis", "outlier"})
 own_chart_generators = _register(
     "chart",
     [
@@ -598,7 +601,14 @@ own_chart_generators = _register(
             weight_function=ConstantWeightFunction(0.25),
             tags=["curve", "chart"],
             name="Correlation Curve",
-            llm=Recipe("chart_correlation", brief="A made-up scientific finding about the concept"),
+            llm=Recipe(
+                "chart_correlation",
+                brief="A made-up scientific finding about the concept",
+                variants=(
+                    Variant(2, note="with funny, oddly specific titles on its axes"),
+                    Variant(1, _BARE_CORRELATION, "bare: no titles on its axes, for the presenter to explain"),
+                ),
+            ),
         ),
         SlideGeneratorData(
             slide_generator_types.ChartSlideGenerator(chart.generate_trend_chart),
@@ -611,6 +621,15 @@ own_chart_generators = _register(
                 "chart_trend",
                 brief="A made-up trend about the concept along two odd axes, with a second line as the "
                 "punchline when that's funnier",
+                variants=(
+                    Variant(2, note="with funny, oddly specific titles on its axes and names on its lines"),
+                    Variant(1, _NAMES_ON_A_TREND, "with funny titles on its axes, and no names on its line"),
+                    Variant(
+                        1,
+                        _NAMES_ON_A_TREND | {"x_axis", "y_axis"},
+                        "bare: one line, without titles on its axes or names, for the presenter to explain",
+                    ),
+                ),
             ),
         ),
         SlideGeneratorData(
@@ -620,7 +639,11 @@ own_chart_generators = _register(
             weight_function=ConstantWeightFunction(1),
             tags=["bar_chart", "chart"],
             name="Bar Ranking",
-            llm=Recipe("chart_bars", brief="A ranking that the concept wins by far"),
+            llm=Recipe(
+                "chart_bars",
+                brief="A ranking that the concept wins by far",
+                variants=(Variant(3), Variant(1, frozenset({"value_axis"}), "without a title on its axis")),
+            ),
         ),
     ],
 )
