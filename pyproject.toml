@@ -115,6 +115,7 @@ module = [
     "talkgenerator.models.classic",
     "talkgenerator.models.deck",
     "talkgenerator.models.usage",
+    "talkgenerator.render.animation",
     "talkgenerator.render.powerpoint",
     "talkgenerator.schema.registry",
     "talkgenerator.settings",
@@ -140,6 +141,7 @@ module = [
     "talkgenerator.util.os_util",
     "talkgenerator.util.random_util",
     "talkgenerator.util.scraper_util",
+    "talkgenerator.util.video_util",
 ]
 disallow_untyped_defs = true
 disallow_incomplete_defs = true

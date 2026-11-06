@@ -3,6 +3,9 @@
 Images are checked while slides are generated, so that a dead link, a "this image was removed"
 placeholder or an unsupported format makes the generator pick another image instead of leaving
 an empty frame in the deck. Downloads are cached, so writing the PowerPoint reuses them.
+
+A gif that can't be used, one too large to embed say, can play as its video copy instead (see
+fetch_image_data): Reddit has mp4 copies of its gifs.
 """
 
 from __future__ import annotations
@@ -12,18 +15,23 @@ import logging
 import os
 import threading
 from collections import OrderedDict
+from collections.abc import Callable
 from functools import lru_cache
 from pathlib import Path
+from typing import Any
 
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 from talkgenerator.datastructures.image_data import ImageData
-from talkgenerator.util import http_util, os_util
+from talkgenerator.util import http_util, os_util, video_util
 
 logger = logging.getLogger("talkgenerator")
 
 MAX_DOWNLOAD_BYTES = 25 * 1024 * 1024
 MAX_GIF_BYTES = 16 * 1024 * 1024  # gifs stay as they are, to stay animated; many good ones are 10 to 16 MB
+# The video copies of gifs too large to embed: as much as a gif, so a deck gets no larger than with gifs (Reddit's
+# mp4 copies are mostly a few MB, but some are larger than their gif)
+MAX_VIDEO_BYTES = MAX_GIF_BYTES
 MAX_DIMENSION = 2400  # pixels; larger photos are scaled down to keep decks small
 MAX_UNCONVERTED_BYTES = 3 * 1024 * 1024
 MIN_DIMENSION = 50  # anything smaller is an icon or a tracking pixel
@@ -46,15 +54,24 @@ _cache_lock = threading.Lock()
 
 def fetch_image(url: str) -> bytes | None:
     """Image bytes that are safe to embed in a pptx, or None if the URL or path isn't a usable image."""
+    return _cached(url, lambda: _load(url))
+
+
+def fetch_video(url: str) -> bytes | None:
+    """The bytes of an mp4 video on the web that's small enough to embed in a pptx, or None."""
+    return _cached("video " + url, lambda: _load_video(url))
+
+
+def _cached(key: str, load: Callable[[], bytes | None]) -> bytes | None:
     global _cache_bytes
     with _cache_lock:
-        if url in _cache:
-            _cache.move_to_end(url)
-            return _cache[url]
-    result = _load(url)
+        if key in _cache:
+            _cache.move_to_end(key)
+            return _cache[key]
+    result = load()
     with _cache_lock:
-        if url not in _cache:
-            _cache[url] = result
+        if key not in _cache:
+            _cache[key] = result
             _cache_bytes += len(result or b"")
             while _cache_bytes > _CACHE_MAX_BYTES and len(_cache) > 1:
                 _, evicted = _cache.popitem(last=False)
@@ -69,9 +86,20 @@ def is_usable_image(url: str) -> bool:
 def fetch_image_data(image: ImageData) -> bytes | None:
     """Like fetch_image, for an ImageData, which keeps the bytes once they're downloaded. That way the
     image that was checked while generating a slide is the one embedded in the PowerPoint, even if it
-    dropped out of the download cache in between."""
+    dropped out of the download cache in between.
+
+    An image that can't be used, such as a gif too large to embed, plays its video copy instead, if it
+    has one that can: then these are the bytes of the video's poster frame, and image.video_data holds
+    the video's."""
     if image.data is None:
         image.data = fetch_image(image.get_image_url())
+        if image.data is None and image.video is not None:
+            poster = fetch_image(image.video.poster_url)
+            video = fetch_video(image.video.url) if poster is not None else None
+            if video is not None:
+                logger.info("Image %s plays as its video copy", http_util.describe_url(image.get_image_url()))
+                image.video_data = video
+                image.data = poster
     return image.data
 
 
@@ -91,30 +119,55 @@ def _load(url: str) -> bytes | None:
     return prepare_image_bytes(data, http_util.describe_url(url))
 
 
-def _download(url: str) -> bytes | None:
+def _load_video(url: str) -> bytes | None:
+    if not url.startswith(("http://", "https://")):
+        logger.warning("Video %s is not on the web", url)
+        return None
+    data = _download(url, MAX_VIDEO_BYTES, "Video")
+    if data is not None and not video_util.is_mp4(data):
+        logger.info("Video %s is not an mp4", http_util.describe_url(url))
+        return None
+    return data
+
+
+def _download(url: str, limit: int = MAX_DOWNLOAD_BYTES, kind: str = "Image") -> bytes | None:
+    """The bytes at the URL, unless there are more than the limit (or than MAX_GIF_BYTES, for a gif)."""
     response = http_util.get(url, timeout=15, stream=True)
     if response is None:
         return None
+    description = http_util.describe_url(url)
     with response:
         if not response.ok:
-            logger.info("Image %s returned HTTP %s", http_util.describe_url(url), response.status_code)
+            logger.info("%s %s returned HTTP %s", kind, description, response.status_code)
             return None
         if "removed" in Path(response.url.split("?")[0]).name:  # e.g. Imgur's removed.png
-            logger.info("Image %s was removed by its host", http_util.describe_url(url))
+            logger.info("%s %s was removed by its host", kind, description)
             return None
         content_type = response.headers.get("Content-Type", "").lower()
         if content_type.startswith(_NOT_AN_IMAGE_CONTENT_TYPES):
-            logger.info("%s is not an image but %s", http_util.describe_url(url), content_type)
+            logger.info("%s %s is %s", kind, description, content_type)
             return None
-        chunks = []
+        # Hosts tell a file's size up front, so one that's too large isn't downloaded at all (gifs of 40 to 60 MB
+        # are common on r/gifs: they play as their video copy instead)
+        declared = _declared_size(response)
+        chunks: list[bytes] = []
         size = 0
         for chunk in response.iter_content(chunk_size=256 * 1024):
+            if not chunks and chunk.startswith(b"GIF8"):  # gifs are used as they are, up to their own limit
+                limit = min(limit, MAX_GIF_BYTES)
             size += len(chunk)
-            if size > MAX_DOWNLOAD_BYTES:
-                logger.info("Image %s is too large to use", http_util.describe_url(url))
+            if size > limit or (declared is not None and declared > limit):
+                logger.info("%s %s is too large to use", kind, description)
                 return None
             chunks.append(chunk)
         return b"".join(chunks)
+
+
+def _declared_size(response: Any) -> int | None:
+    try:
+        return int(response.headers.get("Content-Length", ""))
+    except ValueError:
+        return None
 
 
 @lru_cache(maxsize=1)

@@ -1,8 +1,9 @@
 """Animations on slides, which python-pptx can't make: the timing XML that PowerPoint writes for them.
 
-For now one: a chart whose series after the first appear on clicks, one by one, wiping in from the left. On a trend
-chart, that makes a second line draw itself across the chart as the punchline. In the editor, and in viewers that
-don't play animations, every series simply shows.
+For now two. A chart whose series after the first appear on clicks, one by one, wiping in from the left: on a trend
+chart, that makes a second line draw itself across the chart as the punchline. And videos that play by themselves as
+their slide comes up, looping and without sound, the way the gifs they stand in for do. In the editor, and in viewers
+that don't play animations, every series simply shows, and a video shows its poster frame.
 """
 
 from __future__ import annotations
@@ -12,6 +13,23 @@ from typing import Any, Final
 
 from pptx.oxml import parse_xml
 from pptx.oxml.ns import nsdecls, qn
+
+from talkgenerator.util import video_util
+
+# A slide's timing: the root, holding the main sequence (what happens on clicks, or by itself) and the media after it,
+# then what's built a step at a time
+_TIMING: Final = (
+    "<p:timing {namespaces}><p:tnLst><p:par>"
+    '<p:cTn id="1" dur="indefinite" restart="never" nodeType="tmRoot"><p:childTnLst>'
+    '<p:seq concurrent="1" nextAc="seek"><p:cTn id="2" dur="indefinite" nodeType="mainSeq"><p:childTnLst>'
+    "{sequence}"
+    "</p:childTnLst></p:cTn>"
+    '<p:prevCondLst><p:cond evt="onPrev" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:prevCondLst>'
+    '<p:nextCondLst><p:cond evt="onNext" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:nextCondLst>'
+    "</p:seq>{media}</p:childTnLst></p:cTn></p:par></p:tnLst>{builds}</p:timing>"
+)
+
+# CHARTS
 
 # A chart's series, as an animation target (categoryIdx -3: all of them; bldStep: a series at a time)
 _SERIES_TARGET: Final = (
@@ -36,19 +54,40 @@ _CLICK: Final = (
     "</p:childTnLst></p:cTn></p:par>"
 )
 
-_TIMING: Final = (
-    "<p:timing {namespaces}><p:tnLst><p:par>"
-    '<p:cTn id="1" dur="indefinite" restart="never" nodeType="tmRoot"><p:childTnLst>'
-    '<p:seq concurrent="1" nextAc="seek"><p:cTn id="2" dur="indefinite" nodeType="mainSeq"><p:childTnLst>'
-    "{clicks}"
-    "</p:childTnLst></p:cTn>"
-    '<p:prevCondLst><p:cond evt="onPrev" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:prevCondLst>'
-    '<p:nextCondLst><p:cond evt="onNext" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:nextCondLst>'
-    "</p:seq></p:childTnLst></p:cTn></p:par></p:tnLst>"
-    # Built a series at a time, without drawing the chart's background (its axes, legend and first series) first
+# Built a series at a time, without drawing the chart's background (its axes, legend and first series) first
+_SERIES_BUILD: Final = (
     '<p:bldLst><p:bldGraphic spid="{spid}" grpId="0"><p:bldSub><a:bldChart bld="series" animBg="0"/></p:bldSub>'
-    "</p:bldGraphic>"
-    "</p:bldLst></p:timing>"
+    "</p:bldGraphic></p:bldLst>"
+)
+
+# VIDEOS
+
+# The step that starts with the main sequence, without a click (cTn 2), and the group of effects in it
+_ON_ITS_OWN: Final = (
+    '<p:par><p:cTn id="3" fill="hold"><p:stCondLst><p:cond delay="indefinite"/>'
+    '<p:cond evt="onBegin" delay="0"><p:tn val="2"/></p:cond></p:stCondLst><p:childTnLst>'
+    '<p:par><p:cTn id="4" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>'
+    "{effects}"
+    "</p:childTnLst></p:cTn></p:par>"
+    "</p:childTnLst></p:cTn></p:par>"
+)
+
+# A video plays from its start (PowerPoint's "Play" media effect, preset 1), for as long as it lasts: the first one
+# after the slide comes up ("Start: Automatically"), the others with it
+_PLAY: Final = (
+    '<p:par><p:cTn id="{effect}" presetID="1" presetClass="mediacall" presetSubtype="0" fill="hold" '
+    'nodeType="{node_type}"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>'
+    '<p:cmd type="call" cmd="playFrom(0.0)"><p:cBhvr><p:cTn id="{call}"{duration} fill="hold"/>'
+    '<p:tgtEl><p:spTgt spid="{spid}"/></p:tgtEl></p:cBhvr></p:cmd>'
+    "</p:childTnLst></p:cTn></p:par>"
+)
+
+# The video itself: it loops until the slide ends ("Loop until Stopped"), without sound ("Mute"), as gifs have none
+_MEDIA: Final = (
+    '<p:video><p:cMediaNode vol="80000" mute="1">'
+    '<p:cTn id="{node}" repeatCount="indefinite" fill="hold" display="0">'
+    '<p:stCondLst><p:cond delay="indefinite"/></p:stCondLst></p:cTn>'
+    '<p:tgtEl><p:spTgt spid="{spid}"/></p:tgtEl></p:cMediaNode></p:video>'
 )
 
 
@@ -64,9 +103,43 @@ def reveal_chart_series(slide: Any, chart_frame: Any, series_count: int) -> None
         target = _SERIES_TARGET.format(spid=spid, series=series)
         click, group, effect, show, wipe = (next(ids) for _ in range(5))
         clicks.append(_CLICK.format(click=click, group=group, effect=effect, show=show, wipe=wipe, target=target))
-    timing = parse_xml(_TIMING.format(namespaces=nsdecls("p", "a"), clicks="".join(clicks), spid=spid))
+    timing = _TIMING.format(
+        namespaces=nsdecls("p", "a"), sequence="".join(clicks), media="", builds=_SERIES_BUILD.format(spid=spid)
+    )
+    _replace_timing(slide, parse_xml(timing))
 
-    # A slide's timing comes after its colour map and transition, and before its extensions
+
+def play_videos(slide: Any) -> None:
+    """Have the slide's videos play by themselves as it comes up, all at once, looping and without sound (the slide
+    gets this as its only animation). The timing python-pptx gives them plays a video once it's clicked."""
+    videos = slide.element.xpath("./p:cSld/p:spTree//p:pic[p:nvPicPr/p:nvPr/a:videoFile]")
+    if not videos:
+        return
+    spids = [video.xpath("./p:nvPicPr/p:cNvPr/@id")[0] for video in videos]
+    ids = itertools.count(5)  # 1 to 4 are the root, the main sequence, and the step and group the videos start in
+    effects = []
+    for number, (spid, video) in enumerate(zip(spids, videos, strict=True)):
+        seconds = video_util.duration(_video_bytes(slide, video))
+        duration = f' dur="{round(seconds * 1000)}"' if seconds else ""
+        node_type = "afterEffect" if number == 0 else "withEffect"
+        effect, call = next(ids), next(ids)
+        effects.append(_PLAY.format(effect=effect, call=call, node_type=node_type, duration=duration, spid=spid))
+    media = "".join(_MEDIA.format(node=next(ids), spid=spid) for spid in spids)
+    timing = _TIMING.format(
+        namespaces=nsdecls("p"), sequence=_ON_ITS_OWN.format(effects="".join(effects)), media=media, builds=""
+    )
+    _replace_timing(slide, parse_xml(timing))
+
+
+def _video_bytes(slide: Any, video: Any) -> bytes:
+    """The video file a slide's video shape plays."""
+    part_id = video.xpath("./p:nvPicPr/p:nvPr/a:videoFile/@r:link")[0]
+    return bytes(slide.part.related_part(part_id).blob)
+
+
+def _replace_timing(slide: Any, timing: Any) -> None:
+    """Give the slide this timing instead of the one it has: after its colour map and transition, and before its
+    extensions."""
     slide_element = slide.element
     for old in slide_element.findall(qn("p:timing")):
         slide_element.remove(old)

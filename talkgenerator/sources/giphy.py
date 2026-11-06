@@ -15,7 +15,7 @@ from talkgenerator.util import http_util
 logger = logging.getLogger("talkgenerator")
 
 API_URL = "https://api.giphy.com/v1/gifs/search"
-# Renditions from largest to smallest; image_util refuses GIFs above 8 MB anyway
+# Renditions from largest to smallest; image_util refuses GIFs above 16 MB anyway
 _RENDITIONS = ("downsized_large", "downsized_medium", "original", "downsized")
 
 _cooldown = http_util.Cooldown("GIPHY")

@@ -3,11 +3,24 @@ from __future__ import annotations
 import copy
 import logging
 from collections.abc import Callable, Sequence
+from dataclasses import dataclass
 
 logger = logging.getLogger("talkgenerator")
 
 # A part of an image credit as it reads on a slide: its text, and the page it links to (if any)
 CreditPart = tuple[str, str | None]
+
+
+@dataclass(frozen=True)
+class VideoCopy:
+    """A video of what a gif shows (such as Reddit's mp4 copy of it), and a still of it for the video's poster frame.
+
+    A gif can be too large to embed (r/gifs has many of 40 to 60 MB), while its mp4 copy is a few MB: then the video
+    plays in its place, looping and without sound, the way the gif would (see image_util.fetch_image_data).
+    """
+
+    url: str
+    poster_url: str
 
 
 class ImageData:
@@ -19,6 +32,7 @@ class ImageData:
         source_url: str | None = None,
         credit: Sequence[CreditPart] | None = None,
         description: str | None = None,
+        video: VideoCopy | None = None,
     ) -> None:
         self._image_url = image_url
         self._source = source
@@ -32,6 +46,10 @@ class ImageData:
         self._credit = tuple(credit) if credit else None
         # The checked bytes to embed, once downloaded (see image_util.fetch_image_data)
         self.data: bytes | None = None
+        # A video copy, for when the image itself can't be used (a gif too large to embed, say)
+        self.video = video
+        # The checked bytes of the video copy, once it plays in the image's place: data then holds its poster frame's
+        self.video_data: bytes | None = None
         # The search that found it, when talkgenerator knows (see found_with)
         self.query: str | None = None
 
@@ -42,6 +60,13 @@ class ImageData:
         return found
 
     def get_image_url(self) -> str:
+        return self._image_url
+
+    def get_shown_url(self) -> str:
+        """The URL of the picture a slide shows: the image's own, or its video's poster frame once the video plays in
+        the image's place. A deck names an image by this URL."""
+        if self.video is not None and self.video_data is not None:
+            return self.video.poster_url
         return self._image_url
 
     def get_source(self) -> str | None:

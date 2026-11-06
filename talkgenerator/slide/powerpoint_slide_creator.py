@@ -9,6 +9,7 @@ from lxml.etree import XMLSyntaxError
 from pptx.presentation import Presentation
 
 from talkgenerator.datastructures.image_data import CreditPart, ImageData
+from talkgenerator.render import animation
 from talkgenerator.util import http_util, image_util, os_util
 
 # Location of powerpoint template
@@ -128,8 +129,39 @@ def _add_image(slide, placeholder_id: int, image: ImageData, original_image_size
         return None
 
     if isinstance(image, ImageData):
+        if image.video_data is not None:  # it plays its video, with the picture as its poster frame
+            picture = _play_video(slide, picture, image.video_data, image_bytes, original_image_size)
         image.mark_used()
     return picture
+
+
+def _play_video(slide, picture, video: bytes, poster: bytes, whole: bool):
+    """Put the video where the picture of its poster frame is, the way the gif it stands in for would be: in the
+    picture's place among the slide's shapes (under an overlay drawn over it, say), shown whole or filling the frame
+    as the picture does, and playing by itself, looping. Returns the video's shape (or the picture, if it can't)."""
+    left, top, width, height = picture.left, picture.top, picture.width, picture.height
+    crops = None
+    if whole:  # the largest frame of the poster's shape that fits, in the middle (a video isn't padded like a picture)
+        poster_width, poster_height = image_util.get_image_size(poster)
+        scale = min(width / poster_width, height / poster_height)
+        fitted_width, fitted_height = round(poster_width * scale), round(poster_height * scale)
+        left, top = left + (width - fitted_width) // 2, top + (height - fitted_height) // 2
+        width, height = fitted_width, fitted_height
+    else:  # cropped to fill the frame, as the picture is
+        crops = (picture.crop_left, picture.crop_right, picture.crop_top, picture.crop_bottom)
+    try:
+        movie = slide.shapes.add_movie(
+            BytesIO(video), left, top, width, height, poster_frame_image=BytesIO(poster), mime_type="video/mp4"
+        )
+    except (ValueError, XMLSyntaxError, AttributeError, OSError, KeyError) as e:
+        logger.error("Could not insert a video, so its poster frame shows: %s", e)
+        return picture
+    if crops is not None and any(crops):
+        movie.crop_left, movie.crop_right, movie.crop_top, movie.crop_bottom = crops
+    picture._element.addprevious(movie._element)
+    _remove_shape(picture)
+    animation.play_videos(slide)
+    return movie
 
 
 def _add_chart(slide, placeholder_id, chart_type, chart_data):
