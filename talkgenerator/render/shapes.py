@@ -15,7 +15,7 @@ from typing import Any, Final
 import pptx
 from lxml import etree
 from pptx.dml.color import RGBColor
-from pptx.enum.chart import XL_LABEL_POSITION, XL_LEGEND_POSITION
+from pptx.enum.chart import XL_LABEL_POSITION
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import MSO_ANCHOR, MSO_AUTO_SIZE, PP_ALIGN
 from pptx.oxml.ns import qn
@@ -87,7 +87,7 @@ def draw_slide(
             elif isinstance(element, ImageElement) and element.box is not None:
                 _picture(ppt_slide, element, images)
             elif isinstance(element, ChartElement) and element.box is not None:
-                _chart(ppt_slide, element, theme)
+                _chart(ppt_slide, element, theme, slide)
             elif isinstance(element, DiagramElement) and element.box is not None:
                 diagrams.draw_diagram(ppt_slide, diagrams.Box.on_canvas(element.box), element.diagram, element.style)
             elif isinstance(element, TextElement) and element.box is not None and element.style is not None:
@@ -212,7 +212,7 @@ def _picture(ppt_slide: Slide, element: ImageElement, images: ImageStore | None)
     image.mark_used()
 
 
-def _chart(ppt_slide: Slide, element: ChartElement, theme: Theme) -> None:
+def _chart(ppt_slide: Slide, element: ChartElement, theme: Theme, slide: DeckSlide) -> None:
     assert element.box is not None
     spec, box, palette = element.chart, element.box, theme.palette
     chart_type, data = charts.pptx_chart_data(spec)
@@ -221,17 +221,33 @@ def _chart(ppt_slide: Slide, element: ChartElement, theme: Theme) -> None:
     chart = frame.chart
     charts.CHART_STYLES[spec.chart_type](chart, chart_data)
     charts.set_axis_titles(chart, spec)
-    chart.font.name = theme.fonts.body
-    chart.font.size = Pt(16)
-    chart.font.color.rgb = _rgb(palette.text)
     _theme_colors(chart, spec, theme)
-    charts.label_points(chart, spec, _rgb(palette.accent_2))
+    look = charts.ChartLook(
+        text=_rgb(palette.text),
+        line=_rgb(palette.muted),
+        background=_rgb(_colour_behind(box, slide, theme)),
+        font=theme.fonts.body,
+        punchline=_rgb(palette.accent_2),
+    )
+    charts.label_points(chart, spec, look, frame.width)
+    charts.finish(chart, look)
     if spec.reveal == "series":
         animation.reveal_chart_series(ppt_slide, frame, len(spec.series))
 
 
+def _colour_behind(box: Box, slide: DeckSlide, theme: Theme) -> str:
+    """The slide's background in the middle of the box: on a gradient, the colour that far down it."""
+    background = slide.background
+    top = background.color if background is not None else theme.palette.background
+    bottom = background.color_2 if background is not None else None
+    if bottom is None:
+        return top
+    return color.mix(top, bottom, min(1.0, max(0.0, (box.y + box.h / 2) / HEIGHT)))
+
+
 def _theme_colors(chart: Any, spec: Any, theme: Theme) -> None:
-    """The chart in the theme's colours: slices and series in its accents, and labels that read on the slide."""
+    """The chart in the theme's colours: slices and series in its accents, and labels that read where they are (the
+    others get the theme's text colour from charts.finish)."""
     palette = theme.palette
     series_colors = [palette.accent, palette.accent_2, palette.muted, color.mix(palette.accent, palette.text, 0.5)]
     plot = chart.plots[0]
@@ -241,20 +257,18 @@ def _theme_colors(chart: Any, spec: Any, theme: Theme) -> None:
         for index, point in enumerate(plot.series[0].points if plot.series else []):
             if index >= len(spec.categories):
                 break
+            fill = slice_colors[index % len(slice_colors)]
             point.format.fill.solid()
-            point.format.fill.fore_color.rgb = _rgb(slice_colors[index % len(slice_colors)])
-            if plot.has_data_labels:
-                label = point.data_label
-                label.font.color.rgb = _rgb(palette.text)
-                label.font.size = Pt(18)
-                if spec.chart_type == "pie":
-                    label.position = XL_LABEL_POSITION.OUTSIDE_END  # on the slide's background, where it reads
-        if spec.chart_type == "doughnut":  # (a doughnut's labels can't go outside it: a legend names its slices)
-            plot.has_data_labels = False
-            chart.has_legend = True
-            chart.legend.position = XL_LEGEND_POSITION.RIGHT
-            chart.legend.include_in_layout = False
-            chart.legend.font.size = Pt(18)
+            point.format.fill.fore_color.rgb = _rgb(fill)
+            if not plot.has_data_labels:
+                continue
+            if spec.chart_type == "pie":
+                point.data_label.position = XL_LABEL_POSITION.OUTSIDE_END  # on the slide's background, where it reads
+            else:  # a doughnut's share is on its slice: in whichever of the theme's text and background reads on it
+                on_slice = max((palette.text, palette.background), key=lambda option: color.contrast(option, fill))
+                for paragraph in point.data_label.text_frame.paragraphs:
+                    for run in paragraph.runs:
+                        run.font.color.rgb = _rgb(on_slice)
         return
     for index, series in enumerate(plot.series):
         hue = _rgb(series_colors[index % len(series_colors)])

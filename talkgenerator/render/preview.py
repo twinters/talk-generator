@@ -185,6 +185,7 @@ def _chart(canvas: Image.Image, element: ChartElement, scale: float, theme: Them
     x0, y0, x1, y1 = _rect(element.box, scale)
     label = _font(theme.fonts.body, 28 * scale)
     if spec.chart_type in ("pie", "doughnut"):
+        doughnut = spec.chart_type == "doughnut"
         size = min(x1 - x0, y1 - y0)
         cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
         values = spec.series[0].values if spec.series else ()
@@ -197,19 +198,29 @@ def _chart(canvas: Image.Image, element: ChartElement, scale: float, theme: Them
             )
             middle = math.radians((start + end) / 2)
             name = spec.categories[index] if index < len(spec.categories) else ""
+            reach = 0.375 if doughnut else 0.3  # (a doughnut's share on its ring, its name in the legend)
             draw.text(
-                (cx + math.cos(middle) * size * 0.3, cy + math.sin(middle) * size * 0.3),
-                name,
+                (cx + math.cos(middle) * size * reach, cy + math.sin(middle) * size * reach),
+                f"{value / total:.0%}" if doughnut else name,
                 fill=palette.text,
                 font=label,
                 anchor="mm",
             )
+            if doughnut:
+                key = cy + (index - len(values) / 2) * 36 * scale
+                draw.rectangle(
+                    (cx + size * 0.6, key - 8 * scale, cx + size * 0.6 + 16 * scale, key + 8 * scale),
+                    fill=colors[index % 4],
+                )
+                draw.text((cx + size * 0.6 + 26 * scale, key), name, fill=palette.text, font=label, anchor="lm")
             start = end
-        if spec.chart_type == "doughnut":
+        if doughnut:
             draw.ellipse((cx - size / 4, cy - size / 4, cx + size / 4, cy + size / 4), fill=palette.background)
         return
     left, bottom = x0 + 60 * scale, y1 - 60 * scale
-    draw.line([(left, y0), (left, bottom), (x1, bottom)], fill=palette.muted, width=max(1, round(3 * scale)))
+    axes = {"column": [(left, bottom), (x1, bottom)], "bar": [(left, y0), (left, bottom)]}  # (only what's drawn)
+    axis = axes.get(spec.chart_type, [(left, y0), (left, bottom), (x1, bottom)])
+    draw.line(axis, fill=palette.muted, width=max(1, round(3 * scale)))
     if spec.x_title:
         draw.text(((left + x1) / 2, y1 - 20 * scale), spec.x_title, fill=palette.text, font=label, anchor="mm")
     if spec.y_title:
@@ -259,16 +270,18 @@ def _chart(canvas: Image.Image, element: ChartElement, scale: float, theme: Them
             )
             name = spec.categories[index] if index < len(spec.categories) else ""
             draw.text((left + 10 * scale, top + height / 2), name, fill=palette.background, font=label, anchor="lm")
-        else:
+        else:  # a column, with its share on top
             span = (x1 - left) / count
+            top = bottom - (bottom - y0) * value / top_value * 0.85
             draw.rectangle(
-                (
-                    left + index * span + span * 0.15,
-                    bottom - (bottom - y0) * value / top_value * 0.9,
-                    left + (index + 1) * span - span * 0.15,
-                    bottom,
-                ),
-                fill=fill,
+                (left + index * span + span * 0.15, top, left + (index + 1) * span - span * 0.15, bottom), fill=fill
+            )
+            draw.text(
+                (left + (index + 0.5) * span, top - 6 * scale),
+                f"{value:.0%}",
+                fill=palette.text,
+                font=label,
+                anchor="mb",
             )
 
 

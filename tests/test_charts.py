@@ -1,17 +1,22 @@
 """Offline tests of the charts that came with v5: trends along two odd axes (whose second line draws itself in on a
-click), rankings that the punchline wins by far, and titled axes."""
+click), rankings that the punchline wins by far, and titled axes; and of how every chart looks: quiet, and readable
+in the classic template and in themes."""
 
 import pytest
-from pptx.enum.chart import XL_CHART_TYPE
+from pptx.chart.data import ChartData
+from pptx.enum.chart import XL_CHART_TYPE, XL_LABEL_POSITION, XL_MARKER_STYLE, XL_TICK_LABEL_POSITION, XL_TICK_MARK
 from pptx.oxml.ns import qn
+from pptx.text.text import Font
 
 from talkgenerator.checks.deck import check_leftovers
+from talkgenerator.design import color, engine, themes
 from talkgenerator.models.deck import Deck
 from talkgenerator.models.plan import SlidePlan
 from talkgenerator.plan import external, languages, prompt
 from talkgenerator.plan.kinds import KINDS, Recipe
 from talkgenerator.plan.realize import clean_text
 from talkgenerator.render import charts
+from talkgenerator.render.powerpoint import render_pptx
 from talkgenerator.schema.presentation_schema_types import get_schema
 from talkgenerator.slide import powerpoint_slide_creator, slides
 from talkgenerator.sources import chart, conceptnet
@@ -239,6 +244,9 @@ def test_a_ranking_is_won_by_its_punchline_by_far():
     assert not drawn.has_legend
     punchline = drawn.plots[0].series[0].points[3].format.fill
     assert str(punchline.fore_color.rgb) == "E03C31"
+    assert str(drawn.plots[0].series[0].format.fill.fore_color.rgb) == "808080"  # and the others grey
+    assert not drawn.plots[0].vary_by_categories
+    assert drawn.category_axis.major_tick_mark == XL_TICK_MARK.NONE
 
     with pytest.raises(ValueError):
         KINDS["chart_bars"].build({**texts, "bars": "AI | My cat"}, {}, ENGLISH)
@@ -326,6 +334,147 @@ def test_a_bare_trend_has_no_axis_titles():
     assert (spec.x_title, spec.y_title, [series.name for series in spec.series]) == ("", "", [""])
     _, drawn = _drawn(slide)
     assert not drawn.category_axis.has_title and not drawn.value_axis.has_title
+
+
+# HOW CHARTS LOOK
+
+
+def _answers(kind):
+    """A yes/no chart with a funny third answer (in one of chart.PIE, chart.PROCENT_HISTOGRAM or chart.DOUGHNUT)."""
+    data = ChartData()
+    data.categories = ["Yes", "No", "Only on Tuesdays"]
+    data.add_series("", [0.12, 0.07, 0.81])
+    chart_type, style = kind
+    return slides.ChartSlide("Do you believe sugar was a medieval wonder drug?", chart_type, data, style)
+
+
+def _built(kind, texts, seed):
+    with random_util.use(random_util.Rng(seed)):
+        return KINDS[kind].build(texts, {}, ENGLISH)
+
+
+_EVERY_KIND_OF_CHART = {
+    "column": lambda: _answers(chart.PROCENT_HISTOGRAM),
+    "pie": lambda: _answers(chart.PIE),
+    "doughnut": lambda: _answers(chart.DOUGHNUT),
+    "ranking": lambda: _built(
+        "chart_bars", {"title": "Threats", "bars": "AI | Asteroids | My cat", "value_axis": "Danger"}, 5
+    ),
+    "trend": lambda: _trend(shape="hockey stick", event="I got a cat", line="Me", second_line="My cat"),
+    "correlation": lambda: _built(
+        "chart_correlation", {"title": "Naps cause cats", "x_axis": "Naps", "y_axis": "Cats", "outlier": "Me"}, 8
+    ),
+}
+
+
+def _drawn_in(slide, family=None):
+    """The slide's chart drawn in the classic template, or in a theme of the family; with the colour of the slide
+    behind it, and the font its texts should be in."""
+    deck = Deck(generator="test", seed=1, slides=(slide.to_deck_slide(),))
+    if family is None:
+        presentation, background, font = render_pptx(deck), "#000000", "Calibri"
+    else:
+        theme = themes.pick(family, random_util.Rng(1))
+        presentation = render_pptx(engine.lay_out(deck, theme))
+        background, font = theme.palette.background, theme.fonts.body
+    (frame,) = [shape for shape in presentation.slides[0].shapes if shape.has_chart]
+    return frame.chart, background, font
+
+
+def test_a_column_chart_shows_its_shares_on_its_columns_without_an_axis_or_gridlines():
+    drawn, _, _ = _drawn_in(_answers(chart.PROCENT_HISTOGRAM))
+    value_axis = drawn.value_axis
+    assert not value_axis.visible
+    assert not value_axis.has_major_gridlines and not value_axis.has_minor_gridlines  # (v4 misspelt them, so had them)
+    assert drawn.category_axis.major_tick_mark == XL_TICK_MARK.NONE
+    plot = drawn.plots[0]
+    assert plot.has_data_labels and plot.data_labels.show_value
+    assert (plot.data_labels.number_format, plot.data_labels.position) == ("0%", XL_LABEL_POSITION.OUTSIDE_END)
+
+
+def test_a_correlation_is_dots_without_gridlines_or_numbers():
+    drawn, _, _ = _drawn_in(_EVERY_KIND_OF_CHART["correlation"]())
+    for axis in (drawn.category_axis, drawn.value_axis):
+        assert not axis.has_major_gridlines
+        assert axis.tick_label_position == XL_TICK_LABEL_POSITION.NONE
+        assert axis.major_tick_mark == XL_TICK_MARK.NONE
+    assert drawn.plots[0].series[0].marker.style == XL_MARKER_STYLE.CIRCLE
+
+
+@pytest.mark.parametrize("family", [None, "dark minimal", "clean keynote"])
+@pytest.mark.parametrize("kind", list(_EVERY_KIND_OF_CHART))
+def test_every_text_of_a_chart_reads_on_its_slide(kind, family):
+    """Every text in the look's colour and font: the names, shares and axis titles that talkgenerator writes too,
+    which PowerPoint drew in black (on the classic template's black, and on dark themes)."""
+    drawn, background, font_name = _drawn_in(_EVERY_KIND_OF_CHART[kind](), family)
+    space = drawn._chartSpace
+    texts = [Font(properties) for properties in space.xpath(".//c:txPr//a:defRPr")]
+    runs = [Font(run.get_or_add_rPr()) for run in space.xpath(".//a:r")]
+    assert texts and (runs or kind == "column")
+    on_background = texts + (runs if kind != "doughnut" else [])  # (a doughnut's shares are on its slices)
+    for font in texts + runs:
+        assert font.color.type is not None and font.name == font_name
+    for font in on_background:
+        assert color.contrast(f"#{font.color.rgb}", background) >= 4.5
+
+
+@pytest.mark.parametrize("family", [None, "clean keynote", "dark minimal"])
+def test_a_doughnut_has_its_shares_on_its_ring_and_names_its_slices_in_a_legend(family):
+    drawn, _, _ = _drawn_in(_answers(chart.DOUGHNUT), family)
+    assert drawn.has_legend
+    points = drawn.plots[0].series[0].points
+    assert [point.data_label.text_frame.text for point in points] == ["12%", "7%", "81%"]  # once, not twice
+    if family is not None:  # in whichever of the theme's text and background reads on the slice
+        for point in points:
+            run = point.data_label.text_frame.paragraphs[0].runs[0]
+            assert color.contrast(f"#{run.font.color.rgb}", f"#{point.format.fill.fore_color.rgb}") >= 3
+
+
+@pytest.mark.parametrize("family", [None, "dark minimal"])
+def test_a_pies_slices_are_kept_apart_by_lines_in_the_background_colour(family):
+    drawn, background, _ = _drawn_in(_answers(chart.PIE), family)
+    outlines = {str(point.format.line.color.rgb).lower() for point in drawn.plots[0].series[0].points}
+    assert outlines == {background.lstrip("#").lower()}
+
+
+def _named_point_label(drawn):
+    """How a named point's label wraps (its text, and its own text properties), and how far it's moved over."""
+    (label,) = drawn._chartSpace.xpath(".//c:dLbl[c:tx]")
+    wraps = [body.get("wrap") for body in label.xpath("./c:tx/c:rich/a:bodyPr | ./c:txPr/a:bodyPr")]
+    moved = label.xpath("./c:layout/c:manualLayout/c:x/@val")
+    return wraps, float(moved[0]) if moved else 0.0
+
+
+@pytest.mark.parametrize(("shape", "side"), [("hockey stick", -1), ("rising", -1), ("falling", 1)])
+@pytest.mark.parametrize("family", [None, "neon"])
+def test_a_named_moment_is_on_one_line_on_the_side_its_line_leaves_free(shape, side, family):
+    """Above its dot, ending there where the line climbs on after it, and starting there where the line comes down
+    to it."""
+    drawn, _, _ = _drawn_in(_trend(shape=shape, event="Someone found the cookies"), family)
+    wraps, moved = _named_point_label(drawn)
+    assert wraps == ["none", "none"]
+    assert (moved > 0) - (moved < 0) == side
+    assert drawn._chartSpace.xpath(".//c:dLbl[c:tx]/c:dLblPos/@val") == ["t"]
+
+
+def test_the_side_a_line_leaves_free():
+    climbing, falling = [1, 1, 1, 1, 30, 60], [60, 50, 40, 30, 20]
+    assert charts._free_side(climbing, 3) == -1  # (a hockey stick: the line climbs on after the point)
+    assert charts._free_side(falling, 2) == 1
+    assert charts._free_side([10, 50, 90, 50, 10], 2) == 0  # a peak: above it
+    assert charts._free_side([90, 50, 10, 50, 90], 2) == 0  # a dip: no side is free
+    assert charts._free_side([50] * 5, 2) == 0
+    assert charts._free_side(falling, 9) == 0
+
+
+def test_a_named_moment_moves_only_as_far_as_it_fits_in_the_plot():
+    left, right = charts._PLOT_SPAN
+    climbing = [1, 1, 1, 1, 30, 60]  # (its point 3 is at about 0.6 of the chart's width)
+    assert charts._name_shift(climbing, 3, 0.2, 0.01) == pytest.approx(-0.11)  # its right end 0.01 left of the dot
+    dot = left + 3.5 / 6 * (right - left)
+    long = charts._name_shift(climbing, 3, 0.7, 0.01)  # doesn't fit on the left: it starts where the plot does
+    assert dot + long - 0.35 == pytest.approx(left)
+    assert charts._name_shift(climbing, 3, 2.0, 0.01) == pytest.approx((left + right) / 2 - dot)  # (wider than it)
 
 
 # THE FORMATS
