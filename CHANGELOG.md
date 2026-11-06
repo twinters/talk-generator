@@ -146,6 +146,8 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
 - The prompt no longer gives examples that the free models copied: half of the yes/no charts answered "Only on
   Tuesdays", every outlier was "Me" or "Finland", most conclusions were titled "Conclusions", and a third of the
   talks had an "Expectation vs Reality" slide.
+- A ranking leaves out bars that are only numbers: a free model wrote its scores between the names ("Druids |
+  6 | Priests | 4"), which made a number the winner.
 - No slide shows an image of a slide before it: conclusions, which may repeat texts as they sum up, could repeat
   a picture too.
 - Gif slides show gifs that move. Their Reddit search takes only animated posts (gif subreddits hold photos

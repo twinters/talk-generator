@@ -9,6 +9,7 @@ hints), which fields it leaves out, and which texts come from classic sources in
 from __future__ import annotations
 
 import dataclasses
+import re
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from typing import Any, Final
@@ -176,7 +177,9 @@ def _chart_trend(texts: Mapping[str, str | None], images: Mapping[str, Any], lan
 
 
 def _chart_bars(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
-    bars = [part.strip() for part in (texts["bars"] or "").split("|") if part.strip()][:6]
+    # (Bars that are only numbers are scores a model put between the names: "Druids | 6 | Priests | 4")
+    parts = [part.strip() for part in (texts["bars"] or "").split("|")]
+    bars = [part for part in parts if part and not _NUMBER.fullmatch(part)][:6]
     if len(bars) < 3:
         raise ValueError("a ranking needs three bars or more")
     return slides.ChartSlide(
@@ -208,6 +211,7 @@ def _chart_correlation(texts: Mapping[str, str | None], images: Mapping[str, Any
     )
 
 
+_NUMBER: Final = re.compile(r"[-+]?\d+(?:[.,]\d+)?\s*%?")
 _OPTIONAL_TITLE = TextField("title", "the slide's title", 60, optional=True)
 
 # The talk's own texts, on its title slide: "By <presenter>, <job>" under the title
@@ -351,7 +355,9 @@ KINDS: Final[dict[str, Kind]] = {
             "A ranking in bars, whose last bar, the punchline, wins by far.",
             (
                 TextField("title", "the question the ranking answers, as its title", 90),
-                TextField("bars", "three to six things, separated by |, the last one the punchline", 160),
+                TextField(
+                    "bars", "three to six things (only their names), separated by |, the last one the punchline", 160
+                ),
                 TextField("value_axis", "what the bars measure, such as 'Danger level'", 40, optional=True),
             ),
             (),

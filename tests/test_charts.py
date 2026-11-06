@@ -244,6 +244,13 @@ def test_a_ranking_is_won_by_its_punchline_by_far():
         KINDS["chart_bars"].build({**texts, "bars": "AI | My cat"}, {}, ENGLISH)
 
 
+def test_scores_between_a_rankings_names_are_left_out():
+    texts = {"title": "Who worships cats most?", "bars": "Druids | 6 | Hittite priests | 4.5 | Scholars | 20%"}
+    with random_util.use(random_util.Rng(5)):
+        slide = KINDS["chart_bars"].build({**texts, "value_axis": ""}, {}, ENGLISH)
+    assert _spec(slide).categories == ("Druids", "Hittite priests", "Scholars")
+
+
 def test_the_classic_ranking(monkeypatch):
     related = [(1.0, "dog"), (0.9, "mouse"), (0.8, "cat food"), (0.7, "dog"), (0.5, "yarn")]
     monkeypatch.setattr(conceptnet, "get_weighted_related_words", lambda word, limit=50: related)

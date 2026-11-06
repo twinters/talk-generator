@@ -166,7 +166,7 @@ A ranking in bars, whose last bar, the punchline, wins by far.
 | Text | At most | What to write |
 | --- | --- | --- |
 | `title` | 90 | the question the ranking answers, as its title |
-| `bars` | 160 | three to six things, separated by \|, the last one the punchline |
+| `bars` | 160 | three to six things (only their names), separated by \|, the last one the punchline |
 | `value_axis` | 40 | what the bars measure, such as 'Danger level' (or empty, for none) |
 
 Images: none

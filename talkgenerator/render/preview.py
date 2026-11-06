@@ -130,6 +130,8 @@ def _image(canvas: Image.Image, element: ImageElement, scale: float, images: Ima
         return
     try:
         with Image.open(io.BytesIO(data)) as opened:
+            x0, y0, x1, y1 = _rect(element.box, scale)
+            opened.draft("RGB", (max(1, x1 - x0), max(1, y1 - y0)))  # (a big JPEG decoded at about its shown size)
             picture = opened.convert("RGB")  # (a gif's first frame)
     except Exception:  # a picture Pillow can't read: the preview goes without
         logger.debug("Can't preview %s", element.image.url, exc_info=True)
