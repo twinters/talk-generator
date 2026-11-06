@@ -174,3 +174,45 @@ Images: none
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
 | `bar-ranking` | A ranking that the concept wins by far | the default; tags: bar_chart, chart |
+
+## `venn`
+
+A Venn diagram: two or three circles of things, each with a label, and what's in all of them at once, the punchline, which appears on a click.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `title` | 60 | the diagram's title |
+| `circle_1` | 30 | the first circle's label: a group of things |
+| `circle_2` | 30 | the second circle's label: a group of things that seems to have nothing to do with the first |
+| `circle_3` | 30 | a third circle's label: another such group (or empty, for none) |
+| `overlap` | 30 | the one thing that is in all the circles at once: the punchline |
+
+Images: none
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `venn-diagram` | A Venn diagram about the concept: groups of things that seem to have nothing in common, and what they share, as the punchline | the default; tags: diagram, venn_diagram |
+
+## `matrix`
+
+A 2×2 matrix: two axes that cross in the middle, with a title at each end, a label in each quadrant, and one dot with a name, the punchline, which appears on a click.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `title` | 60 | the matrix's title |
+| `x_left` | 30 | the title at the left end of the axis along the bottom |
+| `x_right` | 30 | the title at the right end of that axis: the opposite of the left end |
+| `y_bottom` | 30 | the title at the bottom end of the axis going up |
+| `y_top` | 30 | the title at the top end of that axis: the opposite of the bottom end |
+| `top_left` | 30 | the label of the top left quadrant: what is both like the top end and like the left end |
+| `top_right` | 30 | the label of the top right quadrant: what is both like the top end and like the right end |
+| `bottom_left` | 30 | the label of the bottom left quadrant: what is both like the bottom end and like the left end |
+| `bottom_right` | 30 | the label of the bottom right quadrant: what is both like the bottom end and like the right end |
+| `dot` | 30 | the name of a dot in one of the quadrants: someone or something surprising there, the punchline |
+| `dot_quadrant` | 12 | the quadrant the dot is in, the most surprising one for it: `top left`, `top right`, `bottom left`, `bottom right` (or empty, for any) |
+
+Images: none
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `2x2-matrix` | A 2×2 matrix about the concept along two odd axes, with one surprising dot as the punchline | the default; tags: diagram, matrix_diagram |

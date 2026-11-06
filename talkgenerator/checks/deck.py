@@ -14,7 +14,15 @@ from dataclasses import dataclass
 from typing import Any, Literal
 
 from talkgenerator.models import classic
-from talkgenerator.models.deck import ChartElement, Deck, ImageElement, TextElement
+from talkgenerator.models.deck import (
+    ChartElement,
+    Deck,
+    DiagramElement,
+    ImageElement,
+    MatrixDiagram,
+    TextElement,
+    VennDiagram,
+)
 from talkgenerator.util import language_util
 
 Severity = Literal["error", "warning"]
@@ -123,11 +131,24 @@ def check_completeness(deck: Deck, expected_slides: int | None = None) -> list[F
                 series.values or series.points for series in element.chart.series
             ):
                 findings.append(Finding("completeness", "error", "a chart without data", number))
+            elif isinstance(element, DiagramElement):
+                findings += [Finding("completeness", "error", gap, number) for gap in diagram_gaps(element.diagram)]
     return findings
 
 
+def diagram_gaps(diagram: VennDiagram | MatrixDiagram) -> list[str]:
+    """What a diagram misses: a Venn diagram needs two or three circles, and every diagram all its labels."""
+    what = "Venn diagram" if isinstance(diagram, VennDiagram) else "2×2 matrix"
+    gaps = []
+    if isinstance(diagram, VennDiagram) and len(diagram.circles) not in (2, 3):
+        count = len(diagram.circles)
+        gaps.append(f"a Venn diagram of {count} circle{'' if count == 1 else 's'} (it takes two or three)")
+    gaps += [f"a {what} with an empty {name}" for name, label in diagram.labels() if not label.strip()]
+    return gaps
+
+
 def check_leftovers(deck: Deck) -> list[Finding]:
-    """No template variables, tracery symbols or Python objects in the texts (chart labels included)."""
+    """No template variables, tracery symbols or Python objects in the texts (chart and diagram labels included)."""
     findings = []
     for number, slide in enumerate(deck.slides, 1):
         for role, text in _texts(slide.elements):
@@ -209,7 +230,9 @@ def _repeated_titles(deck: Deck) -> int:
     return len(titles) - len(set(titles))
 
 
-def _texts(elements: tuple[TextElement | ImageElement | ChartElement, ...]) -> list[tuple[str, str]]:
+def _texts(
+    elements: tuple[TextElement | ImageElement | ChartElement | DiagramElement, ...],
+) -> list[tuple[str, str]]:
     texts = []
     for element in elements:
         if isinstance(element, TextElement):
@@ -217,4 +240,6 @@ def _texts(elements: tuple[TextElement | ImageElement | ChartElement, ...]) -> l
         elif isinstance(element, ChartElement):
             texts.extend((f"{element.role} label", category) for category in element.chart.categories)
             texts.extend((f"{element.role} label", name) for series in element.chart.series for name in series.labels)
+        elif isinstance(element, DiagramElement):
+            texts.extend((f"{element.role}'s {name}", label) for name, label in element.diagram.labels())
     return texts

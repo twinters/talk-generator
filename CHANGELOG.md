@@ -74,6 +74,13 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
 - Charts with axes get axis titles: the correlation curves now show the two things they correlate (v4 left
   them out), and a language model or a plan can name them (`x_axis` and `y_axis`). A deck's chart says its axis
   titles and whether its series appear one by one (`reveal`).
+- Two new kinds of slide, drawn as PowerPoint shapes instead of images, so they need no image source: a Venn
+  diagram, two or three see-through circles with a label each and the punchline where they overlap ("Things I
+  love" and "Things that love me back": "Cheese"), and a 2×2 matrix, two axes with a title at each end, a label in
+  each quadrant and one named dot as the punchline. The punchline appears on a click. Both come out the classic
+  way too, from the words that ConceptNet (or Datamuse) relates to the slide's seed, and a talk has at most one of
+  each. A deck holds them as diagram elements (`VennDiagram` and `MatrixDiagram` on a `diagram` slide), which the
+  checks read for gaps and template leftovers.
 - `talkgenerator login openrouter`: sign in to OpenRouter in the browser (OAuth with PKCE), and talkgenerator gets
   a key of its own, which it keeps in the user's config folder (readable only by the user), so OpenRouter's free
   models write talks without an `OPENROUTER_API_KEY`. `--headless` signs in on a computer without a browser,

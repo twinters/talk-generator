@@ -451,6 +451,14 @@ class ChartSlideGenerator(SlideGenerator):
         return slides.ChartSlide
 
 
+class DiagramSlideGenerator(SlideGenerator):
+    """A diagram drawn as shapes (a Venn diagram, a 2×2 matrix), from a generator of its title and its diagram."""
+
+    @property
+    def slide_type(self):
+        return slides.DiagramSlide
+
+
 # HELPERS
 
 

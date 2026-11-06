@@ -2,7 +2,8 @@
 
 The classic slide creators (`talkgenerator.slide.powerpoint_slide_creator`) still do the drawing: the renderer turns
 each deck slide back into their arguments (see `talkgenerator.models.classic`), so a deck renders exactly like the
-slides it was made from. Charts are rebuilt from their numbers and styled by their type (`talkgenerator.render.charts`).
+slides it was made from. Charts are rebuilt from their numbers and styled by their type (`talkgenerator.render.charts`),
+and diagrams are drawn as shapes (`talkgenerator.render.diagrams`).
 
 Images come from `images` when given (the images checked while generating, with their downloaded bytes and what to do
 once they end up on a slide), and are downloaded otherwise.
@@ -19,7 +20,15 @@ from pptx.slide import Slide
 
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.models import classic
-from talkgenerator.models.deck import ChartElement, Deck, DeckSlide, ImageAsset, ImageElement, TextElement
+from talkgenerator.models.deck import (
+    ChartElement,
+    Deck,
+    DeckSlide,
+    DiagramElement,
+    ImageAsset,
+    ImageElement,
+    TextElement,
+)
 from talkgenerator.render import animation, charts
 from talkgenerator.slide import powerpoint_slide_creator as creator
 
@@ -68,6 +77,8 @@ def render_slide(
         raise ValueError(f"Can't draw layout {slide.layout!r}: only the classic layouts exist so far")
     if slide.type == "chart":
         ppt_slide: Slide | None = _create_chart_slide(presentation, slide)
+    elif slide.type == "diagram":
+        ppt_slide = _create_diagram_slide(presentation, slide)
     elif slide.type in _CREATORS:
         ppt_slide = _CREATORS[slide.type](presentation, **_creator_arguments(slide, images))
     else:
@@ -93,7 +104,7 @@ def _creator_arguments(slide: DeckSlide, images: ImageStore | None) -> dict[str,
             if element.role not in classic.COVER_ROLES:
                 fits.append(element.fit)
         else:
-            raise ValueError(f"A {slide.type} slide can't hold a chart")
+            raise ValueError(f"A {slide.type} slide can't hold a {element.kind}")
     if slide.type in _FITTING_CREATORS:
         arguments["original_image_size"] = all(fit == "contain" for fit in fits)
     return arguments
@@ -118,6 +129,17 @@ def _create_chart_slide(presentation: Presentation, slide: DeckSlide) -> Slide:
     charts.label_points(frame.chart, spec)
     if spec.reveal == "series":
         animation.reveal_chart_series(ppt_slide, frame, len(spec.series))
+    return ppt_slide
+
+
+def _create_diagram_slide(presentation: Presentation, slide: DeckSlide) -> Slide:
+    diagram_element = slide.element("diagram")
+    if not isinstance(diagram_element, DiagramElement):
+        raise ValueError("A diagram slide needs its diagram")
+    title = slide.element("title")
+    ppt_slide: Slide = creator.create_diagram_slide(
+        presentation, title.text if isinstance(title, TextElement) else None, diagram_element.diagram
+    )
     return ppt_slide
 
 

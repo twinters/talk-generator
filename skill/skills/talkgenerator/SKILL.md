@@ -102,7 +102,8 @@ that give the presenter something to work with, rather than finished jokes:
   recurring character, a strange claim from before), and the conclusions call back to several of them.
 - **Shape it like a talk.** A common arc: who the presenter is (an about-me slide), some history (a made-up
   historical figure, old photos), the core (bold statements, contrasts such as Expectation and Reality, a three-step
-  build-up), the evidence (a chart or two), and conclusions that call back. Mix the kinds: no two charts in a row.
+  build-up), the evidence (a chart or two, a Venn diagram or a 2×2 matrix), and conclusions that call back. Mix the
+  kinds: no two charts in a row.
 - **Write image queries that find something**: one to three common English words for one subject, such as "owl",
   "ficus", "old watering can" or "dense tropical jungle". Scenes with several parts ("plant on reception desk"),
   actions and moods ("waiting", "alone"), and words that are photo subjects themselves ("camera", "photo") find the

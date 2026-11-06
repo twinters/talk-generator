@@ -191,6 +191,7 @@ def test_the_required_roles_are_what_the_slide_classes_require():
         slides.TwoColumnImageSlide: "two_column_image",
         slides.ThreeColumnImageSlide: "three_column_image",
         slides.ChartSlide: "chart",
+        slides.DiagramSlide: "diagram",
     }
     assert set(types.values()) == set(classic.REQUIRED_ROLES) == set(classic.CLASSIC_ROLES)
     for slide_class, slide_type in types.items():

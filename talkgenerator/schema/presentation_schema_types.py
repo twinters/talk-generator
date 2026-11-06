@@ -21,6 +21,7 @@ DEFAULT_GROUPS = (
     "captioned_images",
     "reddit_chart",
     "chart",
+    "diagram",
     "conclusion",
 )
 COPYRIGHT_FREE_GROUPS = (
@@ -30,6 +31,7 @@ COPYRIGHT_FREE_GROUPS = (
     "statement_copyright_free",
     "captioned_images_copyright_free",
     "chart",
+    "diagram",
     "conclusion_copyright_free",
 )
 
@@ -101,6 +103,8 @@ ted_schema = schemas.register(
             "location_chart": 1,
             "trend_chart": 1,
             "bar_chart": 1,
+            "venn_diagram": 1,
+            "matrix_diagram": 1,
             "chart": 1,
             "deep": 2,
             # Relative (procentual) maxima

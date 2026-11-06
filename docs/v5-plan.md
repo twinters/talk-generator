@@ -491,7 +491,8 @@ Candidates for new ones:
 - **Structure:** agenda, section divider, "Questions?", a fake contact or thank-you slide.
 - **Native diagrams**, drawn as shapes so they look the same in PowerPoint and in the browser and need no image
   source: timeline, 2×2 matrix, Venn diagram, process with a "???" step, pyramid, funnel, iceberg, cycle, a small
-  org chart.
+  org chart. Two came early, in milestone 2: Venn diagrams (two or three see-through circles, the punchline where
+  they overlap) and 2×2 matrices (a named dot as the punchline), whose punchline appears on a click.
 - **Numbers:** big number, KPI tiles, comparison table, and more kinds of charts with written labels (bar, line,
   stacked, gauge). Two came early, in milestone 2: trends (a line along two odd axes, going one of eleven ways,
   with an optional second line that wipes in on a click as the punchline) and rankings (bars that the last one

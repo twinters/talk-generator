@@ -8,9 +8,12 @@ from talkgenerator.models.deck import (
     CreditPart,
     Deck,
     DeckSlide,
+    DiagramElement,
     ImageAsset,
     ImageElement,
+    MatrixDiagram,
     TextElement,
+    VennDiagram,
 )
 from talkgenerator.models.usage import Usage
 
@@ -22,8 +25,11 @@ __all__ = [
     "CreditPart",
     "Deck",
     "DeckSlide",
+    "DiagramElement",
     "ImageAsset",
     "ImageElement",
+    "MatrixDiagram",
     "TextElement",
     "Usage",
+    "VennDiagram",
 ]
