@@ -93,6 +93,7 @@ def test_a_trend_chart_has_titled_axes_and_one_line():
     assert drawn.category_axis.axis_title.text_frame.text == "Hours since the meeting started"
     assert drawn.value_axis.axis_title.text_frame.text == "Times someone said synergy"
     assert not drawn.has_legend  # one nameless line needs none
+    assert drawn.value_axis.minimum_scale == 0  # so a flat line looks flat
     assert ppt_slide.element.find(qn("p:timing")) is None  # nothing to click for
 
 

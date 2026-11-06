@@ -140,7 +140,8 @@ def set_scatter_properties(chart, chart_data):
 
 
 def set_line_properties(chart, chart_data):
-    """A trend: thick smooth lines, and no numbers on the axes (their titles say what they are)."""
+    """A trend: thick smooth lines, and no numbers on the axes (their titles say what they are). The value axis starts
+    at 0, or PowerPoint would zoom in on a flat line until its noise looks like a rollercoaster."""
     for series in chart.plots[0].series:
         series.smooth = True
         series.format.line.width = Pt(5)
@@ -148,6 +149,7 @@ def set_line_properties(chart, chart_data):
         axis.tick_label_position = XL_TICK_LABEL_POSITION.NONE
         axis.major_tick_mark = XL_TICK_MARK.NONE
     chart.value_axis.has_major_gridlines = False
+    chart.value_axis.minimum_scale = 0
     _legend_for_named_series(chart)
 
 
