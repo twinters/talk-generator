@@ -591,24 +591,13 @@ def _render_command(argv: Sequence[str]) -> int:
                 {"plan": path, "error": "it isn't a plan (see talkgenerator schema plan)", "details": details}
             )
             continue
-        schema_name = args.schema or plan.format or "default"
-        if schema_name not in schemas.names():
-            formats = ", ".join(schemas.names())
-            reports.append({"plan": path, "error": f"there's no format {schema_name!r}; the formats are {formats}"})
-            continue
-        looks = [*themes.names(), "chaos"]
-        if (args.theme or plan.theme or themes.CLASSIC) not in looks:
-            reports.append(
-                {"plan": path, "error": f"there's no theme {plan.theme!r}; the themes are {', '.join(looks)}"}
-            )
-            continue
-        if plan.language not in languages.LANGUAGES:
-            known = ", ".join(languages.LANGUAGES)
-            reports.append({"plan": path, "error": f"there's no language {plan.language!r}; the languages are {known}"})
+        problem = plan_error(plan, args.schema, args.theme)
+        if problem is not None:
+            reports.append({"plan": path, "error": problem})
             continue
         report = render_plan(
             plan,
-            schema_name=schema_name,
+            schema_name=args.schema or plan.format or "default",
             presenter=args.presenter,
             int_seed=args.int_seed,
             output=args.output,
@@ -627,6 +616,23 @@ def _render_command(argv: Sequence[str]) -> int:
     # ASCII only: the report is for programs too, and this way no console encoding mangles it
     print(json.dumps(reports[0] if len(reports) == 1 else reports, indent=2))
     return 2 if any("error" in report for report in reports) else 0
+
+
+def plan_error(plan: TalkPlan, schema_name: str | None = None, theme: str | None = None) -> str | None:
+    """Why a plan can't be rendered: a format, theme or language talkgenerator doesn't know (None if it can be).
+    schema_name and theme are what's asked for instead of the plan's own."""
+    from talkgenerator.schema.presentation_schema_types import schemas
+
+    return (
+        unknown_choice("format", schema_name or plan.format or "default", schemas.names())
+        or unknown_choice("theme", theme or plan.theme or themes.CLASSIC, [*themes.names(), "chaos"])
+        or unknown_choice("language", plan.language, list(languages.LANGUAGES))
+    )
+
+
+def unknown_choice(what: str, value: str, choices: Sequence[str]) -> str | None:
+    """What's wrong with a value that's none of the choices, such as a theme that doesn't exist (None if it's fine)."""
+    return None if value in choices else f"there's no {what} {value!r}; the {what}s are {', '.join(choices)}"
 
 
 def _expand(patterns: Sequence[str]) -> list[str]:

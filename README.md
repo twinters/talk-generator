@@ -121,6 +121,47 @@ The commands the Skill uses work for plans written by hand, or by other tools, t
 
 [An example plan](skill/skills/talkgenerator/references/example-plan.json) shows what goes in one.
 
+### Claude Desktop and other MCP clients: the MCP server
+
+`talkgenerator mcp` gives those commands as tools to [Claude Desktop](https://claude.ai/download) and other MCP clients, so Claude can make decks in a chat, without a shell.
+It runs only on your own computer: the client starts it there, it uses your own keys, and it saves the decks in a folder of yours.
+Nothing of it is hosted.
+
+| Tool | What it does |
+| --- | --- |
+| `list_formats` | The talk formats, themes and languages |
+| `describe_format` | The slides a plan for a format can have (as `talkgenerator formats --details --json`) |
+| `get_plan_schema` | The plan format, as a JSON Schema (as `talkgenerator schema plan`) |
+| `render_plan` | Turns a plan into a PowerPoint, and returns the report of `talkgenerator render`, with the paths of the files it saved |
+| `generate_talk` | Makes a whole talk on a topic, as `talkgenerator --topic` does: the language model of your settings writes it (OpenRouter's free models, when you have an OpenRouter key), or else the classic generator. Returns where the files are, the talk's seed, and the checks |
+
+Install it with the MCP SDK, `pip install 'talkgenerator[mcp]'`, and add it to Claude Desktop's config: Settings > Developer > Edit Config opens `claude_desktop_config.json`.
+Restart Claude Desktop afterwards.
+
+```json
+{
+  "mcpServers": {
+    "talkgenerator": {
+      "command": "talkgenerator",
+      "args": ["mcp"],
+      "env": {
+        "UNSPLASH_ACCESS_KEY": "...",
+        "PEXELS_KEY": "..."
+      }
+    }
+  }
+}
+```
+
+- `command` is the `talkgenerator` command. If Claude Desktop doesn't find it, give its full path, such as `"/Users/you/talks/.venv/bin/talkgenerator"`, or on Windows `"C:\\Users\\you\\talks\\.venv\\Scripts\\talkgenerator.exe"` (JSON doubles the backslashes). With [uv](https://docs.astral.sh/uv/) you don't need to install it first: `"command": "uvx"`, with `"args": ["--from", "talkgenerator[mcp]", "talkgenerator", "mcp"]`.
+- `env` holds your [API keys](#api-keys), just the ones you have: Claude Desktop starts the server in a folder of its own, where your `.env` isn't. A key that `talkgenerator login openrouter` got needs no entry: the server finds it in your config folder. Every other setting works in `env` too, such as `TALKGENERATOR_LLM` (see [Language models](#language-models)), which is the only way to have a paid model write the talks: a tool call can't pick one.
+- The decks go to the `talkgenerator` folder in your documents, or to the folder that `"args": ["mcp", "--output_folder", "<folder>"]` names, and nowhere else. They never overwrite a file: a deck made again gets a name of its own.
+- The server logs to stderr, which Claude Desktop keeps in `mcp-server-talkgenerator.log`, in `%APPDATA%\Claude\logs` on Windows and `~/Library/Logs/Claude` on macOS.
+- On Windows on Arm, install it in an x64 Python (such as `uvx --python cpython-3.13-windows-x86_64-none ...`): the MCP SDK needs the `cryptography` package, which has no wheels for Windows on Arm.
+
+Then ask Claude for, say, "a PowerPoint karaoke deck about competitive birdwatching".
+The server tells Claude how to write a plan and when to render it again; with the [Skill](#claude-as-the-writer-the-skill) as well, Claude knows more about what makes a good karaoke talk.
+
 ### Run arguments
 
 | Argument | Description |
@@ -176,6 +217,9 @@ uv run mypy                       # type checking
 
 Type checking is gradual: mypy checks the whole package, and the modules listed under `[[tool.mypy.overrides]]` in `pyproject.toml` must be fully annotated.
 Add a module to that list once you've typed it.
+
+On Windows on Arm, the dev dependencies leave out the MCP SDK, which doesn't install there, and the MCP server's tests are skipped.
+To run them, use an x64 Python, in a virtual environment of its own outside the repository (so that `.venv` stays as it is): set `UV_PROJECT_ENVIRONMENT` to its folder, and run `uv run --extra mcp --python cpython-3.13-windows-x86_64-none pytest tests/test_mcp_server.py`.
 
 To check the talks themselves, `uv run talkgenerator check` generates talks on a set of topics with the live sources (`--quick` for 3 topics, `--all` for 30), checks them, generates each again with its seed to see that it comes out the same, and writes a report to `output/check-report.json`.
 It exits with an error when a talk is broken: a slide without what it needs, or template code such as `{seed}` on a slide.

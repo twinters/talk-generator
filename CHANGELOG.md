@@ -57,6 +57,18 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
 - The talkgenerator Skill (`skill/`): Claude writes talks for PowerPoint karaoke and improvised TED talks, renders
   them with `talkgenerator render`, and fixes them from the report. It installs as a Claude Code plugin straight
   from this repository (`/plugin marketplace add twinters/talk-generator`), or as a skill folder.
+- `talkgenerator mcp`: a local MCP server, for Claude Desktop and other MCP clients (`pip install
+  'talkgenerator[mcp]'`; the README says how to add it to Claude Desktop's config). The client starts it on the
+  user's computer, over stdio, and it makes talks with the user's own keys and settings; nothing is hosted. Its tools:
+  `list_formats` (the formats, themes and languages), `describe_format` (a format's slides, as `formats --details`),
+  `get_plan_schema`, `render_plan` (a plan as a PowerPoint, with the report of `talkgenerator render`) and
+  `generate_talk` (a talk on a topic, written by the language model the settings name, or else the classic way).
+  They answer in JSON with the paths of the files they saved, save those only in the output folder
+  (`--output_folder`, by default a `talkgenerator` folder in the user's documents) and never over another file, make
+  one talk at a time, and tell the client every few seconds that a talk is still being made. A tool call can't pick
+  the language model, so only the user's settings make a paid one write talks, and keys never show up in what the
+  tools say or log. The Skill tells Claude Desktop users how to set it up. On Windows on Arm, the MCP SDK only
+  installs in an x64 Python, as the `cryptography` package it needs has no wheels there.
 - Talks in Dutch (`--language nl`), and in French, German, Spanish, Italian and Portuguese, when a language model
   or a plan writes them: talkgenerator's own words on the slides ("By ...", a chart's "Yes" and "No") are in the
   talk's language too, a slide that doesn't come out becomes a picture of its subject without text (the classic
@@ -122,7 +134,8 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   dictionaries holding image and chart objects.
 - The classic chart styles moved from `talkgenerator.sources.chart` to `talkgenerator.render.charts` (the old
   names still work).
-- New dependency: pydantic. New optional dependencies: anthropic and openai (see the language model providers).
+- New dependency: pydantic. New optional dependencies: anthropic and openai (see the language model providers), and
+  mcp (for `talkgenerator mcp`).
 - A talk without a seed gets a random one, which the logs and the deck JSON mention, so any talk can be made
   again.
 - Randomness comes from `talkgenerator.util.random_util`: every slide draws from its own streams of the talk's

@@ -451,6 +451,17 @@ sandbox most likely can't install talkgenerator or reach the image APIs (Anthrop
 execution has no internet access, and say nothing about claude.ai's), so there the Skill writes plans for the user
 to render; the SKILL.md frontmatter keeps to the fields claude.ai accepts.
 
+Built on 2026-11-06 as well: `talkgenerator mcp` (`talkgenerator/mcp_server.py`, on the official MCP SDK, 2.3.0, as
+the `mcp` extra), with the tools `list_formats`, `describe_format`, `get_plan_schema`, `render_plan` and
+`generate_talk`. There's no `find_images`: a plan's queries are searched when it's rendered, and the report says what
+they found. The tools save only in the output folder (`--output_folder`, by default a `talkgenerator` folder in the
+user's documents, as clients start servers in folders of their own), make one talk at a time, and send a progress
+notification every 5 seconds, for clients that keep waiting while they hear from a tool. `generate_talk` takes its
+language model from the settings only, so a tool call can't make a paid model write. The SDK needs `cryptography`,
+which has had no Windows on Arm wheels since 46.0.4: the dev dependencies leave the SDK out there (the MCP tests
+skip, and run in an x64 Python), and users on Windows on Arm install it in an x64 Python. Still to check: a
+one-click Claude Desktop extension bundle (`.mcpb`), and how long Claude Desktop waits for a tool.
+
 ## 7. Talk formats
 
 A talk format describes a kind of talk: a description (which doubles as the LLM's brief), an arc of sections

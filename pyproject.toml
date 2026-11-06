@@ -40,6 +40,8 @@ dependencies = [
 anthropic = ["anthropic>=2.1"]
 openai = ["openai>=3.37"]  # for OpenRouter and OpenAI
 llm = ["talkgenerator[anthropic,openai]"]
+# `talkgenerator mcp`: a local MCP server, for Claude Desktop and other MCP clients (see talkgenerator.mcp_server)
+mcp = ["mcp>=2.3"]
 
 [project.urls]
 Homepage = "https://github.com/twinters/talk-generator"
@@ -54,6 +56,10 @@ dev = [
     # The optional language model SDKs, so their adapters get tested and type-checked
     "anthropic>=2.1",
     "openai>=3.37",
+    # and the MCP SDK, for the MCP server; not on Windows on Arm (even in an x64 Python there, which says ARM64 too), where
+    # the cryptography it needs has no wheels (since 46.0.4) and doesn't build, so that `uv sync` works there (the MCP
+    # tests skip: run them in an x64 Python with --extra mcp, as the README's "Tests" says)
+    "mcp>=2.3; sys_platform != 'win32' or platform_machine != 'ARM64'",
     "mypy>=1.13",
     "pytest>=8.0",
     "pytest-cov>=5.0",
@@ -104,6 +110,7 @@ module = [
     "talkgenerator.llm.prices",
     "talkgenerator.llm.providers",
     "talkgenerator.llm.replay",
+    "talkgenerator.mcp_server",
     "talkgenerator.models.base",
     "talkgenerator.models.classic",
     "talkgenerator.models.deck",

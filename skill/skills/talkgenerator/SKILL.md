@@ -2,7 +2,7 @@
 name: talkgenerator
 description: Writes absurd talks for improvised presentations (PowerPoint karaoke, improvised TED talks, battle decks) and renders them as real PowerPoint files with licensed, credited images, using the talkgenerator package. Use it whenever someone wants slides to present unprepared, a karaoke deck, a fake TED talk, talks for an improv show or a party game, a batch of decks from audience suggestions, or a funny presentation on any topic, even if they don't name talkgenerator; also to fix or render again a talk plan (a talkgenerator plan JSON).
 license: MIT
-compatibility: Needs Python 3.11+ with the talkgenerator package (version 5 or newer), a shell to run it, and internet access for the image sources. Image API keys in a .env file are optional.
+compatibility: Needs Python 3.11+ with the talkgenerator package (version 5 or newer), a shell to run it (or, in Claude Desktop, its MCP server), and internet access for the image sources. Image API keys in a .env file are optional.
 ---
 
 # Improvised talks with talkgenerator
@@ -134,4 +134,38 @@ that give the presenter something to work with, rather than finished jokes:
 ## Without a shell
 
 Where you can't run commands (in a chat without code execution, say), write the plan anyway and give it to the user
-as a JSON file, with the command that renders it on their computer: `talkgenerator render plan.json`.
+as a JSON file, with the command that renders it on their computer: `talkgenerator render plan.json`. Or, in Claude
+Desktop, offer to set up talkgenerator's MCP server (below).
+
+## In Claude Desktop, with the MCP server
+
+talkgenerator's MCP server gives you the commands as tools: `list_formats`, `describe_format`
+(`formats --details`), `get_plan_schema` (`schema plan`), `render_plan` (`render`, with the plan itself as its
+input, the same report, and `seed` for `--int_seed`), and `generate_talk`, which has talkgenerator write a whole talk
+on its own. When you have those tools, use them: the steps above stay the same, and the decks go to the server's
+output folder (the report gives their paths).
+
+If the user wants it, the server runs on their own computer, with their own keys. They install it with
+`pip install 'talkgenerator[mcp]'` (on Windows on Arm, in an x64 Python), open Claude Desktop's config (Settings >
+Developer > Edit Config), add the server, and restart Claude Desktop:
+
+```json
+{
+  "mcpServers": {
+    "talkgenerator": {
+      "command": "talkgenerator",
+      "args": ["mcp"],
+      "env": {
+        "UNSPLASH_ACCESS_KEY": "...",
+        "PEXELS_KEY": "..."
+      }
+    }
+  }
+}
+```
+
+`command` is the full path of the `talkgenerator` command when Claude Desktop doesn't find it (or `uvx`, with
+`"args": ["--from", "talkgenerator[mcp]", "talkgenerator", "mcp"]`). `env` holds the keys they have, which they fill
+in themselves: Claude Desktop starts the server in a folder of its own, so it doesn't see their `.env`. The decks go
+to the `talkgenerator` folder in their documents, or to the folder that `"args": ["mcp", "--output_folder",
+"<folder>"]` names.
