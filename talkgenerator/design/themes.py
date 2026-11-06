@@ -9,7 +9,7 @@ extremes, for laughs ("1997 WordArt", "Comic Sans everywhere"): they're in the r
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Final, Literal, TypeVar
+from typing import Any, Final, Literal, TypeVar
 
 from talkgenerator.design import color
 from talkgenerator.models.theme import (
@@ -37,6 +37,7 @@ _HARMONIES: Final[dict[str, tuple[float, float]]] = {
 }
 CLASSIC: Final = "classic"
 RANDOM: Final = "random"
+CHAOS: Final = "chaos"  # (every slide its own theme)
 # How much grain and vignette a member's pictures get, if they get any
 GRAIN: Final = 0.14
 VIGNETTE: Final = 0.7
@@ -73,6 +74,7 @@ class Family:
     text_scale: tuple[float, float] = (1.0, 1.0)
     extreme: bool = False
     weight: float = 1.0  # how often the random mix picks it
+    description: str = ""  # what its members look like, for a settings menu
 
 
 FAMILIES: Final[dict[str, Family]] = {
@@ -80,6 +82,7 @@ FAMILIES: Final[dict[str, Family]] = {
     for family in (
         Family(
             "clean keynote",
+            description="light and calm: a sans-serif, lots of room, an accent here and there",
             harmony="analogous",
             fonts=(("Calibri", "Calibri"), ("Arial", "Arial"), ("Trebuchet MS", "Calibri")),
             uppercase=0.2,
@@ -89,6 +92,7 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "dark minimal",
+            description="light text on a near-black background, now and then grayscale pictures",
             dark=True,
             background_saturation=(0.0, 0.15),
             background_lightness=(0.06, 0.12),
@@ -101,6 +105,7 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "corporate",
+            description="blues and greys, a bar by the titles, framed or duotone pictures",
             hues=(200, 230),
             background_saturation=(0.0, 0.1),
             background_lightness=(0.96, 0.99),
@@ -112,6 +117,7 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "academic",
+            description="a warm paper tone and serif type, as a lecture's slides",
             hues=(35, 55),
             harmony="mono",
             background_saturation=(0.2, 0.4),
@@ -124,6 +130,7 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "startup",
+            description="bold type, bright colours and rounded pictures",
             harmony="triadic",
             accent_saturation=(0.75, 0.95),
             fonts=(("Arial Black", "Arial"), ("Trebuchet MS", "Arial"), ("Verdana", "Verdana")),
@@ -136,6 +143,7 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "vintage paper",
+            description="parchment, serif type, and sepia polaroids with grain",
             hues=(32, 48),
             harmony="mono",
             background_saturation=(0.3, 0.5),
@@ -152,6 +160,7 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "kids",
+            description="bright colours, big friendly type, rounded and polaroid pictures",
             harmony="triadic",
             background_saturation=(0.6, 0.9),
             background_lightness=(0.86, 0.92),
@@ -164,6 +173,7 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "brutalist",
+            description="loud colours, heavy capitals, black-and-white pictures and hard shadows",
             background_saturation=(0.0, 0.9),
             background_lightness=(0.88, 0.95),
             accent_saturation=(0.9, 1.0),
@@ -178,6 +188,7 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "neon",
+            description="glowing headings in neon colours on a dark background",
             dark=True,
             background_saturation=(0.3, 0.6),
             background_lightness=(0.04, 0.08),
@@ -195,6 +206,7 @@ FAMILIES: Final[dict[str, Family]] = {
         # The extremes, for laughs
         Family(
             "1997 WordArt",
+            description="rainbow WordArt headings bent into waves and arches, on a loud gradient",
             background_saturation=(0.8, 1.0),
             background_lightness=(0.35, 0.55),
             accent_saturation=(0.9, 1.0),
@@ -212,6 +224,7 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "Comic Sans everywhere",
+            description="Comic Sans, outlined, on solid shadows, everywhere",
             harmony="triadic",
             background_saturation=(0.5, 0.8),
             background_lightness=(0.85, 0.92),
@@ -226,6 +239,7 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "clip-art corporate",
+            description="a 1990s office deck: gradients, frames and soft shadows",
             hues=(200, 220),
             background_saturation=(0.3, 0.5),
             background_lightness=(0.78, 0.88),
@@ -247,8 +261,32 @@ _HEAVY_FONTS: Final = frozenset({"Impact", "Arial Black"})
 
 
 def names(extremes: bool = True) -> list[str]:
-    """The families' names, and what else --theme takes."""
+    """The families' names, with classic and random."""
     return [CLASSIC, RANDOM, *(name for name, family in FAMILIES.items() if extremes or not family.extreme)]
+
+
+def choices(extremes: bool = True) -> list[str]:
+    """Every theme a talk can ask for (as --theme, TALKGENERATOR_THEME and generate_presentation take it)."""
+    return [*names(extremes), CHAOS]
+
+
+def catalog(extremes: bool = True) -> list[dict[str, Any]]:
+    """The themes a talk can have, for a settings menu (talk-generator-web's, say): each with its name (what
+    choices has), a label, a line on what it looks like, and whether it's one of the themes for laughs."""
+    special = [
+        (RANDOM, "Surprise me", "a theme of a family the talk's seed picks", False),
+        (CLASSIC, "Classic", "the 2019 template", False),
+        (CHAOS, "Chaos", "every slide in a theme of its own", False),
+    ]
+    families = [
+        (name, name[0].upper() + name[1:], family.description, family.extreme)
+        for name, family in FAMILIES.items()
+        if extremes or not family.extreme
+    ]
+    return [
+        {"name": name, "label": label, "description": description, "extreme": extreme}
+        for name, label, description, extreme in [*special, *families]
+    ]
 
 
 def pick(spec: str, rng: random_util.Rng, extremes: bool = True) -> Theme | None:

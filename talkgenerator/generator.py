@@ -54,7 +54,7 @@ def generate_presentation_using_cli_arguments(args) -> tuple[Presentation | None
         save_json=getattr(args, "save_json", False),
         llm=getattr(args, "llm", None),
         language=getattr(args, "language", None) or "en",
-        theme=getattr(args, "theme", None) or "classic",
+        theme=getattr(args, "theme", None),
         style_chaos=getattr(args, "style_chaos", 0.0) or 0.0,
         extreme_themes=getattr(args, "extreme_themes", True),
     )
@@ -77,7 +77,7 @@ def generate_presentation(
     llm: TextProvider | str | None = None,
     language: str = "en",
     budget: Budget | None = None,
-    theme: str = "classic",
+    theme: str | None = None,
     style_chaos: float = 0.0,
     extreme_themes: bool = True,
 ) -> tuple[Presentation | None, SlideDeck, str | None]:
@@ -91,9 +91,13 @@ def generate_presentation(
     for the one TALKGENERATOR_LLM sets (without one, talks are classic). It writes in the given language, and the
     budget limits what it may cost; the deck tells what it used.
 
-    theme is "classic" (the 2019 template), "random" (a theme of a family the seed picks, extremes such as 1997
-    WordArt too unless extreme_themes is off), a family's name such as "dark minimal", or "chaos" (every slide
-    in a theme of its own); style_chaos is how many slides get a theme of their own (0 to 1)."""
+    theme is "random" (a theme of a family the seed picks, extremes such as 1997 WordArt too unless extreme_themes
+    is off), "classic" (the 2019 template), a family's name such as "dark minimal", or "chaos" (every slide in a
+    theme of its own): one of talkgenerator.design.themes.choices(), which catalog() describes. None is the one
+    TALKGENERATOR_THEME names, or else random. style_chaos is how many slides get a theme of their own (0 to 1)."""
+    theme = theme or settings.theme()
+    if theme not in themes.choices():
+        raise ValueError(f"There's no theme {theme!r}; there are {', '.join(themes.choices())}")
     if print_logs:
         os_util.show_logs(logger)
     logger.info("**************************")
@@ -106,7 +110,7 @@ def generate_presentation(
     logger.info("Presentation seed: {} (pass it as int_seed to make this talk again)".format(rng.root_seed))
 
     # The talk's theme, from its seed too (see talkgenerator.design.themes)
-    if theme == "chaos":
+    if theme == themes.CHAOS:
         theme, style_chaos = themes.RANDOM, 1.0
     chosen_theme = themes.pick(theme, rng.child("theme"), extreme_themes)
     if chosen_theme is not None:
@@ -380,10 +384,9 @@ def get_argument_parser():
     )
     parser.add_argument(
         "--theme",
-        default="classic",
-        choices=[*themes.names(), "chaos"],
-        help="The look: classic (the 2019 template), random (a theme the seed picks), a family's name, or chaos "
-        "(every slide its own theme) (default: classic)",
+        choices=themes.choices(),
+        help="The look: random (a theme the seed picks), classic (the 2019 template), a family's name, or chaos "
+        "(every slide its own theme) (default: TALKGENERATOR_THEME's, or else random)",
     )
     parser.add_argument(
         "--style_chaos",

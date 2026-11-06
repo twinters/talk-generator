@@ -8,7 +8,7 @@ from pptx import Presentation
 from pptx.enum.chart import XL_CHART_TYPE
 from pptx.oxml.ns import qn
 
-from talkgenerator import generator
+from talkgenerator import generator, settings
 from talkgenerator.checks.deck import deck_metrics
 from talkgenerator.checks.design import check_design, check_variety
 from talkgenerator.design import color, engine, fit, fonts, themes, treatments
@@ -507,7 +507,39 @@ def test_the_generator_makes_themed_talks(monkeypatch, images):
 def test_the_command_line_takes_a_theme():
     arguments = generator.get_argument_parser().parse_args(["--theme", "dark minimal", "--no_extreme_themes"])
     assert (arguments.theme, arguments.extreme_themes, arguments.style_chaos) == ("dark minimal", False, 0.0)
-    assert generator.get_argument_parser().parse_args([]).theme == "classic"
+    assert generator.get_argument_parser().parse_args([]).theme is None  # (TALKGENERATOR_THEME's, or else random)
+
+
+def test_the_default_theme_is_random_unless_the_settings_name_one(monkeypatch, images):
+    schema = test_seeds.fake_schema()
+    monkeypatch.setattr(generator, "get_schema", lambda name: schema)
+
+    def talk():
+        _, slide_deck, _ = generator.generate_presentation(
+            schema="fake", slides=test_seeds.NUM_SLIDES, topic="cats", int_seed=2, save_ppt=False
+        )
+        return slide_deck.to_deck()
+
+    monkeypatch.delenv("TALKGENERATOR_THEME")
+    assert settings.theme() == "random"
+    assert talk().theme == themes.pick(themes.RANDOM, random_util.Rng(2).child("theme")).name  # (from the seed)
+    monkeypatch.setenv("TALKGENERATOR_THEME", "neon")
+    assert talk().theme.startswith("neon")
+    monkeypatch.setenv("TALKGENERATOR_THEME", "classic")
+    assert talk().theme == "classic"
+    with pytest.raises(ValueError, match="There's no theme 'glitter'"):
+        generator.generate_presentation(schema="fake", slides=3, topic="cats", save_ppt=False, theme="glitter")
+
+
+def test_a_settings_menu_gets_every_theme_with_a_label_and_a_description():
+    catalog = themes.catalog()
+    assert [entry["name"] for entry in catalog] == ["random", "classic", "chaos", *themes.FAMILIES]
+    assert set(themes.choices()) == {entry["name"] for entry in catalog}
+    assert all(entry["label"] and entry["description"] for entry in catalog)
+    assert {entry["name"] for entry in catalog if entry["extreme"]} == {
+        name for name, family in themes.FAMILIES.items() if family.extreme
+    }
+    assert not any(entry["extreme"] for entry in themes.catalog(extremes=False))
 
 
 def test_a_saved_themed_pptx_opens(images, tmp_path):

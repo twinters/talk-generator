@@ -87,6 +87,13 @@ def conceptnet_api_url() -> str:
     return env.str("CONCEPTNET_API_URL", "https://api.conceptnet.io").rstrip("/")
 
 
+def theme() -> str:
+    """The look of talks that don't ask for one: TALKGENERATOR_THEME, as --theme takes it (see
+    talkgenerator.design.themes.catalog). Without it, random: a theme the talk's seed picks; classic is the 2019
+    template."""
+    return env.str("TALKGENERATOR_THEME", "").strip() or "random"
+
+
 def llm_spec() -> str:
     """The language model to write talks with, as "provider:model" (see talkgenerator.llm.providers).
 

@@ -90,11 +90,13 @@ After every talk, the logs tell how many requests it made and what they cost, an
 
 ### Themes
 
-`--theme` picks a talk's look. `classic` (the default for now) is the 2019 template.
+`--theme` picks a talk's look: by default `random`, a theme the talk's seed picks; `classic` is the 2019 template.
 Every other theme draws the slides as shapes on a 1920×1080 canvas: a layout puts every text and image in its box, and every text gets the largest size at which it fits, in fonts nearly every computer has.
 The themes come in families: `clean keynote`, `dark minimal`, `corporate`, `academic`, `startup`, `vintage paper`, `kids`, `brutalist` and `neon`, and, for laughs, `1997 WordArt`, `Comic Sans everywhere` and `clip-art corporate`.
 A family has many members: the talk's seed picks one, with its own colours (every text reads on its background, by the WCAG contrast rules), fonts, decoration and layouts.
 `--theme random` picks a family too, the extremes included unless `--no_extreme_themes` leaves them out, and `--theme chaos` gives every slide a theme of its own (`--style_chaos 0.3` does that for about a third of them).
+`TALKGENERATOR_THEME` sets the look of talks that don't ask for one (such as `classic`, to keep the 2019 template), and in Python, `generate_presentation(theme=...)` takes it per talk.
+For a settings menu, `talkgenerator.design.themes.catalog()` lists every theme with a label, a line on what it looks like, and whether it's one of those for laughs.
 `talkgenerator check --theme random` checks themed talks, and also that their texts read on their backgrounds, fit their boxes and stay on the slide.
 
 ### Run arguments
@@ -117,7 +119,7 @@ A family has many members: the talk's seed picks one, with its own colours (ever
 | `--debug_notes` | Explain in each slide's speaker notes how it was generated. Off by default, since presenters see the notes |
 | `--llm` | The language model that writes the slides, as `provider:model` (see [Language models](#language-models)). `none` makes a classic talk (*default: what `TALKGENERATOR_LLM` says, or else OpenRouter's free models when there's an `OPENROUTER_API_KEY`, or else `none`*) |
 | `--language` | The language of the slides: `en`, `nl`, `fr`, `de`, `es`, `it` or `pt`, for talks a language model writes (classic talks are in English) (*default: en*) |
-| `--theme` | The look (see [Themes](#themes)): `classic` (the 2019 template), `random`, a family's name such as `"dark minimal"`, or `chaos` (*default: classic*) |
+| `--theme` | The look (see [Themes](#themes)): `random`, `classic` (the 2019 template), a family's name such as `"dark minimal"`, or `chaos` (*default: `TALKGENERATOR_THEME`'s, or else random*) |
 | `--style_chaos` | How many slides get a theme of their own, from 0 to 1 (*default: 0*) |
 | `--no_extreme_themes` | Leave the themes for laughs out of `--theme random` |
 

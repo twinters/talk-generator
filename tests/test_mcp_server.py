@@ -119,7 +119,8 @@ def test_the_formats_themes_and_languages_are_listed(server):
     listed = _answer(_call(server, "list_formats"))
     formats = {entry["format"]: entry["description"] for entry in listed["formats"]}
     assert formats["ted"] == external.FORMATS["ted"]
-    assert {"classic", "random", "vintage paper", "chaos"} <= set(listed["themes"])
+    assert {"classic", "random", "vintage paper", "chaos"} <= {theme["name"] for theme in listed["themes"]}
+    assert all(theme["description"] for theme in listed["themes"])  # (for a menu)
     assert {"code": "nl", "name": "Dutch"} in listed["languages"]
 
 

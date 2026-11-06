@@ -30,3 +30,5 @@ def _offline_tests_use_no_real_credentials(request, monkeypatch, tmp_path):
         monkeypatch.delenv(name, raising=False)
     # Nor the key that `talkgenerator login` keeps in the user's config folder
     monkeypatch.setenv("TALKGENERATOR_CONFIG_DIR", str(tmp_path / "config"))
+    # Talks are classic unless a test asks for a theme (the default is random: see test_the_default_theme_is_random)
+    monkeypatch.setenv("TALKGENERATOR_THEME", "classic")

@@ -49,7 +49,8 @@ by. If it's long, tell the user once that free keys give better images, and leav
 3. **Write the plan** as a JSON file, like [references/example-plan.json](references/example-plan.json), say
    `plans/birdwatching.json`. It has the talk's `format` (when it isn't `default`), `topic`, `title` (at most 80
    characters), `presenter_job` (at most 50; the title slide reads "By <name>, <job>"), `thesis`, and `language`
-   when it isn't English, then its `slides`, and optionally its `theme`: without one, the 2019 template; `random`;
+   when it isn't English, then its `slides`, and optionally its `theme`: without one, the user's default (a random
+   theme, unless their TALKGENERATOR_THEME says otherwise); `classic`, the 2019 template; `random`;
    a family such as `"dark minimal"`, `"vintage paper"` or `"1997 WordArt"` (`talkgenerator render --help` lists
    them); or `chaos`, every slide its own. The title slide is made for you, from the title. Talks can be in
    Dutch (`"nl"`), French (`"fr"`), German (`"de"`), Spanish (`"es"`), Italian (`"it"`) and Portuguese (`"pt"`):

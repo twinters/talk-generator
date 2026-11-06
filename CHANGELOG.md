@@ -75,13 +75,15 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   slides are English), and recipes that find English texts, such as real quotes, aren't used. A deck says its
   language, and a new check reads its texts with NLTK's stopword lists: a talk that reads as English when it
   shouldn't is an error, and such a slide a warning. `talkgenerator check --language nl --llm ...` checks them.
-- Themes (`--theme`, docs/v5-plan.md section 9): besides the 2019 template (`classic`, still the default), talks
-  can be drawn as shapes on a 1920×1080 canvas, in a theme of one of twelve families, from `clean keynote` and
+- Themes (`--theme`, docs/v5-plan.md section 9): besides the 2019 template (`classic`), talks can be drawn as
+  shapes on a 1920×1080 canvas, in a theme of one of twelve families, from `clean keynote` and
   `dark minimal` to `vintage paper` and `neon`, with `1997 WordArt`, `Comic Sans everywhere` and `clip-art
   corporate` for laughs. The talk's seed picks a member of the family: its colours (repaired until every text reads
   on its background, gradients included, by WCAG's contrast rules), font pair, casing, decoration and layouts.
-  `--theme random` picks the family too (`--no_extreme_themes` leaves the extremes out), `--theme chaos` gives every
-  slide its own theme, and `--style_chaos` some of them. A plan can have a `theme` too (or `talkgenerator render
+  `--theme random` picks the family too (`--no_extreme_themes` leaves the extremes out), and it's the default:
+  `TALKGENERATOR_THEME` sets another (`classic` keeps the 2019 template). `--theme chaos` gives every slide its own
+  theme, and `--style_chaos` some of them. `generate_presentation(theme=...)` takes it per talk, and
+  `talkgenerator.design.themes.catalog()` lists the themes with a label and a description, for a settings menu. A plan can have a `theme` too (or `talkgenerator render
   --theme`), which the Skill knows about. The layout engine (`talkgenerator.design.engine`) puts
   every element in its box and gives every text the largest size at which it fits, measured with the fonts' own
   files or fonts with the same metrics (`talkgenerator.design.fonts`), so a themed deck's JSON holds every

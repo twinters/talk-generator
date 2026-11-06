@@ -238,9 +238,9 @@ def render_plan(
     slide_deck, outcomes = schema.realize_plan(
         plan.model_copy(update={"slides": resolved}), recipes, presenter, rng, local_images, parallel
     )
-    look = theme or plan.theme or themes.CLASSIC
-    slide_deck.theme = themes.pick(themes.RANDOM if look == "chaos" else look, rng.child("theme"))
-    slide_deck.style_chaos = 1.0 if look == "chaos" else 0.0
+    look = theme or plan.theme or settings.theme()
+    slide_deck.theme = themes.pick(themes.RANDOM if look == themes.CHAOS else look, rng.child("theme"))
+    slide_deck.style_chaos = 1.0 if look == themes.CHAOS else 0.0
     deck = slide_deck.to_deck(schema_name=schema_name)
 
     name = file_name or _file_name(plan.title or plan.topic)
@@ -563,9 +563,9 @@ def _render_command(argv: Sequence[str]) -> int:
     )
     parser.add_argument(
         "--theme",
-        choices=[*themes.names(), "chaos"],
-        help="the look: classic (the 2019 template), random, a theme family, or chaos (default: the plan's own, or "
-        "else classic)",
+        choices=themes.choices(),
+        help="the look: random, classic (the 2019 template), a theme family, or chaos (default: the plan's own, or "
+        "else TALKGENERATOR_THEME's, or random)",
     )
     parser.add_argument("--open", action="store_true", help="open the PowerPoint afterwards")
     parser.add_argument("--verbose", "-v", action="store_true", help="show the generator's logs (on stderr)")
@@ -627,7 +627,7 @@ def plan_error(plan: TalkPlan, schema_name: str | None = None, theme: str | None
 
     return (
         unknown_choice("format", schema_name or plan.format or "default", schemas.names())
-        or unknown_choice("theme", theme or plan.theme or themes.CLASSIC, [*themes.names(), "chaos"])
+        or unknown_choice("theme", theme or plan.theme or settings.theme(), themes.choices())
         or unknown_choice("language", plan.language, list(languages.LANGUAGES))
     )
 

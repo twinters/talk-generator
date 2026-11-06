@@ -100,7 +100,7 @@ def generate_deck(
     parallel: bool,
     llm: TextProvider | str = "none",
     language: str = "en",
-    theme: str = "classic",
+    theme: str | None = None,
 ) -> Deck:
     _, slide_deck, _ = generator.generate_presentation(
         schema=schema,
@@ -125,7 +125,7 @@ def check_talk(
     llm: str = "none",
     language: str = "en",
     decks: Path | None = None,
-    theme: str = "classic",
+    theme: str | None = None,
 ) -> TalkReport:
     """Generate a talk and check it; with determinism, generate it again one by one, which has to give the same.
 
@@ -176,7 +176,7 @@ def run(
     llm: str = "none",
     language: str = "en",
     decks: Path | None = None,
-    theme: str = "classic",
+    theme: str | None = None,
 ) -> dict[str, Any]:
     """Check a talk for every topic and seed, and return the report."""
     talks = []
@@ -196,7 +196,7 @@ def _report(
     seeds: Sequence[int],
     llm: str,
     language: str = "en",
-    theme: str = "classic",
+    theme: str | None = None,
 ) -> dict[str, Any]:
     seconds = [talk.seconds for talk in talks]
     checked = [talk for talk in talks if talk.deterministic is not None]
@@ -297,9 +297,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--decks", help="a folder to save every talk's deck in, as JSON, to read what they say")
     parser.add_argument(
         "--theme",
-        default="classic",
-        choices=[*themes.names(), "chaos"],
-        help="the talks' look (default: classic); themed talks get the design checks too",
+        choices=themes.choices(),
+        help="the talks' look (default: TALKGENERATOR_THEME's, or else random); themed talks get the design checks too",
     )
     parser.add_argument("--verbose", "-v", action="store_true", help="show the generator's logs")
     args = parser.parse_args(argv)

@@ -119,7 +119,7 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
         only, for decks shown in public), the themes (the looks a talk can have) and the languages it can be in."""
         return {
             "formats": [{"format": name, "description": external.FORMATS.get(name, "")} for name in schemas.names()],
-            "themes": [*themes.names(), "chaos"],
+            "themes": themes.catalog(),
             "languages": [{"code": code, "name": language.name} for code, language in languages.LANGUAGES.items()],
         }
 
@@ -190,12 +190,12 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
             ),
         ] = "en",
         theme: Annotated[
-            str,
+            str | None,
             Field(
-                description="The look: 'classic' (the 2019 template), 'random', a theme family, or 'chaos' (see "
-                "list_formats)"
+                description="The look: 'random', 'classic' (the 2019 template), a theme family, or 'chaos' (see "
+                "list_formats; without one, the user's settings', or else random)"
             ),
-        ] = "classic",
+        ] = None,
         title: Annotated[str | None, Field(description="The talk's title (without one, it gets one)")] = None,
         presenter: Annotated[
             str | None,
@@ -209,7 +209,8 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
         with the talk's title, seed and language model, how many slides the model wrote, and the checks. This takes up
         to a minute or two."""
         _check("format", format, schemas.names())
-        _check("theme", theme, [*themes.names(), "chaos"])
+        if theme is not None:
+            _check("theme", theme, themes.choices())
         _check("language", language, list(languages.LANGUAGES))
         try:
             model = providers.from_settings()  # never from the tool's arguments: only the user picks a paid model
@@ -237,7 +238,7 @@ def _generate(
     slides: int,
     schema_name: str,
     language: str,
-    theme: str,
+    theme: str | None,
     title: str | None,
     presenter: str | None,
     seed: int | None,
