@@ -68,5 +68,15 @@
     "The most important things in life",
     "Why projects fail",
     "What we will remember about this decade"
+  ],
+  "trend_event": [
+    "The {y_label} incident",
+    "Peak {y_label}",
+    "{y_label.title} was invented",
+    "I discovered {y_label.plural}",
+    "The great {y_label} shortage",
+    "Someone mentioned {y_label.plural}",
+    "{y_label.plural.title} went viral",
+    "The {y_label} summit"
   ]
 }

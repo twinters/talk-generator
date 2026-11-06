@@ -164,7 +164,7 @@ def test_the_classic_trend_chart(monkeypatch):
     monkeypatch.setattr(chart, "correlation_title_generator", lambda context: f"{context['y_label']} over time")
     with random_util.use(random_util.Rng(4)):
         content = chart.generate_trend_chart({"topic": "cats", "seed": "naps"})
-    title, chart_type, _, _, x_title, y_title = content
+    title, chart_type, _, _, x_title, y_title, _, _ = content
     assert (title, chart_type, x_title, y_title) == ("naps over time", XL_CHART_TYPE.LINE, "cats", "naps")
     spec = _spec(slides.ChartSlide(*content))
     assert (spec.chart_type, spec.x_title, spec.y_title) == ("line", "cats", "naps")
@@ -191,6 +191,20 @@ def test_names_go_only_on_points_the_chart_has():
     spec = _spec(_trend())
     labelled = charts.with_point_labels(spec, [(0, 3, "Here"), (0, 99, "Nowhere"), (5, 0, "No line"), (0, 4, "")])
     assert labelled.series[0].labels == ("", "", "", "Here")
+
+
+def test_a_classic_trend_marks_a_moment_half_of_the_time(monkeypatch):
+    monkeypatch.setattr(chart, "correlation_title_generator", lambda context: "Naps over time")
+    events = []
+    with random_util.use(random_util.Rng(10)):
+        for _ in range(20):
+            content = chart.generate_trend_chart({"topic": "cats", "seed": "nap"})
+            events += [label for _, _, label in content[7]]
+            spec = _spec(slides.ChartSlide(*content))
+            assert sum(1 for label in spec.series[0].labels if label) == len(content[7])
+    assert 4 <= len(events) <= 16
+    assert all("{" not in event and event for event in events)
+    assert any("nap" in event.lower() for event in events)
 
 
 # RANKINGS

@@ -27,6 +27,9 @@ correlation_title_generator = text_generator.TraceryTextGenerator(
 ranking_title_generator = text_generator.TraceryTextGenerator(
     "data/text-templates/chart_texts.json", "ranking_title"
 ).generate
+trend_event_generator = text_generator.TraceryTextGenerator(
+    "data/text-templates/chart_texts.json", "trend_event"
+).generate
 
 
 # DATA POINTS HELPERS
@@ -343,7 +346,8 @@ def trend_chart_data(lines: list[tuple[str, list[float]]]) -> ChartData:
 
 
 def generate_trend_chart(presentation_context: dict[str, Any]) -> tuple[Any, ...] | None:
-    """A classic trend: the slide's seed, going some way along the topic (or along time, if they're alike)."""
+    """A classic trend: the slide's seed, going some way along the topic (or along time, if they're alike), and half
+    of the time a moment on it, where its line turns."""
     x_label = presentation_context["topic"]
     y_label = presentation_context["seed"]
     if is_too_similar_for_axes(x_label, y_label):
@@ -352,8 +356,10 @@ def generate_trend_chart(presentation_context: dict[str, Any]) -> tuple[Any, ...
     title = correlation_title_generator(presentation_context)
     if not title:
         return None
-    _, values = trend_values(None)
-    return title, XL_CHART_TYPE.LINE, trend_chart_data([("", values)]), None, x_label, y_label
+    shape, values = trend_values(None)
+    event = trend_event_generator(presentation_context) if random_util.random() < 0.5 else None
+    labels = ((0, trend_turn(shape), event),) if event else ()
+    return title, XL_CHART_TYPE.LINE, trend_chart_data([("", values)]), None, x_label, y_label, "all", labels
 
 
 # RANKINGS: bars, the last of which, the punchline, wins by far
