@@ -39,7 +39,7 @@ def dot_position(quadrant: str | None) -> tuple[float, float]:
     if quadrant is None or quadrant not in QUADRANTS:
         quadrant = random_util.choice(QUADRANTS)
     x = random_util.uniform(0.8, 0.9) if quadrant.endswith("right") else random_util.uniform(0.1, 0.2)
-    y = random_util.uniform(0.62, 0.7) if quadrant.startswith("top") else random_util.uniform(0.3, 0.38)
+    y = random_util.uniform(0.61, 0.66) if quadrant.startswith("top") else random_util.uniform(0.34, 0.39)
     return round(x, 3), round(y, 3)
 
 

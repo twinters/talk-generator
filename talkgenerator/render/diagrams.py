@@ -54,9 +54,10 @@ _END_TITLE_HEIGHT: Final = int(0.5 * _INCH)
 _GAP: Final = int(0.22 * _INCH)
 _OVERSHOOT: Final = int(0.1 * _INCH)  # how far the axes' arrows reach beyond the matrix
 _DOT_DIAMETER: Final = int(0.32 * _INCH)
-# The share of a quadrant's height that its label takes, at its outer edge (the dot goes in the rest)
-QUADRANT_LABEL_SHARE: Final = 0.36
-_DOT_NAME_HEIGHT: Final = int(0.8 * _INCH)  # two lines
+# A quadrant's label goes at its outer edge, with room for two lines (the dot goes in the rest of the quadrant), and
+# so does the dot's name
+_QUADRANT_LABEL_HEIGHT: Final = int(0.86 * _INCH)
+_DOT_NAME_HEIGHT: Final = int(0.8 * _INCH)
 
 
 @dataclass(frozen=True)
@@ -202,7 +203,7 @@ def matrix_layout(frame: Box) -> MatrixLayout:
     margin = int(0.12 * _INCH)
     labels = []
     for index, quadrant in enumerate(quadrants):
-        height = round(QUADRANT_LABEL_SHARE * quadrant.height) - margin
+        height = min(_QUADRANT_LABEL_HEIGHT, quadrant.height // 2)
         top = quadrant.top + margin if index < 2 else quadrant.bottom - margin - height
         labels.append(Box(quadrant.left + margin, top, quadrant.width - 2 * margin, height))
     return MatrixLayout(matrix, ends, quadrants, (labels[0], labels[1], labels[2], labels[3]))
