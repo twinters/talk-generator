@@ -72,6 +72,10 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
 - Charts with axes get axis titles: the correlation curves now show the two things they correlate (v4 left
   them out), and a language model or a plan can name them (`x_axis` and `y_axis`). A deck's chart says its axis
   titles and whether its series appear one by one (`reveal`).
+- `talkgenerator login openrouter`: sign in to OpenRouter in the browser (OAuth with PKCE), and talkgenerator gets
+  a key of its own, which it keeps in the user's config folder (readable only by the user), so OpenRouter's free
+  models write talks without an `OPENROUTER_API_KEY`. `--headless` signs in on a computer without a browser,
+  `--status` says how many free requests are left today, and `talkgenerator logout openrouter` forgets the key.
 - `talkgenerator check --llm provider:model` checks talks a language model writes; to check that the same answers
   give the same talk, the second run replays what the first one got. The report says how many slides the model
   wrote.

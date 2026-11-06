@@ -355,7 +355,7 @@ def get_argument_parser():
         type=_llm_spec,
         help="The language model that writes the talk, as provider:model: openrouter[:<model>], anthropic[:<model>] "
         "or openai:<model>; 'none' makes a classic talk (default: TALKGENERATOR_LLM's, or else OpenRouter's free "
-        "models when OPENROUTER_API_KEY is set)",
+        "models when there's an OpenRouter key: OPENROUTER_API_KEY, or talkgenerator login openrouter)",
     )
     parser.add_argument(
         "--language",

@@ -14,6 +14,8 @@ from pathlib import Path
 import platformdirs
 from environs import Env, EnvError
 
+from talkgenerator.util import credentials
+
 logger = logging.getLogger("talkgenerator")
 
 env = Env()
@@ -74,6 +76,12 @@ def cache_dir() -> str:
     return env.str("TALKGENERATOR_CACHE_DIR", "") or platformdirs.user_cache_dir("talkgenerator", appauthor=False)
 
 
+def config_dir() -> str:
+    """Folder of what talkgenerator keeps for you, such as the key `talkgenerator login` gets (default: the user's
+    config folder)."""
+    return env.str("TALKGENERATOR_CONFIG_DIR", "") or platformdirs.user_config_dir("talkgenerator", appauthor=False)
+
+
 def conceptnet_api_url() -> str:
     """Base URL of the ConceptNet API; point it at a self-hosted instance if you have one."""
     return env.str("CONCEPTNET_API_URL", "https://api.conceptnet.io").rstrip("/")
@@ -82,8 +90,8 @@ def conceptnet_api_url() -> str:
 def llm_spec() -> str:
     """The language model to write talks with, as "provider:model" (see talkgenerator.llm.providers).
 
-    Without TALKGENERATOR_LLM, OpenRouter's free models write the talks when there's an OPENROUTER_API_KEY (they
-    cost nothing), and talks are classic otherwise: a paid model only writes talks when it's asked for. With
+    Without TALKGENERATOR_LLM, OpenRouter's free models write the talks when there's an OpenRouter key (they cost
+    nothing; see openrouter_api_key), and talks are classic otherwise: a paid model only writes talks when it's asked for. With
     DISABLE_LLM=1, it's "none": talks are then classic, as the 2019 generator made them."""
     if is_source_disabled("LLM"):
         return "none"
@@ -94,7 +102,8 @@ def llm_spec() -> str:
 
 
 def openrouter_api_key() -> str:
-    return env.str("OPENROUTER_API_KEY", "").strip()
+    """OPENROUTER_API_KEY, or else the key that `talkgenerator login openrouter` got."""
+    return env.str("OPENROUTER_API_KEY", "").strip() or credentials.stored_key(config_dir(), "openrouter")
 
 
 def anthropic_api_key() -> str:

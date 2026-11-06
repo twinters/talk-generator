@@ -8,7 +8,7 @@ os.environ.setdefault("DISABLE_CACHE", "1")
 
 
 @pytest.fixture(autouse=True)
-def _offline_tests_use_no_real_credentials(request, monkeypatch):
+def _offline_tests_use_no_real_credentials(request, monkeypatch, tmp_path):
     """Run offline tests as in CI: without the API keys from a local .env or the environment.
 
     environs 15 keeps what it reads from .env inside its Env object instead of os.environ, and
@@ -28,3 +28,5 @@ def _offline_tests_use_no_real_credentials(request, monkeypatch):
     credentials |= {"TALKGENERATOR_LLM_EFFORT", "DISABLE_LLM"}
     for name in sorted(credentials):
         monkeypatch.delenv(name, raising=False)
+    # Nor the key that `talkgenerator login` keeps in the user's config folder
+    monkeypatch.setenv("TALKGENERATOR_CONFIG_DIR", str(tmp_path / "config"))

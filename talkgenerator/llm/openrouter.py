@@ -148,7 +148,8 @@ class OpenRouterProvider(TextProvider):
         key = settings.openrouter_api_key()
         if not key:
             raise ProviderUnavailable(
-                "OpenRouter needs a key: set OPENROUTER_API_KEY (free at https://openrouter.ai/settings/keys)"
+                "OpenRouter needs a key: sign in with `talkgenerator login openrouter`, or set OPENROUTER_API_KEY "
+                "(free at https://openrouter.ai/settings/keys)"
             )
         self._client = sdk.OpenAI(
             api_key=key,

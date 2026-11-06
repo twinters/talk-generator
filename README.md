@@ -73,11 +73,13 @@ The presenter's name is never sent to the model.
 
 | Provider | `--llm` | Key | Install | Cost |
 | --- | --- | --- | --- | --- |
-| [OpenRouter](https://openrouter.ai/)'s free models | `openrouter` (the default when there's a key), or `openrouter:<model>[,<fallback model>...]` | `OPENROUTER_API_KEY` ([free](https://openrouter.ai/settings/keys)) | `pip install 'talkgenerator[openai]'` | free: 50 talks a day, or 1,000 once the account has bought $10 of credits |
+| [OpenRouter](https://openrouter.ai/)'s free models | `openrouter` (the default when there's a key), or `openrouter:<model>[,<fallback model>...]` | `talkgenerator login openrouter`, or `OPENROUTER_API_KEY` ([free](https://openrouter.ai/settings/keys)) | `pip install 'talkgenerator[openai]'` | free: 50 talks a day, or 1,000 once the account has bought $10 of credits |
 | Claude | `anthropic` (Claude Opus 5.5), or `anthropic:<model>`, such as `anthropic:claude-haiku-5-5` | `ANTHROPIC_API_KEY` | `pip install 'talkgenerator[anthropic]'` | a few cents a talk with Claude Opus 5.5 |
 | OpenAI | `openai:<model>` | `OPENAI_API_KEY` | `pip install 'talkgenerator[openai]'` | depends on the model |
 
 Only OpenRouter's free models write talks without being asked: other models write them when `--llm` or `TALKGENERATOR_LLM` names them.
+`talkgenerator login openrouter` is the quickest way to them: you sign in to OpenRouter (or sign up, for free) in your browser, and talkgenerator gets a key of its own, called "talkgenerator" in your OpenRouter settings, which it keeps in your user config folder (`TALKGENERATOR_CONFIG_DIR` puts it elsewhere).
+`--headless` signs in on a computer without a browser, `--status` says how many free requests are left today, and `talkgenerator logout openrouter` forgets the key. An `OPENROUTER_API_KEY` goes first.
 `--llm none` (or `DISABLE_LLM=1`) makes a classic talk, as the 2019 generator did.
 `TALKGENERATOR_LLM_EFFORT` (such as `none`, `minimal`, `low` or `medium`) sets how hard the model thinks before it writes, for the models that take it. Unless it's set, Claude thinks at `low`, and OpenRouter's free models don't think at all (thinking made them take minutes, and they write as well without), or as little as they can when they have to.
 `--language nl` has the model write the talk in Dutch, and so do `fr`, `de`, `es`, `it` and `pt` in French, German, Spanish, Italian and Portuguese; the image searches stay in English.

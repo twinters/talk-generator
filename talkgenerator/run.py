@@ -13,7 +13,8 @@ def main(args):
 
 def main_cli():
     # `talkgenerator check ...` checks generated talks; `render`, `schema` and `formats` are for talks planned
-    # elsewhere (by Claude, through the Skill); everything else is the command line that makes a talk
+    # elsewhere (by Claude, through the Skill); `login` and `logout` sign in to OpenRouter; everything else is the
+    # command line that makes a talk
     if len(sys.argv) > 1 and sys.argv[1] == "check":
         from talkgenerator.checks import benchmark
 
@@ -22,6 +23,10 @@ def main_cli():
         from talkgenerator.plan import external
 
         sys.exit(external.main(sys.argv[1], sys.argv[2:]))
+    if len(sys.argv) > 1 and sys.argv[1] in ("login", "logout"):
+        from talkgenerator.llm import login
+
+        sys.exit(login.main(sys.argv[1], sys.argv[2:]))
     args = generator.get_argument_parser().parse_args()
     main(args)
 
