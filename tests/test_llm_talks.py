@@ -305,9 +305,20 @@ def test_a_model_that_crashes_makes_a_classic_talk(schema):
 
 
 def test_a_topic_the_model_finds_unsafe_makes_a_classic_talk(schema):
-    deck = _talk(FakeModel(change=lambda answer: answer.update(unsafe_topic=True)))
+    model = FakeModel(change=lambda answer: answer.update(unsafe_topic=True))
+    deck = _talk(model)
     assert deck.title.startswith("A classic title")
     assert not any(_planned(deck))
+    assert len(model.requests) == 2  # it was asked once more
+
+
+def test_a_model_that_wrongly_finds_a_topic_unsafe_is_asked_once_more(schema):
+    # Some of the free models get the flag wrong (one turned down "penguins"): the router may pick another one
+    model = FakeModel(change=lambda answer: answer.update(unsafe_topic=len(model.requests) == 1))
+    deck = _talk(model)
+    assert all(_planned(deck))
+    first, second = (request.messages[0].content for request in model.requests)
+    assert "Asked again" not in first and "Asked again: a model said this topic" in second
 
 
 def test_without_a_language_model_the_talk_is_classic(schema):

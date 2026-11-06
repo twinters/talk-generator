@@ -341,6 +341,22 @@ class PresentationSchema:
         if parallel:
             talk.pool = ThreadPool(processes=min(8, len(planned)))
 
+        for asked_again in (False, True):
+            self._ask(llm, talk_request(topics, list(planned.values()), rng, language, title, asked_again), talk)
+            if talk.spine.get("unsafe_topic") is not True:
+                break
+            talk.drop()
+            talk.spine.clear()
+            if asked_again:
+                logger.warning("The language model wouldn't write about this topic: the talk is classic")
+            else:  # (some of the free models get the flag wrong: one turned down "penguins")
+                logger.info("The language model found the topic unsafe: asking once more")
+        logger.info("The language model wrote %s of the %s slides", len(talk.plans), num_slides)
+        return talk
+
+    @staticmethod
+    def _ask(llm: TextProvider, request: Any, talk: "_PlannedTalk") -> None:
+        """Ask the language model for the talk, and hand its answer to the talk while it comes in."""
         reader = ObjectReader()
         read_anything = False
 
@@ -350,7 +366,6 @@ class PresentationSchema:
             for key, value in reader.feed(text):
                 talk.take(key, value)
 
-        request = talk_request(topics, list(planned.values()), rng, language, title)
         try:
             response = llm.stream(request, read)
             if not read_anything:
@@ -367,11 +382,6 @@ class PresentationSchema:
             logger.warning("The language model didn't write the talk (%s): its slides are classic", error)
         except Exception:  # a misbehaving provider shouldn't sink the talk either
             logger.exception("Asking the language model for the talk crashed: its slides are classic")
-        if talk.spine.get("unsafe_topic") is True:
-            logger.warning("The language model wouldn't write about this topic: the talk is classic")
-            talk.drop()
-        logger.info("The language model wrote %s of the %s slides", len(talk.plans), num_slides)
-        return talk
 
     def _pick_generators(
         self, num_slides: int, rng: random_util.Rng, language: str = "en"

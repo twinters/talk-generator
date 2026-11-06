@@ -114,7 +114,10 @@ def talk_request(
     rng: random_util.Rng,
     language: str = "en",
     title: str | None = None,
+    asked_again: bool = False,
 ) -> TextRequest:
+    """The request for a talk. Asked again, it says that a model found the topic unsafe: some of the free models get
+    the flag wrong whichever way it's asked (one turned down "penguins")."""
     with random_util.use(rng.child("dice")):
         persona, angle = random_util.choice(_PERSONAS), random_util.choice(_ANGLES)
     topic = topics[0] + (f" (and {', '.join(topics[1:])})" if len(topics) > 1 else "")
@@ -126,6 +129,15 @@ def talk_request(
         f"The presenter: {persona}",
         f"The angle: {angle}",
         "",
+        *(
+            [
+                "Asked again: a model said this topic asks for something hateful or harmful. Set unsafe_topic to true "
+                "only if it plainly does; an odd, silly or everyday topic is fine.",
+                "",
+            ]
+            if asked_again
+            else []
+        ),
         "Write the talk as one JSON object. First its spine:",
         *(f"- {name}: {description}" for name, description in spine(language).items()),
         "",

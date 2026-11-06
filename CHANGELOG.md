@@ -113,6 +113,8 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   prompt's example.
 - A free model turned down a harmless topic (it said `safe_topic: false`), which made the talk classic. The flag
   now asks the other way around, as the plan had it: `unsafe_topic`, true only for a hateful or harmful topic.
+  As another free model then turned down "penguins" that way, a talk a model finds unsafe is asked for once
+  more, saying so; it's classic when the second answer finds it unsafe too.
 - When the model's provider fails before the model writes anything ("Provider timed out after 11796ms", which
   made one benchmark talk in thirty classic), OpenRouter gets the request once more; the free router may then
   send it to another model.
