@@ -216,4 +216,5 @@ def _texts(elements: tuple[TextElement | ImageElement | ChartElement, ...]) -> l
             texts.append((element.role, element.text))
         elif isinstance(element, ChartElement):
             texts.extend((f"{element.role} label", category) for category in element.chart.categories)
+            texts.extend((f"{element.role} label", name) for series in element.chart.series for name in series.labels)
     return texts

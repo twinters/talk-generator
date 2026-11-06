@@ -67,7 +67,9 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   "Times someone said synergy"), going one of eleven ways, from exponential to hockey stick to crash, with an
   optional second line, the punchline, that draws itself across the chart on a click. And a ranking: bars that
   the last one, the punchline, wins by far. Both come out the classic way too, and a talk has at most one of
-  each. A field of a slide kind can be a choice (`TextField.options`, such as a trend's shape), which the
+  each. A trend can also mark a moment on its line, where it takes off, turns or drops ("I got a cat"), and a
+  correlation can have one outlier far above the others ("Me"): a big dot with its name. A field of a slide kind
+  can be a choice (`TextField.options`, such as a trend's shape), which the
   language model picks from a list, and which the Skill's reference lists.
 - Charts with axes get axis titles: the correlation curves now show the two things they correlate (v4 left
   them out), and a language model or a plan can name them (`x_axis` and `y_axis`). A deck's chart says its axis

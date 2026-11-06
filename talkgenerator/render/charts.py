@@ -12,7 +12,14 @@ from typing import Any
 
 from pptx.chart.data import CategoryChartData, XyChartData
 from pptx.dml.color import RGBColor
-from pptx.enum.chart import XL_CHART_TYPE, XL_LABEL_POSITION, XL_LEGEND_POSITION, XL_TICK_LABEL_POSITION, XL_TICK_MARK
+from pptx.enum.chart import (
+    XL_CHART_TYPE,
+    XL_LABEL_POSITION,
+    XL_LEGEND_POSITION,
+    XL_MARKER_STYLE,
+    XL_TICK_LABEL_POSITION,
+    XL_TICK_MARK,
+)
 from pptx.oxml import parse_xml
 from pptx.oxml.ns import nsdecls, qn
 from pptx.util import Pt
@@ -27,6 +34,8 @@ PPTX_CHART_TYPES: dict[ChartType, XL_CHART_TYPE] = {
     "line": XL_CHART_TYPE.LINE,
     "scatter": XL_CHART_TYPE.XY_SCATTER,
 }
+# The colour of what a chart points out: a ranking's winner, a labelled point
+PUNCHLINE_COLOUR = RGBColor(0xE0, 0x3C, 0x31)
 # The charts that have axes, which can have titles
 AXIS_CHART_TYPES: tuple[ChartType, ...] = ("column", "bar", "line", "scatter")
 _DECK_CHART_TYPES: dict[XL_CHART_TYPE, ChartType] = {pptx_type: name for name, pptx_type in PPTX_CHART_TYPES.items()}
@@ -74,6 +83,25 @@ def pptx_chart_data(spec: ChartSpec) -> tuple[XL_CHART_TYPE, CategoryChartData |
     for series in spec.series:
         category_data.add_series(series.name, list(series.values))
     return PPTX_CHART_TYPES[spec.chart_type], category_data
+
+
+def with_point_labels(spec: ChartSpec, labels: Iterable[tuple[int, int, str]]) -> ChartSpec:
+    """The chart with names on some of its points: (series, point, name) each, counted from 0. Names of points the
+    chart doesn't have are left out."""
+    series = list(spec.series)
+    for series_index, point_index, label in labels:
+        if not label or not 0 <= series_index < len(series):
+            continue
+        current = series[series_index]
+        size = len(current.points) or len(current.values)
+        if not 0 <= point_index < size:
+            continue
+        names = [*current.labels, *[""] * (size - len(current.labels))]
+        names[point_index] = label
+        while names and not names[-1]:  # (no names after the last one)
+            names.pop()
+        series[series_index] = current.model_copy(update={"labels": tuple(names)})
+    return spec.model_copy(update={"series": tuple(series)})
 
 
 def _finite(values: Iterable[Any]) -> tuple[float, ...]:
@@ -165,7 +193,7 @@ def set_bar_properties(chart, chart_data):
     if len(chart_data.categories):
         punchline = points[len(chart_data.categories) - 1].format.fill
         punchline.solid()
-        punchline.fore_color.rgb = RGBColor(0xE0, 0x3C, 0x31)
+        punchline.fore_color.rgb = PUNCHLINE_COLOUR
 
 
 def _legend_for_named_series(chart) -> None:
@@ -200,6 +228,26 @@ def set_axis_titles(chart, spec: ChartSpec) -> None:
             axis.has_title = True
             axis.axis_title.text_frame.text = title
             axis.axis_title.text_frame.paragraphs[0].runs[0].font.size = Pt(20)
+
+
+def label_points(chart, spec: ChartSpec) -> None:
+    """Point out the points that the spec names, on a line or scatter chart: a big dot, with its name above it."""
+    if spec.chart_type not in ("line", "scatter"):
+        return
+    for series, spec_series in zip(chart.plots[0].series, spec.series, strict=False):
+        for index, label in enumerate(spec_series.labels):
+            if not label:
+                continue
+            point = series.points[index]
+            point.marker.style = XL_MARKER_STYLE.CIRCLE
+            point.marker.size = 18
+            point.marker.format.fill.solid()
+            point.marker.format.fill.fore_color.rgb = PUNCHLINE_COLOUR
+            point.marker.format.line.color.rgb = PUNCHLINE_COLOUR
+            point.data_label.text_frame.text = label
+            point.data_label.position = XL_LABEL_POSITION.ABOVE
+            point.data_label.font.size = Pt(20)
+            point.data_label.font.bold = True
 
 
 CHART_STYLES: dict[ChartType, Callable[[Any, Any], Any]] = {

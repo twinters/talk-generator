@@ -135,6 +135,7 @@ def _chart_trend(texts: Mapping[str, str | None], images: Mapping[str, Any], lan
     second = texts.get("second_line")
     if second:
         lines.append((second, chart.trend_values(texts.get("second_shape"), avoid=shape)[1]))
+    event = texts.get("event")
     return slides.ChartSlide(
         texts["title"],
         XL_CHART_TYPE.LINE,
@@ -142,6 +143,7 @@ def _chart_trend(texts: Mapping[str, str | None], images: Mapping[str, Any], lan
         x_title=texts["x_axis"],
         y_title=texts["y_axis"],
         reveal="series" if second else "all",
+        point_labels=((0, chart.trend_turn(shape), event),) if event else (),
     )
 
 
@@ -161,7 +163,12 @@ def _chart_correlation(texts: Mapping[str, str | None], images: Mapping[str, Any
     xs = chart.generate_random_x(0, 2 ** random_util.uniform(1, 10), int(2 ** random_util.uniform(3, 8)))
     points = chart.generate_y(xs, chart.create_interesting_curve_function())
     points = chart.add_gaussian_noise_to_multidim_points(1.5 * random_util.uniform(0, max(xs) / 10), points)
-    chart.add_data_to_series(series, [(abs(x), abs(y)) for x, y in points])
+    points = [(abs(x), abs(y)) for x, y in points]
+    chart.add_data_to_series(series, points)
+    outlier = texts.get("outlier")
+    if outlier:  # one point far above the others
+        highest = max(y for _, y in points)
+        data.add_series(outlier).add_data_point(max(xs) * random_util.uniform(0.4, 0.8), highest * 1.4 or 1)
     return slides.ChartSlide(
         texts["title"],
         XL_CHART_TYPE.XY_SCATTER,
@@ -169,6 +176,7 @@ def _chart_correlation(texts: Mapping[str, str | None], images: Mapping[str, Any
         chart.create_set_scatter_properties("", ""),
         x_title=texts.get("x_axis"),
         y_title=texts.get("y_axis"),
+        point_labels=((1, 0, outlier),) if outlier else (),
     )
 
 
@@ -266,6 +274,9 @@ KINDS: Final[dict[str, Kind]] = {
                 TextField("title", "a made-up correlation between two things, as a claim", 90),
                 TextField("x_axis", "the axis along the bottom: the first of the two things", 40, optional=True),
                 TextField("y_axis", "the axis going up: the second thing", 40, optional=True),
+                TextField(
+                    "outlier", "one point far above the others, named, such as 'Me' or 'Finland'", 30, optional=True
+                ),
             ),
             (),
             _chart_correlation,
@@ -288,6 +299,12 @@ KINDS: Final[dict[str, Kind]] = {
                 ),
                 TextField(
                     "second_shape", "how the second line goes", 20, optional=True, options=tuple(chart.TREND_SHAPES)
+                ),
+                TextField(
+                    "event",
+                    "a moment on the first line, marked where it takes off, turns or drops, such as 'I got a cat'",
+                    40,
+                    optional=True,
                 ),
             ),
             (),

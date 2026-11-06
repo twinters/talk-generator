@@ -115,6 +115,7 @@ def _create_chart_slide(presentation: Presentation, slide: DeckSlide) -> Slide:
     )
     frame: Any = next(shape for shape in ppt_slide.shapes if getattr(shape, "has_chart", False))
     charts.set_axis_titles(frame.chart, spec)
+    charts.label_points(frame.chart, spec)
     if spec.reveal == "series":
         animation.reveal_chart_series(ppt_slide, frame, len(spec.series))
     return ppt_slide

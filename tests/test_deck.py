@@ -105,7 +105,7 @@ def _draw_like_v4(slide, presentation):
     arguments = dict(slide._arguments)
     if slide.type_name == "chart":
         arguments["chart_modifier"] = _V4_STYLES[arguments["chart_type"]]
-        for v5_only in ("x_title", "y_title", "reveal"):  # axis titles and animations came with v5
+        for v5_only in ("x_title", "y_title", "reveal", "point_labels"):  # axis titles, animations, named points: v5
             arguments.pop(v5_only, None)
     ppt_slide = slide._ppt_slide_creator(presentation, **arguments)
     if slide._credits:

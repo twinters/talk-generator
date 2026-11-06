@@ -64,6 +64,8 @@ class ChartSeries(_Data):
     name: str = ""
     values: tuple[float, ...] = ()  # one per category
     points: tuple[tuple[float, float], ...] = ()  # (x, y) pairs, for scatter charts
+    # Names on some of its points, by index ("" for none), on line and scatter charts: a moment on a trend, say
+    labels: tuple[str, ...] = ()
 
 
 class ChartSpec(_Data):

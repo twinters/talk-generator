@@ -300,6 +300,20 @@ TREND_SHAPES: Final[dict[str, Callable[[float], float]]] = {
     "flat": lambda x: 0.5,
 }
 TREND_POINTS: Final = 12
+# Where on each shape something happens (as a share of the way along): where it takes off, turns or drops
+_TREND_TURNS: Final[dict[str, float]] = {
+    "rising": 0.5,
+    "falling": 0.5,
+    "exponential": 0.7,
+    "diminishing": 0.3,
+    "hockey stick": 0.75,
+    "peak": 0.5,
+    "crash": 0.75,
+    "plateau": 0.5,
+    "rollercoaster": 0.2,
+    "dip": 0.5,
+    "flat": 0.5,
+}
 
 
 def trend_values(shape: str | None, avoid: str | None = None) -> tuple[str, list[float]]:
@@ -312,6 +326,11 @@ def trend_values(shape: str | None, avoid: str | None = None) -> tuple[str, list
         100 * max(0.0, curve(point / (TREND_POINTS - 1)) + random_util.gauss(0, 0.03)) for point in range(TREND_POINTS)
     ]
     return shape, values
+
+
+def trend_turn(shape: str) -> int:
+    """The point of a trend line where something happens, for its shape: where it takes off, turns or drops."""
+    return round(_TREND_TURNS.get(shape, 0.5) * (TREND_POINTS - 1))
 
 
 def trend_chart_data(lines: list[tuple[str, list[float]]]) -> ChartData:

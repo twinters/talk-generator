@@ -5,10 +5,13 @@ import pytest
 from pptx.enum.chart import XL_CHART_TYPE
 from pptx.oxml.ns import qn
 
+from talkgenerator.checks.deck import check_leftovers
+from talkgenerator.models.deck import Deck
 from talkgenerator.models.plan import SlidePlan
 from talkgenerator.plan import external, languages, prompt
 from talkgenerator.plan.kinds import KINDS, Recipe
 from talkgenerator.plan.realize import clean_text
+from talkgenerator.render import charts
 from talkgenerator.schema.presentation_schema_types import get_schema
 from talkgenerator.slide import powerpoint_slide_creator, slides
 from talkgenerator.sources import chart, conceptnet
@@ -170,6 +173,26 @@ def test_the_classic_trend_chart(monkeypatch):
         assert chart.generate_trend_chart({"topic": "cat", "seed": "cats"})[4] == "time"  # axes too alike
 
 
+def test_a_moment_on_a_trend_is_marked_where_the_line_turns():
+    slide = _trend(shape="hockey stick", event="I got a cat")
+    (line,) = _spec(slide).series
+    knee = chart.trend_turn("hockey stick")
+    assert knee == 8  # three quarters of the way along
+    assert line.labels[knee] == "I got a cat" and [label for label in line.labels if label] == ["I got a cat"]
+
+    _, drawn = _drawn(slide)
+    point = drawn.plots[0].series[0].points[knee]
+    assert point.data_label.text_frame.text == "I got a cat"
+    assert point.marker.size == 18
+    assert not drawn.plots[0].series[0].points[0].data_label.has_text_frame  # the other points have no names
+
+
+def test_names_go_only_on_points_the_chart_has():
+    spec = _spec(_trend())
+    labelled = charts.with_point_labels(spec, [(0, 3, "Here"), (0, 99, "Nowhere"), (5, 0, "No line"), (0, 4, "")])
+    assert labelled.series[0].labels == ("", "", "", "Here")
+
+
 # RANKINGS
 
 
@@ -222,6 +245,24 @@ def test_a_correlation_can_have_titled_axes():
     with random_util.use(random_util.Rng(8)):
         untitled = KINDS["chart_correlation"].build({"title": "Naps cause cats"}, {}, ENGLISH)
     assert not _drawn(untitled)[1].category_axis.has_title
+
+
+def test_a_correlation_can_have_an_outlier():
+    with random_util.use(random_util.Rng(9)):
+        slide = KINDS["chart_correlation"].build({"title": "Naps cause cats", "outlier": "Me"}, {}, ENGLISH)
+    model, outlier = _spec(slide).series
+    assert outlier.name == "Me" and outlier.labels == ("Me",) and len(outlier.points) == 1
+    assert outlier.points[0][1] > max(y for _, y in model.points)  # far above the others
+    _, drawn = _drawn(slide)
+    assert drawn.plots[0].series[1].points[0].data_label.text_frame.text == "Me"
+    assert not drawn.has_legend
+
+
+def test_point_names_are_checked_for_leftovers():
+    slide = _trend(event="The day of {seed}")
+    deck = Deck(generator="test", slides=(slide.to_deck_slide(),))
+    (finding,) = check_leftovers(deck)
+    assert "chart label" in finding.message
 
 
 # THE FORMATS

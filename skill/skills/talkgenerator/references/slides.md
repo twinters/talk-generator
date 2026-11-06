@@ -156,6 +156,7 @@ A scatter plot of made-up data, under a claim of a correlation.
 | `title` | 90 | a made-up correlation between two things, as a claim |
 | `x_axis` | 40 | the axis along the bottom: the first of the two things (or empty, for none) |
 | `y_axis` | 40 | the axis going up: the second thing (or empty, for none) |
+| `outlier` | 30 | one point far above the others, named, such as 'Me' or 'Finland' (or empty, for none) |
 
 Images: none
 
@@ -176,6 +177,7 @@ A line chart of a made-up trend along two odd axes; a second line, if any, draws
 | `line` | 30 | the line's name in the legend, such as 'Me' (or empty, for none) |
 | `second_line` | 30 | a second line's name in the legend, such as 'My cat'; it appears on a click, as the punchline (or empty, for none) |
 | `second_shape` | 20 | how the second line goes: `rising`, `falling`, `exponential`, `diminishing`, `hockey stick`, `peak`, `crash`, `plateau`, `rollercoaster`, `dip`, `flat` (or empty, for any) |
+| `event` | 40 | a moment on the first line, marked where it takes off, turns or drops, such as 'I got a cat' (or empty, for none) |
 
 Images: none
 

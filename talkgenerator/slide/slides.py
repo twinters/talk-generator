@@ -260,6 +260,7 @@ class ChartSlide(Slide):
         x_title: str | None = None,
         y_title: str | None = None,
         reveal: model.ChartReveal = "all",
+        point_labels: Sequence[tuple[int, int, str]] = (),
     ):
         super().__init__(
             type_name="chart",
@@ -272,12 +273,13 @@ class ChartSlide(Slide):
                 "x_title": x_title,
                 "y_title": y_title,
                 "reveal": reveal,
+                "point_labels": tuple(point_labels),
             },
         )
 
     def to_deck_slide(self) -> model.DeckSlide:
-        """The chart's numbers, axis titles and how it appears go into the deck; the renderer styles the chart by
-        its type (the chart_modifier stays out: a deck holds data, not functions)."""
+        """The chart's numbers, axis titles, named points and how it appears go into the deck; the renderer styles
+        the chart by its type (the chart_modifier stays out: a deck holds data, not functions)."""
         elements: list[model.TextElement | model.ImageElement | model.ChartElement] = []
         title = _to_element("title", self._arguments.get("title"), "contain")
         if title is not None:
@@ -291,5 +293,6 @@ class ChartSlide(Slide):
                 y_title=self._arguments.get("y_title"),
                 reveal=self._arguments.get("reveal") or "all",
             )
+            chart = charts.with_point_labels(chart, self._arguments.get("point_labels") or ())
             elements.append(model.ChartElement(role="chart", chart=chart))
         return self._deck_slide(tuple(elements))
