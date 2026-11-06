@@ -767,6 +767,7 @@ the formats × 3 seeds, in classic mode with replay and, at every milestone, liv
 | Contrast | text against its background, or against the photo behind it after dimming | at least 4.5:1 for body text, 3:1 for titles |
 | Images | loads; not enlarged beyond 1.3×; no near-duplicates within a talk; credited with its license; license policy respected | 100% |
 | Variety | distinct slide types and layouts per talk, no layout twice in a row; across seeds, the share of distinct titles and images | targets per format, set from milestone 1's measurements |
+| Image fit | of the images searched for with a query whose source describes them (alt texts, post titles), the share that shares a word with its query (`talkgenerator check` counts them since milestone 2) | a rough signal to follow, without a bar |
 | Determinism | the same seed with replay gives an identical deck JSON; serial equals parallel | 100% |
 | Safety | blocklist hits in the output; edgy topics screened or falling back | no hits |
 | Language | the text is in the requested language (stopword ratio) | every slide |

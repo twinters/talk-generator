@@ -296,6 +296,25 @@ def test_other_bad_requests_arent_sent_again():
     assert len(api.requests) == 1
 
 
+def _failed_stream(message):
+    return _stream([{**_chunk(finish="error"), "error": {"code": 408, "message": message}}], named=False)
+
+
+def test_a_model_whose_provider_fails_before_it_writes_gets_one_more_try():
+    api = Api(_failed_stream("Provider timed out after 11796ms"), _openrouter_answer(*ANSWER))
+    assert _openrouter(api).complete(REQUEST).data == {"title": "Cats"}
+    assert len(api.requests) == 2
+    api = Api(_error(502, "Provider returned error"), _openrouter_answer(*ANSWER))
+    assert _openrouter(api).complete(REQUEST).data == {"title": "Cats"}
+
+
+def test_but_only_one():
+    api = Api(_failed_stream("Provider timed out"), _failed_stream("Provider timed out"), _openrouter_answer(*ANSWER))
+    with pytest.raises(ProviderUnavailable, match="Provider timed out"):
+        _openrouter(api).complete(REQUEST)
+    assert len(api.requests) == 2
+
+
 def test_openrouter_reports_cached_tokens_and_cost():
     usage = {
         "prompt_tokens": 1000,

@@ -10,6 +10,7 @@ what it cost, and the talk's ledger keeps that.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable, Sequence
 from typing import Any, Final
 
@@ -43,9 +44,16 @@ APP_HEADERS: Final = {
 _THINKING_TOKENS: Final = 8000
 _FINISH: Final[dict[str, Finish]] = {"stop": "complete", "length": "truncated", "content_filter": "refused"}
 
+logger = logging.getLogger("talkgenerator")
+
 
 class _ThinkingRequired(ProviderError):
     """The model can't write without thinking first ("Reasoning is mandatory for this endpoint")."""
+
+
+class _NoAnswer(ProviderError):
+    """The model's provider failed before the model wrote anything (it timed out, say): asked again, the router may
+    send the request to another model, or the provider may be back."""
 
 
 class OpenRouterProvider(TextProvider):
@@ -71,12 +79,21 @@ class OpenRouterProvider(TextProvider):
         sdk = import_sdk("openai", "openai")
         client = self._client or self._new_client(sdk)
         arguments = self.arguments(request)
-        try:
-            return self._stream(client, sdk, request, arguments, on_text)
-        except _ThinkingRequired:
-            # The model that answered has to think: it may think as little as it can
-            arguments["extra_body"]["reasoning"] = {"effort": _LEAST_EFFORT}
-            return self._stream(client, sdk, request, arguments, on_text)
+        asked_again = False
+        while True:
+            try:
+                return self._stream(client, sdk, request, arguments, on_text)
+            except _ThinkingRequired:
+                # The model that answered has to think: it may think as little as it can (this happens only once, as
+                # the request then asks for some thinking)
+                arguments["extra_body"]["reasoning"] = {"effort": _LEAST_EFFORT}
+            except _NoAnswer as error:
+                if asked_again:
+                    raise ProviderUnavailable(str(error)) from error
+                # (A talk without the model is classic: one more try is worth the wait, as in the benchmark, where
+                # "Provider timed out after 11796ms" turned one talk in thirty classic)
+                logger.info("%s: asking once more", error)
+                asked_again = True
 
     def _stream(
         self, client: Any, sdk: Any, request: TextRequest, arguments: dict[str, Any], on_text: Callable[[str], None]
@@ -96,6 +113,8 @@ class OpenRouterProvider(TextProvider):
             no_thinking = arguments.get("extra_body", {}).get("reasoning") == {"effort": "none"}
             if no_thinking and not parts and "reasoning is mandatory" in str(error).lower():
                 raise _ThinkingRequired(str(error)) from error
+            if not parts and _provider_failed(error, sdk):
+                raise _NoAnswer(str(provider_error(error, sdk, "OpenRouter"))) from error
             raise provider_error(error, sdk, "OpenRouter") from error
         if finish == "error":
             raise ProviderError("OpenRouter: the model broke off its answer with an error")
@@ -159,3 +178,14 @@ class OpenRouterProvider(TextProvider):
             max_retries=MAX_RETRIES,
         )
         return self._client
+
+
+def _provider_failed(error: Exception, sdk: Any) -> bool:
+    """Whether an error is the model's provider failing (an error in the stream, a timeout there, a server error),
+    rather than the request, the key or the credits, which asking again doesn't change. Not a timeout of
+    talkgenerator's own: after TIMEOUT_SECONDS, another try would keep the audience waiting too long."""
+    if isinstance(error, sdk.APIConnectionError):
+        return False
+    if isinstance(error, sdk.APIStatusError):
+        return error.status_code >= 500 or error.status_code == 408
+    return True

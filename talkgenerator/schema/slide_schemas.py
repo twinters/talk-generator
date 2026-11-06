@@ -33,7 +33,7 @@ _JOB = "the presenter's (possibly made-up) job"
 _HOBBY = "the presenter's weird hobby"
 _CONTRAST = "Two captioned images that contrast or compare, like 'Expectation' and 'Reality'"
 _SEQUENCE = "Three captioned images that build up, like 'Good, Better, Best' or three steps of a plan"
-_CONCLUSIONS_TITLE = "a title such as 'Conclusions' or 'What we learned'"
+_CONCLUSIONS_TITLE = "a title for the conclusions, in a few words of your own"
 
 
 def _conclusions(number: int) -> dict[str, str]:

@@ -252,7 +252,10 @@ KINDS: Final[dict[str, Kind]] = {
             "A chart of answers to a yes-or-no question: yes, no, and a funny third answer.",
             (
                 TextField("question", "a yes-or-no question, as the chart's title", 90),
-                TextField("funny_answer", "a third answer, besides yes and no, such as 'Only on Tuesdays'", 30),
+                # (Examples here get copied: with "such as 'Only on Tuesdays'", half the charts said that)
+                TextField(
+                    "funny_answer", "a third answer, besides yes and no: an odd one of your own for this question", 30
+                ),
             ),
             (),
             _chart_yes_no,
@@ -275,7 +278,10 @@ KINDS: Final[dict[str, Kind]] = {
                 TextField("x_axis", "the axis along the bottom: the first of the two things", 40, optional=True),
                 TextField("y_axis", "the axis going up: the second thing", 40, optional=True),
                 TextField(
-                    "outlier", "one point far above the others, named, such as 'Me' or 'Finland'", 30, optional=True
+                    "outlier",
+                    "one point far above the others, named after someone or something that doesn't belong there",
+                    30,
+                    optional=True,
                 ),
             ),
             (),

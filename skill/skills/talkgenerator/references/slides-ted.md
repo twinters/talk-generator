@@ -54,7 +54,7 @@ Images: `image_1`, `image_2`
 | --- | --- | --- |
 | `two-history-pictures-crf` | Two old photos from the history of the slide's concept | `title`: a title about the concept's history; `caption_1`: a moment from long ago; `caption_2`: a later moment; tags: history, two_images |
 | `two-captions-copyright-free` | Two captioned images that contrast or compare, like 'Expectation' and 'Reality' | the default; tags: multi_caption, two_captions |
-| `2-conclusions-crf` | The talk's conclusions | `title`: a title such as 'Conclusions' or 'What we learned'; `caption_1`: a lesson from the talk, calling back to an earlier slide; `caption_2`: a lesson from the talk, calling back to an earlier slide; tags: conclusion |
+| `2-conclusions-crf` | The talk's conclusions | `title`: a title for the conclusions, in a few words of your own; `caption_1`: a lesson from the talk, calling back to an earlier slide; `caption_2`: a lesson from the talk, calling back to an earlier slide; tags: conclusion |
 
 ## `three_columns`
 
@@ -72,7 +72,7 @@ Images: `image_1`, `image_2`, `image_3`
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
 | `three-captions-weird-crf` | Three captioned images that build up, like 'Good, Better, Best' or three steps of a plan | the default; tags: multi_caption, three_captions |
-| `3-conclusions-crf` | The talk's conclusions | `title`: a title such as 'Conclusions' or 'What we learned'; `caption_1`: a lesson from the talk, calling back to an earlier slide; `caption_2`: a lesson from the talk, calling back to an earlier slide; `caption_3`: a lesson from the talk, calling back to an earlier slide; tags: conclusion |
+| `3-conclusions-crf` | The talk's conclusions | `title`: a title for the conclusions, in a few words of your own; `caption_1`: a lesson from the talk, calling back to an earlier slide; `caption_2`: a lesson from the talk, calling back to an earlier slide; `caption_3`: a lesson from the talk, calling back to an earlier slide; tags: conclusion |
 
 ## `history_quote`
 
@@ -97,7 +97,7 @@ A chart of answers to a yes-or-no question: yes, no, and a funny third answer.
 | Text | At most | What to write |
 | --- | --- | --- |
 | `question` | 90 | a yes-or-no question, as the chart's title |
-| `funny_answer` | 30 | a third answer, besides yes and no, such as 'Only on Tuesdays' |
+| `funny_answer` | 30 | a third answer, besides yes and no: an odd one of your own for this question |
 
 Images: none
 
@@ -130,7 +130,7 @@ A scatter plot of made-up data, under a claim of a correlation.
 | `title` | 90 | a made-up correlation between two things, as a claim |
 | `x_axis` | 40 | the axis along the bottom: the first of the two things (or empty, for none) |
 | `y_axis` | 40 | the axis going up: the second thing (or empty, for none) |
-| `outlier` | 30 | one point far above the others, named, such as 'Me' or 'Finland' (or empty, for none) |
+| `outlier` | 30 | one point far above the others, named after someone or something that doesn't belong there (or empty, for none) |
 
 Images: none
 

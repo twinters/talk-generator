@@ -113,6 +113,11 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   prompt's example.
 - A free model turned down a harmless topic (it said `safe_topic: false`), which made the talk classic. The flag
   now asks the other way around, as the plan had it: `unsafe_topic`, true only for a hateful or harmful topic.
+- When the model's provider fails before the model writes anything ("Provider timed out after 11796ms", which
+  made one benchmark talk in thirty classic), OpenRouter gets the request once more; the free router may then
+  send it to another model.
+- The prompt no longer gives examples that the free models copied: half of the yes/no charts answered "Only on
+  Tuesdays", every outlier was "Me" or "Finland", and most conclusions were titled "Conclusions".
 - Gif slides show gifs that move. Their Reddit search takes only animated posts (gif subreddits hold photos
   too), an Imgur `.gifv` without Reddit's animated copy comes from Imgur itself instead of as Reddit's still of
   its first frame, and gifs of up to 16 MB (was 8) are used, as many good ones are 10 to 16 MB.

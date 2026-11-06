@@ -75,7 +75,7 @@ Images: `image_1`, `image_2`
 | `two-captions-gifs` | Two captioned images that contrast or compare, like 'Expectation' and 'Reality' | tags: gif, multi_caption, two_captions |
 | `two-captions-weird-reddit` | Two captioned images that contrast or compare, like 'Expectation' and 'Reality' | tags: multi_caption, reddit, two_captions |
 | `two-captions-weird` | Two captioned images that contrast or compare, like 'Expectation' and 'Reality' | tags: multi_caption, reddit, two_captions |
-| `2-conclusions` | The talk's conclusions | `title`: a title such as 'Conclusions' or 'What we learned'; `caption_1`: a lesson from the talk, calling back to an earlier slide; `caption_2`: a lesson from the talk, calling back to an earlier slide; tags: conclusion |
+| `2-conclusions` | The talk's conclusions | `title`: a title for the conclusions, in a few words of your own; `caption_1`: a lesson from the talk, calling back to an earlier slide; `caption_2`: a lesson from the talk, calling back to an earlier slide; tags: conclusion |
 | `two-captions-copyright-free` | Two captioned images that contrast or compare, like 'Expectation' and 'Reality' | the default; tags: multi_caption, two_captions |
 
 ## `three_columns`
@@ -96,7 +96,7 @@ Images: `image_1`, `image_2`, `image_3`
 | `about-me-location-job-weirdhobby` | About the presenter: where they come from, their job and their weird hobby | `title`: a title such as 'About me' or 'Who am I?'; `caption_1`: where the presenter comes from: a country, a city or a place; `caption_2`: the presenter's (possibly made-up) job; `caption_3`: the presenter's weird hobby; tags: about_me |
 | `about-me-location-book-weirdhobby` | About the presenter: where they come from, the book they wrote, and their weird hobby | `title`: a title such as 'About me' or 'Who am I?'; `caption_1`: where the presenter comes from: a country, a city or a place; `caption_2`: the title of a book the presenter wrote; `caption_3`: the presenter's weird hobby; tags: about_me |
 | `three-captions-weird` | Three captioned images that build up, like 'Good, Better, Best' or three steps of a plan | tags: multi_caption, reddit, three_captions |
-| `3-conclusions` | The talk's conclusions | `title`: a title such as 'Conclusions' or 'What we learned'; `caption_1`: a lesson from the talk, calling back to an earlier slide; `caption_2`: a lesson from the talk, calling back to an earlier slide; `caption_3`: a lesson from the talk, calling back to an earlier slide; tags: conclusion |
+| `3-conclusions` | The talk's conclusions | `title`: a title for the conclusions, in a few words of your own; `caption_1`: a lesson from the talk, calling back to an earlier slide; `caption_2`: a lesson from the talk, calling back to an earlier slide; `caption_3`: a lesson from the talk, calling back to an earlier slide; tags: conclusion |
 | `three-captions-weird-crf` | Three captioned images that build up, like 'Good, Better, Best' or three steps of a plan | the default; tags: multi_caption, three_captions |
 
 ## `history_quote`
@@ -123,7 +123,7 @@ A chart of answers to a yes-or-no question: yes, no, and a funny third answer.
 | Text | At most | What to write |
 | --- | --- | --- |
 | `question` | 90 | a yes-or-no question, as the chart's title |
-| `funny_answer` | 30 | a third answer, besides yes and no, such as 'Only on Tuesdays' |
+| `funny_answer` | 30 | a third answer, besides yes and no: an odd one of your own for this question |
 
 Images: none
 
@@ -156,7 +156,7 @@ A scatter plot of made-up data, under a claim of a correlation.
 | `title` | 90 | a made-up correlation between two things, as a claim |
 | `x_axis` | 40 | the axis along the bottom: the first of the two things (or empty, for none) |
 | `y_axis` | 40 | the axis going up: the second thing (or empty, for none) |
-| `outlier` | 30 | one point far above the others, named, such as 'Me' or 'Finland' (or empty, for none) |
+| `outlier` | 30 | one point far above the others, named after someone or something that doesn't belong there (or empty, for none) |
 
 Images: none
 
