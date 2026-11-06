@@ -134,9 +134,10 @@ _PAGE: Final = (
 )
 
 
-class _CallbackServer(http.server.HTTPServer):
+class _CallbackServer(http.server.ThreadingHTTPServer):
     """Waits on localhost for the browser to come back from OpenRouter, with a code (or without one, when the user
-    said no)."""
+    said no). Every connection gets a thread of its own, so connections that browsers open ahead of time, without a
+    request, don't hold up the one with the code."""
 
     def __init__(self, state: str) -> None:
         super().__init__(("127.0.0.1", 0), _CallbackHandler)
@@ -154,6 +155,7 @@ class _CallbackServer(http.server.HTTPServer):
 
 class _CallbackHandler(http.server.BaseHTTPRequestHandler):
     server: _CallbackServer
+    timeout = 5  # (and those connections are dropped after a while)
 
     def do_GET(self) -> None:
         url = urlsplit(self.path)
@@ -192,7 +194,7 @@ def _code_from_browser(challenge: str, open_browser: Callable[[str], bool], wait
         if not open_browser(url):
             print("(No browser to open here: on a computer without one, use --headless.)", file=out)
         print("Waiting for you to sign in (Ctrl+C stops)...", file=out, flush=True)
-        server.timeout = 0.5
+        server.timeout = 0.1  # (how often to look whether a handler's thread got the answer)
         deadline = time.monotonic() + wait_seconds
         while server.answer is None:
             if time.monotonic() > deadline:

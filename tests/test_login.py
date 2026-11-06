@@ -6,8 +6,10 @@ The conftest gives every test a config folder of its own (TALKGENERATOR_CONFIG_D
 
 import io
 import os
+import socket
 import sys
 import threading
+import time
 from urllib.parse import parse_qsl, urlencode, urlsplit
 
 import pytest
@@ -130,6 +132,22 @@ def test_a_code_of_another_sign_in_is_turned_away(openrouter):
     assert login.login(open_browser=browser, out=io.StringIO(), wait_seconds=10) == KEY
     assert [status for status, _ in browser.pages()] == [400, 200]
     assert [exchanged["code"] for exchanged in openrouter.exchanges] == ["the-code"]
+
+
+def test_a_connection_without_a_request_doesnt_hold_up_the_code(openrouter):
+    # Browsers open connections ahead of time, which may never carry a request
+    browser = _browser(openrouter, {"code": "the-code"})
+
+    def open_browser(url):
+        port = urlsplit(dict(parse_qsl(urlsplit(url).query))["callback_url"]).port
+        idle.append(socket.create_connection(("127.0.0.1", port)))
+        return browser(url)
+
+    idle = []
+    started = time.monotonic()
+    assert login.login(open_browser=open_browser, out=io.StringIO(), wait_seconds=10) == KEY
+    assert time.monotonic() - started < 3  # not after the idle connection timed out
+    idle[0].close()
 
 
 def test_saying_no_keeps_nothing(openrouter):
