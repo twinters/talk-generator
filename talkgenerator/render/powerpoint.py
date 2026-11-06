@@ -5,7 +5,8 @@ each deck slide back into their arguments (see `talkgenerator.models.classic`), 
 slides it was made from. Charts are rebuilt from their numbers and styled by their type (`talkgenerator.render.charts`).
 
 Images come from `images` when given (the images checked while generating, with their downloaded bytes and what to do
-once they end up on a slide), and are downloaded otherwise.
+once they end up on a slide), and are downloaded otherwise. An image with a video plays it in its place, by itself and
+looping (`talkgenerator.render.animation`), with the image as its poster frame.
 """
 
 from __future__ import annotations
@@ -17,11 +18,12 @@ from typing import Any
 from pptx.presentation import Presentation
 from pptx.slide import Slide
 
-from talkgenerator.datastructures.image_data import ImageData
+from talkgenerator.datastructures.image_data import ImageData, VideoCopy
 from talkgenerator.models import classic
 from talkgenerator.models.deck import ChartElement, Deck, DeckSlide, ImageAsset, ImageElement, TextElement
 from talkgenerator.render import animation, charts
 from talkgenerator.slide import powerpoint_slide_creator as creator
+from talkgenerator.util import http_util, image_util
 
 logger = logging.getLogger("talkgenerator")
 
@@ -126,7 +128,14 @@ def _image_data(image: ImageAsset, images: ImageStore | None) -> ImageData:
     if known is not None:
         return known
     credit = [(part.text, part.url) for part in image.credit]
-    return ImageData(image_url=image.url, source=image.source, source_url=image.source_url, credit=credit or None)
+    found = ImageData(image_url=image.url, source=image.source, source_url=image.source_url, credit=credit or None)
+    if image.video_url:
+        found.video = VideoCopy(url=image.video_url, poster_url=image.url)
+        found.video_data = image_util.fetch_video(image.video_url)
+        if found.video_data is None:
+            video = http_util.describe_url(image.video_url)
+            logger.warning("Showing video %s as its poster frame: it can't be downloaded or used", video)
+    return found
 
 
 def _finish(ppt_slide: Slide, slide: DeckSlide, debug_notes: bool) -> None:

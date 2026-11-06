@@ -45,10 +45,10 @@ class SlideDeck:
         if not self.is_complete():
             logger.error("ERROR: SOME SLIDES WERE NOT GENERATED: {}".format(self._slides))
             self._slides = [slide for slide in self._slides if slide is not None]
-        images = self.image_store()
+        deck = self.to_deck()
+        images = self.image_store()  # (after the deck, which settles how its images show: as a video, say)
         return [
-            render_slide(prs_template, deck_slide, debug_notes=debug_notes, images=images)
-            for deck_slide in self.to_deck().slides
+            render_slide(prs_template, deck_slide, debug_notes=debug_notes, images=images) for deck_slide in deck.slides
         ]
 
     def to_deck(self, schema_name: str | None = None) -> Deck:

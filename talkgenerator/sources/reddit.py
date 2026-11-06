@@ -5,6 +5,7 @@ queries now return nothing), so we search on the plain topic and pick the image 
 ourselves: direct image links, the first image of a gallery, or the preview image Reddit made.
 Images that posts link to on other hosts (such as Imgur) are downloaded from Reddit's preview copy.
 For gifs (animated=True), only what moves counts: a post's animated image, or else Imgur's own gif.
+A gif comes with Reddit's mp4 copy of it, which plays in its place when the gif is too large to embed.
 """
 
 import html
@@ -12,7 +13,7 @@ import logging
 import re
 import threading
 from functools import lru_cache
-from typing import Any
+from typing import Any, NamedTuple
 from urllib.parse import urlsplit
 
 import praw
@@ -41,6 +42,17 @@ _thread_local = threading.local()
 # When Reddit as a whole fails (bad credentials, rate limit, outage), skip it for a while instead of paying
 # PRAW's timeouts and retries on every search. Errors about one subreddit (private, banned...) don't count.
 _cooldown = http_util.Cooldown("Reddit")
+
+
+class RedditImage(NamedTuple):
+    """The image of a post, its credit and the post's page; for a gif, Reddit's mp4 copy of it and a still of it (the
+    video's poster frame), if Reddit has them (see get_video_copy)."""
+
+    url: str
+    credit: str
+    post_url: str | None
+    video_url: str | None = None
+    poster_url: str | None = None
 
 
 def _has_credentials() -> bool:
@@ -75,9 +87,7 @@ def get_subreddit(name: str) -> Any:
 
 
 @lru_cache(maxsize=128)
-def _search_images(
-    name: str, query: str, sort: str, limit: int, animated: bool = False
-) -> tuple[tuple[str, str, str | None], ...]:
+def _search_images(name: str, query: str, sort: str, limit: int, animated: bool = False) -> tuple[RedditImage, ...]:
     # Raises on API errors, so that failures don't end up in the cache
     subreddit = get_subreddit(name)
     submissions = subreddit.search(query, sort=sort, limit=limit) if query else subreddit.hot(limit=limit)
@@ -87,15 +97,17 @@ def _search_images(
             continue
         image_url = get_image_url(submission, animated=animated)
         if image_url:
-            images.append((image_url, get_source_name(submission), get_post_url(submission)))
+            video_url, poster_url = get_video_copy(submission) or (None, None)
+            credit, post_url = get_source_name(submission), get_post_url(submission)
+            images.append(RedditImage(image_url, credit, post_url, video_url, poster_url))
     return tuple(images)
 
 
 def search_images(
     name: str, query: str | None, sort: str = "relevance", limit: int = 100, animated: bool = False
-) -> list[tuple[str, str, str | None]] | None:
-    """(image URL, credit, post URL) triples of safe-for-work image posts in (a "+"-joined list of) subreddits;
-    with animated, only of the posts whose image moves.
+) -> list[RedditImage] | None:
+    """The images of safe-for-work image posts in (a "+"-joined list of) subreddits; with animated, only of the
+    posts whose image moves.
 
     Searches for the query, or takes the current hot posts if there's no query. Returns None without
     Reddit access or when Reddit fails.
@@ -166,6 +178,25 @@ def get_image_url(submission: Any, animated: bool = False) -> str | None:
                     return html.unescape(gallery_url)
 
     return _preview_url(data, animated_only=animated) or (_imgur_gif(url) if animated else None)
+
+
+def get_video_copy(submission: Any) -> tuple[str, str] | None:
+    """Reddit's mp4 copy of a post's gif, and a still of the gif for the video's poster frame, if it has both.
+
+    Reddit makes an mp4 copy of every gif it hosts (its preview's mp4 variant), a few MB where many gifs on r/gifs are
+    40 to 60 MB, and a video preview of animated links to other hosts, such as Imgur's .gifv (a DASH video, without
+    sound). The preview's own image is a still of the gif's first frame.
+    """
+    preview = vars(submission).get("preview") or {}
+    images = preview.get("images") or []
+    image = images[0] if images else {}
+    video_url = (((image.get("variants") or {}).get("mp4") or {}).get("source") or {}).get("url") or (
+        preview.get("reddit_video_preview") or {}
+    ).get("fallback_url")
+    still_url = (image.get("source") or {}).get("url")
+    if not video_url or not still_url:
+        return None
+    return html.unescape(video_url), html.unescape(still_url)
 
 
 def _imgur_gif(url: str) -> str | None:

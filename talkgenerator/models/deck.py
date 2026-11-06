@@ -39,6 +39,9 @@ class ImageAsset(_Data):
     """An image, and where it came from. The url is a web address or a local path."""
 
     url: str
+    # A video that plays in the image's place, by itself, looping and without sound, with the image as its poster
+    # frame: a gif too large to embed comes as its mp4 copy (and a renderer that plays no videos shows the image)
+    video_url: str | None = None
     source: str | None = None
     source_url: str | None = None
     credit: Credit = ()

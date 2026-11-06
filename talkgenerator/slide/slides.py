@@ -88,9 +88,10 @@ class Slide:
         )
 
     def image_store(self) -> dict[str, ImageData]:
-        """The slide's images by URL, with the bytes downloaded while checking them (so they aren't downloaded
-        again) and what to do once they end up on a slide (such as Unsplash's download tracking)."""
-        return {value.get_image_url(): value for value in self._arguments.values() if isinstance(value, ImageData)}
+        """The slide's images by the URL the deck gives them (see ImageData.get_shown_url), with the bytes downloaded
+        while checking them (so they aren't downloaded again) and what to do once they end up on a slide (such as
+        Unsplash's download tracking)."""
+        return {value.get_shown_url(): value for value in self._arguments.values() if isinstance(value, ImageData)}
 
     def to_slide_dictionary(self) -> dict:
         slide_dict = dict(self._arguments)
@@ -114,8 +115,12 @@ def _to_element(role: str, value: object, fit: model.ImageFit) -> model.TextElem
 
 
 def _to_image_asset(image: ImageData) -> model.ImageAsset:
+    # Checked first (if it wasn't yet), as that settles what shows: a gif too large to embed, say, plays as its video
+    image_util.fetch_image_data(image)
+    video = image.video if image.video_data is not None else None
     return model.ImageAsset(
-        url=image.get_image_url(),
+        url=image.get_shown_url(),
+        video_url=video.url if video is not None else None,
         source=image.get_source(),
         source_url=image.get_source_url(),
         credit=tuple(model.CreditPart(text=text, url=url) for text, url in image.get_credit()),

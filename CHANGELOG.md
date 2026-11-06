@@ -74,6 +74,11 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
 - Charts with axes get axis titles: the correlation curves now show the two things they correlate (v4 left
   them out), and a language model or a plan can name them (`x_axis` and `y_axis`). A deck's chart says its axis
   titles and whether its series appear one by one (`reveal`).
+- Gifs too large to embed play as Reddit's mp4 copy of them: on r/gifs, many are 40 to 90 MB, while their mp4
+  copies are mostly a few MB. In the slideshow, the video starts by itself and loops without sound, as the gif
+  would, with a still of the gif as its poster frame. A deck's image names the video in `video_url` (a renderer
+  that plays no videos shows the still), and gifs of up to 16 MB stay gifs. A file that's too large is now turned
+  down as soon as its host says how large it is, instead of after downloading up to 25 MB of it.
 - `talkgenerator login openrouter`: sign in to OpenRouter in the browser (OAuth with PKCE), and talkgenerator gets
   a key of its own, which it keeps in the user's config folder (readable only by the user), so OpenRouter's free
   models write talks without an `OPENROUTER_API_KEY`. `--headless` signs in on a computer without a browser,

@@ -4,7 +4,10 @@ from types import SimpleNamespace
 
 import pytest
 
+from talkgenerator.datastructures.image_data import VideoCopy
+from talkgenerator.schema.content_generator_structures import RedditImageSearcher
 from talkgenerator.sources import reddit
+from talkgenerator.util import http_util
 
 
 def _post(**data):
@@ -12,12 +15,17 @@ def _post(**data):
     return SimpleNamespace(**data)
 
 
-def _preview(source_url, gif_url=None):
+def _preview(source_url, gif_url=None, mp4_url=None, video_preview_url=None):
     """The `preview` of a post, as Reddit's API returns it (with HTML-escaped URLs)."""
     image = {"source": {"url": source_url, "width": 1200, "height": 900}, "resolutions": [], "variants": {}}
     if gif_url:
-        image["variants"] = {"gif": {"source": {"url": gif_url}, "resolutions": []}}
-    return {"images": [image], "enabled": True}
+        image["variants"]["gif"] = {"source": {"url": gif_url}, "resolutions": []}
+    if mp4_url:
+        image["variants"]["mp4"] = {"source": {"url": mp4_url}, "resolutions": []}
+    preview = {"images": [image], "enabled": True}
+    if video_preview_url:
+        preview["reddit_video_preview"] = {"fallback_url": video_preview_url, "is_gif": True, "duration": 19}
+    return preview
 
 
 def test_direct_image_link():
@@ -150,6 +158,110 @@ def test_a_gifv_without_an_animated_copy_comes_from_imgur_itself():
 )
 def test_for_gifs_only_what_moves_counts(data, gif):
     assert reddit.get_image_url(_post(**data), animated=True) == gif
+
+
+def _big_gif_post(**data):
+    """A gif on Reddit, as r/gifs has them: Reddit's mp4 copy of it in the preview, and a PNG still of it."""
+    data.setdefault("url", "https://i.redd.it/big.gif")
+    data.setdefault(
+        "preview",
+        _preview(
+            "https://preview.redd.it/big.gif?format=png8&amp;s=still",
+            gif_url="https://preview.redd.it/big.gif?s=animated",
+            mp4_url="https://preview.redd.it/big.gif?format=mp4&amp;s=video",
+        ),
+    )
+    return _post(subreddit_name_prefixed="r/gifs", permalink="/r/gifs/comments/big/", **data)
+
+
+def test_a_gif_comes_with_reddits_mp4_copy_and_a_still_of_it():
+    assert reddit.get_video_copy(_big_gif_post()) == (
+        "https://preview.redd.it/big.gif?format=mp4&s=video",
+        "https://preview.redd.it/big.gif?format=png8&s=still",
+    )
+
+
+def test_a_gifv_comes_with_reddits_video_preview():
+    # Imgur's .gifv: Reddit has no gif or mp4 variant of it, but a DASH video it made
+    post = _post(
+        url="https://i.imgur.com/AbC12.gifv",
+        preview=_preview(
+            "https://external-preview.redd.it/x.jpg?auto=webp&amp;s=still",
+            video_preview_url="https://v.redd.it/x/DASH_480.mp4",
+        ),
+    )
+    assert reddit.get_image_url(post, animated=True) == "https://i.imgur.com/AbC12.gif"
+    assert reddit.get_video_copy(post) == (
+        "https://v.redd.it/x/DASH_480.mp4",
+        "https://external-preview.redd.it/x.jpg?auto=webp&s=still",
+    )
+
+
+@pytest.mark.parametrize(
+    "preview",
+    [
+        None,
+        _preview("https://p/x.jpg"),
+        _preview("https://p/x.gif", gif_url="https://p/x.gif?s=animated"),
+        {"images": [{"variants": {"mp4": {"source": {"url": "https://p/x.mp4"}}}}]},
+    ],
+    ids=["no preview", "a photo", "a gif without an mp4 copy", "no still for a poster frame"],
+)
+def test_without_an_mp4_copy_and_a_still_theres_no_video(preview):
+    assert reddit.get_video_copy(_post(url="https://i.redd.it/abc.gif", preview=preview)) is None
+
+
+class _Subreddit:
+    def __init__(self, posts):
+        self.posts = posts
+
+    def search(self, query, sort, limit):
+        return self.posts
+
+    def hot(self, limit):
+        return self.posts
+
+
+@pytest.fixture
+def subreddit(monkeypatch):
+    """Answer searches with the given posts."""
+
+    def install(*posts):
+        monkeypatch.setattr(reddit, "_cooldown", http_util.Cooldown("Reddit (test)"))
+        monkeypatch.setattr(reddit, "has_reddit_access", lambda: True)
+        monkeypatch.setattr(reddit, "get_subreddit", lambda name: _Subreddit(list(posts)))
+        reddit._search_images.cache_clear()
+
+    yield install
+    reddit._search_images.cache_clear()
+
+
+def test_a_gif_search_gives_the_gifs_with_their_video_copies(subreddit):
+    subreddit(_big_gif_post(), _post(url="https://i.redd.it/small.gif", subreddit_name_prefixed="r/gifs"))
+
+    assert reddit.search_images("gifs", "cats", animated=True) == [
+        reddit.RedditImage(
+            "https://i.redd.it/big.gif",
+            "Reddit (r/gifs)",
+            "https://www.reddit.com/r/gifs/comments/big/",
+            "https://preview.redd.it/big.gif?format=mp4&s=video",
+            "https://preview.redd.it/big.gif?format=png8&s=still",
+        ),
+        reddit.RedditImage("https://i.redd.it/small.gif", "Reddit (r/gifs)", None),
+    ]
+
+
+def test_reddits_images_know_their_video_copies(subreddit):
+    subreddit(_big_gif_post())
+
+    (image,) = RedditImageSearcher("gifs", animated=True)("cats")
+
+    assert image.get_image_url() == "https://i.redd.it/big.gif"
+    assert image.video == VideoCopy(
+        "https://preview.redd.it/big.gif?format=mp4&s=video", "https://preview.redd.it/big.gif?format=png8&s=still"
+    )
+    assert image.video_data is None  # until the gif turns out to be too large to embed
+    assert image.get_shown_url() == image.get_image_url()
 
 
 def test_for_gifs_a_gallery_gives_its_first_animated_image():
