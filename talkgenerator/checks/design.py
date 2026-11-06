@@ -11,8 +11,18 @@ from __future__ import annotations
 from typing import Final
 
 from talkgenerator.checks.deck import Finding
-from talkgenerator.design import color, fit
-from talkgenerator.models.deck import Box, Deck, DeckSlide, ImageElement, ShapeElement, TextElement, TextStyle
+from talkgenerator.design import color, engine, fit
+from talkgenerator.models.deck import (
+    Box,
+    Deck,
+    DeckSlide,
+    DiagramElement,
+    ImageElement,
+    ShapeElement,
+    TextElement,
+    TextStyle,
+)
+from talkgenerator.render import diagrams
 
 # WCAG's large text: 18 points, or 14 points in bold (a canvas pixel is half a point)
 LARGE_TEXT: Final = 36
@@ -31,6 +41,8 @@ def check_design(deck: Deck) -> list[Finding]:
         for index, element in enumerate(slide.elements):
             if isinstance(element, TextElement) and element.box is not None and element.style is not None:
                 findings += _text_findings(slide, index, element.box, element.style, element.text, number, element.role)
+            elif isinstance(element, DiagramElement) and element.box is not None and element.style is not None:
+                findings += _diagram_findings(slide, index, element, number)
         if slide.credits and slide.credits_box is not None and slide.credits_style is not None:
             behind = _behind(slide, len(slide.elements), slide.credits_box)
             worst = color.worst_contrast(slide.credits_style.color, behind)
@@ -61,6 +73,32 @@ def _text_findings(
         findings.append(Finding("text size", "warning", f"the {role} is small ({style.size / 2:g} points)", number))
     if not _inside(box, SAFE_AREA):
         findings.append(Finding("margins", "warning", f"the {role} is outside the slide's safe area", number))
+    return findings
+
+
+def _diagram_findings(slide: DeckSlide, index: int, element: DiagramElement, number: int) -> list[Finding]:
+    """A diagram's labels, punchline and axes read on what's behind them (its circles or quadrants over the slide's
+    background), and its labels fit their boxes, in its font."""
+    assert element.box is not None and element.style is not None
+    style, findings = element.style, []
+    behind = engine.diagram_behind(element.diagram, style.fills, style.opacity, _behind(slide, index, element.box))
+    parts = (
+        ("the diagram's labels read badly", style.text, color.BODY_CONTRAST),
+        ("the diagram's punchline reads badly", style.punchline, color.BODY_CONTRAST),
+        ("the diagram's axes are hard to see", style.lines, engine.LINE_CONTRAST),
+    )
+    for (problem, colour, needed), backgrounds in zip(parts, behind, strict=True):
+        worst = color.worst_contrast(colour, backgrounds) if backgrounds else needed
+        if worst < needed:
+            findings.append(Finding("contrast", "error", f"{problem} (contrast {worst:.1f}, needs {needed:g})", number))
+    for label in diagrams.labels(diagrams.Box.on_canvas(element.box), element.diagram, style.font):
+        area = diagrams.text_area(label.box)
+        if not fit.fit(label.text, area.w, area.h, style.font, 2 * label.size, 2 * label.size, label.bold).fits:
+            part = label.name.split(":")[0].lower()
+            message = f"the diagram's {part} doesn't fit its box at {label.size} points"
+            findings.append(Finding("overflow", "error", message, number))
+    if not _inside(element.box, SAFE_AREA):
+        findings.append(Finding("margins", "warning", "the diagram is outside the slide's safe area", number))
     return findings
 
 

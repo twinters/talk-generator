@@ -1,10 +1,14 @@
 """Diagrams drawn as PowerPoint shapes: Venn diagrams and 2×2 matrices.
 
 A deck holds only a diagram's texts and where its dot goes (`VennDiagram`, `MatrixDiagram`), so a diagram needs no
-image source and looks the same wherever the deck is drawn. In PowerPoint, it fills the frame where the classic
-template's title-and-content slide has its content: circles, rectangles and lines, with text boxes for the labels.
-python-pptx can't make shapes see-through, so the circles' and quadrants' colours get their transparency in the
-fill's XML.
+image source and looks the same wherever the deck is drawn. In PowerPoint, it fills a frame: in the classic template,
+where the title-and-content slide has its content, and in a themed deck, the box the layout engine gave it. It's
+circles, rectangles and lines, with text boxes for the labels. python-pptx can't make shapes see-through, so the
+circles' and quadrants' colours get their transparency in the fill's XML.
+
+A classic diagram has the template's colours; a themed one has its theme's, in a `DiagramStyle` that the layout
+engine picked (with colours that read on what's behind them), and its labels are measured in the theme's font. Where
+a diagram's labels go, and at what size, is `labels()`, which the renderer, the previews and the design checks share.
 
 A diagram whose `reveal` is "punchline" shows its punchline (a Venn diagram's overlap, a matrix's dot and its name) on
 a click (see `talkgenerator.render.animation`).
@@ -15,7 +19,7 @@ from __future__ import annotations
 import math
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any, Final
+from typing import Any, Final, Literal
 
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_CONNECTOR, MSO_SHAPE
@@ -24,11 +28,14 @@ from pptx.oxml import parse_xml
 from pptx.oxml.ns import nsdecls, qn
 from pptx.util import Emu, Pt
 
-from talkgenerator.models.deck import MatrixDiagram, VennDiagram
+from talkgenerator.design import fit
+from talkgenerator.models.deck import Box as CanvasBox
+from talkgenerator.models.deck import DiagramStyle, MatrixDiagram, VennDiagram
 from talkgenerator.render import animation
 from talkgenerator.render.charts import PUNCHLINE_COLOUR
 
 _INCH: Final = 914400  # EMU
+EMU_PER_PIXEL: Final = 6350  # a pixel of the 1920×1080 canvas that themed decks are laid out on
 
 # The 2019 template's colours (its theme's accents): blue, orange, green and purple
 COLOURS: Final = (
@@ -53,11 +60,21 @@ _SIDE_TITLE_WIDTH: Final = int(2.1 * _INCH)
 _END_TITLE_HEIGHT: Final = int(0.5 * _INCH)
 _GAP: Final = int(0.22 * _INCH)
 _OVERSHOOT: Final = int(0.1 * _INCH)  # how far the axes' arrows reach beyond the matrix
-_DOT_DIAMETER: Final = int(0.32 * _INCH)
+DOT_DIAMETER: Final = int(0.32 * _INCH)
 # A quadrant's label goes at its outer edge, with room for two lines (the dot goes in the rest of the quadrant), and
 # so does the dot's name
 _QUADRANT_LABEL_HEIGHT: Final = int(0.86 * _INCH)
 _DOT_NAME_HEIGHT: Final = int(0.8 * _INCH)
+_QUADRANT_NAMES: Final = ("Top left", "Top right", "Bottom left", "Bottom right")
+
+# The margins of a label's text box, inside it: at either side, and above and below its text
+_MARGIN_ACROSS: Final = int(0.05 * _INCH)
+_MARGIN_DOWN: Final = int(0.03 * _INCH)
+
+Align = Literal["left", "center", "right"]
+Anchor = Literal["top", "middle", "bottom"]
+_ALIGN: Final = {"left": PP_ALIGN.LEFT, "center": PP_ALIGN.CENTER, "right": PP_ALIGN.RIGHT}
+_ANCHOR: Final = {"top": MSO_ANCHOR.TOP, "middle": MSO_ANCHOR.MIDDLE, "bottom": MSO_ANCHOR.BOTTOM}
 
 
 @dataclass(frozen=True)
@@ -74,6 +91,11 @@ class Box:
         """The box of this size with its centre at (x, y)."""
         return cls(round(x - width / 2), round(y - height / 2), round(width), round(height))
 
+    @classmethod
+    def on_canvas(cls, box: CanvasBox) -> Box:
+        """Where a box of a themed deck's canvas (in pixels) is on the slide."""
+        return cls(*(round(value * EMU_PER_PIXEL) for value in (box.x, box.y, box.w, box.h)))
+
     @property
     def right(self) -> int:
         return self.left + self.width
@@ -87,16 +109,86 @@ class Box:
         return self.left + self.width / 2, self.top + self.height / 2
 
 
-def draw_diagram(slide: Any, frame: Box, diagram: VennDiagram | MatrixDiagram) -> list[Any]:
-    """Draw the diagram in the frame, and return the shapes of its punchline (which appear on a click, if the diagram
-    says so)."""
+def text_area(box: Box) -> CanvasBox:
+    """Where a label's text goes, inside the margins of its text box: on the canvas, in pixels."""
+    return CanvasBox(
+        x=(box.left + _MARGIN_ACROSS) / EMU_PER_PIXEL,
+        y=(box.top + _MARGIN_DOWN) / EMU_PER_PIXEL,
+        w=(box.width - 2 * _MARGIN_ACROSS) / EMU_PER_PIXEL,
+        h=(box.height - 2 * _MARGIN_DOWN) / EMU_PER_PIXEL,
+    )
+
+
+@dataclass(frozen=True)
+class Look:
+    """How a diagram looks: the template's colours (TEMPLATE), or a theme's (see look_of)."""
+
+    fills: tuple[RGBColor, ...] = COLOURS  # the circles' or quadrants' colours, in order
+    circle_opacity: float = CIRCLE_OPACITY
+    quadrant_opacity: float = QUADRANT_OPACITY
+    text: RGBColor | None = None  # the labels' colour (None: the template's)
+    lines: RGBColor = _AXIS_COLOUR
+    punchline: RGBColor = PUNCHLINE_COLOUR  # a matrix's dot, and its name
+    outline: RGBColor = _WHITE  # around the dot
+    font: str | None = None  # the labels' font (None: the template's, whose letters fitting_size estimates)
+
+
+TEMPLATE: Final = Look()
+
+
+def look_of(style: DiagramStyle | None) -> Look:
+    """The look of a diagram in a theme's style (or in the template's, without one)."""
+    if style is None:
+        return TEMPLATE
+    return Look(
+        fills=tuple(_rgb(fill) for fill in style.fills),
+        circle_opacity=style.opacity,
+        quadrant_opacity=style.opacity,
+        text=_rgb(style.text),
+        lines=_rgb(style.lines),
+        punchline=_rgb(style.punchline),
+        outline=_rgb(style.outline),
+        font=style.font,
+    )
+
+
+@dataclass(frozen=True)
+class Label:
+    """One of a diagram's texts: in its box, at its size (in points), and how it looks."""
+
+    name: str  # its shape's name, such as "Circle 1: Things I love"
+    text: str
+    box: Box
+    size: int
+    bold: bool = False
+    italic: bool = False
+    align: Align = "center"
+    anchor: Anchor = "middle"
+    colour: Literal["text", "punchline"] = "text"
+    reveal: bool = False  # part of the punchline, which can appear on a click
+
+
+def draw_diagram(
+    slide: Any, frame: Box, diagram: VennDiagram | MatrixDiagram, style: DiagramStyle | None = None
+) -> list[Any]:
+    """Draw the diagram in the frame, in the theme's style (or the template's), and return the shapes of its
+    punchline (which appear on a click, if the diagram says so)."""
+    look = look_of(style)
     if isinstance(diagram, VennDiagram):
-        punchline = draw_venn(slide, frame, diagram)
+        punchline = draw_venn(slide, frame, diagram, look)
     else:
-        punchline = draw_matrix(slide, frame, diagram)
+        punchline = draw_matrix(slide, frame, diagram, look)
     if diagram.reveal == "punchline":
         animation.reveal_shapes(slide, punchline)
     return punchline
+
+
+def labels(frame: Box, diagram: VennDiagram | MatrixDiagram, font: str | None = None) -> list[Label]:
+    """The diagram's texts in the frame, in the order they're drawn, each at the largest size at which it fits: in
+    the font, if given (measured), else in the template's (estimated). Labels of one kind share one size."""
+    if isinstance(diagram, VennDiagram):
+        return _venn_labels(frame, diagram, font)
+    return _matrix_labels(frame, diagram, font)
 
 
 # VENN DIAGRAMS
@@ -140,20 +232,32 @@ def venn_layout(frame: Box, circles: int) -> VennLayout:
     return VennLayout(centres, radius, labels, overlap)
 
 
-def draw_venn(slide: Any, frame: Box, venn: VennDiagram) -> list[Any]:
+def _venn_labels(frame: Box, venn: VennDiagram, font: str | None) -> list[Label]:
+    layout = venn_layout(frame, len(venn.circles))
+    size = shared_size(venn.circles, layout.labels, 28, font=font)
+    found = [
+        Label(f"Circle {number}: {text}", text, box, size)
+        for number, (text, box) in enumerate(zip(venn.circles, layout.labels, strict=True), 1)
+    ]
+    overlap_size = fitting_size(venn.overlap, layout.overlap, 32, bold=True, font=font)
+    found.append(Label(f"Overlap: {venn.overlap}", venn.overlap, layout.overlap, overlap_size, bold=True, reveal=True))
+    return found
+
+
+def draw_venn(slide: Any, frame: Box, venn: VennDiagram, look: Look = TEMPLATE) -> list[Any]:
     """Two or three see-through circles with a label each, and the overlap's label (the punchline, which this returns)
     where they all overlap."""
     layout = venn_layout(frame, len(venn.circles))
-    for number, ((x, y), colour) in enumerate(zip(layout.centres, COLOURS, strict=False), 1):
+    for number, ((x, y), colour) in enumerate(zip(layout.centres, look.fills, strict=False), 1):
         circle = slide.shapes.add_shape(MSO_SHAPE.OVAL, *_emu(Box.around(x, y, 2 * layout.radius, 2 * layout.radius)))
         circle.name = f"Circle {number}"
-        _style(circle, fill=colour, opacity=CIRCLE_OPACITY, line=colour)
-    size = shared_size(venn.circles, layout.labels, 28)
-    for number, (label, box) in enumerate(zip(venn.circles, layout.labels, strict=True), 1):
-        add_label(slide, box, label, size, name=f"Circle {number}: {label}")
-    overlap_size = fitting_size(venn.overlap, layout.overlap, 32, bold=True)
-    overlap = add_label(slide, layout.overlap, venn.overlap, overlap_size, bold=True, name=f"Overlap: {venn.overlap}")
-    return [overlap]
+        _style(circle, fill=colour, opacity=look.circle_opacity, line=colour)
+    punchline = []
+    for label in _venn_labels(frame, venn, look.font):
+        shape = _add(slide, label, look)
+        if label.reveal:
+            punchline.append(shape)
+    return punchline
 
 
 # 2×2 MATRICES
@@ -177,6 +281,18 @@ class MatrixLayout:
         """Where on the slide a point of the matrix is: from its left (0) to its right (1), from its bottom (0) to
         its top (1)."""
         return self.matrix.left + x * self.matrix.width, self.matrix.bottom - y * self.matrix.height
+
+    def axes(self) -> tuple[tuple[str, tuple[float, float], tuple[float, float]], ...]:
+        """The axes, each with its name, and where it begins and ends (its arrows reach beyond the matrix)."""
+        box, (x, y) = self.matrix, self.middle
+        return (
+            ("Axis along the bottom", (box.left - _OVERSHOOT, y), (box.right + _OVERSHOOT, y)),
+            ("Axis going up", (x, box.bottom + _OVERSHOOT), (x, box.top - _OVERSHOOT)),
+        )
+
+    def dot(self, x: float, y: float) -> Box:
+        """The box of a dot at (x, y)."""
+        return Box.around(*self.point(x, y), DOT_DIAMETER, DOT_DIAMETER)
 
 
 def matrix_layout(frame: Box) -> MatrixLayout:
@@ -209,7 +325,7 @@ def matrix_layout(frame: Box) -> MatrixLayout:
     return MatrixLayout(matrix, ends, quadrants, (labels[0], labels[1], labels[2], labels[3]))
 
 
-def dot_label_box(layout: MatrixLayout, x: float, y: float) -> tuple[Box, PP_ALIGN]:
+def dot_label_box(layout: MatrixLayout, x: float, y: float) -> tuple[Box, Align]:
     """Where the name of a dot at (x, y) goes: beside it, on the side with the most room, and inside the dot's
     quadrant (so it doesn't cross an axis). Its text aligns towards the dot."""
     dot_x, dot_y = layout.point(x, y)
@@ -218,63 +334,86 @@ def dot_label_box(layout: MatrixLayout, x: float, y: float) -> tuple[Box, PP_ALI
     left_edge, right_edge = (box.left, middle_x) if dot_x < middle_x else (middle_x, box.right)
     top_edge, bottom_edge = (box.top, middle_y) if dot_y < middle_y else (middle_y, box.bottom)
     margin = int(0.08 * _INCH)
-    reach = _DOT_DIAMETER / 2 + margin
+    reach = DOT_DIAMETER / 2 + margin
     room_left, room_right = dot_x - reach - left_edge - margin, right_edge - margin - (dot_x + reach)
     height = min(_DOT_NAME_HEIGHT, bottom_edge - top_edge - 2 * margin)
     top = min(max(dot_y - height / 2, top_edge + margin), bottom_edge - margin - height)
     if room_right >= room_left:
         width = max(room_right, 0.5 * _INCH)
-        return Box(round(dot_x + reach), round(top), round(width), round(height)), PP_ALIGN.LEFT
+        return Box(round(dot_x + reach), round(top), round(width), round(height)), "left"
     width = max(room_left, 0.5 * _INCH)
-    return Box(round(dot_x - reach - width), round(top), round(width), round(height)), PP_ALIGN.RIGHT
+    return Box(round(dot_x - reach - width), round(top), round(width), round(height)), "right"
 
 
-def draw_matrix(slide: Any, frame: Box, matrix: MatrixDiagram) -> list[Any]:
+def _matrix_labels(frame: Box, matrix: MatrixDiagram, font: str | None) -> list[Label]:
+    layout = matrix_layout(frame)
+    ends = (matrix.x_left, matrix.x_right, matrix.y_bottom, matrix.y_top)
+    places: tuple[tuple[str, Align, Anchor], ...] = (
+        ("Left end", "right", "middle"),
+        ("Right end", "left", "middle"),
+        ("Bottom end", "center", "top"),
+        ("Top end", "center", "bottom"),
+    )
+    size = shared_size(ends, layout.ends, 22, font=font)
+    found = [
+        Label(f"{name}: {title}", title, box, size, italic=True, align=align, anchor=anchor)
+        for title, box, (name, align, anchor) in zip(ends, layout.ends, places, strict=True)
+    ]
+    quadrant_labels = (matrix.top_left, matrix.top_right, matrix.bottom_left, matrix.bottom_right)
+    size = shared_size(quadrant_labels, layout.labels, 26, bold=True, font=font)
+    found += [
+        Label(f"{name} quadrant: {text}", text, box, size, bold=True, anchor="top" if index < 2 else "bottom")
+        for index, (text, box, name) in enumerate(zip(quadrant_labels, layout.labels, _QUADRANT_NAMES, strict=True))
+    ]
+    name_box, align = dot_label_box(layout, matrix.dot_x, matrix.dot_y)
+    size = fitting_size(matrix.dot, name_box, 24, bold=True, font=font)
+    found.append(
+        Label(f"Dot: {matrix.dot}", matrix.dot, name_box, size, bold=True, align=align, colour="punchline", reveal=True)
+    )
+    return found
+
+
+def draw_matrix(slide: Any, frame: Box, matrix: MatrixDiagram, look: Look = TEMPLATE) -> list[Any]:
     """Four see-through quadrants with a label each, two axes crossing in the middle with a title at each end, and a
     dot with its name (the punchline: this returns its shapes)."""
     layout = matrix_layout(frame)
-    quadrant_labels = (matrix.top_left, matrix.top_right, matrix.bottom_left, matrix.bottom_right)
-    names = ("Top left", "Top right", "Bottom left", "Bottom right")
-    for quadrant, colour, name in zip(layout.quadrants, COLOURS, names, strict=True):
+    for quadrant, colour, name in zip(layout.quadrants, look.fills, _QUADRANT_NAMES, strict=True):
         shape = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, *_emu(quadrant))
         shape.name = f"{name} quadrant"
-        _style(shape, fill=colour, opacity=QUADRANT_OPACITY)
-
-    box, (x, y) = layout.matrix, layout.middle
-    for name, begin, end in (
-        ("Axis along the bottom", (box.left - _OVERSHOOT, y), (box.right + _OVERSHOOT, y)),
-        ("Axis going up", (x, box.bottom + _OVERSHOOT), (x, box.top - _OVERSHOOT)),
-    ):
+        _style(shape, fill=colour, opacity=look.quadrant_opacity)
+    for name, begin, end in layout.axes():
         axis = slide.shapes.add_connector(MSO_CONNECTOR.STRAIGHT, *(Emu(round(value)) for value in (*begin, *end)))
         axis.name = name
-        _arrow(axis)
+        _arrow(axis, look.lines)
 
-    ends = (matrix.x_left, matrix.x_right, matrix.y_bottom, matrix.y_top)
-    alignments = (PP_ALIGN.RIGHT, PP_ALIGN.LEFT, PP_ALIGN.CENTER, PP_ALIGN.CENTER)
-    anchors = (MSO_ANCHOR.MIDDLE, MSO_ANCHOR.MIDDLE, MSO_ANCHOR.TOP, MSO_ANCHOR.BOTTOM)
-    size = shared_size(ends, layout.ends, 22)
-    for title, end_box, align, anchor, name in zip(
-        ends, layout.ends, alignments, anchors, ("Left end", "Right end", "Bottom end", "Top end"), strict=True
-    ):
-        add_label(slide, end_box, title, size, align=align, anchor=anchor, italic=True, name=f"{name}: {title}")
-    size = shared_size(quadrant_labels, layout.labels, 26, bold=True)
-    for index, (label, label_box, name) in enumerate(zip(quadrant_labels, layout.labels, names, strict=True)):
-        anchor = MSO_ANCHOR.TOP if index < 2 else MSO_ANCHOR.BOTTOM
-        add_label(slide, label_box, label, size, bold=True, anchor=anchor, name=f"{name} quadrant: {label}")
-
-    dot_x, dot_y = layout.point(matrix.dot_x, matrix.dot_y)
-    dot = slide.shapes.add_shape(MSO_SHAPE.OVAL, *_emu(Box.around(dot_x, dot_y, _DOT_DIAMETER, _DOT_DIAMETER)))
+    texts = _matrix_labels(frame, matrix, look.font)
+    for label in texts:
+        if not label.reveal:
+            _add(slide, label, look)
+    dot = slide.shapes.add_shape(MSO_SHAPE.OVAL, *_emu(layout.dot(matrix.dot_x, matrix.dot_y)))
     dot.name = "Dot"
-    _style(dot, fill=PUNCHLINE_COLOUR, line=_WHITE)
-    name_box, align = dot_label_box(layout, matrix.dot_x, matrix.dot_y)
-    size = fitting_size(matrix.dot, name_box, 24, bold=True)
-    name = add_label(
-        slide, name_box, matrix.dot, size, bold=True, colour=PUNCHLINE_COLOUR, align=align, name=f"Dot: {matrix.dot}"
-    )
-    return [dot, name]
+    _style(dot, fill=look.punchline, line=look.outline)
+    return [dot, *(_add(slide, label, look) for label in texts if label.reveal)]
 
 
 # SHAPES AND LABELS
+
+
+def _add(slide: Any, label: Label, look: Look) -> Any:
+    colour = look.punchline if label.colour == "punchline" else look.text
+    return add_label(
+        slide,
+        label.box,
+        label.text,
+        label.size,
+        bold=label.bold,
+        italic=label.italic,
+        colour=colour,
+        align=_ALIGN[label.align],
+        anchor=_ANCHOR[label.anchor],
+        name=label.name,
+        font=look.font,
+    )
 
 
 def add_label(
@@ -289,16 +428,17 @@ def add_label(
     align: PP_ALIGN = PP_ALIGN.CENTER,
     anchor: MSO_ANCHOR = MSO_ANCHOR.MIDDLE,
     name: str | None = None,
+    font: str | None = None,
 ) -> Any:
-    """A text box with the text in it, wrapped, at a size in points (see fitting_size)."""
+    """A text box with the text in it, wrapped, at a size in points (see fitting_size), in the font (if given)."""
     shape = slide.shapes.add_textbox(*_emu(box))
     if name:
         shape.name = name[:60]
     frame = shape.text_frame
     frame.word_wrap = True
     frame.vertical_anchor = anchor
-    frame.margin_left = frame.margin_right = Emu(int(0.05 * _INCH))
-    frame.margin_top = frame.margin_bottom = Emu(int(0.03 * _INCH))
+    frame.margin_left = frame.margin_right = Emu(_MARGIN_ACROSS)
+    frame.margin_top = frame.margin_bottom = Emu(_MARGIN_DOWN)
     frame.auto_size = MSO_AUTO_SIZE.NONE  # (python-pptx's text boxes grow with their text; the font size fits it)
     paragraph = frame.paragraphs[0]
     paragraph.alignment = align
@@ -307,21 +447,34 @@ def add_label(
     run.font.size = Pt(size)
     run.font.bold = bold
     run.font.italic = italic
+    if font is not None:
+        run.font.name = font
     if colour is not None:
         run.font.color.rgb = colour
     return shape
 
 
-def shared_size(texts: Sequence[str], boxes: Sequence[Box], largest: int, *, bold: bool = False) -> int:
+def shared_size(
+    texts: Sequence[str], boxes: Sequence[Box], largest: int, *, bold: bool = False, font: str | None = None
+) -> int:
     """The size at which every text fits its box (labels that are alike look alike: one long one makes them all
     smaller)."""
-    return min(fitting_size(text, box, largest, bold=bold) for text, box in zip(texts, boxes, strict=True))
+    return min(fitting_size(text, box, largest, bold=bold, font=font) for text, box in zip(texts, boxes, strict=True))
 
 
-def fitting_size(text: str, box: Box, largest: int, *, bold: bool = False, smallest: int = 12) -> int:
-    """The largest font size, in points, at which the text seems to fit the box when wrapped between its words: by
-    the width of an average letter of the template's font (Calibri), about half the font size (a little more in
+def fitting_size(
+    text: str, box: Box, largest: int, *, bold: bool = False, smallest: int = 12, font: str | None = None
+) -> int:
+    """The largest font size, in points, at which the text fits the box when wrapped between its words. In a font
+    (a theme's), it's measured, as the layout engine measures texts (talkgenerator.design.fit). Else, it's estimated
+    for the template's font (Calibri) by the width of an average letter, about half the font size (a little more in
     bold). PowerPoint doesn't shrink text to fit until it's edited, so the size has to be right from the start."""
+    if font is not None:
+        area = text_area(box)
+        fitted = fit.fit(
+            text, area.w, area.h, font, 2 * largest, 2 * smallest, bold
+        )  # (a canvas pixel is half a point)
+        return max(smallest, round(fitted.size / 2))
     width = box.width / _INCH - 0.1  # (the text box's margins)
     height = box.height / _INCH - 0.06
     words = text.split()
@@ -364,9 +517,9 @@ def _style(shape: Any, *, fill: RGBColor, opacity: float = 1.0, line: RGBColor |
     _drop_style(shape)
 
 
-def _arrow(connector: Any) -> None:
-    """A dark line with an arrowhead at both ends."""
-    connector.line.color.rgb = _AXIS_COLOUR
+def _arrow(connector: Any, colour: RGBColor = _AXIS_COLOUR) -> None:
+    """A line with an arrowhead at both ends."""
+    connector.line.color.rgb = colour
     connector.line.width = Pt(2.5)
     outline = connector.line._get_or_add_ln()
     for end in ("a:headEnd", "a:tailEnd"):
@@ -382,3 +535,8 @@ def _drop_style(shape: Any) -> None:
 
 def _emu(box: Box) -> tuple[Emu, Emu, Emu, Emu]:
     return Emu(box.left), Emu(box.top), Emu(box.width), Emu(box.height)
+
+
+def _rgb(value: str) -> RGBColor:
+    colour: RGBColor = RGBColor.from_string(value.lstrip("#"))
+    return colour

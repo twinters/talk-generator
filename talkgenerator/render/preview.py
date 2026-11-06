@@ -1,7 +1,8 @@
 """Pictures of a themed deck's slides, drawn with Pillow from their positioned elements (docs/v5-plan.md, 9 and 14).
 
 A preview uses the boxes, fonts, sizes and line breaks that the layout engine picked, so it shows where texts break
-and whether they fit; charts are sketched (their kind, colours and labels). A contact sheet shows a whole deck at a
+and whether they fit; charts are sketched (their kind, colours and labels), and diagrams are drawn from the same
+geometry and labels as in PowerPoint (`talkgenerator.render.diagrams`). A contact sheet shows a whole deck at a
 glance. Classic decks have no positions (the 2019 template places their elements), so they have no previews.
 """
 
@@ -23,12 +24,15 @@ from talkgenerator.models.deck import (
     ChartElement,
     Deck,
     DeckSlide,
+    DiagramElement,
     ImageElement,
     ShapeElement,
     TextElement,
     TextStyle,
+    VennDiagram,
 )
 from talkgenerator.models.theme import Theme
+from talkgenerator.render import diagrams
 from talkgenerator.util import image_util
 
 logger = logging.getLogger("talkgenerator")
@@ -50,6 +54,8 @@ def slide_image(slide: DeckSlide, theme: Theme, images: ImageStore | None = None
             _image(canvas, element, scale, images)
         elif isinstance(element, ChartElement) and element.box is not None:
             _chart(canvas, element, scale, slide.style or theme)
+        elif isinstance(element, DiagramElement) and element.box is not None and element.style is not None:
+            _diagram(canvas, element, scale)
         elif isinstance(element, TextElement) and element.box is not None and element.style is not None:
             _text(canvas, element.text, element.box, element.style, scale)
     if slide.credits and slide.credits_box is not None and slide.credits_style is not None:
@@ -264,6 +270,62 @@ def _chart(canvas: Image.Image, element: ChartElement, scale: float, theme: Them
                 ),
                 fill=fill,
             )
+
+
+def _diagram(canvas: Image.Image, element: DiagramElement, scale: float) -> None:
+    """The diagram as the renderer draws it: its see-through circles or quadrants, its axes and dot, and its labels."""
+    assert element.box is not None and element.style is not None
+    style, diagram = element.style, element.diagram
+    frame = diagrams.Box.on_canvas(element.box)
+
+    def at(value: float) -> float:  # a place on the slide (in EMU), in the picture
+        return value / diagrams.EMU_PER_PIXEL * scale
+
+    see_through = round(255 * style.opacity)
+    line = max(1, round(4 * scale))  # (2 points)
+    if isinstance(diagram, VennDiagram):
+        layout = diagrams.venn_layout(frame, len(diagram.circles))
+        radius = layout.radius
+        for (x, y), fill in zip(layout.centres, style.fills, strict=False):
+            layer = Image.new("RGBA", canvas.size, (0, 0, 0, 0))  # (a layer each, so that where they overlap, they mix)
+            ImageDraw.Draw(layer).ellipse(
+                (at(x - radius), at(y - radius), at(x + radius), at(y + radius)),
+                fill=(*_rgb(fill), see_through),
+                outline=fill,
+                width=line,
+            )
+            canvas.alpha_composite(layer)
+    else:
+        matrix = diagrams.matrix_layout(frame)
+        layer = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+        tints = ImageDraw.Draw(layer)
+        for quadrant, fill in zip(matrix.quadrants, style.fills, strict=False):
+            tints.rectangle(
+                (at(quadrant.left), at(quadrant.top), at(quadrant.right), at(quadrant.bottom)),
+                fill=(*_rgb(fill), see_through),
+            )
+        canvas.alpha_composite(layer)
+        draw = ImageDraw.Draw(canvas)
+        for _, (x0, y0), (x1, y1) in matrix.axes():
+            draw.line([(at(x0), at(y0)), (at(x1), at(y1))], fill=style.lines, width=max(1, round(5 * scale)))
+        dot = matrix.dot(diagram.dot_x, diagram.dot_y)
+        draw.ellipse(
+            (at(dot.left), at(dot.top), at(dot.right), at(dot.bottom)),
+            fill=style.punchline,
+            outline=style.outline,
+            width=line,
+        )
+    for label in diagrams.labels(frame, diagram, style.font):
+        look = TextStyle(
+            font=style.font,
+            size=2 * label.size,  # (a canvas pixel is half a point)
+            color=style.punchline if label.colour == "punchline" else style.text,
+            bold=label.bold,
+            italic=label.italic,
+            align=label.align,
+            anchor=label.anchor,
+        )
+        _text(canvas, label.text, diagrams.text_area(label.box), look, scale)
 
 
 def _font(name: str, size: float, bold: bool = False) -> _Font:

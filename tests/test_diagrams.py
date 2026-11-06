@@ -11,14 +11,16 @@ from pptx.oxml.ns import qn
 from pydantic import ValidationError
 
 from talkgenerator.checks.deck import check_completeness, check_language, check_leftovers
+from talkgenerator.checks.design import check_design
 from talkgenerator.datastructures.slide_generator_data import SlideGeneratorData
+from talkgenerator.design import color, engine, themes
 from talkgenerator.models import classic
 from talkgenerator.models.deck import Deck, DeckSlide, DiagramElement, MatrixDiagram, TextElement, VennDiagram
 from talkgenerator.models.plan import SlidePlan
 from talkgenerator.plan import external, languages, prompt
 from talkgenerator.plan.kinds import KINDS, Recipe
 from talkgenerator.plan.realize import clean_text, realize
-from talkgenerator.render import diagrams
+from talkgenerator.render import diagrams, preview
 from talkgenerator.render.powerpoint import render_pptx, render_slide
 from talkgenerator.schema.presentation_schema_types import get_schema
 from talkgenerator.slide import powerpoint_slide_creator, slide_generator_types, slides
@@ -573,3 +575,115 @@ def test_the_reference_lists_the_diagrams():
     assert "## `venn`" in reference and "## `matrix`" in reference and "`bottom right`" in reference
     (matrix,) = [kind for kind in external.catalog("ted")["kinds"] if kind["kind"] == "matrix"]
     assert {text["name"]: text.get("options") for text in matrix["texts"]}["dot_quadrant"] == list(diagram.QUADRANTS)
+
+
+# IN THEMES
+
+
+def _themed(*diagram_slides, family="clean keynote", seed=1):
+    """A deck of the slides, laid out in a theme of the family, and the theme."""
+    theme = themes.pick(family, random_util.Rng(seed))
+    deck = Deck(generator="test", title="Cats", seed=1, slides=tuple(slide.to_deck_slide() for slide in diagram_slides))
+    return engine.lay_out(deck, theme), theme
+
+
+def _hex(rgb):
+    return f"#{rgb}".lower()
+
+
+def _styles(deck):
+    return [slide.element("diagram").style for slide in deck.slides]
+
+
+def test_a_themed_diagram_goes_under_its_title_in_its_themes_look():
+    deck, theme = _themed(_venn(), _matrix())
+
+    for slide in deck.slides:
+        title, element = slide.element("title"), slide.element("diagram")
+        assert slide.layout == "v5/diagram"
+        assert isinstance(element, DiagramElement) and element.box is not None and element.style is not None
+        assert element.box.y >= title.box.y + title.box.h  # under its title
+        assert element.style.font == theme.fonts.body
+        assert len(element.style.fills) == 4  # (a matrix's quadrants; a Venn diagram's circles take the first ones)
+    venn, matrix = _styles(deck)
+    assert (venn.opacity, matrix.opacity) == (engine.DIAGRAM_OPACITY["venn"], engine.DIAGRAM_OPACITY["matrix"])
+
+
+def test_a_themed_diagram_is_drawn_in_its_themes_colours_and_font():
+    deck, theme = _themed(_venn(), _matrix())
+    venn_style, matrix_style = _styles(deck)
+
+    venn_slide, matrix_slide = render_pptx(deck).slides
+
+    shapes = {shape.name: shape for shape in venn_slide.shapes}
+    circles = [shapes["Circle 1"], shapes["Circle 2"]]
+    assert [_hex(circle.fill.fore_color.rgb) for circle in circles] == list(venn_style.fills[:2])
+    assert {_alpha(circle) for circle in circles} == {round(venn_style.opacity * 100000)}
+    label = shapes["Circle 1: Things I love"].text_frame.paragraphs[0].runs[0]
+    assert (label.font.name, _hex(label.font.color.rgb)) == (theme.fonts.body, venn_style.text)
+    assert _timing(venn_slide) is not None  # its punchline still appears on a click
+    shapes = {shape.name: shape for shape in matrix_slide.shapes}
+    assert _hex(shapes["Dot"].fill.fore_color.rgb) == matrix_style.punchline
+    assert _hex(shapes["Axis going up"].line.color.rgb) == matrix_style.lines
+    name = shapes["Dot: My grandmother's parrot"].text_frame.paragraphs[0].runs[0]
+    assert _hex(name.font.color.rgb) == matrix_style.punchline
+
+
+def test_a_classic_diagram_keeps_the_templates_font_and_colours():
+    _, shapes, _ = _drawn(_venn())
+
+    assert shapes["Circle 1: Things I love"].text_frame.paragraphs[0].runs[0].font.name is None  # the template's
+    assert [shapes[f"Circle {number}"].fill.fore_color.rgb for number in (1, 2)] == list(diagrams.COLOURS[:2])
+
+
+def test_themed_diagrams_read_and_fit_in_every_theme():
+    three = _venn(circle_3="Things my doctor approves of")
+    for family in [*themes.FAMILIES, themes.RANDOM]:
+        for seed in range(8):
+            deck, _ = _themed(_venn(), three, _matrix(), family=family, seed=seed)
+            assert check_design(deck) == [], (family, seed)
+
+
+def test_the_design_checks_find_a_themed_diagram_that_reads_badly_or_doesnt_fit():
+    long = MatrixDiagram(**{**_diagram(_matrix()).model_dump(), "dot": "Supercalifragilisticexpialidocious " * 8})
+    deck, theme = _themed(slides.DiagramSlide("Pets", long))
+    assert [finding.message for finding in check_design(deck)] == ["the diagram's dot doesn't fit its box at 12 points"]
+
+    deck, theme = _themed(_matrix())
+    slide = deck.slides[0]
+    unreadable = slide.element("diagram").style.model_copy(
+        update={"text": theme.palette.background, "punchline": theme.palette.background}
+    )
+    elements = tuple(
+        element.model_copy(update={"style": unreadable}) if isinstance(element, DiagramElement) else element
+        for element in slide.elements
+    )
+    broken = deck.model_copy(update={"slides": (slide.model_copy(update={"elements": elements}),)})
+    problems = [finding.message.split(" (")[0] for finding in check_design(broken)]
+    assert problems == ["the diagram's labels read badly", "the diagram's punchline reads badly"]
+
+
+def test_a_themed_diagram_survives_json_and_renders_from_it():
+    deck, _ = _themed(_venn(), _matrix())
+
+    again = Deck.from_json(deck.to_json())
+
+    assert again == deck
+    assert [_summary(slide) for slide in render_pptx(again).slides] == [
+        _summary(slide) for slide in render_pptx(deck).slides
+    ]
+
+
+def test_a_themed_diagrams_preview_shows_its_circles():
+    deck, theme = _themed(_venn())
+    slide = deck.slides[0]
+    element = slide.element("diagram")
+    assert slide.background is not None and slide.background.color_2 is None  # (a solid background)
+
+    picture = preview.slide_image(slide, theme, width=1920)  # (a pixel of the canvas each)
+
+    layout = diagrams.venn_layout(diagrams.Box.on_canvas(element.box), 2)
+    (x, y), radius = layout.centres[0], layout.radius
+    point = (round(x / diagrams.EMU_PER_PIXEL), round((y - 0.6 * radius) / diagrams.EMU_PER_PIXEL))  # its own part
+    expected = color.rgb(color.mix(slide.background.color, element.style.fills[0], element.style.opacity))
+    assert all(abs(a - b) <= 2 for a, b in zip(picture.getpixel(point), expected, strict=True))

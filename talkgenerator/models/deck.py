@@ -198,13 +198,28 @@ class MatrixDiagram(_Data):
 Diagram = Annotated[VennDiagram | MatrixDiagram, Field(discriminator="diagram_type")]
 
 
+class DiagramStyle(_Data):
+    """How a diagram looks in a theme: its labels' font; the colours of its circles or quadrants (in order) and how
+    opaque they are (from 0 to 1); and the colours of its labels, its axes, its punchline (a matrix's dot and the
+    dot's name) and the ring around the dot ("#rrggbb")."""
+
+    font: str
+    fills: tuple[str, ...]
+    opacity: float
+    text: str
+    lines: str
+    punchline: str
+    outline: str
+
+
 class DiagramElement(_Data):
     """A diagram drawn as shapes, so it needs no image source and looks the same wherever the deck is shown."""
 
     kind: Literal["diagram"] = "diagram"
     role: str
     diagram: Diagram
-    box: Box | None = None
+    box: Box | None = None  # where it goes, and how it looks (in a themed deck)
+    style: DiagramStyle | None = None
 
 
 Element = Annotated[

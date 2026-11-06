@@ -30,13 +30,14 @@ from talkgenerator.models.deck import (
     ChartElement,
     Deck,
     DeckSlide,
+    DiagramElement,
     ImageElement,
     ShapeElement,
     TextElement,
     TextStyle,
 )
 from talkgenerator.models.theme import Theme
-from talkgenerator.render import animation, charts
+from talkgenerator.render import animation, charts, diagrams
 from talkgenerator.render.powerpoint import ImageStore, image_data
 from talkgenerator.slide import powerpoint_slide_creator as creator
 from talkgenerator.util import http_util, image_util
@@ -87,6 +88,8 @@ def draw_slide(
                 _picture(ppt_slide, element, images)
             elif isinstance(element, ChartElement) and element.box is not None:
                 _chart(ppt_slide, element, theme)
+            elif isinstance(element, DiagramElement) and element.box is not None:
+                diagrams.draw_diagram(ppt_slide, diagrams.Box.on_canvas(element.box), element.diagram, element.style)
             elif isinstance(element, TextElement) and element.box is not None and element.style is not None:
                 _text_box(ppt_slide, element.box, element.style, [(element.text, None)])
         except (ValueError, KeyError, AttributeError, OSError) as error:  # one element that won't draw stays out

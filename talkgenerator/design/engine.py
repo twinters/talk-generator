@@ -8,7 +8,7 @@ the theme's background and decoration. With style_chaos, slides get themes of th
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Final, Literal
 
@@ -19,12 +19,16 @@ from talkgenerator.models.deck import (
     Content,
     Deck,
     DeckSlide,
+    DiagramElement,
+    DiagramStyle,
     ImageElement,
+    MatrixDiagram,
     ShapeElement,
     SlideBackground,
     TextAnchor,
     TextElement,
     TextStyle,
+    VennDiagram,
 )
 from talkgenerator.models.theme import Theme
 from talkgenerator.util import random_util
@@ -40,6 +44,10 @@ SHADE: Final = "#000000"
 SHADE_OPACITY: Final = 0.55
 BAND_OPACITY: Final = 0.85  # of the bands behind texts on a full-screen picture
 LIGHT_TEXT: Final = "#ffffff"
+# How opaque a diagram's circles are (where they overlap, their colours mix), and its quadrants (as in the template)
+DIAGRAM_OPACITY: Final = {"venn": 0.45, "matrix": 0.2}
+# Lines, such as a matrix's axes, need less contrast than texts to be seen (WCAG's 3 for graphics)
+LINE_CONTRAST: Final = 3.0
 
 
 @dataclass(frozen=True)
@@ -121,11 +129,10 @@ def lay_out_slide(slide: DeckSlide, theme: Theme, rng: random_util.Rng, own_styl
             elements.append(element.model_copy(update={"box": box, "border": border}))
         elif isinstance(element, ChartElement):
             elements.append(element.model_copy(update={"box": box}))
+        elif isinstance(element, DiagramElement):
+            elements.append(element.model_copy(update={"box": box, "style": diagram_style(element.diagram, theme)}))
     # The credits read on what's behind them: the background, or a photo (which could be anything) under a shade
-    behind = [
-        palette.background,
-        *([theme.gradient_to] if theme.background == "gradient" and theme.gradient_to else []),
-    ]
+    behind = _backgrounds(theme)
     if isinstance(background, ImageElement):
         behind = [color.mix(extreme, SHADE, SHADE_OPACITY) for extreme in ("#000000", "#ffffff")]
     elif placement.photo and slide.credits:  # on a band over the picture, solid if no colour reads on it otherwise
@@ -167,6 +174,92 @@ def _style(text: str, box: Box, spec: TextSpec, theme: Theme) -> TextStyle:
         align=theme.title_align if spec.align == "title" else spec.align,
         anchor=spec.anchor,
     )
+
+
+def _backgrounds(theme: Theme) -> list[str]:
+    """The colours of a slide's background in the theme: one, or both ends of a gradient."""
+    palette = theme.palette
+    return [palette.background, *([theme.gradient_to] if theme.background == "gradient" and theme.gradient_to else [])]
+
+
+def diagram_style(diagram: VennDiagram | MatrixDiagram, theme: Theme) -> DiagramStyle:
+    """A diagram's look in the theme: its labels in the theme's body font and text colour, its circles or quadrants
+    in the theme's accents (and two hues a third of the way round from them), and its punchline in the colour that
+    stands out. Circles and quadrants get lighter or darker (keeping their hue) until the text reads on them, and
+    where they overlap: the theme's text reads on its background, so on a lighter or darker shade of it too."""
+    palette = theme.palette
+    backgrounds = _backgrounds(theme)
+    opacity = DIAGRAM_OPACITY[diagram.diagram_type]
+    turned = [color.to_hsl(accent) for accent in (palette.accent, palette.accent_2)]
+    accents = (
+        palette.accent,
+        palette.accent_2,
+        *(color.hsl(hue + 120, saturation, lightness) for hue, saturation, lightness in turned),
+    )
+    overlapping = len(diagram.circles) if isinstance(diagram, VennDiagram) else 0
+    fills = _readable_fills(accents, palette.text, backgrounds, opacity, overlapping)
+    labels, punchline, lines = diagram_behind(diagram, fills, opacity, backgrounds)
+    return DiagramStyle(
+        font=theme.fonts.body,
+        fills=fills,
+        opacity=opacity,
+        text=color.readable_on(palette.text, labels),
+        lines=color.readable_on(palette.text, lines, LINE_CONTRAST) if lines else palette.text,
+        punchline=color.readable_on(palette.accent_2, punchline) if punchline else palette.accent_2,
+        outline=palette.background,
+    )
+
+
+def _readable_fills(
+    fills: Sequence[str], text: str, backgrounds: Sequence[str], opacity: float, overlapping: int
+) -> tuple[str, ...]:
+    """The fills, each the nearest shade of it (by its lightness: lighter under dark text, darker under light text)
+    on which the text reads, over every background; and with the first ones (as many as overlap) shaded further, if
+    the text doesn't read where they all overlap yet."""
+    lighter = color.luminance(text) < color.luminance(backgrounds[0])
+
+    def shade(fill: str, steps: int) -> str:
+        hue, saturation, lightness = color.to_hsl(fill)
+        return color.hsl(hue, saturation, lightness + (0.05 if lighter else -0.05) * steps)
+
+    def reads(*layers: str) -> bool:
+        return color.worst_contrast(text, _under(backgrounds, layers, opacity)) >= color.BODY_CONTRAST
+
+    steps = [next((step for step in range(21) if reads(shade(fill, step))), 20) for fill in fills]
+    shaded = [shade(fill, step) for fill, step in zip(fills, steps, strict=True)]
+    for more in range(1, 21):
+        if overlapping < 2 or reads(*shaded[:overlapping]):
+            break
+        shaded = [shade(fill, step + more) for fill, step in zip(fills, steps, strict=True)]
+    return tuple(shaded)
+
+
+def _under(backgrounds: Sequence[str], layers: Sequence[str], opacity: float) -> list[str]:
+    """The backgrounds with the see-through layers over them, one on top of the other."""
+    found = []
+    for background in backgrounds:
+        mixed = background
+        for layer in layers:
+            mixed = color.mix(mixed, layer, opacity)
+        found.append(mixed)
+    return found
+
+
+def diagram_behind(
+    diagram: VennDiagram | MatrixDiagram, fills: Sequence[str], opacity: float, backgrounds: Sequence[str]
+) -> tuple[list[str], list[str], list[str]]:
+    """What may be behind a diagram's labels, its punchline's name and its lines: the backgrounds, under the circles
+    or quadrants they're on (where a Venn diagram's circles overlap, under all of them)."""
+
+    def under(*layers: str) -> list[str]:
+        return _under(backgrounds, layers, opacity)
+
+    if isinstance(diagram, VennDiagram):
+        circles = fills[: len(diagram.circles)]
+        return [*(mixed for circle in circles for mixed in under(circle)), *under(*circles)], [], []
+    tints = [mixed for quadrant in fills[:4] for mixed in under(quadrant)]
+    # The axes' titles are outside the matrix, on the background; the axes cross it, and reach beyond it
+    return [*tints, *backgrounds], tints, [*tints, *backgrounds]
 
 
 # THE LAYOUTS (each a function of the slide's elements by role, and the theme)
@@ -252,6 +345,13 @@ def _chart(roles: dict[str, Content], theme: Theme) -> _Placement:
     return placement
 
 
+def _diagram(roles: dict[str, Content], theme: Theme) -> _Placement:
+    placement = _Placement("v5/diagram")
+    top = _with_title(placement, roles, theme) if "title" in roles else MARGIN
+    placement.boxes["diagram"] = (Box(x=MARGIN, y=top, w=WIDTH - 2 * MARGIN, h=_CONTENT_BOTTOM - top), "caption")
+    return placement
+
+
 def _with_title(placement: _Placement, roles: dict[str, Content], theme: Theme) -> float:
     """Put the title on top, with the theme's decoration; where the content can start below it."""
     placement.boxes["title"] = (_TITLE, "title")
@@ -295,4 +395,5 @@ _LAYOUTS: Final[dict[str, Callable[[dict[str, Content], Theme], _Placement]]] = 
     "two_column_image": _columns(2),
     "three_column_image": _columns(3),
     "chart": _chart,
+    "diagram": _diagram,
 }

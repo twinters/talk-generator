@@ -118,7 +118,9 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   each quadrant and one named dot as the punchline. The punchline appears on a click. Both come out the classic
   way too, from the words that ConceptNet (or Datamuse) relates to the slide's seed, and a talk has at most one of
   each. A deck holds them as diagram elements (`VennDiagram` and `MatrixDiagram` on a `diagram` slide), which the
-  checks read for gaps and template leftovers.
+  checks read for gaps and template leftovers. In a themed deck, a diagram goes under its title in the theme's
+  colours and body font (`DiagramStyle`), with its circles or quadrants made lighter or darker until its labels
+  read on them, and the design checks check that its labels read and fit.
 - `talkgenerator login openrouter`: sign in to OpenRouter in the browser (OAuth with PKCE), and talkgenerator gets
   a key of its own, which it keeps in the user's config folder (readable only by the user), so OpenRouter's free
   models write talks without an `OPENROUTER_API_KEY`. `--headless` signs in on a computer without a browser,
