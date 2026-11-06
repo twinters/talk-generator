@@ -63,6 +63,15 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   slides are English), and recipes that find English texts, such as real quotes, aren't used. A deck says its
   language, and a new check reads its texts with NLTK's stopword lists: a talk that reads as English when it
   shouldn't is an error, and such a slide a warning. `talkgenerator check --language nl --llm ...` checks them.
+- Two new kinds of chart. A trend: a line along two odd axes ("Hours since the meeting started" against
+  "Times someone said synergy"), going one of eleven ways, from exponential to hockey stick to crash, with an
+  optional second line, the punchline, that draws itself across the chart on a click. And a ranking: bars that
+  the last one, the punchline, wins by far. Both come out the classic way too, and a talk has at most one of
+  each. A field of a slide kind can be a choice (`TextField.options`, such as a trend's shape), which the
+  language model picks from a list, and which the Skill's reference lists.
+- Charts with axes get axis titles: the correlation curves now show the two things they correlate (v4 left
+  them out), and a language model or a plan can name them (`x_axis` and `y_axis`). A deck's chart says its axis
+  titles and whether its series appear one by one (`reveal`).
 - `talkgenerator check --llm provider:model` checks talks a language model writes; to check that the same answers
   give the same talk, the second run replays what the first one got. The report says how many slides the model
   wrote.

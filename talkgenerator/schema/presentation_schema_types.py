@@ -99,6 +99,8 @@ ted_schema = schemas.register(
             "history": 1,
             "anecdote": 1,
             "location_chart": 1,
+            "trend_chart": 1,
+            "bar_chart": 1,
             "chart": 1,
             "deep": 2,
             # Relative (procentual) maxima

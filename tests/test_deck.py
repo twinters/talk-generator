@@ -105,6 +105,8 @@ def _draw_like_v4(slide, presentation):
     arguments = dict(slide._arguments)
     if slide.type_name == "chart":
         arguments["chart_modifier"] = _V4_STYLES[arguments["chart_type"]]
+        for v5_only in ("x_title", "y_title", "reveal"):  # axis titles and animations came with v5
+            arguments.pop(v5_only, None)
     ppt_slide = slide._ppt_slide_creator(presentation, **arguments)
     if slide._credits:
         powerpoint_slide_creator.add_sources_note(ppt_slide, slide._credits)
@@ -260,7 +262,7 @@ def test_numbers_json_cant_hold_become_zero():
 
 def test_unsupported_charts_are_refused():
     with pytest.raises(ValueError):
-        charts.chart_spec(XL_CHART_TYPE.LINE, _pie_chart_data())
+        charts.chart_spec(XL_CHART_TYPE.RADAR, _pie_chart_data())
 
 
 def test_the_slide_deck_dictionary_is_json():

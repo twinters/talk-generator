@@ -20,7 +20,9 @@ from talkgenerator.models.usage import Usage
 DECK_VERSION: Final = 1
 
 ImageFit = Literal["contain", "cover"]
-ChartType = Literal["pie", "doughnut", "column", "scatter"]
+ChartType = Literal["pie", "doughnut", "column", "bar", "line", "scatter"]
+# How a chart appears: all at once, or the series after the first on clicks, one by one
+ChartReveal = Literal["all", "series"]
 
 
 class CreditPart(_Data):
@@ -68,6 +70,11 @@ class ChartSpec(_Data):
     chart_type: ChartType
     categories: tuple[str, ...] = ()
     series: tuple[ChartSeries, ...] = ()
+    # The titles of the axes, on charts that have axes: what the chart goes along (its categories, or its x values),
+    # and what it measures (its values, or its y values)
+    x_title: str = ""
+    y_title: str = ""
+    reveal: ChartReveal = "all"  # "series": the series after the first appear on clicks, one by one
 
 
 class ChartElement(_Data):

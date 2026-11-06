@@ -20,7 +20,7 @@ from pptx.slide import Slide
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.models import classic
 from talkgenerator.models.deck import ChartElement, Deck, DeckSlide, ImageAsset, ImageElement, TextElement
-from talkgenerator.render import charts
+from talkgenerator.render import animation, charts
 from talkgenerator.slide import powerpoint_slide_creator as creator
 
 logger = logging.getLogger("talkgenerator")
@@ -104,14 +104,19 @@ def _create_chart_slide(presentation: Presentation, slide: DeckSlide) -> Slide:
     if not isinstance(chart_element, ChartElement):
         raise ValueError("A chart slide needs its chart")
     title = slide.element("title")
-    chart_type, chart_data = charts.pptx_chart_data(chart_element.chart)
+    spec = chart_element.chart
+    chart_type, chart_data = charts.pptx_chart_data(spec)
     ppt_slide: Slide = creator.create_chart_slide(
         presentation,
         title.text if isinstance(title, TextElement) else None,
         chart_type,
         chart_data,
-        charts.CHART_STYLES[chart_element.chart.chart_type],
+        charts.CHART_STYLES[spec.chart_type],
     )
+    frame: Any = next(shape for shape in ppt_slide.shapes if getattr(shape, "has_chart", False))
+    charts.set_axis_titles(frame.chart, spec)
+    if spec.reveal == "series":
+        animation.reveal_chart_series(ppt_slide, frame, len(spec.series))
     return ppt_slide
 
 

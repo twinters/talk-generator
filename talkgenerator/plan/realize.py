@@ -27,9 +27,12 @@ _QUOTE_MARKS: Final = "\"'“”‘’«»"
 
 def clean_text(value: Any, text_field: TextField) -> str | None:
     """The text as it goes on a slide: on one line, without wrapping quote marks, at most the field's length (cut
-    between words). None when it's empty, or holds bits of templates or code."""
+    between words), or the option it names when the field is a choice. None when it's empty, names no option, or
+    holds bits of templates or code."""
     if not isinstance(value, str):
         return None
+    if text_field.options:
+        return option_of(value, text_field)
     text = " ".join(value.split()).strip(_QUOTE_MARKS + " ")
     if not text or leftovers_in(text):
         return None
@@ -37,6 +40,15 @@ def clean_text(value: Any, text_field: TextField) -> str | None:
         cut = text[: text_field.max_length + 1].rsplit(" ", 1)[0].rstrip(",;:-–— ")
         text = cut or text[: text_field.max_length]
     return text
+
+
+def option_of(value: str, text_field: TextField) -> str | None:
+    """The option of the field that the value names (ignoring case, quote marks, dashes and underscores)."""
+
+    def plain(text: str) -> str:
+        return " ".join(text.replace("-", " ").replace("_", " ").split()).strip(_QUOTE_MARKS + " .").lower()
+
+    return next((option for option in text_field.options if plain(option) == plain(value)), None)
 
 
 def realize(

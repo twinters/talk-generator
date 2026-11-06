@@ -598,6 +598,28 @@ own_chart_generators = _register(
             name="Correlation Curve",
             llm=Recipe("chart_correlation", brief="A made-up scientific finding about the concept"),
         ),
+        SlideGeneratorData(
+            slide_generator_types.ChartSlideGenerator(chart.generate_trend_chart),
+            allowed_repeated_elements=4,
+            retries=1,
+            weight_function=ConstantWeightFunction(1.5),
+            tags=["trend_chart", "chart"],
+            name="Trend Chart",
+            llm=Recipe(
+                "chart_trend",
+                brief="A made-up trend about the concept along two odd axes, with a second line as the "
+                "punchline when that's funnier",
+            ),
+        ),
+        SlideGeneratorData(
+            slide_generator_types.ChartSlideGenerator(chart.generate_ranking_bars),
+            allowed_repeated_elements=4,
+            retries=1,
+            weight_function=ConstantWeightFunction(1),
+            tags=["bar_chart", "chart"],
+            name="Bar Ranking",
+            llm=Recipe("chart_bars", brief="A ranking that the concept wins by far"),
+        ),
     ],
 )
 
@@ -728,6 +750,8 @@ default_max_allowed_tags = {
     "history": 1,
     "anecdote": 1,
     "location_chart": 1,
+    "trend_chart": 1,
+    "bar_chart": 1,
     # Relative (procentual) maxima
     "two_captions": 0.2,
     "three_captions": 0.2,

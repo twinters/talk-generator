@@ -157,14 +157,20 @@ def slide_schema(recipe: Recipe) -> dict[str, Any]:
     properties: dict[str, Any] = {"concept": {"type": "string", "description": CONCEPT}}
     for text in recipe.written_fields():
         properties[text.name] = {"type": "string", "description": field_description(recipe, text)}
+        if text.options:  # one of these words (or empty, when the field may stay empty)
+            properties[text.name]["enum"] = [*text.options, *([""] if text.optional else [])]
     for slot in recipe.image_queries():
         properties[f"{slot}_query"] = {"type": "string", "description": _query_description(slot)}
     return _object(properties)
 
 
 def field_description(recipe: Recipe, text: TextField) -> str:
-    """What to write in a slide's text field: the recipe's hint, or else the field's own description, and its length."""
-    limit = f"at most {text.max_length} characters" + (", or empty for none" if text.optional else "")
+    """What to write in a slide's text field: the recipe's hint, or else the field's own description, and its length
+    (or the words it can be)."""
+    if text.options:
+        limit = "one of " + ", ".join(text.options) + (", or empty for any" if text.optional else "")
+    else:
+        limit = f"at most {text.max_length} characters" + (", or empty for none" if text.optional else "")
     return f"{recipe.hints.get(text.name, text.description)} ({limit})"
 
 

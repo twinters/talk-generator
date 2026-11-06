@@ -251,7 +251,16 @@ class ThreeColumnImageSlide(Slide):
 class ChartSlide(Slide):
     required_arguments = ("chart_type", "chart_data")
 
-    def __init__(self, title, chart_type, chart_data, chart_modifier=None):
+    def __init__(
+        self,
+        title,
+        chart_type,
+        chart_data,
+        chart_modifier=None,
+        x_title: str | None = None,
+        y_title: str | None = None,
+        reveal: model.ChartReveal = "all",
+    ):
         super().__init__(
             type_name="chart",
             ppt_slide_creator=powerpoint_slide_creator.create_chart_slide,
@@ -260,18 +269,27 @@ class ChartSlide(Slide):
                 "chart_type": chart_type,
                 "chart_data": chart_data,
                 "chart_modifier": chart_modifier,
+                "x_title": x_title,
+                "y_title": y_title,
+                "reveal": reveal,
             },
         )
 
     def to_deck_slide(self) -> model.DeckSlide:
-        """The chart's numbers go into the deck; the renderer styles the chart by its type (the chart_modifier
-        stays out: a deck holds data, not functions)."""
+        """The chart's numbers, axis titles and how it appears go into the deck; the renderer styles the chart by
+        its type (the chart_modifier stays out: a deck holds data, not functions)."""
         elements: list[model.TextElement | model.ImageElement | model.ChartElement] = []
         title = _to_element("title", self._arguments.get("title"), "contain")
         if title is not None:
             elements.append(title)
         chart_data = self._arguments.get("chart_data")
         if chart_data is not None:
-            chart = charts.chart_spec(self._arguments["chart_type"], chart_data)
+            chart = charts.chart_spec(
+                self._arguments["chart_type"],
+                chart_data,
+                x_title=self._arguments.get("x_title"),
+                y_title=self._arguments.get("y_title"),
+                reveal=self._arguments.get("reveal") or "all",
+            )
             elements.append(model.ChartElement(role="chart", chart=chart))
         return self._deck_slide(tuple(elements))

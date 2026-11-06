@@ -27,6 +27,7 @@ class TextField:
     description: str
     max_length: int = 80
     optional: bool = False  # may stay empty, and the slide then shows nothing there
+    options: tuple[str, ...] = ()  # the words it can be, when it's a choice (such as how a trend line goes)
 
 
 # Builds the slide from its texts (None where a field stays empty), its images (whatever the sources found), and the
@@ -127,6 +128,32 @@ def _chart_categories(texts: Mapping[str, str | None], images: Mapping[str, Any]
     return slides.ChartSlide(texts["question"], chart_type, data, style)
 
 
+def _chart_trend(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    # The first line goes the way the plan says (or a random way), and a second line, if any, another way
+    shape, values = chart.trend_values(texts.get("shape"))
+    lines = [(texts.get("line") or "", values)]
+    second = texts.get("second_line")
+    if second:
+        lines.append((second, chart.trend_values(texts.get("second_shape"), avoid=shape)[1]))
+    return slides.ChartSlide(
+        texts["title"],
+        XL_CHART_TYPE.LINE,
+        chart.trend_chart_data(lines),
+        x_title=texts["x_axis"],
+        y_title=texts["y_axis"],
+        reveal="series" if second else "all",
+    )
+
+
+def _chart_bars(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    bars = [part.strip() for part in (texts["bars"] or "").split("|") if part.strip()][:6]
+    if len(bars) < 3:
+        raise ValueError("a ranking needs three bars or more")
+    return slides.ChartSlide(
+        texts["title"], XL_CHART_TYPE.BAR_CLUSTERED, chart.ranking_chart_data(bars), y_title=texts.get("value_axis")
+    )
+
+
 def _chart_correlation(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
     # The made-up data of v4's correlation curves, under the plan's claim
     data = XyChartData()
@@ -136,7 +163,12 @@ def _chart_correlation(texts: Mapping[str, str | None], images: Mapping[str, Any
     points = chart.add_gaussian_noise_to_multidim_points(1.5 * random_util.uniform(0, max(xs) / 10), points)
     chart.add_data_to_series(series, [(abs(x), abs(y)) for x, y in points])
     return slides.ChartSlide(
-        texts["title"], XL_CHART_TYPE.XY_SCATTER, data, chart.create_set_scatter_properties("", "")
+        texts["title"],
+        XL_CHART_TYPE.XY_SCATTER,
+        data,
+        chart.create_set_scatter_properties("", ""),
+        x_title=texts.get("x_axis"),
+        y_title=texts.get("y_axis"),
     )
 
 
@@ -224,9 +256,47 @@ KINDS: Final[dict[str, Kind]] = {
         Kind(
             "chart_correlation",
             "A scatter plot of made-up data, under a claim of a correlation.",
-            (TextField("title", "a made-up correlation between two things, as a claim", 90),),
+            (
+                TextField("title", "a made-up correlation between two things, as a claim", 90),
+                TextField("x_axis", "the axis along the bottom: the first of the two things", 40, optional=True),
+                TextField("y_axis", "the axis going up: the second thing", 40, optional=True),
+            ),
             (),
             _chart_correlation,
+        ),
+        Kind(
+            "chart_trend",
+            "A line chart of a made-up trend along two odd axes; a second line, if any, draws itself across it on a "
+            "click, as the punchline.",
+            (
+                TextField("title", "the chart's claim, as its title", 90),
+                TextField("x_axis", "what the chart goes along, such as 'Hours since the meeting started'", 40),
+                TextField("y_axis", "what the line measures, such as 'Times someone said synergy'", 40),
+                TextField("shape", "how the line goes", 20, optional=True, options=tuple(chart.TREND_SHAPES)),
+                TextField("line", "the line's name in the legend, such as 'Me'", 30, optional=True),
+                TextField(
+                    "second_line",
+                    "a second line's name in the legend, such as 'My cat'; it appears on a click, as the punchline",
+                    30,
+                    optional=True,
+                ),
+                TextField(
+                    "second_shape", "how the second line goes", 20, optional=True, options=tuple(chart.TREND_SHAPES)
+                ),
+            ),
+            (),
+            _chart_trend,
+        ),
+        Kind(
+            "chart_bars",
+            "A ranking in bars, whose last bar, the punchline, wins by far.",
+            (
+                TextField("title", "the question the ranking answers, as its title", 90),
+                TextField("bars", "three to six things, separated by |, the last one the punchline", 160),
+                TextField("value_axis", "what the bars measure, such as 'Danger level'", 40, optional=True),
+            ),
+            (),
+            _chart_bars,
         ),
     )
 }

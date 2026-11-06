@@ -55,8 +55,16 @@
       "images": {"image": "bubbling dough"}
     },
     {
-      "kind": "chart_correlation",
-      "texts": {"title": "The more you feed it, the more it owns you"}
+      "kind": "chart_trend",
+      "texts": {
+        "title": "The more you feed it, the more it owns you",
+        "x_axis": "Days since I started my starter",
+        "y_axis": "Control over my weekends",
+        "shape": "falling",
+        "line": "Me",
+        "second_line": "The starter",
+        "second_shape": "exponential"
+      }
     },
     {
       "kind": "three_columns",

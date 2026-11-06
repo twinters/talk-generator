@@ -35,7 +35,8 @@ from talkgenerator.datastructures.slide_generator_data import SlideGeneratorData
 from talkgenerator.models.deck import Deck, ImageElement, TextElement
 from talkgenerator.models.plan import SlidePlan, TalkPlan
 from talkgenerator.plan import languages
-from talkgenerator.plan.kinds import KINDS, Recipe
+from talkgenerator.plan.kinds import KINDS, Recipe, TextField
+from talkgenerator.plan.realize import option_of
 from talkgenerator.schema.presentation_schema import PlanOutcome, PresentationSchema
 from talkgenerator.slide.slide_deck import SlideDeck
 from talkgenerator.util import os_util, random_util
@@ -65,6 +66,8 @@ _DEFAULT_RECIPES: Final = {
     "chart_yes_no": ("yes-no-funny-chart",),
     "chart_categories": ("property-chart",),
     "chart_correlation": ("correlation-curve",),
+    "chart_trend": ("trend-chart",),
+    "chart_bars": ("bar-ranking",),
 }
 _COPYRIGHT_FREE: Final = re.compile(r"-crf$|copyright-free")
 PLANNABLE_KINDS: Final = tuple(name for name in KINDS if name != "title")
@@ -163,6 +166,11 @@ def plan_warnings(slide: SlidePlan, recipe: Recipe) -> list[str]:
             warnings.append(f"this recipe shows no {name}")
         elif name in recipe.texts_from:
             warnings.append(f"this recipe finds its {name} itself, so yours isn't used")
+        elif text_field.options and value.strip() and option_of(value, text_field) is None:
+            warnings.append(
+                f"{name} is none of {_listed(text_field.options)}, so "
+                + ("talkgenerator picked one" if text_field.optional else "the slide can't be made")
+            )
         elif len(" ".join(value.split())) > text_field.max_length:
             warnings.append(f"{name} has more than {text_field.max_length} characters, so it was cut off")
     for slot, query in slide.images.items():
@@ -423,20 +431,24 @@ def catalog(schema_name: str = "default") -> dict[str, Any]:
             {
                 "kind": name,
                 "description": kind.description,
-                "texts": [
-                    {
-                        "name": text.name,
-                        "max_length": text.max_length,
-                        "optional": text.optional,
-                        "description": text.description,
-                    }
-                    for text in kind.texts
-                ],
+                "texts": [_text_entry(text) for text in kind.texts],
                 "images": list(kind.images),
                 "recipes": [_recipe_entry(choice, choice is default) for choice in of_kind],
             }
         )
     return {"format": schema_name, "description": FORMATS.get(schema_name, ""), "kinds": kinds}
+
+
+def _text_entry(text: TextField) -> dict[str, Any]:
+    entry: dict[str, Any] = {
+        "name": text.name,
+        "max_length": text.max_length,
+        "optional": text.optional,
+        "description": text.description,
+    }
+    if text.options:
+        entry["options"] = list(text.options)
+    return entry
 
 
 def _recipe_entry(choice: RecipeChoice, is_default: bool) -> dict[str, Any]:
@@ -475,8 +487,10 @@ def catalog_markdown(schema_name: str = "default") -> str:
         lines += ["", f"## `{kind['kind']}`", "", kind["description"], ""]
         lines += ["| Text | At most | What to write |", "| --- | --- | --- |"]
         for text in kind["texts"]:
-            optional = " (or empty, for none)" if text["optional"] else ""
-            lines.append(f"| `{text['name']}` | {text['max_length']} | {_cell(text['description'])}{optional} |")
+            options = ": " + ", ".join(f"`{option}`" for option in text["options"]) if "options" in text else ""
+            optional = (" (or empty, for any)" if options else " (or empty, for none)") if text["optional"] else ""
+            description = _cell(text["description"]) + options + optional
+            lines.append(f"| `{text['name']}` | {text['max_length']} | {description} |")
         slots = ", ".join(f"`{slot}`" for slot in kind["images"]) or "none"
         lines += ["", f"Images: {slots}", "", "| Recipe | What it's for | Notes |", "| --- | --- | --- |"]
         for recipe in kind["recipes"]:

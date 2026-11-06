@@ -154,9 +154,47 @@ A scatter plot of made-up data, under a claim of a correlation.
 | Text | At most | What to write |
 | --- | --- | --- |
 | `title` | 90 | a made-up correlation between two things, as a claim |
+| `x_axis` | 40 | the axis along the bottom: the first of the two things (or empty, for none) |
+| `y_axis` | 40 | the axis going up: the second thing (or empty, for none) |
 
 Images: none
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
 | `correlation-curve` | A made-up scientific finding about the concept | the default; tags: chart, curve |
+
+## `chart_trend`
+
+A line chart of a made-up trend along two odd axes; a second line, if any, draws itself across it on a click, as the punchline.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `title` | 90 | the chart's claim, as its title |
+| `x_axis` | 40 | what the chart goes along, such as 'Hours since the meeting started' |
+| `y_axis` | 40 | what the line measures, such as 'Times someone said synergy' |
+| `shape` | 20 | how the line goes: `rising`, `falling`, `exponential`, `diminishing`, `hockey stick`, `peak`, `crash`, `plateau`, `rollercoaster`, `dip`, `flat` (or empty, for any) |
+| `line` | 30 | the line's name in the legend, such as 'Me' (or empty, for none) |
+| `second_line` | 30 | a second line's name in the legend, such as 'My cat'; it appears on a click, as the punchline (or empty, for none) |
+| `second_shape` | 20 | how the second line goes: `rising`, `falling`, `exponential`, `diminishing`, `hockey stick`, `peak`, `crash`, `plateau`, `rollercoaster`, `dip`, `flat` (or empty, for any) |
+
+Images: none
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `trend-chart` | A made-up trend about the concept along two odd axes, with a second line as the punchline when that's funnier | the default; tags: chart, trend_chart |
+
+## `chart_bars`
+
+A ranking in bars, whose last bar, the punchline, wins by far.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `title` | 90 | the question the ranking answers, as its title |
+| `bars` | 160 | three to six things, separated by \|, the last one the punchline |
+| `value_axis` | 40 | what the bars measure, such as 'Danger level' (or empty, for none) |
+
+Images: none
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `bar-ranking` | A ranking that the concept wins by far | the default; tags: bar_chart, chart |

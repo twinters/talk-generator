@@ -1,4 +1,6 @@
 import math
+from collections.abc import Callable
+from typing import Any, Final
 
 from pptx.chart.data import ChartData, XyChartData
 from pptx.enum.chart import XL_CHART_TYPE
@@ -21,6 +23,9 @@ property_question_generator = text_generator.TraceryTextGenerator(
 ).generate
 correlation_title_generator = text_generator.TraceryTextGenerator(
     "data/text-templates/chart_texts.json", "correlation_title"
+).generate
+ranking_title_generator = text_generator.TraceryTextGenerator(
+    "data/text-templates/chart_texts.json", "ranking_title"
 ).generate
 
 
@@ -275,4 +280,83 @@ def generate_correlation_curve(presentation_context):
         XL_CHART_TYPE.XY_SCATTER,
         chart_data,
         create_set_scatter_properties(x_label, y_label),
+        x_label,
+        y_label,
     )
+
+
+# TRENDS: a line along two axes, going one of these ways (each a curve over 0 to 1)
+TREND_SHAPES: Final[dict[str, Callable[[float], float]]] = {
+    "rising": lambda x: x,
+    "falling": lambda x: 1 - x,
+    "exponential": lambda x: (math.exp(4 * x) - 1) / (math.exp(4) - 1),
+    "diminishing": lambda x: math.log1p(9 * x) / math.log(10),
+    "hockey stick": lambda x: 0.1 * x if x < 0.75 else 0.075 + (x - 0.75) * 3.7,
+    "peak": lambda x: math.sin(math.pi * x),
+    "crash": lambda x: 0.05 + 0.9 * x if x < 0.8 else 0.05,
+    "plateau": lambda x: 1 / (1 + math.exp(-12 * (x - 0.35))),
+    "rollercoaster": lambda x: 0.5 + 0.4 * math.sin(3 * math.pi * x),
+    "dip": lambda x: (2 * x - 1) ** 2,
+    "flat": lambda x: 0.5,
+}
+TREND_POINTS: Final = 12
+
+
+def trend_values(shape: str | None, avoid: str | None = None) -> tuple[str, list[float]]:
+    """A trend line's values, going the way its shape says, with some noise. Without a shape (or with one that
+    isn't in TREND_SHAPES), a random one, other than the one to avoid (a first line's, for a second line)."""
+    if shape not in TREND_SHAPES:
+        shape = random_util.choice([name for name in TREND_SHAPES if name != avoid])
+    curve = TREND_SHAPES[shape]
+    values = [
+        100 * max(0.0, curve(point / (TREND_POINTS - 1)) + random_util.gauss(0, 0.03)) for point in range(TREND_POINTS)
+    ]
+    return shape, values
+
+
+def trend_chart_data(lines: list[tuple[str, list[float]]]) -> ChartData:
+    """The chart data of trend lines: (name, values) each, along unnamed points."""
+    chart_data = ChartData()
+    chart_data.categories = [str(point) for point in range(1, TREND_POINTS + 1)]
+    for name, values in lines:
+        chart_data.add_series(name, values)
+    return chart_data
+
+
+def generate_trend_chart(presentation_context: dict[str, Any]) -> tuple[Any, ...] | None:
+    """A classic trend: the slide's seed, going some way along the topic (or along time, if they're alike)."""
+    x_label = presentation_context["topic"]
+    y_label = presentation_context["seed"]
+    if is_too_similar_for_axes(x_label, y_label):
+        x_label = "time"
+    presentation_context.update({"x_label": x_label, "y_label": y_label})
+    title = correlation_title_generator(presentation_context)
+    if not title:
+        return None
+    _, values = trend_values(None)
+    return title, XL_CHART_TYPE.LINE, trend_chart_data([("", values)]), None, x_label, y_label
+
+
+# RANKINGS: bars, the last of which, the punchline, wins by far
+
+
+def ranking_chart_data(bars: list[str]) -> ChartData:
+    values = sorted(random_util.uniform(10, 40) for _ in bars[:-1]) + [random_util.uniform(80, 100)]
+    chart_data = ChartData()
+    chart_data.categories = bars
+    chart_data.add_series("", values)
+    return chart_data
+
+
+def generate_ranking_bars(presentation_context: dict[str, Any]) -> tuple[Any, ...] | None:
+    """A classic ranking: things related to the slide's seed, beaten by far by the seed itself."""
+    seed = presentation_context["seed"]
+    related = conceptnet.remove_containing(conceptnet.get_weighted_related_words(seed, 30), seed) or []
+    words = [word for _, word in conceptnet.remove_duplicates(related) or []]
+    if len(words) < 3:
+        return None
+    title = ranking_title_generator(presentation_context)
+    if not title:
+        return None
+    bars = [*random_util.sample(words, 3), seed]
+    return title, XL_CHART_TYPE.BAR_CLUSTERED, ranking_chart_data(bars), None
