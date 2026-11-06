@@ -99,7 +99,7 @@ def _creator_arguments(slide: DeckSlide, images: ImageStore | None) -> dict[str,
         if isinstance(element, TextElement):
             arguments[argument] = element.text
         elif isinstance(element, ImageElement):
-            arguments[argument] = _image_data(element.image, images)
+            arguments[argument] = image_data(element.image, images)
             if element.role not in classic.COVER_ROLES:
                 fits.append(element.fit)
         else:
@@ -131,7 +131,9 @@ def _create_chart_slide(presentation: Presentation, slide: DeckSlide) -> Slide:
     return ppt_slide
 
 
-def _image_data(image: ImageAsset, images: ImageStore | None) -> ImageData:
+def image_data(image: ImageAsset, images: ImageStore | None) -> ImageData:
+    """The image of a deck's image: the one generating found, if the store has it, else one that downloads it (and
+    its video, if it plays one). Themed decks' pictures come from here too (talkgenerator.render.shapes)."""
     known = images.get(image.url) if images is not None else None
     if known is not None:
         return known

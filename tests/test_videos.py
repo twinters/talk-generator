@@ -20,11 +20,12 @@ from pptx.oxml.ns import qn
 from pydantic import ValidationError
 
 from talkgenerator.datastructures.image_data import ImageData, VideoCopy
+from talkgenerator.design import themes
 from talkgenerator.models.deck import Deck, DeckSlide, ImageAsset, ImageElement
 from talkgenerator.render.powerpoint import render_pptx, render_slide
 from talkgenerator.slide import powerpoint_slide_creator, slides
 from talkgenerator.slide.slide_deck import SlideDeck
-from talkgenerator.util import http_util, image_util, video_util
+from talkgenerator.util import http_util, image_util, random_util, video_util
 
 MB = 1024 * 1024
 P = {"p": "http://schemas.openxmlformats.org/presentationml/2006/main"}  # for the XML python-pptx doesn't wrap
@@ -446,3 +447,82 @@ def test_a_pptx_with_a_video_saves_and_opens_again(served):
     with zipfile.ZipFile(output) as archive:
         assert archive.read(partname.lstrip("/")) == _mp4(2.5)
         assert 'ContentType="video/mp4"' in archive.read("[Content_Types].xml").decode()
+
+
+# THEMED DECKS (drawn as shapes, by talkgenerator.render.shapes)
+
+
+def _themed(*slides_to_draw, family="clean keynote", seed=1):
+    """A deck of the slides in a theme, and the PowerPoint slides it's drawn as."""
+    slide_deck = SlideDeck(len(slides_to_draw), title="Gifs", seed=1)
+    for index, slide in enumerate(slides_to_draw):
+        slide_deck.add_slide(index, slide)
+    slide_deck.theme = themes.pick(family, random_util.Rng(seed))
+    deck = slide_deck.to_deck()
+    assert all(slide.layout.startswith("v5/") for slide in deck.slides)
+    return deck, list(render_pptx(deck, images=slide_deck.image_store()).slides)
+
+
+def test_a_gif_too_large_to_embed_plays_in_a_themed_deck_too(served):
+    _, (ppt_slide,) = _themed(slides.FullImageSlide("Look at this", _big_gif()))
+
+    (movie,) = _movies(ppt_slide)
+    assert _video_part(ppt_slide, movie).blob == _mp4(2.5)
+    assert movie.poster_frame.blob == served.images[POSTER]
+    assert len(ppt_slide.element.xpath(".//p:pic")) == 1  # the video took the picture's place
+    (play,) = ppt_slide.element.xpath(".//p:timing//p:cTn[@presetClass='mediacall']")
+    assert play.xpath(".//p:spTgt/@spid", namespaces=P) == [str(movie.shape_id)]  # it plays by itself
+    assert ppt_slide.element.xpath(".//p:timing//p:video/p:cMediaNode/@mute") == ["1"]
+
+
+@pytest.mark.parametrize("whole", [True, False], ids=["shown whole", "filling its frame"])
+def test_a_video_in_a_themed_deck_is_where_its_picture_would_be(served, whole):
+    _, (still,) = _themed(slides.FullImageSlide("Look at this", ImageData(POSTER), original_image_size=whole))
+    (picture,) = [shape for shape in still.shapes if shape.shape_type == MSO_SHAPE_TYPE.PICTURE]
+
+    _, (moving,) = _themed(slides.FullImageSlide("Look at this", _big_gif(), original_image_size=whole))
+
+    (movie,) = _movies(moving)
+    frame = (movie.left, movie.top, movie.width, movie.height)
+    assert frame == pytest.approx((picture.left, picture.top, picture.width, picture.height), abs=2)
+    crops = (picture.crop_left, picture.crop_right, picture.crop_top, picture.crop_bottom)
+    assert any(crops) != whole  # the 4:3 still: whole and uncropped, or cropped to fill its 16:9 frame
+    assert (movie.crop_left, movie.crop_right, movie.crop_top, movie.crop_bottom) == pytest.approx(crops)
+
+
+def test_a_video_has_the_frame_its_theme_gives_pictures(served):
+    family, seed = next(
+        (family, seed)
+        for family in themes.FAMILIES
+        for seed in range(20)
+        if themes.pick(family, random_util.Rng(seed)).image_border
+    )
+    deck, (ppt_slide,) = _themed(slides.ImageSlide("Look at this", _big_gif()), family=family, seed=seed)
+
+    (element,) = [element for element in deck.slides[0].elements if isinstance(element, ImageElement)]
+    assert element.border is not None
+    (movie,) = _movies(ppt_slide)
+    assert str(movie.line.color.rgb).lower() == element.border.lstrip("#")
+
+
+def test_a_themed_deck_from_json_plays_its_video(served):
+    deck, _ = _themed(slides.FullImageSlide("Look at this", _big_gif()))
+
+    (ppt_slide,) = render_pptx(Deck.from_json(deck.to_json())).slides  # without the generation run: downloaded again
+
+    (movie,) = _movies(ppt_slide)
+    assert movie.poster_frame.blob == served.images[POSTER]
+    assert _video_part(ppt_slide, movie).blob == _mp4(2.5)
+
+
+def test_a_themed_video_that_cant_be_downloaded_shows_its_poster_frame(served, caplog):
+    caplog.set_level(logging.WARNING, logger="talkgenerator")
+    deck, _ = _themed(slides.FullImageSlide("Look at this", _big_gif()))
+    served.videos.clear()  # gone from the web
+
+    (ppt_slide,) = render_pptx(Deck.from_json(deck.to_json())).slides
+
+    assert not _movies(ppt_slide)
+    assert len(ppt_slide.element.xpath(".//p:pic")) == 1  # the still
+    assert ppt_slide.element.find(qn("p:timing")) is None
+    assert "as its poster frame" in caplog.text

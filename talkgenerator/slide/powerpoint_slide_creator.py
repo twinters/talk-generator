@@ -129,15 +129,16 @@ def _add_image(slide, placeholder_id: int, image: ImageData, original_image_size
 
     if isinstance(image, ImageData):
         if image.video_data is not None:  # it plays its video, with the picture as its poster frame
-            picture = _play_video(slide, picture, image.video_data, image_bytes, original_image_size)
+            picture = play_video(slide, picture, image.video_data, image_bytes, original_image_size)
         image.mark_used()
     return picture
 
 
-def _play_video(slide, picture, video: bytes, poster: bytes, whole: bool):
+def play_video(slide, picture, video: bytes, poster: bytes, whole: bool):
     """Put the video where the picture of its poster frame is, the way the gif it stands in for would be: in the
     picture's place among the slide's shapes (under an overlay drawn over it, say), shown whole or filling the frame
-    as the picture does, and playing by itself, looping. Returns the video's shape (or the picture, if it can't)."""
+    as the picture does, and playing by itself, looping. Returns the video's shape (or the picture, if it can't).
+    Themed decks' pictures play their videos with it too (talkgenerator.render.shapes)."""
     left, top, width, height = picture.left, picture.top, picture.width, picture.height
     crops = None
     if whole:  # the largest frame of the poster's shape that fits, in the middle (a video isn't padded like a picture)

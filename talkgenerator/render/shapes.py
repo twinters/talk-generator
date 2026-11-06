@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import io
 import logging
-from collections.abc import Mapping
 from typing import Any, Final
 
 import pptx
@@ -24,7 +23,6 @@ from pptx.presentation import Presentation
 from pptx.slide import Slide
 from pptx.util import Emu, Pt
 
-from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.design import color
 from talkgenerator.design.engine import HEIGHT, WIDTH
 from talkgenerator.models.deck import (
@@ -32,7 +30,6 @@ from talkgenerator.models.deck import (
     ChartElement,
     Deck,
     DeckSlide,
-    ImageAsset,
     ImageElement,
     ShapeElement,
     TextElement,
@@ -40,11 +37,12 @@ from talkgenerator.models.deck import (
 )
 from talkgenerator.models.theme import Theme
 from talkgenerator.render import animation, charts
+from talkgenerator.render.powerpoint import ImageStore, image_data
+from talkgenerator.slide import powerpoint_slide_creator as creator
 from talkgenerator.util import http_util, image_util
 
 logger = logging.getLogger("talkgenerator")
 
-ImageStore = Mapping[str, ImageData]
 EMU_PER_PIXEL: Final = 6350  # 12192000 EMU (13.333 inches) across 1920 pixels
 _BLANK_LAYOUT: Final = 6  # in python-pptx's default template
 _ALIGN: Final = {"left": PP_ALIGN.LEFT, "center": PP_ALIGN.CENTER, "right": PP_ALIGN.RIGHT}
@@ -180,7 +178,7 @@ def _text_box(
 
 def _picture(ppt_slide: Slide, element: ImageElement, images: ImageStore | None) -> None:
     assert element.box is not None
-    image = _image_data(element.image, images)
+    image = image_data(element.image, images)
     data = image_util.fetch_image_data(image)
     if data is None:
         logger.warning("Leaving out image %s: it could not be downloaded", http_util.describe_url(element.image.url))
@@ -203,18 +201,12 @@ def _picture(ppt_slide: Slide, element: ImageElement, images: ImageStore | None)
         picture = ppt_slide.shapes.add_picture(
             io.BytesIO(data), _emu(x), _emu(y), _emu(shown_width), _emu(shown_height)
         )
+    if image.video_data is not None:  # a gif too large to embed: its video plays, with this picture as its poster
+        picture = creator.play_video(ppt_slide, picture, image.video_data, data, element.fit != "cover")
     if element.border:
         picture.line.color.rgb = _rgb(element.border)
         picture.line.width = _emu(6)
     image.mark_used()
-
-
-def _image_data(image: ImageAsset, images: ImageStore | None) -> ImageData:
-    known = images.get(image.url) if images is not None else None
-    if known is not None:
-        return known
-    credit = [(part.text, part.url) for part in image.credit]
-    return ImageData(image_url=image.url, source=image.source, source_url=image.source_url, credit=credit or None)
 
 
 def _chart(ppt_slide: Slide, element: ChartElement, theme: Theme) -> None:
