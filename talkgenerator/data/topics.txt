@@ -1,0 +1,775 @@
+# Topics for talks: things a talk can be about, for suggestions (such as talk-generator-web's random button) and for
+# checking talkgenerator on varied topics (talkgenerator check --random 20). One topic a line, mostly short (a phone
+# shows about 20 characters of the site's topic field); blank lines, comments and repeats are skipped.
+# Inspired by the improv suggestion lists of Impy and improbotics-interface: everyday things, oddly specific ones,
+# and big ideas, all harmless, so that any of them makes a fine talk on stage.
+
+# Animals
+cats
+dogs
+penguins
+pigeons
+geese
+octopuses
+sloths
+capybaras
+raccoons
+hedgehogs
+llamas
+alpacas
+goldfish
+squirrels
+owls
+flamingos
+sharks
+jellyfish
+ants
+bees
+crows
+hamsters
+giraffes
+kangaroos
+seagulls
+snails
+moths
+otters
+badgers
+parrots
+chickens
+cows
+goats
+frogs
+beavers
+bats
+koalas
+lobsters
+axolotls
+pandas
+woodpeckers
+moles
+ducks
+tortoises
+camels
+zebras
+walruses
+narwhals
+
+# Food and drink
+bread
+sourdough
+peanuts
+coffee
+tea
+toast
+cheese
+spaghetti
+pickles
+pancakes
+waffles
+fries
+chocolate
+broccoli
+avocados
+soup
+sandwiches
+ketchup
+mayonnaise
+popcorn
+sushi
+pizza
+breakfast cereal
+porridge
+garlic
+onions
+bananas
+lemons
+eggs
+butter
+salt
+leftovers
+birthday cake
+instant noodles
+Brussels sprouts
+potatoes
+mustard
+honey
+jam
+ice cream
+croissants
+cucumbers
+tofu
+kale
+oat milk
+vending machines
+the last slice of pizza
+spicy food
+cupcakes
+doughnuts
+lasagne
+crisps
+smoothies
+fondue
+
+# Everyday objects
+socks
+umbrellas
+spoons
+staplers
+paperclips
+rubber ducks
+traffic cones
+shopping trolleys
+keys
+remote controls
+phone chargers
+batteries
+light bulbs
+doorbells
+mirrors
+pillows
+alarm clocks
+wristwatches
+sunglasses
+backpacks
+suitcases
+hats
+scarves
+gloves
+shoelaces
+buttons
+zippers
+wallets
+receipts
+envelopes
+stamps
+sticky notes
+pencils
+erasers
+scissors
+sticky tape
+rulers
+flip-flops
+garden gnomes
+houseplants
+candles
+vacuum cleaners
+washing machines
+toasters
+microwaves
+fridges
+kettles
+forks
+chopsticks
+ladders
+wheelbarrows
+bubble wrap
+cardboard boxes
+the junk drawer
+coat hangers
+lunch boxes
+doormats
+wallpaper
+curtains
+doorknobs
+lawn mowers
+the thermostat
+the snooze button
+plastic bags
+name tags
+
+# Places
+Belgium
+the moon
+Mars
+elevators
+airports
+train stations
+libraries
+museums
+car parks
+supermarkets
+petrol stations
+dentists
+playgrounds
+zoos
+lighthouses
+castles
+caves
+deserts
+jungles
+islands
+volcanoes
+beaches
+mountains
+forests
+swamps
+the North Pole
+the ocean floor
+waiting rooms
+laundromats
+roundabouts
+motorways
+campsites
+theme parks
+the attic
+the basement
+the garden shed
+furniture stores
+bus stops
+hotel lobbies
+escape rooms
+car washes
+the lost property office
+the back seat
+the kitchen table
+Antarctica
+the Sahara
+
+# Things people do
+procrastination
+napping
+birdwatching
+karaoke
+origami
+juggling
+knitting
+gardening
+fishing
+camping
+hiking
+jogging
+yoga
+baking
+cooking
+cleaning
+ironing
+laundry
+sleepwalking
+daydreaming
+people-watching
+small talk
+gossip
+online shopping
+window shopping
+queueing
+parallel parking
+assembling furniture
+moving house
+packing a suitcase
+journaling
+crossword puzzles
+jigsaw puzzles
+bingo
+board games
+magic tricks
+stand-up comedy
+ballroom dancing
+beekeeping
+metal detecting
+stamp collecting
+trainspotting
+cloud watching
+whistling
+haggling
+saying goodbye
+apologizing
+complaining
+multitasking
+singing in the shower
+talking to plants
+losing things
+waiting
+running late
+oversleeping
+spring cleaning
+recycling
+tidying up
+DIY
+selfies
+
+# Work and the office
+spreadsheets
+meetings
+remote work
+email
+deadlines
+slide decks
+coffee breaks
+the office printer
+job interviews
+team building
+Mondays
+Fridays
+out-of-office replies
+open-plan offices
+performance reviews
+office plants
+the water cooler
+conference calls
+passwords
+to-do lists
+overtime
+productivity
+motivation
+middle management
+the reply-all button
+business cards
+filing cabinets
+lunch breaks
+the office party
+brainstorming
+paperwork
+bureaucracy
+the coffee machine
+the four-day week
+small print
+job titles
+
+# Technology
+artificial intelligence
+robots
+the internet
+Wi-Fi
+smartphones
+emojis
+autocorrect
+the cloud
+algorithms
+video calls
+chatbots
+3D printing
+self-driving cars
+drones
+smartwatches
+cookies
+spam
+captchas
+software updates
+loading bars
+dark mode
+podcasts
+virtual reality
+electric scooters
+satellites
+rockets
+calculators
+typewriters
+fax machines
+floppy disks
+QR codes
+voice assistants
+group chats
+the mute button
+screen time
+
+# Science and nature
+quantum physics
+gravity
+black holes
+glaciers
+mushrooms
+petrichor
+rainbows
+thunderstorms
+fog
+drizzle
+heatwaves
+snow
+earthquakes
+tides
+the sun
+eclipses
+comets
+asteroids
+dinosaurs
+fossils
+evolution
+DNA
+bacteria
+photosynthesis
+magnets
+electricity
+static electricity
+entropy
+time zones
+leap years
+the speed of light
+rust
+dust
+moss
+trees
+weeds
+compost
+clouds
+wind
+icebergs
+quicksand
+the deep sea
+coral reefs
+migration
+the weather
+gravitational waves
+the Big Bang
+the Milky Way
+the periodic table
+
+# History and myth
+pirates
+Vikings
+the Middle Ages
+Shakespeare
+the Roman Empire
+ancient Egypt
+the pyramids
+knights
+the Renaissance
+the Stone Age
+the Wild West
+cowboys
+samurai
+ninjas
+monks
+alchemy
+the printing press
+the wheel
+fire
+mythology
+dragons
+unicorns
+mermaids
+ghosts
+vampires
+werewolves
+wizards
+fairy tales
+superheroes
+time travel
+haunted houses
+the Titanic
+the moon landing
+the Trojan horse
+Atlantis
+the Loch Ness monster
+treasure maps
+the Bronze Age
+cavemen
+
+# Big and small ideas
+time
+luck
+nostalgia
+regret
+patience
+boredom
+curiosity
+happiness
+friendship
+loneliness
+ambition
+confidence
+awkwardness
+embarrassment
+silence
+noise
+chaos
+perfection
+failure
+success
+change
+habits
+routines
+coincidences
+déjà vu
+common sense
+intuition
+free will
+the meaning of life
+adulthood
+childhood
+growing up
+getting old
+first impressions
+second chances
+guilty pleasures
+the weekend
+the future
+yesterday
+tomorrow
+creativity
+leadership
+teamwork
+innovation
+mindfulness
+minimalism
+sustainability
+kindness
+honesty
+politeness
+good manners
+excuses
+secrets
+rumours
+traditions
+superstitions
+wishes
+promises
+rules
+surprises
+mistakes
+compromise
+
+# Things that happen
+traffic jams
+queues
+jet lag
+hiccups
+sneezing
+yawning
+snoring
+insomnia
+sunburn
+brain freeze
+earworms
+Sunday evenings
+Monday mornings
+awkward silences
+birthday parties
+surprise parties
+weddings
+first dates
+blind dates
+family reunions
+school reunions
+neighbours
+roommates
+in-laws
+tourists
+souvenirs
+holidays
+road trips
+lost luggage
+delayed trains
+rainy days
+bad hair days
+the first day of school
+the last day of school
+New Year's resolutions
+moving out
+retirement
+power cuts
+false alarms
+autumn leaves
+lost keys
+wrong numbers
+group photos
+the dentist's chair
+
+# Sports and games
+chess
+curling
+minigolf
+bowling
+tug of war
+darts
+table tennis
+badminton
+tennis
+football
+cycling
+marathons
+synchronized swimming
+figure skating
+sumo wrestling
+fencing
+archery
+rock climbing
+skydiving
+surfing
+skateboarding
+rugby
+golf
+cricket
+hide and seek
+musical chairs
+rock paper scissors
+sudoku
+video games
+pinball
+frisbee
+hula hoops
+trampolines
+cheerleading
+the Olympics
+penalty shootouts
+sack races
+arm wrestling
+
+# Music, art and entertainment
+jazz
+opera
+bagpipes
+interpretive dance
+mime
+the recorder
+the triangle
+kazoos
+accordions
+drums
+the violin
+heavy metal
+lullabies
+elevator music
+national anthems
+ringtones
+musicals
+ballet
+abstract art
+sculptures
+graffiti
+photography
+poetry
+haiku
+comic books
+cartoons
+soap operas
+sitcoms
+reality TV
+documentaries
+horror movies
+romantic comedies
+the circus
+clowns
+puppets
+ventriloquism
+boy bands
+air guitar
+encores
+movie trailers
+museums at night
+
+# Getting around
+bicycles
+submarines
+hot air balloons
+trains
+trams
+buses
+taxis
+ferries
+canoes
+sailboats
+cargo ships
+helicopters
+airplanes
+parachutes
+unicycles
+tandem bicycles
+roller skates
+tractors
+fire engines
+the night bus
+escalators
+moving walkways
+cable cars
+zip lines
+gondolas
+the window seat
+
+# The body
+eyebrows
+elbows
+knees
+wisdom teeth
+freckles
+dimples
+beards
+moustaches
+haircuts
+sleep
+dreams
+nightmares
+posture
+vitamins
+stretching
+breathing
+left-handedness
+goosebumps
+fingerprints
+belly buttons
+
+# People and jobs
+plumbers
+firefighters
+lifeguards
+librarians
+astronauts
+lighthouse keepers
+postal workers
+referees
+bouncers
+archaeologists
+magicians
+detectives
+spies
+chefs
+waiters
+taxi drivers
+weather forecasters
+tour guides
+interior designers
+accountants
+influencers
+inventors
+explorers
+zookeepers
+dog walkers
+grandparents
+toddlers
+teenagers
+cat people
+morning people
+night owls
+know-it-alls
+the new colleague
+
+# Oddly specific
+a crown that's too big
+a printer that jams
+a stuck Ferris wheel
+a cancelled flight
+a missing sock
+a talking parrot
+a haunted toaster
+an overdue library book
+a broken escalator
+an empty stapler
+the wrong name badge
+a tiny door
+a very long queue
+a leaking roof
+a mysterious key
+a message in a bottle
+a dragon in the attic
+a ghost in the office
+a cat on the keyboard
+a pigeon at the station
+an alarm that didn't go off
+a parking ticket
+a speeding snail
+a nervous robot
+a lonely lighthouse
+a surprise inspection
+a forgotten password
+an unread email
+a group project
+a plant that won't die
+a hat on a windy day
+a bicycle with no brakes
+a map without north
+a sofa that eats remotes
+a compass that points south
+a car key without a car
+a diary with a lock
+the last train home
+the wrong umbrella
+a sandwich without filling

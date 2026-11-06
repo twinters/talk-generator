@@ -78,6 +78,10 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   a key of its own, which it keeps in the user's config folder (readable only by the user), so OpenRouter's free
   models write talks without an `OPENROUTER_API_KEY`. `--headless` signs in on a computer without a browser,
   `--status` says how many free requests are left today, and `talkgenerator logout openrouter` forgets the key.
+- A list of 736 topics for talks (`talkgenerator/data/topics.txt`, read with `talkgenerator.topics`), from cats
+  and sourdough to "a printer that jams", inspired by the improv suggestion lists of Impy and
+  improbotics-interface: for suggestions (talk-generator-web's random topic button keeps a copy) and for checks
+  on varied topics, `talkgenerator check --random 20`, which draws the same topics for the same first seed.
 - `talkgenerator check --decks <folder>` saves every talk's deck, to read what the talks say. The report counts
   the images that share a word with their search (of those whose source describes them) and the slides that
   repeat a title from before, and warns about a talk the language model wrote none of.

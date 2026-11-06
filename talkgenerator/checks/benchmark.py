@@ -25,13 +25,14 @@ from pathlib import Path
 from typing import Any, Final
 
 from talkgenerator import __version__, generator
+from talkgenerator import topics as topic_list
 from talkgenerator.checks.deck import Finding, check_deck, deck_metrics
 from talkgenerator.llm.base import TextProvider
 from talkgenerator.llm.providers import provider_from_spec
 from talkgenerator.llm.replay import ReplayProvider
 from talkgenerator.models.deck import Deck
 from talkgenerator.plan import languages
-from talkgenerator.util import os_util
+from talkgenerator.util import os_util, random_util
 
 logger = logging.getLogger("talkgenerator")
 
@@ -254,6 +255,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     which.add_argument("--topics", help="comma-separated topics (default: a set of 10)")
     which.add_argument("--quick", action="store_true", help="only the first 3 topics of the default set")
     which.add_argument("--all", action="store_true", help=f"all {len(DEFAULT_TOPICS) + len(MORE_TOPICS)} topics")
+    which.add_argument(
+        "--random",
+        type=int,
+        metavar="N",
+        help="N topics drawn from talkgenerator's topic list (data/topics.txt); the same N for the same first seed",
+    )
     parser.add_argument("--seeds", default="1", help="comma-separated seeds (default: 1)")
     parser.add_argument("--schema", default="default", help="the presentation schema (default: default)")
     parser.add_argument("--slides", type=int, default=10, help="slides per talk (default: 10)")
@@ -279,16 +286,21 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--verbose", "-v", action="store_true", help="show the generator's logs")
     args = parser.parse_args(argv)
 
-    if args.topics:
-        topics: Sequence[str] = [topic.strip() for topic in args.topics.split(",") if topic.strip()]
-    else:
-        topics = DEFAULT_TOPICS[:3] if args.quick else DEFAULT_TOPICS + MORE_TOPICS if args.all else DEFAULT_TOPICS
     try:
         seeds = [int(seed) for seed in args.seeds.split(",")]
         generator.get_schema(args.schema)
         provider_from_spec(args.llm)
     except (ValueError, KeyError) as error:
         parser.error(str(error))
+    if args.topics:
+        topics: Sequence[str] = [topic.strip() for topic in args.topics.split(",") if topic.strip()]
+    elif args.random is not None:
+        if args.random < 1:
+            parser.error("--random needs a number of topics, 1 or more")
+        with random_util.use(random_util.Rng(seeds[0]).child("topics")):
+            topics = topic_list.random_topics(args.random)
+    else:
+        topics = DEFAULT_TOPICS[:3] if args.quick else DEFAULT_TOPICS + MORE_TOPICS if args.all else DEFAULT_TOPICS
     if args.verbose:
         os_util.show_logs(logger)
 
