@@ -1,17 +1,21 @@
 """Animations on slides, which python-pptx can't make: the timing XML that PowerPoint writes for them.
 
-For now three:
+For now four:
 - a chart whose series after the first appear on clicks, one by one, wiping in from the left. On a trend chart, that
   makes a second line draw itself across the chart as the punchline;
 - shapes that fade in together on a click, such as a Venn diagram's overlap, or a matrix's dot with its name;
 - videos that play by themselves as their slide comes up, looping and without sound, the way the gifs they stand in
-  for do.
+  for do;
+- a layout's animation, copied onto a slide made from it (the 2019 template's columns appear click by click, the
+  one before dimming), with the slide's videos playing as their column appears.
 In the editor, and in viewers that don't play animations, everything simply shows, and a video shows its poster frame.
 """
 
 from __future__ import annotations
 
 import itertools
+from collections.abc import Mapping
+from copy import deepcopy
 from typing import Any, Final
 
 from pptx.oxml import parse_xml
@@ -177,6 +181,99 @@ def play_videos(slide: Any) -> None:
         namespaces=nsdecls("p"), sequence=_ON_ITS_OWN.format(effects="".join(effects)), media=media, builds=""
     )
     _replace_timing(slide, parse_xml(timing))
+
+
+def animate_as(slide: Any, timing: Any, ids: Mapping[str, str]) -> None:
+    """Give the slide a copy of a layout's animation as its own (ids: the slide's shapes' ids, by the layout's), without
+    what animates shapes the slide doesn't have (such as an empty caption), and with the slide's videos playing as
+    they appear, or as the slide comes up if they're there from the start (the slide gets this as its only
+    animation)."""
+    copied = deepcopy(timing)
+    for build in list(copied.iter(qn("p:bldP"))):
+        if build.get("spid") not in ids:
+            build.getparent().remove(build)
+    for target in list(copied.iter(qn("p:spTgt"))):
+        spid = ids.get(target.get("spid"))
+        if spid is None:
+            _drop_effect(target)
+        else:
+            target.set("spid", spid)
+    sequence = copied.find(f".//{qn('p:cTn')}[@nodeType='mainSeq']/{qn('p:childTnLst')}")
+    if sequence is None:
+        return
+    for step in list(sequence):
+        if not any(node.get("presetClass") for node in step.iter(qn("p:cTn"))):
+            sequence.remove(step)  # (a click that would show nothing)
+    _play_where_they_appear(slide, sequence)
+    if not len(sequence):
+        return
+    for number, node in enumerate(copied.find(qn("p:tnLst")).iter(qn("p:cTn")), 1):  # (root 1, main sequence 2)
+        node.set("id", str(number))
+    _replace_timing(slide, copied)
+
+
+def _drop_effect(target: Any) -> None:
+    """Take out the effect that animates the target, and what's left empty around it."""
+    node = target.getparent()
+    while node is not None and not (node.tag == qn("p:par") and _is_effect(node)):
+        node = node.getparent()
+    if node is None or node.getparent() is None:
+        return  # (taken out already: an effect can name its shape twice, as a dimming does)
+    while node is not None and node.tag == qn("p:par"):
+        parent = node.getparent()
+        parent.remove(node)
+        if len(parent) or parent.tag != qn("p:childTnLst"):
+            return
+        node = parent.getparent().getparent()  # (the empty list's time node, and its par)
+
+
+def _is_effect(par: Any) -> bool:
+    node = par.find(qn("p:cTn"))
+    return node is not None and node.get("presetClass") is not None
+
+
+def _play_where_they_appear(slide: Any, sequence: Any) -> None:
+    """Play the slide's videos with the effects that make them appear, or (those that are there from the start) as the
+    slide comes up; looping and without sound."""
+    videos = slide.element.xpath("./p:cSld/p:spTree//p:pic[p:nvPicPr/p:nvPr/a:videoFile]")
+    if not videos:
+        return
+    from_the_start = []
+    for video in videos:
+        spid = video.xpath("./p:nvPicPr/p:cNvPr/@id")[0]
+        seconds = video_util.duration(_video_bytes(slide, video))
+        duration = f' dur="{round(seconds * 1000)}"' if seconds else ""
+        entrance = next(
+            (
+                node
+                for node in sequence.iter(qn("p:cTn"))
+                if node.get("presetClass") == "entr" and node.find(f".//{qn('p:spTgt')}[@spid='{spid}']") is not None
+            ),
+            None,
+        )
+        if entrance is None:
+            from_the_start.append((spid, duration))
+            continue
+        play = _PLAY.format(effect=0, call=0, node_type="withEffect", duration=duration, spid=spid)
+        entrance.getparent().addnext(_parsed(play))  # (in the group of the effect that shows it)
+    if from_the_start:
+        effects = "".join(
+            _PLAY.format(
+                effect=0, call=0, node_type="afterEffect" if number == 0 else "withEffect", duration=duration, spid=spid
+            )
+            for number, (spid, duration) in enumerate(from_the_start)
+        )
+        sequence.insert(0, _parsed(_ON_ITS_OWN.format(effects=effects)))
+    root = sequence.getparent().getparent().getparent()  # (the main sequence's seq, in the root's list)
+    for video in videos:
+        spid = video.xpath("./p:nvPicPr/p:cNvPr/@id")[0]
+        root.append(_parsed(_MEDIA.format(node=0, spid=spid)))
+
+
+def _parsed(xml: str) -> Any:
+    """A time node's XML (as the templates above have it, without namespaces), parsed."""
+    tag = xml[1 : xml.index(">")]
+    return parse_xml(xml.replace(f"<{tag}>", f"<{tag} {nsdecls('p', 'a')}>", 1))
 
 
 def _video_bytes(slide: Any, video: Any) -> bytes:

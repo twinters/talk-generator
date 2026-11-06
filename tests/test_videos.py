@@ -535,3 +535,52 @@ def test_a_video_gets_its_themes_filter_too(served):
 
     (movie,) = _movies(ppt_slide)
     assert movie._element.blipFill.blip.find(qn("a:grayscl")) is not None
+
+
+# VIDEOS IN COLUMNS (whose columns appear click by click)
+
+
+def _clicks(ppt_slide):
+    names = {str(shape.shape_id): shape.name for shape in ppt_slide.shapes}
+    sequence = ppt_slide.element.find(f".//{{{P['p']}}}cTn[@nodeType='mainSeq']/{{{P['p']}}}childTnLst")
+    steps = []
+    for step in sequence.findall(qn("p:par")):
+        starts_by_itself = (
+            step.find(qn("p:cTn")).find(f"{qn('p:stCondLst')}/{qn('p:cond')}[@evt='onBegin']") is not None
+        )
+        effects = [
+            (node.get("presetClass"), names[node.find(f".//{qn('p:spTgt')}").get("spid")])
+            for node in step.iter(qn("p:cTn"))
+            if node.get("presetClass")
+        ]
+        steps.append(("by itself" if starts_by_itself else "click", effects))
+    return steps
+
+
+def test_a_video_in_a_column_appears_and_plays_with_it(served):
+    served.images["https://example.com/one.png"] = served.images["https://example.com/two.png"] = _png()
+    one, two = ImageData("https://example.com/one.png"), ImageData("https://example.com/two.png")
+    slide = slides.ThreeColumnImageSlide("Peanuts", "One", one, "Two", two, "Three", _big_gif())
+
+    ppt_slide = slide.create_powerpoint_slide(_presentation())
+
+    (movie,) = _movies(ppt_slide)
+    steps = _clicks(ppt_slide)
+    assert [kind for kind, _ in steps] == ["click", "click", "click"]  # (nothing before the first click)
+    third = steps[2][1]
+    assert ("entr", movie.name) in third and ("mediacall", movie.name) in third  # it appears, and plays
+    looping = ppt_slide.element.xpath(".//p:timing//p:video/p:cMediaNode/p:cTn/@repeatCount")
+    assert looping == ["indefinite"]
+
+
+def test_a_video_in_the_first_of_two_columns_plays_from_the_start(served):
+    served.images["https://example.com/reality.png"] = _png()
+    reality = ImageData("https://example.com/reality.png")
+    slide = slides.TwoColumnImageSlide("Peanuts", "Expectation", _big_gif(), "Reality", reality)
+
+    ppt_slide = slide.create_powerpoint_slide(_presentation())
+
+    (movie,) = _movies(ppt_slide)
+    steps = _clicks(ppt_slide)
+    assert steps[0] == ("by itself", [("mediacall", movie.name)])  # (the first column shows from the start)
+    assert ("emph", movie.name) in steps[1][1]  # and dims as the second appears

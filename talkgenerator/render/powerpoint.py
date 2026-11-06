@@ -181,5 +181,6 @@ def _finish(ppt_slide: Slide, slide: DeckSlide, debug_notes: bool) -> None:
                 ppt_slide, [[(part.text, part.url) for part in credit] for credit in slide.credits]
             )
         creator.remove_empty_placeholders(ppt_slide)
+        creator.animate_like_layout(ppt_slide)  # (after: only the shapes the slide keeps are animated)
     except (AttributeError, KeyError) as e:
         logger.error("Error while finishing slide: {}".format(e))

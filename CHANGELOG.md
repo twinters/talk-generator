@@ -123,7 +123,8 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   titles and whether its series appear one by one (`reveal`).
 - Gifs too large to embed play as Reddit's mp4 copy of them: on r/gifs, many are 40 to 90 MB, while their mp4
   copies are mostly a few MB. In the slideshow, the video starts by itself and loops without sound, as the gif
-  would, with a still of the gif as its poster frame. A deck's image names the video in `video_url` (a renderer
+  would, with a still of the gif as its poster frame. In a two- or three-column slide, whose columns appear one
+  click at a time, a video appears with its column and starts playing then. A deck's image names the video in `video_url` (a renderer
   that plays no videos shows the still), and gifs of up to 16 MB stay gifs. A file that's too large is now turned
   down as soon as its host says how large it is, instead of after downloading up to 25 MB of it.
 - Two new kinds of slide, drawn as PowerPoint shapes instead of images, so they need no image source: a Venn

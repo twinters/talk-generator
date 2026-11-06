@@ -9,6 +9,7 @@ import json
 
 import pytest
 from PIL import Image
+from pptx import Presentation
 from pptx.chart.data import ChartData, XyChartData
 from pptx.enum.chart import XL_CHART_TYPE
 from pydantic import ValidationError
@@ -384,3 +385,84 @@ def test_cli_flag():
     parser = generator.get_argument_parser()
     assert parser.parse_args(["--topic", "cat"]).save_json is False
     assert parser.parse_args(["--topic", "cat", "--save_json", "true"]).save_json is True
+
+
+# THE COLUMNS' ANIMATION
+
+
+_P = "{http://schemas.openxmlformats.org/presentationml/2006/main}"
+
+
+def _steps(ppt_slide):
+    """A slide's clicks: per click, what each effect does (appear, dim, play) to which shape (by its name)."""
+    names = {str(shape.shape_id): shape.name for shape in ppt_slide.shapes}
+    timing = ppt_slide.element.find(_P + "timing")
+    assert timing is not None
+    targets = [target.get("spid") for target in timing.iter(_P + "spTgt")]
+    assert all(spid in names for spid in targets)  # (nothing animates a shape the slide doesn't have)
+    ids = [node.get("id") for node in timing.find(_P + "tnLst").iter(_P + "cTn")]
+    assert len(ids) == len(set(ids))
+    sequence = timing.find(f".//{_P}cTn[@nodeType='mainSeq']/{_P}childTnLst")
+    kinds = {"entr": "appear", "emph": "dim", "mediacall": "play"}
+    return [
+        [
+            (kinds[node.get("presetClass")], names[node.find(f".//{_P}spTgt").get("spid")])
+            for node in step.iter(_P + "cTn")
+            if node.get("presetClass")
+        ]
+        for step in sequence.findall(_P + "par")
+    ]
+
+
+def test_columns_appear_click_by_click_the_one_before_dimming(images):
+    presentation = powerpoint_slide_creator.create_new_powerpoint()
+    three = slides.ThreeColumnImageSlide(
+        "Cats", "One", _image("wide"), "Two", _image("tall"), "Three", _image("square")
+    ).create_powerpoint_slide(presentation)
+    two = slides.TwoColumnImageSlide(
+        "Cats", "Expectation", _image("wide"), "Reality", _image("tall")
+    ).create_powerpoint_slide(presentation)
+
+    assert _steps(three) == [
+        [("appear", "Picture Placeholder 4"), ("appear", "Text Placeholder 2")],
+        [
+            ("appear", "Picture Placeholder 5"),
+            ("appear", "Text Placeholder 3"),
+            ("dim", "Picture Placeholder 4"),
+            ("dim", "Text Placeholder 2"),
+        ],
+        [
+            ("appear", "Picture Placeholder 7"),
+            ("appear", "Text Placeholder 6"),
+            ("dim", "Picture Placeholder 5"),
+            ("dim", "Text Placeholder 3"),
+        ],
+    ]
+    # The first column shows from the start; the second appears on the click, as the first dims
+    assert [[what for what, _ in step] for step in _steps(two)] == [["appear", "appear", "dim", "dim"]]
+    # The layouts play nothing themselves (PowerPoint would play theirs before the slide's own)
+    assert all(layout.element.find(_P + "timing") is None for layout in presentation.slide_layouts)
+
+
+def test_a_column_without_its_caption_still_appears(images):
+    ppt_slide = slides.ThreeColumnImageSlide(
+        None, "One", _image("wide"), None, _image("tall"), "Three", _image("square")
+    ).create_powerpoint_slide(powerpoint_slide_creator.create_new_powerpoint())
+
+    steps = _steps(ppt_slide)
+    assert [len(step) for step in steps] == [2, 3, 3]  # (the second caption's appearing and dimming are gone)
+    assert ("appear", "Picture Placeholder 5") in steps[1]
+
+
+def test_a_deck_of_column_slides_saves_and_opens_again(images, tmp_path):
+    slide_deck = SlideDeck(2, title="Cats")
+    slide_deck.add_slide(0, slides.TwoColumnImageSlide("Cats", "A", _image("wide"), "B", _image("tall")))
+    slide_deck.add_slide(
+        1, slides.ThreeColumnImageSlide(None, "1", _image("wide"), "2", _image("tall"), "3", _image("square"))
+    )
+    presentation = powerpoint_slide_creator.create_new_powerpoint()
+    slide_deck.save_to_powerpoint(presentation)
+    presentation.save(tmp_path / "columns.pptx")
+
+    reopened = Presentation(str(tmp_path / "columns.pptx"))
+    assert all(slide.element.find(_P + "timing") is not None for slide in list(reopened.slides)[-2:])

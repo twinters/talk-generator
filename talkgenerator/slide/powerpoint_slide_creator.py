@@ -6,6 +6,8 @@ from pathlib import Path
 
 import pptx
 from lxml.etree import XMLSyntaxError
+from pptx.enum.shapes import MSO_SHAPE_TYPE
+from pptx.oxml.ns import qn
 from pptx.presentation import Presentation
 
 from talkgenerator.datastructures.image_data import CreditPart, ImageData
@@ -207,7 +209,63 @@ def add_sources_note(slide, credits: Sequence[Sequence[CreditPart]]):
 
 
 def create_new_powerpoint() -> Presentation:
-    return pptx.Presentation(get_powerpoint_template_file())
+    """A new presentation in the 2019 template, whose layouts' animations become their slides' own (see
+    animate_like_layout)."""
+    presentation = pptx.Presentation(get_powerpoint_template_file())
+    for layout in presentation.slide_layouts:
+        _drop_animation(layout)
+    return presentation
+
+
+@lru_cache(maxsize=1)
+def _layout_animations():
+    """The template's layouts' animations, by layout name: the two- and three-column slides show their columns one
+    click at a time, the one before dimming."""
+    template = pptx.Presentation(get_powerpoint_template_file())
+    found = {}
+    for layout in template.slide_layouts:
+        timing = layout.element.find(qn("p:timing"))
+        if timing is not None:
+            found[layout.name] = timing
+    return found
+
+
+def animate_like_layout(slide):
+    """Give a slide its layout's animation as its own, for the shapes it has, with its videos playing as they
+    appear (a video stands in for the picture it took the place of). PowerPoint would also play the layout's
+    animation, before a slide's own, so a slide that has one too (a video's) got them mixed up: a video that stood in
+    for a picture showed from the start, and the clicks came out of step. So the slide plays it all itself, and its
+    layout has none (create_new_powerpoint takes them out, and so does this, for a presentation made otherwise)."""
+    layout = slide.slide_layout
+    timing = _layout_animations().get(layout.name)
+    if timing is None:
+        return
+    _drop_animation(layout)
+    on_slide = {shape.placeholder_format.idx: shape for shape in slide.placeholders}
+    videos = [shape for shape in slide.shapes if shape.shape_type == MSO_SHAPE_TYPE.MEDIA]
+    ids = {}
+    for placeholder in layout.placeholders:
+        shape = on_slide.get(placeholder.placeholder_format.idx) or _standing_in(placeholder, videos)
+        if shape is not None:
+            ids[str(placeholder.shape_id)] = str(shape.shape_id)
+    animation.animate_as(slide, timing, ids)
+
+
+def _standing_in(placeholder, videos):
+    """The video that took the place of the layout's placeholder (its middle is in the placeholder's), if any."""
+    for video in videos:
+        x, y = video.left + video.width / 2, video.top + video.height / 2
+        if placeholder.left <= x <= placeholder.left + placeholder.width and (
+            placeholder.top <= y <= placeholder.top + placeholder.height
+        ):
+            return video
+    return None
+
+
+def _drop_animation(layout):
+    timing = layout.element.find(qn("p:timing"))
+    if timing is not None:
+        layout.element.remove(timing)
 
 
 def create_title_slide(prs, title, subtitle):
