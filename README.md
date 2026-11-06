@@ -79,7 +79,7 @@ The presenter's name is never sent to the model.
 
 Only OpenRouter's free models write talks without being asked: other models write them when `--llm` or `TALKGENERATOR_LLM` names them.
 `--llm none` (or `DISABLE_LLM=1`) makes a classic talk, as the 2019 generator did.
-`TALKGENERATOR_LLM_EFFORT` (such as `low` or `medium`) sets how hard the model thinks before it writes, for the models that take it; Claude thinks at `low` unless it's set.
+`TALKGENERATOR_LLM_EFFORT` (such as `none`, `minimal`, `low` or `medium`) sets how hard the model thinks before it writes, for the models that take it. Unless it's set, Claude thinks at `low`, and OpenRouter's free models don't think at all (thinking made them take minutes, and they write as well without), or as little as they can when they have to.
 `--language nl` has the model write the talk in Dutch (or in another language); the image searches stay in English.
 After every talk, the logs tell how many requests it made and what they cost, and so does the talk's deck JSON.
 

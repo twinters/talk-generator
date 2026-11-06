@@ -392,6 +392,7 @@ def test_the_check_replays_what_the_model_answered(schema, monkeypatch):
     assert report.findings == []
     assert len(model.requests) == 1
     assert report.metrics["usage"]["requests"] == 1
+    assert report.metrics["written_by_language_model"] == NUM_SLIDES
 
 
 def test_a_talk_claude_declines_halfway_is_classic(schema):
@@ -408,6 +409,23 @@ def test_a_talk_claude_declines_halfway_is_classic(schema):
 
 
 # THE REQUEST
+
+
+def test_the_prompt_says_what_to_write_in_every_field(schema):
+    # Not every model reads the descriptions in the schema: the prompt has them too
+    model = FakeModel()
+    _talk(model)
+    request = model.requests[0]
+    prompt_text = request.messages[0].content
+    for key, value in request.json_schema["properties"].items():
+        if not key.startswith("slide_"):
+            assert f"- {key}: {value['description']}" in prompt_text
+            continue
+        assert f"\n{key}: " in prompt_text
+        for name, field in value["properties"].items():
+            if name != "concept":
+                assert f"- {name}: {field['description']}" in prompt_text
+    assert "A word to riff on: cats" in prompt_text
 
 
 def test_the_response_schema_is_strict_and_in_order():

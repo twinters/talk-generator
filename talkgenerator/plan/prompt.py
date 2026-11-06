@@ -14,7 +14,7 @@ from typing import Any, Final
 
 from talkgenerator.llm.base import Message, TextRequest
 from talkgenerator.models.plan import SlidePlan
-from talkgenerator.plan.kinds import KINDS, Recipe
+from talkgenerator.plan.kinds import KINDS, Recipe, TextField
 from talkgenerator.util import random_util
 
 LANGUAGES: Final = {
@@ -40,8 +40,9 @@ laughs at the presenter making sense of it, not at puns on the slides.
 specific claim, something that needs backing up. Don't explain the joke, or the image.
 - Build one talk. The slides follow one thread, the talk's thesis. Later slides call back to earlier ones (a running \
 gag, a recurring character, a strange claim from before), and the conclusions call back to several of them.
-- Wander and come back. Every slide starts from the word it's given, which may wander away from the topic: follow \
-it, and tie it back to the talk's thread.
+- Wander and come back. Every slide gets a word to riff on, which may wander away from the topic: take it as a \
+starting point (not as the slide's title), and tie it back to the talk's thread.
+- Fit the slide. Write every field the way its description asks, within its length.
 - Image search queries say what the image should show, in two to six plain English words, for stock photo and gif \
 sites: concrete things rather than ideas ("a cat wearing sunglasses", not "coolness").
 
@@ -96,6 +97,20 @@ class PlannedSlide:
         return f"slide_{self.number}"
 
 
+# The talk's spine, which the answer starts with
+SPINE: Final = {
+    "safe_topic": "false if the topic asks for something hateful or harmful, true otherwise",
+    "thesis": "the talk's thesis, its absurd claim in one sentence (not shown)",
+    "title": "the talk's title (at most 80 characters)",
+    "presenter_job": "the presenter's grand, made-up job, for the title slide, such as 'Professor of Applied Sock "
+    "Theory' (at most 60 characters)",
+}
+# What a slide is about: when its images can't be found, it's searched for instead
+CONCEPT: Final = (
+    "the slide's subject in two to five words, such as 'volcano worship in medieval Iceland' (not its kind)"
+)
+
+
 def talk_request(
     topics: list[str],
     planned: list[PlannedSlide],
@@ -113,11 +128,18 @@ def talk_request(
         f"The presenter: {persona}",
         f"The angle: {angle}",
         "",
-        "The slides, in order (slide 1 is the title slide):",
+        "Write the talk as one JSON object. First its spine:",
+        *(f"- {name}: {description}" for name, description in SPINE.items()),
+        "",
+        "Then every slide, in order (slide 1, the title slide, is made from the spine), each with its texts, a search "
+        f"query for each of its images, and its concept: {CONCEPT}.",
     ]
+    # The guidance per field is in the schema too, but not every model gets to read the schema's descriptions
     for slide in planned:
-        brief = slide.recipe.brief or KINDS[slide.recipe.kind].description
-        lines.append(f"- {slide.key}: {brief}. It starts from: {slide.seed}")
+        brief = (slide.recipe.brief or KINDS[slide.recipe.kind].description).rstrip(".")
+        lines += ["", f"{slide.key}: {brief}. A word to riff on: {slide.seed}"]
+        lines += [f"- {text.name}: {field_description(slide.recipe, text)}" for text in slide.recipe.written_fields()]
+        lines += [f"- {slot}_query: {_query_description(slot)}" for slot in slide.recipe.image_queries()]
     return TextRequest(
         purpose="talk plan",
         system=SYSTEM_PROMPT,
@@ -131,14 +153,8 @@ def response_schema(planned: list[PlannedSlide]) -> dict[str, Any]:
     """The JSON Schema of the answer: every property required, nothing else allowed (as strict structured outputs
     want), the spine first and the slides in order."""
     properties: dict[str, Any] = {
-        "safe_topic": {"type": "boolean", "description": "false if the topic asks for something hateful or harmful"},
-        "thesis": {"type": "string", "description": "the talk's thesis, its absurd claim in one sentence (not shown)"},
-        "title": {"type": "string", "description": "the talk's title (at most 80 characters)"},
-        "presenter_job": {
-            "type": "string",
-            "description": "the presenter's grand, made-up job, for the title slide, such as 'Professor of Applied "
-            "Sock Theory' (at most 60 characters)",
-        },
+        name: {"type": "boolean" if name == "safe_topic" else "string", "description": description}
+        for name, description in SPINE.items()
     }
     for slide in planned:
         properties[slide.key] = slide_schema(slide.recipe)
@@ -146,16 +162,23 @@ def response_schema(planned: list[PlannedSlide]) -> dict[str, Any]:
 
 
 def slide_schema(recipe: Recipe) -> dict[str, Any]:
-    properties: dict[str, Any] = {
-        "concept": {"type": "string", "description": "what this slide is about, in a few words"},
-    }
+    properties: dict[str, Any] = {"concept": {"type": "string", "description": CONCEPT}}
     for text in recipe.written_fields():
-        description = recipe.hints.get(text.name, text.description)
-        limit = f"at most {text.max_length} characters" + (", or empty for none" if text.optional else "")
-        properties[text.name] = {"type": "string", "description": f"{description} ({limit})"}
+        properties[text.name] = {"type": "string", "description": field_description(recipe, text)}
     for slot in recipe.image_queries():
-        properties[f"{slot}_query"] = {"type": "string", "description": f"the image search query for the {slot}"}
+        properties[f"{slot}_query"] = {"type": "string", "description": _query_description(slot)}
     return _object(properties)
+
+
+def field_description(recipe: Recipe, text: TextField) -> str:
+    """What to write in a slide's text field: the recipe's hint, or else the field's own description, and its length."""
+    limit = f"at most {text.max_length} characters" + (", or empty for none" if text.optional else "")
+    return f"{recipe.hints.get(text.name, text.description)} ({limit})"
+
+
+def _query_description(slot: str) -> str:
+    name = slot.replace("_", " ")  # "image 1", "background", ...
+    return f"an image search query for {name if name[-1].isdigit() else 'the ' + name}"
 
 
 def _object(properties: dict[str, Any]) -> dict[str, Any]:

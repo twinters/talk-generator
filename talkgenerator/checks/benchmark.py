@@ -170,6 +170,8 @@ def _report(talks: list[TalkReport], schema: str, slides: int, seeds: Sequence[i
             "seconds_median": round(statistics.median(seconds), 1) if seconds else None,
             "seconds_max": round(max(seconds), 1) if seconds else None,
             "language_model_requests": sum(talk.metrics.get("usage", {}).get("requests", 0) for talk in talks),
+            "written_by_language_model": f"{_sum_of(talks, 'written_by_language_model')} of "
+            f"{_sum_of(talks, 'slides')} slides",
             "cost_usd": round(sum(talk.metrics.get("usage", {}).get("cost_usd", 0.0) for talk in talks), 6),
         },
         "talks": [
@@ -184,6 +186,10 @@ def _report(talks: list[TalkReport], schema: str, slides: int, seeds: Sequence[i
             for talk in talks
         ],
     }
+
+
+def _sum_of(talks: list[TalkReport], metric: str) -> int:
+    return sum(talk.metrics.get(metric, 0) for talk in talks)
 
 
 def _differences(deck: Deck, again: Deck) -> str:
@@ -258,6 +264,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         f" {_count(summary['warnings'], 'warning')}; deterministic: {summary['deterministic']};"
         f" median {summary['seconds_median']} seconds a talk"
     )
+    if args.llm != "none":
+        print(
+            f"Written by the language model: {summary['written_by_language_model']}, in"
+            f" {_count(summary['language_model_requests'], 'request')}, for ${summary['cost_usd']}"
+        )
     path = Path(args.report)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

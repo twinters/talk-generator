@@ -256,7 +256,8 @@ def test_openrouter_writes_to_the_schema_with_the_free_router():
     assert body["provider"] == {"require_parameters": True}
     assert body["max_tokens"] == 1000 + 8000
     assert body["stream"] is True
-    assert "models" not in body and "reasoning" not in body
+    assert body["reasoning"] == {"effort": "none"}  # thinking first took the free models minutes
+    assert "models" not in body
     assert api.headers["HTTP-Referer"].startswith("https://github.com/")
     assert api.headers["X-OpenRouter-Title"] == "talkgenerator"
 
@@ -267,13 +268,32 @@ def test_openrouter_writes_to_the_schema_with_the_free_router():
 
 
 def test_openrouter_falls_back_to_the_models_after_the_first(monkeypatch):
-    monkeypatch.setenv("TALKGENERATOR_LLM_EFFORT", "low")
     api = Api(_openrouter_answer("{}"))
     provider = _openrouter(api, ["vendor/a:free", "vendor/b:free"])
     provider.complete(REQUEST)
     assert (api.body["model"], api.body["models"]) == ("vendor/a:free", ["vendor/b:free"])
-    assert api.body["reasoning"] == {"effort": "low"}
     assert provider.possible_models() == ("openrouter:vendor/a:free", "openrouter:vendor/b:free")
+    # Models named in the spec may not reason at all: they only get an effort when it's set
+    assert "reasoning" not in api.body
+    monkeypatch.setenv("TALKGENERATOR_LLM_EFFORT", "medium")
+    provider.complete(REQUEST)
+    assert api.body["reasoning"] == {"effort": "medium"}
+
+
+def test_a_model_that_has_to_think_gets_the_request_again_at_minimal_effort():
+    mandatory = _error(400, "Reasoning is mandatory for this endpoint and cannot be disabled.")
+    api = Api(mandatory, _openrouter_answer(*ANSWER))
+    response = _openrouter(api).complete(REQUEST)
+    assert response.data == {"title": "Cats"}
+    efforts = [json.loads(request.content)["reasoning"] for request in api.requests]
+    assert efforts == [{"effort": "none"}, {"effort": "minimal"}]
+
+
+def test_other_bad_requests_arent_sent_again():
+    api = Api(_error(400, "Invalid schema"), _openrouter_answer(*ANSWER))
+    with pytest.raises(ProviderError, match="Invalid schema"):
+        _openrouter(api).complete(REQUEST)
+    assert len(api.requests) == 1
 
 
 def test_openrouter_reports_cached_tokens_and_cost():

@@ -33,9 +33,12 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
 - Language model providers, with their SDKs as optional extras (`talkgenerator[openai]`,
   `talkgenerator[anthropic]`, or `talkgenerator[llm]` for both):
   - `openrouter`: OpenRouter's free models (its free router by default), with your `OPENROUTER_API_KEY`. They
-    write talks whenever there's a key, at no cost; models listed after the first
+    write talks whenever there's a key, at no cost, and without thinking first, which takes a talk from minutes
+    to seconds (models that have to think do so as little as they can). Models listed after the first
     (`openrouter:<model>,<fallback>`) are fallbacks, and only providers that hold to the talk's schema get the
     request.
+  - The prompt tells the model what each field of each slide is for, and that a slide's seed word is a starting
+    point, not its title: the free models didn't read that from the schema alone.
   - `anthropic`: Claude, Claude Opus 5.5 by default, with your `ANTHROPIC_API_KEY`: structured outputs, thinking
     at low effort (`TALKGENERATOR_LLM_EFFORT` changes it), and server-side fallbacks when a request is declined.
   - `openai:<model>`: OpenAI's models through the Responses API, with your `OPENAI_API_KEY`.
@@ -44,7 +47,8 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   even halfway, is classic. Budgets check every model a request may end up at, and leave room for thinking. Keys
   never show up in logs or error messages.
 - `talkgenerator check --llm provider:model` checks talks a language model writes; to check that the same answers
-  give the same talk, the second run replays what the first one got.
+  give the same talk, the second run replays what the first one got. The report says how many slides the model
+  wrote.
 - `talkgenerator check`: generates talks on a set of topics (10 by default, `--quick` for 3, `--all` for 30),
   checks every deck, generates every talk again one by one with its seed to see that it comes out the same, and
   writes a JSON report. The checks, in `talkgenerator.checks`: every slide has what its type needs, no template

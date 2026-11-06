@@ -27,6 +27,13 @@ from talkgenerator.llm.sdk import MAX_RETRIES, TIMEOUT_SECONDS, import_sdk, pars
 
 API_URL: Final = "https://openrouter.ai/api/v1"
 DEFAULT_MODEL: Final = "openrouter/free"
+# How hard the free router's models think before they write. Measured on 2026-11-06 with 10-slide talks: thinking
+# as much as they liked, they took about two minutes and could run out of room; at minimal effort, 50 to 160
+# seconds; without thinking, 10 to 15 seconds, and they wrote as well. A model that has to think turns "none" down,
+# and then gets the request again at minimal effort. Models named in the spec only get an effort when
+# TALKGENERATOR_LLM_EFFORT sets one: a model that can't reason at all would turn the request down.
+DEFAULT_EFFORT: Final = "none"
+_LEAST_EFFORT: Final = "minimal"
 # Which app sends the requests, for the key owner's activity page and OpenRouter's app rankings
 APP_HEADERS: Final = {
     "HTTP-Referer": "https://github.com/twinters/talk-generator",
@@ -35,6 +42,10 @@ APP_HEADERS: Final = {
 # Most free models think before they write, which counts as output: room for that on top of the answer
 _THINKING_TOKENS: Final = 8000
 _FINISH: Final[dict[str, Finish]] = {"stop": "complete", "length": "truncated", "content_filter": "refused"}
+
+
+class _ThinkingRequired(ProviderError):
+    """The model can't write without thinking first ("Reasoning is mandatory for this endpoint")."""
 
 
 class OpenRouterProvider(TextProvider):
@@ -59,10 +70,21 @@ class OpenRouterProvider(TextProvider):
     def stream(self, request: TextRequest, on_text: Callable[[str], None]) -> TextResponse:
         sdk = import_sdk("openai", "openai")
         client = self._client or self._new_client(sdk)
+        arguments = self.arguments(request)
+        try:
+            return self._stream(client, sdk, request, arguments, on_text)
+        except _ThinkingRequired:
+            # The model that answered has to think: it may think as little as it can
+            arguments["extra_body"]["reasoning"] = {"effort": _LEAST_EFFORT}
+            return self._stream(client, sdk, request, arguments, on_text)
+
+    def _stream(
+        self, client: Any, sdk: Any, request: TextRequest, arguments: dict[str, Any], on_text: Callable[[str], None]
+    ) -> TextResponse:
         parts: list[str] = []
         model = finish = usage = None
         try:
-            for chunk in client.chat.completions.create(**self.arguments(request)):
+            for chunk in client.chat.completions.create(**arguments):
                 model = chunk.model or model
                 usage = chunk.usage or usage
                 for choice in chunk.choices:
@@ -71,6 +93,9 @@ class OpenRouterProvider(TextProvider):
                         on_text(choice.delta.content)
                     finish = choice.finish_reason or finish
         except sdk.OpenAIError as error:  # also an error in the middle of the stream
+            no_thinking = arguments.get("extra_body", {}).get("reasoning") == {"effort": "none"}
+            if no_thinking and not parts and "reasoning is mandatory" in str(error).lower():
+                raise _ThinkingRequired(str(error)) from error
             raise provider_error(error, sdk, "OpenRouter") from error
         if finish == "error":
             raise ProviderError("OpenRouter: the model broke off its answer with an error")
@@ -112,7 +137,7 @@ class OpenRouterProvider(TextProvider):
             }
             # Only to providers that hold their answer to the schema
             extra["provider"] = {"require_parameters": True}
-        effort = settings.llm_effort()
+        effort = settings.llm_effort() or (DEFAULT_EFFORT if self.models == (DEFAULT_MODEL,) else None)
         if effort:
             extra["reasoning"] = {"effort": effort}
         if extra:

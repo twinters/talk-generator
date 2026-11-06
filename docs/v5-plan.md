@@ -286,6 +286,22 @@ day for accounts that have bought less than $10 of credits in total, or 1,000 a 
 talkgenerator.com uses has, so the site gets 1,000. Free models get rate limited at peak times and disappear
 without notice, and `GET /api/v1/key` shows the limits that apply to a key. Free endpoints can come with looser data policies, so we send only the topic and the skeleton.
 
+**Measured on 2026-11-06**, with one 10-slide talk request each (time to the first visible text, then in all):
+
+| Model (free) | Effort | First text | All | Output tokens | The writing |
+| --- | --- | --- | --- | --- | --- |
+| `openrouter/free` (picked `dots-3-note-preview` every time) | the model's own | | about 2 minutes, cut off | 11,700 (the limit) | weak: the slides' seed words as titles, before the fields' hints were in the prompt |
+| `openrouter/free` (`dots-3-note-preview`) | low | | 95 s | 8,851 | good, once the fields' hints were in the prompt |
+| `openrouter/free` (`dots-3-note-preview`) | minimal | 42 s | 49 s (once 160 s, cut off) | 4,378 | good |
+| `openrouter/free` (`dots-3-note-preview`, five times) | none | 1 to 6 s | 10 to 15 s | about 650 | good: a running gag, callbacks, concrete image queries |
+| `nvidia/nemotron-3.5-super-vl:free` | low | 31 s | 31 s | 4,383 | the best: short and coherent |
+| `xingchen-agi/xing4.0-29b-a4b:free` | the model's own | 4 s | 9 s | 688 | ignores the length limits |
+
+So the default is the free router without thinking (effort `none`). Models whose thinking is mandatory
+(`stealth/crouton-alpha`, `liquid/lfm-2.5-2.6b:free` on that day) turn `none` down with a 400 ("Reasoning is
+mandatory for this endpoint"), and the adapter then asks again at `minimal`. Without thinking, the first slide's
+text arrives within seconds, which the web view (milestone 4) needs.
+
 **OpenRouter OAuth (PKCE).** An app sends the user to OpenRouter's auth page with a callback URL (localhost
 callbacks work on any port), exchanges the code it gets back at `/api/v1/auth/keys`, and receives a key on the
 user's own account, with that account's own free quota or credits. It works for the CLI and for talkgenerator.com.

@@ -125,6 +125,10 @@ def deck_metrics(deck: Deck) -> dict[str, Any]:
     types = [slide.type for slide in deck.slides]
     return {
         "slides": len(deck.slides),
+        # The slides a language model wrote (their notes say what it planned); the classic generator made the others
+        "written_by_language_model": sum(
+            1 for slide in deck.slides if any(line.startswith("Planned:") for line in slide.notes.splitlines())
+        ),
         "slide_types": dict(sorted(Counter(types).items())),
         "same_type_in_a_row": sum(1 for before, after in itertools.pairwise(types) if before == after),
         "images": sum(1 for slide in deck.slides for element in slide.elements if isinstance(element, ImageElement)),
