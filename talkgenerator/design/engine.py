@@ -509,13 +509,14 @@ def _rows(roles: dict[str, Content], theme: Theme) -> _Placement:
 
 def _split(roles: dict[str, Content], theme: Theme) -> _Placement:
     """The slide split in two halves, the first in the theme's surface colour, each with its picture (or text) and
-    its caption, and the title across the top."""
+    its caption, and the title across the top, centred (with the theme's decoration)."""
     half = WIDTH / 2
     panel = ShapeElement(role="panel", box=Box(x=0, y=0, w=half, h=HEIGHT), color=theme.palette.surface)
     placement = _Placement("v5/columns-2-split", shapes=[panel])
     top = MARGIN
     if "title" in roles:
         placement.boxes["title"] = (_TITLE, "band title")
+        placement.shapes += _decoration(theme.model_copy(update={"title_align": "center"}), _TITLE, gap=16)
         top = _CONTENT_TOP
     caption_height = 128
     caption_top = _CONTENT_BOTTOM - caption_height
