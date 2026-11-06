@@ -193,6 +193,10 @@ def deck_metrics(deck: Deck) -> dict[str, Any]:
         ),
         "slide_types": dict(sorted(Counter(types).items())),
         "same_type_in_a_row": sum(1 for before, after in itertools.pairwise(types) if before == after),
+        "layouts": len({slide.layout for slide in deck.slides}),
+        "same_layout_in_a_row": sum(
+            1 for before, after in itertools.pairwise(deck.slides) if before.layout == after.layout
+        ),
         "images": sum(1 for slide in deck.slides for element in slide.elements if isinstance(element, ImageElement)),
         **_image_matches(deck),
         "repeated_titles": _repeated_titles(deck),

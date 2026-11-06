@@ -1,23 +1,27 @@
 """Offline tests of themes and layouts (milestone 3): colours and contrast, measuring and fitting text, theme
 families, the layout engine, and the renderers of themed decks (PowerPoint shapes, and previews)."""
 
+import itertools
+
 import pytest
 from pptx import Presentation
 from pptx.enum.chart import XL_CHART_TYPE
 from pptx.oxml.ns import qn
 
 from talkgenerator import generator
-from talkgenerator.checks.design import check_design
+from talkgenerator.checks.deck import deck_metrics
+from talkgenerator.checks.design import check_design, check_variety
 from talkgenerator.design import color, engine, fit, fonts, themes
 from talkgenerator.models.deck import Deck, ImageElement, ShapeElement, TextElement
 from talkgenerator.plan import languages
 from talkgenerator.plan.kinds import KINDS
 from talkgenerator.render import preview
 from talkgenerator.render.powerpoint import render_pptx
+from talkgenerator.slide import slides
 from talkgenerator.slide.slide_deck import SlideDeck
 from talkgenerator.util import random_util
 from tests import test_seeds
-from tests.test_deck import _every_kind_of_slide
+from tests.test_deck import _every_kind_of_slide, _image, _pie_chart_data
 from tests.test_deck import images as images  # the fake image downloads (a fixture)
 
 FAMILIES = list(themes.FAMILIES)
@@ -140,7 +144,110 @@ def test_layouts_and_sizes_come_from_the_seed(images):
     theme = _theme()
     assert _deck(seed=4, theme=theme).to_deck() == _deck(seed=4, theme=theme).to_deck()
     layouts = {tuple(slide.layout for slide in _deck(seed=seed, theme=theme).to_deck().slides) for seed in range(12)}
-    assert len(layouts) > 1  # the image slides come with their title on top, or beside the image
+    assert len(layouts) > 1  # a slide gets one of the layouts of its type
+
+
+def _runs(seed=1, theme=None):
+    """A deck with runs of slides of one type, as talks have them: two-column slides, full-screen pictures with and
+    without a title, charts, image slides, statements and three-column slides, several of each in a row, each with
+    a credit."""
+    wide, tall = _image("wide"), _image("tall")
+    runs = [
+        *(slides.TwoColumnImageSlide("Cats", "Expectation", wide, "Reality", tall) for _ in range(5)),
+        *(slides.FullImageSlide(None, wide) for _ in range(3)),
+        *(slides.FullImageSlide("Look at this", wide) for _ in range(4)),
+        *(slides.ChartSlide("Cat growth", XL_CHART_TYPE.COLUMN_CLUSTERED, _pie_chart_data(), None) for _ in range(3)),
+        *(slides.ImageSlide("Cats", wide) for _ in range(4)),
+        *(slides.LarqeQuoteSlide(None, "Be brave, little cat", background_image=wide) for _ in range(4)),
+        *(slides.ThreeColumnImageSlide(None, "One", wide, "Two", tall, "Three", wide) for _ in range(3)),
+    ]
+    slide_deck = SlideDeck(len(runs), title="Cats", topics=["cats"], seed=seed)
+    for index, slide in enumerate(runs):
+        slide.add_source("Ann (via Pexels)", "https://www.pexels.com/photo/cat-123/")  # (credits on every layout)
+        slide_deck.add_slide(index, slide)
+    slide_deck.theme = theme
+    return slide_deck
+
+
+@pytest.mark.parametrize("family", FAMILIES)
+def test_no_layout_comes_twice_in_a_row_and_every_one_passes_the_design_checks(images, family):
+    for seed in range(3):
+        deck = _runs(seed, _theme(family, seed)).to_deck()
+        layouts = [slide.layout for slide in deck.slides]
+        assert all(before != after for before, after in itertools.pairwise(layouts)), layouts
+        assert check_design(deck) == [], (family, seed)
+
+
+def test_the_layouts_pass_the_design_checks_in_random_themes(images):
+    for seed in range(20):
+        theme = themes.pick(themes.RANDOM, random_util.Rng(seed))  # (extremes included)
+        assert check_design(_runs(seed, theme).to_deck()) == [], (seed, theme.name)
+
+
+def test_every_layout_comes_up(images):
+    seen = set()
+    for seed in range(12):
+        seen |= {slide.layout for slide in _runs(seed, _theme(seed=seed)).to_deck().slides}
+    assert set(engine.layout_names()) - {"v5/title", "v5/diagram"} <= seen  # (the deck has no title or diagram)
+
+
+def test_a_slide_gets_the_layouts_that_fit_its_elements(images):
+    def fitting(slide):
+        return engine.layouts_for(slide.to_deck_slide())
+
+    two = slides.TwoColumnImageSlide("Cats", "Expectation", _image("wide"), "Reality", "A quote, not a picture")
+    assert fitting(two) == ["v5/columns-2", "v5/columns-2-headed", "v5/columns-2-rows", "v5/columns-2-split"]
+    assert fitting(slides.FullImageSlide(None, _image("wide"))) == ["v5/full-image", "v5/full-image-framed"]
+    titled = slides.FullImageSlide("Look at this", _image("wide"))
+    assert fitting(titled) == ["v5/full-image", "v5/full-image-low", "v5/full-image-corner"]
+    assert fitting(slides.ImageSlide(None, _image("wide"))) == ["v5/image-top"]  # (no title to put beside it)
+
+
+def test_a_title_over_a_picture_is_drawn_over_it(images):
+    for seed in range(8):
+        slide_deck = SlideDeck(1, seed=seed)
+        slide_deck.add_slide(0, slides.FullImageSlide("Look at this", _image("wide")))
+        slide_deck.theme = _theme()
+        (slide,) = slide_deck.to_deck().slides
+        order = [element.role for element in slide.elements]
+        assert order.index("content") < order.index("title band") < order.index("title"), (slide.layout, order)
+
+
+def test_the_design_checks_find_a_text_under_a_picture_and_a_layout_twice_in_a_row(images):
+    slide_deck = SlideDeck(1, seed=1)
+    slide_deck.add_slide(0, slides.FullImageSlide("Look at this", _image("wide")))
+    slide_deck.theme = _theme()
+    deck = slide_deck.to_deck()
+    (slide,) = deck.slides
+    title = slide.element("title")
+    under = slide.model_copy(
+        update={"elements": (title, *(element for element in slide.elements if element is not title))}
+    )
+    findings = check_design(deck.model_copy(update={"slides": (under,)}))
+    assert [finding.message for finding in findings if finding.check == "covered"] == [
+        "the title is under a picture drawn over it"
+    ]
+
+    deck = _runs(theme=_theme()).to_deck()
+    assert check_variety(deck) == []
+    first = deck.slides[1]  # (a two-column slide)
+    twice = deck.model_copy(update={"slides": (first, first)})
+    assert [finding.message for finding in check_variety(twice)] == [
+        f"the same layout as the slide before ({first.layout})"
+    ]
+
+
+def test_the_metrics_count_layouts(images):
+    classic = deck_metrics(_runs().to_deck())
+    themed = deck_metrics(_runs(theme=_theme()).to_deck())
+    assert classic["same_layout_in_a_row"] > 0  # (the 2019 template has one layout per slide type)
+    assert themed["same_layout_in_a_row"] == 0 and themed["layouts"] > classic["layouts"]
+
+
+def test_every_layout_draws_and_previews(images):
+    deck = _runs(theme=_theme("neon")).to_deck()
+    assert len(render_pptx(deck).slides) == len(deck.slides)
+    assert preview.contact_sheet(deck).width > 0
 
 
 def test_a_photo_behind_a_statement_gets_a_shade(images):

@@ -8,7 +8,8 @@ the theme's background and decoration. With style_chaos, slides get themes of th
 
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections import Counter
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Final, Literal
 
@@ -58,7 +59,7 @@ class TextSpec:
     largest: float
     smallest: float
     color: Literal["text", "muted", "light"] = "text"
-    align: Literal["title", "left", "center"] = "title"  # title: as the theme aligns its titles
+    align: Literal["title", "left", "center", "right"] = "title"  # title: as the theme aligns its titles
     anchor: TextAnchor = "middle"
     heading: bool = False  # bold and in capitals as the theme's headings are
     italic: bool = False
@@ -70,10 +71,18 @@ SPECS: Final[dict[str, TextSpec]] = {
     "title": TextSpec("heading", 88, 44, heading=True),
     "side title": TextSpec("heading", 96, 48, align="left", heading=True),
     "band title": TextSpec("heading", 80, 40, align="center", heading=True),
+    "panel title": TextSpec("heading", 80, 40, align="left", heading=True),
     "statement": TextSpec("heading", 120, 52, color="light", align="center", heading=True),
     "statement title": TextSpec("heading", 56, 32, color="light", align="center", heading=True),
+    "left statement": TextSpec("heading", 112, 52, color="light", align="left", heading=True),
+    "left statement title": TextSpec("heading", 56, 32, color="light", align="left", heading=True),
+    "band statement": TextSpec("heading", 96, 44, align="center", heading=True),
     "caption": TextSpec("body", 52, 28, align="center", anchor="top"),
     "small caption": TextSpec("body", 44, 26, align="center", anchor="top"),
+    "heading caption": TextSpec("body", 52, 28, align="center", anchor="bottom"),  # above its picture
+    "small heading caption": TextSpec("body", 44, 26, align="center", anchor="bottom"),
+    "side caption": TextSpec("body", 52, 28, align="left"),  # beside its picture, on the right
+    "side caption right": TextSpec("body", 52, 28, align="right"),  # beside its picture, on the left
     "quote": TextSpec("body", 64, 30, align="left", italic=True),
 }
 
@@ -83,6 +92,7 @@ class _Placement:
     layout: str
     boxes: dict[str, tuple[Box, str]] = field(default_factory=dict)  # role: (box, text spec)
     shapes: list[ShapeElement] = field(default_factory=list)  # drawn behind the content
+    overlays: list[ShapeElement] = field(default_factory=list)  # drawn over the content, under the texts
     photo: bool = False  # a photo fills the slide: credits go on a band
 
 
@@ -90,7 +100,8 @@ def lay_out(deck: Deck, theme: Theme, style_chaos: float = 0.0, extremes: bool =
     """The deck with its elements placed and styled in the theme; with style_chaos, some slides (that share of
     them, picked by the seed) in themes of their own."""
     rng = random_util.Rng(deck.seed if deck.seed is not None else 0).child("layout")
-    laid_out = []
+    laid_out: list[DeckSlide] = []
+    used: Counter[str] = Counter()  # how often the deck has had each layout so far
     for number, slide in enumerate(deck.slides):
         slide_rng = rng.child("slide", number)
         own = None
@@ -99,40 +110,82 @@ def lay_out(deck: Deck, theme: Theme, style_chaos: float = 0.0, extremes: bool =
                 chaotic = random_util.random() < style_chaos
             if chaotic:
                 own = themes.pick(themes.RANDOM, slide_rng.child("theme"), extremes)
-        laid_out.append(lay_out_slide(slide, own or theme, slide_rng, own_style=own is not None))
+        previous = laid_out[-1].layout if laid_out else None
+        placed = lay_out_slide(slide, own or theme, slide_rng, own_style=own is not None, previous=previous, used=used)
+        used[placed.layout] += 1
+        laid_out.append(placed)
     return deck.model_copy(update={"theme": theme.name, "style": theme, "slides": tuple(laid_out)})
 
 
-def lay_out_slide(slide: DeckSlide, theme: Theme, rng: random_util.Rng, own_style: bool = False) -> DeckSlide:
-    builder = _LAYOUTS.get(slide.type)
-    if builder is None:
+def layouts_for(slide: DeckSlide) -> list[str]:
+    """The layouts that fit the slide: those of its type that fit its elements (a full-screen picture's title goes on
+    a band or a panel, and one without a title can be framed instead, say)."""
+    roles = {element.role: element for element in slide.elements}
+    return [layout.name for layout in _LAYOUTS.get(slide.type, ()) if layout.fits(roles)]
+
+
+def layout_names() -> list[str]:
+    """Every layout's name, slide type by slide type (a title slide's is named for its theme's alignment, as
+    v5/title-left or v5/title-center)."""
+    return [layout.name for layouts in _LAYOUTS.values() for layout in layouts]
+
+
+def lay_out_slide(
+    slide: DeckSlide,
+    theme: Theme,
+    rng: random_util.Rng,
+    own_style: bool = False,
+    previous: str | None = None,
+    used: Mapping[str, int] | None = None,
+) -> DeckSlide:
+    """The slide in one of the layouts that fit it, picked with its random generator: not the previous slide's
+    layout if another one fits, and less likely the more often the deck has had it already (used)."""
+    layouts = _LAYOUTS.get(slide.type)
+    if not layouts:
         raise ValueError(f"There's no layout for {slide.type!r} slides")
     roles = {element.role: element for element in slide.elements}
+    fitting = [layout for layout in layouts if layout.fits(roles)] or [layouts[0]]
+    fresh = [layout for layout in fitting if layout.name != previous] or fitting
+    counts = used or {}
+    with random_util.use(rng.child("variant")):
+        chosen = random_util.weighted_random(
+            [(layout.weight * 0.5 ** counts.get(layout.name, 0), layout) for layout in fresh]
+        )
     with random_util.use(rng):
-        placement = builder(roles, theme)
+        placement = (chosen or fresh[0]).build(roles, theme)
     palette = theme.palette
-    elements: list[Content] = []
     background = roles.get("background")
-    if isinstance(background, ImageElement):  # a photo behind everything
-        elements.append(background.model_copy(update={"box": FULL, "fit": "cover"}))
-    elements += placement.shapes
+    backdrop: list[Content] = []  # a photo behind everything, and the shapes behind the content
+    if isinstance(background, ImageElement):
+        backdrop.append(background.model_copy(update={"box": FULL, "fit": "cover"}))
+    backdrop += placement.shapes
+    content: list[Content] = []  # pictures, charts and diagrams; the bands over them; then the texts, on top
+    texts: list[Content] = []
     for element in slide.elements:
         if element is background or element.role not in placement.boxes:
             continue
         box, spec = placement.boxes[element.role]
         if isinstance(element, TextElement):
-            elements.append(
+            texts.append(
                 element.model_copy(update={"box": box, "style": _style(element.text, box, SPECS[spec], theme)})
             )
         elif isinstance(element, ImageElement):
-            border = palette.text if theme.image_border and box != FULL else None
-            elements.append(element.model_copy(update={"box": box, "border": border}))
+            border = palette.text if theme.image_border and box != FULL and not placement.photo else None
+            content.append(element.model_copy(update={"box": box, "border": border}))
         elif isinstance(element, ChartElement):
-            elements.append(element.model_copy(update={"box": box}))
+            content.append(element.model_copy(update={"box": box}))
         elif isinstance(element, DiagramElement):
-            elements.append(element.model_copy(update={"box": box, "style": diagram_style(element.diagram, theme)}))
-    # The credits read on what's behind them: the background, or a photo (which could be anything) under a shade
+            content.append(element.model_copy(update={"box": box, "style": diagram_style(element.diagram, theme)}))
+    elements = [*backdrop, *content, *placement.overlays, *texts]
+    # The credits read on what's behind them: the background (and the shapes on it, such as a panel), or a photo
+    # (which could be anything) under a shade
     behind = _backgrounds(theme)
+    behind += [
+        color.mix(colour, shape.color, shape.opacity)
+        for shape in placement.shapes
+        if _overlap(shape.box, CREDITS_BOX)
+        for colour in _backgrounds(theme)
+    ]
     if isinstance(background, ImageElement):
         behind = [color.mix(extreme, SHADE, SHADE_OPACITY) for extreme in ("#000000", "#ffffff")]
     elif placement.photo and slide.credits:  # on a band over the picture, solid if no colour reads on it otherwise
@@ -173,6 +226,13 @@ def _style(text: str, box: Box, spec: TextSpec, theme: Theme) -> TextStyle:
         uppercase=uppercase,
         align=theme.title_align if spec.align == "title" else spec.align,
         anchor=spec.anchor,
+    )
+
+
+def _overlap(box: Box, other: Box) -> bool:
+    """Whether the boxes share some area (not just an edge)."""
+    return (
+        box.x < other.x + other.w and other.x < box.x + box.w and box.y < other.y + other.h and other.y < box.y + box.h
     )
 
 
@@ -262,11 +322,14 @@ def diagram_behind(
     return [*tints, *backgrounds], tints, [*tints, *backgrounds]
 
 
-# THE LAYOUTS (each a function of the slide's elements by role, and the theme)
+# THE LAYOUTS (each a function of the slide's elements by role, and the theme; a slide type has one or more)
 
 _TITLE: Final = Box(x=MARGIN, y=56, w=WIDTH - 2 * MARGIN, h=150)
 _CONTENT_TOP: Final = 236
 _CONTENT_BOTTOM: Final = 980
+_SIDE_TITLE_WIDTH: Final = 600  # a title beside the content
+_SIDE_GAP: Final = 48
+_GAP: Final = 48  # between columns
 
 
 def _title_slide(roles: dict[str, Content], theme: Theme) -> _Placement:
@@ -278,48 +341,111 @@ def _title_slide(roles: dict[str, Content], theme: Theme) -> _Placement:
     return placement
 
 
+def _shade() -> ShapeElement:
+    return ShapeElement(role="shade", box=FULL, color=SHADE, opacity=SHADE_OPACITY)
+
+
 def _statement(roles: dict[str, Content], theme: Theme) -> _Placement:
-    placement = _Placement(
-        "v5/statement", shapes=[ShapeElement(role="shade", box=FULL, color=SHADE, opacity=SHADE_OPACITY)]
-    )
+    placement = _Placement("v5/statement", shapes=[_shade()])
     placement.boxes["text"] = (Box(x=200, y=200, w=1520, h=700), "statement")
     placement.boxes["title"] = (Box(x=200, y=72, w=1520, h=110), "statement title")
     return placement
 
 
-def _image(roles: dict[str, Content], theme: Theme) -> _Placement:
-    content_spec = "quote" if isinstance(roles.get("content"), TextElement) else "caption"
-    if "title" in roles and random_util.random() < 0.35:  # the title beside the image
-        title = Box(x=MARGIN, y=MARGIN, w=600, h=HEIGHT - 2 * MARGIN - 100)
-        placement = _Placement("v5/image-side")
-        placement.boxes["title"] = (title, "side title")
-        placement.boxes["content"] = (
-            Box(x=744, y=MARGIN, w=WIDTH - 744 - MARGIN, h=_CONTENT_BOTTOM - MARGIN),
-            content_spec,
-        )
-        placement.shapes += _decoration(theme.model_copy(update={"title_align": "left"}), title, gap=12)
-        return placement
-    placement = _Placement("v5/image-top")
-    top = _with_title(placement, roles, theme)
-    placement.boxes["content"] = (Box(x=MARGIN, y=top, w=WIDTH - 2 * MARGIN, h=_CONTENT_BOTTOM - top), content_spec)
+def _statement_left(roles: dict[str, Content], theme: Theme) -> _Placement:
+    """The statement over the shaded photo, aligned left beside a bar in the theme's accent (made visible on it)."""
+    shaded = [color.mix(extreme, SHADE, SHADE_OPACITY) for extreme in ("#000000", "#ffffff")]
+    bar = ShapeElement(
+        role="decoration",
+        box=Box(x=150, y=250, w=14, h=600),
+        color=color.readable_on(theme.palette.accent, shaded, LINE_CONTRAST),
+    )
+    placement = _Placement("v5/statement-left", shapes=[_shade(), bar])
+    placement.boxes["text"] = (Box(x=210, y=200, w=1510, h=700), "left statement")
+    placement.boxes["title"] = (Box(x=210, y=72, w=1510, h=110), "left statement title")
     return placement
 
 
+def _statement_band(roles: dict[str, Content], theme: Theme) -> _Placement:
+    """The statement in the theme's text colour, on a band across the shaded photo."""
+    band = ShapeElement(
+        role="statement band", box=Box(x=0, y=290, w=WIDTH, h=520), color=theme.palette.surface, opacity=BAND_OPACITY
+    )
+    placement = _Placement("v5/statement-band", shapes=[_shade()], overlays=[band])
+    placement.boxes["text"] = (Box(x=200, y=320, w=1520, h=460), "band statement")
+    placement.boxes["title"] = (Box(x=200, y=150, w=1520, h=110), "statement title")
+    return placement
+
+
+def _content_spec(element: Content | None, caption: str = "caption") -> str:
+    """The text spec of a content: a quote if it's a text (not a picture)."""
+    return "quote" if isinstance(element, TextElement) else caption
+
+
+def _image_top(roles: dict[str, Content], theme: Theme) -> _Placement:
+    placement = _Placement("v5/image-top")
+    top = _with_title(placement, roles, theme) if "title" in roles else MARGIN
+    content = Box(x=MARGIN, y=top, w=WIDTH - 2 * MARGIN, h=_CONTENT_BOTTOM - top)
+    placement.boxes["content"] = (content, _content_spec(roles.get("content")))
+    return placement
+
+
+def _image_beside(right: bool) -> Callable[[dict[str, Content], Theme], _Placement]:
+    """The title beside the image: on its left, or (right) on its right."""
+    content_width = WIDTH - 2 * MARGIN - _SIDE_TITLE_WIDTH - _SIDE_GAP
+
+    def image_beside(roles: dict[str, Content], theme: Theme) -> _Placement:
+        title_x = WIDTH - MARGIN - _SIDE_TITLE_WIDTH if right else MARGIN
+        content_x = MARGIN if right else MARGIN + _SIDE_TITLE_WIDTH + _SIDE_GAP
+        title = Box(x=title_x, y=MARGIN, w=_SIDE_TITLE_WIDTH, h=HEIGHT - 2 * MARGIN - 100)
+        placement = _Placement("v5/image-side-right" if right else "v5/image-side")
+        placement.boxes["title"] = (title, "side title")
+        content = Box(x=content_x, y=MARGIN, w=content_width, h=_CONTENT_BOTTOM - MARGIN)
+        placement.boxes["content"] = (content, _content_spec(roles.get("content")))
+        placement.shapes += _decoration(theme.model_copy(update={"title_align": "left"}), title, gap=12)
+        return placement
+
+    return image_beside
+
+
 def _full_image(roles: dict[str, Content], theme: Theme) -> _Placement:
-    placement = _Placement("v5/full-image", photo=True)
+    """The picture over the whole slide, and its title on a band across the top."""
+    return _full_image_with("v5/full-image", roles, theme, Box(x=0, y=0, w=WIDTH, h=170), "band title")
+
+
+def _full_image_framed(roles: dict[str, Content], theme: Theme) -> _Placement:
+    """A picture without a title, inset from the slide's edges (framed, in themes that frame pictures)."""
+    placement = _Placement("v5/full-image-framed")
+    placement.boxes["content"] = (Box(x=MARGIN, y=64, w=WIDTH - 2 * MARGIN, h=_CONTENT_BOTTOM - 64), "quote")
+    return placement
+
+
+def _full_image_low(roles: dict[str, Content], theme: Theme) -> _Placement:
+    """The title on a band across the bottom (above the credits)."""
+    return _full_image_with("v5/full-image-low", roles, theme, Box(x=0, y=800, w=WIDTH, h=170), "band title")
+
+
+def _full_image_corner(roles: dict[str, Content], theme: Theme) -> _Placement:
+    """The title on a panel in the bottom left corner."""
+    return _full_image_with("v5/full-image-corner", roles, theme, Box(x=56, y=690, w=1000, h=260), "panel title")
+
+
+def _full_image_with(name: str, roles: dict[str, Content], theme: Theme, band: Box, spec: str) -> _Placement:
+    placement = _Placement(name, photo=True)
     placement.boxes["content"] = (FULL, "quote")
     if "title" in roles:
-        band = Box(x=0, y=0, w=WIDTH, h=170)
-        placement.shapes.append(
+        placement.overlays.append(
             ShapeElement(role="title band", box=band, color=theme.palette.surface, opacity=BAND_OPACITY)
         )
-        placement.boxes["title"] = (Box(x=MARGIN, y=16, w=WIDTH - 2 * MARGIN, h=138), "band title")
+        inset = 40 if spec == "panel title" else MARGIN
+        title = Box(x=band.x + inset, y=band.y + 16, w=band.w - 2 * inset, h=band.h - 32)
+        placement.boxes["title"] = (title, spec)
     return placement
 
 
 def _columns(count: int) -> Callable[[dict[str, Content], Theme], _Placement]:
-    gap = 48
-    width = (WIDTH - 2 * MARGIN - (count - 1) * gap) / count
+    """Side by side, with their captions under them."""
+    width = (WIDTH - 2 * MARGIN - (count - 1) * _GAP) / count
     caption_height = 128 if count == 2 else 168
     caption_spec = "caption" if count == 2 else "small caption"
 
@@ -328,9 +454,8 @@ def _columns(count: int) -> Callable[[dict[str, Content], Theme], _Placement]:
         top = _with_title(placement, roles, theme) if "title" in roles else MARGIN
         caption_top = _CONTENT_BOTTOM - caption_height
         for index in range(1, count + 1):
-            x = MARGIN + (index - 1) * (width + gap)
-            content = roles.get(f"content_{index}")
-            spec = "quote" if isinstance(content, TextElement) else caption_spec
+            x = MARGIN + (index - 1) * (width + _GAP)
+            spec = _content_spec(roles.get(f"content_{index}"), caption_spec)
             placement.boxes[f"content_{index}"] = (Box(x=x, y=top, w=width, h=caption_top - top - 16), spec)
             placement.boxes[f"caption_{index}"] = (Box(x=x, y=caption_top, w=width, h=caption_height), caption_spec)
         return placement
@@ -338,10 +463,85 @@ def _columns(count: int) -> Callable[[dict[str, Content], Theme], _Placement]:
     return columns
 
 
+def _headed_columns(count: int) -> Callable[[dict[str, Content], Theme], _Placement]:
+    """Side by side, with their captions above them, as headings."""
+    width = (WIDTH - 2 * MARGIN - (count - 1) * _GAP) / count
+    caption_height = 128 if count == 2 else 168
+    caption_spec = "heading caption" if count == 2 else "small heading caption"
+
+    def headed(roles: dict[str, Content], theme: Theme) -> _Placement:
+        placement = _Placement(f"v5/columns-{count}-headed")
+        top = _with_title(placement, roles, theme) if "title" in roles else MARGIN
+        content_top = top + caption_height + 16
+        for index in range(1, count + 1):
+            x = MARGIN + (index - 1) * (width + _GAP)
+            spec = _content_spec(roles.get(f"content_{index}"), caption_spec)
+            placement.boxes[f"caption_{index}"] = (Box(x=x, y=top, w=width, h=caption_height), caption_spec)
+            placement.boxes[f"content_{index}"] = (
+                Box(x=x, y=content_top, w=width, h=_CONTENT_BOTTOM - content_top),
+                spec,
+            )
+        return placement
+
+    return headed
+
+
+def _rows(roles: dict[str, Content], theme: Theme) -> _Placement:
+    """The two one above the other, zig-zag: the first on the left with its caption on its right, the second on the
+    right with its caption on its left."""
+    placement = _Placement("v5/columns-2-rows")
+    top = _with_title(placement, roles, theme) if "title" in roles else MARGIN
+    gap = 24
+    height = (_CONTENT_BOTTOM - top - gap) / 2
+    content_width = 640  # (most pictures are landscape: a narrower box keeps them by their captions)
+    caption_width = WIDTH - 2 * MARGIN - content_width - _GAP
+    rows = (
+        (MARGIN, MARGIN + content_width + _GAP, "side caption"),
+        (WIDTH - MARGIN - content_width, MARGIN, "side caption right"),
+    )
+    for index, (content_x, caption_x, caption_spec) in enumerate(rows, 1):
+        y = top + (index - 1) * (height + gap)
+        spec = _content_spec(roles.get(f"content_{index}"), caption_spec)
+        placement.boxes[f"content_{index}"] = (Box(x=content_x, y=y, w=content_width, h=height), spec)
+        placement.boxes[f"caption_{index}"] = (Box(x=caption_x, y=y, w=caption_width, h=height), caption_spec)
+    return placement
+
+
+def _split(roles: dict[str, Content], theme: Theme) -> _Placement:
+    """The slide split in two halves, the first in the theme's surface colour, each with its picture (or text) and
+    its caption, and the title across the top."""
+    half = WIDTH / 2
+    panel = ShapeElement(role="panel", box=Box(x=0, y=0, w=half, h=HEIGHT), color=theme.palette.surface)
+    placement = _Placement("v5/columns-2-split", shapes=[panel])
+    top = MARGIN
+    if "title" in roles:
+        placement.boxes["title"] = (_TITLE, "band title")
+        top = _CONTENT_TOP
+    caption_height = 128
+    caption_top = _CONTENT_BOTTOM - caption_height
+    for index in (1, 2):
+        x = (index - 1) * half + 64
+        spec = _content_spec(roles.get(f"content_{index}"))
+        placement.boxes[f"content_{index}"] = (Box(x=x, y=top, w=half - 128, h=caption_top - top - 16), spec)
+        placement.boxes[f"caption_{index}"] = (Box(x=x, y=caption_top, w=half - 128, h=caption_height), "caption")
+    return placement
+
+
 def _chart(roles: dict[str, Content], theme: Theme) -> _Placement:
     placement = _Placement("v5/chart")
     top = _with_title(placement, roles, theme) if "title" in roles else MARGIN
     placement.boxes["chart"] = (Box(x=MARGIN, y=top, w=WIDTH - 2 * MARGIN, h=_CONTENT_BOTTOM - top), "caption")
+    return placement
+
+
+def _chart_side(roles: dict[str, Content], theme: Theme) -> _Placement:
+    """The title on the left, the chart beside it."""
+    title = Box(x=MARGIN, y=MARGIN, w=_SIDE_TITLE_WIDTH, h=HEIGHT - 2 * MARGIN - 100)
+    placement = _Placement("v5/chart-side")
+    placement.boxes["title"] = (title, "side title")
+    x = MARGIN + _SIDE_TITLE_WIDTH + _SIDE_GAP
+    placement.boxes["chart"] = (Box(x=x, y=MARGIN, w=WIDTH - MARGIN - x, h=_CONTENT_BOTTOM - MARGIN), "caption")
+    placement.shapes += _decoration(theme.model_copy(update={"title_align": "left"}), title, gap=12)
     return placement
 
 
@@ -387,13 +587,60 @@ def _decoration(theme: Theme, title: Box, gap: float) -> list[ShapeElement]:
     return []
 
 
-_LAYOUTS: Final[dict[str, Callable[[dict[str, Content], Theme], _Placement]]] = {
-    "title": _title_slide,
-    "large_quote": _statement,
-    "image": _image,
-    "full_image": _full_image,
-    "two_column_image": _columns(2),
-    "three_column_image": _columns(3),
-    "chart": _chart,
-    "diagram": _diagram,
+def _always(roles: dict[str, Content]) -> bool:
+    return True
+
+
+def _titled(roles: dict[str, Content]) -> bool:
+    return "title" in roles
+
+
+def _untitled(roles: dict[str, Content]) -> bool:
+    return "title" not in roles
+
+
+@dataclass(frozen=True)
+class _Layout:
+    """One of a slide type's layouts: its name, what places its elements, how likely it's picked (against the type's
+    other layouts), and which slides it fits, by their elements."""
+
+    name: str
+    build: Callable[[dict[str, Content], Theme], _Placement]
+    weight: float = 1.0
+    fits: Callable[[dict[str, Content]], bool] = _always
+
+
+_LAYOUTS: Final[dict[str, tuple[_Layout, ...]]] = {
+    "title": (_Layout("v5/title", _title_slide),),  # (named for the theme's alignment: v5/title-left or -center)
+    "large_quote": (
+        _Layout("v5/statement", _statement),
+        _Layout("v5/statement-left", _statement_left, 0.8),
+        _Layout("v5/statement-band", _statement_band, 0.6),
+    ),
+    "image": (
+        _Layout("v5/image-top", _image_top),
+        _Layout("v5/image-side", _image_beside(right=False), 0.6, _titled),
+        _Layout("v5/image-side-right", _image_beside(right=True), 0.5, _titled),
+    ),
+    "full_image": (
+        _Layout("v5/full-image", _full_image),
+        _Layout("v5/full-image-low", _full_image_low, 0.8, _titled),
+        _Layout("v5/full-image-corner", _full_image_corner, 0.8, _titled),
+        _Layout("v5/full-image-framed", _full_image_framed, 0.8, _untitled),
+    ),
+    "two_column_image": (
+        _Layout("v5/columns-2", _columns(2)),
+        _Layout("v5/columns-2-headed", _headed_columns(2), 0.8),
+        _Layout("v5/columns-2-rows", _rows, 0.8),
+        _Layout("v5/columns-2-split", _split, 0.8),
+    ),
+    "three_column_image": (
+        _Layout("v5/columns-3", _columns(3)),
+        _Layout("v5/columns-3-headed", _headed_columns(3), 0.8),
+    ),
+    "chart": (
+        _Layout("v5/chart", _chart),
+        _Layout("v5/chart-side", _chart_side, 0.6, _titled),
+    ),
+    "diagram": (_Layout("v5/diagram", _diagram),),
 }

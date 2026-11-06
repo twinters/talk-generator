@@ -87,9 +87,17 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   files or fonts with the same metrics (`talkgenerator.design.fonts`), so a themed deck's JSON holds every
   element's place and style, and every renderer draws it the same way. `talkgenerator.render.shapes` draws it in
   PowerPoint, and `talkgenerator.render.preview` as pictures with Pillow, with a contact sheet of a whole deck.
+  Every slide type has its layouts, twenty in all: a full-screen picture with its title on a band at the top or
+  the bottom, or on a panel in a corner (and framed when it has no title), two pictures side by side with their
+  captions under or above them, in zig-zag rows or on the two halves of the slide, a chart or picture beside its
+  title, a statement centred, aligned left by a bar or on a band. A slide never gets the layout of the slide before
+  it when another one fits, and less often the ones the deck has had already. Pictures, charts and diagrams go
+  under the bands and texts over them.
 - Design checks for themed decks (`talkgenerator.checks.design`): every text reads on what's behind it (a photo
-  counts as black or white, as shaded), fits its box, isn't too small, and stays on the slide. On 2,376 themed
-  decks made from 66 benchmark talks, nothing came up. `talkgenerator check --theme random` checks themed talks.
+  counts as black or white, as shaded), fits its box, isn't too small, stays on the slide and isn't covered by what's
+  drawn after it, and no slide has the layout of the slide before it where another fits. On 2,376 themed decks made
+  from 66 benchmark talks, nothing came up, nor on 792 decks of those talks laid out with twelve seeds. `talkgenerator
+  check --theme random` checks themed talks, and its metrics count a deck's layouts and those twice in a row.
 - Two new kinds of chart. A trend: a line along two odd axes ("Hours since the meeting started" against
   "Times someone said synergy"), going one of eleven ways, from exponential to hockey stick to crash, with an
   optional second line, the punchline, that draws itself across the chart on a click. And a ranking: bars that

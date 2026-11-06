@@ -1,19 +1,22 @@
 """Design checks of themed decks (docs/v5-plan.md, sections 9 and 14).
 
 Every text has to read on what's behind it (WCAG contrast: 4.5 for body text, 3 for large text), fit its box at its
-size, be big enough to read from the back of the room, and stay within the slide's safe area. What's behind a text
-is the slide's background (both ends of a gradient), and the shapes and images drawn before it: an image could be
-anything, so for one the check takes the worst of black and white, as shaded by what's drawn over it.
+size, be big enough to read from the back of the room, stay within the slide's safe area, and not be covered by
+what's drawn after it. What's behind a text is the slide's background (both ends of a gradient), and the shapes and
+images drawn before it: an image could be anything, so for one the check takes the worst of black and white, as
+shaded by what's drawn over it. And a slide doesn't repeat the layout of the slide before it, if another one fits.
 """
 
 from __future__ import annotations
 
+import itertools
 from typing import Final
 
 from talkgenerator.checks.deck import Finding
 from talkgenerator.design import color, engine, fit
 from talkgenerator.models.deck import (
     Box,
+    ChartElement,
     Deck,
     DeckSlide,
     DiagramElement,
@@ -23,6 +26,9 @@ from talkgenerator.models.deck import (
     TextStyle,
 )
 from talkgenerator.render import diagrams
+
+# A shape at least this opaque hides what's under it
+COVERING_OPACITY: Final = 0.5
 
 # WCAG's large text: 18 points, or 14 points in bold (a canvas pixel is half a point)
 LARGE_TEXT: Final = 36
@@ -50,7 +56,18 @@ def check_design(deck: Deck) -> list[Finding]:
                 findings.append(Finding("contrast", "error", f"the credits read badly (contrast {worst:.1f})", number))
             if slide.credits_style.size < SMALLEST_CREDITS:
                 findings.append(Finding("text size", "warning", "the credits are too small to read", number))
-    return findings
+    return [*findings, *check_variety(deck)]
+
+
+def check_variety(deck: Deck) -> list[Finding]:
+    """A themed deck's slides don't have the layout of the slide before them, where another layout fits them."""
+    if deck.style is None:
+        return []
+    return [
+        Finding("variety", "warning", f"the same layout as the slide before ({slide.layout})", number)
+        for number, (before, slide) in enumerate(itertools.pairwise(deck.slides), 2)
+        if slide.layout == before.layout and len(engine.layouts_for(slide)) > 1
+    ]
 
 
 def _text_findings(
@@ -73,7 +90,31 @@ def _text_findings(
         findings.append(Finding("text size", "warning", f"the {role} is small ({style.size / 2:g} points)", number))
     if not _inside(box, SAFE_AREA):
         findings.append(Finding("margins", "warning", f"the {role} is outside the slide's safe area", number))
+    covering = _covering(slide, index, box)
+    if covering is not None:
+        findings.append(Finding("covered", "error", f"the {role} is under a {covering} drawn over it", number))
     return findings
+
+
+def _covering(slide: DeckSlide, index: int, box: Box) -> str | None:
+    """What's drawn over a box after the element at the index, if anything: a picture, a chart, a diagram, or a
+    shape that hides what's under it."""
+    for element in slide.elements[index + 1 :]:
+        area = element.box
+        if area is None or not _overlap(area, box):
+            continue
+        if isinstance(element, ImageElement | ChartElement | DiagramElement):
+            return "picture" if isinstance(element, ImageElement) else element.kind
+        if isinstance(element, ShapeElement) and element.opacity >= COVERING_OPACITY:
+            return element.role
+    return None
+
+
+def _overlap(box: Box, other: Box) -> bool:
+    """Whether the boxes share some area (not just an edge)."""
+    return (
+        box.x < other.x + other.w and other.x < box.x + box.w and box.y < other.y + other.h and other.y < box.y + box.h
+    )
 
 
 def _diagram_findings(slide: DeckSlide, index: int, element: DiagramElement, number: int) -> list[Finding]:
