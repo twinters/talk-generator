@@ -123,7 +123,7 @@ inspirobot_image_generator = inspirobot.get_random_inspirobot_image
 
 # GIFS
 
-reddit_gif_generator = create_reddit_image_generator("gifs", "gif", "gifextra", "nonononoYES")
+reddit_gif_generator = create_reddit_image_generator("gifs", "gif", "gifextra", "nonononoYES", animated=True)
 giphy_gif_generator = SeededGenerator(ExternalImageListGenerator(giphy.search_gifs))
 
 combined_gif_generator = CombinedGenerator((1, reddit_gif_generator), (1, giphy_gif_generator))

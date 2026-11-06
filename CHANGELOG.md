@@ -87,6 +87,9 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
 
 ### Fixed
 
+- Gif slides show gifs that move. Their Reddit search takes only animated posts (gif subreddits hold photos
+  too), an Imgur `.gifv` without Reddit's animated copy comes from Imgur itself instead of as Reddit's still of
+  its first frame, and gifs of up to 16 MB (was 8) are used, as many good ones are 10 to 16 MB.
 - `--int_seed` gives the same talk every time, also with `--parallel` (the default), with seed 0, and in every
   Python process. Slides generated in parallel are settled in order, so a talk comes out the same as when its
   slides are generated one by one.

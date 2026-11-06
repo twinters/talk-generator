@@ -4,10 +4,12 @@ Reddit's search no longer supports the `url:` operators we used to filter on ima
 queries now return nothing), so we search on the plain topic and pick the image out of each post
 ourselves: direct image links, the first image of a gallery, or the preview image Reddit made.
 Images that posts link to on other hosts (such as Imgur) are downloaded from Reddit's preview copy.
+For gifs (animated=True), only what moves counts: a post's animated image, or else Imgur's own gif.
 """
 
 import html
 import logging
+import re
 import threading
 from functools import lru_cache
 from typing import Any
@@ -29,6 +31,11 @@ from talkgenerator.util import http_util
 logger = logging.getLogger("talkgenerator")
 
 _IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".gif")
+_ANIMATED_EXTENSIONS = (".gif", ".gifv", ".mp4")
+# An Imgur image or gif (not an album), whose gif Imgur serves at i.imgur.com/<id>.gif
+_IMGUR = re.compile(
+    r"^https?://(?:i\.|m\.)?imgur\.com/([A-Za-z0-9]{5,8})(?:\.(?:gifv|gif|mp4|webm|jpe?g|png))?$", re.IGNORECASE
+)
 _thread_local = threading.local()
 
 # When Reddit as a whole fails (bad credentials, rate limit, outage), skip it for a while instead of paying
@@ -68,7 +75,9 @@ def get_subreddit(name: str) -> Any:
 
 
 @lru_cache(maxsize=128)
-def _search_images(name: str, query: str, sort: str, limit: int) -> tuple[tuple[str, str, str | None], ...]:
+def _search_images(
+    name: str, query: str, sort: str, limit: int, animated: bool = False
+) -> tuple[tuple[str, str, str | None], ...]:
     # Raises on API errors, so that failures don't end up in the cache
     subreddit = get_subreddit(name)
     submissions = subreddit.search(query, sort=sort, limit=limit) if query else subreddit.hot(limit=limit)
@@ -76,16 +85,17 @@ def _search_images(name: str, query: str, sort: str, limit: int) -> tuple[tuple[
     for submission in submissions:
         if vars(submission).get("over_18"):
             continue
-        image_url = get_image_url(submission)
+        image_url = get_image_url(submission, animated=animated)
         if image_url:
             images.append((image_url, get_source_name(submission), get_post_url(submission)))
     return tuple(images)
 
 
 def search_images(
-    name: str, query: str | None, sort: str = "relevance", limit: int = 100
+    name: str, query: str | None, sort: str = "relevance", limit: int = 100, animated: bool = False
 ) -> list[tuple[str, str, str | None]] | None:
-    """(image URL, credit, post URL) triples of safe-for-work image posts in (a "+"-joined list of) subreddits.
+    """(image URL, credit, post URL) triples of safe-for-work image posts in (a "+"-joined list of) subreddits;
+    with animated, only of the posts whose image moves.
 
     Searches for the query, or takes the current hot posts if there's no query. Returns None without
     Reddit access or when Reddit fails.
@@ -96,7 +106,7 @@ def search_images(
     if _cooldown.active:
         return None
     try:
-        return list(_search_images(name, (query or "").strip(), sort, limit))
+        return list(_search_images(name, (query or "").strip(), sort, limit, animated))
     except PrawcoreException as err:
         cooldown = _cooldown_for(err)
         if cooldown:
@@ -120,8 +130,8 @@ def _cooldown_for(error: PrawcoreException) -> tuple[float, str] | None:
     return None
 
 
-def get_image_url(submission: Any) -> str | None:
-    """The URL of the image a post shows, if it shows one."""
+def get_image_url(submission: Any, animated: bool = False) -> str | None:
+    """The URL of the image a post shows, if it shows one; with animated, only if it moves (a gif)."""
     # Read the raw data: PRAW would make an extra request for every missing attribute otherwise
     data = vars(submission)
     if data.get("is_video"):
@@ -129,12 +139,18 @@ def get_image_url(submission: Any) -> str | None:
 
     url = data.get("url_overridden_by_dest") or data.get("url") or ""
     link = urlsplit(url)
-    if link.path.lower().endswith(_IMAGE_EXTENSIONS):
-        if link.hostname == "i.redd.it":
+    path = link.path.lower()
+    moving = path.endswith(_ANIMATED_EXTENSIONS)
+    if path.endswith(_IMAGE_EXTENSIONS) or moving:
+        if link.hostname == "i.redd.it" and (moving or not animated):
             return url
         # Hosted elsewhere: download Reddit's copy instead, since other hosts can refuse us (i.imgur.com
-        # answers talkgenerator.com's server with HTTP 429). A gif without an animated copy keeps its link.
-        return _preview_url(data, animated_only=link.path.lower().endswith(".gif")) or url
+        # answers talkgenerator.com's server with HTTP 429). For a gif, that's Reddit's animated copy, or else
+        # the gif itself (Imgur's, for a .gifv): Reddit's still of its first frame isn't a gif.
+        if moving or animated:
+            gif = _preview_url(data, animated_only=True) or (_imgur_gif(url) if moving else None)
+            return gif or (url if path.endswith(".gif") else None)
+        return _preview_url(data) or url
 
     media_metadata = data.get("media_metadata") or {}
     if data.get("is_gallery") and media_metadata:
@@ -142,13 +158,20 @@ def get_image_url(submission: Any) -> str | None:
         media_ids = [item.get("media_id") for item in gallery_items] or list(media_metadata)
         for media_id in media_ids:
             media = media_metadata.get(media_id) or {}
-            if media.get("status") == "valid" and media.get("e") in ("Image", "AnimatedImage"):
+            kinds = ("AnimatedImage",) if animated else ("Image", "AnimatedImage")
+            if media.get("status") == "valid" and media.get("e") in kinds:
                 source = media.get("s") or {}
-                gallery_url = source.get("gif") or source.get("u")
+                gallery_url = source.get("gif") or (None if animated else source.get("u"))
                 if gallery_url:
                     return html.unescape(gallery_url)
 
-    return _preview_url(data)
+    return _preview_url(data, animated_only=animated) or (_imgur_gif(url) if animated else None)
+
+
+def _imgur_gif(url: str) -> str | None:
+    """The gif of an Imgur link, as Imgur serves it: https://i.imgur.com/abc12.gif for imgur.com/abc12.gifv."""
+    found = _IMGUR.match(url)
+    return f"https://i.imgur.com/{found.group(1)}.gif" if found else None
 
 
 def _preview_url(data: dict[str, Any], animated_only: bool = False) -> str | None:

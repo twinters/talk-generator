@@ -112,3 +112,52 @@ def test_text_post_has_no_image():
 def test_source_name_with_deleted_author():
     assert reddit.get_source_name(_post(author=None)) == "Reddit (r/pics)"
     assert reddit.get_source_name(_post(author=SimpleNamespace(name="someone"))) == "u/someone (on r/pics)"
+
+
+# GIFS
+
+
+def test_a_gifv_comes_from_reddits_animated_copy():
+    post = _post(
+        url="https://i.imgur.com/AbC12.gifv",
+        preview=_preview("https://external-preview.redd.it/x.jpg", gif_url="https://external-preview.redd.it/x.gif"),
+    )
+    assert reddit.get_image_url(post) == "https://external-preview.redd.it/x.gif"
+
+
+def test_a_gifv_without_an_animated_copy_comes_from_imgur_itself():
+    # Reddit's preview of it is a still of its first frame: the gif is still at Imgur
+    post = _post(url="https://imgur.com/AbC12.gifv", preview=_preview("https://external-preview.redd.it/x.jpg"))
+    assert reddit.get_image_url(post) == "https://i.imgur.com/AbC12.gif"
+
+
+@pytest.mark.parametrize(
+    ("data", "gif"),
+    [
+        ({"url": "https://i.redd.it/abc.gif"}, "https://i.redd.it/abc.gif"),
+        ({"url": "https://i.redd.it/abc.jpg"}, None),
+        ({"url": "https://i.imgur.com/abc12.jpg", "preview": _preview("https://external-preview.redd.it/x.jpg")}, None),
+        (
+            {
+                "url": "https://www.reddit.com/r/gifs/x",
+                "preview": _preview("https://p/x.jpg", gif_url="https://p/x.gif"),
+            },
+            "https://p/x.gif",
+        ),
+        ({"url": "https://www.reddit.com/r/gifs/x", "preview": _preview("https://p/x.jpg")}, None),
+        ({"url": "https://imgur.com/AbC12"}, "https://i.imgur.com/AbC12.gif"),
+    ],
+)
+def test_for_gifs_only_what_moves_counts(data, gif):
+    assert reddit.get_image_url(_post(**data), animated=True) == gif
+
+
+def test_for_gifs_a_gallery_gives_its_first_animated_image():
+    media = {
+        "a": {"status": "valid", "e": "Image", "s": {"u": "https://preview.redd.it/a.jpg"}},
+        "b": {"status": "valid", "e": "AnimatedImage", "s": {"gif": "https://i.redd.it/b.gif", "u": "x"}},
+    }
+    items = {"items": [{"media_id": "a"}, {"media_id": "b"}]}
+    post = _post(url="https://www.reddit.com/gallery/x", is_gallery=True, media_metadata=media, gallery_data=items)
+    assert reddit.get_image_url(post, animated=True) == "https://i.redd.it/b.gif"
+    assert reddit.get_image_url(post) == "https://preview.redd.it/a.jpg"

@@ -52,17 +52,19 @@ class WikiquoteQuoteGenerator:
 # REDDIT
 
 
-def create_reddit_image_generator(*name):
-    reddit_generator = RedditImageGenerator("+".join(name))
+def create_reddit_image_generator(*name, animated: bool = False):
+    """Images from the subreddits; with animated, only gifs (images that move)."""
+    reddit_generator = RedditImageGenerator("+".join(name), animated)
     return BackupGenerator(reddit_generator.generate, reddit_generator.generate_random)
 
 
 class RedditImageSearcher:
-    def __init__(self, subreddit: str):
+    def __init__(self, subreddit: str, animated: bool = False):
         self._subreddit = subreddit
+        self._animated = animated
 
     def __call__(self, seed: str):
-        results = reddit.search_images(self._subreddit, str(seed or ""))
+        results = reddit.search_images(self._subreddit, str(seed or ""), animated=self._animated)
         if not results:
             return None
         return [
@@ -72,11 +74,11 @@ class RedditImageSearcher:
 
 
 class RedditImageGenerator:
-    def __init__(self, subreddit: str):
+    def __init__(self, subreddit: str, animated: bool = False):
         self._subreddit = subreddit
 
         self._generate = ExternalImageListGenerator(
-            SeededGenerator(RedditImageSearcher(self._subreddit)),
+            SeededGenerator(RedditImageSearcher(self._subreddit, animated)),
         )
 
     def generate(self, presentation_context):

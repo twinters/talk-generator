@@ -23,7 +23,7 @@ from talkgenerator.util import http_util, os_util
 logger = logging.getLogger("talkgenerator")
 
 MAX_DOWNLOAD_BYTES = 25 * 1024 * 1024
-MAX_GIF_BYTES = 8 * 1024 * 1024
+MAX_GIF_BYTES = 16 * 1024 * 1024  # gifs stay as they are, to stay animated; many good ones are 10 to 16 MB
 MAX_DIMENSION = 2400  # pixels; larger photos are scaled down to keep decks small
 MAX_UNCONVERTED_BYTES = 3 * 1024 * 1024
 MIN_DIMENSION = 50  # anything smaller is an icon or a tracking pixel
