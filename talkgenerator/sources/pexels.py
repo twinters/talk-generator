@@ -54,7 +54,7 @@ def _map_to_image_data(photo: dict[str, Any]) -> ImageData | None:
     # The original upload can be huge; ask the CDN for a slide-sized version instead
     image_url = http_util.with_query_params(original, auto="compress", cs="tinysrgb", w=_IMAGE_WIDTH)
     source = photo["photographer"] + " (via Pexels)" if photo.get("photographer") else "Pexels"
-    return ImageData(image_url=image_url, source=source, source_url=photo.get("url"))
+    return ImageData(image_url=image_url, source=source, source_url=photo.get("url"), description=photo.get("alt"))
 
 
 def search_photos(query: str | None) -> list[ImageData]:

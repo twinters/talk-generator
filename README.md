@@ -83,6 +83,32 @@ Only OpenRouter's free models write talks without being asked: other models writ
 `--language nl` has the model write the talk in Dutch (or in another language); the image searches stay in English.
 After every talk, the logs tell how many requests it made and what they cost, and so does the talk's deck JSON.
 
+### Claude as the writer: the Skill
+
+With the talkgenerator Skill, Claude writes the talk itself, on your own Claude plan, and talkgenerator turns it into a deck.
+Claude writes a plan (what every slide says, and what its images should show), `talkgenerator render` finds images it may use, credits them, saves the PowerPoint and reports back, and Claude fixes the slides that didn't come out.
+It runs wherever Claude can run commands, such as in [Claude Code](https://claude.com/claude-code), with talkgenerator installed (`pip install talkgenerator`).
+
+Install it as a Claude Code plugin, straight from this repository:
+
+```
+/plugin marketplace add twinters/talk-generator
+/plugin install talkgenerator@talk-generator
+```
+
+Or copy [`skill/skills/talkgenerator`](skill/skills/talkgenerator) into `~/.claude/skills/`.
+Then ask Claude for, say, "a 10-slide PowerPoint karaoke deck about competitive birdwatching".
+
+The commands the Skill uses work for plans written by hand, or by other tools, too:
+
+| Command | What it does |
+| --- | --- |
+| `talkgenerator render plan.json [-o talk.pptx]` | Turns a plan (or several: `plans/*.json`) into a PowerPoint, with the deck's JSON and a contact sheet of its images next to it, and prints a report in JSON: per slide, whether it came out as planned, was made the classic way instead, or was left out, and why, and what every image was searched with |
+| `talkgenerator formats [--details] [--json]` | The talk formats, and with `--details` the slides a plan can have: their texts, length limits, images and recipes |
+| `talkgenerator schema plan` | The plan format, as a JSON Schema (`schema deck` for the deck format) |
+
+[An example plan](skill/skills/talkgenerator/references/example-plan.json) shows what goes in one.
+
 ### Run arguments
 
 | Argument | Description |

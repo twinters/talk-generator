@@ -149,6 +149,7 @@ def _map_to_image_data(item: dict[str, Any]) -> ImageData | None:
         image_url=url,
         source=f"{creator} ({_license_label(item)}, via Openverse)",
         source_url=item.get("foreign_landing_url"),
+        description=item.get("title"),
     )
 
 

@@ -40,6 +40,8 @@ class ImageAsset(_Data):
     source: str | None = None
     source_url: str | None = None
     credit: Credit = ()
+    query: str | None = None  # the search that found it, for an image a plan asked for
+    description: str | None = None  # what it shows, as its source describes it (for alt text, say)
 
 
 class TextElement(_Data):

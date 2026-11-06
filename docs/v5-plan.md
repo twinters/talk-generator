@@ -431,6 +431,18 @@ rendering the deck.
 - The same plan-in, deck-out path can later let talkgenerator.com accept plans written in the visitor's browser
   with the visitor's own key, so that key never reaches the server.
 
+Built on 2026-11-06: `talkgenerator schema plan|deck`, `talkgenerator formats [--details] [--json]` (the formats
+are the presentation schemas for now) and `talkgenerator render`, whose report gives every planned slide's outcome
+(`as planned`, `classic` or `left out`), its problems and warnings. A slide's recipe is one of the format's slide
+generators, by an id made from its name (`two-captions-gifs`); a kind without a recipe in the plan gets a default,
+and a format without that default borrows its copyright-free version. The Skill lives in
+`skill/skills/talkgenerator/` (SKILL.md, the slide reference that `formats --details` generates, which a test keeps
+up to date, and an example plan); `skill/` is a Claude Code plugin, which `.claude-plugin/marketplace.json` at the
+repository's root lists, so `/plugin marketplace add twinters/talk-generator` installs it. For claude.ai: its
+sandbox most likely can't install talkgenerator or reach the image APIs (Anthropic's docs say the API's code
+execution has no internet access, and say nothing about claude.ai's), so there the Skill writes plans for the user
+to render; the SKILL.md frontmatter keeps to the fields claude.ai accepts.
+
 ## 7. Talk formats
 
 A talk format describes a kind of talk: a description (which doubles as the LLM's brief), an arc of sections
@@ -784,7 +796,7 @@ before the new formats. A milestone is a checkpoint on `v5`, not a release; only
 | Milestone | Focus | Contents | Done when |
 | --- | --- | --- | --- |
 | 1 (done, 2026-11-05) | Groundwork | deck JSON and the models; pptx renderer from deck JSON (classic look); seeded random streams (`random_util`), with parallel generation giving the one-by-one talk; the classic engine on the new model; `--save_json`; usage ledger and budgets; `replay` and `none` providers; `talkgenerator check` for completeness, template leftovers and determinism | classic talks look like v4's; the same seed gives the same deck, serial or parallel; v4's offline tests pass |
-| 2 (under way: the TalkPlan schema, the planner, and the `openrouter`, `anthropic` and `openai` adapters are in) | LLM TED talks and the Claude Skill | TalkPlan schema; the LLM planner (one streamed call, dice, per-slide fallback, safety); `openrouter`, `anthropic` and `openai` adapters; languages, Dutch first; `render plan.json`, `schema`, `formats`; `skill/` with SKILL.md; `login openrouter`; the `chatgpt` adapter (may slip to milestone 3); checks for requests, cost, speed and language | on the benchmark with OpenRouter's free models: no holes, no leftovers, $0 and one request per talk; Dutch talks pass the language check; Claude Code makes a deck end to end with the Skill |
+| 2 (under way: the TalkPlan schema, the planner, the `openrouter`, `anthropic` and `openai` adapters, `render`, `schema`, `formats` and the Skill are in) | LLM TED talks and the Claude Skill | TalkPlan schema; the LLM planner (one streamed call, dice, per-slide fallback, safety); `openrouter`, `anthropic` and `openai` adapters; languages, Dutch first; `render plan.json`, `schema`, `formats`; `skill/` with SKILL.md; `login openrouter`; the `chatgpt` adapter (may slip to milestone 3); checks for requests, cost, speed and language | on the benchmark with OpenRouter's free models: no holes, no leftovers, $0 and one request per talk; Dutch talks pass the language check; Claude Code makes a deck end to end with the Skill |
 | 3 | Themes and layouts | theme tokens and families, extremes on by default; procedural palettes and font pairs; layout variants; text fitting; image treatments; the `classic` theme; thumbnails and contact sheet in CI; the local MCP server | contrast and overflow checks pass on every theme |
 | 4 | Streaming and the web view | `stream_talk()`, display policies, probe validation; in talk-generator-web: the SSE endpoint, the Angular renderer, LLM talks by default with the classic switch, a language choice, Connect OpenRouter and pasted keys, .pptx on download, a preview deployment that installs `v5` from git | first slide on screen within the calibrated target on the VPS; a 20-slide talk under the memory bar; the downloaded .pptx matches the web view |
 | 5 | Images | slots, aesthetic profiles and flavour packs, local analysis, license classes; new open and weird sources; AI image generation with the user's own keys; the optional vision pick | license policies enforced; profile checks pass (such as the grayscale share for `vintage`); generated images credited |

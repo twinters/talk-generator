@@ -33,7 +33,12 @@ def _map_gif(gif: dict[str, Any]) -> ImageData | None:
         url = (images.get(rendition) or {}).get("url")
         if url:
             creator = gif.get("username") or "GIPHY"
-            return ImageData(image_url=url, source=f"{creator} (Powered by GIPHY)", source_url=gif.get("url"))
+            return ImageData(
+                image_url=url,
+                source=f"{creator} (Powered by GIPHY)",
+                source_url=gif.get("url"),
+                description=gif.get("title"),
+            )
     return None
 
 

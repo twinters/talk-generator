@@ -138,7 +138,7 @@ def _chart_correlation(texts: Mapping[str, str | None], images: Mapping[str, Any
     )
 
 
-_OPTIONAL_TITLE = TextField("title", "the slide's title, or empty for none", 60, optional=True)
+_OPTIONAL_TITLE = TextField("title", "the slide's title", 60, optional=True)
 
 KINDS: Final[dict[str, Kind]] = {
     kind.name: kind

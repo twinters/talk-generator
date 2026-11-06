@@ -4,13 +4,35 @@ certain types of (content) generators
 """
 
 import logging
-from collections.abc import Callable
-from typing import Any
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
+from typing import Any, Final
 
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.util import image_util, random_util
 
 logger = logging.getLogger("talkgenerator")
+
+# While the images of a planned slide are searched (see as_planned), searches go as written: generators that rewrite a
+# search (with a prefix, a related word, a walk) pass it on unchanged, random fallbacks step aside, and image lists
+# pick among their best results instead of all of them. The classic generator keeps its surprises.
+_AS_PLANNED: ContextVar[bool] = ContextVar("talkgenerator_as_planned", default=False)
+TOP_RESULTS: Final = 5
+
+
+@contextmanager
+def as_planned() -> Iterator[None]:
+    """Search for what a plan asks for, as written (see _AS_PLANNED)."""
+    token = _AS_PLANNED.set(True)
+    try:
+        yield
+    finally:
+        _AS_PLANNED.reset(token)
+
+
+def planned() -> bool:
+    return _AS_PLANNED.get()
 
 
 def fullname(o):
@@ -39,7 +61,7 @@ class PrefixedGenerator(Generator):
         self._generator = generator
 
     def __call__(self, seed: str):
-        return self._generator(self._prefix + " " + seed)
+        return self._generator(seed if planned() else self._prefix + " " + seed)
 
 
 class PrefixedPresentationContextGenerator(Generator):
@@ -48,6 +70,8 @@ class PrefixedPresentationContextGenerator(Generator):
         self._generator = generator
 
     def __call__(self, presentation_context):
+        if planned():
+            return self._generator(presentation_context)
         presentation_context = dict(presentation_context)
         presentation_context["seed"] = self._prefix + " " + presentation_context["seed"]
         return self._generator(presentation_context)
@@ -217,11 +241,13 @@ class ExternalImageListGenerator(Generator):
                 candidates = [entry for entry in candidates if entry[0] > 0]
             if not candidates:
                 return None
+            # For a plan, among the best results (the search's first ones) that are left
+            pool = candidates[:TOP_RESULTS] if planned() else candidates
             if self._weighted:
-                entry = random_util.choices(candidates, weights=[entry[0] for entry in candidates])[0]
+                entry = random_util.choices(pool, weights=[entry[0] for entry in pool])[0]
                 chosen = entry[1]
             else:
-                entry = chosen = random_util.choice(candidates)
+                entry = chosen = random_util.choice(pool)
             candidates.remove(entry)
 
             if isinstance(chosen, str):
@@ -276,6 +302,8 @@ class WalkingGenerator(Generator):
         self._steps = steps
 
     def __call__(self, seed):
+        if planned():
+            return seed
         history = set()
         history.add(seed)
         current = seed
@@ -307,5 +335,5 @@ class RelatedMappingGenerator(Generator):
         self._generator = generator
 
     def __call__(self, seed: str) -> str | None:
-        mapped_seed = self._related_word_generator(seed)
+        mapped_seed = seed if planned() else self._related_word_generator(seed)
         return self._generator(mapped_seed)

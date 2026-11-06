@@ -119,6 +119,8 @@ def _to_image_asset(image: ImageData) -> model.ImageAsset:
         source=image.get_source(),
         source_url=image.get_source_url(),
         credit=tuple(model.CreditPart(text=text, url=url) for text, url in image.get_credit()),
+        query=image.query,
+        description=image.description,
     )
 
 

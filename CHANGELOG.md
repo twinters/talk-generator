@@ -46,6 +46,17 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   Paid models only write talks when `--llm` or `TALKGENERATOR_LLM` names them. A talk that a model declines,
   even halfway, is classic. Budgets check every model a request may end up at, and leave room for thinking. Keys
   never show up in logs or error messages.
+- `talkgenerator render plan.json` turns a talk plan written elsewhere (by Claude through the Skill, by hand, ...)
+  into a PowerPoint, with the deck's JSON (`<name>.deck.json`) and a contact sheet of its images
+  (`<name>.images.png`) next to it, and prints a report in JSON: per slide, whether it came out as planned, was
+  made the classic way instead, or was left out, and why, what every image was searched with and where it's from,
+  and warnings about texts that were cut off and fields that don't exist. A slide's recipe (one of the format's slide generators, such as `two-captions-gifs`)
+  picks its look and image sources, and an image query may name an image file of the user's own.
+  `talkgenerator formats --details` lists the slide kinds, their texts, limits and recipes, and
+  `talkgenerator schema plan` prints the plan format as a JSON Schema.
+- The talkgenerator Skill (`skill/`): Claude writes talks for PowerPoint karaoke and improvised TED talks, renders
+  them with `talkgenerator render`, and fixes them from the report. It installs as a Claude Code plugin straight
+  from this repository (`/plugin marketplace add twinters/talk-generator`), or as a skill folder.
 - `talkgenerator check --llm provider:model` checks talks a language model writes; to check that the same answers
   give the same talk, the second run replays what the first one got. The report says how many slides the model
   wrote.

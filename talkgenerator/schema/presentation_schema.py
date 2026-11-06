@@ -22,9 +22,10 @@ import functools
 import itertools
 import logging
 import time
-from collections.abc import Callable, Collection
+from collections.abc import Callable, Collection, Sequence
 from dataclasses import dataclass, field
 from multiprocessing.pool import ThreadPool
+from pathlib import Path
 from typing import Any
 
 from pptx.presentation import Presentation
@@ -32,8 +33,8 @@ from pptx.presentation import Presentation
 from talkgenerator.datastructures.slide_generator_data import SlideGeneratorData, _filter_generated_elements
 from talkgenerator.llm.base import ProviderError, TextProvider
 from talkgenerator.llm.providers import NoneProvider
-from talkgenerator.models.plan import SlidePlan
-from talkgenerator.plan.kinds import TextField
+from talkgenerator.models.plan import SlidePlan, TalkPlan
+from talkgenerator.plan.kinds import Recipe, TextField
 from talkgenerator.plan.prompt import PlannedSlide, slide_plan, talk_request
 from talkgenerator.plan.realize import ATTEMPTS, clean_text, realize
 from talkgenerator.plan.stream import ObjectReader
@@ -76,7 +77,34 @@ class _NeedsWork:
 _NEEDS_WORK = _NeedsWork()
 
 _TALK_TITLE = TextField("title", "the talk's title", 80)
-_PRESENTER_JOB = TextField("presenter_job", "the presenter's job", 60)
+_PRESENTER_JOB = TextField("presenter_job", "the presenter's job", 40)
+
+
+@dataclass
+class PlanOutcome:
+    """How a slide of a plan that was written outside talkgenerator came out (see PresentationSchema.realize_plan)."""
+
+    number: int  # its place in the deck, counted from 1 (slide 1 is the title slide)
+    outcome: str = "as planned"  # or "classic" (its recipe's classic generator made it), or "left out"
+    problems: list[str] = field(default_factory=list)  # what went wrong on the way, even when a later try worked
+
+
+def _title_slide(
+    title: str, presenter: str | None, job: str | None, thesis: str | None, rng: random_util.Rng
+) -> tuple[slides.Slide, list[str]]:
+    """The title slide of a planned talk ("By <presenter>, <job>"), with its texts."""
+    with random_util.use(rng.child("subtitle")):
+        by = random_util.choice(("By", "A presentation by", "Presented by"))
+    subtitle = ", ".join(part for part in (f"{by} {presenter}" if presenter else "", job or "") if part) or None
+    slide = slides.TitleSlide(title, subtitle)
+    slide.set_note(f"Planned: the title slide\nThesis: {thesis!r}")
+    return slide, [text for text in (title, subtitle) if text]
+
+
+def _add_used(state: _DeckState, generated_elements: list) -> None:
+    elements = set(generated_elements)
+    _filter_generated_elements(elements)
+    state.used_elements.update(elements)
 
 
 @dataclass(eq=False)
@@ -245,6 +273,12 @@ class PresentationSchema:
 
         return None, slide_deck
 
+    def render(self, slide_deck: SlideDeck, debug_notes: bool = False) -> Presentation:
+        """The deck as a PowerPoint presentation."""
+        presentation = self._powerpoint_creator()
+        slide_deck.save_to_powerpoint(presentation, debug_notes=debug_notes)
+        return presentation
+
     def writes_with(self, llm: TextProvider | None) -> bool:
         """Whether a language model writes this schema's talks: there is one, and slide generators with recipes."""
         if llm is None or isinstance(getattr(llm, "provider", llm), NoneProvider):
@@ -377,12 +411,107 @@ class PresentationSchema:
         slide_nr: int, generator: SlideGeneratorData, talk: "_PlannedTalk", title: str, presenter: str | None
     ) -> _WorkedOutSlide:
         job = clean_text(talk.spine.get("presenter_job"), _PRESENTER_JOB)
-        with random_util.use(talk.rngs[slide_nr].child("subtitle")):
-            by = random_util.choice(("By", "A presentation by", "Presented by"))
-        subtitle = ", ".join(part for part in (f"{by} {presenter}" if presenter else "", job or "") if part) or None
-        slide = slides.TitleSlide(title, subtitle)
-        slide.set_note(f"Planned: the title slide\nThesis: {talk.spine.get('thesis')!r}")
-        return _WorkedOutSlide(slide_nr, generator, slide, [text for text in (title, subtitle) if text])
+        slide, texts = _title_slide(title, presenter, job, talk.spine.get("thesis"), talk.rngs[slide_nr])
+        return _WorkedOutSlide(slide_nr, generator, slide, texts)
+
+    # TALKS PLANNED OUTSIDE TALKGENERATOR (BY AN AGENT, SAY)
+
+    def realize_plan(
+        self,
+        plan: TalkPlan,
+        recipes: Sequence[tuple[SlideGeneratorData, Recipe] | None],
+        presenter: str | None,
+        rng: random_util.Rng,
+        local_images: Path | None = None,
+        parallel: bool = True,
+    ) -> tuple[SlideDeck, list["PlanOutcome"]]:
+        """A plan written outside talkgenerator (see talkgenerator.plan.external) as a deck: the title slide from the
+        plan's title, then every planned slide as planned (in up to ATTEMPTS tries, each of which must not repeat what
+        the slides before it used), or else made by its recipe's classic generator, or else left out.
+
+        recipes holds every planned slide's slide generator and recipe, or None for a slide that can't be made (a
+        kind this schema has no slides of). Like the other talks, the same seed gives the same deck, in parallel or
+        not, as long as the sources give the same answers."""
+        num_slides = 1 + len(plan.slides)
+        title = clean_text(plan.title, _TALK_TITLE) or plan.topic
+        slide_deck = SlideDeck(num_slides, title=title, topics=[plan.topic], presenter=presenter, seed=rng.root_seed)
+        state = _DeckState()
+        job = clean_text(plan.presenter_job, _PRESENTER_JOB)
+        title_slide, title_texts = _title_slide(title, presenter, job, plan.thesis, rng.child("slide", 0, "planned"))
+        slide_deck.add_slide(0, title_slide)
+        _add_used(state, title_texts)
+
+        contexts = [
+            {
+                "topic": plan.topic,
+                "topics": [plan.topic],
+                "seed": planned.concept.strip() or plan.topic,
+                "presenter": presenter,
+                "title": plan.title,
+            }
+            for planned in plan.slides
+        ]
+
+        def attempt(index: int, attempt_nr: int) -> tuple[_Result, list[str]]:
+            entry = recipes[index]
+            assert entry is not None
+            problems: list[str] = []
+            rng_of_slide = rng.child("slide", index + 1, "planned")
+            try:
+                result = realize(
+                    plan.slides[index],
+                    entry[1],
+                    contexts[index],
+                    rng_of_slide,
+                    attempt_nr,
+                    problems=problems,
+                    local_images=local_images,
+                )
+            except Exception as error:  # one misbehaving source shouldn't sink the talk
+                logger.exception("Realizing slide %s of the plan crashed", index + 2)
+                problems.append(f"realizing it crashed: {error!r}")
+                result = None
+            return result, problems
+
+        # Every slide's first try at once: searching images takes most of the time
+        makeable = [index for index, entry in enumerate(recipes) if entry is not None]
+        first_tries: dict[int, tuple[_Result, list[str]]] = {}
+        if parallel and len(makeable) > 1:
+            with ThreadPool(processes=min(8, len(makeable))) as pool:
+                first_tries = dict(zip(makeable, pool.map(lambda index: attempt(index, 0), makeable), strict=True))
+
+        outcomes = []
+        for index, planned in enumerate(plan.slides):
+            outcome = PlanOutcome(number=index + 2)
+            outcomes.append(outcome)
+            entry = recipes[index]
+            if entry is None:
+                outcome.outcome = "left out"
+                outcome.problems.append(f"this format has no {planned.kind!r} slides")
+                continue
+            generator, recipe = entry
+            worked_out: tuple[Any, list] | None = None
+            for attempt_nr in range(ATTEMPTS):
+                result, problems = first_tries.pop(index) if index in first_tries else attempt(index, attempt_nr)
+                outcome.problems += [problem for problem in problems if problem not in outcome.problems]
+                if result is not None and self._is_new_enough(result, generator, state):
+                    worked_out = result
+                    break
+                if result is not None:
+                    outcome.problems.append("it repeats an image or a text of a slide before it")
+            if worked_out is None:
+                classic = self._run_generator(
+                    generator, index + 1, contexts[index], rng.child("slide", index + 1, "classic"), state
+                )
+                if classic is not None and self._is_new_enough(classic, generator, state):
+                    worked_out = classic
+                    outcome.outcome = "classic"
+                else:
+                    outcome.outcome = "left out"
+                    continue
+            slide_deck.add_slide(index + 1, worked_out[0])
+            _add_used(state, worked_out[1])
+        return slide_deck, outcomes
 
     # TALKS THE CLASSIC GENERATOR MAKES
 

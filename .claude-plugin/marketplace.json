@@ -1,0 +1,14 @@
+{
+  "name": "talk-generator",
+  "description": "The talkgenerator plugin for Claude Code",
+  "owner": {
+    "name": "Thomas Winters"
+  },
+  "plugins": [
+    {
+      "name": "talkgenerator",
+      "source": "./skill",
+      "description": "Claude writes absurd talks for PowerPoint karaoke and improvised TED talks, and talkgenerator renders them as PowerPoints with licensed, credited images"
+    }
+  ]
+}

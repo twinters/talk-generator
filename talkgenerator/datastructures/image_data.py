@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import logging
 from collections.abc import Callable, Sequence
 
@@ -17,9 +18,12 @@ class ImageData:
         on_use: Callable[[], None] | None = None,
         source_url: str | None = None,
         credit: Sequence[CreditPart] | None = None,
+        description: str | None = None,
     ) -> None:
         self._image_url = image_url
         self._source = source
+        # What the image shows, as its source describes it (its alt text, title or tags), if it does
+        self.description = " ".join(description.split())[:200] if description else None
         # Called once when the image ends up on a slide, e.g. for Unsplash's download tracking
         self._on_use = on_use
         # Page that the credit links to (the photographer's profile, the photo's page, ...)
@@ -28,6 +32,14 @@ class ImageData:
         self._credit = tuple(credit) if credit else None
         # The checked bytes to embed, once downloaded (see image_util.fetch_image_data)
         self.data: bytes | None = None
+        # The search that found it, when talkgenerator knows (see found_with)
+        self.query: str | None = None
+
+    def found_with(self, query: str) -> ImageData:
+        """This image, noting the search that found it: a copy, as a source may hand out the same object again."""
+        found = copy.copy(self)
+        found.query = query
+        return found
 
     def get_image_url(self) -> str:
         return self._image_url

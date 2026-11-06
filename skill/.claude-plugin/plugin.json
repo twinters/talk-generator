@@ -1,0 +1,11 @@
+{
+  "name": "talkgenerator",
+  "description": "Claude writes absurd talks for PowerPoint karaoke and improvised TED talks, and talkgenerator renders them as PowerPoints with licensed, credited images",
+  "author": {
+    "name": "Thomas Winters"
+  },
+  "homepage": "https://github.com/twinters/talk-generator",
+  "repository": "https://github.com/twinters/talk-generator",
+  "license": "MIT",
+  "keywords": ["presentations", "improv", "powerpoint karaoke", "slides", "talk generator"]
+}

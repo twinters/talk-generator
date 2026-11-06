@@ -42,7 +42,13 @@ def _map_page(page: dict[str, Any]) -> ImageData | None:
     source = (
         f"{artist} ({license_name}, via Wikimedia Commons)" if license_name else f"{artist} (via Wikimedia Commons)"
     )
-    return ImageData(image_url=image_url, source=source, source_url=info.get("descriptionurl"))
+    description = _plain_text((metadata.get("ImageDescription") or {}).get("value", ""), 200)
+    return ImageData(
+        image_url=image_url,
+        source=source,
+        source_url=info.get("descriptionurl"),
+        description=description or None,
+    )
 
 
 def search_images(query: str, limit: int = 20) -> list[ImageData]:

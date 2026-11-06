@@ -1,0 +1,130 @@
+---
+name: talkgenerator
+description: Writes absurd talks for improvised presentations (PowerPoint karaoke, improvised TED talks, battle decks) and renders them as real PowerPoint files with licensed, credited images, using the talkgenerator package. Use it whenever someone wants slides to present unprepared, a karaoke deck, a fake TED talk, talks for an improv show or a party game, a batch of decks from audience suggestions, or a funny presentation on any topic, even if they don't name talkgenerator; also to fix or render again a talk plan (a talkgenerator plan JSON).
+license: MIT
+compatibility: Needs Python 3.11+ with the talkgenerator package (version 5 or newer), a shell to run it, and internet access for the image sources. Image API keys in a .env file are optional.
+---
+
+# Improvised talks with talkgenerator
+
+You write the talk, talkgenerator makes the deck. You decide what every slide says and what its images should show;
+talkgenerator searches the image sources, picks images it may use, credits them on the slides, lays everything out,
+and saves a PowerPoint. It reports back in JSON, and you fix what didn't work and render again.
+
+A plan holds words and image search queries, never image addresses: finding, licensing and crediting images is
+talkgenerator's job, which keeps every deck usable on a stage.
+
+## Before the first talk
+
+Check that the command is there:
+
+```bash
+talkgenerator formats
+```
+
+If it isn't, or doesn't know `formats`, install or upgrade it (`pip install --upgrade talkgenerator`): this needs
+version 5 or newer. The first run downloads some language data, which takes a minute.
+
+Images come from many sources, some of which need free API keys (Unsplash, Pexels, Pixabay, GIPHY, Reddit). They go
+in a `.env` file, which talkgenerator looks for in the folder it runs from (and next to its own files);
+`.env.example` in talkgenerator's repository lists them, with where to get each. Without keys it still works, with
+fewer sources. Every report lists the sources it had to skip, under `sources_without_keys`: that's the list to go
+by. If it's long, tell the user once that free keys give better images, and leave it there: the user puts keys in
+`.env` themselves, never in a plan or in the chat.
+
+## Making a talk
+
+1. **Work out what's wanted**: the topic (several topics work too); how many slides (a "10-slide deck" is the
+   title slide plus 9 slides in the plan, and 10 to 12 slides suit a talk of five minutes); the language; whether
+   the presenter's name should be on the title slide (without one, talkgenerator makes one up, which is part of the
+   fun); and the format. The `default` format draws on every image source, Reddit's wilder pictures and gifs too.
+   For a deck shown beyond a circle of friends (at a company event, on a stage, online), use `ted`: copyright-free
+   images only. Don't hold things up with questions: pick sensible defaults and say which.
+2. **Look up the slides you can use** in the format's reference: [references/slides.md](references/slides.md) for
+   `default`, [references/slides-ted.md](references/slides-ted.md) for `ted`. They list the slide kinds, their
+   texts, length limits, images and recipes. (`ted` has no full-screen images and no recipes for slides about the
+   presenter: an about-me slide there is a two- or three-column slide with about-me captions.)
+   `talkgenerator formats --details --format <format>` prints the same for the version that's installed, and
+   `talkgenerator schema plan` the plan's JSON Schema.
+3. **Write the plan** as a JSON file, like [references/example-plan.json](references/example-plan.json), say
+   `plans/birdwatching.json`. It has the talk's `format` (when it isn't `default`), `topic`, `title` (at most 80
+   characters), `presenter_job` (at most 40; the title slide reads "By <name>, <job>"), `thesis`, and `language`
+   when it isn't English (`"nl"` for Dutch), and then its `slides`. The title slide is made for you, from the title.
+4. **Render it**:
+
+   ```bash
+   talkgenerator render plans/birdwatching.json -o talks/birdwatching.pptx
+   ```
+
+   Add `--presenter "Name"` for the presenter's name. Without `-o`, the PowerPoint goes in `output/`, named after
+   the plan. Next to it come `<name>.deck.json` (the deck as data, which you can leave be) and `<name>.images.png`
+   (a contact sheet of all the images). Several plans at once: `talkgenerator render plans/*.json --output_folder
+   talks`.
+5. **Read the report** (JSON, on stdout). For every slide of the plan (`plan_index` is its place in your `slides`,
+   `deck_slide` its place in the deck) it gives the `outcome`: `as planned`, `classic` (talkgenerator made the slide
+   its own way, because the plan's version didn't come out) or `left out`, with the `problems` that caused that,
+   and `warnings` about texts that were cut off, fields that don't exist, and such. `checks` lists what the deck's
+   automated checks found (a slide missing what it needs, template code on a slide, images without credits or
+   shown twice), and `notes` what concerns the whole talk. A field that isn't there means there's nothing to say.
+6. **Look at the images.** "As planned" means every image was found, not that it fits: image search is a lottery.
+   Each slide's `images` give what an image was searched with (`searched`: your query, or the slide's concept when
+   the query found nothing), what it `shows` according to its source (most stock photos say), its credit, and its
+   `page`. If you can look at pictures, look at the contact sheet (`contact_sheet` in the report): every image with
+   its slide's number, its search and the slide's texts. Change the query of every image that doesn't fit, or that
+   reads badly next to its text (see "Keep it kind").
+7. **Render again** with the seed from the first report, `--int_seed <seed>` (and the same `--presenter`): the
+   images you didn't change then come out the same, and an old query brings its old image back (Reddit images can
+   still change, as Reddit does). Render at most three times in all: a classic slide or an odd image is part of
+   the game.
+8. **Hand it over**: say where the PowerPoint is, how many slides came out as planned, and the command that renders
+   it again (with its seed, so the user can add the presenter's name without changing the slides). Don't spoil the
+   talk: for karaoke, the presenter shouldn't see the slides beforehand, so don't describe them unless asked.
+
+For a batch, say ten talks from tonight's audience suggestions, write one plan per topic in a folder and render
+them all at once; vary the titles, presenter jobs and slide kinds, so the evening doesn't repeat itself.
+
+## What makes a good karaoke talk
+
+The fun is in watching someone explain slides they've never seen as if they had planned it all. So write slides
+that give the presenter something to work with, rather than finished jokes:
+
+- **Keep it short.** Titles of a few words, captions of one to four. No paragraphs, no bullet points: the length
+  limits in the slide reference are maximums, not targets.
+- **Play it straight.** Write like a confident expert giving a serious talk, however absurd the content. The
+  audience laughs at the presenter making sense of it, not at puns on the slides.
+- **Leave gaps.** A good slide raises a question the presenter has to answer: an odd juxtaposition, a suspiciously
+  specific claim, a chart that needs explaining. Don't explain the joke, or the image.
+- **Build one talk.** Give it a thesis and follow it. Later slides call back to earlier ones (a running gag, a
+  recurring character, a strange claim from before), and the conclusions call back to several of them.
+- **Shape it like a talk.** A common arc: who the presenter is (an about-me slide), some history (a made-up
+  historical figure, old photos), the core (bold statements, contrasts such as Expectation and Reality, a three-step
+  build-up), the evidence (a chart or two), and conclusions that call back. Mix the kinds: no two charts in a row.
+- **Write image queries that find something**: one to three common English words for one subject, such as "owl",
+  "ficus", "old watering can" or "dense tropical jungle". Scenes with several parts ("plant on reception desk"),
+  actions and moods ("waiting", "alone"), and words that are photo subjects themselves ("camera", "photo") find the
+  wrong things. When an image keeps missing, cut its query down to one common noun. The texts can be in any
+  language; the queries stay in English, which the image sources know best.
+- **Give every slide with images a `concept`**: its subject as a search of one to three words ("medieval bread").
+  An image whose query finds nothing is searched for with it (an image that's merely wrong isn't).
+- **Pick recipes for flavour.** A slide's `recipe` decides where its images come from. In the default format, many
+  recipes mix in Reddit images and gifs, which are wilder, need Reddit or GIPHY keys, and change from one render to
+  the next; recipes with `copyright-free` or `crf` in their id use stock photos, artworks and old photos only. Some
+  recipes find their texts themselves (real quotes, say): the reference says so, and then you don't write that text.
+- **Your own pictures**: an image "query" may be the path of an image file, relative to the plan's folder. That
+  puts the user's own photo on the slide, for an about-me slide, say.
+
+## Keep it kind
+
+- No quotes put in the mouths of real people: quotes on slides belong to made-up people (the history slides are
+  for made-up historical figures), or come from talkgenerator's real quotes.
+- Nothing about real private persons, and nothing that mocks people for who they are. No slurs or sexual content.
+- Images and texts are read together. A photo of a person under a caption that labels or judges ("Camouflage",
+  "Patience", "Reality") can read as a joke about that person: for such captions, search for animals, objects or
+  scenes. Replace images of real public figures, and any image that, next to its text, mocks someone's looks,
+  origin or body.
+- If a topic asks for something hateful or harmful, say no kindly, and offer a talk on a nearby harmless topic.
+
+## Without a shell
+
+Where you can't run commands (in a chat without code execution, say), write the plan anyway and give it to the user
+as a JSON file, with the command that renders it on their computer: `talkgenerator render plan.json`.

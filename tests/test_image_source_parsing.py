@@ -217,3 +217,30 @@ def test_unsplash_credit_links_the_photographer_and_unsplash():
 
 def test_image_data_keeps_its_link():
     assert ImageData("https://x/1.jpg", "Ann", source_url="https://page").get_source_url() == "https://page"
+
+
+def test_images_say_what_they_show_when_their_source_does():
+    from talkgenerator.sources import pexels
+
+    photo = {
+        "urls": {"raw": "https://images.unsplash.com/photo-1"},
+        "user": {"name": "Ann", "links": {"html": "https://unsplash.com/@ann"}},
+        "alt_description": "a cat   sitting on a windowsill",
+    }
+    assert unsplash._map_to_image_data(photo).description == "a cat sitting on a windowsill"
+    pexel = {"src": {"original": "https://images.pexels.com/1.jpg"}, "photographer": "Bo", "alt": "Owl close up"}
+    assert pexels._map_to_image_data(pexel).description == "Owl close up"
+    assert giphy._map_gif(
+        {"images": {"original": {"url": "https://x/1.gif"}}, "title": "Cat Dance GIF"}
+    ).description == ("Cat Dance GIF")
+    assert ImageData("https://x/1.jpg").description is None
+
+
+def test_pixabay_tags_say_what_a_photo_shows(fake_get, monkeypatch):
+    from talkgenerator import settings
+    from talkgenerator.sources import pixabay
+
+    monkeypatch.setattr(settings, "pixabay_auth", lambda: {"pixabay_key": "test"})
+    fake_get({"hits": [{"largeImageURL": "https://x/1.jpg", "user": "Cy", "tags": "owl, bird, feathers"}]})
+    (image,) = pixabay.search_photos("owl")
+    assert image.description == "owl, bird, feathers"

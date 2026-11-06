@@ -82,7 +82,15 @@ def _map_to_image_data(photo: dict[str, Any]) -> ImageData | None:
         source, credit = "Unsplash", (("Unsplash", _with_referral(UNSPLASH_URL)),)
     download_location = (photo.get("links") or {}).get("download_location")
     on_use = (lambda: _track_download(download_location)) if download_location else None
-    return ImageData(image_url=image_url, source=source, on_use=on_use, source_url=profile, credit=credit)
+    description = photo.get("alt_description") or photo.get("description")
+    return ImageData(
+        image_url=image_url,
+        source=source,
+        on_use=on_use,
+        source_url=profile,
+        credit=credit,
+        description=description,
+    )
 
 
 def _profile_link(user: dict[str, Any]) -> str:

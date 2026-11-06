@@ -1,0 +1,79 @@
+{
+  "topic": "sourdough",
+  "title": "The Starter Within: What Sourdough Knows About Us",
+  "presenter_job": "Chief Fermentation Officer",
+  "thesis": "Sourdough starters are the true heads of every household, and we merely feed them.",
+  "slides": [
+    {
+      "kind": "three_columns",
+      "recipe": "about-me-location-job-weirdhobby",
+      "concept": "bakery",
+      "texts": {
+        "title": "About me",
+        "caption_1": "Raised in a bakery basement",
+        "caption_2": "Fermentation consultant",
+        "caption_3": "Naming my starters after poets"
+      },
+      "images": {
+        "image_1": "old bakery",
+        "image_2": "microscope",
+        "image_3": "jar of sourdough starter"
+      }
+    },
+    {
+      "kind": "history_quote",
+      "concept": "medieval bread",
+      "texts": {
+        "title": "Wisdom from the ovens of 1247",
+        "name": "Abbess Hildegunde of the Rising Loaf",
+        "quote": "Whoever feeds the starter at dawn shall never be hungry, nor ever be free."
+      },
+      "images": {"portrait": "medieval nun painting"}
+    },
+    {
+      "kind": "two_columns",
+      "recipe": "two-captions-copyright-free",
+      "concept": "bread",
+      "texts": {"title": "The two faces of baking", "caption_1": "Expectation", "caption_2": "Reality"},
+      "images": {"image_1": "artisan bread loaf", "image_2": "burnt bread"}
+    },
+    {
+      "kind": "statement",
+      "recipe": "anecdote",
+      "concept": "sourdough starter",
+      "texts": {"text": "The time my starter escaped the jar"},
+      "images": {"background": "overflowing dough"}
+    },
+    {
+      "kind": "chart_yes_no",
+      "texts": {"question": "Has your starter ever judged you?", "funny_answer": "Only on Sundays"}
+    },
+    {
+      "kind": "full_image",
+      "concept": "dough",
+      "texts": {"title": "Look closely"},
+      "images": {"image": "bubbling dough"}
+    },
+    {
+      "kind": "chart_correlation",
+      "texts": {"title": "The more you feed it, the more it owns you"}
+    },
+    {
+      "kind": "three_columns",
+      "concept": "baking",
+      "texts": {"title": "The three stages", "caption_1": "Curiosity", "caption_2": "Devotion", "caption_3": "Servitude"},
+      "images": {"image_1": "bag of flour", "image_2": "kneading dough", "image_3": "chef hat"}
+    },
+    {
+      "kind": "two_columns",
+      "recipe": "2-conclusions",
+      "concept": "bread",
+      "texts": {
+        "title": "What we learned",
+        "caption_1": "Feed your starter, or else",
+        "caption_2": "We are the yeast's household"
+      },
+      "images": {"image_1": "crown", "image_2": "family dinner"}
+    }
+  ]
+}

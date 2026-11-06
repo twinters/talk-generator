@@ -11,6 +11,7 @@ from talkgenerator.util.generator_util import (
     FromListGenerator,
     RelatedMappingGenerator,
     SeededGenerator,
+    planned,
 )
 
 
@@ -82,6 +83,8 @@ class RedditImageGenerator:
         return self._generate(presentation_context)
 
     def generate_random(self, _):
+        if planned():  # a plan asked for something: a random post isn't it
+            return None
         return self.generate({"seed": ""})
 
 

@@ -29,6 +29,7 @@ def _map_artwork(item: dict[str, Any], iiif_url: str) -> ImageData | None:
         image_url=f"{iiif_url}/{image_id}/full/{_IMAGE_WIDTH},/0/default.jpg",
         source=f"{artist} (Art Institute of Chicago)",
         source_url=f"https://www.artic.edu/artworks/{item['id']}" if item.get("id") else None,
+        description=item.get("title"),
     )
 
 

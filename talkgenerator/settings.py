@@ -123,6 +123,11 @@ def is_source_disabled(name: str) -> bool:
         return False
 
 
+def sources_without_keys() -> list[str]:
+    """The sources that need keys (see required_keys) and have none, leaving out the ones that are switched off."""
+    return [name for name, keys in required_keys.items() if not is_source_disabled(name) and _get_missing_keys(keys)]
+
+
 def _get_missing_keys(key_variables: list[str]) -> list[str]:
     return [key_name for key_name in key_variables if not env.str(key_name, "").strip()]
 

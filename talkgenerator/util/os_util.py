@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 from functools import lru_cache
+from typing import Any
 
 from talkgenerator.datastructures.image_data import ImageData
 
@@ -43,11 +44,12 @@ class _ConsoleHandler(logging.StreamHandler):
     """The handler show_logs adds, so that it can recognise it later."""
 
 
-def show_logs(given_logger: logging.Logger, level: int = logging.INFO) -> None:
-    """Print the logger's messages to stdout (once: calling this again doesn't add duplicate handlers)."""
+def show_logs(given_logger: logging.Logger, level: int = logging.INFO, stream: Any = None) -> None:
+    """Print the logger's messages to stdout, or to the given stream (once: calling this again doesn't add duplicate
+    handlers)."""
     given_logger.setLevel(level)
     if not any(isinstance(handler, _ConsoleHandler) for handler in given_logger.handlers):
-        console_handler = _ConsoleHandler(sys.stdout)
+        console_handler = _ConsoleHandler(stream or sys.stdout)
         console_handler.setFormatter(logging.Formatter(_LOG_FORMAT))
         given_logger.addHandler(console_handler)
     for handler in given_logger.handlers:

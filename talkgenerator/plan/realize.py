@@ -7,6 +7,7 @@ never on the other slides: so slides can be realized in parallel, in any order, 
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any, Final
 
 from talkgenerator.checks.deck import leftovers_in
@@ -14,10 +15,10 @@ from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.models.plan import SlidePlan
 from talkgenerator.plan.kinds import KINDS, Recipe, TextField
 from talkgenerator.slide.slides import Slide
-from talkgenerator.util import random_util
+from talkgenerator.util import generator_util, os_util, random_util
 
 # The first attempt searches with the plan's queries, the second tries other images for them, and the last searches
-# for the slide's concept instead
+# for the slide's concept for the images whose queries find nothing
 ATTEMPTS: Final = 3
 
 _QUOTE_MARKS: Final = "\"'“”‘’«»"
@@ -43,38 +44,66 @@ def realize(
     presentation_context: dict[str, Any],
     rng: random_util.Rng,
     attempt: int,
+    *,
+    problems: list[str] | None = None,
+    local_images: Path | None = None,
 ) -> tuple[Slide, list[Any]] | None:
     """A planned slide as a slide, with what it's made of (to check for repeats). None if anything it needs is
-    missing: a text, or an image the sources couldn't find."""
+    missing: a text, or an image the sources couldn't find; problems then gets why.
+
+    With local_images (a folder), an image "query" that names an image file (relative to that folder, or absolute)
+    puts that file on the slide: for plans that people or agents write, never for what a language model wrote."""
     kind = KINDS[recipe.kind]
     concept = plan.concept.strip() or str(presentation_context.get("seed") or "")
     with random_util.use(rng.child("attempt", attempt)):
         texts: dict[str, str | None] = {}
         for text_field in kind.texts:
-            if text_field.name in recipe.omit:
-                texts[text_field.name] = None
+            name = text_field.name
+            if name in recipe.omit:
+                texts[name] = None
                 continue
-            if text_field.name in recipe.texts_from:
-                found = recipe.texts_from[text_field.name]({**presentation_context, "seed": concept})
-                texts[text_field.name] = clean_text(found, text_field)
+            if name in recipe.texts_from:
+                texts[name] = clean_text(recipe.texts_from[name]({**presentation_context, "seed": concept}), text_field)
+                why = f"{name}: talkgenerator found none about {concept!r}"
             else:
-                texts[text_field.name] = clean_text(plan.texts.get(text_field.name), text_field)
-            if texts[text_field.name] is None and not text_field.optional:
+                value = plan.texts.get(name)
+                texts[name] = clean_text(value, text_field)
+                written = isinstance(value, str) and value.strip()
+                why = f"{name}: not written" if not written else f"{name}: holds template code ({value!r})"
+            if texts[name] is None and not text_field.optional:
+                _note(problems, why)
                 return None
 
         images: dict[str, Any] = {}
         queries: dict[str, str] = {}
         for slot, source in zip(kind.images, recipe.images, strict=True):
             query = plan.images.get(slot, "").strip()
-            queries[slot] = concept if attempt >= ATTEMPTS - 1 or not query else query
-            images[slot] = source({**presentation_context, "seed": queries[slot]})
+            local = _local_image(query, local_images)
+            if local is not None:
+                queries[slot], images[slot] = query, ImageData(local).found_with(query)
+                continue
+            queries[slot] = query or concept
+            with generator_util.as_planned():  # searched as written, among the best results
+                found = source({**presentation_context, "seed": queries[slot]})
+            if found is None:
+                _note(problems, f"{slot}: no image found for {queries[slot]!r}")
+                if attempt >= ATTEMPTS - 1 and queries[slot] != concept:
+                    queries[slot] = concept
+                    with generator_util.as_planned():
+                        found = source({**presentation_context, "seed": concept})
+            if found is None:
+                return None
+            images[slot] = found.found_with(queries[slot]) if isinstance(found, ImageData) else found
 
         try:
             slide = kind.build(texts, images)
-        except (ValueError, KeyError):
+        except (ValueError, KeyError) as error:
+            _note(problems, str(error))
             return None
 
-    if slide.missing_content():
+    missing = slide.missing_content()
+    if missing:
+        _note(problems, f"an image couldn't be downloaded, or is on the slide twice ({', '.join(missing)})")
         return None
     slide.set_note(
         f"Seed: {presentation_context.get('seed')}\nPlanned: a {recipe.kind} slide for {plan.recipe}, about {concept!r}"
@@ -85,3 +114,17 @@ def realize(
             slide.add_source(image.get_source(), image.get_source_url(), image.get_credit())
     generated = [value for value in (*texts.values(), *images.values()) if value is not None]
     return slide, generated
+
+
+def _local_image(query: str, folder: Path | None) -> str | None:
+    """The image file a query names, if local images are allowed and it is one."""
+    if folder is None or not query or not os_util.is_image(query):
+        return None
+    path = Path(query).expanduser()
+    path = path if path.is_absolute() else folder / path
+    return str(path) if path.is_file() else None
+
+
+def _note(problems: list[str] | None, problem: str) -> None:
+    if problems is not None and problem not in problems:
+        problems.append(problem)

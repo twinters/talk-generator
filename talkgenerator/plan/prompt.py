@@ -103,7 +103,7 @@ SPINE: Final = {
     "thesis": "the talk's thesis, its absurd claim in one sentence (not shown)",
     "title": "the talk's title (at most 80 characters)",
     "presenter_job": "the presenter's grand, made-up job, for the title slide, such as 'Professor of Applied Sock "
-    "Theory' (at most 60 characters)",
+    "Theory' (at most 40 characters)",
 }
 # What a slide is about: when its images can't be found, it's searched for instead
 CONCEPT: Final = (
