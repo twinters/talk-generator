@@ -117,7 +117,10 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   made one benchmark talk in thirty classic), OpenRouter gets the request once more; the free router may then
   send it to another model.
 - The prompt no longer gives examples that the free models copied: half of the yes/no charts answered "Only on
-  Tuesdays", every outlier was "Me" or "Finland", and most conclusions were titled "Conclusions".
+  Tuesdays", every outlier was "Me" or "Finland", most conclusions were titled "Conclusions", and a third of the
+  talks had an "Expectation vs Reality" slide.
+- No slide shows an image of a slide before it: conclusions, which may repeat texts as they sum up, could repeat
+  a picture too.
 - Gif slides show gifs that move. Their Reddit search takes only animated posts (gif subreddits hold photos
   too), an Imgur `.gifv` without Reddit's animated copy comes from Imgur itself instead of as Reddit's still of
   its first frame, and gifs of up to 16 MB (was 8) are used, as many good ones are 10 to 16 MB.

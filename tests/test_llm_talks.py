@@ -465,6 +465,21 @@ def test_the_check_says_when_the_model_wrote_nothing(schema, monkeypatch):
     assert [(finding.check, finding.severity) for finding in report.findings] == [("language model", "warning")]
 
 
+def test_no_slide_shows_an_image_of_a_slide_before_it():
+    # Conclusions may repeat many elements (they sum up), but not a picture
+    from talkgenerator.schema import presentation_schema
+
+    state = presentation_schema._DeckState()
+    cat = ImageData("https://example.com/cat.jpg")
+    presentation_schema._add_used(state, [cat, "Cats rule"])
+    generous = SlideGeneratorData(
+        slide_generator_types.ChartSlideGenerator(_classic_chart), allowed_repeated_elements=10
+    )
+    new_enough = presentation_schema.PresentationSchema._is_new_enough
+    assert not new_enough((None, [ImageData("https://example.com/cat.jpg"), "Conclusions"]), generous, state)
+    assert new_enough((None, [ImageData("https://example.com/dog.jpg"), "Cats rule"]), generous, state)
+
+
 def test_a_talk_claude_declines_halfway_is_classic(schema):
     transport = httpx2.MockTransport(_claude_api_that_declines_halfway)
     client = anthropic.Anthropic(

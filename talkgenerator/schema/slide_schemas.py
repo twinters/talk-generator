@@ -31,7 +31,8 @@ _ABOUT_ME_TITLE = "a title such as 'About me' or 'Who am I?'"
 _FROM = "where the presenter comes from: a country, a city or a place"
 _JOB = "the presenter's (possibly made-up) job"
 _HOBBY = "the presenter's weird hobby"
-_CONTRAST = "Two captioned images that contrast or compare, like 'Expectation' and 'Reality'"
+# (With "like 'Expectation' and 'Reality'" here, a third of the talks had an "Expectation vs Reality" slide)
+_CONTRAST = "Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing"
 _SEQUENCE = "Three captioned images that build up, like 'Good, Better, Best' or three steps of a plan"
 _CONCLUSIONS_TITLE = "a title for the conclusions, in a few words of your own"
 

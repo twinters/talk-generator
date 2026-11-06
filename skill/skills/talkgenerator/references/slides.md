@@ -72,11 +72,11 @@ Images: `image_1`, `image_2`
 | --- | --- | --- |
 | `about-me-location-job` | About the presenter: where they come from and their job | `title`: a title such as 'About me' or 'Who am I?'; `caption_1`: where the presenter comes from: a country, a city or a place; `caption_2`: the presenter's (possibly made-up) job; tags: about_me |
 | `two-history-pictures` | Two old photos from the history of the slide's concept | `title`: a title about the concept's history; `caption_1`: a moment from long ago; `caption_2`: a later moment; tags: history, two_images |
-| `two-captions-gifs` | Two captioned images that contrast or compare, like 'Expectation' and 'Reality' | tags: gif, multi_caption, two_captions |
-| `two-captions-weird-reddit` | Two captioned images that contrast or compare, like 'Expectation' and 'Reality' | tags: multi_caption, reddit, two_captions |
-| `two-captions-weird` | Two captioned images that contrast or compare, like 'Expectation' and 'Reality' | tags: multi_caption, reddit, two_captions |
+| `two-captions-gifs` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | tags: gif, multi_caption, two_captions |
+| `two-captions-weird-reddit` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | tags: multi_caption, reddit, two_captions |
+| `two-captions-weird` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | tags: multi_caption, reddit, two_captions |
 | `2-conclusions` | The talk's conclusions | `title`: a title for the conclusions, in a few words of your own; `caption_1`: a lesson from the talk, calling back to an earlier slide; `caption_2`: a lesson from the talk, calling back to an earlier slide; tags: conclusion |
-| `two-captions-copyright-free` | Two captioned images that contrast or compare, like 'Expectation' and 'Reality' | the default; tags: multi_caption, two_captions |
+| `two-captions-copyright-free` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | the default; tags: multi_caption, two_captions |
 
 ## `three_columns`
 

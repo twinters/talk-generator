@@ -30,6 +30,7 @@ from typing import Any
 
 from pptx.presentation import Presentation
 
+from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.datastructures.slide_generator_data import SlideGeneratorData, _filter_generated_elements
 from talkgenerator.llm.base import ProviderError, TextProvider
 from talkgenerator.llm.providers import NoneProvider
@@ -696,6 +697,10 @@ class PresentationSchema:
 
     @staticmethod
     def _is_new_enough(result: tuple[Any, list], generator: SlideGeneratorData, state: _DeckState) -> bool:
+        """Whether a slide repeats no more of the slides before it than its generator allows, and none of their
+        images: conclusions may repeat texts (as they sum up), but a picture twice is a picture too few."""
+        if any(isinstance(element, ImageData) and element in state.used_elements for element in result[1]):
+            return False
         return slide_generator_types.is_different_enough_for_allowed_repeated(
             result[1], state.used_elements, generator.get_allowed_repeated_elements()
         )

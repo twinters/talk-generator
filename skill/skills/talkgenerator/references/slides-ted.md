@@ -53,7 +53,7 @@ Images: `image_1`, `image_2`
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
 | `two-history-pictures-crf` | Two old photos from the history of the slide's concept | `title`: a title about the concept's history; `caption_1`: a moment from long ago; `caption_2`: a later moment; tags: history, two_images |
-| `two-captions-copyright-free` | Two captioned images that contrast or compare, like 'Expectation' and 'Reality' | the default; tags: multi_caption, two_captions |
+| `two-captions-copyright-free` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | the default; tags: multi_caption, two_captions |
 | `2-conclusions-crf` | The talk's conclusions | `title`: a title for the conclusions, in a few words of your own; `caption_1`: a lesson from the talk, calling back to an earlier slide; `caption_2`: a lesson from the talk, calling back to an earlier slide; tags: conclusion |
 
 ## `three_columns`
