@@ -151,11 +151,11 @@ def fake_schema():
 
 
 def _answer(schema):
-    """Fill in every property of the response schema."""
+    """Fill in every property of the response schema (the only boolean, unsafe_topic, with false)."""
     answer = {}
     for key, value in schema["properties"].items():
         if value["type"] == "boolean":
-            answer[key] = True
+            answer[key] = False
         elif value["type"] == "string":
             answer[key] = f"The {key.replace('_', ' ')}"
         else:
@@ -305,7 +305,7 @@ def test_a_model_that_crashes_makes_a_classic_talk(schema):
 
 
 def test_a_topic_the_model_finds_unsafe_makes_a_classic_talk(schema):
-    deck = _talk(FakeModel(change=lambda answer: answer.update(safe_topic=False)))
+    deck = _talk(FakeModel(change=lambda answer: answer.update(unsafe_topic=True)))
     assert deck.title.startswith("A classic title")
     assert not any(_planned(deck))
 
@@ -459,7 +459,7 @@ def test_the_check_replays_what_the_model_answered(schema, monkeypatch):
 
 
 def test_the_check_says_when_the_model_wrote_nothing(schema, monkeypatch):
-    model = FakeModel(change=lambda answer: answer.update(safe_topic=False))
+    model = FakeModel(change=lambda answer: answer.update(unsafe_topic=True))
     monkeypatch.setitem(providers._FACTORIES, "fake", lambda argument: model)
     report = benchmark.check_talk("cats", 1, schema="fake", slides=NUM_SLIDES, llm="fake", determinism=False)
     assert [(finding.check, finding.severity) for finding in report.findings] == [("language model", "warning")]
@@ -514,7 +514,7 @@ def test_the_response_schema_is_strict_and_in_order():
                 check(value)
 
     check(schema)
-    assert list(schema["properties"])[:4] == ["safe_topic", "thesis", "title", "presenter_job"]
+    assert list(schema["properties"])[:4] == ["unsafe_topic", "thesis", "title", "presenter_job"]
     assert list(schema["properties"])[4:] == [slide.key for slide in planned]
 
 

@@ -43,7 +43,7 @@ Never write:
 - slurs, sexual content, or anything that mocks people for who they are,
 - markup, emoji, hashtags, or placeholders in curly braces.
 
-If the topic asks for something hateful or harmful, set "safe_topic" to false, and keep everything else short.
+If the topic asks for something hateful or harmful, set "unsafe_topic" to true, and keep everything else short.
 Answer with one JSON object in the shape you're given, and nothing else."""
 
 _PERSONAS: Final = (
@@ -92,7 +92,9 @@ def spine(language: str = "en") -> dict[str, str]:
     """The talk's spine, which the answer starts with: what to write in each of its fields."""
     name = languages.language(language).name
     return {
-        "safe_topic": "false if the topic asks for something hateful or harmful, true otherwise",
+        # (Asked the other way around, as "safe_topic", the free models sometimes turned down harmless topics)
+        "unsafe_topic": "true only if the topic asks for something hateful or harmful; false for every other topic, "
+        "however odd",
         "thesis": "the talk's thesis, its absurd claim in one sentence (not shown)",
         "title": f"{TALK_TITLE.description}, in {name} (at most {TALK_TITLE.max_length} characters)",
         "presenter_job": f"{PRESENTER_JOB.description}, for the title slide, in {name} (at most "
@@ -149,7 +151,7 @@ def response_schema(planned: list[PlannedSlide], language: str = "en") -> dict[s
     """The JSON Schema of the answer: every property required, nothing else allowed (as strict structured outputs
     want), the spine first and the slides in order."""
     properties: dict[str, Any] = {
-        name: {"type": "boolean" if name == "safe_topic" else "string", "description": description}
+        name: {"type": "boolean" if name == "unsafe_topic" else "string", "description": description}
         for name, description in spine(language).items()
     }
     for slide in planned:

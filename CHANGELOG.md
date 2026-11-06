@@ -109,6 +109,8 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   asks for the title and the job in the talk's language: the free models wrote them in English, after the
   English example. Gif slides no longer all get the teaser "Look at this", which the free models took from the
   prompt's example.
+- A free model turned down a harmless topic (it said `safe_topic: false`), which made the talk classic. The flag
+  now asks the other way around, as the plan had it: `unsafe_topic`, true only for a hateful or harmful topic.
 - Gif slides show gifs that move. Their Reddit search takes only animated posts (gif subreddits hold photos
   too), an Imgur `.gifv` without Reddit's animated copy comes from Imgur itself instead of as Reddit's still of
   its first frame, and gifs of up to 16 MB (was 8) are used, as many good ones are 10 to 16 MB.

@@ -140,7 +140,7 @@ class _PlannedTalk:
         if slide_nr is None:
             self.spine[key] = value
             return
-        if self.spine.get("safe_topic") is False:  # it comes first: then no slide is looked for
+        if self.spine.get("unsafe_topic") is True:  # it comes first: then no slide is looked for
             return
         plan = slide_plan(self.planned[slide_nr], value)
         if plan is None:
@@ -366,7 +366,7 @@ class PresentationSchema:
             logger.warning("The language model didn't write the talk (%s): its slides are classic", error)
         except Exception:  # a misbehaving provider shouldn't sink the talk either
             logger.exception("Asking the language model for the talk crashed: its slides are classic")
-        if talk.spine.get("safe_topic") is False:
+        if talk.spine.get("unsafe_topic") is True:
             logger.warning("The language model wouldn't write about this topic: the talk is classic")
             talk.drop()
         logger.info("The language model wrote %s of the %s slides", len(talk.plans), num_slides)
