@@ -189,9 +189,18 @@ def animate_as(slide: Any, timing: Any, ids: Mapping[str, str]) -> None:
     they appear, or as the slide comes up if they're there from the start (the slide gets this as its only
     animation)."""
     copied = deepcopy(timing)
+    # How the layout's shapes build (their text as a whole, or by paragraph), as the slide's: only shapes with text
+    # build so (a picture or a video that took a placeholder's place has nothing to build)
+    texts = set(slide.element.xpath("./p:cSld/p:spTree//p:sp[p:txBody]/p:nvSpPr/p:cNvPr/@id"))
     for build in list(copied.iter(qn("p:bldP"))):
-        if build.get("spid") not in ids:
+        spid = ids.get(build.get("spid"))
+        if spid in texts:
+            build.set("spid", spid)
+        else:
             build.getparent().remove(build)
+    builds = copied.find(qn("p:bldLst"))
+    if builds is not None and not len(builds):
+        copied.remove(builds)
     for target in list(copied.iter(qn("p:spTgt"))):
         spid = ids.get(target.get("spid"))
         if spid is None:

@@ -400,6 +400,14 @@ def _steps(ppt_slide):
     assert timing is not None
     targets = [target.get("spid") for target in timing.iter(_P + "spTgt")]
     assert all(spid in names for spid in targets)  # (nothing animates a shape the slide doesn't have)
+    # The build list says how the slide's own shapes with text build, those whose paragraphs the effects name
+    texts = {
+        str(shape.shape_id) for shape in ppt_slide.shapes if shape.element.tag == _P + "sp" and shape.has_text_frame
+    }
+    builds = {build.get("spid") for build in timing.iter(_P + "bldP")}
+    assert builds <= texts
+    by_paragraph = {target.get("spid") for target in timing.iter(_P + "spTgt") if target.find(_P + "txEl") is not None}
+    assert by_paragraph <= builds
     ids = [node.get("id") for node in timing.find(_P + "tnLst").iter(_P + "cTn")]
     assert len(ids) == len(set(ids))
     sequence = timing.find(f".//{_P}cTn[@nodeType='mainSeq']/{_P}childTnLst")
