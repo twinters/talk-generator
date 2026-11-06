@@ -25,6 +25,11 @@ QUADRANTS: Final = ("top left", "top right", "bottom left", "bottom right")
 # How a classic Venn diagram's circles read, for a word that describes the seed (the first ones only fit single words)
 _CIRCLE_FORMS: Final = ("{} things", "Everything {}", "Things that are {}")
 _LONGEST_WORD: Final = 20  # longer "words" are phrases that don't read well in a circle or a quadrant
+# Adjectives of quantity, which say nothing about what they describe ("Things that are much")
+_VAGUE: Final = frozenset(
+    ("much", "more", "most", "less", "least", "many", "few", "fewer", "other", "such", "same", "own", "several")
+    + ("certain", "enough", "whole", "entire", "only", "various")
+)
 
 
 def dot_position(quadrant: str | None) -> tuple[float, float]:
@@ -101,7 +106,7 @@ def _properties(seed: str) -> list[str]:
 
 
 def _describes(word: str) -> bool:
-    return " " in word or language_util.is_adjective(word)
+    return " " in word or (word.lower() not in _VAGUE and language_util.is_adjective(word))
 
 
 def _axis(word: str) -> tuple[str, str]:

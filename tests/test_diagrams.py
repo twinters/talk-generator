@@ -311,6 +311,21 @@ def test_long_labels_get_smaller_text():
     long = diagrams.fitting_size("Things that love me back when nobody is looking", box, 32, bold=True)
     assert short > long >= 12
     assert diagrams.fitting_size("Supercalifragilisticexpialidocious" * 3, box, 32) == 12  # never smaller
+    assert diagrams.shared_size(["Cheese", "Things that love me back when nobody is looking"], [box, box], 32) == (
+        diagrams.fitting_size("Things that love me back when nobody is looking", box, 32)
+    )
+
+
+def test_labels_that_are_alike_look_alike():
+    def size(shape):
+        return shape.text_frame.paragraphs[0].runs[0].font.size
+
+    _, shapes, _ = _drawn(_matrix(bottom_right="That cheese from last March"))
+    assert len({size(shape) for name, shape in shapes.items() if " quadrant: " in name}) == 1
+    assert len({size(shape) for name, shape in shapes.items() if " end: " in name}) == 1
+    _, shapes, _ = _drawn(_venn(circle_3="Things my doctor approves of"))
+    circles = {size(shape) for name, shape in shapes.items() if name.startswith("Circle ") and ": " in name}
+    assert len(circles) == 1 and size(shapes["Overlap: Cheese"]) > circles.pop()  # the punchline: bigger
 
 
 # THE DECK
@@ -461,7 +476,8 @@ def test_a_planned_matrix_without_a_dot_cant_be_made():
 def words(monkeypatch):
     """Fake word sources: what describes a word, what's related to it, and its opposites."""
     properties = {
-        "cat": [(1.0, "fluffy"), (0.9, "day"), (0.8, "evil"), (0.7, "catlike"), (0.6, "lazy"), (0.5, "fluffy")],
+        "cat": [(1.0, "fluffy"), (0.9, "day"), (0.8, "evil"), (0.7, "catlike"), (0.6, "lazy"), (0.5, "fluffy")]
+        + [(0.4, "much")],
         "travel": [(1.0, "international"), (0.5, "safe")],
     }
     related = {"cat": [(1.0, "dog"), (0.9, "mouse"), (0.8, "cat food"), (0.7, "yarn"), (0.6, "milk"), (0.5, "lazy")]}
@@ -483,9 +499,10 @@ def test_the_classic_venn_diagram(words):
         assert venn.overlap == "Cat" and venn.reveal == "punchline"
         assert len(venn.circles) in (2, 3) and len(set(venn.circles)) == len(venn.circles)
         found |= {circle.lower() for circle in venn.circles}
-    # From what describes the seed: not "day" (no adjective), "catlike" (holds the seed), nor "fluffy" twice
+    # From what describes the seed: not "day" (no adjective), "catlike" (holds the seed), "much" (says nothing), nor
+    # "fluffy" twice
     assert any("fluffy" in circle for circle in found) and any("lazy" in circle for circle in found)
-    assert not any("day" in circle or "catlike" in circle for circle in found)
+    assert not any(word in circle for circle in found for word in ("day", "catlike", "much"))
     with random_util.use(random_util.Rng(7)):
         sizes = {len(diagram.generate_venn({"seed": "cat"})[1].circles) for _ in range(30)}
     assert sizes == {2, 3}  # three circles a third of the time

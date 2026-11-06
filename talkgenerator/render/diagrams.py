@@ -13,6 +13,7 @@ a click (see `talkgenerator.render.animation`).
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, Final
 
@@ -146,9 +147,11 @@ def draw_venn(slide: Any, frame: Box, venn: VennDiagram) -> list[Any]:
         circle = slide.shapes.add_shape(MSO_SHAPE.OVAL, *_emu(Box.around(x, y, 2 * layout.radius, 2 * layout.radius)))
         circle.name = f"Circle {number}"
         _style(circle, fill=colour, opacity=CIRCLE_OPACITY, line=colour)
+    size = shared_size(venn.circles, layout.labels, 28)
     for number, (label, box) in enumerate(zip(venn.circles, layout.labels, strict=True), 1):
-        add_label(slide, box, label, 28, name=f"Circle {number}: {label}")
-    overlap = add_label(slide, layout.overlap, venn.overlap, 32, bold=True, name=f"Overlap: {venn.overlap}")
+        add_label(slide, box, label, size, name=f"Circle {number}: {label}")
+    overlap_size = fitting_size(venn.overlap, layout.overlap, 32, bold=True)
+    overlap = add_label(slide, layout.overlap, venn.overlap, overlap_size, bold=True, name=f"Overlap: {venn.overlap}")
     return [overlap]
 
 
@@ -248,21 +251,24 @@ def draw_matrix(slide: Any, frame: Box, matrix: MatrixDiagram) -> list[Any]:
     ends = (matrix.x_left, matrix.x_right, matrix.y_bottom, matrix.y_top)
     alignments = (PP_ALIGN.RIGHT, PP_ALIGN.LEFT, PP_ALIGN.CENTER, PP_ALIGN.CENTER)
     anchors = (MSO_ANCHOR.MIDDLE, MSO_ANCHOR.MIDDLE, MSO_ANCHOR.TOP, MSO_ANCHOR.BOTTOM)
+    size = shared_size(ends, layout.ends, 22)
     for title, end_box, align, anchor, name in zip(
         ends, layout.ends, alignments, anchors, ("Left end", "Right end", "Bottom end", "Top end"), strict=True
     ):
-        add_label(slide, end_box, title, 22, align=align, anchor=anchor, italic=True, name=f"{name}: {title}")
+        add_label(slide, end_box, title, size, align=align, anchor=anchor, italic=True, name=f"{name}: {title}")
+    size = shared_size(quadrant_labels, layout.labels, 26, bold=True)
     for index, (label, label_box, name) in enumerate(zip(quadrant_labels, layout.labels, names, strict=True)):
         anchor = MSO_ANCHOR.TOP if index < 2 else MSO_ANCHOR.BOTTOM
-        add_label(slide, label_box, label, 26, bold=True, anchor=anchor, name=f"{name} quadrant: {label}")
+        add_label(slide, label_box, label, size, bold=True, anchor=anchor, name=f"{name} quadrant: {label}")
 
     dot_x, dot_y = layout.point(matrix.dot_x, matrix.dot_y)
     dot = slide.shapes.add_shape(MSO_SHAPE.OVAL, *_emu(Box.around(dot_x, dot_y, _DOT_DIAMETER, _DOT_DIAMETER)))
     dot.name = "Dot"
     _style(dot, fill=PUNCHLINE_COLOUR, line=_WHITE)
     name_box, align = dot_label_box(layout, matrix.dot_x, matrix.dot_y)
+    size = fitting_size(matrix.dot, name_box, 24, bold=True)
     name = add_label(
-        slide, name_box, matrix.dot, 24, bold=True, colour=PUNCHLINE_COLOUR, align=align, name=f"Dot: {matrix.dot}"
+        slide, name_box, matrix.dot, size, bold=True, colour=PUNCHLINE_COLOUR, align=align, name=f"Dot: {matrix.dot}"
     )
     return [dot, name]
 
@@ -274,7 +280,7 @@ def add_label(
     slide: Any,
     box: Box,
     text: str,
-    largest: int,
+    size: int,
     *,
     bold: bool = False,
     italic: bool = False,
@@ -283,7 +289,7 @@ def add_label(
     anchor: MSO_ANCHOR = MSO_ANCHOR.MIDDLE,
     name: str | None = None,
 ) -> Any:
-    """A text box with the text wrapped inside it, as large as fits (up to the largest size, in points)."""
+    """A text box with the text in it, wrapped, at a size in points (see fitting_size)."""
     shape = slide.shapes.add_textbox(*_emu(box))
     if name:
         shape.name = name[:60]
@@ -297,12 +303,18 @@ def add_label(
     paragraph.alignment = align
     run = paragraph.add_run()
     run.text = text
-    run.font.size = Pt(fitting_size(text, box, largest, bold=bold))
+    run.font.size = Pt(size)
     run.font.bold = bold
     run.font.italic = italic
     if colour is not None:
         run.font.color.rgb = colour
     return shape
+
+
+def shared_size(texts: Sequence[str], boxes: Sequence[Box], largest: int, *, bold: bool = False) -> int:
+    """The size at which every text fits its box (labels that are alike look alike: one long one makes them all
+    smaller)."""
+    return min(fitting_size(text, box, largest, bold=bold) for text, box in zip(texts, boxes, strict=True))
 
 
 def fitting_size(text: str, box: Box, largest: int, *, bold: bool = False, smallest: int = 12) -> int:
