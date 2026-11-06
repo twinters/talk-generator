@@ -9,12 +9,22 @@ extremes, for laughs ("1997 WordArt", "Comic Sans everywhere"): they're in the r
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Final, Literal
+from typing import Final, Literal, TypeVar
 
 from talkgenerator.design import color
-from talkgenerator.models.theme import Alignment, BackgroundStyle, Decoration, Fonts, Palette, Theme
+from talkgenerator.models.theme import (
+    Alignment,
+    BackgroundStyle,
+    Decoration,
+    Fonts,
+    ImageFilter,
+    ImageFrame,
+    Palette,
+    Theme,
+)
 from talkgenerator.util import random_util
 
+T = TypeVar("T")
 Harmony = Literal["analogous", "complementary", "triadic", "mono"]
 # Where an accent's hue lies, from the background's: the first accent, and the second
 _HARMONIES: Final[dict[str, tuple[float, float]]] = {
@@ -25,6 +35,9 @@ _HARMONIES: Final[dict[str, tuple[float, float]]] = {
 }
 CLASSIC: Final = "classic"
 RANDOM: Final = "random"
+# How much grain and vignette a member's pictures get, if they get any
+GRAIN: Final = 0.14
+VIGNETTE: Final = 0.7
 
 
 @dataclass(frozen=True)
@@ -42,6 +55,12 @@ class Family:
     decorations: tuple[Decoration, ...] = ("none",)
     alignments: tuple[Alignment, ...] = ("left",)
     image_border: float = 0.0  # the chance that images get a frame
+    # Image treatments (see talkgenerator.design.treatments): filters and frames with how likely each is, and the
+    # chances of grain and of a vignette
+    image_filters: tuple[tuple[ImageFilter, float], ...] = (("none", 1.0),)
+    image_frames: tuple[tuple[ImageFrame, float], ...] = (("none", 1.0),)
+    image_grain: float = 0.0
+    image_vignette: float = 0.0
     text_scale: tuple[float, float] = (1.0, 1.0)
     extreme: bool = False
     weight: float = 1.0  # how often the random mix picks it
@@ -57,6 +76,7 @@ FAMILIES: Final[dict[str, Family]] = {
             uppercase=0.2,
             decorations=("none", "underline"),
             alignments=("left", "center"),
+            image_frames=(("none", 0.6), ("rounded", 0.4)),
         ),
         Family(
             "dark minimal",
@@ -67,6 +87,8 @@ FAMILIES: Final[dict[str, Family]] = {
             fonts=(("Arial", "Arial"), ("Calibri", "Calibri"), ("Verdana", "Verdana")),
             uppercase=0.4,
             decorations=("none", "underline"),
+            image_filters=(("none", 0.6), ("grayscale", 0.4)),
+            image_vignette=0.3,
         ),
         Family(
             "corporate",
@@ -77,6 +99,7 @@ FAMILIES: Final[dict[str, Family]] = {
             fonts=(("Arial", "Arial"), ("Calibri", "Calibri"), ("Verdana", "Arial")),
             decorations=("bar",),
             image_border=0.5,
+            image_filters=(("none", 0.7), ("duotone", 0.3)),
         ),
         Family(
             "academic",
@@ -88,6 +111,7 @@ FAMILIES: Final[dict[str, Family]] = {
             fonts=(("Georgia", "Georgia"), ("Times New Roman", "Times New Roman"), ("Cambria", "Calibri")),
             decorations=("underline", "bar"),
             text_scale=(0.9, 0.95),
+            image_filters=(("none", 0.7), ("grayscale", 0.3)),
         ),
         Family(
             "startup",
@@ -98,6 +122,8 @@ FAMILIES: Final[dict[str, Family]] = {
             backgrounds=("solid", "gradient"),
             decorations=("bar", "none"),
             alignments=("left", "center"),
+            image_filters=(("none", 0.8), ("duotone", 0.2)),
+            image_frames=(("rounded", 0.7), ("none", 0.3)),
         ),
         Family(
             "vintage paper",
@@ -110,6 +136,10 @@ FAMILIES: Final[dict[str, Family]] = {
             decorations=("frame", "underline"),
             alignments=("center",),
             image_border=0.8,
+            image_filters=(("sepia", 0.6), ("grayscale", 0.3), ("none", 0.1)),
+            image_frames=(("none", 0.6), ("polaroid", 0.4)),
+            image_grain=0.6,
+            image_vignette=0.5,
         ),
         Family(
             "kids",
@@ -121,6 +151,7 @@ FAMILIES: Final[dict[str, Family]] = {
             decorations=("frame", "bar"),
             alignments=("center",),
             text_scale=(1.05, 1.1),
+            image_frames=(("rounded", 0.5), ("polaroid", 0.4), ("none", 0.1)),
         ),
         Family(
             "brutalist",
@@ -132,6 +163,7 @@ FAMILIES: Final[dict[str, Family]] = {
             decorations=("frame", "bar"),
             image_border=1.0,
             text_scale=(1.1, 1.15),
+            image_filters=(("black and white", 0.4), ("grayscale", 0.4), ("none", 0.2)),
         ),
         Family(
             "neon",
@@ -143,6 +175,9 @@ FAMILIES: Final[dict[str, Family]] = {
             uppercase=0.5,
             backgrounds=("solid", "gradient"),
             decorations=("underline", "frame"),
+            image_filters=(("duotone", 0.6), ("none", 0.4)),
+            image_frames=(("none", 0.7), ("rounded", 0.3)),
+            image_vignette=0.3,
         ),
         # The extremes, for laughs
         Family(
@@ -156,6 +191,7 @@ FAMILIES: Final[dict[str, Family]] = {
             decorations=("frame",),
             alignments=("center",),
             text_scale=(1.05, 1.15),
+            image_frames=(("none", 0.7), ("polaroid", 0.3)),
             extreme=True,
             weight=0.5,
         ),
@@ -167,6 +203,7 @@ FAMILIES: Final[dict[str, Family]] = {
             fonts=(("Comic Sans MS", "Comic Sans MS"),),
             decorations=("frame", "bar", "none"),
             alignments=("center",),
+            image_frames=(("polaroid", 0.5), ("rounded", 0.2), ("none", 0.3)),
             extreme=True,
             weight=0.5,
         ),
@@ -179,6 +216,8 @@ FAMILIES: Final[dict[str, Family]] = {
             backgrounds=("gradient",),
             decorations=("bar",),
             image_border=1.0,
+            image_filters=(("none", 0.7), ("duotone", 0.3)),
+            image_frames=(("none", 0.6), ("rounded", 0.4)),
             extreme=True,
             weight=0.5,
         ),
@@ -243,7 +282,7 @@ def member(family: Family) -> Theme:
         color.hsl(hue + second + 40, saturation, 0.62 if family.dark else 0.45), backgrounds, 3.0
     )
     heading, body = random_util.choice(family.fonts)
-    return Theme(
+    theme = Theme(
         name=f"{family.name} {number}",
         family=family.name,
         extreme=family.extreme,
@@ -268,6 +307,19 @@ def member(family: Family) -> Theme:
         image_border=random_util.random() < family.image_border,
         text_scale=round(random_util.uniform(*family.text_scale), 2),
     )
+    # The image treatments come last, so that a seed's member has the colours, fonts and such it had before
+    return theme.model_copy(
+        update={
+            "image_filter": _weighted(family.image_filters),
+            "image_frame": _weighted(family.image_frames),
+            "image_grain": GRAIN if random_util.random() < family.image_grain else 0.0,
+            "image_vignette": VIGNETTE if random_util.random() < family.image_vignette else 0.0,
+        }
+    )
+
+
+def _weighted(choices: tuple[tuple[T, float], ...]) -> T:
+    return random_util.weighted_random([(weight, choice) for choice, weight in choices]) or choices[0][0]
 
 
 def _gradient_end(background: str, family: Family) -> tuple[float, float]:

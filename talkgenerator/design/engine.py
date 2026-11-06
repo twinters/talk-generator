@@ -13,7 +13,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Final, Literal
 
-from talkgenerator.design import color, fit, themes
+from talkgenerator.design import color, fit, themes, treatments
 from talkgenerator.models.deck import (
     Box,
     ChartElement,
@@ -157,7 +157,9 @@ def lay_out_slide(
     background = roles.get("background")
     backdrop: list[Content] = []  # a photo behind everything, and the shapes behind the content
     if isinstance(background, ImageElement):
-        backdrop.append(background.model_copy(update={"box": FULL, "fit": "cover"}))
+        with random_util.use(rng.child("treatment", background.role)):
+            look = treatments.treatment(theme, framed=False)
+        backdrop.append(background.model_copy(update={"box": FULL, "fit": "cover", "treatment": look}))
     backdrop += placement.shapes
     content: list[Content] = []  # pictures, charts and diagrams; the bands over them; then the texts, on top
     texts: list[Content] = []
@@ -170,8 +172,12 @@ def lay_out_slide(
                 element.model_copy(update={"box": box, "style": _style(element.text, box, SPECS[spec], theme)})
             )
         elif isinstance(element, ImageElement):
-            border = palette.text if theme.image_border and box != FULL and not placement.photo else None
-            content.append(element.model_copy(update={"box": box, "border": border}))
+            framed = box != FULL and not placement.photo  # (a picture over the whole slide gets no frame)
+            with random_util.use(rng.child("treatment", element.role)):
+                look = treatments.treatment(theme, framed)
+            polaroid = look is not None and look.frame == "polaroid"  # (its own white frame instead of a border)
+            border = palette.text if theme.image_border and framed and not polaroid else None
+            content.append(element.model_copy(update={"box": box, "border": border, "treatment": look}))
         elif isinstance(element, ChartElement):
             content.append(element.model_copy(update={"box": box}))
         elif isinstance(element, DiagramElement):

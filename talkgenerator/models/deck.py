@@ -19,7 +19,7 @@ from typing import Annotated, Any, Final, Literal
 from pydantic import Field
 
 from talkgenerator.models.base import Data as _Data
-from talkgenerator.models.theme import Theme
+from talkgenerator.models.theme import ImageFilter, ImageFrame, Theme
 from talkgenerator.models.usage import Usage
 
 DECK_VERSION: Final = 1
@@ -89,6 +89,21 @@ class TextElement(_Data):
     style: TextStyle | None = None
 
 
+class ImageTreatment(_Data):
+    """How a theme treats a picture (see talkgenerator.design.treatments): a filter, with a duotone's (or sepia's)
+    colours, from what's darkest in the picture to what's lightest; a frame, a polaroid's tilted by a few degrees
+    (clockwise); and grain and a vignette, from 0 (none) to 1. Renderers apply it their own way (PowerPoint with its
+    picture effects), and the deck keeps the original picture."""
+
+    filter: ImageFilter = "none"
+    dark: str | None = None
+    light: str | None = None
+    frame: ImageFrame = "none"
+    tilt: float = 0.0
+    grain: float = 0.0
+    vignette: float = 0.0
+
+
 class ImageElement(_Data):
     kind: Literal["image"] = "image"
     role: str
@@ -97,6 +112,7 @@ class ImageElement(_Data):
     fit: ImageFit = "contain"
     box: Box | None = None
     border: str | None = None  # a frame around the image, in this colour ("#rrggbb")
+    treatment: ImageTreatment | None = None  # (in a themed deck)
 
 
 class ChartSeries(_Data):

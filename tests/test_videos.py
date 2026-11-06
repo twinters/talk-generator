@@ -452,12 +452,12 @@ def test_a_pptx_with_a_video_saves_and_opens_again(served):
 # THEMED DECKS (drawn as shapes, by talkgenerator.render.shapes)
 
 
-def _themed(*slides_to_draw, family="clean keynote", seed=1):
-    """A deck of the slides in a theme, and the PowerPoint slides it's drawn as."""
+def _themed(*slides_to_draw, family="clean keynote", seed=1, theme=None):
+    """A deck of the slides in a theme (of the family, or the one given), and the PowerPoint slides it's drawn as."""
     slide_deck = SlideDeck(len(slides_to_draw), title="Gifs", seed=1)
     for index, slide in enumerate(slides_to_draw):
         slide_deck.add_slide(index, slide)
-    slide_deck.theme = themes.pick(family, random_util.Rng(seed))
+    slide_deck.theme = theme or themes.pick(family, random_util.Rng(seed))
     deck = slide_deck.to_deck()
     assert all(slide.layout.startswith("v5/") for slide in deck.slides)
     return deck, list(render_pptx(deck, images=slide_deck.image_store()).slides)
@@ -526,3 +526,12 @@ def test_a_themed_video_that_cant_be_downloaded_shows_its_poster_frame(served, c
     assert len(ppt_slide.element.xpath(".//p:pic")) == 1  # the still
     assert ppt_slide.element.find(qn("p:timing")) is None
     assert "as its poster frame" in caplog.text
+
+
+def test_a_video_gets_its_themes_filter_too(served):
+    theme = themes.pick("clean keynote", random_util.Rng(1)).model_copy(update={"image_filter": "grayscale"})
+
+    _, (ppt_slide,) = _themed(slides.ImageSlide("Look at this", _big_gif()), theme=theme)
+
+    (movie,) = _movies(ppt_slide)
+    assert movie._element.blipFill.blip.find(qn("a:grayscl")) is not None

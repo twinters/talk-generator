@@ -10,6 +10,9 @@ from talkgenerator.models.base import Data as _Data
 BackgroundStyle = Literal["solid", "gradient"]
 Decoration = Literal["none", "bar", "underline", "frame"]
 Alignment = Literal["left", "center"]
+# How pictures look in a theme: a filter (sepia and duotone map a picture's light onto two colours), and a frame
+ImageFilter = Literal["none", "grayscale", "sepia", "duotone", "black and white"]
+ImageFrame = Literal["none", "rounded", "polaroid"]
 
 
 class Palette(_Data):
@@ -40,3 +43,9 @@ class Theme(_Data):
     title_align: Alignment = "left"
     image_border: bool = False
     text_scale: float = 1.0  # bigger or smaller type than the layouts' sizes
+    # Image treatments, which give pictures from mixed sources one look: a filter, a frame (on pictures in a box, not
+    # over a whole slide), and how much grain and vignette they get (from 0, none, to 1)
+    image_filter: ImageFilter = "none"
+    image_frame: ImageFrame = "none"
+    image_grain: float = 0.0
+    image_vignette: float = 0.0

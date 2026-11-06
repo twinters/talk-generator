@@ -10,20 +10,23 @@ from __future__ import annotations
 
 import io
 import logging
+from functools import cache
 from typing import Any, Final
 
 import pptx
 from lxml import etree
+from PIL import Image as PILImage
 from pptx.dml.color import RGBColor
 from pptx.enum.chart import XL_LABEL_POSITION, XL_LEGEND_POSITION
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import MSO_ANCHOR, MSO_AUTO_SIZE, PP_ALIGN
-from pptx.oxml.ns import qn
+from pptx.oxml import parse_xml
+from pptx.oxml.ns import nsdecls, qn
 from pptx.presentation import Presentation
 from pptx.slide import Slide
 from pptx.util import Emu, Pt
 
-from talkgenerator.design import color
+from talkgenerator.design import color, treatments
 from talkgenerator.design.engine import HEIGHT, WIDTH
 from talkgenerator.models.deck import (
     Box,
@@ -32,6 +35,7 @@ from talkgenerator.models.deck import (
     DeckSlide,
     DiagramElement,
     ImageElement,
+    ImageTreatment,
     ShapeElement,
     TextElement,
     TextStyle,
@@ -187,8 +191,26 @@ def _picture(ppt_slide: Slide, element: ImageElement, images: ImageStore | None)
         logger.warning("Leaving out image %s: it could not be downloaded", http_util.describe_url(element.image.url))
         return
     width, height = image_util.get_image_size(data)
-    box = element.box
-    if element.fit == "cover":
+    look = element.treatment or ImageTreatment()
+    box, frame = element.box, None
+    if look.frame == "polaroid":  # a white frame around the picture, both tilted a little
+        frame, box = treatments.polaroid(element.box, width, height, cover=element.fit == "cover")
+        _polaroid_frame(ppt_slide, frame, look.tilt)
+    picture = _placed(ppt_slide, data, box, width, height, element.fit)
+    if image.video_data is not None:  # a gif too large to embed: its video plays, with this picture as its poster
+        picture = creator.play_video(ppt_slide, picture, image.video_data, data, element.fit != "cover")
+    if frame is not None and look.tilt:
+        _turn(picture, frame, look.tilt)
+    _treat(ppt_slide, picture, look, data)
+    if element.border and look.frame != "polaroid":
+        picture.line.color.rgb = _rgb(element.border)
+        picture.line.width = _emu(6)
+    image.mark_used()
+
+
+def _placed(ppt_slide: Slide, data: bytes, box: Box, width: int, height: int, fit: str) -> Any:
+    """The picture in the box: filling it, cropped (cover), or whole, in its middle (contain)."""
+    if fit == "cover":
         picture = ppt_slide.shapes.add_picture(io.BytesIO(data), _emu(box.x), _emu(box.y), _emu(box.w), _emu(box.h))
         box_ratio, image_ratio = box.w / box.h, width / height
         if image_ratio > box_ratio:  # wider than its box: crop the sides
@@ -197,19 +219,131 @@ def _picture(ppt_slide: Slide, element: ImageElement, images: ImageStore | None)
         else:
             crop = (1 - image_ratio / box_ratio) / 2
             picture.crop_top = picture.crop_bottom = crop
-    else:
-        ratio = min(box.w / width, box.h / height)
-        shown_width, shown_height = width * ratio, height * ratio
-        x, y = box.x + (box.w - shown_width) / 2, box.y + (box.h - shown_height) / 2
-        picture = ppt_slide.shapes.add_picture(
-            io.BytesIO(data), _emu(x), _emu(y), _emu(shown_width), _emu(shown_height)
+        return picture
+    ratio = min(box.w / width, box.h / height)
+    shown_width, shown_height = width * ratio, height * ratio
+    x, y = box.x + (box.w - shown_width) / 2, box.y + (box.h - shown_height) / 2
+    return ppt_slide.shapes.add_picture(io.BytesIO(data), _emu(x), _emu(y), _emu(shown_width), _emu(shown_height))
+
+
+# A polaroid's shadow, soft and below it
+_SHADOW: Final = (
+    f'<a:effectLst {nsdecls("a")}><a:outerShdw blurRad="76200" dist="19050" dir="5400000" algn="t" '
+    'rotWithShape="0"><a:srgbClr val="000000"><a:alpha val="30000"/></a:srgbClr></a:outerShdw></a:effectLst>'
+)
+
+
+def _polaroid_frame(ppt_slide: Slide, frame: Box, degrees: float) -> None:
+    shape = ppt_slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, _emu(frame.x), _emu(frame.y), _emu(frame.w), _emu(frame.h))
+    shape.name = "Polaroid frame"
+    shape.fill.solid()
+    shape.fill.fore_color.rgb = _rgb(treatments.POLAROID_WHITE)
+    shape.line.fill.background()
+    shape._element.spPr.append(parse_xml(_SHADOW))
+    shape.rotation = degrees
+
+
+def _turn(shape: Any, frame: Box, degrees: float) -> None:
+    """Turn the shape the degrees (clockwise) around the middle of the frame, as if it were stuck on it."""
+    at = Box(
+        x=shape.left / EMU_PER_PIXEL,
+        y=shape.top / EMU_PER_PIXEL,
+        w=shape.width / EMU_PER_PIXEL,
+        h=shape.height / EMU_PER_PIXEL,
+    )
+    moved = treatments.turned(at, (frame.x + frame.w / 2, frame.y + frame.h / 2), degrees)
+    shape.left, shape.top = _emu(moved.x), _emu(moved.y)
+    shape.rotation = degrees
+
+
+def _treat(ppt_slide: Slide, picture: Any, look: ImageTreatment, data: bytes) -> None:
+    """The treatment's filter, as a picture effect that PowerPoint applies (the picture itself stays as it is), its
+    rounded corners, and its vignette and grain, laid over the picture."""
+    effect = _effect(look, data)
+    if effect is not None:
+        blip = picture._element.blipFill.blip
+        extensions = blip.find(qn("a:extLst"))
+        if extensions is not None:
+            extensions.addprevious(effect)
+        else:
+            blip.append(effect)
+    if look.frame == "rounded":
+        _round(picture)
+    if look.vignette:
+        vignette = ppt_slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE, picture.left, picture.top, picture.width, picture.height
         )
-    if image.video_data is not None:  # a gif too large to embed: its video plays, with this picture as its poster
-        picture = creator.play_video(ppt_slide, picture, image.video_data, data, element.fit != "cover")
-    if element.border:
-        picture.line.color.rgb = _rgb(element.border)
-        picture.line.width = _emu(6)
-    image.mark_used()
+        vignette.name = "Vignette"
+        _vignette(vignette, look.vignette)
+        _like(vignette, picture, look)
+    if look.grain:
+        grain = ppt_slide.shapes.add_picture(
+            io.BytesIO(_grain(look.grain)), picture.left, picture.top, picture.width, picture.height
+        )
+        grain.name = "Grain"
+        _like(grain, picture, look)
+
+
+def _effect(look: ImageTreatment, data: bytes) -> Any:
+    """The picture effect (DrawingML) of the treatment's filter, if it has one."""
+    if look.filter == "grayscale":
+        return parse_xml(f"<a:grayscl {nsdecls('a')}/>")
+    if look.filter == "black and white":  # split at the picture's own median lightness
+        with PILImage.open(io.BytesIO(data)) as opened:
+            cut = treatments.threshold(opened.convert("RGB"))
+        return parse_xml(f'<a:biLevel {nsdecls("a")} thresh="{round(cut * 100000)}"/>')
+    if look.filter in ("sepia", "duotone") and look.dark and look.light:
+        dark, light = look.dark.lstrip("#"), look.light.lstrip("#")
+        return parse_xml(f'<a:duotone {nsdecls("a")}><a:srgbClr val="{dark}"/><a:srgbClr val="{light}"/></a:duotone>')
+    return None
+
+
+def _round(shape: Any) -> None:
+    """Give the shape (a picture, say) rounded corners."""
+    geometry = shape._element.spPr.find(qn("a:prstGeom"))
+    if geometry is None:
+        return
+    geometry.set("prst", "roundRect")
+    for child in list(geometry):
+        geometry.remove(child)
+    radius = round(treatments.ROUNDED * 100000)  # (of the shorter side)
+    geometry.append(parse_xml(f'<a:avLst {nsdecls("a")}><a:gd name="adj" fmla="val {radius}"/></a:avLst>'))
+
+
+def _vignette(shape: Any, strength: float) -> None:
+    """Fill the shape with a vignette: clear in the middle, darker towards the edges (a gradient along a circle)."""
+    shape.line.fill.background()
+    shape.shadow.inherit = False
+    properties = shape._element.spPr
+    for tag in ("a:solidFill", "a:noFill", "a:gradFill"):
+        for old in properties.findall(qn(tag)):
+            properties.remove(old)
+    start = round(treatments.VIGNETTE_START * 100000)
+    darkest = round(treatments.VIGNETTE_DARKEST * strength * 100000)
+    stop = '<a:gs pos="{pos}"><a:srgbClr val="000000"><a:alpha val="{alpha}"/></a:srgbClr></a:gs>'
+    fill = parse_xml(
+        f'<a:gradFill {nsdecls("a")} rotWithShape="1"><a:gsLst>'
+        + stop.format(pos=0, alpha=0)
+        + stop.format(pos=start, alpha=0)
+        + stop.format(pos=100000, alpha=darkest)
+        + '</a:gsLst><a:path path="circle"><a:fillToRect l="50000" t="50000" r="50000" b="50000"/></a:path>'
+        "</a:gradFill>"
+    )
+    properties.find(qn("a:prstGeom")).addnext(fill)
+
+
+def _like(overlay: Any, picture: Any, look: ImageTreatment) -> None:
+    """Turn and shape an overlay like the picture it lies on."""
+    overlay.rotation = picture.rotation
+    if look.frame == "rounded":
+        _round(overlay)
+
+
+@cache
+def _grain(opacity: float) -> bytes:
+    output = io.BytesIO()
+    treatments.grain(opacity).save(output, "PNG")
+    return output.getvalue()
 
 
 def _chart(ppt_slide: Slide, element: ChartElement, theme: Theme) -> None:

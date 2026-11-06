@@ -11,7 +11,7 @@ from pptx.oxml.ns import qn
 from talkgenerator import generator
 from talkgenerator.checks.deck import deck_metrics
 from talkgenerator.checks.design import check_design, check_variety
-from talkgenerator.design import color, engine, fit, fonts, themes
+from talkgenerator.design import color, engine, fit, fonts, themes, treatments
 from talkgenerator.models.deck import Deck, ImageElement, ShapeElement, TextElement
 from talkgenerator.plan import languages
 from talkgenerator.plan.kinds import KINDS
@@ -248,6 +248,131 @@ def test_every_layout_draws_and_previews(images):
     deck = _runs(theme=_theme("neon")).to_deck()
     assert len(render_pptx(deck).slides) == len(deck.slides)
     assert preview.contact_sheet(deck).width > 0
+
+
+# IMAGE TREATMENTS
+
+
+def _treated(slide=None, family="clean keynote", **treatment):
+    """A one-slide deck (a picture under a title, by default) in a theme with the treatment, its slide drawn in
+    PowerPoint, and the theme."""
+    theme = _theme(family).model_copy(update={f"image_{name}": value for name, value in treatment.items()})
+    slide_deck = SlideDeck(1, seed=1)
+    slide_deck.add_slide(0, slide or slides.ImageSlide("Cats", _image("wide")))
+    slide_deck.theme = theme
+    deck = slide_deck.to_deck()
+    return deck, render_pptx(deck).slides[0], theme
+
+
+def _named(ppt_slide, name):
+    return [shape for shape in ppt_slide.shapes if shape.name == name]
+
+
+def _the_picture(ppt_slide):
+    (picture,) = [shape for shape in ppt_slide.shapes if shape.shape_type == 13 and shape.name != "Grain"]
+    return picture
+
+
+def _blip(picture):
+    return picture._element.blipFill.blip
+
+
+def test_families_treat_their_pictures():
+    def share(family, wanted):
+        members = [themes.pick(family, random_util.Rng(seed)) for seed in range(40)]
+        return sum(wanted(member) for member in members) / len(members)
+
+    assert share("vintage paper", lambda theme: theme.image_filter in ("sepia", "grayscale")) > 0.8
+    assert share("vintage paper", lambda theme: theme.image_grain > 0) > 0.3
+    assert share("brutalist", lambda theme: theme.image_filter in ("black and white", "grayscale")) > 0.6
+    assert share("neon", lambda theme: theme.image_filter == "duotone") > 0.3
+    assert share("kids", lambda theme: theme.image_frame in ("rounded", "polaroid")) > 0.8
+    assert share("clean keynote", lambda theme: theme.image_filter == "none") == 1
+
+
+def test_a_themed_picture_gets_its_themes_treatment(images):
+    deck, _, theme = _treated(filter="duotone", frame="rounded", grain=0.14, vignette=0.7)
+    (picture,) = [element for element in deck.slides[0].elements if isinstance(element, ImageElement)]
+    look = picture.treatment
+    assert (look.filter, look.frame, look.grain, look.vignette) == ("duotone", "rounded", 0.14, 0.7)
+    assert (look.dark, look.light) == treatments.duotone(theme.palette)
+    assert Deck.from_json(deck.to_json()) == deck
+    classic = _deck().to_deck()
+    assert all(
+        element.treatment is None
+        for slide in classic.slides
+        for element in slide.elements
+        if isinstance(element, ImageElement)
+    )
+
+
+def test_a_picture_over_the_whole_slide_gets_its_filter_but_no_frame(images):
+    deck, _, _ = _treated(slides.FullImageSlide("Look at this", _image("wide")), filter="sepia", frame="polaroid")
+    (picture,) = [element for element in deck.slides[0].elements if isinstance(element, ImageElement)]
+    assert (picture.treatment.filter, picture.treatment.frame) == ("sepia", "none")
+    assert (picture.treatment.dark, picture.treatment.light) == treatments.SEPIA
+
+
+@pytest.mark.parametrize("name", ["grayscale", "sepia", "duotone", "black and white"])
+def test_a_filter_is_a_picture_effect_in_powerpoint(images, name):
+    deck, ppt_slide, theme = _treated(filter=name)
+    blip = _blip(_the_picture(ppt_slide))
+    if name == "grayscale":
+        assert blip.find(qn("a:grayscl")) is not None
+    elif name == "black and white":
+        threshold = int(blip.find(qn("a:biLevel")).get("thresh"))
+        low, high = treatments.THRESHOLDS
+        assert round(low * 100000) <= threshold <= round(high * 100000)
+    else:
+        colours = [element.get("val").lower() for element in blip.find(qn("a:duotone"))]
+        expected = treatments.SEPIA if name == "sepia" else treatments.duotone(theme.palette)
+        assert colours == [colour.lstrip("#") for colour in expected]
+
+
+def test_rounded_corners_a_vignette_and_grain(images):
+    _, ppt_slide, _ = _treated(frame="rounded", grain=0.14, vignette=0.7)
+    picture = _the_picture(ppt_slide)
+    (vignette,) = _named(ppt_slide, "Vignette")
+    (grain,) = _named(ppt_slide, "Grain")
+    shapes = list(ppt_slide.shapes)
+    assert shapes.index(picture) < shapes.index(vignette) < shapes.index(grain)  # (over the picture)
+    for shape in (picture, vignette, grain):
+        assert shape._element.spPr.find(qn("a:prstGeom")).get("prst") == "roundRect"
+        assert (shape.left, shape.top, shape.width, shape.height) == (
+            picture.left,
+            picture.top,
+            picture.width,
+            picture.height,
+        )
+    gradient = vignette._element.spPr.find(qn("a:gradFill"))
+    assert gradient.find(qn("a:path")).get("path") == "circle"
+
+
+def test_a_polaroid_is_a_tilted_white_frame_around_its_picture(images):
+    deck, ppt_slide, _ = _treated(frame="polaroid", border=True)
+    (frame,) = _named(ppt_slide, "Polaroid frame")
+    picture = _the_picture(ppt_slide)
+    (element,) = [element for element in deck.slides[0].elements if isinstance(element, ImageElement)]
+    tilt = element.treatment.tilt
+    assert treatments.POLAROID_TILT[0] <= abs(tilt) <= treatments.POLAROID_TILT[1]
+    assert frame.rotation == picture.rotation == pytest.approx(tilt % 360)
+    shapes = list(ppt_slide.shapes)
+    assert shapes.index(frame) < shapes.index(picture)  # (the frame behind it)
+    assert element.border is None  # (the white frame instead of the theme's border)
+    assert picture.width < frame.width and picture.height < frame.height
+
+
+def test_previews_show_the_treatments(images):
+    deck, _, theme = _treated(filter="grayscale")
+    slide = deck.slides[0]
+    (element,) = [element for element in slide.elements if isinstance(element, ImageElement)]
+    picture = preview.slide_image(slide, theme, width=1920)
+    middle = (round(element.box.x + element.box.w / 2), round(element.box.y + element.box.h / 2))
+    red, green, blue = picture.getpixel(middle)
+    assert red == green == blue  # (the fake picture is blue)
+    for treatment in ({"frame": "polaroid", "grain": 0.14, "vignette": 0.7}, {"frame": "rounded", "filter": "duotone"}):
+        deck, _, theme = _treated(**treatment)
+        assert preview.slide_image(deck.slides[0], theme).width == 960
 
 
 def test_a_photo_behind_a_statement_gets_a_shade(images):

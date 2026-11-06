@@ -17,7 +17,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 from talkgenerator.datastructures.image_data import ImageData
-from talkgenerator.design import fit, fonts
+from talkgenerator.design import fit, fonts, treatments
 from talkgenerator.design.engine import HEIGHT, WIDTH
 from talkgenerator.models.deck import (
     Box,
@@ -26,6 +26,7 @@ from talkgenerator.models.deck import (
     DeckSlide,
     DiagramElement,
     ImageElement,
+    ImageTreatment,
     ShapeElement,
     TextElement,
     TextStyle,
@@ -142,22 +143,49 @@ def _image(canvas: Image.Image, element: ImageElement, scale: float, images: Ima
     except Exception:  # a picture Pillow can't read: the preview goes without
         logger.debug("Can't preview %s", element.image.url, exc_info=True)
         return
-    x0, y0, x1, y1 = _rect(element.box, scale)
+    look = element.treatment or ImageTreatment()
+    box, frame = element.box, None
+    if look.frame == "polaroid":
+        frame, box = treatments.polaroid(element.box, picture.width, picture.height, element.fit == "cover")
+    shown, (left, top) = _fitted(picture, box, element.fit, scale)
+    shown = treatments.filtered(shown, look)
+    if frame is not None:
+        _polaroid(canvas, shown, (left, top), frame, look.tilt, scale)
+        return
+    canvas.paste(shown, (left, top), treatments.rounded_mask(shown.size) if look.frame == "rounded" else None)
+    if element.border:
+        placed = (left, top, left + shown.width, top + shown.height)
+        draw, line = ImageDraw.Draw(canvas), max(1, round(6 * scale))
+        if look.frame == "rounded":
+            draw.rounded_rectangle(placed, treatments.ROUNDED * min(shown.size), outline=element.border, width=line)
+        else:
+            draw.rectangle(placed, outline=element.border, width=line)
+
+
+def _fitted(picture: Image.Image, box: Box, fit: str, scale: float) -> tuple[Image.Image, tuple[int, int]]:
+    """The picture as it's shown in the box (filling it, cropped, or whole), and where it goes on the canvas."""
+    x0, y0, x1, y1 = _rect(box, scale)
     width, height = max(1, x1 - x0), max(1, y1 - y0)
-    if element.fit == "cover":
+    if fit == "cover":
         ratio = max(width / picture.width, height / picture.height)
         resized = picture.resize((max(1, round(picture.width * ratio)), max(1, round(picture.height * ratio))))
         left, top = (resized.width - width) // 2, (resized.height - height) // 2
-        canvas.paste(resized.crop((left, top, left + width, top + height)), (x0, y0))
-        placed = (x0, y0, x0 + width, y0 + height)
-    else:
-        ratio = min(width / picture.width, height / picture.height)
-        resized = picture.resize((max(1, round(picture.width * ratio)), max(1, round(picture.height * ratio))))
-        left, top = x0 + (width - resized.width) // 2, y0 + (height - resized.height) // 2
-        canvas.paste(resized, (left, top))
-        placed = (left, top, left + resized.width, top + resized.height)
-    if element.border:
-        ImageDraw.Draw(canvas).rectangle(placed, outline=element.border, width=max(1, round(6 * scale)))
+        return resized.crop((left, top, left + width, top + height)), (x0, y0)
+    ratio = min(width / picture.width, height / picture.height)
+    resized = picture.resize((max(1, round(picture.width * ratio)), max(1, round(picture.height * ratio))))
+    return resized, (x0 + (width - resized.width) // 2, y0 + (height - resized.height) // 2)
+
+
+def _polaroid(
+    canvas: Image.Image, shown: Image.Image, at: tuple[int, int], frame: Box, tilt: float, scale: float
+) -> None:
+    """The picture on its white polaroid frame, the two turned as one around the frame's middle."""
+    x0, y0, x1, y1 = _rect(frame, scale)
+    card = Image.new("RGBA", (max(1, x1 - x0), max(1, y1 - y0)), treatments.POLAROID_WHITE)
+    card.paste(shown, (at[0] - x0, at[1] - y0))
+    turned = card.rotate(-tilt, resample=Image.Resampling.BICUBIC, expand=True)  # (Pillow turns anticlockwise)
+    middle_x, middle_y = (x0 + x1) / 2, (y0 + y1) / 2
+    canvas.paste(turned, (round(middle_x - turned.width / 2), round(middle_y - turned.height / 2)), turned)
 
 
 def _text(canvas: Image.Image, text: str, box: Box, style: TextStyle, scale: float, wrap_lines: bool = True) -> None:

@@ -93,6 +93,12 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   title, a statement centred, aligned left by a bar or on a band. A slide never gets the layout of the slide before
   it when another one fits, and less often the ones the deck has had already. Pictures, charts and diagrams go
   under the bands and texts over them.
+  Pictures get their theme's treatment, so that pictures from mixed sources share one look
+  (`talkgenerator.design.treatments`): grayscale, sepia, a duotone in the theme's colours, or black and white (split
+  at the picture's own median lightness), rounded corners or a white polaroid frame tilted a few degrees, grain and
+  a vignette. Vintage paper goes sepia with grain and polaroids, neon duotone, brutalist black and white, kids
+  rounded and polaroid. PowerPoint applies the filters as picture effects, so the deck keeps the original picture
+  (and "Reset Picture" brings it back), and previews apply them with Pillow.
 - Design checks for themed decks (`talkgenerator.checks.design`): every text reads on what's behind it (a photo
   counts as black or white, as shaded), fits its box, isn't too small, stays on the slide and isn't covered by what's
   drawn after it, and no slide has the layout of the slide before it where another fits. On 2,376 themed decks made
