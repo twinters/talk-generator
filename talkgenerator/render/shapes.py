@@ -128,7 +128,7 @@ def _background(ppt_slide: Slide, slide: DeckSlide, theme: Theme) -> None:
         fill.fore_color.rgb = _rgb(top)
         return
     fill.gradient()
-    fill.gradient_angle = 90  # from the top down
+    fill.gradient_angle = 270  # from the top down (python-pptx counts counter-clockwise: this is DrawingML's 90)
     stops = fill.gradient_stops
     stops[0].color.rgb = _rgb(top)
     stops[0].position = 0

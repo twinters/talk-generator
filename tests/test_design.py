@@ -205,6 +205,16 @@ def test_a_themed_deck_is_drawn_as_shapes(images):
     assert len(pictures) == sum(len(slide.images()) for slide in deck.slides)
 
 
+def test_a_gradient_runs_from_the_top_down():
+    theme = next(_theme("1997 WordArt", seed) for seed in range(20) if _theme("1997 WordArt", seed).gradient_to)
+    slide = Deck(generator="test", slides=(_deck().to_deck().slides[0],))
+    presentation = render_pptx(engine.lay_out(slide, theme))
+    linear = presentation.slides[0].element.find(".//" + qn("a:lin"))
+    assert linear.get("ang") == "5400000"  # DrawingML's 90 degrees: the first colour at the top
+    colors = [element.get("val").lower() for element in presentation.slides[0].element.iter(qn("a:srgbClr"))][:2]
+    assert colors == [theme.palette.background.lstrip("#"), theme.gradient_to.lstrip("#")]
+
+
 def test_a_deck_from_json_is_laid_out_when_drawn(images):
     deck = _deck().to_deck().model_copy(update={"theme": "neon 1", "style": _theme("neon")})
     presentation = render_pptx(Deck.from_json(deck.to_json()))
