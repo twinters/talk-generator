@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from typing import Any, Literal
 
 from talkgenerator.models import classic
-from talkgenerator.models.deck import ChartElement, Deck, ImageElement, TextElement
+from talkgenerator.models.deck import ChartElement, Content, Deck, ImageElement, TextElement
 from talkgenerator.util import language_util
 
 Severity = Literal["error", "warning"]
@@ -50,12 +50,15 @@ def leftovers_in(text: str) -> list[str]:
 
 
 def check_deck(deck: Deck, expected_slides: int | None = None) -> list[Finding]:
-    """Every check of a deck."""
+    """Every check of a deck (and of a themed deck's design: see talkgenerator.checks.design)."""
+    from talkgenerator.checks.design import check_design  # (it needs this module's Finding)
+
     return [
         *check_completeness(deck, expected_slides),
         *check_leftovers(deck),
         *check_images(deck),
         *check_language(deck),
+        *check_design(deck),
     ]
 
 
@@ -209,7 +212,7 @@ def _repeated_titles(deck: Deck) -> int:
     return len(titles) - len(set(titles))
 
 
-def _texts(elements: tuple[TextElement | ImageElement | ChartElement, ...]) -> list[tuple[str, str]]:
+def _texts(elements: tuple[Content, ...]) -> list[tuple[str, str]]:
     texts = []
     for element in elements:
         if isinstance(element, TextElement):

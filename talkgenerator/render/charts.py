@@ -230,7 +230,7 @@ def set_axis_titles(chart, spec: ChartSpec) -> None:
             axis.axis_title.text_frame.paragraphs[0].runs[0].font.size = Pt(20)
 
 
-def label_points(chart, spec: ChartSpec) -> None:
+def label_points(chart, spec: ChartSpec, colour: RGBColor = PUNCHLINE_COLOUR) -> None:
     """Point out the points that the spec names, on a line or scatter chart: a big dot, with its name above it."""
     if spec.chart_type not in ("line", "scatter"):
         return
@@ -242,8 +242,8 @@ def label_points(chart, spec: ChartSpec) -> None:
             point.marker.style = XL_MARKER_STYLE.CIRCLE
             point.marker.size = 18
             point.marker.format.fill.solid()
-            point.marker.format.fill.fore_color.rgb = PUNCHLINE_COLOUR
-            point.marker.format.line.color.rgb = PUNCHLINE_COLOUR
+            point.marker.format.fill.fore_color.rgb = colour
+            point.marker.format.line.color.rgb = colour
             point.data_label.text_frame.text = label
             point.data_label.position = XL_LABEL_POSITION.ABOVE
             point.data_label.font.size = Pt(20)

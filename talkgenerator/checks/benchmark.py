@@ -27,6 +27,7 @@ from typing import Any, Final
 from talkgenerator import __version__, generator
 from talkgenerator import topics as topic_list
 from talkgenerator.checks.deck import Finding, check_deck, deck_metrics
+from talkgenerator.design import themes
 from talkgenerator.llm.base import TextProvider
 from talkgenerator.llm.providers import provider_from_spec
 from talkgenerator.llm.replay import ReplayProvider
@@ -99,6 +100,7 @@ def generate_deck(
     parallel: bool,
     llm: TextProvider | str = "none",
     language: str = "en",
+    theme: str = "classic",
 ) -> Deck:
     _, slide_deck, _ = generator.generate_presentation(
         schema=schema,
@@ -109,6 +111,7 @@ def generate_deck(
         save_ppt=False,
         llm=llm,
         language=language,
+        theme=theme,
     )
     return slide_deck.to_deck(schema_name=schema)
 
@@ -122,6 +125,7 @@ def check_talk(
     llm: str = "none",
     language: str = "en",
     decks: Path | None = None,
+    theme: str = "classic",
 ) -> TalkReport:
     """Generate a talk and check it; with determinism, generate it again one by one, which has to give the same.
 
@@ -134,7 +138,7 @@ def check_talk(
             recording = ReplayProvider(cassette, record=provider_from_spec(llm))
         start = time.monotonic()
         try:
-            deck = generate_deck(topic, seed, schema, slides, parallel=True, llm=recording, language=language)
+            deck = generate_deck(topic, seed, schema, slides, True, recording, language, theme)
         except Exception as error:  # a talk should never fail: if it does, that's what the check found
             logger.exception("Generating a talk about %r crashed", topic)
             crash = Finding("generation", "error", f"generating the talk crashed: {error!r}")
@@ -154,7 +158,7 @@ def check_talk(
             )
         if determinism:
             replaying: TextProvider | str = ReplayProvider(cassette) if llm != "none" else "none"
-            again = generate_deck(topic, seed, schema, slides, parallel=False, llm=replaying, language=language)
+            again = generate_deck(topic, seed, schema, slides, False, replaying, language, theme)
             # What the talks asked of language models differs (the second one replayed); their slides may not
             report.deterministic = again.model_copy(update={"usage": deck.usage}).to_json() == deck.to_json()
             if not report.deterministic:
@@ -172,20 +176,27 @@ def run(
     llm: str = "none",
     language: str = "en",
     decks: Path | None = None,
+    theme: str = "classic",
 ) -> dict[str, Any]:
     """Check a talk for every topic and seed, and return the report."""
     talks = []
     for topic in topics:
         for seed in seeds:
-            talk = check_talk(topic, seed, schema, slides, determinism, llm, language, decks)
+            talk = check_talk(topic, seed, schema, slides, determinism, llm, language, decks, theme)
             talks.append(talk)
             if on_talk is not None:
                 on_talk(talk)
-    return _report(talks, schema, slides, seeds, llm, language)
+    return _report(talks, schema, slides, seeds, llm, language, theme)
 
 
 def _report(
-    talks: list[TalkReport], schema: str, slides: int, seeds: Sequence[int], llm: str, language: str = "en"
+    talks: list[TalkReport],
+    schema: str,
+    slides: int,
+    seeds: Sequence[int],
+    llm: str,
+    language: str = "en",
+    theme: str = "classic",
 ) -> dict[str, Any]:
     seconds = [talk.seconds for talk in talks]
     checked = [talk for talk in talks if talk.deterministic is not None]
@@ -193,6 +204,7 @@ def _report(
         "generator": f"talkgenerator {__version__}",
         "llm": llm,
         "language": language,
+        "theme": theme,
         "schema": schema,
         "slides": slides,
         "seeds": list(seeds),
@@ -283,6 +295,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     parser.add_argument("--report", default=str(Path("output") / "check-report.json"), help="where to write it")
     parser.add_argument("--decks", help="a folder to save every talk's deck in, as JSON, to read what they say")
+    parser.add_argument(
+        "--theme",
+        default="classic",
+        choices=[*themes.names(), "chaos"],
+        help="the talks' look (default: classic); themed talks get the design checks too",
+    )
     parser.add_argument("--verbose", "-v", action="store_true", help="show the generator's logs")
     args = parser.parse_args(argv)
 
@@ -323,6 +341,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         llm=args.llm,
         language=args.language,
         decks=Path(args.decks) if args.decks else None,
+        theme=args.theme,
     )
     summary = report["summary"]
     print(

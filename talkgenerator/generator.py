@@ -8,6 +8,7 @@ import sys
 from pptx.presentation import Presentation
 
 from talkgenerator import runtime_checker, settings
+from talkgenerator.design import themes
 from talkgenerator.llm.base import TextProvider
 from talkgenerator.llm.ledger import Budget, Ledger, MeteredProvider
 from talkgenerator.llm.providers import NoneProvider, from_settings, provider_from_spec
@@ -53,6 +54,9 @@ def generate_presentation_using_cli_arguments(args) -> tuple[Presentation | None
         save_json=getattr(args, "save_json", False),
         llm=getattr(args, "llm", None),
         language=getattr(args, "language", None) or "en",
+        theme=getattr(args, "theme", None) or "classic",
+        style_chaos=getattr(args, "style_chaos", 0.0) or 0.0,
+        extreme_themes=getattr(args, "extreme_themes", True),
     )
 
 
@@ -73,6 +77,9 @@ def generate_presentation(
     llm: TextProvider | str | None = None,
     language: str = "en",
     budget: Budget | None = None,
+    theme: str = "classic",
+    style_chaos: float = 0.0,
+    extreme_themes: bool = True,
 ) -> tuple[Presentation | None, SlideDeck, str | None]:
     """Generate a talk. With debug_notes, every slide's speaker notes explain how it was generated.
 
@@ -82,7 +89,11 @@ def generate_presentation(
 
     llm is the language model that writes the talk: a provider, a spec such as "anthropic:claude-opus-5-5", or None
     for the one TALKGENERATOR_LLM sets (without one, talks are classic). It writes in the given language, and the
-    budget limits what it may cost; the deck tells what it used."""
+    budget limits what it may cost; the deck tells what it used.
+
+    theme is "classic" (the 2019 template), "random" (a theme of a family the seed picks, extremes such as 1997
+    WordArt too unless extreme_themes is off), a family's name such as "dark minimal", or "chaos" (every slide
+    in a theme of its own); style_chaos is how many slides get a theme of their own (0 to 1)."""
     if print_logs:
         os_util.show_logs(logger)
     logger.info("**************************")
@@ -93,6 +104,13 @@ def generate_presentation(
     # The talk's random choices all come from its seed (a random one if none is given), see random_util
     rng = random_util.Rng(int_seed)
     logger.info("Presentation seed: {} (pass it as int_seed to make this talk again)".format(rng.root_seed))
+
+    # The talk's theme, from its seed too (see talkgenerator.design.themes)
+    if theme == "chaos":
+        theme, style_chaos = themes.RANDOM, 1.0
+    chosen_theme = themes.pick(theme, rng.child("theme"), extreme_themes)
+    if chosen_theme is not None:
+        logger.info("Theme: {}".format(chosen_theme.name))
 
     # Retrieve the schema to generate the presentation with
     presentation_schema = get_schema(schema)
@@ -142,6 +160,9 @@ def generate_presentation(
         rng=rng,
         llm=MeteredProvider(provider, ledger, budget or Budget()) if provider is not None else None,
         language=language,
+        theme=chosen_theme,
+        style_chaos=style_chaos,
+        extreme_themes=extreme_themes,
     )
     slide_deck.usage = ledger.total()
     if provider is not None:
@@ -356,6 +377,25 @@ def get_argument_parser():
         help="The language model that writes the talk, as provider:model: openrouter[:<model>], anthropic[:<model>] "
         "or openai:<model>; 'none' makes a classic talk (default: TALKGENERATOR_LLM's, or else OpenRouter's free "
         "models when there's an OpenRouter key: OPENROUTER_API_KEY, or talkgenerator login openrouter)",
+    )
+    parser.add_argument(
+        "--theme",
+        default="classic",
+        choices=[*themes.names(), "chaos"],
+        help="The look: classic (the 2019 template), random (a theme the seed picks), a family's name, or chaos "
+        "(every slide its own theme) (default: classic)",
+    )
+    parser.add_argument(
+        "--style_chaos",
+        default=0.0,
+        type=float,
+        help="How many slides get a theme of their own, from 0 (none) to 1 (all) (default: 0)",
+    )
+    parser.add_argument(
+        "--no_extreme_themes",
+        dest="extreme_themes",
+        action="store_false",
+        help="Leave the themes for laughs, such as 1997 WordArt and Comic Sans everywhere, out of the random mix",
     )
     parser.add_argument(
         "--language",

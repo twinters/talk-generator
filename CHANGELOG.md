@@ -63,6 +63,20 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   slides are English), and recipes that find English texts, such as real quotes, aren't used. A deck says its
   language, and a new check reads its texts with NLTK's stopword lists: a talk that reads as English when it
   shouldn't is an error, and such a slide a warning. `talkgenerator check --language nl --llm ...` checks them.
+- Themes (`--theme`, docs/v5-plan.md section 9): besides the 2019 template (`classic`, still the default), talks
+  can be drawn as shapes on a 1920×1080 canvas, in a theme of one of twelve families, from `clean keynote` and
+  `dark minimal` to `vintage paper` and `neon`, with `1997 WordArt`, `Comic Sans everywhere` and `clip-art
+  corporate` for laughs. The talk's seed picks a member of the family: its colours (repaired until every text reads
+  on its background, gradients included, by WCAG's contrast rules), font pair, casing, decoration and layouts.
+  `--theme random` picks the family too (`--no_extreme_themes` leaves the extremes out), `--theme chaos` gives every
+  slide its own theme, and `--style_chaos` some of them. The layout engine (`talkgenerator.design.engine`) puts
+  every element in its box and gives every text the largest size at which it fits, measured with the fonts' own
+  files or fonts with the same metrics (`talkgenerator.design.fonts`), so a themed deck's JSON holds every
+  element's place and style, and every renderer draws it the same way. `talkgenerator.render.shapes` draws it in
+  PowerPoint, and `talkgenerator.render.preview` as pictures with Pillow, with a contact sheet of a whole deck.
+- Design checks for themed decks (`talkgenerator.checks.design`): every text reads on what's behind it (a photo
+  counts as black or white, as shaded), fits its box, isn't too small, and stays on the slide. On 2,376 themed
+  decks made from 66 benchmark talks, nothing came up. `talkgenerator check --theme random` checks themed talks.
 - Two new kinds of chart. A trend: a line along two odd axes ("Hours since the meeting started" against
   "Times someone said synergy"), going one of eleven ways, from exponential to hockey stick to crash, with an
   optional second line, the punchline, that draws itself across the chart on a click. And a ranking: bars that

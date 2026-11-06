@@ -46,9 +46,17 @@ def render_pptx(
     debug_notes: bool = False,
     images: ImageStore | None = None,
 ) -> Presentation:
-    """Add the deck's slides to the presentation (a new one from the classic template if none is given)."""
+    """Add the deck's slides to the presentation (a new one if none is given): a classic deck's in the 2019
+    template, a themed deck's as shapes (see talkgenerator.render.shapes), laid out first if it isn't yet."""
     if deck.theme != "classic":
-        raise ValueError(f"Can't draw theme {deck.theme!r}: only the classic theme exists so far")
+        from talkgenerator.design import engine
+        from talkgenerator.render.shapes import render_themed
+
+        if deck.style is None:
+            raise ValueError(f"A deck with theme {deck.theme!r} needs the theme's tokens (its style)")
+        if not all(slide.layout.startswith("v5/") for slide in deck.slides):
+            deck = engine.lay_out(deck, deck.style)
+        return render_themed(deck, presentation, debug_notes=debug_notes, images=images)
     if presentation is None:
         presentation = creator.create_new_powerpoint()
     for slide in deck.slides:

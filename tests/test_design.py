@@ -1,0 +1,313 @@
+"""Offline tests of themes and layouts (milestone 3): colours and contrast, measuring and fitting text, theme
+families, the layout engine, and the renderers of themed decks (PowerPoint shapes, and previews)."""
+
+import pytest
+from pptx import Presentation
+from pptx.enum.chart import XL_CHART_TYPE
+from pptx.oxml.ns import qn
+
+from talkgenerator import generator
+from talkgenerator.checks.design import check_design
+from talkgenerator.design import color, engine, fit, fonts, themes
+from talkgenerator.models.deck import Deck, ImageElement, ShapeElement, TextElement
+from talkgenerator.plan import languages
+from talkgenerator.plan.kinds import KINDS
+from talkgenerator.render import preview
+from talkgenerator.render.powerpoint import render_pptx
+from talkgenerator.slide.slide_deck import SlideDeck
+from talkgenerator.util import random_util
+from tests import test_seeds
+from tests.test_deck import _every_kind_of_slide
+from tests.test_deck import images as images  # the fake image downloads (a fixture)
+
+FAMILIES = list(themes.FAMILIES)
+
+
+def _deck(seed=1, theme=None, **options):
+    """A deck of every kind of slide, as the generator makes it (laid out in the theme, if any)."""
+    slide_deck = SlideDeck(len(_every_kind_of_slide()), title="Cats", topics=["cats"], seed=seed)
+    for index, slide in enumerate(_every_kind_of_slide()):
+        slide_deck.add_slide(index, slide)
+    slide_deck.theme = theme
+    slide_deck.style_chaos = options.get("style_chaos", 0.0)
+    return slide_deck
+
+
+def _theme(family="clean keynote", seed=1):
+    return themes.pick(family, random_util.Rng(seed))
+
+
+# COLOURS
+
+
+def test_contrast_is_wcags():
+    assert color.contrast("#000000", "#ffffff") == pytest.approx(21)
+    assert color.contrast("#777777", "#777777") == pytest.approx(1)
+    assert color.contrast("#767676", "#ffffff") == pytest.approx(4.54, abs=0.01)
+
+
+def test_a_colour_that_doesnt_read_is_repaired():
+    for foreground, background in [("#9999ff", "#ffffff"), ("#333333", "#111111"), ("#ff0000", "#ee1111")]:
+        repaired = color.readable(foreground, background, 4.5)
+        assert color.contrast(repaired, background) >= 4.5
+    assert color.readable("#000000", "#ffffff") == "#000000"  # good enough already: unchanged
+
+
+def test_colours_round_trip():
+    assert color.hsl(*color.to_hsl("#3366cc")) == "#3366cc"
+    assert color.mix("#000000", "#ffffff", 0.5) == "#808080"
+
+
+# MEASURING AND FITTING TEXT
+
+
+def test_text_is_measured_or_generously_estimated(monkeypatch):
+    width = fonts.text_width("Hello there", "Arial", 100)
+    assert fonts.text_width("Hello there, again", "Arial", 100) > width
+    assert fonts.text_width("Hello there", "Arial", 50) == pytest.approx(width / 2, rel=0.01)
+    monkeypatch.setattr(fonts, "_font_index", lambda: {})  # a computer without any of the fonts
+    assert not fonts.measured("Arial")
+    estimate = fonts.text_width("Hello there", "Arial", 100)
+    assert estimate == pytest.approx(11 * 100 * 0.52 * fonts.ESTIMATE_MARGIN)
+
+
+def test_a_text_gets_the_largest_size_at_which_it_fits():
+    short = fit.fit("Cats", 1600, 300, "Arial", 140, 60)
+    assert short.fits and short.size == 140 and short.lines == ("Cats",)
+    long = fit.fit("The secret life of cats, and what they do when nobody is looking", 800, 200, "Arial", 140, 30)
+    assert long.fits and long.size < 140 and len(long.lines) > 1
+    assert len(long.lines) * long.size * fit.LINE_HEIGHT <= 200
+    assert all(fonts.text_width(line, "Arial", long.size) <= 800 for line in long.lines)
+    impossible = fit.fit("word " * 80, 200, 50, "Arial", 60, 40)
+    assert not impossible.fits and impossible.size == 40
+
+
+# THEMES
+
+
+def test_classic_is_no_theme_and_unknown_themes_are_refused():
+    assert themes.pick("classic", random_util.Rng(1)) is None
+    with pytest.raises(ValueError, match="no theme 'glitter'"):
+        themes.pick("glitter", random_util.Rng(1))
+
+
+@pytest.mark.parametrize("family", FAMILIES)
+def test_every_member_of_every_family_reads(family):
+    for seed in range(8):
+        theme = _theme(family, seed)
+        palette = theme.palette
+        backgrounds = [palette.background, *([theme.gradient_to] if theme.gradient_to else [])]
+        for background in backgrounds:
+            assert color.contrast(palette.text, background) >= 4.5, (theme.name, background)
+            assert color.contrast(palette.muted, background) >= 4.5, (theme.name, background)
+            assert color.contrast(palette.accent, background) >= 3, (theme.name, background)
+        assert theme.fonts.heading in fonts.FONTS and theme.fonts.body in fonts.FONTS
+
+
+def test_a_theme_comes_from_its_seed():
+    assert _theme("neon", 3) == _theme("neon", 3)
+    assert len({_theme("neon", seed).palette.accent for seed in range(10)}) > 5
+
+
+def test_the_random_mix_leaves_extremes_out_when_asked():
+    picked = [themes.pick("random", random_util.Rng(seed), extremes=False) for seed in range(60)]
+    assert not any(theme.extreme for theme in picked)
+    assert any(themes.pick("random", random_util.Rng(seed)).extreme for seed in range(60))
+    assert "1997 WordArt" not in themes.names(extremes=False) and "1997 WordArt" in themes.names()
+
+
+# THE LAYOUT ENGINE
+
+
+@pytest.mark.parametrize("family", FAMILIES)
+def test_every_element_gets_a_place_and_every_text_fits(images, family):
+    deck = _deck(theme=_theme(family)).to_deck()
+    assert deck.theme.startswith(family) and deck.style.family == family
+    for slide in deck.slides:
+        assert slide.layout.startswith("v5/") and slide.background is not None
+        for element in slide.elements:
+            box = element.box
+            assert box is not None, (slide.type, element.role)
+            assert box.x >= 0 and box.y >= 0 and box.x + box.w <= 1920 and box.y + box.h <= 1080
+            if isinstance(element, TextElement):
+                style = element.style
+                text = element.text.upper() if style.uppercase else element.text
+                fitted = fit.fit(text, box.w, box.h, style.font, style.size, style.size, style.bold)
+                assert fitted.fits, (slide.type, element.role, element.text, style.size)
+
+
+def test_layouts_and_sizes_come_from_the_seed(images):
+    theme = _theme()
+    assert _deck(seed=4, theme=theme).to_deck() == _deck(seed=4, theme=theme).to_deck()
+    layouts = {tuple(slide.layout for slide in _deck(seed=seed, theme=theme).to_deck().slides) for seed in range(12)}
+    assert len(layouts) > 1  # the image slides come with their title on top, or beside the image
+
+
+def test_a_photo_behind_a_statement_gets_a_shade(images):
+    deck = _deck(theme=_theme()).to_deck()
+    statement = next(slide for slide in deck.slides if slide.type == "large_quote")
+    background, shade = statement.elements[0], statement.elements[1]
+    assert isinstance(background, ImageElement) and background.fit == "cover" and background.box == engine.FULL
+    assert isinstance(shade, ShapeElement) and shade.opacity == engine.SHADE_OPACITY
+    assert statement.element("text").style.color == engine.LIGHT_TEXT
+
+
+def test_with_style_chaos_slides_get_themes_of_their_own(images):
+    theme = _theme()
+    calm = _deck(theme=theme).to_deck()
+    assert not any(slide.style for slide in calm.slides)
+    chaos = _deck(theme=theme, style_chaos=1.0).to_deck()
+    assert all(slide.style is not None for slide in chaos.slides)
+    assert len({slide.style.name for slide in chaos.slides}) > 3
+
+
+def test_a_classic_deck_stays_classic(images):
+    deck = _deck().to_deck()
+    assert deck.theme == "classic" and deck.style is None
+    assert all(slide.layout.startswith("classic/") for slide in deck.slides)
+    assert '"box"' not in deck.to_json()  # (nothing for the empty fields)
+
+
+# DRAWING THEMED DECKS
+
+
+def test_a_themed_deck_is_drawn_as_shapes(images):
+    theme = _theme("dark minimal")
+    slide_deck = _deck(theme=theme)
+    deck = slide_deck.to_deck()
+    presentation = render_pptx(deck, images=slide_deck.image_store())
+    assert (presentation.slide_width, presentation.slide_height) == (12192000, 6858000)
+    assert len(presentation.slides) == len(deck.slides)
+    title_slide = presentation.slides[0]
+    assert not list(title_slide.placeholders)  # blank slides, drawn on
+    fill = title_slide.background.fill
+    assert str(fill.fore_color.rgb).lower() == theme.palette.background.lstrip("#")
+    runs = [
+        run
+        for shape in title_slide.shapes
+        if shape.has_text_frame
+        for p in shape.text_frame.paragraphs
+        for run in p.runs
+    ]
+    assert runs[0].text == "A talk about cats" and runs[0].font.name == theme.fonts.heading
+    # The credits link to their pages
+    credited = presentation.slides[2]
+    links = [
+        run.hyperlink.address
+        for shape in credited.shapes
+        if shape.has_text_frame
+        for p in shape.text_frame.paragraphs
+        for run in p.runs
+        if run.hyperlink.address
+    ]
+    assert links == ["https://www.pexels.com/photo/cat-123/"]
+    pictures = [shape for slide in presentation.slides for shape in slide.shapes if shape.shape_type == 13]
+    assert len(pictures) == sum(len(slide.images()) for slide in deck.slides)
+
+
+def test_a_deck_from_json_is_laid_out_when_drawn(images):
+    deck = _deck().to_deck().model_copy(update={"theme": "neon 1", "style": _theme("neon")})
+    presentation = render_pptx(Deck.from_json(deck.to_json()))
+    assert len(presentation.slides) == len(deck.slides) and not list(presentation.slides[0].placeholders)
+
+
+def test_a_themed_trend_with_two_lines_still_draws_its_second_line_on_a_click(images):
+    with random_util.use(random_util.Rng(5)):
+        trend = KINDS["chart_trend"].build(
+            {"title": "Me versus my cat", "line": "Me", "second_line": "My cat"}, {}, languages.LANGUAGES["en"]
+        )
+    slide_deck = SlideDeck(1, seed=1)
+    slide_deck.add_slide(0, trend)
+    slide_deck.theme = _theme("startup")
+    presentation = render_pptx(slide_deck.to_deck())
+    slide = presentation.slides[0]
+    assert slide.element.find(qn("p:timing")) is not None
+    (frame,) = [shape for shape in slide.shapes if shape.has_chart]
+    assert frame.chart.chart_type == XL_CHART_TYPE.LINE
+
+
+def test_previews_show_the_slides(images, tmp_path):
+    theme = _theme("vintage paper")
+    slide_deck = _deck(theme=theme)
+    deck = slide_deck.to_deck()
+    picture = preview.slide_image(deck.slides[0], theme, slide_deck.image_store(), width=480)
+    assert picture.size == (480, 270)
+    assert picture.getpixel((2, 135)) == color.rgb(theme.palette.background)
+    paths = preview.save_previews(deck, tmp_path / "previews", slide_deck.image_store())
+    assert [path.name for path in paths][-1] == "slides.png" and len(paths) == len(deck.slides) + 1
+    with pytest.raises(ValueError, match="classic"):
+        preview.contact_sheet(_deck().to_deck())
+
+
+# THE GENERATOR
+
+
+def test_the_generator_makes_themed_talks(monkeypatch, images):
+    schema = test_seeds.fake_schema()
+    monkeypatch.setattr(generator, "get_schema", lambda name: schema)
+    _, slide_deck, _ = generator.generate_presentation(
+        schema="fake", slides=test_seeds.NUM_SLIDES, topic="cats", int_seed=2, save_ppt=False, theme="neon"
+    )
+    deck = slide_deck.to_deck()
+    assert deck.theme.startswith("neon") and all(slide.layout.startswith("v5/") for slide in deck.slides)
+    _, classic, _ = generator.generate_presentation(
+        schema="fake", slides=test_seeds.NUM_SLIDES, topic="cats", int_seed=2, save_ppt=False
+    )
+    # The theme doesn't change what's on the slides
+    texts = [[e.text for e in s.elements if isinstance(e, TextElement)] for s in classic.to_deck().slides]
+    assert texts == [[e.text for e in s.elements if isinstance(e, TextElement)] for s in deck.slides]
+    _, chaos, _ = generator.generate_presentation(
+        schema="fake", slides=test_seeds.NUM_SLIDES, topic="cats", int_seed=2, save_ppt=False, theme="chaos"
+    )
+    assert all(slide.style is not None for slide in chaos.to_deck().slides)
+
+
+def test_the_command_line_takes_a_theme():
+    arguments = generator.get_argument_parser().parse_args(["--theme", "dark minimal", "--no_extreme_themes"])
+    assert (arguments.theme, arguments.extreme_themes, arguments.style_chaos) == ("dark minimal", False, 0.0)
+    assert generator.get_argument_parser().parse_args([]).theme == "classic"
+
+
+def test_a_saved_themed_pptx_opens(images, tmp_path):
+    slide_deck = _deck(theme=_theme("brutalist"))
+    path = tmp_path / "themed.pptx"
+    render_pptx(slide_deck.to_deck(), images=slide_deck.image_store()).save(path)
+    assert len(Presentation(str(path)).slides) == len(_every_kind_of_slide())
+
+
+# THE DESIGN CHECKS
+
+
+def test_a_themed_deck_passes_the_design_checks(images):
+    for family in FAMILIES:
+        assert check_design(_deck(theme=_theme(family)).to_deck()) == [], family
+    assert check_design(_deck().to_deck()) == []  # (a classic deck has no design to check)
+
+
+def test_texts_that_dont_read_fit_or_stay_on_the_slide_are_found(images):
+    deck = _deck(theme=_theme()).to_deck()
+    slide = deck.slides[0]
+    title = slide.element("title")
+
+    def with_title(**changes):
+        style = title.style.model_copy(update={key: value for key, value in changes.items() if key != "box"})
+        changed = title.model_copy(update={"style": style, "box": changes.get("box", title.box)})
+        elements = tuple(changed if element is title else element for element in slide.elements)
+        return deck.model_copy(update={"slides": (slide.model_copy(update={"elements": elements}),)})
+
+    def checks(changed):
+        return [(finding.check, finding.severity) for finding in check_design(changed)]
+
+    assert checks(with_title(color=slide.background.color)) == [("contrast", "error")]
+    assert checks(with_title(size=400)) == [("overflow", "error")]
+    assert checks(with_title(size=20)) == [("text size", "warning")]
+    off = title.box.model_copy(update={"x": -40})
+    assert checks(with_title(box=off)) == [("margins", "warning")]
+
+
+def test_a_text_on_a_photo_needs_its_shade(images):
+    deck = _deck(theme=_theme()).to_deck()
+    statement = next(slide for slide in deck.slides if slide.type == "large_quote")
+    unshaded = tuple(element for element in statement.elements if element.role != "shade")
+    bare = deck.model_copy(update={"slides": (statement.model_copy(update={"elements": unshaded}),)})
+    assert [finding.check for finding in check_design(bare)] == ["contrast"]  # white text on a picture: not always

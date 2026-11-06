@@ -35,11 +35,13 @@ from talkgenerator.datastructures.slide_generator_data import SlideGeneratorData
 from talkgenerator.llm.base import ProviderError, TextProvider
 from talkgenerator.llm.providers import NoneProvider
 from talkgenerator.models.plan import SlidePlan, TalkPlan
+from talkgenerator.models.theme import Theme
 from talkgenerator.plan import languages
 from talkgenerator.plan.kinds import PRESENTER_JOB, TALK_TITLE, Recipe
 from talkgenerator.plan.prompt import PlannedSlide, slide_plan, talk_request
 from talkgenerator.plan.realize import ATTEMPTS, clean_text, realize
 from talkgenerator.plan.stream import ObjectReader
+from talkgenerator.render.powerpoint import render_pptx
 from talkgenerator.schema.slide_topic_generators import SlideSeedGenerator
 from talkgenerator.slide import slide_generator_types, slides
 from talkgenerator.slide.slide_deck import SlideDeck
@@ -217,6 +219,9 @@ class PresentationSchema:
         rng: random_util.Rng | None = None,
         llm: TextProvider | None = None,
         language: str = "en",
+        theme: Theme | None = None,
+        style_chaos: float = 0.0,
+        extreme_themes: bool = True,
     ) -> tuple[Presentation | None, SlideDeck]:
         """Generate a presentation about a certain topic with a certain number of slides.
 
@@ -268,6 +273,7 @@ class PresentationSchema:
                 seed=rng.root_seed,
                 language=talk_language,
             )
+            slide_deck.theme, slide_deck.style_chaos, slide_deck.extreme_themes = theme, style_chaos, extreme_themes
             logger.info("Slide deck: {}".format(slide_deck))
 
             # Create main presentation_context
@@ -288,14 +294,14 @@ class PresentationSchema:
                 talk.close()
 
         if save_ppt:
-            presentation = self._powerpoint_creator()
-            slide_deck.save_to_powerpoint(presentation, debug_notes=debug_notes)
-            return presentation, slide_deck
+            return self.render(slide_deck, debug_notes), slide_deck
 
         return None, slide_deck
 
     def render(self, slide_deck: SlideDeck, debug_notes: bool = False) -> Presentation:
-        """The deck as a PowerPoint presentation."""
+        """The deck as a PowerPoint presentation: in the classic template, or (with a theme) drawn as shapes."""
+        if slide_deck.theme is not None:
+            return render_pptx(slide_deck.to_deck(), debug_notes=debug_notes, images=slide_deck.image_store())
         presentation = self._powerpoint_creator()
         slide_deck.save_to_powerpoint(presentation, debug_notes=debug_notes)
         return presentation
