@@ -232,7 +232,8 @@ history_slide_generators_copyright_free = _register(
 
 
 # FULL SCREEN RELATED IMAGES
-_TEASER = "a short teaser such as 'Look at this' or 'Brace yourselves', or empty for none"
+# (Without an example: the free models wrote the example's teaser on every gif)
+_TEASER = "two to four words of your own that build up to the gif, or empty for none"
 
 single_image_slide_generators = _register(
     "single_image",

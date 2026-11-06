@@ -35,7 +35,7 @@ from talkgenerator.llm.base import ProviderError, TextProvider
 from talkgenerator.llm.providers import NoneProvider
 from talkgenerator.models.plan import SlidePlan, TalkPlan
 from talkgenerator.plan import languages
-from talkgenerator.plan.kinds import Recipe, TextField
+from talkgenerator.plan.kinds import PRESENTER_JOB, TALK_TITLE, Recipe
 from talkgenerator.plan.prompt import PlannedSlide, slide_plan, talk_request
 from talkgenerator.plan.realize import ATTEMPTS, clean_text, realize
 from talkgenerator.plan.stream import ObjectReader
@@ -76,9 +76,6 @@ class _NeedsWork:
 
 
 _NEEDS_WORK = _NeedsWork()
-
-_TALK_TITLE = TextField("title", "the talk's title", 80)
-_PRESENTER_JOB = TextField("presenter_job", "the presenter's job", 40)
 
 
 @dataclass
@@ -135,7 +132,7 @@ class _PlannedTalk:
 
     @property
     def title(self) -> str | None:
-        return clean_text(self.spine.get("title"), _TALK_TITLE)
+        return clean_text(self.spine.get("title"), TALK_TITLE, self.language)
 
     def take(self, key: str, value: Any) -> None:
         """A part of the model's answer: the spine, or a slide (whose first attempt then starts, in parallel)."""
@@ -450,7 +447,7 @@ class PresentationSchema:
     def _planned_title_slide(
         slide_nr: int, generator: SlideGeneratorData, talk: "_PlannedTalk", title: str, presenter: str | None
     ) -> _WorkedOutSlide:
-        job = clean_text(talk.spine.get("presenter_job"), _PRESENTER_JOB)
+        job = clean_text(talk.spine.get("presenter_job"), PRESENTER_JOB, talk.language)
         thesis = talk.spine.get("thesis")
         slide, texts = _title_slide(title, presenter, job, thesis, talk.rngs[slide_nr], talk.language)
         return _WorkedOutSlide(slide_nr, generator, slide, texts)
@@ -500,7 +497,7 @@ class PresentationSchema:
         kind this schema has no slides of). Like the other talks, the same seed gives the same deck, in parallel or
         not, as long as the sources give the same answers."""
         num_slides = 1 + len(plan.slides)
-        title = clean_text(plan.title, _TALK_TITLE) or plan.topic
+        title = clean_text(plan.title, TALK_TITLE, plan.language) or plan.topic
         slide_deck = SlideDeck(
             num_slides,
             title=title,
@@ -510,7 +507,7 @@ class PresentationSchema:
             language=plan.language,
         )
         state = _DeckState()
-        job = clean_text(plan.presenter_job, _PRESENTER_JOB)
+        job = clean_text(plan.presenter_job, PRESENTER_JOB, plan.language)
         title_slide, title_texts = _title_slide(
             title, presenter, job, plan.thesis, rng.child("slide", 0, "planned"), plan.language
         )

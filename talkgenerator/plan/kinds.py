@@ -174,6 +174,12 @@ def _chart_correlation(texts: Mapping[str, str | None], images: Mapping[str, Any
 
 _OPTIONAL_TITLE = TextField("title", "the slide's title", 60, optional=True)
 
+# The talk's own texts, on its title slide: "By <presenter>, <job>" under the title
+TALK_TITLE: Final = TextField("title", "the talk's title", 80)
+PRESENTER_JOB: Final = TextField(
+    "presenter_job", "the presenter's grand, made-up job, such as 'Professor of Applied Sock Theory'", 50
+)
+
 KINDS: Final[dict[str, Kind]] = {
     kind.name: kind
     for kind in (

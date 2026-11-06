@@ -100,6 +100,12 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
 
 ### Fixed
 
+- Texts that a language model or a plan writes a little longer than their limit (by up to an eighth) stay whole,
+  and a text that has to be cut no longer ends on a little word, as in "Cats were the true scholars of the" (in
+  every language, with NLTK's stopword lists). The presenter's job may be 50 characters (was 40), and the prompt
+  asks for the title and the job in the talk's language: the free models wrote them in English, after the
+  English example. Gif slides no longer all get the teaser "Look at this", which the free models took from the
+  prompt's example.
 - Gif slides show gifs that move. Their Reddit search takes only animated posts (gif subreddits hold photos
   too), an Imgur `.gifv` without Reddit's animated copy comes from Imgur itself instead of as Reddit's still of
   its first frame, and gifs of up to 16 MB (was 8) are used, as many good ones are 10 to 16 MB.

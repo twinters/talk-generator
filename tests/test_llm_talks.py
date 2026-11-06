@@ -547,10 +547,34 @@ def test_a_value_that_doesnt_parse_is_left_out():
 def test_slide_texts_are_cleaned_up():
     field = TextField("caption", "a caption", 20)
     assert clean_text('  "Expectation"\n', field) == "Expectation"
-    assert clean_text("A caption that is far too long to fit", field) == "A caption that is"
+    assert clean_text("A caption that is far too long to fit", field) == "A caption"  # not "A caption that is"
     assert clean_text("About {seed.plural}", field) is None
     assert clean_text("   ", field) is None
     assert clean_text(42, field) is None
+
+
+def test_a_text_thats_cut_ends_on_a_word_that_matters():
+    caption = TextField("caption", "a caption", 40)
+    # A little too long is fine: up to an eighth more (here 45 characters) stays whole
+    assert clean_text("Cats were the true scholars of the abbey", caption) == "Cats were the true scholars of the abbey"
+    assert clean_text("Cats were the true scholars of the Middle Ages", caption) == "Cats were the true scholars"
+    assert (
+        clean_text("The abbot was the first time traveler, obviously so", caption)
+        == "The abbot was the first time traveler"
+    )
+    dutch = "De kat was de ware geleerde van de Middeleeuwen"
+    assert clean_text(dutch, TextField("caption", "a caption", 35), "nl") == "De kat was de ware geleerde"
+    assert clean_text("Supercalifragilisticexpialidocious", TextField("word", "a word", 10)) == "Supercalif"
+
+
+def test_the_spine_is_in_the_talks_language():
+    planned = [prompt.PlannedSlide(2, "Fake", Recipe("chart_yes_no"), "cat")]
+    schema = prompt.response_schema(planned, "nl")
+    assert "in Dutch" in schema["properties"]["presenter_job"]["description"]
+    assert "in Dutch" in schema["properties"]["title"]["description"]
+    request = prompt.talk_request(["cat"], planned, random_util.Rng(1), "nl")
+    assert "- presenter_job: the presenter's grand, made-up job, such as" in request.messages[0].content
+    assert "in Dutch (at most 50 characters)" in request.messages[0].content
 
 
 def test_a_deck_from_an_llm_talk_renders(schema):

@@ -35,7 +35,7 @@ Images: `image`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `full-screen-gif` | A gif, filling the slide | `title`: a short teaser such as 'Look at this' or 'Brace yourselves', or empty for none; tags: full_image, gif |
+| `full-screen-gif` | A gif, filling the slide | `title`: two to four words of your own that build up to the gif, or empty for none; tags: full_image, gif |
 | `full-screen-meme` | A meme, filling the slide | shows no `title`; tags: full_image, meme |
 | `full-screen-neutral-images` | A photo, filling the slide | the default; tags: full_image, neutral |
 | `reddit-chart` | A chart, filling the slide | shows no `title`; tags: chart |

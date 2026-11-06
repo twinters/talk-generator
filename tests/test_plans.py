@@ -160,7 +160,7 @@ def test_nothing_is_saved_over_the_plan(schema, tmp_path, capsys):
 def test_a_title_or_job_thats_too_long_is_cut(schema, tmp_path):
     plan = _plan(CHART).model_copy(update={"presenter_job": "Professor " * 10})
     report = _render(plan, tmp_path)
-    assert report["notes"] == ["the presenter_job has more than 40 characters, so it was cut off"]
+    assert report["notes"] == ["the presenter_job has more than 50 characters, so it was cut off"]
 
 
 def test_the_report_says_what_doesnt_show_up_as_written(schema, tmp_path):

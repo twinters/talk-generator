@@ -15,7 +15,7 @@ from typing import Any, Final
 from talkgenerator.llm.base import Message, TextRequest
 from talkgenerator.models.plan import SlidePlan
 from talkgenerator.plan import languages
-from talkgenerator.plan.kinds import KINDS, Recipe, TextField
+from talkgenerator.plan.kinds import KINDS, PRESENTER_JOB, TALK_TITLE, Recipe, TextField
 from talkgenerator.util import random_util
 
 SYSTEM_PROMPT: Final = """\
@@ -88,14 +88,18 @@ class PlannedSlide:
         return f"slide_{self.number}"
 
 
-# The talk's spine, which the answer starts with
-SPINE: Final = {
-    "safe_topic": "false if the topic asks for something hateful or harmful, true otherwise",
-    "thesis": "the talk's thesis, its absurd claim in one sentence (not shown)",
-    "title": "the talk's title (at most 80 characters)",
-    "presenter_job": "the presenter's grand, made-up job, for the title slide, such as 'Professor of Applied Sock "
-    "Theory' (at most 40 characters)",
-}
+def spine(language: str = "en") -> dict[str, str]:
+    """The talk's spine, which the answer starts with: what to write in each of its fields."""
+    name = languages.language(language).name
+    return {
+        "safe_topic": "false if the topic asks for something hateful or harmful, true otherwise",
+        "thesis": "the talk's thesis, its absurd claim in one sentence (not shown)",
+        "title": f"{TALK_TITLE.description}, in {name} (at most {TALK_TITLE.max_length} characters)",
+        "presenter_job": f"{PRESENTER_JOB.description}, for the title slide, in {name} (at most "
+        f"{PRESENTER_JOB.max_length} characters)",
+    }
+
+
 # What a slide is about: when its images can't be found, it's searched for instead
 CONCEPT: Final = (
     "the slide's subject in two to five words, such as 'volcano worship in medieval Iceland' (not its kind)"
@@ -121,7 +125,7 @@ def talk_request(
         f"The angle: {angle}",
         "",
         "Write the talk as one JSON object. First its spine:",
-        *(f"- {name}: {description}" for name, description in SPINE.items()),
+        *(f"- {name}: {description}" for name, description in spine(language).items()),
         "",
         "Then every slide, in order (slide 1, the title slide, is made from the spine), each with its texts, a search "
         f"query for each of its images, and its concept: {CONCEPT}.",
@@ -136,17 +140,17 @@ def talk_request(
         purpose="talk plan",
         system=SYSTEM_PROMPT,
         messages=(Message(role="user", content="\n".join(lines)),),
-        json_schema=response_schema(planned),
+        json_schema=response_schema(planned, language),
         max_output_tokens=1000 + 300 * len(planned),
     )
 
 
-def response_schema(planned: list[PlannedSlide]) -> dict[str, Any]:
+def response_schema(planned: list[PlannedSlide], language: str = "en") -> dict[str, Any]:
     """The JSON Schema of the answer: every property required, nothing else allowed (as strict structured outputs
     want), the spine first and the slides in order."""
     properties: dict[str, Any] = {
         name: {"type": "boolean" if name == "safe_topic" else "string", "description": description}
-        for name, description in SPINE.items()
+        for name, description in spine(language).items()
     }
     for slide in planned:
         properties[slide.key] = slide_schema(slide.recipe)

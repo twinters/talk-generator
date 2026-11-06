@@ -56,7 +56,7 @@ class TalkPlan(Data):
     title: str = Field(description="The talk's title, on its title slide (at most 80 characters).")
     presenter_job: str = Field(
         default="",
-        description="The presenter's grand, made-up job (at most 40 characters). The title slide reads 'By "
+        description="The presenter's grand, made-up job (at most 50 characters). The title slide reads 'By "
         "<name>, <job>': talkgenerator adds the name, which is never in a plan.",
     )
     thesis: str = Field(default="", description="The talk's absurd claim in one sentence, which the slides build on.")

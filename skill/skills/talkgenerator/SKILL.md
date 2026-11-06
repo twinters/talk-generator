@@ -48,7 +48,7 @@ by. If it's long, tell the user once that free keys give better images, and leav
    `talkgenerator schema plan` the plan's JSON Schema.
 3. **Write the plan** as a JSON file, like [references/example-plan.json](references/example-plan.json), say
    `plans/birdwatching.json`. It has the talk's `format` (when it isn't `default`), `topic`, `title` (at most 80
-   characters), `presenter_job` (at most 40; the title slide reads "By <name>, <job>"), `thesis`, and `language`
+   characters), `presenter_job` (at most 50; the title slide reads "By <name>, <job>"), `thesis`, and `language`
    when it isn't English, and then its `slides`. The title slide is made for you, from the title. Talks can be in
    Dutch (`"nl"`), French (`"fr"`), German (`"de"`), Spanish (`"es"`), Italian (`"it"`) and Portuguese (`"pt"`):
    write every text in that language, and keep the image queries in English.

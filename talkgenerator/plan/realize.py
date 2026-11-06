@@ -16,19 +16,29 @@ from talkgenerator.models.plan import SlidePlan
 from talkgenerator.plan import languages
 from talkgenerator.plan.kinds import KINDS, Recipe, TextField
 from talkgenerator.slide.slides import Slide
-from talkgenerator.util import generator_util, os_util, random_util
+from talkgenerator.util import generator_util, language_util, os_util, random_util
 
 # The first attempt searches with the plan's queries, the second tries other images for them, and the last searches
 # for the slide's concept for the images whose queries find nothing
 ATTEMPTS: Final = 3
 
 _QUOTE_MARKS: Final = "\"'“”‘’«»"
+# What a cut may leave at the end of a text, besides little words: punctuation that leads on to more
+_DANGLING: Final = ",;:-–—([{/&+ "
 
 
-def clean_text(value: Any, text_field: TextField) -> str | None:
-    """The text as it goes on a slide: on one line, without wrapping quote marks, at most the field's length (cut
-    between words), or the option it names when the field is a choice. None when it's empty, names no option, or
-    holds bits of templates or code."""
+def length_limit(text_field: TextField) -> int:
+    """How long a text of the field may be before it's cut: a little longer than the field's length (by an eighth,
+    or at least four characters), as a few characters too many rarely spoil a slide, and a phrase cut off always
+    does."""
+    return text_field.max_length + max(4, text_field.max_length // 8)
+
+
+def clean_text(value: Any, text_field: TextField, language: str = "en") -> str | None:
+    """The text as it goes on a slide: on one line, without wrapping quote marks, and cut to the field's length when
+    it's longer than its length_limit (between words, and not after a little word of its language, such as "the"),
+    or the option it names when the field is a choice. None when it's empty, names no option, or holds bits of
+    templates or code."""
     if not isinstance(value, str):
         return None
     if text_field.options:
@@ -36,10 +46,30 @@ def clean_text(value: Any, text_field: TextField) -> str | None:
     text = " ".join(value.split()).strip(_QUOTE_MARKS + " ")
     if not text or leftovers_in(text):
         return None
-    if len(text) > text_field.max_length:
-        cut = text[: text_field.max_length + 1].rsplit(" ", 1)[0].rstrip(",;:-–— ")
-        text = cut or text[: text_field.max_length]
+    if len(text) > length_limit(text_field):
+        text = _cut(text, text_field.max_length, language)
     return text
+
+
+def _cut(text: str, length: int, language: str) -> str:
+    """The text cut to its length between words, without the little words and punctuation that a cut leaves
+    hanging at its end (as in "Cats were the true scholars of the")."""
+    head = text[: length + 1]
+    if " " not in head:  # one long word
+        return text[:length]
+    words = head.rsplit(" ", 1)[0].split()
+    little = _little_words(language)
+    while len(words) > 1 and words[-1].strip(_DANGLING + _QUOTE_MARKS + ".!?").lower() in little | {""}:
+        words.pop()
+    cut = " ".join(words).rstrip(_DANGLING)
+    return cut or text[:length]
+
+
+def _little_words(language: str) -> frozenset[str]:
+    try:
+        return language_util.stopwords(languages.language(language).stopwords)
+    except (LookupError, OSError, ValueError):  # NLTK's lists can't be had: cut between words only
+        return frozenset()
 
 
 def option_of(value: str, text_field: TextField) -> str | None:
@@ -68,6 +98,7 @@ def realize(
     puts that file on the slide: for plans that people or agents write, never for what a language model wrote."""
     kind = KINDS[recipe.kind]
     concept = plan.concept.strip() or str(presentation_context.get("seed") or "")
+    language = presentation_context.get("language", "en")
     with random_util.use(rng.child("attempt", attempt)):
         texts: dict[str, str | None] = {}
         for text_field in kind.texts:
@@ -76,11 +107,12 @@ def realize(
                 texts[name] = None
                 continue
             if name in recipe.texts_from:
-                texts[name] = clean_text(recipe.texts_from[name]({**presentation_context, "seed": concept}), text_field)
+                found = recipe.texts_from[name]({**presentation_context, "seed": concept})
+                texts[name] = clean_text(found, text_field, language)
                 why = f"{name}: talkgenerator found none about {concept!r}"
             else:
                 value = plan.texts.get(name)
-                texts[name] = clean_text(value, text_field)
+                texts[name] = clean_text(value, text_field, language)
                 written = isinstance(value, str) and value.strip()
                 why = f"{name}: not written" if not written else f"{name}: holds template code ({value!r})"
             if texts[name] is None and not text_field.optional:
@@ -109,7 +141,7 @@ def realize(
             images[slot] = found.found_with(queries[slot]) if isinstance(found, ImageData) else found
 
         try:
-            slide = kind.build(texts, images, languages.language(presentation_context.get("language", "en")))
+            slide = kind.build(texts, images, languages.language(language))
         except (ValueError, KeyError) as error:
             _note(problems, str(error))
             return None

@@ -35,8 +35,8 @@ from talkgenerator.datastructures.slide_generator_data import SlideGeneratorData
 from talkgenerator.models.deck import Deck, ImageElement, TextElement
 from talkgenerator.models.plan import SlidePlan, TalkPlan
 from talkgenerator.plan import languages
-from talkgenerator.plan.kinds import KINDS, Recipe, TextField
-from talkgenerator.plan.realize import option_of
+from talkgenerator.plan.kinds import KINDS, PRESENTER_JOB, TALK_TITLE, Recipe, TextField
+from talkgenerator.plan.realize import length_limit, option_of
 from talkgenerator.schema.presentation_schema import PlanOutcome, PresentationSchema
 from talkgenerator.slide.slide_deck import SlideDeck
 from talkgenerator.util import os_util, random_util
@@ -171,7 +171,7 @@ def plan_warnings(slide: SlidePlan, recipe: Recipe) -> list[str]:
                 f"{name} is none of {_listed(text_field.options)}, so "
                 + ("talkgenerator picked one" if text_field.optional else "the slide can't be made")
             )
-        elif len(" ".join(value.split())) > text_field.max_length:
+        elif len(" ".join(value.split())) > length_limit(text_field):
             warnings.append(f"{name} has more than {text_field.max_length} characters, so it was cut off")
     for slot, query in slide.images.items():
         if slot not in kind.images:
@@ -278,9 +278,9 @@ def render_plan(
         "checks": [asdict(finding) for finding in check_deck(deck)],
         "sources_without_keys": settings.sources_without_keys(),
     }
-    for name, limit in (("title", 80), ("presenter_job", 40)):
-        if len(" ".join(getattr(plan, name).split())) > limit:
-            notes.append(f"the {name} has more than {limit} characters, so it was cut off")
+    for text_field in (TALK_TITLE, PRESENTER_JOB):
+        if len(" ".join(getattr(plan, text_field.name).split())) > length_limit(text_field):
+            notes.append(f"the {text_field.name} has more than {text_field.max_length} characters, so it was cut off")
     if notes:
         report["notes"] = notes
     return report
