@@ -112,6 +112,13 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   would, with a still of the gif as its poster frame. A deck's image names the video in `video_url` (a renderer
   that plays no videos shows the still), and gifs of up to 16 MB stay gifs. A file that's too large is now turned
   down as soon as its host says how large it is, instead of after downloading up to 25 MB of it.
+- Two new kinds of slide, drawn as PowerPoint shapes instead of images, so they need no image source: a Venn
+  diagram, two or three see-through circles with a label each and the punchline where they overlap ("Things I
+  love" and "Things that love me back": "Cheese"), and a 2×2 matrix, two axes with a title at each end, a label in
+  each quadrant and one named dot as the punchline. The punchline appears on a click. Both come out the classic
+  way too, from the words that ConceptNet (or Datamuse) relates to the slide's seed, and a talk has at most one of
+  each. A deck holds them as diagram elements (`VennDiagram` and `MatrixDiagram` on a `diagram` slide), which the
+  checks read for gaps and template leftovers.
 - `talkgenerator login openrouter`: sign in to OpenRouter in the browser (OAuth with PKCE), and talkgenerator gets
   a key of its own, which it keeps in the user's config folder (readable only by the user), so OpenRouter's free
   models write talks without an `OPENROUTER_API_KEY`. `--headless` signs in on a computer without a browser,

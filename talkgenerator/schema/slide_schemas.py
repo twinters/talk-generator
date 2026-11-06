@@ -7,7 +7,7 @@ from talkgenerator.plan.kinds import Recipe, Variant
 from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema.registry import Registry
 from talkgenerator.slide import slide_generator_types
-from talkgenerator.sources import chart
+from talkgenerator.sources import chart, diagram
 from talkgenerator.util.generator_util import CombinedGenerator, NoneGenerator
 
 # ==============================
@@ -670,6 +670,38 @@ chart_slide_generators = (
     + own_chart_generators
 )
 
+# DIAGRAMS: drawn as shapes, so they need no images (and fit every format)
+diagram_slide_generators = _register(
+    "diagram",
+    [
+        SlideGeneratorData(
+            slide_generator_types.DiagramSlideGenerator(diagram.generate_venn),
+            allowed_repeated_elements=4,
+            retries=1,
+            weight_function=ConstantWeightFunction(1),
+            tags=["venn_diagram", "diagram"],
+            name="Venn Diagram",
+            llm=Recipe(
+                "venn",
+                brief="A Venn diagram about the concept: groups of things that seem to have nothing in common, and "
+                "what they share, as the punchline",
+            ),
+        ),
+        SlideGeneratorData(
+            slide_generator_types.DiagramSlideGenerator(diagram.generate_matrix),
+            allowed_repeated_elements=4,
+            retries=1,
+            weight_function=ConstantWeightFunction(1),
+            tags=["matrix_diagram", "diagram"],
+            name="2x2 Matrix",
+            llm=Recipe(
+                "matrix",
+                brief="A 2×2 matrix about the concept along two odd axes, with one surprising dot as the punchline",
+            ),
+        ),
+    ],
+)
+
 # CONCLUSIONS
 conclusion_slide_generators = _register(
     "conclusion",
@@ -765,6 +797,7 @@ all_slide_generators = (
     + statement_slide_generators
     + captioned_images_slide_generators
     + chart_slide_generators
+    + diagram_slide_generators
     + conclusion_slide_generators
 )
 
@@ -777,6 +810,8 @@ default_max_allowed_tags = {
     "location_chart": 1,
     "trend_chart": 1,
     "bar_chart": 1,
+    "venn_diagram": 1,
+    "matrix_diagram": 1,
     # Relative (procentual) maxima
     "two_captions": 0.2,
     "three_captions": 0.2,

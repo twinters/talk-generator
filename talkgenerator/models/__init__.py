@@ -9,12 +9,15 @@ from talkgenerator.models.deck import (
     CreditPart,
     Deck,
     DeckSlide,
+    DiagramElement,
     ImageAsset,
     ImageElement,
+    MatrixDiagram,
     ShapeElement,
     SlideBackground,
     TextElement,
     TextStyle,
+    VennDiagram,
 )
 from talkgenerator.models.theme import Fonts, Palette, Theme
 from talkgenerator.models.usage import Usage
@@ -28,9 +31,11 @@ __all__ = [
     "CreditPart",
     "Deck",
     "DeckSlide",
+    "DiagramElement",
     "ImageAsset",
     "Fonts",
     "ImageElement",
+    "MatrixDiagram",
     "Palette",
     "ShapeElement",
     "SlideBackground",
@@ -38,4 +43,5 @@ __all__ = [
     "TextStyle",
     "Theme",
     "Usage",
+    "VennDiagram",
 ]

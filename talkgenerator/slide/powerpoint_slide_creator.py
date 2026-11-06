@@ -9,7 +9,7 @@ from lxml.etree import XMLSyntaxError
 from pptx.presentation import Presentation
 
 from talkgenerator.datastructures.image_data import CreditPart, ImageData
-from talkgenerator.render import animation
+from talkgenerator.render import animation, diagrams
 from talkgenerator.util import http_util, image_util, os_util
 
 # Location of powerpoint template
@@ -317,4 +317,16 @@ def create_chart_slide(prs, title, chart_type, chart_data, chart_modifier=None):
     chart = _add_chart(slide, 10, chart_type, chart_data).chart
     if chart_modifier:
         chart_modifier(chart, chart_data)
+    return slide
+
+
+def create_diagram_slide(prs, title, diagram):
+    """A diagram (a deck's VennDiagram or MatrixDiagram), drawn as shapes where the title and content layout has its
+    content."""
+    slide = _create_slide(prs, LAYOUT_TITLE_AND_CONTENT)
+    _add_title(slide, title)
+    content = slide.placeholders[1]
+    frame = diagrams.Box(content.left, content.top, content.width, content.height)
+    _remove_shape(content)
+    diagrams.draw_diagram(slide, frame, diagram)
     return slide

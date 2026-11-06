@@ -69,6 +69,8 @@ _DEFAULT_RECIPES: Final = {
     "chart_correlation": ("correlation-curve",),
     "chart_trend": ("trend-chart",),
     "chart_bars": ("bar-ranking",),
+    "venn": ("venn-diagram",),
+    "matrix": ("2x2-matrix",),
 }
 _COPYRIGHT_FREE: Final = re.compile(r"-crf$|copyright-free")
 PLANNABLE_KINDS: Final = tuple(name for name in KINDS if name != "title")

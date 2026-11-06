@@ -76,7 +76,7 @@ class Slide:
         return self._deck_slide(tuple(elements))
 
     def _deck_slide(
-        self, elements: tuple[model.TextElement | model.ImageElement | model.ChartElement, ...]
+        self, elements: tuple[model.TextElement | model.ImageElement | model.ChartElement | model.DiagramElement, ...]
     ) -> model.DeckSlide:
         credits = tuple(tuple(model.CreditPart(text=text, url=url) for text, url in credit) for credit in self._credits)
         return model.DeckSlide(
@@ -300,4 +300,27 @@ class ChartSlide(Slide):
             )
             chart = charts.with_point_labels(chart, self._arguments.get("point_labels") or ())
             elements.append(model.ChartElement(role="chart", chart=chart))
+        return self._deck_slide(tuple(elements))
+
+
+class DiagramSlide(Slide):
+    """A diagram drawn as shapes, under a title: a Venn diagram or a 2×2 matrix (see talkgenerator.render.diagrams)."""
+
+    required_arguments = ("diagram",)
+
+    def __init__(self, title: str | None, diagram: model.VennDiagram | model.MatrixDiagram | None):
+        super().__init__(
+            type_name="diagram",
+            ppt_slide_creator=powerpoint_slide_creator.create_diagram_slide,
+            arguments={"title": title, "diagram": diagram},
+        )
+
+    def to_deck_slide(self) -> model.DeckSlide:
+        elements: list[model.TextElement | model.ImageElement | model.ChartElement | model.DiagramElement] = []
+        title = _to_element("title", self._arguments.get("title"), "contain")
+        if title is not None:
+            elements.append(title)
+        diagram = self._arguments.get("diagram")
+        if diagram is not None:
+            elements.append(model.DiagramElement(role="diagram", diagram=diagram))
         return self._deck_slide(tuple(elements))

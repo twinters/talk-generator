@@ -17,9 +17,10 @@ from typing import Any, Final
 from pptx.chart.data import ChartData, XyChartData
 from pptx.enum.chart import XL_CHART_TYPE
 
+from talkgenerator.models.deck import MatrixDiagram, VennDiagram
 from talkgenerator.plan.languages import Language
 from talkgenerator.slide import slides
-from talkgenerator.sources import chart
+from talkgenerator.sources import chart, diagram
 from talkgenerator.util import random_util
 
 
@@ -211,6 +212,39 @@ def _chart_correlation(texts: Mapping[str, str | None], images: Mapping[str, Any
     )
 
 
+def _venn(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    circles = tuple(text for text in (texts["circle_1"], texts["circle_2"], texts.get("circle_3")) if text)
+    return slides.DiagramSlide(
+        texts["title"], VennDiagram(circles=circles, overlap=texts["overlap"] or "", reveal="punchline")
+    )
+
+
+def _matrix(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    # The dot goes in the quadrant the plan says (or a random one)
+    dot_x, dot_y = diagram.dot_position(texts.get("dot_quadrant"))
+    return slides.DiagramSlide(
+        texts["title"],
+        MatrixDiagram(
+            x_left=texts["x_left"] or "",
+            x_right=texts["x_right"] or "",
+            y_bottom=texts["y_bottom"] or "",
+            y_top=texts["y_top"] or "",
+            top_left=texts["top_left"] or "",
+            top_right=texts["top_right"] or "",
+            bottom_left=texts["bottom_left"] or "",
+            bottom_right=texts["bottom_right"] or "",
+            dot=texts["dot"] or "",
+            dot_x=dot_x,
+            dot_y=dot_y,
+            reveal="punchline",
+        ),
+    )
+
+
+def _quadrant(corner: str, ends: str) -> TextField:
+    return TextField(corner.replace(" ", "_"), f"the label of the {corner} quadrant: what is {ends}", 30)
+
+
 _NUMBER: Final = re.compile(r"[-+]?\d+(?:[.,]\d+)?\s*%?")
 _OPTIONAL_TITLE = TextField("title", "the slide's title", 60, optional=True)
 
@@ -362,6 +396,55 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             (),
             _chart_bars,
+        ),
+        # (No examples in these descriptions either: the free models copy them)
+        Kind(
+            "venn",
+            "A Venn diagram: two or three circles of things, each with a label, and what's in all of them at once, "
+            "the punchline, which appears on a click.",
+            (
+                TextField("title", "the diagram's title", 60),
+                TextField("circle_1", "the first circle's label: a group of things", 30),
+                TextField(
+                    "circle_2",
+                    "the second circle's label: a group of things that seems to have nothing to do with the first",
+                    30,
+                ),
+                TextField("circle_3", "a third circle's label: another such group", 30, optional=True),
+                TextField("overlap", "the one thing that is in all the circles at once: the punchline", 30),
+            ),
+            (),
+            _venn,
+        ),
+        Kind(
+            "matrix",
+            "A 2×2 matrix: two axes that cross in the middle, with a title at each end, a label in each quadrant, and "
+            "one dot with a name, the punchline, which appears on a click.",
+            (
+                TextField("title", "the matrix's title", 60),
+                TextField("x_left", "the title at the left end of the axis along the bottom", 30),
+                TextField("x_right", "the title at the right end of that axis: the opposite of the left end", 30),
+                TextField("y_bottom", "the title at the bottom end of the axis going up", 30),
+                TextField("y_top", "the title at the top end of that axis: the opposite of the bottom end", 30),
+                _quadrant("top left", "both like the top end and like the left end"),
+                _quadrant("top right", "both like the top end and like the right end"),
+                _quadrant("bottom left", "both like the bottom end and like the left end"),
+                _quadrant("bottom right", "both like the bottom end and like the right end"),
+                TextField(
+                    "dot",
+                    "the name of a dot in one of the quadrants: someone or something surprising there, the punchline",
+                    30,
+                ),
+                TextField(
+                    "dot_quadrant",
+                    "the quadrant the dot is in, the most surprising one for it",
+                    12,
+                    optional=True,
+                    options=diagram.QUADRANTS,
+                ),
+            ),
+            (),
+            _matrix,
         ),
     )
 }

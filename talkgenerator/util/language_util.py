@@ -294,6 +294,19 @@ def is_place(word: str) -> bool:
     return bool(categories & _PLACE_CATEGORIES)
 
 
+@lru_cache(maxsize=2048)
+def is_adjective(word: str) -> bool:
+    """Whether WordNet knows the word (or phrase) as an adjective, such as "fluffy" or "salted" (and not "day"). True
+    when WordNet isn't available, as it can't tell."""
+    from nltk.corpus import wordnet
+
+    try:
+        return bool(wordnet.synsets(word.strip().replace(" ", "_"), pos=wordnet.ADJ))
+    except LookupError:
+        logger.warning("WordNet is not available; can't recognise adjectives")
+        return True
+
+
 # Special operators
 
 

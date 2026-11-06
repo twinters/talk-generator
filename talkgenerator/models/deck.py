@@ -28,6 +28,8 @@ ImageFit = Literal["contain", "cover"]
 ChartType = Literal["pie", "doughnut", "column", "bar", "line", "scatter"]
 # How a chart appears: all at once, or the series after the first on clicks, one by one
 ChartReveal = Literal["all", "series"]
+# How a diagram appears: all at once, or without its punchline, which appears on a click
+DiagramReveal = Literal["all", "punchline"]
 TextAlign = Literal["left", "center", "right"]
 TextAnchor = Literal["top", "middle", "bottom"]
 ShapeKind = Literal["rectangle", "ellipse"]
@@ -141,8 +143,74 @@ class SlideBackground(_Data):
     color_2: str | None = None
 
 
-Element = Annotated[TextElement | ImageElement | ChartElement | ShapeElement, Field(discriminator="kind")]
-Content = TextElement | ImageElement | ChartElement | ShapeElement
+class VennDiagram(_Data):
+    """Two or three overlapping circles, each with a label, and a label where they all overlap: the punchline."""
+
+    diagram_type: Literal["venn"] = "venn"
+    circles: tuple[str, ...] = ()  # the circles' labels: two or three
+    overlap: str = ""
+    reveal: DiagramReveal = "all"
+
+    def labels(self) -> tuple[tuple[str, str], ...]:
+        """Its texts, each with what it is."""
+        return (
+            *((f"circle {number}", label) for number, label in enumerate(self.circles, 1)),
+            ("overlap", self.overlap),
+        )
+
+
+class MatrixDiagram(_Data):
+    """A 2×2 matrix: two axes that cross in its middle, with a title at each end, a label in each quadrant, and one
+    dot with a name, the punchline."""
+
+    diagram_type: Literal["matrix"] = "matrix"
+    # The titles at the ends of the axes: of the one along the bottom (left and right), and of the one going up
+    x_left: str = ""
+    x_right: str = ""
+    y_bottom: str = ""
+    y_top: str = ""
+    top_left: str = ""
+    top_right: str = ""
+    bottom_left: str = ""
+    bottom_right: str = ""
+    dot: str = ""
+    # Where the dot is, along each axis: from its left end (0) to its right end (1), and from the bottom (0) to the top
+    # (1); the axes cross at 0.5
+    dot_x: float = Field(0.5, ge=0, le=1)
+    dot_y: float = Field(0.5, ge=0, le=1)
+    reveal: DiagramReveal = "all"
+
+    def labels(self) -> tuple[tuple[str, str], ...]:
+        """Its texts, each with what it is."""
+        return (
+            ("left end", self.x_left),
+            ("right end", self.x_right),
+            ("bottom end", self.y_bottom),
+            ("top end", self.y_top),
+            ("top left quadrant", self.top_left),
+            ("top right quadrant", self.top_right),
+            ("bottom left quadrant", self.bottom_left),
+            ("bottom right quadrant", self.bottom_right),
+            ("dot", self.dot),
+        )
+
+
+Diagram = Annotated[VennDiagram | MatrixDiagram, Field(discriminator="diagram_type")]
+
+
+class DiagramElement(_Data):
+    """A diagram drawn as shapes, so it needs no image source and looks the same wherever the deck is shown."""
+
+    kind: Literal["diagram"] = "diagram"
+    role: str
+    diagram: Diagram
+    box: Box | None = None
+
+
+Element = Annotated[
+    TextElement | ImageElement | ChartElement | DiagramElement | ShapeElement, Field(discriminator="kind")
+]
+Content = TextElement | ImageElement | ChartElement | DiagramElement | ShapeElement
 
 
 class DeckSlide(_Data):

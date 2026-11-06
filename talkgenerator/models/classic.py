@@ -31,6 +31,8 @@ CLASSIC_ROLES: Final[dict[str, dict[str, str]]] = {
         "image_or_text_3": "content_3",
     },
     "chart": {"title": "title", "chart_data": "chart"},
+    # (New in v5: a Venn diagram or a 2×2 matrix, drawn as shapes where the 2019 template has its content)
+    "diagram": {"title": "title", "diagram": "diagram"},
 }
 
 # The roles a slide of each type can't do without: its Slide class's required_arguments, as roles
@@ -42,6 +44,7 @@ REQUIRED_ROLES: Final[dict[str, tuple[str, ...]]] = {
     "two_column_image": ("content_1", "content_2"),
     "three_column_image": ("content_1", "content_2", "content_3"),
     "chart": ("chart",),
+    "diagram": ("diagram",),
 }
 
 # Roles that only ever hold text, even when the text looks like an image's file name

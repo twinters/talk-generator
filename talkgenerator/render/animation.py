@@ -1,9 +1,12 @@
 """Animations on slides, which python-pptx can't make: the timing XML that PowerPoint writes for them.
 
-For now two. A chart whose series after the first appear on clicks, one by one, wiping in from the left: on a trend
-chart, that makes a second line draw itself across the chart as the punchline. And videos that play by themselves as
-their slide comes up, looping and without sound, the way the gifs they stand in for do. In the editor, and in viewers
-that don't play animations, every series simply shows, and a video shows its poster frame.
+For now three:
+- a chart whose series after the first appear on clicks, one by one, wiping in from the left. On a trend chart, that
+  makes a second line draw itself across the chart as the punchline;
+- shapes that fade in together on a click, such as a Venn diagram's overlap, or a matrix's dot with its name;
+- videos that play by themselves as their slide comes up, looping and without sound, the way the gifs they stand in
+  for do.
+In the editor, and in viewers that don't play animations, everything simply shows, and a video shows its poster frame.
 """
 
 from __future__ import annotations
@@ -60,6 +63,31 @@ _SERIES_BUILD: Final = (
     "</p:bldGraphic></p:bldLst>"
 )
 
+# SHAPES
+
+# One click: shapes fade in together in half a second (PowerPoint's preset 10, "Fade"), the first as the click's
+# effect and the others with it
+_SHAPES_CLICK: Final = (
+    '<p:par><p:cTn id="{click}" fill="hold"><p:stCondLst><p:cond delay="indefinite"/></p:stCondLst><p:childTnLst>'
+    '<p:par><p:cTn id="{group}" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>'
+    "{effects}"
+    "</p:childTnLst></p:cTn></p:par>"
+    "</p:childTnLst></p:cTn></p:par>"
+)
+_FADE_IN: Final = (
+    '<p:par><p:cTn id="{effect}" presetID="10" presetClass="entr" presetSubtype="0" fill="hold" grpId="0" '
+    'nodeType="{node}"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>'
+    '<p:set><p:cBhvr><p:cTn id="{show}" dur="1" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst></p:cTn>'
+    '<p:tgtEl><p:spTgt spid="{spid}"/></p:tgtEl>'
+    "<p:attrNameLst><p:attrName>style.visibility</p:attrName></p:attrNameLst></p:cBhvr>"
+    '<p:to><p:strVal val="visible"/></p:to></p:set>'
+    '<p:animEffect transition="in" filter="fade"><p:cBhvr><p:cTn id="{fade}" dur="500"/>'
+    '<p:tgtEl><p:spTgt spid="{spid}"/></p:tgtEl></p:cBhvr></p:animEffect>'
+    "</p:childTnLst></p:cTn></p:par>"
+)
+# A shape that appears as one object, its text with it
+_SHAPE_BUILD: Final = '<p:bldP spid="{spid}" grpId="0" animBg="1"/>'
+
 # VIDEOS
 
 # The step that starts with the main sequence, without a click (cTn 2), and the group of effects in it
@@ -105,6 +133,26 @@ def reveal_chart_series(slide: Any, chart_frame: Any, series_count: int) -> None
         clicks.append(_CLICK.format(click=click, group=group, effect=effect, show=show, wipe=wipe, target=target))
     timing = _TIMING.format(
         namespaces=nsdecls("p", "a"), sequence="".join(clicks), media="", builds=_SERIES_BUILD.format(spid=spid)
+    )
+    _replace_timing(slide, parse_xml(timing))
+
+
+def reveal_shapes(slide: Any, shapes: list[Any]) -> None:
+    """Have the shapes appear together on a click, fading in (the slide gets this as its only animation)."""
+    if not shapes:
+        return
+    ids = itertools.count(5)  # 1 and 2 are the root and the main sequence, 3 and 4 the click and its group
+    effects = []
+    for index, shape in enumerate(shapes):
+        effect, show, fade = (next(ids) for _ in range(3))
+        node = "clickEffect" if index == 0 else "withEffect"
+        effects.append(_FADE_IN.format(effect=effect, node=node, show=show, fade=fade, spid=shape.shape_id))
+    builds = "".join(_SHAPE_BUILD.format(spid=shape.shape_id) for shape in shapes)
+    timing = _TIMING.format(
+        namespaces=nsdecls("p", "a"),
+        sequence=_SHAPES_CLICK.format(click=3, group=4, effects="".join(effects)),
+        media="",
+        builds=f"<p:bldLst>{builds}</p:bldLst>",
     )
     _replace_timing(slide, parse_xml(timing))
 
