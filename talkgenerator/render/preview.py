@@ -14,7 +14,7 @@ import math
 from collections.abc import Mapping
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.design import fit, fonts, treatments
@@ -32,7 +32,7 @@ from talkgenerator.models.deck import (
     TextStyle,
     VennDiagram,
 )
-from talkgenerator.models.theme import Theme
+from talkgenerator.models.theme import TextEffect, Theme
 from talkgenerator.render import diagrams
 from talkgenerator.util import image_util
 
@@ -197,11 +197,120 @@ def _text(canvas: Image.Image, text: str, box: Box, style: TextStyle, scale: flo
     total = line_height * len(lines)
     x0, y0, x1, y1 = (value * scale for value in (box.x, box.y, box.x + box.w, box.y + box.h))
     top = {"top": y0, "middle": y0 + (y1 - y0 - total) / 2, "bottom": y1 - total}[style.anchor]
+    placed = []
     for index, line in enumerate(lines):
         length = draw.textlength(line, font=font)
         left = {"left": x0, "center": x0 + (x1 - x0 - length) / 2, "right": x1 - length}[style.align]
-        y = top + index * line_height + (line_height - style.size * scale) / 2
-        draw.text((left, y), line, fill=style.color, font=font)
+        placed.append((left, top + index * line_height + (line_height - style.size * scale) / 2, line))
+    if style.effect is None:
+        for left, y, line in placed:
+            draw.text((left, y), line, fill=style.color, font=font)
+        return
+    _with_effect(canvas, placed, font, style.color, style.effect, scale, (x0, y0, x1, y1))
+
+
+def _with_effect(
+    canvas: Image.Image,
+    placed: list[tuple[float, float, str]],
+    font: _Font,
+    colour: str,
+    effect: TextEffect,
+    scale: float,
+    area: tuple[float, float, float, float],
+) -> None:
+    """A text's lines with WordArt-style effects, as PowerPoint draws them: its glow and shadow behind it, its
+    outline, its fill (a gradient from the top of the text down, or its colour), all bent into the warp's shape."""
+    mask = Image.new("L", canvas.size, 0)
+    pen = ImageDraw.Draw(mask)
+    for left, y, line in placed:
+        pen.text((left, y), line, fill=255, font=font)
+    layer = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    if effect.glow and effect.glow_radius > 0:
+        radius = max(1, round(effect.glow_radius * scale))
+        glow = mask.filter(ImageFilter.MaxFilter(2 * (radius // 2) + 1)).filter(ImageFilter.GaussianBlur(radius / 2))
+        _paint(layer, glow, effect.glow, 0.6)
+    if effect.shadow:
+        right, down = (round(value * scale) for value in effect.shadow_offset)
+        shadow = Image.new("L", canvas.size, 0)
+        shadow.paste(mask, (right, down))
+        if effect.shadow_blur > 0:
+            shadow = shadow.filter(ImageFilter.GaussianBlur(effect.shadow_blur * scale))
+        _paint(layer, shadow, effect.shadow, effect.shadow_opacity)
+    if effect.outline and effect.outline_width > 0:
+        stroke = Image.new("L", canvas.size, 0)
+        width = max(1, round(effect.outline_width * scale))
+        outline_pen = ImageDraw.Draw(stroke)
+        for left, y, line in placed:
+            outline_pen.text((left, y), line, fill=255, font=font, stroke_width=width, stroke_fill=255)
+        _paint(layer, stroke, effect.outline, 1.0)
+    if effect.fill:
+        top = placed[0][1]
+        bottom = placed[-1][1] + font.size if isinstance(font, ImageFont.FreeTypeFont) else placed[-1][1] + 10
+        layer.paste(_gradient(canvas.size, effect.fill, top, bottom), (0, 0), mask)
+    else:
+        _paint(layer, mask, colour, 1.0)
+    if effect.warp:
+        layer = _warped(layer, area, effect.warp)
+    canvas.alpha_composite(layer)
+
+
+def _paint(layer: Image.Image, mask: Image.Image, colour: str, opacity: float) -> None:
+    tinted = Image.new("RGBA", layer.size, (*_rgb(colour), 0))
+    tinted.putalpha(mask.point(lambda value: round(value * opacity)))
+    layer.alpha_composite(tinted)
+
+
+def _gradient(size: tuple[int, int], stops: tuple[str, ...], top: float, bottom: float) -> Image.Image:
+    """An image of the colours, from the first at the top to the last at the bottom (and beyond)."""
+    colours = [_rgb(stop) for stop in stops]
+    height = max(2, round(bottom - top))
+    column = Image.new("RGB", (1, height))
+    for y in range(height):
+        position = y / (height - 1) * (len(colours) - 1)
+        low = min(int(position), len(colours) - 2) if len(colours) > 1 else 0
+        share = position - low if len(colours) > 1 else 0.0
+        first, second = colours[low], colours[min(low + 1, len(colours) - 1)]
+        column.putpixel((0, y), tuple(round(a + (b - a) * share) for a, b in zip(first, second, strict=True)))
+    image = Image.new("RGBA", size, (*colours[-1], 255))
+    image.paste(Image.new("RGBA", (size[0], max(0, round(top))), (*colours[0], 255)), (0, 0))
+    image.paste(column.resize((size[0], height)), (0, round(top)))
+    return image
+
+
+def _warped(layer: Image.Image, area: tuple[float, float, float, float], warp: str) -> Image.Image:
+    """The layer with what's in the area (and a little around it, for shadows) bent into one of WordArt's shapes, and
+    squeezed first so that it stays in its box, as PowerPoint keeps it: strips of it moved up and down (or stretched,
+    to inflate it)."""
+    margin = 0.08 * (area[2] - area[0])
+    x0, y0 = max(0, round(area[0] - margin)), max(0, round(area[1] - margin))
+    x1, y1 = min(layer.width, round(area[2] + margin)), min(layer.height, round(area[3] + margin))
+    region = layer.crop((x0, y0, x1, y1))
+    width, height = region.size
+    amplitude = 0.12 * (area[3] - area[1])
+    stretch = 1.3  # (how much taller an inflated middle is)
+    room = height / stretch if warp == "inflate" else height - 2 * amplitude
+    squeezed = region.resize((width, max(1, round(room))))
+    bent = Image.new("RGBA", region.size, (0, 0, 0, 0))
+    for x in range(0, width, 2):
+        strip = squeezed.crop((x, 0, min(width, x + 2), squeezed.height))
+        share = (x + 1) / max(1, width)
+        if warp == "inflate":  # taller in the middle
+            tall = strip.resize(
+                (strip.width, max(1, round(squeezed.height * (1 + (stretch - 1) * (1 - (2 * share - 1) ** 2)))))
+            )
+            bent.paste(tall, (x, round((height - tall.height) / 2)), tall)
+            continue
+        if warp == "wave":
+            lift = amplitude * math.sin(2 * math.pi * share)
+        elif warp == "arch":
+            lift = -amplitude * (1 - (2 * share - 1) ** 2)
+        else:  # slant: rising to the right
+            lift = amplitude * (1 - 2 * share)
+        bent.paste(strip, (x, round(amplitude + lift)), strip)
+    result = layer.copy()
+    result.paste((0, 0, 0, 0), (x0, y0, x1, y1))
+    result.alpha_composite(bent, (x0, y0))
+    return result
 
 
 def _chart(canvas: Image.Image, element: ChartElement, scale: float, theme: Theme) -> None:

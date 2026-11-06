@@ -63,6 +63,7 @@ class TextSpec:
     anchor: TextAnchor = "middle"
     heading: bool = False  # bold and in capitals as the theme's headings are
     italic: bool = False
+    on_photo: bool = False  # on a shade or band over a photo, which could be anything
 
 
 SPECS: Final[dict[str, TextSpec]] = {
@@ -70,13 +71,14 @@ SPECS: Final[dict[str, TextSpec]] = {
     "subtitle": TextSpec("body", 52, 30, color="muted", anchor="top"),
     "title": TextSpec("heading", 88, 44, heading=True),
     "side title": TextSpec("heading", 96, 48, align="left", heading=True),
-    "band title": TextSpec("heading", 80, 40, align="center", heading=True),
-    "panel title": TextSpec("heading", 80, 40, align="left", heading=True),
-    "statement": TextSpec("heading", 120, 52, color="light", align="center", heading=True),
-    "statement title": TextSpec("heading", 56, 32, color="light", align="center", heading=True),
-    "left statement": TextSpec("heading", 112, 52, color="light", align="left", heading=True),
-    "left statement title": TextSpec("heading", 56, 32, color="light", align="left", heading=True),
-    "band statement": TextSpec("heading", 96, 44, align="center", heading=True),
+    "band title": TextSpec("heading", 80, 40, align="center", heading=True, on_photo=True),
+    "centred title": TextSpec("heading", 80, 40, align="center", heading=True),
+    "panel title": TextSpec("heading", 80, 40, align="left", heading=True, on_photo=True),
+    "statement": TextSpec("heading", 120, 52, color="light", align="center", heading=True, on_photo=True),
+    "statement title": TextSpec("heading", 56, 32, color="light", align="center", heading=True, on_photo=True),
+    "left statement": TextSpec("heading", 112, 52, color="light", align="left", heading=True, on_photo=True),
+    "left statement title": TextSpec("heading", 56, 32, color="light", align="left", heading=True, on_photo=True),
+    "band statement": TextSpec("heading", 96, 44, align="center", heading=True, on_photo=True),
     "caption": TextSpec("body", 52, 28, align="center", anchor="top"),
     "small caption": TextSpec("body", 44, 26, align="center", anchor="top"),
     "heading caption": TextSpec("body", 52, 28, align="center", anchor="bottom"),  # above its picture
@@ -223,6 +225,9 @@ def _style(text: str, box: Box, spec: TextSpec, theme: Theme) -> TextStyle:
     largest = max(spec.smallest, round(spec.largest * theme.text_scale / fit.STEP) * fit.STEP)
     fitted = fit.fit(text.upper() if uppercase else text, box.w, box.h, font, largest, spec.smallest, bold)
     colors = {"text": theme.palette.text, "muted": theme.palette.muted, "light": LIGHT_TEXT}
+    effect = theme.heading_effect if spec.heading else None
+    if effect is not None and spec.on_photo:  # (over a photo, the text colour reads; a gradient may not)
+        effect = effect.model_copy(update={"fill": ()})
     return TextStyle(
         font=font,
         size=fitted.size,
@@ -232,6 +237,7 @@ def _style(text: str, box: Box, spec: TextSpec, theme: Theme) -> TextStyle:
         uppercase=uppercase,
         align=theme.title_align if spec.align == "title" else spec.align,
         anchor=spec.anchor,
+        effect=effect,
     )
 
 
@@ -521,7 +527,7 @@ def _split(roles: dict[str, Content], theme: Theme) -> _Placement:
     placement = _Placement("v5/columns-2-split", shapes=[panel])
     top = MARGIN
     if "title" in roles:
-        placement.boxes["title"] = (_TITLE, "band title")
+        placement.boxes["title"] = (_TITLE, "centred title")
         placement.shapes += _decoration(theme.model_copy(update={"title_align": "center"}), _TITLE, gap=16)
         top = _CONTENT_TOP
     caption_height = 128

@@ -99,6 +99,11 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   a vignette. Vintage paper goes sepia with grain and polaroids, neon duotone, brutalist black and white, kids
   rounded and polaroid. PowerPoint applies the filters as picture effects, so the deck keeps the original picture
   (and "Reset Picture" brings it back), and previews apply them with Pillow.
+  Headings get WordArt-style effects in some families: 1997 WordArt's rainbow in a black or white outline, with a
+  drop shadow, bent into a wave, an arch, inflated or slanting up; neon's glow; brutalist's hard offset shadow;
+  Comic Sans' light outline on a solid shadow; clip-art corporate's gradient with a soft shadow. PowerPoint draws
+  them as text effects, so the text stays text (and editable), and previews with Pillow. A heading over a photo
+  keeps its theme's text colour, and the design checks accept a text that reads by its outline.
 - Design checks for themed decks (`talkgenerator.checks.design`): every text reads on what's behind it (a photo
   counts as black or white, as shaded), fits its box, isn't too small, stays on the slide and isn't covered by what's
   drawn after it, and no slide has the layout of the slide before it where another fits. On 2,376 themed decks made

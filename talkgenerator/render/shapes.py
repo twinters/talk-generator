@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import io
 import logging
+import math
 from functools import cache
 from typing import Any, Final
 
@@ -40,7 +41,7 @@ from talkgenerator.models.deck import (
     TextElement,
     TextStyle,
 )
-from talkgenerator.models.theme import Theme
+from talkgenerator.models.theme import TextEffect, Theme
 from talkgenerator.render import animation, charts, diagrams
 from talkgenerator.render.powerpoint import ImageStore, image_data
 from talkgenerator.slide import powerpoint_slide_creator as creator
@@ -179,8 +180,62 @@ def _text_box(
         font.color.rgb = _rgb(style.color)
         if style.uppercase:
             run._r.get_or_add_rPr().set("cap", "all")  # shown in capitals, written as it is
+        if style.effect is not None:
+            _text_effect(run, style.effect)
         if url:
             run.hyperlink.address = url
+    if style.effect is not None and style.effect.warp:
+        frame._bodyPr.insert(
+            0, parse_xml(f'<a:prstTxWarp {nsdecls("a")} prst="{_WARPS[style.effect.warp]}"><a:avLst/></a:prstTxWarp>')
+        )
+
+
+# WordArt's shapes, as PowerPoint names them
+_WARPS: Final = {"wave": "textWave1", "arch": "textArchUp", "inflate": "textInflate", "slant": "textSlantUp"}
+
+
+def _text_effect(run: Any, effect: TextEffect) -> None:
+    """A heading's WordArt-style effects on a run of it: its outline, its gradient (instead of its colour), and its
+    glow and shadow, in the order a run's properties have them (before its font)."""
+    properties = run._r.get_or_add_rPr()
+    if effect.outline and effect.outline_width > 0:
+        outline = effect.outline.lstrip("#")
+        properties.insert(
+            0,
+            parse_xml(
+                f'<a:ln {nsdecls("a")} w="{_emu(effect.outline_width)}"><a:solidFill>'
+                f'<a:srgbClr val="{outline}"/></a:solidFill></a:ln>'
+            ),
+        )
+    solid = properties.find(qn("a:solidFill"))
+    if effect.fill and solid is not None:
+        last = max(1, len(effect.fill) - 1)
+        stops = "".join(
+            f'<a:gs pos="{round(100000 * index / last)}"><a:srgbClr val="{stop.lstrip("#")}"/></a:gs>'
+            for index, stop in enumerate(effect.fill)
+        )
+        gradient = parse_xml(
+            f'<a:gradFill {nsdecls("a")} rotWithShape="1"><a:gsLst>{stops}</a:gsLst>'
+            '<a:lin ang="5400000" scaled="0"/></a:gradFill>'  # (from the top down)
+        )
+        solid.addprevious(gradient)
+        properties.remove(solid)
+        solid = gradient
+    effects = ""
+    if effect.glow and effect.glow_radius > 0:
+        glow = effect.glow.lstrip("#")
+        effects += f'<a:glow rad="{_emu(effect.glow_radius)}"><a:srgbClr val="{glow}"><a:alpha val="60000"/></a:srgbClr></a:glow>'
+    if effect.shadow:
+        right, down = effect.shadow_offset
+        direction = round(math.degrees(math.atan2(down, right)) % 360 * 60000)
+        alpha = round(effect.shadow_opacity * 100000)
+        effects += (
+            f'<a:outerShdw blurRad="{_emu(effect.shadow_blur)}" dist="{_emu(math.hypot(right, down))}" '
+            f'dir="{direction}" algn="tl" rotWithShape="0"><a:srgbClr val="{effect.shadow.lstrip("#")}">'
+            f'<a:alpha val="{alpha}"/></a:srgbClr></a:outerShdw>'
+        )
+    if effects and solid is not None:
+        solid.addnext(parse_xml(f"<a:effectLst {nsdecls('a')}>{effects}</a:effectLst>"))
 
 
 def _picture(ppt_slide: Slide, element: ImageElement, images: ImageStore | None) -> None:

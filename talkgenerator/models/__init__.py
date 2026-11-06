@@ -21,7 +21,7 @@ from talkgenerator.models.deck import (
     TextStyle,
     VennDiagram,
 )
-from talkgenerator.models.theme import Fonts, Palette, Theme
+from talkgenerator.models.theme import Fonts, Palette, TextEffect, Theme
 from talkgenerator.models.usage import Usage
 
 __all__ = [
@@ -43,6 +43,7 @@ __all__ = [
     "Palette",
     "ShapeElement",
     "SlideBackground",
+    "TextEffect",
     "TextElement",
     "TextStyle",
     "Theme",

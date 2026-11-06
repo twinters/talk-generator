@@ -76,7 +76,7 @@ def _text_findings(
     findings = []
     large = style.size >= LARGE_TEXT or (style.bold and style.size >= LARGE_BOLD_TEXT)
     needed = color.LARGE_TEXT_CONTRAST if large else color.BODY_CONTRAST
-    worst = color.worst_contrast(style.color, _behind(slide, index, box))
+    worst = _legibility(style, _behind(slide, index, box), needed)
     if worst < needed:
         findings.append(
             Finding("contrast", "error", f"the {role} reads badly (contrast {worst:.1f}, needs {needed:g})", number)
@@ -94,6 +94,21 @@ def _text_findings(
     if covering is not None:
         findings.append(Finding("covered", "error", f"the {role} is under a {covering} drawn over it", number))
     return findings
+
+
+def _legibility(style: TextStyle, behind: list[str], needed: float) -> float:
+    """How well a text reads on what's behind it: its colour's contrast (each of its gradient's colours, if it has
+    one) with the worst of what's behind it, or, if it has an outline (as WordArt does), the outline's contrast with
+    that and the colours' with the outline, if that's better (an outlined text reads by its outline)."""
+    effect = style.effect
+    fills = effect.fill if effect is not None and effect.fill else (style.color,)
+    worst = min(color.worst_contrast(fill, behind) for fill in fills)
+    if worst < needed and effect is not None and effect.outline and effect.outline_width > 0:
+        outlined = min(
+            color.worst_contrast(effect.outline, behind), min(color.contrast(fill, effect.outline) for fill in fills)
+        )
+        worst = max(worst, outlined)
+    return worst
 
 
 def _covering(slide: DeckSlide, index: int, box: Box) -> str | None:

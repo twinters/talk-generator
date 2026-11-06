@@ -20,7 +20,9 @@ from talkgenerator.models.theme import (
     ImageFilter,
     ImageFrame,
     Palette,
+    TextEffect,
     Theme,
+    Warp,
 )
 from talkgenerator.util import random_util
 
@@ -38,6 +40,10 @@ RANDOM: Final = "random"
 # How much grain and vignette a member's pictures get, if they get any
 GRAIN: Final = 0.14
 VIGNETTE: Final = 0.7
+# WordArt's shapes, for the 1997 WordArt family's headings
+WARPS: Final[tuple[Warp, ...]] = ("wave", "arch", "inflate", "slant")
+# The kinds of heading effects a family can have (see _heading_effect)
+HeadingEffect = Literal["none", "wordart", "glow", "hard shadow", "comic", "clip art"]
 
 
 @dataclass(frozen=True)
@@ -61,6 +67,9 @@ class Family:
     image_frames: tuple[tuple[ImageFrame, float], ...] = (("none", 1.0),)
     image_grain: float = 0.0
     image_vignette: float = 0.0
+    # WordArt-style effects on its headings: which kind, and the chance that a member has them
+    heading_effect: HeadingEffect = "none"
+    heading_effect_chance: float = 0.0
     text_scale: tuple[float, float] = (1.0, 1.0)
     extreme: bool = False
     weight: float = 1.0  # how often the random mix picks it
@@ -164,6 +173,8 @@ FAMILIES: Final[dict[str, Family]] = {
             image_border=1.0,
             text_scale=(1.1, 1.15),
             image_filters=(("black and white", 0.4), ("grayscale", 0.4), ("none", 0.2)),
+            heading_effect="hard shadow",
+            heading_effect_chance=0.5,
         ),
         Family(
             "neon",
@@ -178,6 +189,8 @@ FAMILIES: Final[dict[str, Family]] = {
             image_filters=(("duotone", 0.6), ("none", 0.4)),
             image_frames=(("none", 0.7), ("rounded", 0.3)),
             image_vignette=0.3,
+            heading_effect="glow",
+            heading_effect_chance=0.8,
         ),
         # The extremes, for laughs
         Family(
@@ -192,6 +205,8 @@ FAMILIES: Final[dict[str, Family]] = {
             alignments=("center",),
             text_scale=(1.05, 1.15),
             image_frames=(("none", 0.7), ("polaroid", 0.3)),
+            heading_effect="wordart",
+            heading_effect_chance=1.0,
             extreme=True,
             weight=0.5,
         ),
@@ -204,6 +219,8 @@ FAMILIES: Final[dict[str, Family]] = {
             decorations=("frame", "bar", "none"),
             alignments=("center",),
             image_frames=(("polaroid", 0.5), ("rounded", 0.2), ("none", 0.3)),
+            heading_effect="comic",
+            heading_effect_chance=0.7,
             extreme=True,
             weight=0.5,
         ),
@@ -218,6 +235,8 @@ FAMILIES: Final[dict[str, Family]] = {
             image_border=1.0,
             image_filters=(("none", 0.7), ("duotone", 0.3)),
             image_frames=(("none", 0.6), ("rounded", 0.4)),
+            heading_effect="clip art",
+            heading_effect_chance=0.8,
             extreme=True,
             weight=0.5,
         ),
@@ -307,15 +326,64 @@ def member(family: Family) -> Theme:
         image_border=random_util.random() < family.image_border,
         text_scale=round(random_util.uniform(*family.text_scale), 2),
     )
-    # The image treatments come last, so that a seed's member has the colours, fonts and such it had before
+    # The image treatments come last, and the heading effects after them, so that a seed's member has the colours,
+    # fonts and such it had before there were any
+    image_filter = _weighted(family.image_filters)
+    image_frame = _weighted(family.image_frames)
+    image_grain = GRAIN if random_util.random() < family.image_grain else 0.0
+    image_vignette = VIGNETTE if random_util.random() < family.image_vignette else 0.0
+    effect = None
+    if random_util.random() < family.heading_effect_chance:
+        effect = _heading_effect(family.heading_effect, theme)
     return theme.model_copy(
         update={
-            "image_filter": _weighted(family.image_filters),
-            "image_frame": _weighted(family.image_frames),
-            "image_grain": GRAIN if random_util.random() < family.image_grain else 0.0,
-            "image_vignette": VIGNETTE if random_util.random() < family.image_vignette else 0.0,
+            "image_filter": image_filter,
+            "image_frame": image_frame,
+            "image_grain": image_grain,
+            "image_vignette": image_vignette,
+            "heading_effect": effect,
         }
     )
+
+
+def _heading_effect(kind: HeadingEffect, theme: Theme) -> TextEffect | None:
+    """A family's kind of heading effect, in the member's colours. A heading reads on what's behind it (the
+    background, and the bands behind titles on photos), by its fill or by its outline: an outline that reads on the
+    background, around a fill that reads on the outline (see talkgenerator.checks.design)."""
+    palette = theme.palette
+    backgrounds = [palette.background, palette.surface, *([theme.gradient_to] if theme.gradient_to else [])]
+    if kind == "wordart":  # a rainbow in a black or white outline, with a drop shadow, bent into a WordArt shape
+        outline = max(("#1a1a1a", "#ffffff"), key=lambda extreme: color.worst_contrast(extreme, backgrounds))
+        hue = color.to_hsl(palette.accent)[0]
+        rainbow = tuple(
+            color.readable_on(color.hsl(hue + turn, 0.95, 0.55), [outline], color.BODY_CONTRAST)
+            for turn in (0, 70, 140)
+        )
+        return TextEffect(
+            fill=rainbow,
+            outline=outline,
+            outline_width=4,
+            shadow="#000000",
+            shadow_offset=(8, 8),
+            shadow_blur=4,
+            shadow_opacity=0.55,
+            warp=random_util.choice(WARPS),
+        )
+    if kind == "glow":  # a neon sign's
+        return TextEffect(glow=palette.accent, glow_radius=16)
+    if kind == "hard shadow":  # a solid block, offset
+        return TextEffect(shadow=palette.accent_2, shadow_offset=(8, 8), shadow_opacity=1.0)
+    if kind == "comic":  # the text in a light outline, on a solid shadow
+        lightest = max((palette.text, palette.background, "#ffffff"), key=color.luminance)
+        return TextEffect(
+            outline=lightest, outline_width=3, shadow=palette.accent, shadow_offset=(6, 6), shadow_opacity=1.0
+        )
+    if kind == "clip art":  # a gradient from the text's colour towards the accent, with a soft shadow
+        tinted = color.readable_on(color.mix(palette.text, palette.accent, 0.6), backgrounds, color.LARGE_TEXT_CONTRAST)
+        return TextEffect(
+            fill=(tinted, palette.text), shadow="#000000", shadow_offset=(5, 5), shadow_blur=6, shadow_opacity=0.45
+        )
+    return None
 
 
 def _weighted(choices: tuple[tuple[T, float], ...]) -> T:

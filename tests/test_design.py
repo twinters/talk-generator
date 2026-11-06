@@ -553,3 +553,99 @@ def test_a_text_on_a_photo_needs_its_shade(images):
     unshaded = tuple(element for element in statement.elements if element.role != "shade")
     bare = deck.model_copy(update={"slides": (statement.model_copy(update={"elements": unshaded}),)})
     assert [finding.check for finding in check_design(bare)] == ["contrast"]  # white text on a picture: not always
+
+
+# WORDART-STYLE HEADING EFFECTS
+
+
+def _wordart(seed=0):
+    return themes.pick("1997 WordArt", random_util.Rng(seed))
+
+
+def _shape_of(ppt_slide, text):
+    return next(shape for shape in ppt_slide.shapes if shape.has_text_frame and shape.text_frame.text == text)
+
+
+def test_the_extremes_give_their_headings_effects():
+    for seed in range(10):
+        effect = _wordart(seed).heading_effect
+        assert len(effect.fill) == 3 and effect.outline and effect.shadow and effect.warp in themes.WARPS
+        # The rainbow reads on its outline, and the outline on the background
+        assert all(color.contrast(stop, effect.outline) >= color.BODY_CONTRAST for stop in effect.fill)
+    glowing = [themes.pick("neon", random_util.Rng(seed)).heading_effect for seed in range(20)]
+    assert sum(effect is not None and effect.glow is not None for effect in glowing) >= 10
+    assert all(themes.pick("clean keynote", random_util.Rng(seed)).heading_effect is None for seed in range(10))
+
+
+def test_only_headings_get_the_effect(images):
+    theme = _wordart()
+    deck = _runs(theme=theme).to_deck()
+    styles = {
+        element.role: element.style
+        for slide in deck.slides
+        for element in slide.elements
+        if isinstance(element, TextElement)
+    }
+    assert styles["title"].effect == theme.heading_effect
+    assert styles["caption_1"].effect is None
+    statement = next(slide for slide in deck.slides if slide.type == "large_quote").element("text").style
+    assert statement.effect is not None and statement.effect.fill == ()  # (light on the shaded photo, not a rainbow)
+
+
+def test_powerpoint_draws_wordart(images):
+    theme = _wordart(3)
+    slide_deck = SlideDeck(1, seed=1)
+    slide_deck.add_slide(0, slides.ImageSlide("Cats rule", _image("wide")))
+    slide_deck.theme = theme
+    (ppt_slide,) = render_pptx(slide_deck.to_deck()).slides
+
+    title = _shape_of(ppt_slide, "Cats rule")
+    properties = title.text_frame.paragraphs[0].runs[0]._r.rPr
+    tags = [child.tag.split("}")[1] for child in properties]
+    assert tags[:3] == ["ln", "gradFill", "effectLst"] and tags.index("latin") > 2  # (in a run's properties' order)
+    stops = [stop.get("val").lower() for stop in properties.find(qn("a:gradFill")).iter(qn("a:srgbClr"))]
+    assert stops == [colour.lstrip("#") for colour in theme.heading_effect.fill]
+    assert properties.find(qn("a:effectLst")).find(qn("a:outerShdw")) is not None
+    warp = title.text_frame._bodyPr[0]
+    assert warp.tag == qn("a:prstTxWarp") and warp.get("prst").startswith("text")
+
+
+def test_neon_headings_glow(images):
+    theme = next(
+        member
+        for member in (themes.pick("neon", random_util.Rng(seed)) for seed in range(20))
+        if member.heading_effect is not None
+    )
+    slide_deck = SlideDeck(1, seed=1)
+    slide_deck.add_slide(0, slides.ImageSlide("Cats rule", _image("wide")))
+    slide_deck.theme = theme
+    (ppt_slide,) = render_pptx(slide_deck.to_deck()).slides
+    properties = _shape_of(ppt_slide, "Cats rule").text_frame.paragraphs[0].runs[0]._r.rPr
+    assert properties.find(qn("a:effectLst")).find(qn("a:glow")) is not None
+
+
+def test_an_outlined_heading_reads_by_its_outline(images):
+    theme = _wordart()
+    deck = _runs(theme=theme).to_deck()
+    assert [finding for finding in check_design(deck) if finding.check == "contrast"] == []
+    # Without its outline, a rainbow doesn't read on WordArt's loud backgrounds
+    effect = theme.heading_effect.model_copy(update={"outline": None, "outline_width": 0.0})
+    bare = _runs(theme=theme.model_copy(update={"heading_effect": effect})).to_deck()
+    assert any(finding.check == "contrast" for finding in check_design(bare))
+
+
+@pytest.mark.parametrize("seed", range(4))
+def test_previews_draw_the_effects(images, seed):
+    theme = _wordart(seed)
+    slide = _deck(theme=theme).to_deck().slides[0]
+    plain = slide.model_copy(
+        update={
+            "elements": tuple(
+                element.model_copy(update={"style": element.style.model_copy(update={"effect": None})})
+                if isinstance(element, TextElement)
+                else element
+                for element in slide.elements
+            )
+        }
+    )
+    assert preview.slide_image(slide, theme).tobytes() != preview.slide_image(plain, theme).tobytes()

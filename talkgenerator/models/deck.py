@@ -19,7 +19,7 @@ from typing import Annotated, Any, Final, Literal
 from pydantic import Field
 
 from talkgenerator.models.base import Data as _Data
-from talkgenerator.models.theme import ImageFilter, ImageFrame, Theme
+from talkgenerator.models.theme import ImageFilter, ImageFrame, TextEffect, Theme
 from talkgenerator.models.usage import Usage
 
 DECK_VERSION: Final = 1
@@ -55,6 +55,7 @@ class TextStyle(_Data):
     uppercase: bool = False
     align: TextAlign = "left"
     anchor: TextAnchor = "top"
+    effect: TextEffect | None = None  # (a heading's, in a theme with WordArt-style effects)
 
 
 class CreditPart(_Data):
