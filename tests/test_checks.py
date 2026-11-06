@@ -14,6 +14,7 @@ from talkgenerator.checks.deck import (
     check_images,
     check_language,
     check_leftovers,
+    deck_metrics,
 )
 from talkgenerator.models import classic
 from talkgenerator.models.deck import (
@@ -199,6 +200,23 @@ def test_the_required_roles_are_what_the_slide_classes_require():
         assert required == set(classic.REQUIRED_ROLES[slide_type]), slide_type
 
 
+def test_the_metrics_say_whether_images_match_their_queries_and_titles_repeat():
+    def found(query, description):
+        image = ImageAsset(url=f"https://example.com/{query}.jpg", query=query, description=description)
+        return ImageElement(role="image", image=image)
+
+    deck = _deck(
+        TITLE,
+        _slide("image", _text("title", "Look at this"), found("cats on a roof", "A cat sitting on a red roof")),
+        _slide("image", _text("title", "look at this"), found("a cat in sunglasses", "Dog wearing a hat")),
+        _slide("image", _text("title", "Then"), found("old typewriter", "")),  # nothing to compare with
+    )
+    metrics = deck_metrics(deck)
+    assert metrics["images_with_query_and_description"] == 2
+    assert metrics["images_matching_their_query"] == 1
+    assert metrics["repeated_titles"] == 1
+
+
 # BENCHMARK RUNS
 
 
@@ -260,6 +278,15 @@ def test_the_command_writes_a_report(fake_schema, tmp_path, capsys):
 
     assert "1 talk: 0 errors" in capsys.readouterr().out
     assert json.loads(report.read_text(encoding="utf-8"))["summary"]["talks"] == 1
+
+
+def test_the_command_can_save_every_deck(fake_schema, tmp_path, capsys):
+    arguments = ["--topics", "time travel", "--schema", "fake", "--slides", str(test_seeds.NUM_SLIDES)]
+    arguments += ["--no_determinism", "--report", str(tmp_path / "report.json"), "--decks", str(tmp_path / "decks")]
+    assert benchmark.main(arguments) == 0
+    (saved,) = (tmp_path / "decks").iterdir()
+    assert saved.name == "time-travel-1.deck.json"
+    assert len(Deck.model_validate_json(saved.read_text(encoding="utf-8")).slides) == test_seeds.NUM_SLIDES
 
 
 def test_errors_fail_the_command(fake_schema, tmp_path, monkeypatch):

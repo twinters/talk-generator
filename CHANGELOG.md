@@ -76,6 +76,9 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   a key of its own, which it keeps in the user's config folder (readable only by the user), so OpenRouter's free
   models write talks without an `OPENROUTER_API_KEY`. `--headless` signs in on a computer without a browser,
   `--status` says how many free requests are left today, and `talkgenerator logout openrouter` forgets the key.
+- `talkgenerator check --decks <folder>` saves every talk's deck, to read what the talks say. The report counts
+  the images that share a word with their search (of those whose source describes them) and the slides that
+  repeat a title from before, and warns about a talk the language model wrote none of.
 - `talkgenerator check --llm provider:model` checks talks a language model writes; to check that the same answers
   give the same talk, the second run replays what the first one got. The report says how many slides the model
   wrote.

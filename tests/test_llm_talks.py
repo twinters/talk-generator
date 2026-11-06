@@ -458,6 +458,13 @@ def test_the_check_replays_what_the_model_answered(schema, monkeypatch):
     assert report.metrics["written_by_language_model"] == NUM_SLIDES
 
 
+def test_the_check_says_when_the_model_wrote_nothing(schema, monkeypatch):
+    model = FakeModel(change=lambda answer: answer.update(safe_topic=False))
+    monkeypatch.setitem(providers._FACTORIES, "fake", lambda argument: model)
+    report = benchmark.check_talk("cats", 1, schema="fake", slides=NUM_SLIDES, llm="fake", determinism=False)
+    assert [(finding.check, finding.severity) for finding in report.findings] == [("language model", "warning")]
+
+
 def test_a_talk_claude_declines_halfway_is_classic(schema):
     transport = httpx2.MockTransport(_claude_api_that_declines_halfway)
     client = anthropic.Anthropic(

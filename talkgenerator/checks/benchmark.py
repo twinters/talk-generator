@@ -120,11 +120,12 @@ def check_talk(
     determinism: bool = True,
     llm: str = "none",
     language: str = "en",
+    decks: Path | None = None,
 ) -> TalkReport:
     """Generate a talk and check it; with determinism, generate it again one by one, which has to give the same.
 
     With a language model (a spec, see talkgenerator.llm.providers), its answers are recorded, and the second run
-    replays them."""
+    replays them. With decks (a folder), the talk's deck is saved there as JSON, to read what it says."""
     with tempfile.TemporaryDirectory(prefix="talkgenerator-check-") as folder:
         cassette = Path(folder) / "answers.json"
         recording: TextProvider | str = llm
@@ -138,6 +139,18 @@ def check_talk(
             crash = Finding("generation", "error", f"generating the talk crashed: {error!r}")
             return TalkReport(topic, seed, time.monotonic() - start, [crash])
         report = TalkReport(topic, seed, time.monotonic() - start, check_deck(deck, slides), deck_metrics(deck))
+        if decks is not None:
+            decks.mkdir(parents=True, exist_ok=True)
+            name = "".join(character if character.isalnum() else "-" for character in topic.lower())
+            (decks / f"{name}-{seed}.deck.json").write_text(deck.to_json(), encoding="utf-8")
+        if llm != "none" and report.metrics["written_by_language_model"] == 0:
+            report.findings.append(
+                Finding(
+                    "language model",
+                    "warning",
+                    "the language model wrote none of the slides: it failed, or turned the topic down (see the logs)",
+                )
+            )
         if determinism:
             replaying: TextProvider | str = ReplayProvider(cassette) if llm != "none" else "none"
             again = generate_deck(topic, seed, schema, slides, parallel=False, llm=replaying, language=language)
@@ -157,12 +170,13 @@ def run(
     on_talk: Callable[[TalkReport], None] | None = None,
     llm: str = "none",
     language: str = "en",
+    decks: Path | None = None,
 ) -> dict[str, Any]:
     """Check a talk for every topic and seed, and return the report."""
     talks = []
     for topic in topics:
         for seed in seeds:
-            talk = check_talk(topic, seed, schema, slides, determinism, llm, language)
+            talk = check_talk(topic, seed, schema, slides, determinism, llm, language, decks)
             talks.append(talk)
             if on_talk is not None:
                 on_talk(talk)
@@ -192,6 +206,9 @@ def _report(
             "written_by_language_model": f"{_sum_of(talks, 'written_by_language_model')} of "
             f"{_sum_of(talks, 'slides')} slides",
             "cost_usd": round(sum(talk.metrics.get("usage", {}).get("cost_usd", 0.0) for talk in talks), 6),
+            "images_matching_their_query": f"{_sum_of(talks, 'images_matching_their_query')} of "
+            f"{_sum_of(talks, 'images_with_query_and_description')} with a query and a description",
+            "repeated_titles": _sum_of(talks, "repeated_titles"),
         },
         "talks": [
             {
@@ -258,6 +275,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="don't generate every talk again one by one to compare",
     )
     parser.add_argument("--report", default=str(Path("output") / "check-report.json"), help="where to write it")
+    parser.add_argument("--decks", help="a folder to save every talk's deck in, as JSON, to read what they say")
     parser.add_argument("--verbose", "-v", action="store_true", help="show the generator's logs")
     args = parser.parse_args(argv)
 
@@ -277,10 +295,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     def print_talk(talk: TalkReport) -> None:
         print(
             f"{talk.topic!r}, seed {talk.seed}: {_count(len(talk.errors), 'error')},"
-            f" {_count(len(talk.warnings), 'warning')}, {talk.seconds:.0f} seconds"
+            f" {_count(len(talk.warnings), 'warning')}, {talk.seconds:.0f} seconds",
+            flush=True,
         )
         for finding in talk.findings:
-            print(f"    {finding}")
+            print(f"    {finding}", flush=True)
 
     report = run(
         topics,
@@ -291,6 +310,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         on_talk=print_talk,
         llm=args.llm,
         language=args.language,
+        decks=Path(args.decks) if args.decks else None,
     )
     summary = report["summary"]
     print(

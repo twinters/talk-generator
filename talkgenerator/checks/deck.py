@@ -15,6 +15,7 @@ from typing import Any, Literal
 
 from talkgenerator.models import classic
 from talkgenerator.models.deck import ChartElement, Deck, ImageElement, TextElement
+from talkgenerator.util import language_util
 
 Severity = Literal["error", "warning"]
 
@@ -168,8 +169,44 @@ def deck_metrics(deck: Deck) -> dict[str, Any]:
         "slide_types": dict(sorted(Counter(types).items())),
         "same_type_in_a_row": sum(1 for before, after in itertools.pairwise(types) if before == after),
         "images": sum(1 for slide in deck.slides for element in slide.elements if isinstance(element, ImageElement)),
+        **_image_matches(deck),
+        "repeated_titles": _repeated_titles(deck),
         "usage": deck.usage.model_dump(),
     }
+
+
+def _image_matches(deck: Deck) -> dict[str, int]:
+    """How many images were searched for with a query and came with a description (the sources' alt texts, post
+    titles and such), and how many of those share a word with their query: a rough sign of whether the images
+    show what the slides asked for."""
+    described = matching = 0
+    for slide in deck.slides:
+        for element in slide.elements:
+            if isinstance(element, ImageElement) and element.image.query and element.image.description:
+                described += 1
+                matching += bool(_content_words(element.image.query) & _content_words(element.image.description))
+    return {"images_with_query_and_description": described, "images_matching_their_query": matching}
+
+
+def _content_words(text: str) -> set[str]:
+    """The words of an (English) text that say something, roughly singular: "Cats on a roof" gives cat and roof."""
+    try:
+        little = language_util.stopwords("english")
+    except (LookupError, OSError):
+        little = frozenset()
+    words = re.findall(r"[a-z]+", text.lower())
+    return {word.removesuffix("s") for word in words if len(word) > 2 and word not in little}
+
+
+def _repeated_titles(deck: Deck) -> int:
+    """How many slides have the title of a slide before them (such as two gif slides both saying "Look at this")."""
+    titles = [
+        element.text.lower()
+        for slide in deck.slides
+        for element in slide.elements
+        if isinstance(element, TextElement) and element.role == "title"
+    ]
+    return len(titles) - len(set(titles))
 
 
 def _texts(elements: tuple[TextElement | ImageElement | ChartElement, ...]) -> list[tuple[str, str]]:
