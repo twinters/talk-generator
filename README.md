@@ -33,6 +33,8 @@ uv sync                                                   # install the dependen
 uv run talkgenerator --topic "peanuts" --num_slides 10
 ```
 
+To have Claude write the talks, with talkgenerator making the decks, see [Use it with Claude](#use-it-with-claude): as a Claude Skill, or as an MCP server for Claude Desktop.
+
 On its first run, the generator downloads the NLTK data it needs (about 30 MB).
 For deployments, you can prepare it up front with `python run_nltk_download.py --data-dir <folder>` (from a clone of this repository) and point `NLTK_DATA` to that folder.
 
@@ -95,73 +97,6 @@ A family has many members: the talk's seed picks one, with its own colours (ever
 `--theme random` picks a family too, the extremes included unless `--no_extreme_themes` leaves them out, and `--theme chaos` gives every slide a theme of its own (`--style_chaos 0.3` does that for about a third of them).
 `talkgenerator check --theme random` checks themed talks, and also that their texts read on their backgrounds, fit their boxes and stay on the slide.
 
-### Claude as the writer: the Skill
-
-With the talkgenerator Skill, Claude writes the talk itself, on your own Claude plan, and talkgenerator turns it into a deck.
-Claude writes a plan (what every slide says, and what its images should show), `talkgenerator render` finds images it may use, credits them, saves the PowerPoint and reports back, and Claude fixes the slides that didn't come out.
-It runs wherever Claude can run commands, such as in [Claude Code](https://claude.com/claude-code), with talkgenerator installed (`pip install talkgenerator`).
-
-Install it as a Claude Code plugin, straight from this repository:
-
-```
-/plugin marketplace add twinters/talk-generator
-/plugin install talkgenerator@talk-generator
-```
-
-Or copy [`skill/skills/talkgenerator`](skill/skills/talkgenerator) into `~/.claude/skills/`.
-Then ask Claude for, say, "a 10-slide PowerPoint karaoke deck about competitive birdwatching".
-
-The commands the Skill uses work for plans written by hand, or by other tools, too:
-
-| Command | What it does |
-| --- | --- |
-| `talkgenerator render plan.json [-o talk.pptx]` | Turns a plan (or several: `plans/*.json`) into a PowerPoint, with the deck's JSON and a contact sheet of its images next to it, and prints a report in JSON: per slide, whether it came out as planned, was made the classic way instead, or was left out, and why, and what every image was searched with |
-| `talkgenerator formats [--details] [--json]` | The talk formats, and with `--details` the slides a plan can have: their texts, length limits, images and recipes |
-| `talkgenerator schema plan` | The plan format, as a JSON Schema (`schema deck` for the deck format) |
-
-[An example plan](skill/skills/talkgenerator/references/example-plan.json) shows what goes in one.
-
-### Claude Desktop and other MCP clients: the MCP server
-
-`talkgenerator mcp` gives those commands as tools to [Claude Desktop](https://claude.ai/download) and other MCP clients, so Claude can make decks in a chat, without a shell.
-It runs only on your own computer: the client starts it there, it uses your own keys, and it saves the decks in a folder of yours.
-Nothing of it is hosted.
-
-| Tool | What it does |
-| --- | --- |
-| `list_formats` | The talk formats, themes and languages |
-| `describe_format` | The slides a plan for a format can have (as `talkgenerator formats --details --json`) |
-| `get_plan_schema` | The plan format, as a JSON Schema (as `talkgenerator schema plan`) |
-| `render_plan` | Turns a plan into a PowerPoint, and returns the report of `talkgenerator render`, with the paths of the files it saved |
-| `generate_talk` | Makes a whole talk on a topic, as `talkgenerator --topic` does: the language model of your settings writes it (OpenRouter's free models, when you have an OpenRouter key), or else the classic generator. Returns where the files are, the talk's seed, and the checks |
-
-Install it with the MCP SDK, `pip install 'talkgenerator[mcp]'`, and add it to Claude Desktop's config: Settings > Developer > Edit Config opens `claude_desktop_config.json`.
-Restart Claude Desktop afterwards.
-
-```json
-{
-  "mcpServers": {
-    "talkgenerator": {
-      "command": "talkgenerator",
-      "args": ["mcp"],
-      "env": {
-        "UNSPLASH_ACCESS_KEY": "...",
-        "PEXELS_KEY": "..."
-      }
-    }
-  }
-}
-```
-
-- `command` is the `talkgenerator` command. If Claude Desktop doesn't find it, give its full path, such as `"/Users/you/talks/.venv/bin/talkgenerator"`, or on Windows `"C:\\Users\\you\\talks\\.venv\\Scripts\\talkgenerator.exe"` (JSON doubles the backslashes). With [uv](https://docs.astral.sh/uv/) you don't need to install it first: `"command": "uvx"`, with `"args": ["--from", "talkgenerator[mcp]", "talkgenerator", "mcp"]`.
-- `env` holds your [API keys](#api-keys), just the ones you have: Claude Desktop starts the server in a folder of its own, where your `.env` isn't. A key that `talkgenerator login openrouter` got needs no entry: the server finds it in your config folder. Every other setting works in `env` too, such as `TALKGENERATOR_LLM` (see [Language models](#language-models)), which is the only way to have a paid model write the talks: a tool call can't pick one.
-- The decks go to the `talkgenerator` folder in your documents, or to the folder that `"args": ["mcp", "--output_folder", "<folder>"]` names, and nowhere else. They never overwrite a file: a deck made again gets a name of its own.
-- The server logs to stderr, which Claude Desktop keeps in `mcp-server-talkgenerator.log`, in `%APPDATA%\Claude\logs` on Windows and `~/Library/Logs/Claude` on macOS.
-- On Windows on Arm, install it in an x64 Python (such as `uvx --python cpython-3.13-windows-x86_64-none ...`): the MCP SDK needs the `cryptography` package, which has no wheels for Windows on Arm.
-
-Then ask Claude for, say, "a PowerPoint karaoke deck about competitive birdwatching".
-The server tells Claude how to write a plan and when to render it again; with the [Skill](#claude-as-the-writer-the-skill) as well, Claude knows more about what makes a good karaoke talk.
-
 ### Run arguments
 
 | Argument | Description |
@@ -199,6 +134,99 @@ presentation, slide_deck, output_file = generator.generate_presentation(
     open_ppt=False,
 )
 ```
+
+## Use it with Claude
+
+Claude can write the talk itself, on your own Claude plan, and leave the rest to talkgenerator: finding images it may use, crediting them on the slides, laying out the deck and saving the PowerPoint.
+Claude writes a plan (what every slide says, and what its images should show), talkgenerator turns it into a deck and reports back, and Claude fixes the slides that didn't come out.
+There are two ways to set this up, and they work together:
+
+| | The Skill | The MCP server |
+| --- | --- | --- |
+| What it is | Instructions that teach Claude what makes a good karaoke talk, and how to use talkgenerator's commands | `talkgenerator mcp`: talkgenerator's commands as tools, on your computer |
+| Where it works | [Claude Code](https://claude.com/claude-code), and wherever else Claude can run commands; in claude.ai, Claude writes the plan and you render it | [Claude Desktop](https://claude.ai/download), Claude Code and other MCP clients |
+| What to install | `pip install talkgenerator` | `pip install 'talkgenerator[mcp]'` |
+
+In Claude Code, the Skill is all you need: Claude runs the commands itself.
+In Claude Desktop, add the MCP server, so that Claude can make the decks, and the Skill as well if you like, as it knows more about what makes a good talk.
+Nothing goes through talkgenerator.com: talkgenerator works with your own [API keys](#api-keys) and [language model settings](#language-models).
+
+### The Skill
+
+1. Install talkgenerator where Claude runs its commands, `pip install talkgenerator`, and put the API keys you have in a `.env` file (see [API keys](#api-keys)).
+2. Add the Skill to Claude:
+   - In **Claude Code**, install it as a plugin, straight from this repository:
+
+     ```
+     /plugin marketplace add twinters/talk-generator
+     /plugin install talkgenerator@talk-generator
+     ```
+
+     Or copy the [`skill/skills/talkgenerator`](https://github.com/twinters/talk-generator/tree/master/skill/skills/talkgenerator) folder into `~/.claude/skills/`, for all your projects, or into a project's `.claude/skills/`.
+   - In **claude.ai** and the Claude apps, zip that `talkgenerator` folder (so that the zip holds `talkgenerator/SKILL.md`), and upload it under Customize > Skills: "+", then "Create skill", then "Upload a skill". Skills need code execution, which you turn on under Settings > Capabilities.
+     Claude's sandbox there may not be able to install talkgenerator or reach the image sources. Claude then gives you the plan as a JSON file, which you render on your computer with `talkgenerator render plan.json`, or which Claude Desktop renders itself with the [MCP server](#the-mcp-server).
+3. Ask Claude for, say, "a 10-slide PowerPoint karaoke deck about competitive birdwatching".
+
+The commands the Skill uses work for plans written by hand, or by other tools, too:
+
+| Command | What it does |
+| --- | --- |
+| `talkgenerator render plan.json [-o talk.pptx]` | Turns a plan (or several: `plans/*.json`) into a PowerPoint, with the deck's JSON and a contact sheet of its images next to it, and prints a report in JSON: per slide, whether it came out as planned, was made the classic way instead, or was left out, and why, and what every image was searched with |
+| `talkgenerator formats [--details] [--json]` | The talk formats, and with `--details` the slides a plan can have: their texts, length limits, images and recipes |
+| `talkgenerator schema plan` | The plan format, as a JSON Schema (`schema deck` for the deck format) |
+
+[An example plan](https://github.com/twinters/talk-generator/blob/master/skill/skills/talkgenerator/references/example-plan.json) shows what goes in one.
+
+### The MCP server
+
+`talkgenerator mcp` is a local [MCP](https://modelcontextprotocol.io/) server: it gives talkgenerator's commands as tools to Claude Desktop and other MCP clients, so Claude can make decks in a chat, without a shell.
+The client starts it on your own computer, where it uses your own keys and saves the decks in a folder of yours. Nothing of it is hosted.
+
+| Tool | What it does |
+| --- | --- |
+| `list_formats` | The talk formats, themes and languages |
+| `describe_format` | The slides a plan for a format can have (as `talkgenerator formats --details --json`) |
+| `get_plan_schema` | The plan format, as a JSON Schema (as `talkgenerator schema plan`) |
+| `render_plan` | Turns a plan into a PowerPoint, and returns the report of `talkgenerator render`, with the paths of the files it saved |
+| `generate_talk` | Makes a whole talk on a topic, as `talkgenerator --topic` does: the language model of your settings writes it (OpenRouter's free models, when you have an OpenRouter key), or else the classic generator. Returns where the files are, the talk's seed, and the checks |
+
+1. Install talkgenerator with the MCP SDK on your computer: `pip install 'talkgenerator[mcp]'`.
+   On Windows on Arm, install it in an x64 Python: the MCP SDK needs the `cryptography` package, which has no wheels for Windows on Arm.
+2. Add the server to your MCP client:
+   - In **Claude Desktop**, Settings > Developer > Edit Config opens its config file, `claude_desktop_config.json`. Add the server under `mcpServers`, next to what the file holds already, with the API keys you have under `env`:
+
+     ```json
+     {
+       "mcpServers": {
+         "talkgenerator": {
+           "command": "talkgenerator",
+           "args": ["mcp"],
+           "env": {
+             "UNSPLASH_ACCESS_KEY": "...",
+             "PEXELS_KEY": "..."
+           }
+         }
+       }
+     }
+     ```
+
+     Then quit Claude Desktop completely (closing its window leaves it running) and start it again: talkgenerator shows up among the connectors, under the "+" button of a chat.
+   - In **Claude Code**, for all your projects (keys go in `--env NAME=value` options, before `--transport`):
+
+     ```sh
+     claude mcp add --transport stdio --scope user talkgenerator -- talkgenerator mcp
+     ```
+
+   - In **other MCP clients**: the command `talkgenerator`, with the argument `mcp`, over stdio.
+3. Ask Claude for, say, "a PowerPoint karaoke deck about competitive birdwatching". The server tells Claude how to write a plan, and when to render it again.
+
+Good to know:
+
+- If the client doesn't find the `talkgenerator` command, give its full path, such as `"/Users/you/talks/.venv/bin/talkgenerator"`, or on Windows `"C:\\Users\\you\\talks\\.venv\\Scripts\\talkgenerator.exe"` (JSON doubles the backslashes). With [uv](https://docs.astral.sh/uv/), there's nothing to install first: use `"command": "uvx"`, with `"args": ["--from", "talkgenerator[mcp]", "talkgenerator", "mcp"]` (on Windows on Arm, put `"--python", "cpython-3.13-windows-x86_64-none"` in front of those).
+- Claude Desktop starts the server in a folder of its own, where your `.env` isn't: that's why the keys go under `env`. A key that `talkgenerator login openrouter` got needs no entry, as the server finds it in your config folder. It also finds the `.env` of a clone of this repository when it runs from that clone (installed with `pip install -e '.[mcp]'`).
+- Every other setting works under `env` too, such as `TALKGENERATOR_LLM` (see [Language models](#language-models)), which is the only way to have a paid model write the talks: a tool call can't pick one.
+- The decks go to a `talkgenerator` folder in your documents, or to the folder that `"args": ["mcp", "--output_folder", "<folder>"]` names, and nowhere else. They never overwrite a file: a deck made again gets a name of its own.
+- If the server doesn't show up, run `talkgenerator mcp` in a terminal: it should say that it serves its tools, and wait (Ctrl+C stops it). Claude Desktop keeps what the server logs in `mcp-server-talkgenerator.log`, in its logs folder: on Windows, the `logs` folder next to the config file; on macOS, `~/Library/Logs/Claude`.
 
 ## Program structure
 
