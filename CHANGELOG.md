@@ -145,6 +145,11 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   fresh grammar.
 - The notes of chart slides no longer hold memory addresses (of their chart data and style), which made the
   same talk's deck differ from one run to the next. `talkgenerator check` found it.
+- Pictures shown whole (`"fit": "contain"`) keep their shape. They were padded by the difference between their
+  aspect ratio and their frame's, which only comes out right for a square picture in a frame wider than tall, or
+  for a picture of its frame's own shape: on a full-picture slide, a 9:16 picture came out 43% too wide and a 4:3
+  one 8% too narrow, and in the three columns of an "About me" slide, which are taller than wide, a square
+  picture came out 6% too narrow. v4 drew them like that too.
 
 ## [4.0.1] - 2026-11-05
 
