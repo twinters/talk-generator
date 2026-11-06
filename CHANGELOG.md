@@ -69,7 +69,8 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   corporate` for laughs. The talk's seed picks a member of the family: its colours (repaired until every text reads
   on its background, gradients included, by WCAG's contrast rules), font pair, casing, decoration and layouts.
   `--theme random` picks the family too (`--no_extreme_themes` leaves the extremes out), `--theme chaos` gives every
-  slide its own theme, and `--style_chaos` some of them. The layout engine (`talkgenerator.design.engine`) puts
+  slide its own theme, and `--style_chaos` some of them. A plan can have a `theme` too (or `talkgenerator render
+  --theme`), which the Skill knows about. The layout engine (`talkgenerator.design.engine`) puts
   every element in its box and gives every text the largest size at which it fits, measured with the fonts' own
   files or fonts with the same metrics (`talkgenerator.design.fonts`), so a themed deck's JSON holds every
   element's place and style, and every renderer draws it the same way. `talkgenerator.render.shapes` draws it in

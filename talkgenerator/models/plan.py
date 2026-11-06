@@ -53,6 +53,11 @@ class TalkPlan(Data):
     )
     topic: str = Field(description="What the talk is about, such as 'peanuts'.")
     language: str = Field(default="en", description="The language of the talk's texts, such as 'en' or 'nl'.")
+    theme: str | None = Field(
+        default=None,
+        description="The look: 'classic' (the 2019 template, without a theme), 'random', a theme family such as "
+        "'dark minimal' or 'vintage paper' (see `talkgenerator render --help`), or 'chaos' (every slide its own).",
+    )
     title: str = Field(description="The talk's title, on its title slide (at most 80 characters).")
     presenter_job: str = Field(
         default="",

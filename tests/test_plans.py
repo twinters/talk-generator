@@ -225,6 +225,20 @@ def test_render_says_what_is_wrong_with_a_plan(schema, tmp_path, capsys):
     assert {"where": "slides.0.text", "problem": "Extra inputs are not permitted"} in report["details"]
 
 
+def test_a_plan_can_have_a_theme(schema, tmp_path, capsys):
+    report = _render(_plan(TWO_COLUMNS, CHART, theme="vintage paper"), tmp_path)
+    assert report["theme"].startswith("vintage paper")
+    deck = Deck.model_validate_json(Path(report["deck_json"]).read_text(encoding="utf-8"))
+    assert all(slide.layout.startswith("v5/") for slide in deck.slides) and deck.style.family == "vintage paper"
+    assert _render(_plan(CHART), tmp_path)["theme"] == "classic"  # without one, the 2019 template
+    path = tmp_path / "themed.json"
+    path.write_text(_plan(CHART, theme="glitter").model_dump_json(), encoding="utf-8")
+    assert external.main("render", [str(path), "--output_folder", str(tmp_path)]) == 2
+    assert json.loads(capsys.readouterr().out)["error"].startswith("there's no theme 'glitter'")
+    assert external.main("render", [str(path), "--output_folder", str(tmp_path), "--theme", "neon"]) == 0
+    assert json.loads(capsys.readouterr().out)["theme"].startswith("neon")
+
+
 def test_render_takes_patterns_of_plans(schema, tmp_path, capsys):
     for name in ("one", "two"):
         (tmp_path / f"{name}.json").write_text(_plan(CHART).model_dump_json(), encoding="utf-8")

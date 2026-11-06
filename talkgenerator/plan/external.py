@@ -32,6 +32,7 @@ from talkgenerator import settings
 from talkgenerator.checks.deck import check_deck
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.datastructures.slide_generator_data import SlideGeneratorData
+from talkgenerator.design import themes
 from talkgenerator.models.deck import Deck, ImageElement, TextElement
 from talkgenerator.models.plan import SlidePlan, TalkPlan
 from talkgenerator.plan import languages
@@ -207,13 +208,14 @@ def render_plan(
     local_images: Path | None = None,
     parallel: bool = True,
     debug_notes: bool = False,
+    theme: str | None = None,
 ) -> dict[str, Any]:
     """Realize a plan, save it as a PowerPoint (at output, or under an unused name in output_folder), with the deck's
     JSON (<name>.deck.json) and a contact sheet of its images (<name>.images.png) next to it, and return the report:
     what came out as planned, what didn't and why, what every image was searched with, and the checks.
 
     With local_images (a folder), image "queries" that name image files there put those files on the slides. Nothing
-    is saved over plan_path, the plan's own file."""
+    is saved over plan_path, the plan's own file. theme (or else the plan's own) is its look, as --theme takes it."""
     from talkgenerator import generator  # (here: the generator module imports the schemas)
     from talkgenerator.schema.content_generators import full_name_generator
 
@@ -234,6 +236,9 @@ def render_plan(
     slide_deck, outcomes = schema.realize_plan(
         plan.model_copy(update={"slides": resolved}), recipes, presenter, rng, local_images, parallel
     )
+    look = theme or plan.theme or themes.CLASSIC
+    slide_deck.theme = themes.pick(themes.RANDOM if look == "chaos" else look, rng.child("theme"))
+    slide_deck.style_chaos = 1.0 if look == "chaos" else 0.0
     deck = slide_deck.to_deck(schema_name=schema_name)
 
     name = file_name or _file_name(plan.title or plan.topic)
@@ -265,6 +270,7 @@ def render_plan(
         "presenter": presenter,
         "format": schema_name,
         "language": deck.language,
+        "theme": deck.theme,
         "seed": rng.root_seed,
         "summary": {
             "deck_slides": len(deck.slides),  # the title slide too
@@ -553,6 +559,12 @@ def _render_command(argv: Sequence[str]) -> int:
         action="store_false",
         help="don't save the picture of all the images (<name>.images.png) next to the PowerPoint",
     )
+    parser.add_argument(
+        "--theme",
+        choices=[*themes.names(), "chaos"],
+        help="the look: classic (the 2019 template), random, a theme family, or chaos (default: the plan's own, or "
+        "else classic)",
+    )
     parser.add_argument("--open", action="store_true", help="open the PowerPoint afterwards")
     parser.add_argument("--verbose", "-v", action="store_true", help="show the generator's logs (on stderr)")
     args = parser.parse_args(argv)
@@ -584,6 +596,12 @@ def _render_command(argv: Sequence[str]) -> int:
             formats = ", ".join(schemas.names())
             reports.append({"plan": path, "error": f"there's no format {schema_name!r}; the formats are {formats}"})
             continue
+        looks = [*themes.names(), "chaos"]
+        if (args.theme or plan.theme or themes.CLASSIC) not in looks:
+            reports.append(
+                {"plan": path, "error": f"there's no theme {plan.theme!r}; the themes are {', '.join(looks)}"}
+            )
+            continue
         if plan.language not in languages.LANGUAGES:
             known = ", ".join(languages.LANGUAGES)
             reports.append({"plan": path, "error": f"there's no language {plan.language!r}; the languages are {known}"})
@@ -600,6 +618,7 @@ def _render_command(argv: Sequence[str]) -> int:
             contact_sheet=args.contact_sheet,
             plan_path=Path(path),
             local_images=Path(path).resolve().parent,
+            theme=args.theme,
         )
         reports.append({"plan": path, **report})
         if args.open:
