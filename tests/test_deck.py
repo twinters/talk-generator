@@ -312,6 +312,62 @@ def test_images_without_a_store_keep_their_credit(images):
     assert render_slide(powerpoint_slide_creator.create_new_powerpoint(), deck_slide) is not None
 
 
+# Pictures wider and narrower than every frame of the template's: the full picture's is 16:9, the title and
+# picture's about 1.92:1, a column's about 1.12:1 out of two and 0.76:1 out of three
+_PICTURE_SIZES = {
+    "panorama_3x1": (900, 300),
+    "widescreen_16x9": (1600, 900),
+    "landscape_4x3": (400, 300),
+    "square": (300, 300),
+    "portrait_3x4": (300, 400),
+    "portrait_9x16": (900, 1600),
+}
+_PICTURE_ROLES = {
+    "image": ("content",),
+    "full_image": ("content",),
+    "two_column_image": ("content_1", "content_2"),
+    "three_column_image": ("content_1", "content_2", "content_3"),
+}
+
+
+@pytest.mark.parametrize("size", _PICTURE_SIZES.values(), ids=_PICTURE_SIZES.keys())
+@pytest.mark.parametrize("slide_type", _PICTURE_ROLES)
+def test_pictures_shown_whole_keep_their_shape(slide_type, size):
+    """A picture shown whole (fit "contain") is drawn as large as it fits in its frame, centred, and neither stretched
+    nor squashed. v4 padded it by the difference between its aspect ratio and its frame's, which only kept square
+    pictures in shape: a 9:16 one on a full-picture slide came out 43% too wide."""
+    images = {}
+    for role in _PICTURE_ROLES[slide_type]:
+        image = ImageData(f"https://example.com/{role}.jpg")
+        image.data = _jpeg(size)
+        images[role] = image
+    deck_slide = DeckSlide(
+        type=slide_type,
+        layout=f"classic/{slide_type}",
+        elements=tuple(
+            ImageElement(role=role, image=ImageAsset(url=image.get_image_url()), fit="contain")
+            for role, image in images.items()
+        ),
+    )
+
+    ppt_slide = render_slide(
+        powerpoint_slide_creator.create_new_powerpoint(),
+        deck_slide,
+        images={image.get_image_url(): image for image in images.values()},
+    )
+
+    pictures = [shape for shape in ppt_slide.shapes if getattr(shape, "image", None) is not None]
+    assert len(pictures) == len(images)
+    for picture in pictures:
+        # Crops are fractions of the image (negative ones pad it), and what's left of it is stretched over the frame
+        drawn_width = picture.width / (1 - picture.crop_left - picture.crop_right)
+        drawn_height = picture.height / (1 - picture.crop_top - picture.crop_bottom)
+        assert drawn_width / drawn_height == pytest.approx(size[0] / size[1], rel=1e-4)
+        # As wide or as high as the frame, and no larger than it either way
+        assert max(drawn_width / picture.width, drawn_height / picture.height) == pytest.approx(1, rel=1e-4)
+        assert (picture.crop_left, picture.crop_top) == (picture.crop_right, picture.crop_bottom)
+
+
 def test_save_deck_to_json(tmp_path):
     deck = Deck(generator="test", title="Cats")
 

@@ -106,20 +106,19 @@ def _add_image(slide, placeholder_id: int, image: ImageData, original_image_size
             placeholder.height = height
             placeholder.width = width
             picture = placeholder.insert_picture(BytesIO(image_bytes))
-            # Then pad the picture so it fits inside the layout's frame with its own aspect ratio
+            # The picture now fills the layout's frame, stretched to it. Pad it with negative crops (fractions of
+            # the image's size) so it's drawn whole, centred, with its own aspect ratio: the image is drawn
+            # frame width / (1 - crop_left - crop_right) wide and frame height / (1 - crop_top - crop_bottom) high
             image_ratio = width / height
-            placeholder_ratio = picture.width / picture.height
-            ratio_difference = placeholder_ratio - image_ratio
-            # Placeholder width too wide:
-            if ratio_difference > 0:
-                difference_on_each_side = ratio_difference / 2
-                picture.crop_left = -difference_on_each_side
-                picture.crop_right = -difference_on_each_side
-            # Placeholder height too high
-            else:
-                difference_on_each_side = -ratio_difference / 2
-                picture.crop_bottom = -difference_on_each_side
-                picture.crop_top = -difference_on_each_side
+            frame_ratio = picture.width / picture.height
+            if frame_ratio > image_ratio:  # the frame is proportionally wider than the image: pad its left and right
+                padding = (frame_ratio / image_ratio - 1) / 2
+                picture.crop_left = -padding
+                picture.crop_right = -padding
+            else:  # the frame is proportionally taller (or just right): pad its top and bottom
+                padding = (image_ratio / frame_ratio - 1) / 2
+                picture.crop_top = -padding
+                picture.crop_bottom = -padding
         else:
             picture = placeholder.insert_picture(BytesIO(image_bytes))
     except (ValueError, XMLSyntaxError, AttributeError, OSError, KeyError) as e:
