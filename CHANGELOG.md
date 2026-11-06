@@ -170,6 +170,13 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   dictionaries holding image and chart objects.
 - The classic chart styles moved from `talkgenerator.sources.chart` to `talkgenerator.render.charts` (the old
   names still work).
+- Charts are quieter, so that the joke stands out: no gridlines, tick marks or numbers along their axes, which
+  only showed made-up numbers. A yes/no chart's columns have their shares on top ("81%" over "Only on Tuesdays")
+  instead of an axis of percentages; a doughnut has its slices' shares on its ring and a legend that names them;
+  a correlation is round dots; a pie's slices are kept apart by thin lines; and in the classic template, a
+  ranking's bars are grey but for the punchline, and a trend's second line comes in the punchline's red. Chart
+  texts are bigger (18 to 24 points), in the template's or the theme's font, and axes are thin lines in a muted
+  colour. A trend's named moment ("I got a cat") is on one line, beside its dot on the side the line leaves free.
 - New dependency: pydantic. New optional dependencies: anthropic and openai (see the language model providers), and
   mcp (for `talkgenerator mcp`).
 - A talk without a seed gets a random one, which the logs and the deck JSON mention, so any talk can be made
@@ -197,6 +204,13 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   talks had an "Expectation vs Reality" slide.
 - A ranking leaves out bars that are only numbers: a free model wrote its scores between the names ("Druids |
   6 | Priests | 4"), which made a number the winner.
+- The texts that talkgenerator writes on charts itself, such as axis titles, a pie's names and shares, and a named
+  point, show on every slide. PowerPoint drew them in black, whatever the chart's own font said, so on the classic
+  template's black and on dark themes they didn't show at all. They're in the template's or the theme's text
+  colour now, and a doughnut's shares in whatever reads on their slice.
+- Column charts no longer have gridlines: v4 meant to leave them out, but misspelt them (`has_mayor_gridlines`).
+- A doughnut in a theme named its slices twice: in a legend, and on its ring, where longer names ran into each
+  other.
 - No slide shows an image of a slide before it: conclusions, which may repeat texts as they sum up, could repeat
   a picture too.
 - Gif slides show gifs that move. Their Reddit search takes only animated posts (gif subreddits hold photos
