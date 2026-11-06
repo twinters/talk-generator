@@ -15,6 +15,7 @@ from typing import Any, Final
 from pptx.chart.data import ChartData, XyChartData
 from pptx.enum.chart import XL_CHART_TYPE
 
+from talkgenerator.plan.languages import Language
 from talkgenerator.slide import slides
 from talkgenerator.sources import chart
 from talkgenerator.util import random_util
@@ -28,8 +29,9 @@ class TextField:
     optional: bool = False  # may stay empty, and the slide then shows nothing there
 
 
-# Builds the slide from its texts (None where a field stays empty) and its images (whatever the sources found)
-Builder = Callable[[Mapping[str, str | None], Mapping[str, Any]], slides.Slide]
+# Builds the slide from its texts (None where a field stays empty), its images (whatever the sources found), and the
+# talk's language (for the words talkgenerator adds itself, such as a chart's Yes and No)
+Builder = Callable[[Mapping[str, str | None], Mapping[str, Any], Language], slides.Slide]
 
 
 @dataclass(frozen=True)
@@ -65,29 +67,29 @@ class Recipe:
         return [slot for slot in KINDS[self.kind].images if f"{slot}_query" not in self.omit]
 
 
-def _title(texts: Mapping[str, str | None], images: Mapping[str, Any]) -> slides.Slide:
+def _title(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
     return slides.TitleSlide(texts["title"] or "", texts.get("subtitle"))
 
 
-def _image(texts: Mapping[str, str | None], images: Mapping[str, Any]) -> slides.Slide:
+def _image(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
     return slides.ImageSlide(texts.get("title"), images.get("image"))
 
 
-def _full_image(texts: Mapping[str, str | None], images: Mapping[str, Any]) -> slides.Slide:
+def _full_image(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
     return slides.FullImageSlide(texts.get("title"), images.get("image"))
 
 
-def _statement(texts: Mapping[str, str | None], images: Mapping[str, Any]) -> slides.Slide:
+def _statement(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
     return slides.LarqeQuoteSlide(None, texts.get("text") or "", images.get("background"))
 
 
-def _two_columns(texts: Mapping[str, str | None], images: Mapping[str, Any]) -> slides.Slide:
+def _two_columns(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
     return slides.TwoColumnImageSlide(
         texts.get("title"), texts.get("caption_1"), images.get("image_1"), texts.get("caption_2"), images.get("image_2")
     )
 
 
-def _three_columns(texts: Mapping[str, str | None], images: Mapping[str, Any]) -> slides.Slide:
+def _three_columns(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
     return slides.ThreeColumnImageSlide(
         texts.get("title"),
         texts.get("caption_1"),
@@ -99,22 +101,22 @@ def _three_columns(texts: Mapping[str, str | None], images: Mapping[str, Any]) -
     )
 
 
-def _history_quote(texts: Mapping[str, str | None], images: Mapping[str, Any]) -> slides.Slide:
+def _history_quote(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
     # A made-up historical figure (never a real person) and their quote, where v4 put a real quote next to a made-up name
     return slides.TwoColumnImageSlide(
         texts.get("title"), texts.get("name"), images.get("portrait"), None, texts.get("quote")
     )
 
 
-def _chart_yes_no(texts: Mapping[str, str | None], images: Mapping[str, Any]) -> slides.Slide:
+def _chart_yes_no(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
     data = ChartData()
-    data.categories = ["Yes", "No", texts["funny_answer"] or ""]
+    data.categories = [language.yes, language.no, texts["funny_answer"] or ""]
     data.add_series("", chart.normalise_data(chart.create_equal_data_with_outlier_end(3, 0.2, 1, 2.5, 1, 20)))
     chart_type, style = random_util.choice((chart.PIE, chart.PROCENT_HISTOGRAM, chart.DOUGHNUT))
     return slides.ChartSlide(texts["question"], chart_type, data, style)
 
 
-def _chart_categories(texts: Mapping[str, str | None], images: Mapping[str, Any]) -> slides.Slide:
+def _chart_categories(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
     categories = [part.strip() for part in (texts["categories"] or "").split("|") if part.strip()][:5]
     if len(categories) < 2:
         raise ValueError("a pie chart needs two answers or more")
@@ -125,7 +127,7 @@ def _chart_categories(texts: Mapping[str, str | None], images: Mapping[str, Any]
     return slides.ChartSlide(texts["question"], chart_type, data, style)
 
 
-def _chart_correlation(texts: Mapping[str, str | None], images: Mapping[str, Any]) -> slides.Slide:
+def _chart_correlation(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
     # The made-up data of v4's correlation curves, under the plan's claim
     data = XyChartData()
     series = data.add_series("Model")

@@ -50,7 +50,43 @@ def leftovers_in(text: str) -> list[str]:
 
 def check_deck(deck: Deck, expected_slides: int | None = None) -> list[Finding]:
     """Every check of a deck."""
-    return [*check_completeness(deck, expected_slides), *check_leftovers(deck), *check_images(deck)]
+    return [
+        *check_completeness(deck, expected_slides),
+        *check_leftovers(deck),
+        *check_images(deck),
+        *check_language(deck),
+    ]
+
+
+_WORD = re.compile(r"[^\W\d_]+")
+
+
+def check_language(deck: Deck) -> list[Finding]:
+    """Whether a talk in another language than English is in that language: by the stopwords its texts hold (NLTK's
+    lists of a language's little words, such as "de" and "het", or "the" and "of"). An error when the talk reads as
+    English, and a warning for a slide that does. (The classic generator writes English, so English talks pass.)"""
+    if deck.language == "en":
+        return []
+    from talkgenerator.plan import languages  # (here: the checks don't need them otherwise)
+    from talkgenerator.util import language_util
+
+    language = languages.language(deck.language)
+    expected = language_util.stopwords(language.stopwords)
+    english = language_util.stopwords("english")
+    own, foreign = expected - english, english - expected  # the words that tell the two apart
+    findings = []
+    own_in_talk = english_in_talk = 0
+    for number, slide in enumerate(deck.slides, 1):
+        words = [word for _, text in _texts(slide.elements) for word in _WORD.findall(text.lower())]
+        own_in_slide = sum(word in own for word in words)
+        english_in_slide = sum(word in foreign for word in words)
+        own_in_talk += own_in_slide
+        english_in_talk += english_in_slide
+        if english_in_slide >= 2 and own_in_slide == 0:
+            findings.append(Finding("language", "warning", f"reads as English, not {language.name}", number))
+    if english_in_talk >= 4 and english_in_talk > 2 * own_in_talk:
+        findings.insert(0, Finding("language", "error", f"the talk reads as English, not {language.name}"))
+    return findings
 
 
 def check_completeness(deck: Deck, expected_slides: int | None = None) -> list[Finding]:

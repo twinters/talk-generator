@@ -34,6 +34,7 @@ from talkgenerator.datastructures.slide_generator_data import SlideGeneratorData
 from talkgenerator.llm.base import ProviderError, TextProvider
 from talkgenerator.llm.providers import NoneProvider
 from talkgenerator.models.plan import SlidePlan, TalkPlan
+from talkgenerator.plan import languages
 from talkgenerator.plan.kinds import Recipe, TextField
 from talkgenerator.plan.prompt import PlannedSlide, slide_plan, talk_request
 from talkgenerator.plan.realize import ATTEMPTS, clean_text, realize
@@ -85,16 +86,23 @@ class PlanOutcome:
     """How a slide of a plan that was written outside talkgenerator came out (see PresentationSchema.realize_plan)."""
 
     number: int  # its place in the deck, counted from 1 (slide 1 is the title slide)
-    outcome: str = "as planned"  # or "classic" (its recipe's classic generator made it), or "left out"
+    # Or "classic" (its recipe's classic generator made it), "picture" (a picture of its concept without text, in
+    # a talk in another language than English, which classic slides aren't in), or "left out"
+    outcome: str = "as planned"
     problems: list[str] = field(default_factory=list)  # what went wrong on the way, even when a later try worked
 
 
 def _title_slide(
-    title: str, presenter: str | None, job: str | None, thesis: str | None, rng: random_util.Rng
+    title: str,
+    presenter: str | None,
+    job: str | None,
+    thesis: str | None,
+    rng: random_util.Rng,
+    language: str = "en",
 ) -> tuple[slides.Slide, list[str]]:
-    """The title slide of a planned talk ("By <presenter>, <job>"), with its texts."""
+    """The title slide of a planned talk ("By <presenter>, <job>", in the talk's language), with its texts."""
     with random_util.use(rng.child("subtitle")):
-        by = random_util.choice(("By", "A presentation by", "Presented by"))
+        by = random_util.choice(languages.language(language).by)
     subtitle = ", ".join(part for part in (f"{by} {presenter}" if presenter else "", job or "") if part) or None
     slide = slides.TitleSlide(title, subtitle)
     slide.set_note(f"Planned: the title slide\nThesis: {thesis!r}")
@@ -120,6 +128,7 @@ class _PlannedTalk:
     plans: dict[int, SlidePlan] = field(default_factory=dict)
     first_attempts: dict[int, Any] = field(default_factory=dict)
     pool: ThreadPool | None = None
+    language: str = "en"
 
     def __post_init__(self) -> None:
         self._slide_numbers = {slide.key: slide_nr for slide_nr, slide in self.planned.items()}
@@ -246,8 +255,21 @@ class PresentationSchema:
                         title = "About " + topics[0]
             logger.info("Generate talk title: {}".format(title))
 
+            # A talk in another language needs the language model's slides: the classic ones are English
+            planned = talk is not None and bool(talk.plans)
+            talk_language = language if planned else "en"
+            if language != talk_language:
+                logger.warning("Without the language model's slides, this talk is classic, and so in English")
+
             # Create new presentation
-            slide_deck = SlideDeck(num_slides, title=title, topics=topics, presenter=presenter, seed=rng.root_seed)
+            slide_deck = SlideDeck(
+                num_slides,
+                title=title,
+                topics=topics,
+                presenter=presenter,
+                seed=rng.root_seed,
+                language=talk_language,
+            )
             logger.info("Slide deck: {}".format(slide_deck))
 
             # Create main presentation_context
@@ -256,9 +278,10 @@ class PresentationSchema:
                 "topics": topics,
                 "presenter": presenter,
                 "title": title,
+                "language": talk_language,
             }
             contexts = [create_slide_presentation_context(main_presentation_context, seed) for seed in seeds]
-            if talk is not None and talk.plans:
+            if talk is not None and planned:
                 self._settle_planned_talk(slide_deck, talk, contexts, rng, presenter)
             else:
                 self._generate_slides(slide_deck, contexts, rng, parallel)
@@ -301,7 +324,7 @@ class PresentationSchema:
         generators have recipes. The model's answer is read while it's written, and in parallel, every slide's first
         attempt starts as soon as its part of the answer is in."""
         num_slides = len(seeds)
-        picks = self._pick_generators(num_slides, rng)
+        picks = self._pick_generators(num_slides, rng, language)
         planned = {
             slide_nr: PlannedSlide(slide_nr + 1, pick.name or str(pick), pick.llm, seeds[slide_nr])
             for slide_nr, pick in enumerate(picks)
@@ -310,9 +333,10 @@ class PresentationSchema:
         talk = _PlannedTalk(
             picks,
             planned,
-            # What realizing a slide may know: its topic (not the title, which arrives with the answer)
-            [{"topic": topics[0], "topics": topics, "seed": seed} for seed in seeds],
+            # What realizing a slide may know: its topic and language (not the title, which arrives with the answer)
+            [{"topic": topics[0], "topics": topics, "seed": seed, "language": language} for seed in seeds],
             [rng.child("slide", slide_nr, "planned") for slide_nr in range(num_slides)],
+            language=language,
         )
         if not planned:
             return talk
@@ -351,13 +375,21 @@ class PresentationSchema:
         logger.info("The language model wrote %s of the %s slides", len(talk.plans), num_slides)
         return talk
 
-    def _pick_generators(self, num_slides: int, rng: random_util.Rng) -> list[SlideGeneratorData | None]:
+    def _pick_generators(
+        self, num_slides: int, rng: random_util.Rng, language: str = "en"
+    ) -> list[SlideGeneratorData | None]:
         """Every slide's generator, before there's any content: by weight for the slide's position, among the ones
-        the tags of the slides before it still allow (as generating the slides one by one picks them)."""
+        the tags of the slides before it still allow (as generating the slides one by one picks them). A talk in
+        another language than English gets none whose recipes find English texts (such as real quotes)."""
+        english_only = {
+            generator for generator in self._slide_generators if generator.llm is not None and generator.llm.texts_from
+        }
         used_tags: dict[str, int] = {}
         picks: list[SlideGeneratorData | None] = []
         for slide_nr in range(num_slides):
-            prohibited = self._calculate_prohibited_generators(used_tags, num_slides)
+            prohibited = set(self._calculate_prohibited_generators(used_tags, num_slides))
+            if language != "en":
+                prohibited |= english_only
             with random_util.use(rng.child("slide", slide_nr, "plan")):
                 try:
                     generator = self._select_generator(slide_nr, num_slides, prohibited)
@@ -377,7 +409,9 @@ class PresentationSchema:
         presenter: str | None,
     ) -> None:
         """Settle the slides in order: the title slide from the plan's title, a planned slide in up to ATTEMPTS
-        tries (each must not repeat what the slides before it used), and a classic slide wherever that fails."""
+        tries (each must not repeat what the slides before it used), and a classic slide wherever that fails. In a
+        talk in another language than English, where classic slides would be English, that's a picture of what the
+        slide was about, without text (or no slide, without pictures in the schema)."""
         num_slides = len(contexts)
         state = _DeckState()
         for slide_nr in range(num_slides):
@@ -393,7 +427,13 @@ class PresentationSchema:
                         break
                 else:
                     logger.info("Planned slide %s didn't come out: it's classic", slide_nr + 1)
-            if worked_out is None:
+            if worked_out is None and talk.language != "en":
+                plan = talk.plans.get(slide_nr)
+                concept = (plan.concept.strip() if plan else "") or contexts[slide_nr]["seed"]
+                worked_out = self._picture_slide(
+                    slide_nr, concept, contexts[slide_nr], rng.child("slide", slide_nr, "picture"), state
+                )
+            elif worked_out is None:
                 classic = self._work_out_slide(
                     slide_nr, num_slides, contexts[slide_nr], rng.child("slide", slide_nr), state, {}, generate=True
                 )
@@ -411,8 +451,33 @@ class PresentationSchema:
         slide_nr: int, generator: SlideGeneratorData, talk: "_PlannedTalk", title: str, presenter: str | None
     ) -> _WorkedOutSlide:
         job = clean_text(talk.spine.get("presenter_job"), _PRESENTER_JOB)
-        slide, texts = _title_slide(title, presenter, job, talk.spine.get("thesis"), talk.rngs[slide_nr])
+        thesis = talk.spine.get("thesis")
+        slide, texts = _title_slide(title, presenter, job, thesis, talk.rngs[slide_nr], talk.language)
         return _WorkedOutSlide(slide_nr, generator, slide, texts)
+
+    def _picture_slide(
+        self, slide_nr: int, concept: str, context: dict, rng: random_util.Rng, state: _DeckState
+    ) -> _WorkedOutSlide | None:
+        """A picture of the concept, filling the slide, without text: what a slide of a talk in another language
+        than English becomes when it doesn't come out as planned. None if this schema has no such pictures, or none
+        is found."""
+        pictures = [
+            generator
+            for generator in self._slide_generators
+            if generator.llm is not None and generator.llm.kind == "full_image" and not generator.llm.texts_from
+        ]
+        neutral = [generator for generator in pictures if "neutral" in generator.get_tags()]
+        if not pictures:
+            return None
+        generator = (neutral or pictures)[0]
+        recipe = generator.llm
+        assert recipe is not None
+        picture = SlidePlan(kind="full_image", recipe=generator.name, concept=concept, images={"image": concept})
+        for attempt in range(ATTEMPTS):
+            result = realize(picture, recipe, context, rng, attempt)
+            if result is not None and self._is_new_enough(result, generator, state):
+                return _WorkedOutSlide(slide_nr, generator, *result)
+        return None
 
     # TALKS PLANNED OUTSIDE TALKGENERATOR (BY AN AGENT, SAY)
 
@@ -427,17 +492,28 @@ class PresentationSchema:
     ) -> tuple[SlideDeck, list["PlanOutcome"]]:
         """A plan written outside talkgenerator (see talkgenerator.plan.external) as a deck: the title slide from the
         plan's title, then every planned slide as planned (in up to ATTEMPTS tries, each of which must not repeat what
-        the slides before it used), or else made by its recipe's classic generator, or else left out.
+        the slides before it used), or else made by its recipe's classic generator, or else left out. In a plan in
+        another language than English, where classic slides would be English, a slide that doesn't come out becomes a
+        picture of its concept, without text, instead.
 
         recipes holds every planned slide's slide generator and recipe, or None for a slide that can't be made (a
         kind this schema has no slides of). Like the other talks, the same seed gives the same deck, in parallel or
         not, as long as the sources give the same answers."""
         num_slides = 1 + len(plan.slides)
         title = clean_text(plan.title, _TALK_TITLE) or plan.topic
-        slide_deck = SlideDeck(num_slides, title=title, topics=[plan.topic], presenter=presenter, seed=rng.root_seed)
+        slide_deck = SlideDeck(
+            num_slides,
+            title=title,
+            topics=[plan.topic],
+            presenter=presenter,
+            seed=rng.root_seed,
+            language=plan.language,
+        )
         state = _DeckState()
         job = clean_text(plan.presenter_job, _PRESENTER_JOB)
-        title_slide, title_texts = _title_slide(title, presenter, job, plan.thesis, rng.child("slide", 0, "planned"))
+        title_slide, title_texts = _title_slide(
+            title, presenter, job, plan.thesis, rng.child("slide", 0, "planned"), plan.language
+        )
         slide_deck.add_slide(0, title_slide)
         _add_used(state, title_texts)
 
@@ -448,6 +524,7 @@ class PresentationSchema:
                 "seed": planned.concept.strip() or plan.topic,
                 "presenter": presenter,
                 "title": plan.title,
+                "language": plan.language,
             }
             for planned in plan.slides
         ]
@@ -499,7 +576,17 @@ class PresentationSchema:
                     break
                 if result is not None:
                     outcome.problems.append("it repeats an image or a text of a slide before it")
-            if worked_out is None:
+            if worked_out is None and plan.language != "en":
+                concept = planned.concept.strip() or plan.topic
+                picture = self._picture_slide(
+                    index + 1, concept, contexts[index], rng.child("slide", index + 1, "picture"), state
+                )
+                if picture is None:
+                    outcome.outcome = "left out"
+                    continue
+                worked_out = (picture.slide, picture.generated_elements)
+                outcome.outcome = "picture"
+            elif worked_out is None:
                 classic = self._run_generator(
                     generator, index + 1, contexts[index], rng.child("slide", index + 1, "classic"), state
                 )

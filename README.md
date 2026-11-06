@@ -80,7 +80,8 @@ The presenter's name is never sent to the model.
 Only OpenRouter's free models write talks without being asked: other models write them when `--llm` or `TALKGENERATOR_LLM` names them.
 `--llm none` (or `DISABLE_LLM=1`) makes a classic talk, as the 2019 generator did.
 `TALKGENERATOR_LLM_EFFORT` (such as `none`, `minimal`, `low` or `medium`) sets how hard the model thinks before it writes, for the models that take it. Unless it's set, Claude thinks at `low`, and OpenRouter's free models don't think at all (thinking made them take minutes, and they write as well without), or as little as they can when they have to.
-`--language nl` has the model write the talk in Dutch (or in another language); the image searches stay in English.
+`--language nl` has the model write the talk in Dutch, and so do `fr`, `de`, `es`, `it` and `pt` in French, German, Spanish, Italian and Portuguese; the image searches stay in English.
+The classic generator only speaks English, so in such a talk, a slide that doesn't come out as the model wrote it becomes a picture without text instead of a classic slide, and the talk as a whole is English (and says so in the logs) when the model doesn't write it.
 After every talk, the logs tell how many requests it made and what they cost, and so does the talk's deck JSON.
 
 ### Claude as the writer: the Skill
@@ -128,7 +129,7 @@ The commands the Skill uses work for plans written by hand, or by other tools, t
 | `--print_logs` / `--verbose` | Print progress (*default: true*); `--verbose` adds debug logs |
 | `--debug_notes` | Explain in each slide's speaker notes how it was generated. Off by default, since presenters see the notes |
 | `--llm` | The language model that writes the slides, as `provider:model` (see [Language models](#language-models)). `none` makes a classic talk (*default: what `TALKGENERATOR_LLM` says, or else OpenRouter's free models when there's an `OPENROUTER_API_KEY`, or else `none`*) |
-| `--language` | The language of the slides, such as `nl`, for talks a language model writes (classic talks are in English) (*default: en*) |
+| `--language` | The language of the slides: `en`, `nl`, `fr`, `de`, `es`, `it` or `pt`, for talks a language model writes (classic talks are in English) (*default: en*) |
 
 ### Using it from Python
 

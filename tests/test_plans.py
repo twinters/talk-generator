@@ -68,13 +68,14 @@ def _render(plan, tmp_path, **options):
     return external.render_plan(plan, output_folder=tmp_path, presenter="Ann Example", int_seed=1, **options)
 
 
-def _summary(deck_slides, as_planned=0, classic=0, left_out=0):
-    planned = as_planned + classic + left_out
+def _summary(deck_slides, as_planned=0, classic=0, picture=0, left_out=0):
+    planned = as_planned + classic + picture + left_out
     return {
         "deck_slides": deck_slides,
         "planned_slides": planned,
         "as_planned": as_planned,
         "classic": classic,
+        "picture": picture,
         "left_out": left_out,
     }
 
@@ -321,3 +322,45 @@ def test_a_plan_can_name_its_format(schema, tmp_path, capsys):
     path.write_text(_plan(CHART, format="karaoke").model_dump_json(), encoding="utf-8")
     assert external.main("render", [str(path), "--output_folder", str(tmp_path)]) == 2
     assert "there's no format 'karaoke'" in json.loads(capsys.readouterr().out)["error"]
+
+
+# PLANS IN OTHER LANGUAGES
+
+
+def test_a_dutch_plan_gets_dutch_words_and_pictures_instead_of_classic_slides(schema, tmp_path):
+    from talkgenerator.plan import languages
+
+    unwritten = {**TWO_COLUMNS, "texts": {"caption_2": "Werkelijkheid"}}  # no caption_1: it can't come out
+    report = _render(_plan(unwritten, STATEMENT, language="nl"), tmp_path)
+    assert (report["language"], report["summary"]) == ("nl", _summary(3, as_planned=1, picture=1))
+    assert report["slides"][0]["outcome"] == "picture"
+    deck = Deck.from_json(Path(report["deck_json"]).read_text(encoding="utf-8"))
+    assert deck.language == "nl"
+    assert deck.slides[0].elements[1].text.split(" Ann Example")[0] in languages.LANGUAGES["nl"].by
+    assert deck.slides[1].type == "full_image"
+    assert [element for element in deck.slides[1].elements if element.kind == "text"] == []
+
+
+def test_a_dutch_plan_gets_no_recipe_that_finds_english_texts():
+    choices = external.recipes_of(get_schema("default"))
+    choice, warnings = external.choose_recipe(choices, SlidePlan(kind="statement", recipe="quote"), "nl")
+    assert choice.id == "wikihow-bold-statement"
+    assert "finds English texts" in warnings[0]
+    assert external.choose_recipe(choices, SlidePlan(kind="statement", recipe="quote"))[0].id == "quote"
+
+
+def test_render_refuses_a_language_it_doesnt_know(schema, tmp_path, capsys):
+    path = tmp_path / "cats.json"
+    path.write_text(_plan(CHART, language="xx").model_dump_json(), encoding="utf-8")
+    assert external.main("render", [str(path), "--output_folder", str(tmp_path)]) == 2
+    assert "there's no language 'xx'" in json.loads(capsys.readouterr().out)["error"]
+
+
+def test_a_plan_gets_no_random_shitpostbot_or_unsplash_images_either():
+    from talkgenerator.sources import shitpostbot, unsplash
+    from talkgenerator.util import generator_util
+
+    with generator_util.as_planned():  # (no requests: they step aside before asking)
+        assert shitpostbot.get_random_images_rated("owls") == []
+        assert shitpostbot.get_random_images("owls") == []
+        assert unsplash.random_as_list("owls") == []

@@ -99,6 +99,7 @@ class Deck(_Data):
     title: str | None = None
     topics: tuple[str, ...] = ()
     presenter: str | None = None
+    language: str = "en"  # the language of its texts (the credits stay as their sources word them)
     schema_name: str | None = None
     seed: int | None = None
     theme: str = "classic"

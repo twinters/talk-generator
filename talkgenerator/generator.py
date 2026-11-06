@@ -12,6 +12,7 @@ from talkgenerator.llm.base import TextProvider
 from talkgenerator.llm.ledger import Budget, Ledger, MeteredProvider
 from talkgenerator.llm.providers import NoneProvider, from_settings, provider_from_spec
 from talkgenerator.models.deck import Deck
+from talkgenerator.plan import languages
 from talkgenerator.schema.content_generators import full_name_generator
 from talkgenerator.schema.presentation_schema_types import get_schema, schemas
 from talkgenerator.slide.slide_deck import SlideDeck
@@ -121,6 +122,7 @@ def generate_presentation(
 
     # The language model that writes the talk, if any; every request it gets is written down in the talk's ledger
     provider = _language_model(llm)
+    languages.language(language)  # (a ValueError for a language talkgenerator doesn't know)
     ledger = Ledger()
     if provider is not None:
         logger.info("Language model: {}".format(provider.id))
@@ -358,7 +360,7 @@ def get_argument_parser():
     parser.add_argument(
         "--language",
         default="en",
-        type=str,
+        choices=list(languages.LANGUAGES),
         help="The language of the talk, such as en or nl (only with a language model: classic talks are English)",
     )
     parser.add_argument(

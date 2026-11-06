@@ -34,6 +34,7 @@ from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.datastructures.slide_generator_data import SlideGeneratorData
 from talkgenerator.models.deck import Deck, ImageElement, TextElement
 from talkgenerator.models.plan import SlidePlan, TalkPlan
+from talkgenerator.plan import languages
 from talkgenerator.plan.kinds import KINDS, Recipe
 from talkgenerator.schema.presentation_schema import PlanOutcome, PresentationSchema
 from talkgenerator.slide.slide_deck import SlideDeck
@@ -118,8 +119,11 @@ def default_recipe(choices: Sequence[RecipeChoice], kind: str) -> RecipeChoice |
     return writes_its_texts[0] if writes_its_texts else None
 
 
-def choose_recipe(choices: Sequence[RecipeChoice], slide: SlidePlan) -> tuple[RecipeChoice | None, list[str]]:
-    """The recipe a planned slide gets (None if it can't be made), and warnings about the one it asked for."""
+def choose_recipe(
+    choices: Sequence[RecipeChoice], slide: SlidePlan, language: str = "en"
+) -> tuple[RecipeChoice | None, list[str]]:
+    """The recipe a planned slide gets (None if it can't be made), and warnings about the one it asked for. In a
+    talk in another language than English, that's never one that finds its texts itself: they'd be English."""
     if slide.kind not in PLANNABLE_KINDS:
         return None, [f"there's no slide kind {slide.kind!r}; the kinds are {', '.join(PLANNABLE_KINDS)}"]
     warnings = []
@@ -131,6 +135,11 @@ def choose_recipe(choices: Sequence[RecipeChoice], slide: SlidePlan) -> tuple[Re
             warnings.append(
                 f"recipe {slide.recipe!r} makes {found.recipe.kind} slides, not {slide.kind} ones: the default one "
                 f"for {slide.kind} was used"
+            )
+        elif language != "en" and found.recipe.texts_from:
+            warnings.append(
+                f"recipe {slide.recipe!r} finds English texts, which don't fit a talk in another language: the "
+                f"default one for {slide.kind} was used"
             )
         else:
             return found, warnings
@@ -207,7 +216,7 @@ def render_plan(
             presenter = full_name_generator()
 
     choices = recipes_of(schema)
-    chosen = [choose_recipe(choices, slide) for slide in plan.slides]
+    chosen = [choose_recipe(choices, slide, plan.language) for slide in plan.slides]
     recipes = [(choice.generator, choice.recipe) if choice else None for choice, _ in chosen]
     # The recipes as chosen, which the slides' notes then name
     resolved = tuple(
@@ -247,12 +256,14 @@ def render_plan(
         "title": deck.title,
         "presenter": presenter,
         "format": schema_name,
+        "language": deck.language,
         "seed": rng.root_seed,
         "summary": {
             "deck_slides": len(deck.slides),  # the title slide too
             "planned_slides": len(plan.slides),
             "as_planned": outcome_names.count("as planned"),
             "classic": outcome_names.count("classic"),
+            "picture": outcome_names.count("picture"),
             "left_out": outcome_names.count("left out"),
         },
         "slides": slide_reports,
@@ -558,6 +569,10 @@ def _render_command(argv: Sequence[str]) -> int:
         if schema_name not in schemas.names():
             formats = ", ".join(schemas.names())
             reports.append({"plan": path, "error": f"there's no format {schema_name!r}; the formats are {formats}"})
+            continue
+        if plan.language not in languages.LANGUAGES:
+            known = ", ".join(languages.LANGUAGES)
+            reports.append({"plan": path, "error": f"there's no language {plan.language!r}; the languages are {known}"})
             continue
         report = render_plan(
             plan,

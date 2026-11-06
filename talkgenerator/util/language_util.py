@@ -4,7 +4,7 @@ import logging
 import re
 import string
 from collections.abc import Callable
-from functools import lru_cache
+from functools import cache, lru_cache
 from pathlib import Path
 
 import inflect
@@ -18,6 +18,7 @@ REQUIRED_NLTK_RESOURCES = (
     ("tokenizers/punkt_tab", "punkt_tab"),
     ("taggers/averaged_perceptron_tagger_eng", "averaged_perceptron_tagger_eng"),
     ("corpora/wordnet", "wordnet"),
+    ("corpora/stopwords", "stopwords"),  # for the language check (talkgenerator.checks.deck)
 )
 
 
@@ -57,6 +58,16 @@ def _check_and_download_corpus(resource_path: str, package: str) -> None:
     if _download(package, str(fallback_dir)) and _is_available(resource_path):
         return
     raise LookupError(f"NLTK resource '{package}' is missing and could not be downloaded")
+
+
+@cache
+def stopwords(language: str) -> frozenset[str]:
+    """NLTK's stopwords of a language ("dutch", "english", ...): its most common little words, such as "the" and
+    "of". Downloads NLTK's lists the first time they're needed."""
+    _check_and_download_corpus("corpora/stopwords", "stopwords")
+    from nltk.corpus import stopwords as corpus
+
+    return frozenset(corpus.words(language))
 
 
 def _download(package: str, download_dir: str | None = None) -> bool:

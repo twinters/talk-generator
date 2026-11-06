@@ -13,6 +13,7 @@ from typing import Any, Final
 from talkgenerator.checks.deck import leftovers_in
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.models.plan import SlidePlan
+from talkgenerator.plan import languages
 from talkgenerator.plan.kinds import KINDS, Recipe, TextField
 from talkgenerator.slide.slides import Slide
 from talkgenerator.util import generator_util, os_util, random_util
@@ -96,7 +97,7 @@ def realize(
             images[slot] = found.found_with(queries[slot]) if isinstance(found, ImageData) else found
 
         try:
-            slide = kind.build(texts, images)
+            slide = kind.build(texts, images, languages.language(presentation_context.get("language", "en")))
         except (ValueError, KeyError) as error:
             _note(problems, str(error))
             return None

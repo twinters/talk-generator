@@ -49,7 +49,9 @@ by. If it's long, tell the user once that free keys give better images, and leav
 3. **Write the plan** as a JSON file, like [references/example-plan.json](references/example-plan.json), say
    `plans/birdwatching.json`. It has the talk's `format` (when it isn't `default`), `topic`, `title` (at most 80
    characters), `presenter_job` (at most 40; the title slide reads "By <name>, <job>"), `thesis`, and `language`
-   when it isn't English (`"nl"` for Dutch), and then its `slides`. The title slide is made for you, from the title.
+   when it isn't English, and then its `slides`. The title slide is made for you, from the title. Talks can be in
+   Dutch (`"nl"`), French (`"fr"`), German (`"de"`), Spanish (`"es"`), Italian (`"it"`) and Portuguese (`"pt"`):
+   write every text in that language, and keep the image queries in English.
 4. **Render it**:
 
    ```bash
@@ -62,10 +64,12 @@ by. If it's long, tell the user once that free keys give better images, and leav
    talks`.
 5. **Read the report** (JSON, on stdout). For every slide of the plan (`plan_index` is its place in your `slides`,
    `deck_slide` its place in the deck) it gives the `outcome`: `as planned`, `classic` (talkgenerator made the slide
-   its own way, because the plan's version didn't come out) or `left out`, with the `problems` that caused that,
-   and `warnings` about texts that were cut off, fields that don't exist, and such. `checks` lists what the deck's
-   automated checks found (a slide missing what it needs, template code on a slide, images without credits or
-   shown twice), and `notes` what concerns the whole talk. A field that isn't there means there's nothing to say.
+   its own way, because the plan's version didn't come out), `picture` (in a talk in another language than
+   English, where talkgenerator's own slides would be English: a picture of the slide's concept, without text) or
+   `left out`, with the `problems` that caused that, and `warnings` about texts that were cut off, fields that don't
+   exist, and such. `checks` lists what the deck's automated checks found (a slide missing what it needs, template
+   code on a slide, images without credits or shown twice, a talk or slide in the wrong language), and `notes` what
+   concerns the whole talk. A field that isn't there means there's nothing to say.
 6. **Look at the images.** "As planned" means every image was found, not that it fits: image search is a lottery.
    Each slide's `images` give what an image was searched with (`searched`: your query, or the slide's concept when
    the query found nothing), what it `shows` according to its source (most stock photos say), its credit, and its
@@ -110,6 +114,7 @@ that give the presenter something to work with, rather than finished jokes:
   recipes mix in Reddit images and gifs, which are wilder, need Reddit or GIPHY keys, and change from one render to
   the next; recipes with `copyright-free` or `crf` in their id use stock photos, artworks and old photos only. Some
   recipes find their texts themselves (real quotes, say): the reference says so, and then you don't write that text.
+  Those texts are English, so a talk in another language gets the kind's default recipe instead.
 - **Your own pictures**: an image "query" may be the path of an image file, relative to the plan's folder. That
   puts the user's own photo on the slide, for an about-me slide, say.
 

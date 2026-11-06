@@ -14,7 +14,7 @@ import ssl
 import nltk
 
 # Keep in sync with talkgenerator.util.language_util.REQUIRED_NLTK_RESOURCES
-CORPORA = ["punkt_tab", "averaged_perceptron_tagger_eng", "wordnet"]
+CORPORA = ["punkt_tab", "averaged_perceptron_tagger_eng", "wordnet", "stopwords"]
 
 
 def main() -> None:

@@ -12,6 +12,7 @@ from typing import Any
 from talkgenerator import settings
 from talkgenerator.datastructures.image_data import CreditPart, ImageData
 from talkgenerator.util import http_util
+from talkgenerator.util.generator_util import planned
 
 logger = logging.getLogger("talkgenerator")
 
@@ -112,6 +113,8 @@ def random(_: object = None) -> ImageData | None:
 
 
 def random_as_list(_: object = None) -> list[ImageData]:
+    if planned():  # a plan asked for something: a random photo isn't it
+        return []
     result = random(_)
     return [result] if result else []
 

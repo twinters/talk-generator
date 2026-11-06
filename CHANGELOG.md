@@ -57,6 +57,12 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
 - The talkgenerator Skill (`skill/`): Claude writes talks for PowerPoint karaoke and improvised TED talks, renders
   them with `talkgenerator render`, and fixes them from the report. It installs as a Claude Code plugin straight
   from this repository (`/plugin marketplace add twinters/talk-generator`), or as a skill folder.
+- Talks in Dutch (`--language nl`), and in French, German, Spanish, Italian and Portuguese, when a language model
+  or a plan writes them: talkgenerator's own words on the slides ("By ...", a chart's "Yes" and "No") are in the
+  talk's language too, a slide that doesn't come out becomes a picture of its subject without text (the classic
+  slides are English), and recipes that find English texts, such as real quotes, aren't used. A deck says its
+  language, and a new check reads its texts with NLTK's stopword lists: a talk that reads as English when it
+  shouldn't is an error, and such a slide a warning. `talkgenerator check --language nl --llm ...` checks them.
 - `talkgenerator check --llm provider:model` checks talks a language model writes; to check that the same answers
   give the same talk, the second run replays what the first one got. The report says how many slides the model
   wrote.

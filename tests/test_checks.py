@@ -7,7 +7,14 @@ import pytest
 
 from talkgenerator import generator, run
 from talkgenerator.checks import benchmark
-from talkgenerator.checks.deck import Finding, check_completeness, check_deck, check_images, check_leftovers
+from talkgenerator.checks.deck import (
+    Finding,
+    check_completeness,
+    check_deck,
+    check_images,
+    check_language,
+    check_leftovers,
+)
 from talkgenerator.models import classic
 from talkgenerator.models.deck import (
     ChartElement,
@@ -49,6 +56,49 @@ TITLE = _slide("title", _text("title", "Cats"), _text("subtitle", "By Ann"))
 
 
 # CHECKS OF A DECK
+
+
+def _talk_in(language, *texts):
+    """A deck in the language, with a slide for every text."""
+    title = _slide("title", _text("title", texts[0]), _text("subtitle", "Door Ann Example"))
+    return Deck(
+        generator="test",
+        language=language,
+        slides=(title, *(_slide("full_image", _text("title", text)) for text in texts[1:])),
+    )
+
+
+def test_a_dutch_talk_in_dutch_passes_the_language_check():
+    deck = _talk_in(
+        "nl",
+        "Het geheime leven van katten",
+        "Waarom de kat altijd wint",
+        "Een kat op de bank is een koning",
+        "Wat we hebben geleerd",
+    )
+    assert check_language(deck) == []
+
+
+def test_a_dutch_talk_in_english_doesnt():
+    deck = _talk_in(
+        "nl",
+        "The secret life of cats",
+        "Why the cat always wins",
+        "A cat on the couch is a king",
+        "What we have learned from them",
+    )
+    findings = check_language(deck)
+    assert findings[0] == Finding("language", "error", "the talk reads as English, not Dutch")
+    assert {finding.slide for finding in findings[1:]} <= {2, 3, 4, 5}
+
+
+def test_one_english_slide_in_a_dutch_talk_is_a_warning():
+    deck = _talk_in("nl", "Het geheime leven van katten", "Waarom de kat altijd wint", "What we have learned from them")
+    assert check_language(deck) == [Finding("language", "warning", "reads as English, not Dutch", 3)]
+
+
+def test_english_talks_have_no_language_to_check():
+    assert check_language(_talk_in("en", "Het geheime leven van katten", "Waarom de kat wint")) == []
 
 
 def test_a_good_deck_has_no_findings():

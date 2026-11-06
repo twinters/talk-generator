@@ -14,18 +14,9 @@ from typing import Any, Final
 
 from talkgenerator.llm.base import Message, TextRequest
 from talkgenerator.models.plan import SlidePlan
+from talkgenerator.plan import languages
 from talkgenerator.plan.kinds import KINDS, Recipe, TextField
 from talkgenerator.util import random_util
-
-LANGUAGES: Final = {
-    "en": "English",
-    "nl": "Dutch",
-    "fr": "French",
-    "de": "German",
-    "es": "Spanish",
-    "it": "Italian",
-    "pt": "Portuguese",
-}
 
 SYSTEM_PROMPT: Final = """\
 You write the slides of talks for improv theatre, for formats such as PowerPoint karaoke and improvised TED talks. A \
@@ -124,7 +115,8 @@ def talk_request(
     lines = [
         f"Topic: {topic}",
         f"Title: {title}" if title else "Title: come up with one",
-        f"Language: write the slides in {LANGUAGES.get(language, language)}, and the image search queries in English",
+        f"Language: write the title, the presenter's job and every slide in {languages.language(language).name}, and "
+        "the image search queries in English",
         f"The presenter: {persona}",
         f"The angle: {angle}",
         "",

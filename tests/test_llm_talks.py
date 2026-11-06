@@ -25,7 +25,7 @@ from talkgenerator.datastructures.slide_generator_data import ConstantWeightFunc
 from talkgenerator.llm import providers
 from talkgenerator.llm.base import Capabilities, TextProvider, TextResponse
 from talkgenerator.models.deck import Deck
-from talkgenerator.plan import prompt
+from talkgenerator.plan import languages, prompt
 from talkgenerator.plan.kinds import KINDS, Recipe, TextField
 from talkgenerator.plan.realize import clean_text
 from talkgenerator.plan.stream import ObjectReader
@@ -78,12 +78,12 @@ def _classic_chart(context):
 
 
 def fake_schema():
-    def generator_(kind, weight, classic, **recipe):
+    def generator_(kind, weight, classic, tags=(), **recipe):
         return SlideGeneratorData(
             classic,
             weight_function=weight,
             allowed_repeated_elements=10,
-            tags=[kind],
+            tags=[kind, *tags],
             name=f"Fake {kind}",
             llm=Recipe(kind, **recipe),
         )
@@ -121,6 +121,14 @@ def fake_schema():
             ),
             generator_(
                 "chart_yes_no", ConstantWeightFunction(1), slide_generator_types.ChartSlideGenerator(_classic_chart)
+            ),
+            # Never picked (weight 0): the picture a slide of a talk in another language becomes when it fails
+            generator_(
+                "full_image",
+                ConstantWeightFunction(0),
+                slide_generator_types.FullImageSlideGenerator.of(NoneGenerator(), _photo("full")),
+                images=(_photos,),
+                tags=["neutral"],
             ),
             generator_(
                 "three_columns",
@@ -318,9 +326,64 @@ def test_the_language_and_a_given_title_reach_the_prompt(schema):
     model = FakeModel()
     deck = _talk(model, language="nl", title="Over katten")
     user_prompt = model.requests[0].messages[0].content
-    assert "write the slides in Dutch" in user_prompt
+    assert "every slide in Dutch" in user_prompt
     assert "Title: Over katten" in user_prompt
     assert deck.title == "Over katten"
+
+
+# TALKS IN OTHER LANGUAGES
+
+
+def test_a_dutch_talk_has_dutch_words_of_its_own(schema):
+    deck = _talk(FakeModel(), language="nl")
+    assert deck.language == "nl"
+    by = deck.slides[0].elements[1].text.split(" Ann Example")[0]
+    assert by in languages.LANGUAGES["nl"].by
+    chart = KINDS["chart_yes_no"].build({"question": "Ooit?", "funny_answer": "Soms"}, {}, languages.LANGUAGES["nl"])
+    (element,) = [element for element in chart.to_deck_slide().elements if element.kind == "chart"]
+    assert element.chart.categories == ("Ja", "Nee", "Soms")
+
+
+def test_a_slide_of_a_dutch_talk_that_doesnt_come_out_becomes_a_picture(schema):
+    def spoil(answer):
+        first = next(key for key in answer if key.startswith("slide_"))
+        answer[first] = {key: "{seed}" for key in answer[first]}  # template code: it can't come out
+
+    deck = _talk(FakeModel(change=spoil), language="nl")
+    spoiled = deck.slides[1]
+    assert spoiled.type == "full_image"
+    assert [element for element in spoiled.elements if element.kind == "text"] == []  # no English classic slide
+    assert len(deck.slides) == NUM_SLIDES
+
+
+def test_a_dutch_talk_gets_no_slides_that_find_english_texts(monkeypatch):
+    fake = fake_schema()
+    quote = SlideGeneratorData(
+        slide_generator_types.LarqeQuoteSlideGenerator.of(NoneGenerator(), StaticGenerator("A quote"), _photo("q")),
+        weight_function=ConstantWeightFunction(1000),
+        allowed_repeated_elements=10,
+        name="Fake quote",
+        llm=Recipe("statement", images=(_photos,), texts_from={"text": lambda context: "An English quote"}),
+    )
+    schema = PresentationSchema(
+        powerpoint_slide_creator.create_new_powerpoint,
+        seed_generator=IdentityTopicGenerator,
+        title_generator=lambda context: "A classic title",
+        slide_generators=[*fake.slide_generators, quote],
+        max_allowed_tags={"title": 1, "three_columns": 1},
+    )
+    monkeypatch.setattr(generator, "get_schema", lambda name: schema)
+
+    def texts(deck):
+        return [element.text for slide in deck.slides for element in slide.elements if element.kind == "text"]
+
+    assert "An English quote" in texts(_talk(FakeModel()))
+    assert "An English quote" not in texts(_talk(FakeModel(), language="nl"))
+
+
+def test_a_language_talkgenerator_doesnt_know_is_refused(schema):
+    with pytest.raises(ValueError, match="doesn't know the language 'xx'"):
+        _talk(FakeModel(), language="xx")
 
 
 # THROUGH THE PROVIDERS' APIS (FAKED AT THE HTTP LEVEL)

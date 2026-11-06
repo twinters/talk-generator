@@ -6,21 +6,25 @@ from functools import lru_cache
 from bs4 import BeautifulSoup, Tag
 
 from talkgenerator import settings
+from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.util import http_util, random_util, scraper_util
+from talkgenerator.util.generator_util import planned
 
 logger = logging.getLogger("talkgenerator")
 
 _MAX_RANDOM_PAGE = 150
 _SEARCH_URL = "https://www.shitpostbot.com/gallery/sourceimages"
+# Its source images are its users' uploads: credited to the gallery they come from
+_SOURCE = "ShitpostBot 5000"
 source_image_prefix = "https://www.shitpostbot.com/img/sourceimages/"
 
 
-def _search_shitpostbot_page(search_term: str, page: int) -> list[str]:
+def _search_shitpostbot_page(search_term: str, page: int) -> list[ImageData]:
     return [element[1] for element in _search_shitpostbot_page_rated(search_term, page)]
 
 
 @lru_cache(maxsize=64)
-def _search_shitpostbot_page_rated(search_term: str, page: int) -> list[tuple[int, str]]:
+def _search_shitpostbot_page_rated(search_term: str, page: int) -> list[tuple[int, ImageData]]:
     if settings.is_source_disabled("SHITPOSTBOT"):
         return []
     params = {
@@ -56,7 +60,7 @@ def _search_shitpostbot_page_rated(search_term: str, page: int) -> list[tuple[in
         except ValueError:
             rating = 1
         if rating > 0:
-            image_urls.append((rating, image_url))
+            image_urls.append((rating, ImageData(image_url, source=_SOURCE, source_url=_SEARCH_URL)))
     return image_urls
 
 
@@ -67,11 +71,15 @@ def _get_source_image(image_url: str) -> str:
     return source_image_prefix + image_file_name
 
 
-def get_random_images(_: object) -> list[str]:
+def get_random_images(_: object) -> list[ImageData]:
+    if planned():  # a plan asked for something: a random page isn't it
+        return []
     return _search_shitpostbot_page("", random_util.choice(range(1, _MAX_RANDOM_PAGE)))
 
 
-def get_random_images_rated(_: object) -> list[tuple[int, str]]:
+def get_random_images_rated(_: object) -> list[tuple[int, ImageData]]:
+    if planned():
+        return []
     return _search_shitpostbot_page_rated("", random_util.choice(range(1, _MAX_RANDOM_PAGE)))
 
 
@@ -79,9 +87,9 @@ _search_image_function = scraper_util.create_page_scraper(_search_shitpostbot_pa
 _search_image_function_rated = scraper_util.create_page_scraper(_search_shitpostbot_page_rated)
 
 
-def search_images(search_term: str, number: int = 50) -> list[str]:
+def search_images(search_term: str, number: int = 50) -> list[ImageData]:
     return _search_image_function(search_term, number)
 
 
-def search_images_rated(search_term: str, number: int = 50) -> list[tuple[int, str]]:
+def search_images_rated(search_term: str, number: int = 50) -> list[tuple[int, ImageData]]:
     return _search_image_function_rated(search_term, number)

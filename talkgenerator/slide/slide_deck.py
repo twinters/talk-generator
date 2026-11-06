@@ -22,6 +22,7 @@ class SlideDeck:
         topics: Sequence[str] = (),
         presenter: str | None = None,
         seed: int | None = None,
+        language: str = "en",
     ):
         self._size = size
         self._slides: list[Slide | None] = [None] * size
@@ -29,6 +30,7 @@ class SlideDeck:
         self._topics = tuple(topics)
         self._presenter = presenter
         self._seed = seed
+        self._language = language
         # What the talk asked of language models (see talkgenerator.llm), for the deck to tell
         self.usage = Usage()
 
@@ -56,6 +58,7 @@ class SlideDeck:
             title=self._title,
             topics=self._topics,
             presenter=self._presenter,
+            language=self._language,
             schema_name=schema_name,
             seed=self._seed,
             slides=tuple(slide.to_deck_slide() for slide in self._slides if slide is not None),
