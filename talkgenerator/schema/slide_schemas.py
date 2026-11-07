@@ -707,6 +707,12 @@ diagram_slide_generators = _register(
 # every format
 
 
+def _middle(weight: float) -> BetweenWeight:
+    """A weight for the slides in the middle of a talk: not the title slide, the one after it (where the presenter
+    introduces themself) or the last (the conclusions)."""
+    return BetweenWeight(weight, after=2, before=1)
+
+
 def _drawn(content, slide_class, weight, tags, name, recipe, repeats=2) -> SlideGeneratorData:
     return SlideGeneratorData(
         slide_generator_types.DrawnSlideGenerator(content, slide_class),
@@ -726,7 +732,7 @@ number_slide_generators = _register(
         _drawn(
             slide_texts.generate_big_number,
             slides.BigNumberSlide,
-            ConstantWeightFunction(1.2),
+            _middle(1.2),
             ["big_number"],
             "Big Number",
             Recipe(
@@ -738,7 +744,7 @@ number_slide_generators = _register(
         _drawn(
             slide_texts.generate_kpi,
             slides.KpiSlide,
-            ConstantWeightFunction(0.8),
+            _middle(0.8),
             ["kpi"],
             "KPI Tiles",
             Recipe(
@@ -761,7 +767,7 @@ quiz_slide_generators = _register(
         _drawn(
             slide_texts.generate_quiz,
             slides.QuizSlide,
-            ConstantWeightFunction(1),
+            _middle(1),
             ["quiz"],
             "Quiz",
             Recipe(
@@ -788,7 +794,7 @@ def _mockups(post_image, news_image, suffix: str = "") -> list[SlideGeneratorDat
         _drawn(
             slide_texts.social_post(post_image),
             slides.SocialPostSlide,
-            ConstantWeightFunction(1),
+            _middle(1),
             ["social_post"],
             f"Social Media Post{suffix}",
             Recipe("social_post", (post_image,), brief=_POST_BRIEF),
@@ -797,7 +803,7 @@ def _mockups(post_image, news_image, suffix: str = "") -> list[SlideGeneratorDat
         _drawn(
             slide_texts.news_headline(news_image),
             slides.NewsHeadlineSlide,
-            ConstantWeightFunction(1),
+            _middle(1),
             ["news"],
             f"News Headline{suffix}",
             Recipe("news_headline", (news_image,), brief=_NEWS_BRIEF),
@@ -868,7 +874,7 @@ native_diagram_slide_generators = _register(
         _drawn(
             slide_texts.generate_timeline,
             slides.TimelineSlide,
-            ConstantWeightFunction(0.4),
+            _middle(0.4),
             ["timeline", "diagram"],
             "Timeline",
             Recipe("timeline", brief="The concept's made-up history, as a timeline whose last moment is the punchline"),
@@ -876,7 +882,7 @@ native_diagram_slide_generators = _register(
         _drawn(
             slide_texts.generate_pyramid,
             slides.PyramidSlide,
-            ConstantWeightFunction(0.4),
+            _middle(0.4),
             ["pyramid", "diagram"],
             "Pyramid",
             Recipe(
@@ -886,7 +892,7 @@ native_diagram_slide_generators = _register(
         _drawn(
             slide_texts.generate_funnel,
             slides.FunnelSlide,
-            ConstantWeightFunction(0.4),
+            _middle(0.4),
             ["funnel", "diagram"],
             "Funnel",
             Recipe("funnel", brief="A sales funnel about the concept, narrowing down to something absurd"),
@@ -894,7 +900,7 @@ native_diagram_slide_generators = _register(
         _drawn(
             slide_texts.generate_cycle,
             slides.CycleSlide,
-            ConstantWeightFunction(0.4),
+            _middle(0.4),
             ["cycle", "diagram"],
             "Cycle",
             Recipe("cycle", brief="A vicious circle about the concept: steps that lead to each other, and back"),
@@ -902,7 +908,7 @@ native_diagram_slide_generators = _register(
         _drawn(
             slide_texts.generate_org_chart,
             slides.OrgChartSlide,
-            ConstantWeightFunction(0.4),
+            _middle(0.4),
             ["org_chart", "diagram"],
             "Org Chart",
             Recipe("org_chart", brief="Who's really in charge of the concept, as an org chart with a surprising boss"),
@@ -910,7 +916,7 @@ native_diagram_slide_generators = _register(
         _drawn(
             slide_texts.generate_iceberg,
             slides.IcebergSlide,
-            ConstantWeightFunction(0.4),
+            _middle(0.4),
             ["iceberg", "diagram"],
             "Iceberg",
             Recipe(
