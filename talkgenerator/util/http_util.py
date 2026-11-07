@@ -137,6 +137,7 @@ def get_session() -> requests.Session:
                 allowable_methods=("GET",),
                 ignored_parameters=_CACHE_IGNORED_PARAMETERS,
             )
+            session.hooks["response"].append(_matchable)
         else:
             session = requests.Session()
         session.mount("https://", adapter)
@@ -144,6 +145,28 @@ def get_session() -> requests.Session:
         session.headers["User-Agent"] = USER_AGENT
         _thread_local.session = session
     return session
+
+
+# Headers that an answer the cache keeps may not vary on: requests_cache wouldn't read it back. One that varies on a
+# header the cache keys leave out (see _CACHE_IGNORED_PARAMETERS) never matches a request that sends it, as all
+# Unsplash's searches do, and Openverse's with a token (they say "Vary: ..., Authorization"); and one that varies on
+# Cookie (Pixabay's, Commons', Openverse's) only matches while the session holds the same cookies, from any host,
+# as when it was stored. What these searches answer depends on neither.
+_UNMATCHED_VARY = frozenset({"authorization", "cookie"})
+
+
+def _matchable(response: requests.Response, *args: Any, **kwargs: Any) -> requests.Response:
+    """A response hook: an answer the cache keeps, without the Vary headers it couldn't be matched on."""
+    vary = response.headers.get("Vary")
+    if vary and _kept_on_disk(response.url):
+        names = [name.strip() for name in vary.split(",") if name.strip()]
+        kept = [name for name in names if name.lower() not in _UNMATCHED_VARY]
+        if len(kept) < len(names):
+            if kept:
+                response.headers["Vary"] = ", ".join(kept)
+            else:
+                del response.headers["Vary"]
+    return response
 
 
 def reset_sessions() -> None:

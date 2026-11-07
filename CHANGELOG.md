@@ -414,6 +414,11 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   expired between its two runs: Pixabay's expire after a day, and a fresh answer links the same pictures under other
   addresses, so a slide's picture changed its link. The second run now gets the answers the first one got
   (`http_util.same_answers`), as it gets a language model's; GIPHY's, which may not be kept, are still asked twice.
+- The on-disk cache of API responses reads back what it keeps. Unsplash's searches, and Openverse's once it's
+  signed in, were stored but never read back: their answers say they vary on `Authorization`, which the cache's keys
+  leave out. And Pixabay's, Commons' and Openverse's, which say they vary on `Cookie`, stopped being read back once
+  any host had set a cookie. Those searches went out again every time, using up rate limits (Unsplash's demo key
+  allows 50 an hour). The cache no longer stores answers as varying on either header.
 
 ## [4.0.1] - 2026-11-05
 

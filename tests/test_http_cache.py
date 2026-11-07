@@ -38,6 +38,13 @@ class _Handler(http.server.BaseHTTPRequestHandler):
         self.send_response(404 if path.endswith("/missing") else 200)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
+        # As Unsplash's searches answer (and Openverse's), and Pixabay's
+        if path.endswith("/varies-on-authorization"):
+            self.send_header("Vary", "Accept-Encoding,Authorization,Accept")
+        if path.endswith("/varies-on-cookie"):
+            self.send_header("Vary", "Accept-Encoding, Accept-Language, Cookie")
+        if path.endswith("/sets-cookie"):  # as a host behind Cloudflare does
+            self.send_header("Set-Cookie", "__cf_bm=abc; Path=/")
         self.end_headers()
         self.wfile.write(body)
 
@@ -84,6 +91,25 @@ def test_giphy_searches_are_never_cached(cache_dir):
     patterns = http_util.get_session().settings.urls_expire_after
     assert get_url_expiration("https://api.pexels.com/v1/search?query=cat", patterns)  # (other searches are)
     assert get_url_expiration(giphy.API_URL + "?q=cat&limit=25", patterns) is None
+
+
+def test_answers_that_vary_on_authorization_are_read_back(server, cache_dir):
+    # Unsplash's searches always send their key, and its answers say "Vary: ..., Authorization": they were stored, and
+    # never read back, as the cache keys leave the key out
+    url = f"http://{server}/api/varies-on-authorization"
+    headers = {"Authorization": "Client-ID SECRET"}
+    http_util.get(url, params={"query": "cat"}, headers=headers)
+    assert http_util.get(url, params={"query": "cat"}, headers=headers).from_cache
+    assert _Handler.hits["/api/varies-on-authorization"] == 1
+
+
+def test_answers_that_vary_on_cookies_are_read_back_whatever_cookies_came_in(server, cache_dir):
+    # Pixabay's answers say "Vary: ..., Cookie": once any host had set a cookie, they weren't read back any more
+    url = f"http://{server}/api/varies-on-cookie"
+    http_util.get(url, params={"q": "cat"})
+    http_util.get(f"http://{server}/sets-cookie")
+    assert http_util.get(url, params={"q": "cat"}).from_cache
+    assert _Handler.hits["/api/varies-on-cookie"] == 1
 
 
 def test_errors_are_not_cached(server, cache_dir):
