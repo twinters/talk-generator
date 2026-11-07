@@ -205,7 +205,7 @@ def schema(monkeypatch):
 
 
 def _talk(model, int_seed=1, parallel=True, **options):
-    _, slide_deck, _ = generator.generate_presentation(
+    _, slide_deck, _ = generator._generate_presentation(
         schema="fake",
         slides=NUM_SLIDES,
         topic="cats",

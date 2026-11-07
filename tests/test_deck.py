@@ -280,7 +280,9 @@ def test_unsupported_charts_are_refused():
 def test_the_slide_deck_dictionary_is_json():
     deck = SlideDeck(1)
     deck.add_slide(0, slides.TitleSlide("Cats", None))
-    assert json.loads(json.dumps(deck.to_slide_deck_dictionary())) == [
+    with pytest.warns(DeprecationWarning, match=r"Use slide_deck\.to_deck\(\) instead"):  # (see test_deprecations)
+        dictionary = deck.to_slide_deck_dictionary()
+    assert json.loads(json.dumps(dictionary)) == [
         {
             "type": "title",
             "layout": "classic/title",

@@ -57,7 +57,7 @@ def _streamed(slides=NUM_SLIDES, **options):
 
 
 def _made_at_once(slides=NUM_SLIDES, **options):
-    _, slide_deck, _ = generator.generate_presentation("fake", slides, save_ppt=False, **{**TALK, **options})
+    _, slide_deck, _ = generator._generate_presentation("fake", slides, save_ppt=False, **{**TALK, **options})
     return slide_deck.to_deck(schema_name="fake")
 
 

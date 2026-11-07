@@ -49,7 +49,7 @@ def test_parallel_multiple_topics(tmp_path):
 
 
 def test_to_dictionary():
-    _, slide_deck, _ = generator.generate_presentation(
+    _, slide_deck, _ = generator._generate_presentation(
         schema="default",
         slides=3,
         topic="cat",
@@ -57,7 +57,8 @@ def test_to_dictionary():
         int_seed=123,
         save_ppt=False,
     )
-    slides_dict = slide_deck.to_slide_deck_dictionary()
+    with pytest.warns(DeprecationWarning, match="to_deck"):
+        slides_dict = slide_deck.to_slide_deck_dictionary()
     assert len(slides_dict) == 3
 
 
