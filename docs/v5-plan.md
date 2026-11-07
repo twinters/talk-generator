@@ -716,15 +716,24 @@ optional memory of recently shown quotes and images, so popular topics don't kee
 - **Procedural themes:** a base hue from the seed, a harmony rule per family (analogous, complementary,
   triadic), lightness limits, and a contrast check (WCAG: at least 4.5:1 for body text, 3:1 for titles) that
   repairs failing colors. Font pairs come from a curated list per family.
-- **Fonts:** a .pptx names its fonts, and the computer showing it needs to have them. So pptx themes stick to
-  widely installed fonts (Arial, Calibri, Georgia, Verdana, Trebuchet MS, Impact, Comic Sans MS, Courier New,
-  Times New Roman...), and the browser view maps each one to a web font. Text gets measured with bundled open
-  fonts that share the main fonts' metrics (Liberation Sans, Serif and Mono for Arial, Times New Roman and
-  Courier New; Carlito for Calibri; Caladea for Cambria; Gelasio for Georgia), and the fonts without such a twin
-  (Arial Black, Verdana, Trebuchet MS, Impact, Comic Sans MS) with a table of every character's width in them,
-  measured once from their own files, so font sizes are picked deterministically, the same on every computer, and
-  text doesn't overflow. Only a character outside those tables gets a safety margin. PowerPoint's
-  shrink-on-overflow stays on as a safety net.
+- **Fonts:** a .pptx names its fonts, and the computer showing it needs to have them, unless they travel inside it.
+  So themes use two kinds. Widely installed fonts (Arial, Calibri, Georgia, Verdana, Trebuchet MS, Impact, Comic
+  Sans MS, Courier New, Times New Roman...), which the browser view maps to web fonts: measured with bundled open
+  fonts that share their metrics (Liberation Sans, Serif and Mono for Arial, Times New Roman and Courier New;
+  Carlito for Calibri; Caladea for Cambria; Gelasio for Georgia), and the ones without such a twin (Arial Black,
+  Verdana, Trebuchet MS, Impact, Comic Sans MS) with a table of every character's width in them, measured once from
+  their own files. And open fonts with more personality (D38): two pairings per family, from Google Fonts (Poppins,
+  Space Mono, Crimson Text, Abril Fatface, Audiowide...), which a member has two times in three. They're bundled
+  (3.9 MB), so they're measured everywhere; every .pptx that uses them carries them inside it, regular and bold, as
+  uncompressed Embedded OpenType, which PowerPoint for Windows shows (tried on 2026-11-07), as PowerPoint for Mac
+  and LibreOffice 25.8 should; and the browser view loads them from Google Fonts. Where a deck's own fonts aren't
+  used (PowerPoint for the web, most likely Keynote), a stand-in shows: each open font has an installed one, texts
+  are fitted to both (a few percent smaller in the fonts narrower than theirs, such as Barlow and Titillium Web),
+  and runs carry the font's PANOSE and pitch family, so the stand-in is of the same kind. Lato and Poppins are
+  Office cloud fonts, which PowerPoint for the web shows anyway. The extremes keep their installed fonts: Comic Sans
+  MS, Impact and Arial Black are the joke. Font sizes are picked deterministically, the same on every computer, and
+  text doesn't overflow. Only a character outside the tables gets a safety margin. PowerPoint's shrink-on-overflow
+  stays on as a safety net.
 - **Rendering:** the pptx renderer draws shapes (text boxes, pictures, shapes, charts) on a blank slide instead
   of filling the template's placeholders. v4's `template.pptx` lives on as the `classic` theme, for the paper
   baseline and for anyone who likes the old look.
@@ -1204,8 +1213,9 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D35 | What's typed for a talk (Automatic, topic_or_title) stays its title only when it's clearly one: four words or more, or a question or exclamation, with its slips fixed. Anything shorter is the topic, or a premise, on which the language model builds a funnier, more specific title ("The French Revolution" deserves better than itself); a title in quote marks stays word for word. The talk's dice pick whether the classic titles go with a short input as options, as inspiration only, or not at all. |
 | D36 | GIPHY's searches aren't cached: its API rules forbid caching its responses and media URLs. The other search APIs stay cached. |
 | D37 | Milestone 6's slide types are built from the deck's texts, shapes and pictures, which the layout engine places, so every renderer draws them as it draws the other slides (talk-generator-web without changes); a classic deck draws them on the 2019 template's blank slide, laid out in the template's look. What appears on a click is a property of an element (`appears_on_click`), which a renderer that plays no clicks ignores. |
+| D38 | Themes use open fonts from Google Fonts besides the installed ones: two pairings per family (not the extremes), which a member has two times in three. They're bundled, so they're measured everywhere, and embedded in every .pptx that uses them, whole, as uncompressed EOT (python-pptx can't embed fonts; PowerPoint for Windows showed one, regular and bold, on a computer without it). Each has an installed stand-in that its texts fit too, for where embedded fonts are ignored (PowerPoint for the web, Keynote). |
 
-D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, and D28 to D37 on 2026-11-07; the others follow from the design.
+D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, and D28 to D38 on 2026-11-07; the others follow from the design.
 
 ### Open questions
 

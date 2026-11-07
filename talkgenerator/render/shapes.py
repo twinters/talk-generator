@@ -3,10 +3,10 @@
 Every element of a themed deck has its box on the 1920×1080 canvas (see `talkgenerator.design.engine`), and every
 text its style, so this renderer only draws them: a canvas pixel is 6350 EMU, and half a point. PowerPoint breaks
 the texts into lines itself, with the same fonts as the engine measured them with; shrink-on-overflow stays on as a
-safety net. Slides animate as classic ones do (`talkgenerator.render.animation`): two or three columns appear click
-by click, the one before dimming, a chart's second line draws itself in and a diagram's punchline fades in on a
-click, and videos play by themselves. Classic decks go to `talkgenerator.render.powerpoint`, which fills the 2019
-template.
+safety net. The open fonts that texts are in travel inside the file (`talkgenerator.render.embedding`). Slides
+animate as classic ones do (`talkgenerator.render.animation`): two or three columns appear click by click, the one
+before dimming, a chart's second line draws itself in and a diagram's punchline fades in on a click, and videos play
+by themselves. Classic decks go to `talkgenerator.render.powerpoint`, which fills the 2019 template.
 """
 
 from __future__ import annotations
@@ -45,7 +45,7 @@ from talkgenerator.models.deck import (
     TextStyle,
 )
 from talkgenerator.models.theme import TextEffect, Theme
-from talkgenerator.render import animation, charts, diagrams
+from talkgenerator.render import animation, charts, diagrams, embedding
 from talkgenerator.render.powerpoint import ImageStore, image_data
 from talkgenerator.slide import powerpoint_slide_creator as creator
 from talkgenerator.util import http_util, image_util
@@ -78,6 +78,7 @@ def render_themed(
         presentation = new_presentation()
     for slide in deck.slides:
         draw_slide(presentation, slide, slide.style or deck.style, debug_notes=debug_notes, images=images)
+    embedding.embed_fonts(presentation)  # (the open fonts its texts are in, so PowerPoint shows them)
     return presentation
 
 

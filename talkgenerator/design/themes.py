@@ -4,6 +4,10 @@ A family says what its members can be: how light their backgrounds are, which hu
 their font pairs, decoration and casing. A member picks from that with the seed, and then repairs its colours until
 every text reads on its background (WCAG contrast: at least 4.5 for body text, 3 for titles). Some families are
 extremes, for laughs ("1997 WordArt", "Comic Sans everywhere"): they're in the random mix unless left out.
+
+A family's fonts are pairs of fonts that nearly every computer has, and (most of the time, OPEN_FONT_CHANCE) a pair
+of open fonts with more personality, which decks carry inside them (talkgenerator.design.fonts.OPEN_FONTS). The
+extremes keep to the installed ones: Comic Sans MS, Impact and Arial Black are the joke.
 """
 
 from __future__ import annotations
@@ -45,6 +49,8 @@ VIGNETTE: Final = 0.7
 WARPS: Final[tuple[Warp, ...]] = ("wave", "arch", "inflate", "slant")
 # The kinds of heading effects a family can have (see _heading_effect)
 HeadingEffect = Literal["none", "wordart", "glow", "hard shadow", "comic", "clip art"]
+# How often a member of a family with open fonts has a pair of them (else a pair of the installed fonts)
+OPEN_FONT_CHANCE: Final = 2 / 3
 
 
 @dataclass(frozen=True)
@@ -56,7 +62,8 @@ class Family:
     background_saturation: tuple[float, float] = (0.0, 0.08)
     background_lightness: tuple[float, float] = (0.95, 0.99)
     accent_saturation: tuple[float, float] = (0.6, 0.85)
-    fonts: tuple[tuple[str, str], ...] = (("Calibri", "Calibri"),)  # (heading, body) pairs
+    fonts: tuple[tuple[str, str], ...] = (("Calibri", "Calibri"),)  # (heading, body) pairs of installed fonts
+    open_fonts: tuple[tuple[str, str], ...] = ()  # (heading, body) pairs of open fonts (see OPEN_FONT_CHANCE)
     uppercase: float = 0.0  # the chance that headings are in capitals
     backgrounds: tuple[BackgroundStyle, ...] = ("solid",)
     decorations: tuple[Decoration, ...] = ("none",)
@@ -85,6 +92,7 @@ FAMILIES: Final[dict[str, Family]] = {
             description="light and calm: a sans-serif, lots of room, an accent here and there",
             harmony="analogous",
             fonts=(("Calibri", "Calibri"), ("Arial", "Arial"), ("Trebuchet MS", "Calibri")),
+            open_fonts=(("Barlow", "Barlow"), ("Atkinson Hyperlegible", "Atkinson Hyperlegible")),
             uppercase=0.2,
             decorations=("none", "underline"),
             alignments=("left", "center"),
@@ -98,6 +106,7 @@ FAMILIES: Final[dict[str, Family]] = {
             background_lightness=(0.06, 0.12),
             accent_saturation=(0.5, 0.8),
             fonts=(("Arial", "Arial"), ("Calibri", "Calibri"), ("Verdana", "Verdana")),
+            open_fonts=(("IBM Plex Mono", "Barlow"), ("Titillium Web", "Titillium Web")),
             uppercase=0.4,
             decorations=("none", "underline"),
             image_filters=(("none", 0.6), ("grayscale", 0.4)),
@@ -111,6 +120,7 @@ FAMILIES: Final[dict[str, Family]] = {
             background_lightness=(0.96, 0.99),
             accent_saturation=(0.55, 0.75),
             fonts=(("Arial", "Arial"), ("Calibri", "Calibri"), ("Verdana", "Arial")),
+            open_fonts=(("Poppins", "Lato"), ("Lato", "Lato")),
             decorations=("bar",),
             image_border=0.5,
             image_filters=(("none", 0.7), ("duotone", 0.3)),
@@ -124,6 +134,7 @@ FAMILIES: Final[dict[str, Family]] = {
             background_lightness=(0.93, 0.97),
             accent_saturation=(0.4, 0.6),
             fonts=(("Georgia", "Georgia"), ("Times New Roman", "Times New Roman"), ("Cambria", "Calibri")),
+            open_fonts=(("Crimson Text", "Crimson Text"), ("Spectral", "Spectral")),
             decorations=("underline", "bar"),
             text_scale=(0.9, 0.95),
             image_filters=(("none", 0.7), ("grayscale", 0.3)),
@@ -134,6 +145,7 @@ FAMILIES: Final[dict[str, Family]] = {
             harmony="triadic",
             accent_saturation=(0.75, 0.95),
             fonts=(("Arial Black", "Arial"), ("Trebuchet MS", "Arial"), ("Verdana", "Verdana")),
+            open_fonts=(("Poppins", "Poppins"), ("Archivo Black", "Poppins")),
             uppercase=0.3,
             backgrounds=("solid", "gradient"),
             decorations=("bar", "none"),
@@ -150,6 +162,7 @@ FAMILIES: Final[dict[str, Family]] = {
             background_lightness=(0.82, 0.9),
             accent_saturation=(0.35, 0.55),
             fonts=(("Georgia", "Georgia"), ("Times New Roman", "Georgia"), ("Courier New", "Courier New")),
+            open_fonts=(("Abril Fatface", "Crimson Text"), ("Courier Prime", "Courier Prime")),
             decorations=("frame", "underline"),
             alignments=("center",),
             image_border=0.8,
@@ -166,6 +179,7 @@ FAMILIES: Final[dict[str, Family]] = {
             background_lightness=(0.86, 0.92),
             accent_saturation=(0.8, 1.0),
             fonts=(("Trebuchet MS", "Verdana"), ("Verdana", "Verdana"), ("Comic Sans MS", "Trebuchet MS")),
+            open_fonts=(("Mali", "Mali"), ("Sniglet", "Mali")),
             decorations=("frame", "bar"),
             alignments=("center",),
             text_scale=(1.05, 1.1),
@@ -178,6 +192,7 @@ FAMILIES: Final[dict[str, Family]] = {
             background_lightness=(0.88, 0.95),
             accent_saturation=(0.9, 1.0),
             fonts=(("Arial Black", "Courier New"), ("Impact", "Arial"), ("Courier New", "Courier New")),
+            open_fonts=(("Archivo Black", "IBM Plex Mono"), ("Space Mono", "IBM Plex Mono")),
             uppercase=0.8,
             decorations=("frame", "bar"),
             image_border=1.0,
@@ -194,6 +209,7 @@ FAMILIES: Final[dict[str, Family]] = {
             background_lightness=(0.04, 0.08),
             accent_saturation=(0.95, 1.0),
             fonts=(("Verdana", "Verdana"), ("Arial Black", "Arial"), ("Trebuchet MS", "Trebuchet MS")),
+            open_fonts=(("Audiowide", "Chakra Petch"), ("Chakra Petch", "Chakra Petch")),
             uppercase=0.5,
             backgrounds=("solid", "gradient"),
             decorations=("underline", "frame"),
@@ -256,8 +272,12 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
     )
 }
-# Fonts that are bold already: their headings aren't made bolder
-_HEAVY_FONTS: Final = frozenset({"Impact", "Arial Black"})
+# Fonts that are bold already, or display faces with no bold (PowerPoint would make one up, wider): their headings
+# aren't made bolder
+_HEAVY_FONTS: Final = frozenset({"Impact", "Arial Black", "Archivo Black", "Abril Fatface", "Audiowide", "Sniglet"})
+# Display faces too wide in capitals for the longest titles, even at their smallest size: their headings aren't
+# put in capitals
+_NO_CAPITALS: Final = frozenset({"Audiowide"})
 
 # The 2019 template's look, as tokens: white Calibri on black, its titles centred, with its accents (orange, which reads
 # on black, and blue, which white reads on) and its dark grey for panels. A classic deck draws the slide types that the template has no layouts for (big numbers,
@@ -391,6 +411,14 @@ def member(family: Family) -> Theme:
     effect = None
     if random_util.random() < family.heading_effect_chance:
         effect = _heading_effect(family.heading_effect, theme)
+    # And the open fonts after everything else, for the same reason: they take the place of the installed pair
+    fonts = theme.fonts
+    if family.open_fonts and random_util.random() < OPEN_FONT_CHANCE:
+        heading, body = random_util.choice(family.open_fonts)
+        update = {"heading": heading, "body": body, "heading_bold": heading not in _HEAVY_FONTS}
+        fonts = fonts.model_copy(
+            update={**update, "heading_uppercase": fonts.heading_uppercase and heading not in _NO_CAPITALS}
+        )
     return theme.model_copy(
         update={
             "image_filter": image_filter,
@@ -398,6 +426,7 @@ def member(family: Family) -> Theme:
             "image_grain": image_grain,
             "image_vignette": image_vignette,
             "heading_effect": effect,
+            "fonts": fonts,
         }
     )
 
