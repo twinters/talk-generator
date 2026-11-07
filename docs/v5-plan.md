@@ -668,9 +668,9 @@ order, and `generate`, for 10.5); a recipe's images are slots, and v4's image ge
 slots under their old names, so classic slides and recipes ask the same way (a recipe or a variant can leave a slot
 out: the builder gets None, and the model writes no query for it). The finder (`finder.py`):
 
-1. orders the look's sources by weight, without putting one back (what v4's `CombinedGenerator` did one at a
-   time), leaving out those the talk's license policy allows none of the classes of, and those that can't be
-   searched now (no key, a cooldown);
+1. orders the look's sources that the talk's license policy allows by weight, without putting one back (what v4's
+   `CombinedGenerator` did one at a time), and then leaves out those that can't be searched now (no key, a
+   cooldown): the others keep their order, so a cooldown changes only what that source would have found;
 2. searches them two at a time for most looks (a look's `breadth`), in parallel, each search in a thread of its own
    with a random stream from one number of the slide's, so the same seed finds the same, whatever comes back first;
 3. filters: the license class of every image (Openverse's and Wikimedia's each have their own), size and
@@ -689,9 +689,9 @@ Every picked image gets a look at its thumbnail (one small download, the same wh
 once, so a streamed talk stays the talk made at once), whose perceptual hash keeps nearly the same picture off other
 slides: the schema's rule that no slide repeats an image now counts near-duplicates, and slide generators keep to it
 themselves (they could repeat an image when allowed to repeat something, which parallel generation then rejected
-round after round; found by this work's determinism test). Searching two sources at once asks about twice as many
-requests of them as v4 did (cached for a day, as before): to watch on talkgenerator.com, where Unsplash is at 50 an
-hour until its review.
+round after round; found by this work's determinism test). Searching two sources at once asks more of them than v4
+did (in the speed comparison below, 8 searches at Pexels against 5; cached for a day, as before): to watch on
+talkgenerator.com, where Unsplash is at 50 an hour until its review.
 
 ### 10.2 License classes
 
@@ -762,8 +762,9 @@ As built (2026-11-07, `profiles.py`, `catalog.py`, `analysis.py`):
 - **Looks**: `photo` (v4's copyright-free mix: Unsplash, Pixabay and Pexels 1 each, Openverse 0.1, a random
   Unsplash photo as a classic last resort), `neutral` (that, and Reddit's pictures at 0.93: v4's 1000 to 300),
   `weird-stock`, `corporate-stock` (blue and teal colour filters, "business" and "office"), `calm-backdrop` (Pixabay
-  3, Unsplash and Pexels 1, landscape; at most 0.08 of detail where the text goes (a sky is 0.02, a landscape 0.06 to 0.09, a street 0.12 and more), brightness 0.12 to 0.7: statements'
-  backdrops, which were Pixabay's only), `vintage` (Reddit's old photos 3, Commons' black and white photographs 2,
+  3, Unsplash and Pexels 1, landscape; at most 0.08 of detail where the text goes, where a sky has 0.02, a landscape
+  0.06 to 0.09 and a street 0.12 and more; brightness 0.12 to 0.7: statements' backdrops, which were Pixabay's
+  only), `vintage` (Reddit's old photos 3, Commons' black and white photographs 2,
   Openverse's archives (NYPL, the Finnish Heritage Agency, DigitaltMuseum, the Smithsonian's archives), Unsplash's
   and Pixabay's black and white; monochrome preferred, sepia applied: history slides, which took Reddit's colourised
   photos and the Art Institute's paintings too), `old-photo`, `old-people` and `portrait` (historical figures),
@@ -780,8 +781,8 @@ As built (2026-11-07, `profiles.py`, `catalog.py`, `analysis.py`):
   AnimalsBeingBros, aww), `bad-charts` (funnycharts, dataisugly, dataisbeautiful, charts: Reddit's chart slides),
   `medieval` (MedievalMemes, medievalart), `liminal`, `retro-futurism`, `accidental-art`, `pareidolia` and
   `corporate-cringe`; each is a source (`reddit:<pack>`) and a look. All their subreddits were checked on
-  2026-11-07: each has pictures among its hot posts (r/MadeMeSmile few, mostly videos: hence r/aww in `wholesome`). Reddit's NSFW mark and the finder's NSFW words
-  keep them safe for work.
+  2026-11-07: each has pictures among its hot posts (r/MadeMeSmile few, mostly videos: hence r/aww in `wholesome`).
+  Reddit's NSFW mark and the finder's NSFW words keep them safe for work.
 - **Local analysis**, with Pillow on thumbnails (the sources' own: Unsplash's `thumb`, Pexels' 240 px, Pixabay's
   preview, Openverse's, Commons' 330 px, the Art Institute's 200 px IIIF, Reddit's preview, GIPHY's still,
   ShitpostBot's gallery copy; InspiroBot has none), at 96 pixels: brightness, Hasler and Süsstrunk's colourfulness,
@@ -799,6 +800,25 @@ As built (2026-11-07, `profiles.py`, `catalog.py`, `analysis.py`):
   own (`treatments.for_look`); the classic template keeps its pictures as they are.
 - Not yet: the museums' date and classification filters (the Art Institute's search takes them), icon sets for
   `illustration`, and the vision pick (4.) and generated images (10.5), for which slots have room (`generate`).
+- **Live** (2026-11-07, `talkgenerator check`, every key, themed talks; the free OpenRouter router for the talks it
+  writes; reports in the session's scratchpad, sample decks in the comparison folder's `15-v5-9997e28-image-looks`):
+  - Classic talks on the 10 default topics (seed 1) and on 5 topics with seeds 2 and 3: 20 talks, 18 the same made
+    one by one. The other two came out differently because Unsplash's demo key ran out of its 50 requests an hour
+    while they were made: its cooldown kept it out of the one-by-one run. Talks by the free models (5 topics, seed
+    2): 50 of 50 slides by the model, 5 requests, $0, 4 of 5 the same (Unsplash and GIPHY ran out during the first).
+    With those two switched off (`DISABLE_UNSPLASH`, `DISABLE_GIPHY`): 5 of 5 classic talks and 3 of 3 talks by the
+    free models came out the same (30 of 30 slides by the model, $0), without a finding.
+  - `vintage`: 26 of 26 pictures in black and white or sepia (Reddit's old photos and Commons'). `calm-backdrop`:
+    18 of 34 at most 0.08 of detail where the text goes, 2 busier than 0.12 (a warning; 3 of 9 in the first run,
+    before the finder looked at more candidates when none was calm); every other look's pictures all had it.
+  - `ted` (policy `open`): 36 images, all stock, none fair use; 1 of 3 the same (an Unsplash cooldown, and a quote
+    or WikiHow statement that came out different the second time). Images by class over all runs: 266 fair use, 135
+    stock, 4 public domain, 1 open.
+  - Speed, the same 4 classic talks before (`be09a7e`) and after (Unsplash and GIPHY off, seed 5, themed, parallel,
+    on this computer): with the search answers cached, a median of 16.6 seconds a talk against 16.2, and 106 calls
+    against 97; cold, 37 against 39 seconds, and 421 calls against 163, most of them thumbnails (Reddit's previews,
+    Pixabay's and Pexels' CDNs), which the second round had remembered. Search APIs: Pexels 8 against 5, the Art
+    Institute 8 against 5, Openverse 7 against 0 (on the site: to watch, with Unsplash at 50 an hour).
 
 ### 10.4 More image sources
 

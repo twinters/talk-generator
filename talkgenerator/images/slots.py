@@ -9,8 +9,8 @@ A recipe asks for its images with slots (talkgenerator.plan.kinds.Recipe.images)
 slots too (talkgenerator.schema.content_generators): called with a presentation context, a slot searches for its
 "seed", as v4's image generators did.
 
-Left room for: an image a vision model picks among the candidates, and one that's generated instead (10.4, 10.5):
-`generate` says a slot may be generated.
+Left room for: an image a vision model picks among the candidates (10.3's vision pick), and one that's generated
+instead (10.5): `generate` says a slot may be generated.
 """
 
 from __future__ import annotations
@@ -37,9 +37,8 @@ class ImageSlot:
     aesthetic: str = profiles.DEFAULT  # its look: the name of an aesthetic profile, or of a flavour pack
     license_classes: frozenset[LicenseClass] | None = None  # the license classes it may have, of the talk's
     sources: tuple[str, ...] = ()  # the only sources it may come from, of its look's (see talkgenerator.images.catalog)
-    backups: tuple[
-        str, ...
-    ] = ()  # looks that take over, in order, when its own finds none (after the look's fallbacks)
+    # Looks that take over, in order, when its own finds none (after the look's own fallbacks)
+    backups: tuple[str, ...] = ()
     generate: bool = False  # may be generated instead (docs/v5-plan.md, 10.5): not yet
 
     def __post_init__(self) -> None:
@@ -68,17 +67,6 @@ class ImageSlot:
     def but(self, **changes: Any) -> ImageSlot:
         """The slot with some of its fields changed, such as `slot.but(orientation="portrait")`."""
         return dataclasses.replace(self, **changes)
-
-    def describe(self) -> dict[str, Any]:
-        """The slot as plain data (for the formats' catalog, say)."""
-        entry: dict[str, Any] = {"look": self.aesthetic}
-        if self.intent:
-            entry["intent"] = self.intent
-        if self.orientation:
-            entry["orientation"] = self.orientation
-        if self.backups:
-            entry["backups"] = list(self.backups)
-        return entry
 
     def __repr__(self) -> str:
         return f"ImageSlot({self.aesthetic}{', ' + self.intent if self.intent else ''})"

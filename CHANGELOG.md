@@ -252,8 +252,8 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
 ### Changed
 
 - Images come through the image finder (see the image slots above): classic talks draw on the same sources with
-  about the same weights as before, but history slides now show old photographs (in black and white or sepia, by
-  preference) instead of Reddit's colourised ones and the Art Institute's paintings, statements' backdrops come from
+  about the same weights as before, but history slides now show old photographs in black and white or sepia (by
+  preference; no more r/ColorizedHistory or the Art Institute's paintings among them), statements' backdrops come from
   Pixabay, Unsplash and Pexels (they were Pixabay's only), Reddit's chart slides also take charts from
   r/dataisugly, and Reddit's images say what they show (their post's title). Searching sources at once asks more
   of them per image than before (two at a time, for most looks).
