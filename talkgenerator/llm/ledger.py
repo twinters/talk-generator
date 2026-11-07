@@ -3,6 +3,9 @@
 Wrap a talk's provider in a MeteredProvider: every request it lets through is written down in the talk's Ledger,
 failed ones too (OpenRouter's free tier counts requests, not tokens), and the Budget is checked before each request.
 A budget of max_cost_usd=0 lets only free models through, which is how talkgenerator.com stays at $0.
+
+The talk's generated pictures go in its ledger too (purpose "image": see talkgenerator.images.generation), with their
+own budget (talkgenerator.images.generation.ImageBudget): a picture isn't a language model's request.
 """
 
 from __future__ import annotations
@@ -15,6 +18,8 @@ from dataclasses import dataclass
 from talkgenerator.llm import prices
 from talkgenerator.llm.base import BudgetExceeded, ProviderError, TextProvider, TextRequest, TextResponse
 from talkgenerator.models.usage import Usage
+
+IMAGES = "image"  # the purpose of a generated picture's entry (talkgenerator.images.generation.PURPOSE)
 
 
 @dataclass(frozen=True)
@@ -46,21 +51,35 @@ class Ledger:
         return sum((entry.usage for entry in self.entries), Usage())
 
     def summary(self) -> str:
-        """One line for the logs."""
+        """One line for the logs (and what the talk's generated pictures cost, if it has any)."""
         total = self.total()
-        if not total.requests:
-            return "No language model requests"
-        models = ", ".join(sorted({entry.model for entry in self.entries}))
-        line = (
-            f"{total.requests} language model request{'s' if total.requests != 1 else ''} ({models}): "
-            f"{total.input_tokens + total.cached_input_tokens:,} tokens in ({total.cached_input_tokens:,} cached), "
-            f"{total.output_tokens:,} out, ${total.cost_usd:.4f}"
-        )
-        if total.unpriced_requests:
-            line += f" plus {total.unpriced_requests} of unknown price"
-        if total.failed_requests:
-            line += f"; {total.failed_requests} failed"
+        line = "No language model requests"
+        if total.requests:
+            models = ", ".join(sorted({entry.model for entry in self.entries if entry.purpose != IMAGES}))
+            line = (
+                f"{total.requests} language model request{'s' if total.requests != 1 else ''} ({models}): "
+                f"{total.input_tokens + total.cached_input_tokens:,} tokens in ({total.cached_input_tokens:,} cached), "
+                f"{total.output_tokens:,} out, ${total.cost_usd:.4f}"
+            )
+            if total.unpriced_requests:
+                line += f" plus {total.unpriced_requests} of unknown price"
+            if total.failed_requests:
+                line += f"; {total.failed_requests} failed"
+        if total.images or total.failed_images:
+            generators = ", ".join(sorted({entry.model for entry in self.entries if entry.purpose == IMAGES}))
+            line += (
+                f"; {total.images} generated picture{'s' if total.images != 1 else ''} ({generators}): "
+                f"${total.image_cost_usd:.4f}"
+            )
+            if total.unpriced_images:
+                line += f" plus {total.unpriced_images} of unknown price"
+            if total.failed_images:
+                line += f"; {total.failed_images} failed"
         return line
+
+    def language_models(self) -> list[str]:
+        """The language models that answered the talk's requests, in order (not its image generators)."""
+        return [entry.model for entry in self.entries if entry.error is None and entry.purpose != IMAGES]
 
 
 @dataclass(frozen=True)

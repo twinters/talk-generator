@@ -25,7 +25,7 @@ from talkgenerator.models.deck import (
     TopicOrTitle,
     VennDiagram,
 )
-from talkgenerator.models.events import SlideReady, TalkEvent, TalkFinished, TalkStarted
+from talkgenerator.models.events import SlideReady, SlideUpdated, TalkEvent, TalkFinished, TalkStarted
 from talkgenerator.models.theme import Fonts, Palette, TextEffect, Theme
 from talkgenerator.models.usage import Usage
 
@@ -51,6 +51,7 @@ __all__ = [
     "Palette",
     "ShapeElement",
     "SlideReady",
+    "SlideUpdated",
     "SlideBackground",
     "TalkEvent",
     "TalkFinished",

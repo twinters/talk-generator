@@ -400,6 +400,28 @@ def _squashed(text: str) -> str:
     return "".join(_plain_words(text))
 
 
+# Last names of the famous people above that are ordinary words too: they only count with the whole name
+_COMMON_LAST_NAMES: Final = frozenset({"arc", "cook", "poe", "polo"})
+
+
+def real_person(text: str) -> str | None:
+    """A real person the text names, of the people talkgenerator knows by name: someone a talk doesn't go out under
+    (a dictator, a famous living person), or a famous historical figure whose name the pack bends, by their whole
+    name or their last name ("Einstein"). For generated pictures, which mustn't show real people (see
+    talkgenerator.images.safety); the name as the text has it, or None."""
+    words = _plain_words(text)
+    for start in range(len(words)):
+        if _blocked(words[start : start + 3]):
+            return " ".join(words[start : start + 2])
+    for famous in _famous_names():
+        if _has_words(words, famous):
+            return " ".join(famous)
+        last = famous[-1]
+        if len(famous) > 1 and last not in _COMMON_LAST_NAMES and last in words:
+            return last
+    return None
+
+
 def _blocked(words: Sequence[str]) -> bool:
     """Whether a name's words (see _plain_words) name someone a talk doesn't go out under."""
     if _BLOCKED_WORDS & set(words) or any(word.startswith(_BLOCKED_STARTS) for word in words):

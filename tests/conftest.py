@@ -47,9 +47,14 @@ def _offline_tests_use_no_real_credentials(request, monkeypatch, tmp_path):
     # No language model either, unless a test brings its own: offline talks are classic
     credentials |= {"TALKGENERATOR_LLM", "OPENROUTER_API_KEY", "ANTHROPIC_API_KEY", "OPENAI_API_KEY"}
     credentials |= {"TALKGENERATOR_LLM_EFFORT", "DISABLE_LLM"}
+    # Nor an image generator (offline talks generate no pictures, unless a test brings its own), nor its keys
+    credentials |= {"TALKGENERATOR_IMAGE_GENERATOR", "DISABLE_IMAGE_GENERATION", "TALKGENERATOR_GENERATED_IMAGES"}
+    credentials |= {"TALKGENERATOR_IMAGE_COST_LIMIT", "TALKGENERATOR_IMAGE_QUALITY", "GEMINI_API_KEY", "GOOGLE_API_KEY"}
+    credentials |= {"BFL_API_KEY", "COMFYUI_URL", "COMFYUI_CHECKPOINT", "COMFYUI_WORKFLOW", "AUTOMATIC1111_URL"}
     for name in sorted(credentials):
         monkeypatch.delenv(name, raising=False)
-    # Nor the key that `talkgenerator login` keeps in the user's config folder
+    # Nor the key that `talkgenerator login` keeps in the user's config folder, nor the pictures generated before
     monkeypatch.setenv("TALKGENERATOR_CONFIG_DIR", str(tmp_path / "config"))
+    monkeypatch.setenv("TALKGENERATOR_CACHE_DIR", str(tmp_path / "cache"))
     # Talks are classic unless a test asks for a theme (the default is random: see test_the_default_theme_is_random)
     monkeypatch.setenv("TALKGENERATOR_THEME", "classic")

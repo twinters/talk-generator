@@ -458,7 +458,9 @@ def test_the_ted_formats_mockups_get_copyright_free_photos():
 
     ted = {generator.name: generator for generator in get_schema("ted").slide_generators}
     assert ted["Social Media Post (CRF)"].llm.images == (cg.copyright_free_generator,)
-    assert ted["News Headline (CRF)"].llm.images == (cg.copyright_free_generator,)
+    # (the news story's photo prefers a generated picture, in a talk that generates them: copyright free either way)
+    assert ted["News Headline (CRF)"].llm.images == (cg.news_photo_copyright_free_generator,)
+    assert cg.news_photo_copyright_free_generator.aesthetic == cg.copyright_free_generator.aesthetic == "photo"
 
 
 def test_the_new_types_are_drawn_types():

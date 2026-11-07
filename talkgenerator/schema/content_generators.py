@@ -206,6 +206,23 @@ reddit_book_cover_generator = ImageSlot("a book cover", aesthetic="book-covers")
 
 reddit_location_image_generator = ImageSlot("a place", aesthetic="places")
 
+# GENERATED, IN A TALK THAT GENERATES PICTURES (see talkgenerator.images.generation): what stock photos can't show well
+# prefers a generated picture. Each slot's look is the one its slides had, whose stock photo stands in for the
+# generated picture until it's in (or for good, in a talk that generates none).
+hobby_image_generator = ImageSlot("the presenter's weird hobby", aesthetic="meme-chaos", generate=True)
+book_cover_generator = ImageSlot("the cover of the book the presenter wrote", aesthetic="book-covers", generate=True)
+historic_moment_generator = ImageSlot(
+    "an old photograph of a moment in the concept's made-up history", aesthetic="vintage", generate=True
+)
+historic_figure_generator = ImageSlot(
+    "a portrait of the made-up historical figure", aesthetic="old-people", generate=True
+)
+historic_figure_copyright_free_generator = ImageSlot(
+    "a portrait of the made-up historical figure", aesthetic="portrait", generate=True
+)
+news_photo_generator = ImageSlot("the photo of the made-up news story", aesthetic="neutral", generate=True)
+news_photo_copyright_free_generator = ImageSlot("the photo of the made-up news story", aesthetic="photo", generate=True)
+
 # TUPLED ABOUT ME
 
 about_me_hobby_tuple_generator = TupledGenerator(hobby_description_generator, weird_punchline_image_generator)

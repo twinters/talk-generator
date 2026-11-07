@@ -123,20 +123,42 @@ def _add_used(state: _DeckState, generated_elements: list) -> None:
     state.used_elements.update(elements)
 
 
+def _add_slide(slide_deck: SlideDeck, slide_nr: int, slide: Any) -> None:
+    """Add a settled slide to the deck, and in a talk that generates pictures, start generating the ones it wishes for
+    (see talkgenerator.images.generation): each takes its stock photo's place once it's in, and updates the slide."""
+    slide_deck.add_slide(slide_nr, slide)
+    generation = image_context.current().generation
+    if generation is not None and getattr(slide, "wishes", None):
+        generation.settled(slide, functools.partial(slide_deck.slide_updated, slide_nr))
+
+
+def _finish_generating(slide_deck: SlideDeck, cancelled: threading.Event | None = None) -> None:
+    """Wait for the pictures being generated for the deck's slides (so it has them all), and then stop hearing of
+    changes to its slides. TalkCancelled, if the talk is cancelled meanwhile."""
+    generation = image_context.current().generation
+    if generation is not None and not generation.finish(cancelled):
+        raise TalkCancelled()
+    slide_deck.update_listener = None
+
+
 class TalkCancelled(Exception):
     """Whoever followed the talk stopped wanting it (see Progress): it's left unfinished."""
 
 
 class Progress(Protocol):
     """Who follows a talk while it's made: told once its title and language are known (with the deck, still without
-    slides), and of every slide once it's settled, in order. Raising TalkCancelled from either stops the talk, and so
-    does setting cancelled, also while the talk waits for the language model (whose answer then isn't read further)."""
+    slides), of every slide once it's settled, in order, and of a slide settled before that got a generated picture
+    in its stock photo's place (see talkgenerator.images.generation), whenever that comes in. Raising TalkCancelled
+    from started or settled stops the talk, and so does setting cancelled, also while the talk waits for the language
+    model (whose answer then isn't read further)."""
 
     cancelled: threading.Event
 
     def started(self, slide_deck: SlideDeck) -> None: ...
 
     def settled(self, slide_deck: SlideDeck, slide_nr: int, slide: Any) -> None: ...
+
+    def updated(self, slide_deck: SlideDeck, slide_nr: int, slide: Any) -> None: ...
 
 
 @dataclass(eq=False)
@@ -308,7 +330,7 @@ class PresentationSchema:
         self.looks: Mapping[str, str] = dict(looks or {})
         for look in (*self.looks, *self.looks.values()):
             profiles.profile(look)
-        self._unservable: dict[str, frozenset[SlideGeneratorData]] = {}
+        self._unservable: dict[tuple[str, bool], frozenset[SlideGeneratorData]] = {}
         self._seed_generator = seed_generator
         self._slide_generators = slide_generators
         self._generator_indices = {id(generator): index for index, generator in enumerate(slide_generators)}
@@ -433,6 +455,7 @@ class PresentationSchema:
             if progress is not None:
                 progress.started(slide_deck)
                 slide_deck.listener = progress.settled
+                slide_deck.update_listener = getattr(progress, "updated", None)
 
             # Create main presentation_context
             main_presentation_context = {
@@ -448,9 +471,13 @@ class PresentationSchema:
             else:
                 self._generate_slides(slide_deck, contexts, rng, parallel)
             slide_deck.listener = None
+            _finish_generating(slide_deck, progress.cancelled if progress is not None else None)
         except BaseException:
             if talk is not None:
                 talk.cancelled.set()  # (what's still coming in isn't wanted anymore)
+            generation = image_context.current().generation
+            if generation is not None:
+                generation.close()  # (and no generated picture either)
             raise
         finally:
             if talk is not None:
@@ -537,9 +564,10 @@ class PresentationSchema:
 
         def answer() -> None:
             try:
+                generation = image_context.current().generation  # (its images' prompts, if it generates pictures)
                 for asked_again in (False, True):
                     request = talk_request(
-                        topics, list(planned.values()), rng, language, title, asked_again, name, typed
+                        topics, list(planned.values()), rng, language, title, asked_again, name, typed, generation
                     )
                     self._ask(llm, request, talk)
                     if talk.cancelled.is_set() or talk.spine.get("unsafe_topic") is not True:
@@ -661,7 +689,7 @@ class PresentationSchema:
             if worked_out is None:
                 logger.error("Gave up on generating slide %s", slide_nr + 1)
                 continue
-            slide_deck.add_slide(slide_nr, worked_out.slide)
+            _add_slide(slide_deck, slide_nr, worked_out.slide)
             self._update_used_elements(
                 state.used_elements, state.used_tags, worked_out.generated_elements, worked_out.generator
             )
@@ -817,8 +845,9 @@ class PresentationSchema:
                 else:
                     outcome.outcome = "left out"
                     continue
-            slide_deck.add_slide(index + 1, worked_out[0])
+            _add_slide(slide_deck, index + 1, worked_out[0])
             _add_used(state, worked_out[1])
+        _finish_generating(slide_deck)
         return slide_deck, outcomes
 
     # TALKS THE CLASSIC GENERATOR MAKES
@@ -1063,8 +1092,11 @@ class PresentationSchema:
     def unservable(self) -> frozenset[SlideGeneratorData]:
         """The slide generators whose images the talk's license policy allows no source for (a meme slide in a talk
         without fair use, say), by the image slots of their recipes, which their classic slides use too."""
-        policy = image_context.current().policy
-        known = self._unservable.get(policy.name)
+        talk = image_context.current()
+        policy = talk.policy
+        # (a talk that generates pictures can serve the slots that prefer generated ones, whatever their sources)
+        key = (policy.name, talk.generation is not None and talk.generation.active)
+        known = self._unservable.get(key)
         if known is None:
             known = frozenset(
                 generator
@@ -1075,7 +1107,7 @@ class PresentationSchema:
                     for _, source in generator.llm.slots()
                 )
             )
-            self._unservable[policy.name] = known
+            self._unservable[key] = known
         return known
 
 

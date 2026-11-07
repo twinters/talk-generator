@@ -130,6 +130,71 @@ def openai_api_key() -> str:
     return env.str("OPENAI_API_KEY", "").strip()
 
 
+def image_generator_spec() -> str:
+    """The image generator that makes pictures for the slides that stock photos can't show (see
+    talkgenerator.images.generation), as "provider:model": TALKGENERATOR_IMAGE_GENERATOR (see
+    talkgenerator.images.generators.providers), or "none" without it, or with DISABLE_IMAGE_GENERATION=1. Never one
+    because a key is set: generated pictures cost money (but on a server of your own), so they're asked for."""
+    if is_source_disabled("IMAGE_GENERATION"):
+        return "none"
+    return env.str("TALKGENERATOR_IMAGE_GENERATOR", "").strip() or "none"
+
+
+def generated_images() -> int:
+    """How many pictures a talk generates at most (TALKGENERATOR_GENERATED_IMAGES; 3 by default)."""
+    try:
+        return max(0, env.int("TALKGENERATOR_GENERATED_IMAGES", 3))
+    except EnvError:
+        logger.warning("Ignoring TALKGENERATOR_GENERATED_IMAGES: expected a number such as 3.")
+        return 3
+
+
+def image_cost_limit() -> float | None:
+    """What a talk's generated pictures may cost at most, in dollars, by their list prices
+    (TALKGENERATOR_IMAGE_COST_LIMIT; none by default: then only generated_images limits them)."""
+    value = env.str("TALKGENERATOR_IMAGE_COST_LIMIT", "").strip()
+    if not value:
+        return None
+    try:
+        return max(0.0, float(value))
+    except ValueError:
+        logger.warning("Ignoring TALKGENERATOR_IMAGE_COST_LIMIT: expected dollars, such as 0.05.")
+        return None
+
+
+def image_quality() -> str:
+    """The quality generated pictures are asked in, for the models that have qualities: low (the default, and the
+    cheapest), medium or high (TALKGENERATOR_IMAGE_QUALITY)."""
+    quality = env.str("TALKGENERATOR_IMAGE_QUALITY", "").strip().lower()
+    return quality if quality in ("low", "medium", "high") else "low"
+
+
+def gemini_api_key() -> str:
+    return env.str("GEMINI_API_KEY", "").strip() or env.str("GOOGLE_API_KEY", "").strip()
+
+
+def bfl_api_key() -> str:
+    """A key of Black Forest Labs' API, for FLUX."""
+    return env.str("BFL_API_KEY", "").strip()
+
+
+def comfyui_url() -> str:
+    return env.str("COMFYUI_URL", "").strip() or "http://127.0.0.1:8188"
+
+
+def comfyui_checkpoint() -> str:
+    return env.str("COMFYUI_CHECKPOINT", "").strip()
+
+
+def comfyui_workflow() -> str:
+    """A ComfyUI workflow of your own, in its API format (see talkgenerator.images.generators.local)."""
+    return env.str("COMFYUI_WORKFLOW", "").strip()
+
+
+def automatic1111_url() -> str:
+    return env.str("AUTOMATIC1111_URL", "").strip() or "http://127.0.0.1:7860"
+
+
 def llm_effort() -> str | None:
     """How hard a language model thinks before it writes (TALKGENERATOR_LLM_EFFORT: low, medium, high, ...), for
     the models that take it. None leaves it to the provider's adapter."""

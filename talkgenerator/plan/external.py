@@ -34,7 +34,11 @@ from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.datastructures.slide_generator_data import SlideGeneratorData
 from talkgenerator.design import themes
 from talkgenerator.images import context as image_context
+from talkgenerator.images import generation as image_generation
 from talkgenerator.images import licenses
+from talkgenerator.images.generation import ImageBudget
+from talkgenerator.images.generators import ImageGenerator, generator_from_spec
+from talkgenerator.llm.ledger import Ledger
 from talkgenerator.models.deck import Deck, ImageElement, TextElement
 from talkgenerator.models.plan import SlidePlan, TalkPlan
 from talkgenerator.plan import languages
@@ -227,6 +231,8 @@ def render_plan(
     theme: str | None = None,
     name_styles: Sequence[str] | str | None = None,
     license_policy: str | Sequence[str] | None = None,
+    image_generator: ImageGenerator | str | None = None,
+    image_budget: ImageBudget | None = None,
 ) -> dict[str, Any]:
     """Realize a plan, save it as a PowerPoint (at output, or under an unused name in output_folder), with the deck's
     JSON (<name>.deck.json) and a contact sheet of its images (<name>.images.png) next to it, and return the report:
@@ -238,7 +244,11 @@ def render_plan(
     The presenter is the one given, or else the plan's presenter_name (when it will do: see
     talkgenerator.names.clean), or else a name talkgenerator makes up, in one of name_styles (see generate_presentation).
 
-    license_policy is the license classes its images may have (see generate_presentation): the format's, without one."""
+    license_policy is the license classes its images may have (see generate_presentation): the format's, without one.
+
+    image_generator generates pictures for the images that prefer one (from the plan's prompts, or else their
+    queries) and for images whose search finds nothing, a few at most (image_budget): see generate_presentation.
+    Without one, TALKGENERATOR_IMAGE_GENERATOR's, if it names one. The report says what they cost."""
     from talkgenerator import generator  # (here: the generator module imports the schemas)
 
     schema = generator.get_schema(schema_name)
@@ -259,7 +269,9 @@ def render_plan(
             )
         presenter = presenter or names.from_pack([plan.topic], chosen_styles, rng)
 
-    images = image_context.ImageContext(policy, generator.palette(chosen_theme), schema.looks)
+    ledger = Ledger()
+    generation = image_generation.for_talk(image_generator, image_budget, policy, ledger, [plan.topic], presenter)
+    images = image_context.ImageContext(policy, generator.palette(chosen_theme), schema.looks, generation)
     with image_context.for_talk(images):
         choices = recipes_of(schema)
         unservable = schema.unservable()
@@ -276,6 +288,9 @@ def render_plan(
     slide_deck.theme = chosen_theme
     slide_deck.style_chaos = 1.0 if look == themes.CHAOS else 0.0
     slide_deck.license_policy = policy.name
+    slide_deck.usage = ledger.total()
+    if generation is not None:
+        logger.info(ledger.summary())
     deck = slide_deck.to_deck(schema_name=schema_name)
 
     name = file_name or _file_name(plan.title or plan.topic)
@@ -321,6 +336,18 @@ def render_plan(
         "checks": [asdict(finding) for finding in check_deck(deck)],
         "sources_without_keys": settings.sources_without_keys(),
     }
+    if generation is not None:
+        usage = deck.usage
+        report["generated_images"] = {
+            "generator": generation.generator.id,
+            "generated": usage.images,  # (made now: the ones the cache had cost nothing)
+            "on_slides": sum(
+                1 for slide in deck.slides for image in slide.images() if image.license_class == "generated"
+            ),
+            "failed": usage.failed_images,
+            "cost_usd": round(usage.image_cost_usd, 4),
+            "estimate": str(generation.estimate()),
+        }
     for text_field in (TALK_TITLE, PRESENTER_JOB):
         if len(" ".join(getattr(plan, text_field.name).split())) > length_limit(text_field):
             notes.append(f"the {text_field.name} has more than {text_field.max_length} characters, so it was cut off")
@@ -522,7 +549,9 @@ def _looks(recipe: Recipe) -> dict[str, str]:
     from talkgenerator.images.slots import ImageSlot
 
     return {
-        name: source.aesthetic + "".join(f", else {backup}" for backup in source.backups)
+        name: source.aesthetic
+        + "".join(f", else {backup}" for backup in source.backups)
+        + (" (or generated, from its prompt, with an image generator set up)" if source.generate else "")
         for name, source in recipe.slots()
         if isinstance(source, ImageSlot)
     }
@@ -634,6 +663,18 @@ def _render_command(argv: Sequence[str]) -> int:
         help="the license classes the images may have: all, open (no fair use: no memes, gifs or Reddit's posts), or "
         "classes separated by commas (default: the format's: open for ted, else all)",
     )
+    parser.add_argument(
+        "--image_generator",
+        help="generates pictures for the images that prefer one (from the plan's prompts, or else their queries) and "
+        "for images whose search finds nothing: openai[:<model>], openrouter[:<model>], gemini[:<model>], "
+        "flux[:<model>], comfyui, automatic1111 or none; they cost money, on your own key (default: "
+        "TALKGENERATOR_IMAGE_GENERATOR's, or else none)",
+    )
+    parser.add_argument(
+        "--generated_images",
+        type=int,
+        help="how many pictures a plan generates at most (default: TALKGENERATOR_GENERATED_IMAGES's, or else 3)",
+    )
     parser.add_argument("--open", action="store_true", help="open the PowerPoint afterwards")
     parser.add_argument("--verbose", "-v", action="store_true", help="show the generator's logs (on stderr)")
     args = parser.parse_args(argv)
@@ -642,6 +683,14 @@ def _render_command(argv: Sequence[str]) -> int:
             licenses.policy(args.license_policy)
         except ValueError as error:
             parser.error(str(error))
+    if args.image_generator is not None:
+        try:
+            generator_from_spec(args.image_generator)
+        except ValueError as error:
+            parser.error(str(error))
+    budget = None
+    if args.generated_images is not None:
+        budget = ImageBudget(max(0, args.generated_images), settings.image_cost_limit())
 
     paths = _expand(args.plans)
     if args.output and len(paths) > 1:
@@ -683,6 +732,8 @@ def _render_command(argv: Sequence[str]) -> int:
             local_images=Path(path).resolve().parent,
             theme=args.theme,
             license_policy=args.license_policy,
+            image_generator=args.image_generator,
+            image_budget=budget,
         )
         reports.append({"plan": path, **report})
         if args.open:
@@ -744,11 +795,38 @@ def _formats_command(argv: Sequence[str]) -> int:
     parser.add_argument(
         "--licenses", action="store_true", help="the license policies, and the license classes they pick from"
     )
+    parser.add_argument(
+        "--generators",
+        action="store_true",
+        help="the image generators' models and list prices, and the generator that's set up (if any)",
+    )
     parser.add_argument("--format", dest="schema", default="default", choices=schemas.names(), help="the format")
     parser.add_argument("--json", action="store_true", help="as JSON instead of Markdown")
     args = parser.parse_args(argv)
 
-    if args.looks or args.licenses:
+    if args.generators:
+        from talkgenerator.images.generators import prices
+
+        models = prices.catalog()
+        spec = settings.image_generator_spec()
+        if args.json:
+            text = json.dumps({"set_up": spec, "checked": prices.config().get("checked"), "models": models}, indent=2)
+        else:
+            lines = [f"Set up: {spec} (TALKGENERATOR_IMAGE_GENERATOR; prices checked {prices.config().get('checked')})"]
+            for entry in models:
+                price = entry["price_usd"]
+                shown = (
+                    ", ".join(f"{quality} ${value}" for quality, value in price.items())
+                    if isinstance(price, dict)
+                    else f"${price}"
+                )
+                notes = (" (the default)" if entry["default"] else "") + (
+                    f" (retiring {entry['retiring']})" if entry.get("retiring") else ""
+                )
+                lines.append(f"{entry['provider']}:{entry['model']}: {shown} a picture{notes}")
+            lines.append("comfyui, automatic1111: servers of your own, for nothing")
+            text = "\n".join(lines)
+    elif args.looks or args.licenses:
         from talkgenerator.images import licenses as license_policies
         from talkgenerator.images import profiles
 

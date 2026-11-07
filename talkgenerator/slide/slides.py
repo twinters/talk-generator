@@ -1,5 +1,6 @@
 import re
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 from talkgenerator.datastructures.image_data import CreditPart, ImageData
 from talkgenerator.images import analysis
@@ -10,6 +11,9 @@ from talkgenerator.render import charts
 from talkgenerator.render.powerpoint import render_slide
 from talkgenerator.slide import powerpoint_slide_creator
 from talkgenerator.util import image_util, os_util
+
+if TYPE_CHECKING:
+    from talkgenerator.images.generation import Wish
 
 
 class Slide:
@@ -26,18 +30,42 @@ class Slide:
         self._sources: list[str] = []
         self._source_urls: list[str | None] = []
         self._credits: list[tuple[CreditPart, ...]] = []
+        self._credited: list[ImageData | None] = []  # the image each credit is for, if it's known
+        # The pictures the slide wishes to have generated, each with the stock photo that stands in for it until it's
+        # in (see talkgenerator.images.generation)
+        self.wishes: list[tuple[ImageData, Wish]] = []
 
     @property
     def type_name(self) -> str:
         return self._type_name
 
-    def add_source(self, source: str | None, url: str | None = None, credit: Sequence[CreditPart] | None = None):
-        """Credit an image source. In the PowerPoint, the credit links to the url (if given), or reads as the
-        given credit parts, each linking to its own page."""
+    def add_source(
+        self,
+        source: str | None,
+        url: str | None = None,
+        credit: Sequence[CreditPart] | None = None,
+        image: ImageData | None = None,
+    ):
+        """Credit an image source (for the image, if given). In the PowerPoint, the credit links to the url (if
+        given), or reads as the given credit parts, each linking to its own page."""
         if source is not None:
             self._sources.append(source)
             self._source_urls.append(url)
             self._credits.append(tuple(credit) if credit else ((source, url),))
+            self._credited.append(image)
+
+    def replace_image(self, old: ImageData, new: ImageData) -> None:
+        """Put the new image where the old one is on the slide, crediting it instead: a generated picture in place of
+        the stock photo that stood in for it (see talkgenerator.images.generation)."""
+        for name, value in list(self._arguments.items()):
+            if value is old:
+                self._arguments[name] = new
+        for index, credited in enumerate(self._credited):
+            if credited is old:
+                self._sources[index] = new.get_source() or ""
+                self._source_urls[index] = new.get_source_url()
+                self._credits[index] = new.get_credit()
+                self._credited[index] = new
 
     def set_note(self, note: str):
         """Debug information about how the slide was generated."""
@@ -133,7 +161,8 @@ def _to_image_asset(image: ImageData) -> model.ImageAsset:
         credit=tuple(model.CreditPart(text=text, url=url) for text, url in image.get_credit()),
         query=image.query,
         description=image.description,
-        display=image.display if url.startswith(("http://", "https://")) else "local",
+        # (a file of the computer's own, but a generated picture, whose app keeps a copy of it, as of Pixabay's)
+        display=image.display if url.startswith(("http://", "https://")) or image.display == "copy" else "local",
         width=image.size[0] if image.size else None,
         height=image.size[1] if image.size else None,
         license_class=image.license_class,
