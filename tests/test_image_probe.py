@@ -269,6 +269,18 @@ def test_an_image_that_plays_its_video_has_its_posters_size(web):
     assert image.size == (640, 360)
 
 
+def test_a_server_can_forget_the_images_it_downloaded(web):
+    url = "https://example.com/photo.jpg"
+    web.serve(url, _image(), "image/jpeg", size=2 * MB)
+    assert image_util.fetch_image(url) is not None
+    assert image_util.fetch_image(url) is not None and web.read(url) == 2 * MB  # (the second from the cache)
+
+    image_util.forget_downloads()
+
+    assert image_util._cache_bytes == 0
+    assert image_util.fetch_image(url) is not None and web.read(url) == 4 * MB  # (downloaded again)
+
+
 def test_the_deck_tells_an_images_size(web):
     from talkgenerator.slide import slides
 

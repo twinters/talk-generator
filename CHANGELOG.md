@@ -161,7 +161,9 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   their first bytes tell their format and size, so a check reads 64 KB instead of the whole file, which a
   browser loads itself. Images that don't tell their size early, and those shaped like a known "image not
   available" placeholder, are still downloaded whole, and a gif too large to embed probes its video copy. On 33
-  images of earlier talks, probes took 9.7 s against 43.8 s for downloading them.
+  images of earlier talks, probes took 9.7 s against 43.8 s for downloading them. `image_util.forget_downloads()`
+  empties the cache of downloaded images (up to 96 MB), for a server once it has made a PowerPoint: on
+  talkgenerator.com's 450 MB, two downloads in a row otherwise took the service to its memory cap.
 - A deck's images say how a browser may show them (`display`), as their sources' terms and servers allow:
   `direct` from their links (Unsplash and GIPHY require it; Wikimedia Commons, Pexels, Openverse's hosts, Reddit,
   InspiroBot and ShitpostBot load that way too), `proxy` through a pass-through proxy (the Art Institute of

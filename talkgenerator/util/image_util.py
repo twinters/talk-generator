@@ -104,6 +104,15 @@ def _cached(key: str, load: Callable[[], bytes | None]) -> bytes | None:
     return result
 
 
+def forget_downloads() -> None:
+    """Empty the cache of downloaded images and videos (up to 96 MB), as a server may once it has made a PowerPoint:
+    the next talk or download then doesn't add its own on top. What probes found, and images' sizes, stay."""
+    global _cache_bytes
+    with _cache_lock:
+        _cache.clear()
+        _cache_bytes = 0
+
+
 def is_usable_image(url: str) -> bool:
     """Whether the image at the URL (or path) can go on a slide: downloaded, or probed while probing."""
     if _checks.get() == "probe":
