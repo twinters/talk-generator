@@ -38,6 +38,9 @@ logger = logging.getLogger("talkgenerator")
 TOPIC: Final = "topic"
 TITLE: Final = "title"
 READINGS: Final = (TOPIC, TITLE)
+# The field of the talk's spine in which the language model says which it read: one that sorts before the others, so
+# that a model that writes the fields in alphabetical order says it before it writes the title too
+INPUT_IS: Final = "input_is"
 
 # How titles start, as words in lower case: in English, and in the other languages talks can be in (what's typed for
 # a talk in another language may be in either). "How to", "Why", "The", "A", "My", ...
@@ -160,7 +163,7 @@ def candidates(generators: Sequence[TitleGenerator], topic: str, rng: random_uti
 @dataclass(frozen=True)
 class TitleRequest:
     """What the language model that writes a talk is told about what was typed for it, and asked: whether it reads
-    as the talk's topic or its title (reads_as, in the spine), and the talk's title, for a topic the best of
+    as the talk's topic or its title (input_is, in the spine), and the talk's title, for a topic the best of
     its own (own_title) and the classic candidates, when there are any (in English talks: the classic titles are
     English)."""
 
@@ -169,17 +172,17 @@ class TitleRequest:
 
     def lines(self) -> list[str]:
         """The request's lines about it, instead of its topic and title."""
-        lines = [f"Typed: {self.typed} (the talk's topic or its title: say which in reads_as)"]
+        lines = [f"Typed: {self.typed} (the user's input: the talk's topic or its title; say which in input_is)"]
         if self.candidates:
             listed = "; ".join(f'"{candidate}"' for candidate in self.candidates)
             lines.append(f"Classic titles, for a topic: {listed}")
         return lines
 
-    def reads_as_description(self) -> str:
+    def input_is_description(self) -> str:
         return (
-            "'title' if what was typed is a talk's title: a phrase that names a talk, a claim or a question (such as "
-            "'Why I Joined a Penguin Cult'); 'topic' if it's what a talk is about: a thing or a subject, or a few "
-            "(such as 'penguins' or 'medieval cheese'), however odd"
+            "what the typed input is, decided first: 'title' if it's a talk's title (a phrase that names a talk, a "
+            "claim or a question, such as 'Why I Joined a Penguin Cult'), 'topic' if it's what a talk is about (a "
+            "thing or a subject, or a few, such as 'penguins' or 'medieval cheese'), however odd"
         )
 
     def own_title_description(self, language: str = "en") -> str:
@@ -191,13 +194,13 @@ class TitleRequest:
     def title_description(self, language: str = "en") -> str:
         name = languages.language(language).name
         topic = (
-            "the best of own_title and the classic titles, fixed where it's off (a broken plural, an odd phrase, "
-            f"words that make no sense), in {name}"
+            "the best of own_title and the classic titles, whichever it is, fixed where it's off (a broken plural, an "
+            f"odd phrase, words that make no sense), in {name}"
             if self.candidates
             else f"your own title for the talk, in {name}"
         )
         return (
-            f"the talk's title: for a title, what was typed with only its obvious slips fixed (spelling, grammar, "
+            "the talk's title: for a title, the typed input with only its obvious slips fixed (spelling, grammar, "
             f"capitals), its words and its joke kept, and not translated; for a topic, {topic} (at most "
             f"{TALK_TITLE.max_length} characters)"
         )
@@ -241,7 +244,7 @@ class Titling:
 
     def settle(self, spine: Mapping[str, Any], classic: Callable[[], str]) -> tuple[str, TopicOrTitle]:
         """The talk's title, and how what was typed was read: as the language model read it (its answer's spine:
-        reads_as and title), or else as talkgenerator guesses. A title: the model's, when it's recognisably what was
+        input_is and title), or else as talkgenerator guesses. A title: the model's, when it's recognisably what was
         typed (see recognisable), or else what was typed. A topic: the model's title, or else the classic title
         (classic(), the one a classic talk with this seed gets)."""
         reading, by = self._reading(spine)
@@ -258,8 +261,8 @@ class Titling:
         return title, TopicOrTitle(text=self.typed, read_as=reading, by=by)
 
     def _reading(self, spine: Mapping[str, Any]) -> tuple[Reading, ReadBy]:
-        """How what was typed was read, and by whom: as the language model's reads_as says, or else as guessed."""
-        said = spine.get("reads_as") if self.request is not None else None
+        """How what was typed was read, and by whom: as the language model's input_is says, or else as guessed."""
+        said = spine.get(INPUT_IS) if self.request is not None else None
         if isinstance(said, str) and said.strip().casefold() in READINGS:
             return ("title" if said.strip().casefold() == TITLE else "topic"), "language model"
         if self.request is not None:

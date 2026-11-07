@@ -252,9 +252,8 @@ class _PlannedTalk:
         with self._changed:
             self.plans.clear()
             self.first_attempts.clear()
-            self.spine.pop("title", None)
-            self.spine.pop("presenter_name", None)
-            self.spine.pop("name_plays_on", None)
+            for written in ("title", "own_title", titles.INPUT_IS, "presenter_name", "name_plays_on"):
+                self.spine.pop(written, None)
             self._changed.notify_all()
 
     def restart(self) -> None:
@@ -380,7 +379,8 @@ class PresentationSchema:
         if llm is not None and writes:
             cancelled = progress.cancelled if progress is not None else None
             name = naming.request if naming is not None else None
-            talk = self._plan_talk(topics, seeds, rng, llm, language, title, parallel, cancelled, name)
+            typed = titling.request if titling is not None else None
+            talk = self._plan_talk(topics, seeds, rng, llm, language, title, parallel, cancelled, name, typed)
         try:
             if talk is not None:
                 talk.wait_for_spine()
@@ -485,9 +485,11 @@ class PresentationSchema:
         parallel: bool,
         cancelled: threading.Event | None = None,
         name: names.NameRequest | None = None,
+        typed: titles.TitleRequest | None = None,
     ) -> "_PlannedTalk":
         """Pick every slide's generator, and ask the language model, in one request, what goes on the slides whose
-        generators have recipes (and the presenter's name, with a name request). The model's answer is read while
+        generators have recipes (and the presenter's name, with a name request, and for what was typed, whether it's
+        the topic or the title, with a title request: see talkgenerator.titles). The model's answer is read while
         it's written, and in parallel, every slide's first attempt starts as soon as its part of the answer is in.
         For a talk that streams (that can be cancelled), the answer comes in on a thread of its own, and this returns
         at once, for the slides to be settled while it does."""
@@ -511,7 +513,7 @@ class PresentationSchema:
             # What realizing a slide may know: its topic and language (not the title, which arrives with the answer)
             [{"topic": topics[0], "topics": topics, "seed": seed, "language": language} for seed in seeds],
             [rng.child("slide", slide_nr, "planned") for slide_nr in range(num_slides)],
-            frozenset(prompt.spine(language, name)),
+            frozenset(prompt.spine(language, name, typed)),
             language=language,
             cancelled=cancelled or threading.Event(),
         )
@@ -524,7 +526,9 @@ class PresentationSchema:
         def answer() -> None:
             try:
                 for asked_again in (False, True):
-                    request = talk_request(topics, list(planned.values()), rng, language, title, asked_again, name)
+                    request = talk_request(
+                        topics, list(planned.values()), rng, language, title, asked_again, name, typed
+                    )
                     self._ask(llm, request, talk)
                     if talk.cancelled.is_set() or talk.spine.get("unsafe_topic") is not True:
                         break

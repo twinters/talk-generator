@@ -21,6 +21,7 @@ from talkgenerator.models.plan import SlidePlan
 from talkgenerator.names import NameRequest
 from talkgenerator.plan import languages
 from talkgenerator.plan.kinds import KINDS, PRESENTER_JOB, TALK_TITLE, Recipe, TextField
+from talkgenerator.titles import INPUT_IS, READINGS, TitleRequest
 from talkgenerator.util import random_util
 
 SYSTEM_PROMPT: Final = """\
@@ -100,17 +101,28 @@ class PlannedSlide:
 SPINE: Final = "about"
 
 
-def spine(language: str = "en", name: NameRequest | None = None) -> dict[str, str]:
+def spine(language: str = "en", name: NameRequest | None = None, typed: TitleRequest | None = None) -> dict[str, str]:
     """The talk's spine, which the answer starts with: what to write in each of its fields. With a name request, the
-    presenter's name too, before their job (which then agrees with it)."""
+    presenter's name too, before their job (which then agrees with it). For what was typed, which could be the topic
+    or the title (see talkgenerator.titles), whether it's either (input_is, which sorts first, for models that write
+    the fields in alphabetical order), and with classic titles to weigh, the model's own title (own_title) before the
+    title it settles on."""
     language_name = languages.language(language).name
     fields = {
         # (Asked the other way around, as "safe_topic", the free models sometimes turned down harmless topics)
         "unsafe_topic": "true only if the topic asks for something hateful or harmful; false for every other topic, "
         "however odd",
-        "thesis": "the talk's thesis, its absurd claim in one sentence (not shown)",
-        "title": f"{TALK_TITLE.description}, in {language_name} (at most {TALK_TITLE.max_length} characters)",
     }
+    if typed is not None:
+        fields[INPUT_IS] = typed.input_is_description()
+    fields["thesis"] = "the talk's thesis, its absurd claim in one sentence (not shown)"
+    if typed is not None and typed.candidates:
+        fields["own_title"] = typed.own_title_description(language)
+    fields["title"] = (
+        typed.title_description(language)
+        if typed is not None
+        else f"{TALK_TITLE.description}, in {language_name} (at most {TALK_TITLE.max_length} characters)"
+    )
     agreeing = ""
     if name is not None:
         fields["name_plays_on"] = name.plays_on_description()
@@ -137,18 +149,24 @@ def talk_request(
     title: str | None = None,
     asked_again: bool = False,
     name: NameRequest | None = None,
+    typed: TitleRequest | None = None,
 ) -> TextRequest:
     """The request for a talk (with the presenter's name, when there's a name request). Asked again, it says that a
     model found the topic unsafe: some of the free models get the flag wrong whichever way it's asked (one turned
-    down "penguins")."""
+    down "penguins"). For what was typed, which could be the topic or the title (see talkgenerator.titles), it gives
+    that instead of the topic and the title, and asks which it is."""
     with random_util.use(rng.child("dice")):
         persona, angle = random_util.choice(_PERSONAS), random_util.choice(_ANGLES)
     topic = topics[0] + (f" (and {', '.join(topics[1:])})" if len(topics) > 1 else "")
+    kept = " (a typed title keeps its words)" if typed is not None else ""
     lines = [
-        f"Topic: {topic}",
-        f"Title: {title}" if title else "Title: come up with one",
-        f"Language: write the title, the presenter's {'name and ' if name is not None else ''}job and every slide in "
-        f"{languages.language(language).name}, and the image search queries in English",
+        *(
+            typed.lines()
+            if typed is not None
+            else [f"Topic: {topic}", f"Title: {title}" if title else "Title: come up with one"]
+        ),
+        f"Language: write the title{kept}, the presenter's {'name and ' if name is not None else ''}job and every "
+        f"slide in {languages.language(language).name}, and the image search queries in English",
         f"The presenter: {persona}",
         f"The angle: {angle}",
         "",
@@ -162,7 +180,7 @@ def talk_request(
             else []
         ),
         f"Write the talk as one JSON object. First its spine, as an object called {SPINE}:",
-        *(f"- {field}: {description}" for field, description in spine(language, name).items()),
+        *(f"- {field}: {description}" for field, description in spine(language, name, typed).items()),
         "",
         "Then every slide, in order (slide 1, the title slide, is made from the spine), each with its texts, a search "
         f"query for each of its images, and its concept: {CONCEPT}.",
@@ -177,20 +195,25 @@ def talk_request(
         purpose="talk plan",
         system=SYSTEM_PROMPT,
         messages=(Message(role="user", content="\n".join(lines)),),
-        json_schema=response_schema(planned, language, name),
+        json_schema=response_schema(planned, language, name, typed),
         max_output_tokens=1000 + 300 * len(planned),
     )
 
 
 def response_schema(
-    planned: list[PlannedSlide], language: str = "en", name: NameRequest | None = None
+    planned: list[PlannedSlide],
+    language: str = "en",
+    name: NameRequest | None = None,
+    typed: TitleRequest | None = None,
 ) -> dict[str, Any]:
     """The JSON Schema of the answer: every property required, nothing else allowed (as strict structured outputs
     want), the spine first and the slides in order (which is alphabetical order too)."""
-    fields = {
+    fields: dict[str, Any] = {
         field: {"type": "boolean" if field == "unsafe_topic" else "string", "description": description}
-        for field, description in spine(language, name).items()
+        for field, description in spine(language, name, typed).items()
     }
+    if INPUT_IS in fields:  # (one of the two)
+        fields[INPUT_IS]["enum"] = list(READINGS)
     properties: dict[str, Any] = {SPINE: _object(fields)}
     for slide in planned:
         properties[slide.key] = slide_schema(slide.recipe)
