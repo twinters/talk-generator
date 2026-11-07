@@ -2,8 +2,11 @@
 families, the layout engine, and the renderers of themed decks (PowerPoint shapes, and previews)."""
 
 import itertools
+import os
+from pathlib import Path
 
 import pytest
+from PIL import ImageFont
 from pptx import Presentation
 from pptx.enum.chart import XL_CHART_TYPE
 from pptx.oxml.ns import qn
@@ -19,7 +22,7 @@ from talkgenerator.render import preview
 from talkgenerator.render.powerpoint import render_pptx
 from talkgenerator.slide import slides
 from talkgenerator.slide.slide_deck import SlideDeck
-from talkgenerator.util import random_util
+from talkgenerator.util import os_util, random_util
 from tests import test_seeds
 from tests.test_deck import _every_kind_of_slide, _image, _pie_chart_data
 from tests.test_deck import images as images  # the fake image downloads (a fixture)
@@ -73,6 +76,66 @@ def test_text_is_measured_or_generously_estimated(monkeypatch):
     assert not fonts.measured("Arial")
     estimate = fonts.text_width("Hello there", "Arial", 100)
     assert estimate == pytest.approx(11 * 100 * 0.52 * fonts.ESTIMATE_MARGIN)
+
+
+_TWINS = {
+    ("Arial", False): "LiberationSans-Regular.ttf",
+    ("Arial", True): "LiberationSans-Bold.ttf",
+    ("Times New Roman", False): "LiberationSerif-Regular.ttf",
+    ("Times New Roman", True): "LiberationSerif-Bold.ttf",
+    ("Courier New", False): "LiberationMono-Regular.ttf",
+    ("Courier New", True): "LiberationMono-Bold.ttf",
+    ("Calibri", False): "Carlito-Regular.ttf",
+    ("Calibri", True): "Carlito-Bold.ttf",
+    ("Cambria", False): "Caladea-Regular.ttf",
+    ("Cambria", True): "Caladea-Bold.ttf",
+    ("Georgia", False): "Gelasio-Regular.ttf",
+    ("Georgia", True): "Gelasio-Bold.ttf",
+}
+_BUNDLED = Path(os_util.to_actual_file("data/fonts"))
+
+
+def test_the_bundled_twins_measure_where_the_fonts_themselves_are_missing(monkeypatch):
+    monkeypatch.setattr(fonts, "_font_folders", lambda: [_BUNDLED])  # (a computer without any fonts of its own)
+    fonts._font_index.cache_clear()
+    try:
+        for (font, bold), twin in _TWINS.items():
+            assert fonts.font_file(font, bold) == _BUNDLED / twin
+        assert fonts.measured("Calibri") and not fonts.measured("Impact")  # (no open twin: estimated)
+    finally:
+        fonts._font_index.cache_clear()
+
+
+def test_every_bundled_font_is_credited_with_its_license():
+    readme = (_BUNDLED / "README.md").read_text(encoding="utf-8")
+    assert sorted(path.name for path in _BUNDLED.glob("*.ttf")) == sorted(_TWINS.values())
+    assert all(twin in readme for twin in _TWINS.values())
+    for license_file in ("LICENSE-Liberation.txt", "OFL-Carlito.txt", "LICENSE-Caladea.txt", "OFL-Gelasio.txt"):
+        assert (_BUNDLED / license_file).is_file() and license_file in readme
+
+
+def test_the_twins_are_as_wide_as_the_fonts_they_stand_in_for():
+    originals = Path(os.environ.get("WINDIR", "C:/Windows")) / "Fonts"
+    files = {
+        ("Arial", False): "arial.ttf",
+        ("Arial", True): "arialbd.ttf",
+        ("Times New Roman", False): "times.ttf",
+        ("Times New Roman", True): "timesbd.ttf",
+        ("Courier New", False): "cour.ttf",
+        ("Courier New", True): "courbd.ttf",
+        ("Calibri", False): "calibri.ttf",
+        ("Calibri", True): "calibrib.ttf",
+        ("Cambria", False): "cambria.ttc",
+        ("Cambria", True): "cambriab.ttf",
+        ("Georgia", False): "georgia.ttf",
+        ("Georgia", True): "georgiab.ttf",
+    }
+    if not all((originals / name).is_file() for name in files.values()):
+        pytest.skip("needs the original fonts to compare with (as Windows has them)")
+    sentence = "The quick brown fox jumps over the lazy dog: Expectation vs Reality, 1997 WordArt?"
+    for key, original in files.items():
+        twin = ImageFont.truetype(str(_BUNDLED / _TWINS[key]), 100).getlength(sentence)
+        assert twin == pytest.approx(ImageFont.truetype(str(originals / original), 100).getlength(sentence), rel=0.005)
 
 
 def test_a_text_gets_the_largest_size_at_which_it_fits():

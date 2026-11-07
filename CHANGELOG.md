@@ -86,7 +86,9 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   `talkgenerator.design.themes.catalog()` lists the themes with a label and a description, for a settings menu. A plan can have a `theme` too (or `talkgenerator render
   --theme`), which the Skill knows about. The layout engine (`talkgenerator.design.engine`) puts
   every element in its box and gives every text the largest size at which it fits, measured with the fonts' own
-  files or fonts with the same metrics (`talkgenerator.design.fonts`), so a themed deck's JSON holds every
+  files or fonts with the same metrics (`talkgenerator.design.fonts`; talkgenerator comes with the open ones: Liberation
+  Sans, Serif and Mono, Carlito, Caladea and Gelasio, in `data/fonts`, so texts measure the same on a computer
+  without Arial, Calibri and the rest), so a themed deck's JSON holds every
   element's place and style, and every renderer draws it the same way. `talkgenerator.render.shapes` draws it in
   PowerPoint, and `talkgenerator.render.preview` as pictures with Pillow, with a contact sheet of a whole deck.
   Every slide type has its layouts, twenty in all: a full-screen picture with its title on a band at the top or
