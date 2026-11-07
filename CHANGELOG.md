@@ -402,6 +402,10 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   older posters, at their predictable addresses (73 folders of 9,999 posters, from 2015 to 2017), which used to
   fill in when the API didn't answer. Talks without a seed get a random one, so they still get any of those
   posters, and no request goes to InspiroBot's API any more.
+- `talkgenerator check` no longer finds a talk that came out differently because an answer of the on-disk cache
+  expired between its two runs: Pixabay's expire after a day, and a fresh answer links the same pictures under other
+  addresses, so a slide's picture changed its link. The second run now gets the answers the first one got
+  (`http_util.same_answers`), as it gets a language model's; GIPHY's, which may not be kept, are still asked twice.
 
 ## [4.0.1] - 2026-11-05
 

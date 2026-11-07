@@ -7,8 +7,10 @@ took and what it asked of language models, to compare with the report of an earl
 Talks are classic unless a language model is given (--llm). A model doesn't give the same answer twice, so the
 second run replays the answers the first run got: the same answers have to give the same talk.
 
-With live sources, a talk can also come out differently because a source answered differently between the two runs;
-the on-disk cache of API responses makes that rare.
+Live sources answer the second run as they answered the first: their searches come from the on-disk cache of API
+responses, or from the first run's answer when that one expires in between (http_util.same_answers: Pixabay's expire
+after a day, and its image links change), and Reddit's searches, WikiHow's pages and the images from memory. A source
+that fails, or starts limiting requests, between the two runs can still make a talk come out differently.
 """
 
 from __future__ import annotations
@@ -34,7 +36,7 @@ from talkgenerator.llm.providers import provider_from_spec
 from talkgenerator.llm.replay import ReplayProvider
 from talkgenerator.models.deck import Deck
 from talkgenerator.plan import languages
-from talkgenerator.util import os_util, random_util
+from talkgenerator.util import http_util, os_util, random_util
 
 logger = logging.getLogger("talkgenerator")
 
@@ -134,8 +136,9 @@ def check_talk(
     """Generate a talk and check it; with determinism, generate it again one by one, which has to give the same.
 
     With a language model (a spec, see talkgenerator.llm.providers), its answers are recorded, and the second run
-    replays them. With decks (a folder), the talk's deck is saved there as JSON, to read what it says."""
-    with tempfile.TemporaryDirectory(prefix="talkgenerator-check-") as folder:
+    replays them, and so do the sources' answers that the on-disk cache keeps (http_util.same_answers), which can
+    expire in between. With decks (a folder), the talk's deck is saved there as JSON, to read what it says."""
+    with tempfile.TemporaryDirectory(prefix="talkgenerator-check-") as folder, http_util.same_answers():
         cassette = Path(folder) / "answers.json"
         recording: TextProvider | str = llm
         if llm != "none":
