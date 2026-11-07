@@ -10,12 +10,13 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
-from talkgenerator import generator
+from talkgenerator import generator, names
 from talkgenerator.checks.deck import check_deck
 from talkgenerator.models.deck import Deck
 from talkgenerator.models.plan import SlidePlan, TalkPlan
 from talkgenerator.plan import external
 from talkgenerator.schema.presentation_schema_types import get_schema
+from talkgenerator.util import random_util
 from tests.test_llm_talks import fake_schema
 from tests.test_llm_talks import images as images  # the fake image sources (an autouse fixture)
 
@@ -163,6 +164,39 @@ def test_a_title_or_job_thats_too_long_is_cut(schema, tmp_path):
     assert report["notes"] == ["the presenter_job has more than 50 characters, so it was cut off"]
 
 
+def _title_slide_text(report):
+    deck = Deck.from_json(Path(report["deck_json"]).read_text(encoding="utf-8"))
+    return deck.slides[0].elements[1].text, deck.presenter
+
+
+def test_a_plan_can_name_the_presenter(schema, tmp_path):
+    plan = _plan(CHART, presenter_name="Dr. Tabby Cattington")
+    report = external.render_plan(plan, output_folder=tmp_path, int_seed=1)
+    subtitle, presenter = _title_slide_text(report)
+    assert report["presenter"] == presenter == "Dr. Tabby Cattington"
+    assert subtitle.endswith("Dr. Tabby Cattington, Professor of Applied Napping")
+    assert "notes" not in report
+
+
+def test_a_given_name_goes_before_the_plans(schema, tmp_path):
+    report = _render(_plan(CHART, presenter_name="Dr. Tabby Cattington"), tmp_path)
+    assert report["presenter"] == _title_slide_text(report)[1] == "Ann Example"
+
+
+def test_a_plans_name_that_wont_do_is_made_up_instead(schema, tmp_path):
+    report = external.render_plan(_plan(CHART, presenter_name="[Your name here]"), output_folder=tmp_path, int_seed=1)
+    assert report["presenter"] == names.from_pack(["cats"], names.DEFAULT_STYLES, random_util.Rng(1))
+    assert report["notes"][0].startswith("the presenter_name '[Your name here]' isn't a name talkgenerator puts on")
+
+
+def test_without_a_name_a_plans_presenter_gets_one_made_up(schema, tmp_path):
+    report = external.render_plan(_plan(CHART), output_folder=tmp_path, int_seed=2)
+    assert report["presenter"] == names.from_pack(["cats"], names.DEFAULT_STYLES, random_util.Rng(2))
+    classic = external.render_plan(_plan(CHART), output_folder=tmp_path, int_seed=2, name_styles="classic")
+    assert classic["presenter"] == names.classic(random_util.Rng(2))
+    assert "notes" not in report
+
+
 def test_the_report_says_what_doesnt_show_up_as_written(schema, tmp_path):
     sloppy = {
         **TWO_COLUMNS,
@@ -283,6 +317,7 @@ def test_the_skills_slide_references_are_up_to_date(format_name, file_name):
 
 def test_the_skills_example_plan_is_a_plan_without_warnings():
     plan = TalkPlan.model_validate_json((SKILL / "references" / "example-plan.json").read_text(encoding="utf-8"))
+    assert names.clean(plan.presenter_name) == plan.presenter_name != ""
     choices = external.recipes_of(get_schema("default"))
     for slide in plan.slides:
         choice, warnings = external.choose_recipe(choices, slide)

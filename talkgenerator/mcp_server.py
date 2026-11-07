@@ -30,7 +30,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
 from pydantic import Field
 
-from talkgenerator import __version__, settings
+from talkgenerator import __version__, names, settings
 from talkgenerator.checks.deck import check_deck, deck_metrics
 from talkgenerator.design import themes
 from talkgenerator.llm import providers
@@ -116,11 +116,13 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
     @tool("List the talk formats, themes and languages", _LOOKS_UP)
     def list_formats() -> dict[str, Any]:
         """The talk formats (such as 'default', with images from every source, and 'ted', with copyright-free images
-        only, for decks shown in public), the themes (the looks a talk can have) and the languages it can be in."""
+        only, for decks shown in public), the themes (the looks a talk can have), the languages it can be in, and the
+        styles of the presenter's names that generate_talk makes up."""
         return {
             "formats": [{"format": name, "description": external.FORMATS.get(name, "")} for name in schemas.names()],
             "themes": themes.catalog(),
             "languages": [{"code": code, "name": language.name} for code, language in languages.LANGUAGES.items()],
+            "name_styles": names.catalog(),
         }
 
     @tool("Describe the slides of a talk format", _LOOKS_UP)
@@ -201,6 +203,15 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
             str | None,
             Field(description="The presenter's name, for the title slide (without one, talkgenerator makes one up)"),
         ] = None,
+        name_styles: Annotated[
+            list[str] | None,
+            Field(
+                description="Without a presenter, the styles of made-up names the talk's seed picks from: 'pun' (such "
+                "as Prof. Anna Tomy, for a talk on medicine), 'fun_surname' (Linda Hivesworth, for bees), "
+                "'famous_pun' (Albert Einstone, for geology) and 'classic' (a random first and last name); see "
+                "list_formats (without them, the first three)"
+            ),
+        ] = None,
         seed: Annotated[int | None, Field(description="The seed of an earlier talk, to make it again")] = None,
     ) -> dict[str, Any]:
         """Make a whole talk on a topic, as `talkgenerator --topic` does. The language model the user's settings name
@@ -212,13 +223,15 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
         if theme is not None:
             _check("theme", theme, themes.choices())
         _check("language", language, list(languages.LANGUAGES))
+        for style in name_styles or ():
+            _check("name style", style, list(names.STYLES))
         try:
             model = providers.from_settings()  # never from the tool's arguments: only the user picks a paid model
         except ValueError as error:
             raise ToolError(f"the language model the settings ask for can't be used: {error}") from error
 
         def generate() -> dict[str, Any]:
-            return _generate(model, folder, topic, slides, format, language, theme, title, presenter, seed)
+            return _generate(model, folder, topic, slides, format, language, theme, title, presenter, seed, name_styles)
 
         return await _in_a_thread(ctx, "Making the talk", generate, one_at_a_time, progress_every, folder)
 
@@ -242,6 +255,7 @@ def _generate(
     title: str | None,
     presenter: str | None,
     seed: int | None,
+    name_styles: Sequence[str] | None = None,
 ) -> dict[str, Any]:
     """A talk on a topic, saved in the folder with its deck's JSON and contact sheet, and the report on it."""
     from talkgenerator import generator  # (here: the generator module imports the schemas)
@@ -258,6 +272,7 @@ def _generate(
         llm=model,
         language=language,
         theme=theme,
+        name_styles=name_styles,
     )
     if saved is None:
         raise ToolError(f"couldn't save the PowerPoint in {folder}")

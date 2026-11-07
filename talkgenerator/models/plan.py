@@ -3,7 +3,8 @@
 A plan is what a language model or an agent (Claude, through the Skill) writes, and what the realizer turns into
 slides: for every slide its kind (a slide shape, such as two captioned images), what it's about (its concept), its
 texts, and a search query for each of its images. Plans hold queries, never image addresses: finding, licensing and
-crediting images stays with talkgenerator. And the presenter's name never goes into a plan: it's filled in locally.
+crediting images stays with talkgenerator. And a name the user gives never goes into a plan: it's filled in locally
+(a plan may have a made-up one, which that name goes before).
 
 `talkgenerator schema plan` prints the JSON Schema of this format, and `talkgenerator formats --details` the slide
 kinds, their texts and images, and the recipes to pick from.
@@ -62,7 +63,15 @@ class TalkPlan(Data):
     presenter_job: str = Field(
         default="",
         description="The presenter's grand, made-up job (at most 50 characters). The title slide reads 'By "
-        "<name>, <job>': talkgenerator adds the name, which is never in a plan.",
+        "<name>, <job>'.",
+    )
+    presenter_name: str = Field(
+        default="",
+        description="A made-up name for the presenter (at most 40 characters), such as a pun on the topic ('Prof. "
+        "Anna Tomy' for a talk on medicine), an ordinary first name with a surname that fits the topic too well "
+        "('Linda Hivesworth' for bees), or a historical figure's name bent to fit it ('Albert Einstone' for "
+        "geology); never a real person's name. A job with a title agrees with it (a Prof. is a professor). A name "
+        "the user gives (render's --presenter) goes first, and without either, talkgenerator makes one up.",
     )
     thesis: str = Field(default="", description="The talk's absurd claim in one sentence, which the slides build on.")
     slides: tuple[SlidePlan, ...] = Field(
