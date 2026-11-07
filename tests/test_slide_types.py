@@ -403,6 +403,24 @@ def test_the_classic_templates_leave_nothing_behind(related):
         assert check_leftovers(deck) == []
 
 
+def test_the_classic_generators_leave_sensitive_words_out(monkeypatch, related):
+    related["islam"] = [(1.0, "jihad"), (0.9, "allah"), (0.8, "prayer"), (0.7, "mosque"), (0.6, "ramadan")]
+    related["cat"] = [*related["cat"], (0.4, "death star"), (0.3, "god")]
+    assert slide_texts.related_words("cat") == ["Dog", "Mouse", "Yarn", "Milk", "Whiskers"]  # (no "cat food" either)
+    with random_util.use(random_util.Rng(1)):
+        assert all(content({"seed": "islam", "topic": "cats"}) is None for content, _ in CLASSIC.values())
+    assert slide_texts.sensitive("The Islam cycle") and not slide_texts.sensitive("Godzilla")
+
+
+def test_a_classic_slides_texts_come_from_templates_of_their_own(related):
+    for seed in range(20):
+        with random_util.use(random_util.Rng(seed)):
+            title, *moments = slide_texts.generate_timeline({"seed": "cat", "topic": "cats"})
+        events = moments[1::2][:-1]  # (the last one is the punchline)
+        banned = [event for event in events if event.endswith(" is banned")]
+        assert len(banned) <= 1 and len(set(events)) == len(events), events
+
+
 # THE FORMATS
 
 

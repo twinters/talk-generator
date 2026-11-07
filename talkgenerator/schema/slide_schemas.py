@@ -848,7 +848,9 @@ structure_slide_generators = _register(
             Recipe(
                 "section",
                 brief="A section's divider, opening the next part of the talk",
-                hints={"title": "the title of the part of the talk that starts here"},
+                hints={
+                    "title": "the title of the part of the talk that starts here, without a number (the slide has it)"
+                },
                 variants=(Variant(1), Variant(1, frozenset({"subtitle"}), "without a subtitle")),
             ),
         ),

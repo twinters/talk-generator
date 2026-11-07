@@ -363,7 +363,7 @@ Images: none
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `section-divider` | A section's divider, opening the next part of the talk | the default; `title`: the title of the part of the talk that starts here; tags: section |
+| `section-divider` | A section's divider, opening the next part of the talk | the default; `title`: the title of the part of the talk that starts here, without a number (the slide has it); tags: section |
 
 ## `questions`
 

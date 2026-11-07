@@ -4,22 +4,36 @@ news headlines, an agenda, a section's divider and the closing "Questions?" (doc
 They come from templates (`data/text-templates/slide_texts.json`) about the slide's seed, with the words ConceptNet
 relates to it where a slide needs more than one thing (a quiz's options, an agenda's items), and numbers made up
 here. Each generator takes a presentation context and returns its Slide class's arguments (or None when it can't make
-one), for `talkgenerator.slide.slide_generator_types.DrawnSlideGenerator`.
+one), for `talkgenerator.slide.slide_generator_types.DrawnSlideGenerator`. A talk's seeds wander from its topic, so
+words on faiths, violence and hate, or not for a family audience, are left out: a slide whose seed is one of them
+isn't made this way (another kind of slide takes its place), and such related words are skipped.
 """
 
 from __future__ import annotations
 
+import functools
+import json
 import re
 from collections.abc import Callable
 from functools import cache
-from typing import Any, Final
+from typing import Any, Final, TypeVar
 
 from talkgenerator.sources import conceptnet, text_generator
-from talkgenerator.util import random_util
+from talkgenerator.util import os_util, random_util
 
 _TEMPLATES: Final = "data/text-templates/slide_texts.json"
 _LONGEST_WORD: Final = 24  # a related word longer than this is a phrase that doesn't fit an option or an item
 ImageSource = Callable[[dict[str, Any]], Any]
+# Words a slide shouldn't make light of (see the module's documentation)
+_SENSITIVE: Final = frozenset(
+    ("islam", "islamic", "muslim", "muslims", "jihad", "allah", "quran", "koran", "mosque", "shia", "sunni", "imam")
+    + ("christian", "christianity", "christ", "jesus", "god", "gods", "bible", "church", "pope", "satan", "devil")
+    + ("jew", "jews", "jewish", "judaism", "synagogue", "torah", "rabbi", "hindu", "hinduism", "buddha", "buddhist")
+    + ("buddhism", "sikh", "prophet", "religion", "religious", "kill", "killing", "killer", "murder", "rape")
+    + ("suicide", "terror", "terrorist", "terrorism", "bomb", "nazi", "nazis", "hitler", "genocide", "holocaust")
+    + ("slave", "slavery", "racist", "racism", "sex", "sexual", "sexy", "porn", "nude", "naked", "penis", "vagina")
+    + ("drug", "drugs", "cocaine", "heroin", "abuse", "torture", "weapon", "gun", "guns", "corpse", "death")
+)
 
 
 @cache
@@ -31,12 +45,41 @@ def _template(name: str) -> Callable[[dict[str, Any]], str | None]:
 _full_name = text_generator.TraceryTextGenerator("data/text-templates/name.json", "full_name").generate
 
 
+@cache
+def _grammar() -> dict[str, list[str]]:
+    with open(os_util.to_actual_file(_TEMPLATES), encoding="utf-8") as file:
+        grammar: dict[str, list[str]] = json.load(file)
+    return grammar
+
+
+def sensitive(text: str) -> bool:
+    """Whether a text has a word that a slide shouldn't make light of (a faith, violence, hate...)."""
+    return any(word in _SENSITIVE for word in re.findall(r"[a-z]+", text.lower()))
+
+
 def related_words(seed: str, count: int = 12) -> list[str]:
-    """Words that ConceptNet relates to the seed, the weightiest first: short ones, without the seed, capitalised."""
+    """Words that ConceptNet relates to the seed, the weightiest first: short ones, without the seed or sensitive
+    words, capitalised."""
     entries = conceptnet.get_weighted_related_words(seed, 30) or []
     kept = conceptnet.remove_duplicates(conceptnet.remove_containing(list(entries), seed.lower()) or []) or []
     words = [str(word).strip() for _, word in sorted(kept, key=lambda entry: -entry[0])]
-    return [_capitalised(word) for word in words if word and len(word) <= _LONGEST_WORD][:count]
+    usable = [word for word in words if word and len(word) <= _LONGEST_WORD and not sensitive(word)]
+    return [_capitalised(word) for word in usable][:count]
+
+
+Generated = TypeVar("Generated")
+
+
+def _unless_sensitive(
+    generate: Callable[[dict[str, Any]], Generated | None],
+) -> Callable[[dict[str, Any]], Generated | None]:
+    """The generator, making nothing for a slide whose seed is sensitive."""
+
+    @functools.wraps(generate)
+    def generator(presentation_context: dict[str, Any]) -> Generated | None:
+        return None if sensitive(str(presentation_context["seed"])) else generate(presentation_context)
+
+    return generator
 
 
 def _context(presentation_context: dict[str, Any], related: list[str] | None = None) -> dict[str, Any]:
@@ -53,12 +96,22 @@ def _maybe(chance: float, text: str | None) -> str | None:
 
 
 def _different(name: str, presentation_context: dict[str, Any], related: list[str], count: int) -> list[str]:
-    """That many different texts from a template, each about another related word (fewer if they don't differ)."""
+    """That many texts from a list of templates, each from a template of its own, and those about a related word each
+    about another one (fewer if there aren't enough)."""
+    words = list(related)
     found: list[str] = []
-    for _ in range(50):
+    templates = _grammar()[name]
+    for template in random_util.sample(templates, len(templates)):
         if len(found) == count:
             break
-        text = _template(name)(_context(presentation_context, related))
+        variables = {"seed": presentation_context["seed"]}
+        if "{related" in template:
+            if not words:
+                continue
+            word = random_util.choice(words)
+            words.remove(word)
+            variables["related"] = word.lower()
+        text = text_generator.apply_variables_to_template(template, variables)
         if text and text not in found:
             found.append(text)
     return found
@@ -87,6 +140,7 @@ def _figure(kind: str) -> str:
     )
 
 
+@_unless_sensitive
 def generate_big_number(presentation_context: dict[str, Any]) -> tuple[str | None, str, str, str | None] | None:
     """A big number about the seed, with what it counts and a made-up source: a title, the number, its label, the
     source."""
@@ -113,6 +167,7 @@ def _kpi_number(punchline: bool) -> str:
     )
 
 
+@_unless_sensitive
 def generate_kpi(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
     """Three or four made-up figures about the seed, as on a dashboard, the last one a punchline: a title, then
     every figure's number and label."""
@@ -134,6 +189,7 @@ def generate_kpi(presentation_context: dict[str, Any]) -> tuple[str | None, ...]
 # A QUIZ
 
 
+@_unless_sensitive
 def generate_quiz(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
     """A quiz about the seed, its options things ConceptNet relates to it: the question, four options (the fourth
     may be None), the right one's letter (any: the presenter explains why), and an explanation, if any."""
@@ -166,6 +222,7 @@ def social_post(image: ImageSource) -> Callable[[dict[str, Any]], tuple[Any, ...
     """A generator of made-up social media posts about the seed, with a photo from the image source: a title (if
     any), the poster's name and username, the post, its photo, and how often it was liked and shared."""
 
+    @_unless_sensitive
     def generate(presentation_context: dict[str, Any]) -> tuple[Any, ...] | None:
         variables = _context(presentation_context)
         author = _full_name({})
@@ -187,6 +244,7 @@ def news_headline(image: ImageSource) -> Callable[[dict[str, Any]], tuple[Any, .
     """A generator of made-up news stories about the seed, with a photo from the image source: the outlet, the
     headline, a subheadline (if any) and the photo."""
 
+    @_unless_sensitive
     def generate(presentation_context: dict[str, Any]) -> tuple[Any, ...] | None:
         variables = _context(presentation_context)
         outlet = _template("news_outlet")(variables)
@@ -204,6 +262,7 @@ def news_headline(image: ImageSource) -> Callable[[dict[str, Any]], tuple[Any, .
 # THE TALK'S STRUCTURE
 
 
+@_unless_sensitive
 def generate_agenda(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
     """An agenda for a talk about the seed: a title, and three to five items (an opening, things related to the seed,
     and an end)."""
@@ -217,6 +276,7 @@ def generate_agenda(presentation_context: dict[str, Any]) -> tuple[str | None, .
     return title, first, *middle, last
 
 
+@_unless_sensitive
 def generate_section(presentation_context: dict[str, Any]) -> tuple[str, str | None] | None:
     """A section's divider about the seed: its title and subtitle (if any). The deck numbers it."""
     variables = _context(presentation_context)
@@ -226,6 +286,7 @@ def generate_section(presentation_context: dict[str, Any]) -> tuple[str, str | N
     return title, _maybe(0.5, _template("section_subtitle")(variables))
 
 
+@_unless_sensitive
 def generate_questions(presentation_context: dict[str, Any]) -> tuple[str, str | None] | None:
     """The closing slide: a question to the audience, and a subtitle (if any)."""
     variables = _context(presentation_context)
@@ -241,6 +302,7 @@ def generate_questions(presentation_context: dict[str, Any]) -> tuple[str, str |
 _DATES: Final = ("3000 BC", "1492", "1888", "1969", "2003", "Last Tuesday", "2087")
 
 
+@_unless_sensitive
 def generate_timeline(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
     """A made-up history of the seed: a title, then three to five dates (oldest first) each with what happened then,
     the last one a punchline."""
@@ -258,6 +320,7 @@ def generate_timeline(presentation_context: dict[str, Any]) -> tuple[str | None,
     return (title, *moments)
 
 
+@_unless_sensitive
 def generate_pyramid(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
     """A hierarchy of needs about the seed: a title, then three or four levels from the top (the seed itself) down to
     the base (something everyone needs), with words related to the seed between them."""
@@ -272,6 +335,7 @@ def generate_pyramid(presentation_context: dict[str, Any]) -> tuple[str | None, 
     return title, _capitalised(presentation_context["seed"]), *random_util.sample(related, count - 2), base
 
 
+@_unless_sensitive
 def generate_funnel(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
     """A funnel about the seed: a title, then three to five stages, words related to the seed narrowing down to a
     punchline."""
@@ -286,6 +350,7 @@ def generate_funnel(presentation_context: dict[str, Any]) -> tuple[str | None, .
     return title, *random_util.sample(related, count - 1), punchline
 
 
+@_unless_sensitive
 def generate_cycle(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
     """A cycle about the seed: a title, then three to five words related to it, each leading to the next."""
     related = [word for word in related_words(presentation_context["seed"]) if len(word) <= 24]
@@ -298,6 +363,7 @@ def generate_cycle(presentation_context: dict[str, Any]) -> tuple[str | None, ..
     return title, *random_util.sample(related, count)
 
 
+@_unless_sensitive
 def generate_org_chart(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
     """Who's in charge of the seed: a title, the boss (the punchline), and two to four people under them, each in
     charge of something related to the seed."""
@@ -312,6 +378,7 @@ def generate_org_chart(presentation_context: dict[str, Any]) -> tuple[str | None
     return title, boss, *reports
 
 
+@_unless_sensitive
 def generate_iceberg(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
     """An iceberg of the seed: a title, the seed on its tip, and two or three things under the water."""
     related = related_words(presentation_context["seed"])
