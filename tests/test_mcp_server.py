@@ -261,7 +261,7 @@ def test_without_a_language_model_the_talk_is_classic_and_english(schema, server
 def test_a_talk_on_what_the_user_asked_for_says_how_it_was_read(schema, server):
     typed = "Why I joined a penguin cult"
     report = _answer(_call(server, "generate_talk", {"topic_or_title": typed, "slides": 4}))
-    assert report["topic_or_title"] == {"text": typed, "read_as": "title", "by": "guess"}  # (no language model)
+    assert report["topic_or_title"] == {"text": typed, "read_as": "title"}  # (no language model: the guess)
     assert (report["title"], report["topics"]) == (typed, ["penguin"])
     assert _deck(report).topic_or_title.read_as == "title"
     assert "topic_or_title" not in _answer(_call(server, "generate_talk", {"topic": "cats", "slides": 4}))

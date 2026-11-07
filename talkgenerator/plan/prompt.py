@@ -21,7 +21,7 @@ from talkgenerator.models.plan import SlidePlan
 from talkgenerator.names import NameRequest
 from talkgenerator.plan import languages
 from talkgenerator.plan.kinds import KINDS, PRESENTER_JOB, TALK_TITLE, Recipe, TextField
-from talkgenerator.titles import INPUT_IS, READINGS, TitleRequest
+from talkgenerator.titles import TitleRequest
 from talkgenerator.util import random_util
 
 SYSTEM_PROMPT: Final = """\
@@ -104,25 +104,19 @@ SPINE: Final = "about"
 def spine(language: str = "en", name: NameRequest | None = None, typed: TitleRequest | None = None) -> dict[str, str]:
     """The talk's spine, which the answer starts with: what to write in each of its fields. With a name request, the
     presenter's name too, before their job (which then agrees with it). For what was typed, which could be the topic
-    or the title (see talkgenerator.titles), whether it's either (input_is, which sorts first, for models that write
-    the fields in alphabetical order), and with classic titles to weigh, the model's own title (own_title) before the
-    title it settles on."""
+    or the title (see talkgenerator.titles), the title as its request asks (with classic titles to pick, the model's
+    own title, own_title, before the title it settles on)."""
     language_name = languages.language(language).name
     fields = {
         # (Asked the other way around, as "safe_topic", the free models sometimes turned down harmless topics)
         "unsafe_topic": "true only if the topic asks for something hateful or harmful; false for every other topic, "
         "however odd",
+        "thesis": "the talk's thesis, its absurd claim in one sentence (not shown)",
     }
     if typed is not None:
-        fields[INPUT_IS] = typed.input_is_description()
-    fields["thesis"] = "the talk's thesis, its absurd claim in one sentence (not shown)"
-    if typed is not None and typed.candidates:
-        fields["own_title"] = typed.own_title_description(language)
-    fields["title"] = (
-        typed.title_description(language)
-        if typed is not None
-        else f"{TALK_TITLE.description}, in {language_name} (at most {TALK_TITLE.max_length} characters)"
-    )
+        fields.update(typed.fields(language))
+    else:
+        fields["title"] = f"{TALK_TITLE.description}, in {language_name} (at most {TALK_TITLE.max_length} characters)"
     agreeing = ""
     if name is not None:
         fields["name_plays_on"] = name.plays_on_description()
@@ -153,15 +147,15 @@ def talk_request(
 ) -> TextRequest:
     """The request for a talk (with the presenter's name, when there's a name request). Asked again, it says that a
     model found the topic unsafe: some of the free models get the flag wrong whichever way it's asked (one turned
-    down "penguins"). For what was typed, which could be the topic or the title (see talkgenerator.titles), it gives
-    that instead of the topic and the title, and asks which it is."""
+    down "penguins"). For what was typed, which could be the topic or the title (see talkgenerator.titles), it says
+    what the title is to be: what was typed, with its slips fixed, or a title of the model's own on it."""
     with random_util.use(rng.child("dice")):
         persona, angle = random_util.choice(_PERSONAS), random_util.choice(_ANGLES)
     topic = topics[0] + (f" (and {', '.join(topics[1:])})" if len(topics) > 1 else "")
-    kept = " (a typed title keeps its words)" if typed is not None else ""
+    kept = " (the typed title keeps its words)" if typed is not None and typed.keep else ""
     lines = [
         *(
-            typed.lines()
+            typed.lines(topic)
             if typed is not None
             else [f"Topic: {topic}", f"Title: {title}" if title else "Title: come up with one"]
         ),
@@ -212,8 +206,6 @@ def response_schema(
         field: {"type": "boolean" if field == "unsafe_topic" else "string", "description": description}
         for field, description in spine(language, name, typed).items()
     }
-    if INPUT_IS in fields:  # (one of the two)
-        fields[INPUT_IS]["enum"] = list(READINGS)
     properties: dict[str, Any] = {SPINE: _object(fields)}
     for slide in planned:
         properties[slide.key] = slide_schema(slide.recipe)

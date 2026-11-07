@@ -252,7 +252,7 @@ class _PlannedTalk:
         with self._changed:
             self.plans.clear()
             self.first_attempts.clear()
-            for written in ("title", "own_title", titles.INPUT_IS, "presenter_name", "name_plays_on"):
+            for written in ("title", "own_title", "presenter_name", "name_plays_on"):
                 self.spine.pop(written, None)
             self._changed.notify_all()
 

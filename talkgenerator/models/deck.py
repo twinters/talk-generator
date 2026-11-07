@@ -276,11 +276,9 @@ class DeckSlide(_Data):
         return tuple(element.image for element in self.elements if isinstance(element, ImageElement))
 
 
-# What was typed for a talk can be read as its topic ("penguins") or as its title ("Why I Joined a Penguin Cult")
+# What was typed for a talk can be read as its topic ("penguins", or a premise such as "Cats are liquid"), which the
+# talk's title builds on, or as its title ("Why I Joined a Penguin Cult"), which it keeps
 Reading = Literal["topic", "title"]
-# Who read it: the language model that wrote the talk, or talkgenerator's guess (a talk without one, or whose model
-# didn't say)
-ReadBy = Literal["language model", "guess"]
 
 
 class TopicOrTitle(_Data):
@@ -289,7 +287,6 @@ class TopicOrTitle(_Data):
 
     text: str
     read_as: Reading
-    by: ReadBy
 
 
 class Deck(_Data):

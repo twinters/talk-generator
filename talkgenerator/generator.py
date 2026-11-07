@@ -94,12 +94,13 @@ def generate_presentation(
     """Generate a talk. With debug_notes, every slide's speaker notes explain how it was generated.
 
     topic is what the talk is about (or topics, separated by commas), and title its title; without a title, it gets
-    one. topic_or_title stands for both, when what's given could be either, as what someone types can be: "penguins"
-    or "Why I Joined a Penguin Cult". The language model that writes the talk tells which, in the same request: a
-    title stays the talk's title (with only its obvious slips fixed), a topic gets a title. Without a language model
-    (or when it doesn't say), talkgenerator guesses: a title when it has four words or more, starts like one ("How
-    to", "Why", "The", "A", "My") or ends in "?" or "!". The deck tells how it was read (see talkgenerator.titles).
-    It's given instead of topic and title, never with them.
+    one. topic_or_title stands for both, when what's given could be either, as what someone types can be: "penguins",
+    "Cats are liquid" or "Why I Joined a Penguin Cult". What's clearly a title (four words or more, or a question or an
+    exclamation) stays the talk's title, with only its obvious slips fixed; anything shorter is the topic (or a
+    premise), on which the language model that writes the talk builds a funnier, more specific title, in the same
+    request. Without a language model, talkgenerator guesses: a title when it's clearly one, starts like one ("How
+    to", "Why", "The", "A", "My") or makes a claim ("Cats are liquid"), which stays as typed. The deck tells how it was
+    read (see talkgenerator.titles). It's given instead of topic and title, never with them.
 
     With save_json, the talk is also saved as a deck (see talkgenerator.models.deck): as JSON, next to the PowerPoint
     and with the same name, or on its own in output_folder when save_ppt is off. slide_deck.to_deck() gives the same
@@ -513,9 +514,9 @@ def get_argument_parser():
         default=None,
         type=str,
         help="Instead of --topic and --title: what the talk is about or its title, such as 'penguins' or 'Why I "
-        "Joined a Penguin Cult'. The language model that writes the talk tells which (a title stays the title, with "
-        "its obvious slips fixed); without one, a title is something of four words or more, that starts like one "
-        "('How to', 'Why', 'The', 'A', 'My') or ends in '?' or '!'",
+        "Joined a Penguin Cult'. Four words or more, or a question or exclamation, is the talk's title (its obvious "
+        "slips fixed); anything shorter is the topic, on which the language model builds a funnier title. Without a "
+        "model, a title is also what starts like one ('How to', 'Why', 'The', 'A', 'My') or makes a claim",
     )
     parser.add_argument(
         "--parallel",

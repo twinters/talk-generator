@@ -1,15 +1,22 @@
 """A talk's title and topic from what's typed for it, which can be either (docs/v5-plan.md, section 5.11).
 
-What someone types for a talk (generate_presentation's topic_or_title) can be its topic ("penguins") or its title
-("Why I Joined a Penguin Cult"). In a talk a language model writes, the model tells which, in the same request: in the
-talk's spine, before the rest. Read as a title, it stays the talk's title, with only its obvious slips fixed (spelling,
-grammar, capitals): its wording and its joke stay (see recognisable). Read as a topic, it gets a title from the model,
-which picks the best of its own and a few classic titles that the talk's dice draw (see candidates), fixing the one
-it picks where it's off. A talk without a language model, or whose model doesn't say how it read what was typed,
-goes by talkgenerator's guess (see guess).
+What someone types for a talk (generate_presentation's topic_or_title) can be its topic ("penguins"), a premise ("Cats
+are liquid") or its title ("Why I Joined a Penguin Cult"). In a talk a language model writes:
 
-The talk's topic is settled before the model is asked, since the slides' words to riff on come from it: by the guess,
-the rarest word of a title (as for a title given as such), or else what was typed (topics, separated by commas).
+- What's clearly a title (see clearly_a_title: four words or more, or a question or exclamation) stays the talk's
+  title, with only its obvious slips fixed (spelling, grammar, capitals) by the model, in the same request: its wording
+  and its joke stay (see recognisable), or else it stays as typed, with the slips fixed that talkgenerator can fix
+  itself (see polished).
+- Anything shorter is the talk's topic, or a premise, on which the model builds a title of its own, funnier and more
+  specific than what was typed ("The French Revolution" deserves better than itself; a premise keeps its words). (The
+  user's call, 2026-11-07, after the free models proved unreliable at telling a topic from a title themselves.)
+
+A talk without a language model, or whose model writes no title, goes by talkgenerator's guess (see guess): what reads
+as a title stays as typed (polished), and a topic gets the classic title.
+
+The talk's topic is settled before the model is asked, since the slides' words to riff on come from it: a clear
+title's rarest word (as for a title given as such), or else what was typed (topics, separated by commas), either with
+its misspellings fixed.
 
 A topic or a title given as such (generate_presentation's topic and title) is taken as it is: nothing second-guesses
 the user.
@@ -26,7 +33,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Final
 
-from talkgenerator.models.deck import ReadBy, Reading, TopicOrTitle
+from talkgenerator.models.deck import Reading, TopicOrTitle
 from talkgenerator.plan import languages
 from talkgenerator.plan.kinds import TALK_TITLE
 from talkgenerator.plan.realize import clean_text
@@ -38,9 +45,9 @@ logger = logging.getLogger("talkgenerator")
 TOPIC: Final = "topic"
 TITLE: Final = "title"
 READINGS: Final = (TOPIC, TITLE)
-# The field of the talk's spine in which the language model says which it read: one that sorts before the others, so
-# that a model that writes the fields in alphabetical order says it before it writes the title too
-INPUT_IS: Final = "input_is"
+# How the classic titles are offered to the model for a topic: as titles to pick ("options"), as examples of their
+# humour to write its own after ("inspiration"), or not at all ("none"). (For the user to compare: see the plan.)
+CLASSIC_TITLES = "options"
 
 # How titles start, as words in lower case: in English, and in the other languages talks can be in (what's typed for
 # a talk in another language may be in either). "How to", "Why", "The", "A", "My", ...
@@ -109,13 +116,13 @@ def guess(text: str, language: str = "en") -> str:
 
 
 def topics_from(text: str, language: str = "en") -> list[str]:
-    """The topics of a talk on what was typed, as settled before its language model reads it (by the guess): a
-    title's rarest word in its language (as for a title given as such), or else the topics it names, separated by
-    commas. Either with its misspellings fixed ("pengiuns": "penguins"), as what's typed often has them: the topics
-    give the slides their words to riff on, and a misspelled word would be a title's rarest, as no language knows
-    it."""
+    """The topics of a talk on what was typed, as settled before its language model is asked: a clear title's rarest
+    word in its language (as for a title given as such), or else the topics it names, separated by commas (a premise,
+    such as "Cats are liquid", as it is). Either with its misspellings fixed ("pengiuns": "penguins"), as what's
+    typed often has them: the topics give the slides their words to riff on, and a misspelled word would be a
+    title's rarest, as no language knows it."""
     text = normalised(text)
-    if guess(text, language) == TITLE:
+    if clearly_a_title(text):
         return [word_frequency.get_rarest_word(text, language, fix_spelling=True) or text]
     fixed = word_frequency.fix_spelling(text, language)
     return [part.strip() for part in fixed.split(",") if part.strip()] or [text]
@@ -238,49 +245,56 @@ def _about(title: str, topic: str) -> bool:
 
 @dataclass(frozen=True)
 class TitleRequest:
-    """What the language model that writes a talk is told about what was typed for it, and asked: whether it reads
-    as the talk's topic or its title (input_is, in the spine), and the talk's title, for a topic the best of
-    its own (own_title) and the classic candidates, when there are any (in English talks: the classic titles are
-    English)."""
+    """What the language model that writes a talk is told about what was typed for it, and asked: to keep it as the
+    talk's title, fixing its slips (keep, for what's clearly a title), or else to build a title of its own on it, as
+    the talk's topic or premise, funnier and more specific; with the classic titles that may go with that (in English
+    talks: the classic titles are English), as titles to pick or as inspiration."""
 
     typed: str
+    keep: bool = False
     candidates: tuple[str, ...] = ()
+    inspiration: bool = False  # (the classic titles are examples of their humour, not titles to pick)
 
-    def lines(self) -> list[str]:
-        """The request's lines about it, instead of its topic and title."""
-        lines = [f'What the user typed: "{self.typed}" (the talk\'s topic or its title: say which in {INPUT_IS})']
+    def lines(self, topic: str) -> list[str]:
+        """The request's lines about it, instead of its topic and title (topic: the talk's, for a title to keep)."""
+        if self.keep:
+            return [
+                f"Topic: {topic}",
+                f'Title: "{self.typed}" (as the user typed it: keep its words, fixing only its spelling, grammar and '
+                "capitals)",
+            ]
+        lines = [
+            f'Topic: "{self.typed}" (as the user typed it: the talk\'s topic, or a premise for it)',
+            "Title: come up with one, funnier and more specific than what the user typed",
+        ]
         if self.candidates:
             listed = "; ".join(f'"{candidate}"' for candidate in self.candidates)
-            lines.append(f"Classic titles from talkgenerator, for a topic: {listed}")
+            if self.inspiration:
+                lines.append(f"Classic talkgenerator titles, for inspiration only (write your own): {listed}")
+            else:
+                lines.append(f"Classic titles from talkgenerator, to pick from: {listed}")
         return lines
 
-    def input_is_description(self) -> str:
-        return (
-            "'topic' or 'title', decided first: whether what the user typed is what a talk is about (a thing or a "
-            "subject, or a few, however odd, such as 'penguins' or 'medieval cheese') or a talk's title (a phrase "
-            "that reads as a title, a claim or a question, such as 'Why I Joined a Penguin Cult' or 'Breakfast is "
-            "overrated')"
-        )
-
-    def own_title_description(self, language: str = "en") -> str:
-        return (
-            f"for a topic, your own title for a talk on it, in {languages.language(language).name}; for a title, "
-            f"empty (at most {TALK_TITLE.max_length} characters)"
-        )
-
-    def title_description(self, language: str = "en") -> str:
+    def fields(self, language: str = "en") -> dict[str, str]:
+        """The spine's fields about the title, in order (instead of its title)."""
         name = languages.language(language).name
-        topic = (
-            "own_title, or one of the classic titles instead if it's about the topic and funnier, fixed where it's "
-            "off (a broken plural, an odd phrase)"
-            if self.candidates
-            else f"your own title for a talk on it, in {name}"
+        limit = f"at most {TALK_TITLE.max_length} characters"
+        if self.keep:
+            return {
+                "title": "the title the user typed, word for word, with only its spelling, grammar and capitals "
+                f"fixed (not translated) ({limit})"
+            }
+        own = (
+            f"a title of your own for the talk, in {name}: funnier and more specific than what the user typed, "
+            f"building on it (a premise such as 'Cats are liquid' keeps its words) ({limit})"
         )
-        return (
-            f"the talk's title: if {INPUT_IS} is 'title', what the user typed, word for word, with only its "
-            f"spelling, grammar and capitals fixed (not translated); if it's 'topic', {topic} (at most "
-            f"{TALK_TITLE.max_length} characters)"
-        )
+        if self.candidates and not self.inspiration:
+            return {
+                "own_title": own,
+                "title": "own_title, or one of the classic titles instead if it's about the topic and funnier, fixed "
+                f"where it's off ({limit})",
+            }
+        return {"title": own}
 
 
 # A TALK'S TITLE
@@ -290,7 +304,7 @@ class TitleRequest:
 class Titling:
     """How a talk on what was typed gets its title, as decided before its language model is asked (if a model writes
     it): what was typed, how talkgenerator guesses it reads, and for a talk a model writes, what the model is asked
-    (with the classic titles it may pick)."""
+    (with the classic titles that go with a topic)."""
 
     typed: str
     language: str = "en"
@@ -307,82 +321,58 @@ class Titling:
         topic: str | None = None,
         rng: random_util.Rng | None = None,
     ) -> Titling:
-        """How a talk on what was typed gets its title: for a talk a language model writes (written), the model is
-        asked how it reads, and in an English talk, unless what was typed is clearly a title (see clearly_a_title), it
-        gets classic titles to weigh, which the generators make about the topic, with the talk's dice (rng)."""
+        """How a talk on what was typed gets its title: for a talk a language model writes (written), what's clearly a
+        title is kept, and anything shorter gets the model's title, with in an English talk classic titles that the
+        generators make about the topic, with the talk's dice (rng), as CLASSIC_TITLES says."""
         typed = normalised(typed)
         titling = cls(typed, language, guess(typed, language))
         if not written:
             return titling
+        keep = clearly_a_title(typed)
         drawn: tuple[str, ...] = ()
-        if language == "en" and generators and topic and rng is not None and not clearly_a_title(typed):
+        offered = CLASSIC_TITLES != "none" and language == "en" and not keep
+        if offered and generators and topic and rng is not None:
             drawn = candidates(generators, topic, rng)
-        return dataclasses.replace(titling, request=TitleRequest(typed, drawn))
+        return dataclasses.replace(
+            titling, request=TitleRequest(typed, keep, drawn, inspiration=CLASSIC_TITLES == "inspiration")
+        )
 
     def settle(self, spine: Mapping[str, Any], classic: Callable[[], str]) -> tuple[str, TopicOrTitle]:
         """The talk's title, and how what was typed was read.
 
-        What's clearly a title (see clearly_a_title) is the talk's title, whatever the language model says (the free
-        models took some for topics, and gave the talk a classic title instead): in the model's words when they're
-        recognisably what was typed (see recognisable) or part of its title ("Cats Are Liquid", out of "Cats Are
-        Liquid: A Medieval Breakthrough"), and else as typed.
-
-        Otherwise, the model's answer (its spine) tells, by the title it wrote more than by what it says (input_is):
-        the free models often say one thing and do the other ("title" for "sourdough bread", and then a title of
-        their own):
-
-        - a title that's recognisably what was typed: a title, in the model's words;
-        - another title, when the model says it's a title and talkgenerator's guess agrees: a title, as typed (the
-          model strayed from it);
-        - any other title: a topic, in the model's words (its own title, or a classic one), also one with what was
-          typed in it (a free model's own title for "The French Revolution" was "The French Revolution Was a
-          Medieval Dance-Off", and one for "pengiuns" "Why Penguins Will Ruin Your Life").
-
-        Without a title from the model, it's as the model says, or else as talkgenerator guesses: what was typed for a
-        title, and else the classic title (classic(), the one a classic talk with this seed gets). What was typed
-        stays as typed, but with its misspellings and a lower-case start fixed (see polished)."""
-        said = self._said(spine)
-        written = self._written(spine)
-        kept = written if written is not None and recognisable(self.typed, written) else None
-        part = part_of(self.typed, written) if written is not None and kept is None else None  # (clear titles')
-        by: ReadBy = "language model"
+        What's clearly a title is the talk's title, in the model's words when they're recognisably what was typed (see
+        recognisable) or part of its title ("Cats Are Liquid", out of "Cats Are Liquid: A Medieval Breakthrough"), and
+        else as typed, with the slips fixed that talkgenerator can fix itself (see polished). Anything shorter is the
+        topic, and the talk gets the model's title: its own, rather than just what was typed when it wrote both. Without
+        a title from the model (or without a model), talkgenerator's guess goes: what reads as a title stays as typed
+        (polished), and a topic gets the classic title (classic(), the one a classic talk with this seed gets)."""
+        written = self._written(spine, "title")
+        own = self._written(spine, "own_title")
         reading: Reading
-        if clearly_a_title(self.typed):
+        if self.request is not None and self.request.keep:
+            kept = written if written is not None and recognisable(self.typed, written) else None
+            part = part_of(self.typed, written) if written is not None and kept is None else None
             reading, title = "title", kept or part or polished(self.typed, self.language)
-            if not (kept or part or said == TITLE):
-                by = "guess"
-        elif kept is not None:
-            reading, title = "title", kept
-        elif written is not None and said == TITLE and self.guessed == TITLE:
-            reading, title = "title", polished(self.typed, self.language)
-            logger.info("The language model's title strays from the typed one (%r): it stays as typed", written)
-        elif written is not None:
-            reading, title = "topic", written
+            if title == self.typed:  # (the model gave it back as typed, slips and all)
+                title = polished(self.typed, self.language)
+        elif self.request is not None and (written or own):
+            reading = "topic"
+            echoed = written is None or recognisable(self.typed, written)
+            title = own if echoed and own and not recognisable(self.typed, own) else (written or own or "")
         else:
-            if said is None:
-                by = "guess"
-                if self.request is not None:
-                    logger.info("The language model didn't say how it read %r: talkgenerator guesses", self.typed)
-            reading = "title" if (said or self.guessed) == TITLE else "topic"
+            if self.request is not None:
+                logger.info("The language model wrote no title for %r: talkgenerator guesses", self.typed)
+            reading = "title" if self.guessed == TITLE else "topic"
             title = polished(self.typed, self.language) if reading == "title" else classic()
-        if reading == "title" and title == self.typed:  # (the model gave it back as typed, slips and all)
-            title = polished(self.typed, self.language)
-        logger.info("Read %r as a %s (%s): the title is %r", self.typed, reading, by, title)
-        return title, TopicOrTitle(text=self.typed, read_as=reading, by=by)
+        logger.info("Read %r as a %s: the title is %r", self.typed, reading, title)
+        return title, TopicOrTitle(text=self.typed, read_as=reading)
 
-    def _said(self, spine: Mapping[str, Any]) -> str | None:
-        """What the language model says what was typed is (its input_is), if it says it right: TOPIC or TITLE."""
-        said = spine.get(INPUT_IS) if self.request is not None else None
-        if isinstance(said, str) and said.strip().casefold() in READINGS:
-            return TITLE if said.strip().casefold() == TITLE else TOPIC
-        return None
-
-    def _written(self, spine: Mapping[str, Any]) -> str | None:
-        """The title the language model wrote, if it will do, without a label the request has put before it
-        ("Typed: ...", which a free model copied)."""
+    def _written(self, spine: Mapping[str, Any], field: str) -> str | None:
+        """A title the language model wrote (its title or own_title), if it will do, without a label the request has
+        put before it ("Title: ...", which a free model copied)."""
         if self.request is None:
             return None
-        title = clean_text(spine.get("title"), TALK_TITLE, self.language)
+        title = clean_text(spine.get(field), TALK_TITLE, self.language)
         if title is not None:
             title = _LABEL.sub("", title).strip() or None
         return title

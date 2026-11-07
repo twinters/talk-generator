@@ -188,8 +188,9 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
             Field(
                 min_length=1,
                 description="Instead of a topic and a title: what the user asked for, as they put it, when it could "
-                "be either, such as 'penguins' or 'Why I Joined a Penguin Cult' (the language model that writes the "
-                "talk tells which, and a title stays the title, with only its obvious slips fixed)",
+                "be either, such as 'penguins' or 'Why I Joined a Penguin Cult' (four words or more, or a question, "
+                "stays the title with only its obvious slips fixed; anything shorter is the topic, which gets a "
+                "funnier title)",
             ),
         ] = None,
         slides: Annotated[int, Field(ge=2, le=MAX_SLIDES, description="How many slides, the title slide too")] = 10,
@@ -332,7 +333,7 @@ def _generate(
         "checks": [asdict(finding) for finding in check_deck(deck, slides)],
         "sources_without_keys": settings.sources_without_keys(),
     }
-    if deck.topic_or_title is not None:  # (how what was typed was read: as the topic or the title, and by whom)
+    if deck.topic_or_title is not None:  # (how what was typed was read: as the topic or as the title)
         report["topic_or_title"] = deck.topic_or_title.model_dump()
     notes = []
     if writes and not written:

@@ -497,62 +497,59 @@ third choice, **Automatic**, the default, next to Topic and Title.
 - It changes the spine and the prompt, as the presenter names do (5.10), so it's built after them.
 
 Built on 2026-11-07 (`talkgenerator.titles`), after the presenter names and the fix for answers in alphabetical
-order (the spine is one object, `about`):
+order (the spine is one object, `about`). After three live rounds (below), the user's call (D35): what's typed
+is kept as the title only when it's clearly one; anything shorter is a topic or a premise for a funnier title of
+the model's, as "The French Revolution" deserves better than itself.
 
 - **The argument is `topic_or_title=`**, in `generate_presentation()` and `stream_talk()`, instead of `topic` and
   `title` (a ValueError with either). The site's three choices: Automatic passes the text as `topic_or_title`,
-  Topic as `topic`, Title as `title`. Also `--topic_or_title`, and the MCP server's `generate_talk(topic_or_title=)`
-  (its `topic` is optional now: a topic, a title or a topic_or_title). The Skill needs no argument (Claude is the
-  planner there): its instructions say a request can be a title, which stays as it was asked for.
-- **The request** says `What the user typed: "<text>" (the talk's topic or its title: say which in input_is)`
-  instead of the Topic and Title lines, and in English talks lists the classic titles. The spine gets `input_is`
-  (an enum, `topic` or `title`), named to sort first, so the models that write the fields in alphabetical order say
-  it before the title too, and with classic titles, `own_title` (the model's own proposal) before `title`, which is
-  own_title unless a classic title is about the topic and funnier. A topic or a title given as such gets the same
-  request as before, so recorded talks replay.
-- **The topics are settled before the model is asked**, since the slides' words to riff on come from them: by
-  talkgenerator's guess, a title's rarest word (in the talk's language, and English), or else what was typed. Typed
-  text has misspellings, and a misspelled word is the rarest (no language knows it), so they're fixed first: a rare
-  word becomes the word one edit away that's a hundred times more frequent ("waht": "what", "pengiun": "penguin"),
-  a word no language knows the closest frequent word ("airplain": "airplane"); made-up words stay ("Zorblaxia").
-  When the model reads it the other way than the guess, the topics stay as they were (the talk was planned on them).
-- **How it was read comes from the title the model writes**, more than from `input_is`, as the free models often
-  say one thing and do the other (see the benchmark below): a title that's recognisably the typed one (about as many
-  words, none added or left out but little ones, at least 70% the same letters: `titles.recognisable`) makes it a
-  title, in the model's words; so does a longer title with the typed one in it, for what the guess calls a title of
-  three words or more ("Cats Are Liquid" out of "Cats Are Liquid: A Medieval Scientific Breakthrough"). Another
-  title makes it a topic, with the model's title, unless the model and the guess both say it's a title: then it
-  stays as typed (the model strayed from it). Without a title from the model, `input_is` decides, or else the
-  guess (a title as typed, a topic with the classic title). The guess also reads a claim as a title ("Cats are
-  liquid": a form of "to be" or a modal verb, in the talks' languages).
-- **The classic titles to weigh**: the talk's dice draw how many (one to three), from the format's title generator
-  (whose first title is the one the classic talk of the same seed gets), a wikiHow "How to ..." title
-  (`content_generators.wikihow_title_generator`) and the title generator again, each from a stream of its own,
-  leaving out those that don't mention the topic (from an odd wikiHow page: "Never, Ever Be A Secret Agent" for
-  penguins). Drawing them takes about 0.7 s before the request (one wikiHow search, cached after that). Talks in
-  other languages get none (the classic titles are English): the model writes their title. Explicit topics don't get
-  them either ("as now").
+  Topic as `topic`, Title as `title` (a short title the visitor wants word for word). Also `--topic_or_title`, and
+  the MCP server's `generate_talk(topic_or_title=)` (its `topic` is optional now: a topic, a title or a
+  topic_or_title). The Skill needs no argument (Claude is the planner there): its instructions say the same.
+- **Clearly a title** (`titles.clearly_a_title`): a part of four words or more, or a question or exclamation. The
+  request says `Title: "<typed>" (as the user typed it: keep its words, fixing only its spelling, grammar and
+  capitals)`, and the talk gets the model's version when it's recognisably the typed one (about as many words, none
+  added or left out but little ones, at least 70% the same letters: `titles.recognisable`) or part of a longer
+  title of its own, and else what was typed, with the slips fixed that talkgenerator can fix itself
+  (`titles.polished`: misspellings, a capital start for a title typed in lower case). Its topic is its rarest word.
+- **Anything shorter is the topic, or a premise** ("Cats are liquid"): the request says `Topic: "<typed>" (as the
+  user typed it: the talk's topic, or a premise for it)` and `Title: come up with one, funnier and more specific
+  than what the user typed`, and the model's title goes (its own_title rather than an echo of what was typed). The
+  topics are what was typed.
+- **Misspellings** are fixed before the topics are taken (`word_frequency.fix_spelling`): a rare word becomes the
+  likest word one edit away that's a hundred times more frequent ("waht": "what", "joind": "joined"), a word no
+  language knows the closest frequent word ("airplain": "airplane"); made-up words stay ("Zorblaxia").
+- **The classic titles**, for a short input in an English talk: the talk's dice draw one to three, from the format's
+  title generator, a wikiHow "How to ..." title (`content_generators.wikihow_title_generator`) and the title
+  generator again, each from a stream of its own, leaving out those that don't mention the topic ("Never, Ever Be A
+  Secret Agent" for penguins); about 0.7 s before the request (one wikiHow search, cached after that). They're
+  offered as titles to pick (`titles.CLASSIC_TITLES`, "options"), which the free models did in about half the talks,
+  copied as listed; the user is to choose between that, inspiration only, and none, from a live comparison.
+- **Without a language model** (or when it writes no title), talkgenerator's guess goes: a title also when it starts
+  like one ("How to", "Why", "The", "A", "My") or makes a claim (a form of "to be", or a modal verb), in the talks'
+  languages, which stays as typed (polished); a topic gets the classic title.
 - **WikiHow's how-tos** are only the pages that teach an action ("How to ...", "4 Easy Ways to ..."): its search now
   also finds lists, quizzes and questions, which the 2019 code cut into actions such as "e 20 Top Games Like Club
   Penguin". That helps the classic slides and titles too.
-- **The deck and `talk.started`** record it: `topic_or_title` = {text, `read_as` (topic or title), `by` (language
-  model or guess)}. A model that writes no title and doesn't say (or fails, or declines) leaves it to the guess.
+- **The deck and `talk.started`** record it: `topic_or_title` = {text, `read_as`: topic or title}.
 
 Live on 2026-11-07, with OpenRouter's free router: a benchmark of 20 typed inputs, 10 topics (two misspelled, two
 that start like titles: "The French Revolution", "The Beatles") and 10 titles (two misspelled, two short claims:
-"Cats are liquid", "Breakfast is overrated"), in talks of 4 slides with seed 1, one request each but one, $0:
+"Cats are liquid", "Breakfast is overrated"), in talks of 4 slides, one request each but one, $0:
 
-- First round, with the first prompt and `input_is` deciding: 14 of 20 read right, fewer than talkgenerator's
-  guess (16, before it read claims as titles). The models' label often contradicted their title:
-  `dots-studio/dots-3-note-preview:free` said "title" for "sourdough bread", "pengiuns" and "The Beatles", and then
-  wrote a title of its own or a classic one, and one title came out "Typed: Quantim Physics". Typed titles came out
-  recognisable in 9 of 10, their slips fixed ("waht my cat taught me about taxes": "What My Cat Taught Me About
-  Taxes", "how too become a profesional napper": "How to Become a Professional Napper"). Topics got the model's own
-  title in 3 of 6 and a classic one in the other 3, odd ones ("Never, Ever Improve Your Emotional Intelligence" for
-  artificial intelligence: seed 1 draws one classic title, from a "Never, Ever ..." template and a wikiHow page).
-  All 80 slides were the model's; median 24 s a talk.
-- The rules above, on the same answers: 18 of 20 read right (the misses: "The Beatles", kept as the title, and
-  "quantim physics", titled "Quantim Physics"). The guess, which now reads claims as titles, gets 18 of 20 too.
+- Round one (seed 1), the model saying in `input_is` which it read: 14 of 20 read right, fewer than talkgenerator's
+  guess (16). The free models' label often contradicted their title (dots-3 said "title" for "sourdough bread" and
+  wrote a title of its own), and one title came out "Typed: Quantim Physics".
+- Round two (seeds 1 and 2), reading by the title the model wrote: 17 and 16 of 20. Clear titles lost to classic
+  ones ("10 reasons your toaster hates you": "Never, Ever Clean A Toaster"), which led to keeping clear titles.
+- Round three (seed 3), clear titles kept: 19 of 20, every clear title recognisable, slips fixed ("waht my cat taught
+  me about taxes": "What my cat taught me about taxes"; "how too become a profesional napper": "How to Become a
+  Professional Napper"), and the best titles were the model's own on short inputs ("Cats Are Liquid: The Future of
+  Fluid Startups"), while "Breakfast is overrated" stayed as typed: hence D35.
+- Topics took a classic title as listed in about half the talks of the three rounds ("How to Make Penguins Your
+  Friend", "What Your Sourdough Bread Says About You", "Why Beatles Will Ruin Your Life"); the models' own were often
+  spicier ("How Medieval Cheese Will Save Your Startup", "The Hidden Medieval History of Quantum Physics").
+- Median 17 to 24 s for a 4-slide talk; all 80 slides of a round by the model.
 
 ## 6. Agent mode: talkgenerator as a Claude Skill
 
@@ -1066,8 +1063,9 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D32 | What's typed can be a topic or a title: by default the language model tells which, in the talk's one request, and picks the title among its own proposal and a few classic candidates, fixing what's off; the visitor can still say which it is (section 5.11). |
 | D33 | Presenter names may be famous-name puns ("Albert Einstone" for geology), on by default: a historical figure's name bent to fit the topic, never the real name as it is, a living person's or a dictator's. Real historical figures' names as they are aren't a style. |
 | D34 | Talks without a language model get a name from a small pack curated by hand (pun names by topic, and a few fun surnames and famous-name puns) when their topic matches one of its entries, and tracery's random names otherwise. |
+| D35 | What's typed for a talk (Automatic, topic_or_title) stays its title only when it's clearly one: four words or more, or a question or exclamation, with its slips fixed. Anything shorter is the topic, or a premise, on which the language model builds a funnier, more specific title ("The French Revolution" deserves better than itself); the Title choice keeps a short title word for word. |
 
-D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, and D28 to D34 on 2026-11-07; the others follow from the design.
+D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, and D28 to D35 on 2026-11-07; the others follow from the design.
 
 ### Open questions
 
