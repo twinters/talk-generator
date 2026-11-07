@@ -59,9 +59,9 @@ TITLE = _slide("title", _text("title", "Cats"), _text("subtitle", "By Ann"))
 # CHECKS OF A DECK
 
 
-def _talk_in(language, *texts):
+def _talk_in(language, *texts, by="Door"):
     """A deck in the language, with a slide for every text."""
-    title = _slide("title", _text("title", texts[0]), _text("subtitle", "Door Ann Example"))
+    title = _slide("title", _text("title", texts[0]), _text("subtitle", f"{by} Ann Example"))
     return Deck(
         generator="test",
         language=language,
@@ -96,6 +96,44 @@ def test_a_dutch_talk_in_english_doesnt():
 def test_one_english_slide_in_a_dutch_talk_is_a_warning():
     deck = _talk_in("nl", "Het geheime leven van katten", "Waarom de kat altijd wint", "What we have learned from them")
     assert check_language(deck) == [Finding("language", "warning", "reads as English, not Dutch", 3)]
+
+
+def test_a_swedish_talk_in_swedish_passes_the_language_check():
+    deck = _talk_in(
+        "sv",
+        "Kattens hemliga liv",
+        "Varför katten alltid vinner",
+        "En katt i soffan är en kung",
+        "Det här har vi lärt oss",
+        by="Av",
+    )
+    assert check_language(deck) == []
+
+
+def test_a_swedish_talk_in_english_doesnt():
+    deck = _talk_in(
+        "sv",
+        "The secret life of cats",
+        "Why the cat always wins",
+        "A cat on the couch is a king",
+        "What we have learned from them",
+        by="Av",
+    )
+    findings = check_language(deck)
+    assert findings[0] == Finding("language", "error", "the talk reads as English, not Swedish")
+    assert {finding.slide for finding in findings[1:]} == {2, 3, 4}  # (the title slide's "Av" is Swedish)
+    one = _talk_in(
+        "sv", "Det hemliga livet för katter", "Varför katten alltid vinner", "What we have learned from them", by="Av"
+    )
+    assert check_language(one) == [Finding("language", "warning", "reads as English, not Swedish", 3)]
+
+
+def test_swedish_words_that_look_like_english_ones_dont_make_a_slide_read_as_english():
+    # (all, into, just, ice: English stopwords, and words of Swedish that its stopwords leave out)
+    deck = _talk_in("sv", "Kattens hemliga liv", "All glass in", "Just is", by="Av")
+    assert check_language(deck) == []
+    english = _talk_in("sv", "Kattens hemliga liv", "All of the ice", by="Av")
+    assert check_language(english) == [Finding("language", "warning", "reads as English, not Swedish", 2)]
 
 
 def test_english_talks_have_no_language_to_check():

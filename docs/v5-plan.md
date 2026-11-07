@@ -387,12 +387,57 @@ image ([section 10.5](#105-generated-images)).
 ### 5.9 Languages
 
 Built on 2026-11-06: `talkgenerator.plan.languages` has what talkgenerator writes itself in en, nl, fr, de, es, it
-and pt (the title slide's "By ...", a chart's "Yes" and "No"); a slide of a non-English talk that doesn't come
-out becomes a full-screen picture of its concept, without text, rather than an English classic slide (or is left
-out, in a format without such pictures); recipes with `texts_from` (real quotes, which are English) are left
-out of non-English talks; decks have a `language`; and `check_language` reads a deck's texts with NLTK's
-stopwords (only the words that tell the language and English apart), flagging slides and talks that read as
-English. Dutch Wikipedia and Wikiquote as sources are still to do.
+and pt, and since 2026-11-07 sv (the title slide's "By ...", a chart's "Yes" and "No"); a slide of a non-English
+talk that doesn't come out becomes a full-screen picture of its concept, without text, rather than an English
+classic slide (or is left out, in a format without such pictures); recipes with `texts_from` (real quotes, which
+are English) are left out of non-English talks; decks have a `language`; and `check_language` reads a deck's texts
+with NLTK's stopwords (only the words that tell the language and English apart), flagging slides and talks that
+read as English. Dutch Wikipedia and Wikiquote as sources are still to do.
+
+Swedish (`sv`) joined on 2026-11-07, at the user's request (D38). Besides its own words ("Av ...", "Ja" and "Nej", a
+post's "gilla-markeringar" and "delningar", a news story's "JUST NU"), it needed three things the other languages
+didn't:
+
+- What's typed reads as a title, without a model, when it starts like a Swedish one ("Hur", "Varför", and "Därför"
+  and "Så", where English headlines say "Why" and "How to") or makes a Swedish claim ("är", "måste", ...). But
+  English "is" isn't a claim in Swedish, where it means ice ("Pingviner på is").
+- The language check leaves out Swedish words that are English stopwords too but missing from NLTK's Swedish list
+  (`Language.english_lookalikes`: "in", "all", "just", "be", "by", "is"), which made a terse Swedish slide ("All
+  glass in", or a chart of "Is" and "All mat") read as English.
+- The spelling fixes of what's typed (`word_frequency.fix_spelling`), which take English words as candidates in
+  every language, turned rare words of the talk's language into English ones, and compounds into near words.
+  Measured on samples (600 rare words and about 790 made-up compounds per language, wordfreq's lists): 27 Swedish,
+  38 Dutch and 65 French rare words became English-leaning ones ("matare", Swedish for a feeder: "mature"; Dutch
+  "attractieve": "attractive"), and 17 Swedish, 13 Dutch and 8 German compounds became near words ("tomatbok":
+  "tomato"; "maanspion": "mansion"; "Computerkrise": "computerised"). Now a word that the language knows at least
+  as well as English only becomes another word of that language. And in a language that writes compounds as one
+  word (`Language.compounds`: nl, de and sv), a word made of two or more of its words stays as typed: the first
+  word may be joined on with an "s", or lose its last "e" or "a". The exception is a word one edit from a known
+  word, which still gets fixed: 2 Swedish, 4 Dutch and 2 German compounds still change, all a letter away from a
+  real word ("issekt": "insekt"). The English-leaning changes left (10, 20 and 29) are of words that are more
+  English than the language's own. Typos of common words get fixed as often as before in all eight languages (476
+  of 540 in Swedish before, 478 now, as "å" joined the letters an edit may use).
+
+Swedish compounds are as long as Dutch ones. Titles with a word over 15 letters already keep off the side
+layouts, and the Swedish 20-letter words measured (with å, ä and ö: "Kärnkraftsolyckornas", "Pingvinkaffekulterna")
+are no wider than the Dutch word that the long-word tests use, in any theme font: those tests passed with Swedish
+words in all twelve families. Words of 22 letters can
+still overflow a few narrow boxes in any language (a timeline's moment, a 2×2 matrix's axis end, a slide type's
+title at its smallest size), in four of the families.
+
+Live (2026-11-07, OpenRouter's free router, one request a talk, $0): seven Swedish talks, four on what was typed
+("kanelbullar", "älgar", "Varför jag gick med i en pingvinsekt", "katter är flytande") and the three sample talks
+(cat, peanuts and time travel). There were no language findings, and every title was Swedish: the typed title was
+kept as typed, the premise kept its words ("Katter är flytande: En medeltida guide till livets flyt"), and the
+topics got titles of their own ("Älgar: De glömda makarna i medeltiden"). So were the names: "Prof. Kanel
+Bullarsson", "Prof. Olof Älgkonung", "Prof. Albert Pingvinstein", "Dr. Tor Tidström". The model wrote 62 of the 70
+slides: one answer stopped at its output cap (11,700 tokens, where the others needed 674 to 1,008), and that talk's
+other eight slides became pictures, as designed. `deck_metrics` counts those pictures as written by the model, as
+their notes start with "Planned:". One presenter job came out in English ("Professor of Antarctic Entomology"),
+which the check doesn't see on a title slide that also says "Presenterad av". Two three-circle Venn diagrams didn't
+fit a long label ("Hantverksföreningar", "Medeltidsentusiaster"); laid out again with the Venn branch's labels
+beside their circles (`2126dc5`), both fit. The free models' Swedish has slips that no stopword check can see
+("Erdnöten" for jordnötter, a headline that reads Norwegian).
 
 Decided: talks in Dutch, and later other languages, whenever an LLM is available. The classic engine and its
 grammars stay English: translating them would mean keeping parallel grammars in step for every language, a lot of
@@ -1202,8 +1247,9 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D35 | What's typed for a talk (Automatic, topic_or_title) stays its title only when it's clearly one: four words or more, or a question or exclamation, with its slips fixed. Anything shorter is the topic, or a premise, on which the language model builds a funnier, more specific title ("The French Revolution" deserves better than itself); a title in quote marks stays word for word. The talk's dice pick whether the classic titles go with a short input as options, as inspiration only, or not at all. |
 | D36 | GIPHY's searches aren't cached: its API rules forbid caching its responses and media URLs. The other search APIs stay cached. |
 | D37 | Milestone 6's slide types are built from the deck's texts, shapes and pictures, which the layout engine places, so every renderer draws them as it draws the other slides (talk-generator-web without changes); a classic deck draws them on the 2019 template's blank slide, laid out in the template's look. What appears on a click is a property of an element (`appears_on_click`), which a renderer that plays no clicks ignores. |
+| D38 | Swedish (`sv`) is a talk language too, on the terms of D19 and D25: a language model writes the talk in Swedish, with talkgenerator's own words in Swedish; without one, the talk is classic and English. |
 
-D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, and D28 to D37 on 2026-11-07; the others follow from the design.
+D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, and D28 to D38 on 2026-11-07; the others follow from the design.
 
 ### Open questions
 

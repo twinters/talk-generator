@@ -376,16 +376,19 @@ def test_a_plan_can_name_its_format(schema, tmp_path, capsys):
 # PLANS IN OTHER LANGUAGES
 
 
-def test_a_dutch_plan_gets_dutch_words_and_pictures_instead_of_classic_slides(schema, tmp_path):
+@pytest.mark.parametrize(("language", "reality"), [("nl", "Werkelijkheid"), ("sv", "Verkligheten")])
+def test_a_plan_in_another_language_gets_its_words_and_pictures_instead_of_classic_slides(
+    schema, tmp_path, language, reality
+):
     from talkgenerator.plan import languages
 
-    unwritten = {**TWO_COLUMNS, "texts": {"caption_2": "Werkelijkheid"}}  # no caption_1: it can't come out
-    report = _render(_plan(unwritten, STATEMENT, language="nl"), tmp_path)
-    assert (report["language"], report["summary"]) == ("nl", _summary(3, as_planned=1, picture=1))
+    unwritten = {**TWO_COLUMNS, "texts": {"caption_2": reality}}  # no caption_1: it can't come out
+    report = _render(_plan(unwritten, STATEMENT, language=language), tmp_path)
+    assert (report["language"], report["summary"]) == (language, _summary(3, as_planned=1, picture=1))
     assert report["slides"][0]["outcome"] == "picture"
     deck = Deck.from_json(Path(report["deck_json"]).read_text(encoding="utf-8"))
-    assert deck.language == "nl"
-    assert deck.slides[0].elements[1].text.split(" Ann Example")[0] in languages.LANGUAGES["nl"].by
+    assert deck.language == language
+    assert deck.slides[0].elements[1].text.split(" Ann Example")[0] in languages.LANGUAGES[language].by
     assert deck.slides[1].type == "full_image"
     assert [element for element in deck.slides[1].elements if element.kind == "text"] == []
 

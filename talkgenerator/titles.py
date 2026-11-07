@@ -62,6 +62,11 @@ _TITLE_STARTS: Final[dict[str, tuple[str, ...]]] = {
     "es": ("cómo", "como", "por qué", "porque", "qué", "cuándo", "el", "la", "los", "las", "un", "una", "mi", "yo"),
     "it": ("come", "perché", "cosa", "quando", "il", "lo", "la", "gli", "le", "un", "una", "uno", "mio", "mia", "io"),
     "pt": ("como", "por que", "porque", "o que", "quando", "o", "os", "as", "um", "uma", "meu", "minha", "eu"),
+    # (Swedish headlines start with "Därför" and "Så" where English ones say "Why" and "How to")
+    "sv": (
+        *("hur", "varför", "därför", "så", "vad", "när", "vem", "den", "det", "en", "ett"),
+        *("min", "mitt", "din", "ditt", "jag", "vi", "du"),
+    ),
 }
 # Verbs that make a few words a claim ("Cats are liquid", "Breakfast is overrated"), which a topic hardly has: forms of
 # "to be" and modal verbs, in English and in the other languages talks can be in
@@ -75,7 +80,10 @@ _CLAIM_VERBS: Final[dict[str, frozenset[str]]] = {
     "es": frozenset({"es", "son", "está", "están", "era", "soy", "puede", "pueden", "debe", "va"}),
     "it": frozenset({"è", "sono", "era", "può", "possono", "deve", "va"}),
     "pt": frozenset({"é", "são", "está", "estão", "era", "sou", "pode", "podem", "deve", "vai"}),
+    "sv": frozenset({"är", "var", "blir", "blev", "kan", "ska", "skall", "måste", "vill", "bör", "kommer"}),
 }
+# English claim verbs that are other words in a language talks can be in: Swedish "is" is ice ("Pingviner på is")
+_NOT_CLAIM_VERBS: Final[dict[str, frozenset[str]]] = {"sv": frozenset({"is"})}
 _MOST_TOPIC_WORDS: Final = 3  # a part of what's typed (between commas) with more words than this is a title's
 _TITLE_ENDS: Final = ("?", "!")
 _QUOTE_MARKS: Final = "\"'“”‘’«»„"
@@ -121,7 +129,8 @@ def guess(text: str, language: str = "en") -> str:
         start_words = start.split()
         if words[: len(start_words)] == start_words:
             return TITLE
-    if len(words) > 1 and set(words[1:]) & (_CLAIM_VERBS["en"] | _CLAIM_VERBS.get(language, frozenset())):
+    english = _CLAIM_VERBS["en"] - _NOT_CLAIM_VERBS.get(language, frozenset())
+    if len(words) > 1 and set(words[1:]) & (english | _CLAIM_VERBS.get(language, frozenset())):
         return TITLE
     return TOPIC
 

@@ -11,6 +11,7 @@ from typing import Final
 
 from wordfreq import top_n_list, zipf_frequency
 
+from talkgenerator.plan.languages import LANGUAGES
 from talkgenerator.util import language_util
 
 _KNOWN_WORDS = 50_000  # how many of a language's most frequent words a misspelling is matched against
@@ -81,17 +82,24 @@ def _spelled(word: str, language: str) -> str:
     know, nor English), the most frequent word one edit away (a letter left out, two swapped, one changed or one
     added) that's at least a hundred times more frequent ("waht" is "what", "teh" "the", "pengiun" "penguin"); or
     else, for a word no language knows, one of the language's most frequent words that starts with the same letter,
-    is about as long and is mostly the same letters ("airplain": "airplane")."""
+    is about as long and is mostly the same letters ("airplain": "airplane").
+
+    In another language than English, a word of that language (one it knows at least as well as English does) is
+    only taken as another word of it, never as an English one ("matare", Swedish for a feeder, isn't "mature"). In
+    a language that writes compounds as one word (Dutch, German and Swedish), a word no language knows that's two of
+    its words put together is a compound, and no near match ("tomatbok", a book of tomatoes, isn't "tomato", nor is
+    "robotarmé" "robotar"); one a single edit away from a known word is still taken as it ("kvallens": "kvällens")."""
     frequency = _frequency(word, language)
     if len(word) < 3 or frequency >= _RARE:
         return word
     lowered = word.casefold()
+    own = language != "en" and _own(lowered, language)
     languages = (language, "en") if language != "en" else ("en",)
     known = frozenset().union(*(_known_set(each) for each in languages))
     edited = [
         candidate
         for candidate in sorted(_edits(lowered) & known)
-        if _frequency(candidate, language) >= frequency + _MORE_FREQUENT
+        if _frequency(candidate, language) >= frequency + _MORE_FREQUENT and (not own or _own(candidate, language))
     ]
     if edited:  # (the likest first, "joined" before "join" for "joind"; then the most frequent, "what" for "waht")
         return max(
@@ -103,6 +111,8 @@ def _spelled(word: str, language: str) -> str:
         )
     if frequency > 0:
         return word  # (a rare word, but a word)
+    if _compounding(language) and _compound(lowered, language):
+        return word
     pool = [
         candidate
         for each in languages
@@ -113,7 +123,52 @@ def _spelled(word: str, language: str) -> str:
     return matches[0] if matches else word
 
 
-_LETTERS: Final = "abcdefghijklmnopqrstuvwxyzàáâäçèéêëìíîïñòóôöùúûü"
+def _own(word: str, language: str) -> bool:
+    """Whether a word is one of the language's own: one it knows at least as well as English does."""
+    frequency = get_frequency(word, language)
+    return frequency > 0 and frequency >= get_frequency(word)
+
+
+def _compounding(language: str) -> bool:
+    """Whether the language writes compounds as one word, as Dutch, German and Swedish do."""
+    found = LANGUAGES.get(language)
+    return found is not None and found.compounds
+
+
+_LEAST_HEAD: Final = 2  # the shortest words a compound is taken to start with ("is" in "isrobot", an ice robot)
+_LEAST_TAIL: Final = 3  # and to end with ("bok" in "tomatbok")
+
+
+@lru_cache(maxsize=4096)
+def _compound(word: str, language: str) -> bool:
+    """Whether a word (in lower case) is two or more of the language's words put together, as Dutch, German and
+    Swedish make them ("pingvinsekt", "tomatbok"): words among its most frequent, at least one of them more its own
+    than English's (its lists hold English words too, and two of those make no compound of it). The first may be
+    joined to the rest with an "s" ("kärnkraftsolycka"), or lose its last "e" or "a" ("spökarmé", of "spöke" and
+    "armé")."""
+    for split in range(_LEAST_HEAD, len(word) - _LEAST_TAIL + 1):
+        head, tail = word[:split], word[split:]
+        if not _part(tail, language):
+            continue
+        heads = [head, head + "e", head + "a"]
+        if head.endswith("s") and split > _LEAST_HEAD:
+            heads.append(head[:-1])
+        if any(_part(each, language) and (_own_part(each, language) or _own_part(tail, language)) for each in heads):
+            return True
+    return False
+
+
+def _part(word: str, language: str) -> bool:
+    """Whether a word can be a part of a compound in the language: one of its most frequent words, or a compound."""
+    return word in _known_set(language) or _compound(word, language)
+
+
+def _own_part(word: str, language: str) -> bool:
+    """Whether a part of a compound is the language's own: its own word, or a compound (of which one word is)."""
+    return _own(word, language) or (word not in _known_set(language) and _compound(word, language))
+
+
+_LETTERS: Final = "abcdefghijklmnopqrstuvwxyzàáâäåçèéêëìíîïñòóôöùúûü"
 
 
 def _edits(word: str) -> set[str]:

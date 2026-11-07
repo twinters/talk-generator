@@ -114,6 +114,12 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   slides are English), and recipes that find English texts, such as real quotes, aren't used. A deck says its
   language, and a new check reads its texts with NLTK's stopword lists: a talk that reads as English when it
   shouldn't is an error, and such a slide a warning. `talkgenerator check --language nl --llm ...` checks them.
+- Talks in Swedish (`--language sv`), as in the other languages: talkgenerator's own words are Swedish ("Av ...",
+  "Ja" and "Nej", a post's "gilla-markeringar" and "delningar", a news story's "JUST NU"); without a language model,
+  what's typed reads as a title when it starts like a Swedish one ("Varför", "Därför", "Så", "Hur") or makes a claim
+  ("Katter är flytande"), but not for its "is", which is ice ("Pingviner på is"); and the language check doesn't
+  count Swedish words that are English stopwords too ("in", "all", "just", "is") as English
+  (`Language.english_lookalikes`). talkgenerator.com lists it among its languages once it runs a v5 with it.
 - Themes (`--theme`, docs/v5-plan.md section 9): besides the 2019 template (`classic`), talks can be drawn as
   shapes on a 1920×1080 canvas, in a theme of one of twelve families, from `clean keynote` and
   `dark minimal` to `vintage paper` and `neon`, with `1997 WordArt`, `Comic Sans everywhere` and `clip-art
@@ -337,6 +343,13 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
 - WikiHow's search finds lists, quizzes and questions too, which were cut into odd actions for classic slides and
   titles ("e 20 Top Games Like Club Penguin", "arn All About the 18 Different Penguin Species"): only pages that
   teach an action count now ("How to ...", "4 Easy Ways to ...").
+- The spelling fixes of what's typed for a talk in another language than English no longer turn its words into
+  English ones ("matare", Swedish for a feeder, became "mature"; Dutch "attractieve" became "attractive"), and in
+  Dutch, German and Swedish, which write compounds as one word (`Language.compounds`), a word no language knows
+  that's two of the language's words put together stays as typed, where it was taken for a near word ("tomatbok"
+  became "tomato", "maanspion" "mansion", "Computerkrise" "computerised", "robotarmé" "robotar"). A word one edit
+  from a known one is still fixed, and so is a Swedish word typed without its ring ("faglar": "fåglar", was
+  "naglar"). On samples of typos of common words, as many are fixed as before in every language.
 - In a themed deck, a title with a word too long for the column beside a picture or a chart, as Dutch and German
   compounds can be ("Vulkaanuitbarstingen"), goes across the top of the slide instead: in a wide font, such a word
   didn't fit the 600-pixel column even at the smallest size. Those layouts now take a title only if it has no word
