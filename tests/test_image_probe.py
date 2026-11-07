@@ -240,3 +240,40 @@ def test_local_files_are_read_as_they_are(web):
     with image_util.probing():
         assert image_util.is_usable_image(os_util.to_actual_file("data/images/black-transparent.png"))
         assert not image_util.is_usable_image(os.path.join("nowhere", "missing.png"))
+
+
+def test_a_probe_and_a_download_tell_the_same_size(web):
+    # The original's, also when the bytes for a PowerPoint are scaled down
+    body = _image(size=(4000, 3000))
+    web.serve("https://example.com/probed.jpg", body, "image/jpeg")
+    web.serve("https://example.com/downloaded.jpg", body, "image/jpeg")
+    probed, downloaded = ImageData("https://example.com/probed.jpg"), ImageData("https://example.com/downloaded.jpg")
+
+    with image_util.probing():
+        assert image_util.check_image(probed)
+    assert image_util.check_image(downloaded)
+
+    assert probed.size == downloaded.size == (4000, 3000)
+    assert max(image_util.get_image_size(downloaded.data)) == image_util.MAX_DIMENSION  # (scaled down to embed)
+
+
+def test_an_image_that_plays_its_video_has_its_posters_size(web):
+    gif = "https://example.com/long.gif"
+    video = VideoCopy(url="https://example.com/long.mp4", poster_url="https://example.com/long-poster.jpg")
+    web.serve(gif, _image(image_format="GIF"), "image/gif", size=50 * MB)
+    web.serve(video.poster_url, _image(size=(640, 360)), "image/jpeg", size=MB)
+    web.serve(video.url, _mp4(), "video/mp4", size=2 * MB)
+    image = ImageData(gif, video=video)
+    with image_util.probing():
+        assert image_util.check_image(image)
+    assert image.size == (640, 360)
+
+
+def test_the_deck_tells_an_images_size(web):
+    from talkgenerator.slide import slides
+
+    web.serve("https://example.com/photo.jpg", _image(size=(1200, 800)), "image/jpeg", size=2 * MB)
+    with image_util.probing():
+        asset = slides._to_image_asset(ImageData("https://example.com/photo.jpg"))
+    assert (asset.width, asset.height) == (1200, 800)
+    assert '"width":1200' in asset.model_dump_json()

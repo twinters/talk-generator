@@ -89,6 +89,10 @@ class ImageAsset(_Data):
     query: str | None = None  # the search that found it, for an image a plan asked for
     description: str | None = None  # what it shows, as its source describes it (for alt text, say)
     display: DisplayPolicy = "direct"  # how a browser may show it (a PowerPoint embeds it whatever it says)
+    # Its size in pixels, as the check that let it on the slide found it (none if it didn't tell): for a browser to
+    # place a picture before it has loaded it
+    width: int | None = None
+    height: int | None = None
 
 
 class TextElement(_Data):
@@ -283,6 +287,8 @@ class Deck(_Data):
     seed: int | None = None
     theme: str = "classic"  # the name of the theme: "classic" (the 2019 template), or one of a family's
     style: Theme | None = None  # the theme's tokens (none for the classic theme)
+    # The language model that wrote the talk, as "provider:model" (the one that answered), or none: a classic talk
+    language_model: str | None = None
     slides: tuple[DeckSlide, ...] = ()
     usage: Usage = Usage()  # what the talk asked of language models, and what that cost
 

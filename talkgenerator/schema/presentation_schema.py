@@ -363,6 +363,7 @@ class PresentationSchema:
                 language=talk_language,
             )
             slide_deck.theme, slide_deck.style_chaos, slide_deck.extreme_themes = theme, style_chaos, extreme_themes
+            slide_deck.language_model = llm.id if planned and llm is not None else None
             logger.info("Slide deck: {}".format(slide_deck))
             if progress is not None:
                 progress.started(slide_deck)

@@ -39,6 +39,8 @@ class SlideDeck:
         self.theme: Theme | None = None
         self.style_chaos = 0.0
         self.extreme_themes = True
+        # The language model that writes the talk ("provider:model"), or None: a classic talk
+        self.language_model: str | None = None
         # Who wants to know about every slide once it's added (a talk that streams: see talkgenerator.generator)
         self.listener: Callable[[SlideDeck, int, Slide], None] | None = None
 
@@ -96,6 +98,7 @@ class SlideDeck:
             language=self._language,
             schema_name=schema_name,
             seed=self._seed,
+            language_model=self.language_model,
             slides=tuple(slide.to_deck_slide() for slide in self._slides if slide is not None),
             usage=self.usage,
         )

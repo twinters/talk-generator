@@ -129,6 +129,8 @@ def _to_image_asset(image: ImageData) -> model.ImageAsset:
         query=image.query,
         description=image.description,
         display=image.display if url.startswith(("http://", "https://")) else "local",
+        width=image.size[0] if image.size else None,
+        height=image.size[1] if image.size else None,
     )
 
 

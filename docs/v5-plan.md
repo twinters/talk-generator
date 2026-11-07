@@ -727,7 +727,12 @@ browser ([section 13.1](#131-streaming-slides-into-the-browser)) and the filters
 
 - **The library:** `stream_talk()` yields `talk.started` (title, theme, slide count), `slide.ready` (index and
   slide JSON), `slide.updated` (images that came in late) and `talk.finished` (credits, usage, fallbacks). Slides
-  arrive in order, and later slides get prepared in parallel.
+  arrive in order, and later slides get prepared in parallel. As built (2026-11-07): a slide is handed over whole,
+  so there's no `slide.updated` (a later one would replace the slide at its index, as the site takes it);
+  `talk.started` also names the language model that writes the talk (none: classic), and every image its size in
+  pixels. What a browser can't do as PowerPoint does: split black and white at a picture's own median lightness
+  (it can't read another site's pixels, so it splits at half), and bend text into an arch, a wave or an inflated
+  shape (a slant it can).
 - **talk-generator-web**, on a branch of its own: `POST /api/talks` returns an id; `GET /api/talks/<id>/events`
   streams Server-Sent Events (with nginx's buffering off); `GET /api/talks/<id>` returns the deck JSON as a
   permalink, kept for 7 days like today's outputs; `GET /api/talks/<id>.pptx` renders the .pptx on demand.

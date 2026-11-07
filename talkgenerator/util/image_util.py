@@ -64,6 +64,10 @@ PROBE_BYTES = 64 * 1024  # read at a time: the first 2 KB tell most images' form
 MAX_PROBE_BYTES = 512 * 1024  # an image that hasn't told its size by then is downloaded whole instead
 _MAX_PROBED = 4096
 _probed: OrderedDict[str, bool] = OrderedDict()  # what probes found, by URL ("video " and the URL, for videos)
+# The size (width, height) of the images that checks let through, by URL: the original's, also when the bytes for a
+# PowerPoint are scaled down, so that a probe and a download tell the same
+_MAX_SIZES = 16384
+_sizes: OrderedDict[str, tuple[int, int]] = OrderedDict()
 # What the first bytes of a file can say (see _identify), besides its format and size
 _MORE = "more"  # more bytes are needed to tell
 _WHOLE = "whole"  # it can only be told from the whole file (an AVIF, say)
@@ -116,7 +120,32 @@ def check_image(image: ImageData) -> bool:
             image.usable = _probe_image(image)
         else:
             image.usable = fetch_image_data(image) is not None
+        if image.usable:
+            image.size = image_size(image.get_shown_url())
     return image.usable
+
+
+def image_size(url: str) -> tuple[int, int] | None:
+    """The size in pixels (width, height) of an image that a check let through (probed or downloaded), if known."""
+    with _cache_lock:
+        return _sizes.get(url)
+
+
+def _remember_size(url: str, size: tuple[int, int] | None) -> None:
+    if size is None:
+        return
+    with _cache_lock:
+        _sizes[url] = size
+        _sizes.move_to_end(url)
+        while len(_sizes) > _MAX_SIZES:
+            _sizes.popitem(last=False)
+
+
+def _size_of(data: bytes) -> tuple[int, int] | None:
+    try:
+        return get_image_size(data)
+    except (UnidentifiedImageError, Image.DecompressionBombError, OSError, ValueError, SyntaxError):
+        return None
 
 
 def fetch_image_data(image: ImageData) -> bytes | None:
@@ -224,7 +253,10 @@ def _probe(url: str) -> bool:
             if seen != _MORE or len(head) >= MAX_PROBE_BYTES:
                 break
         else:  # the whole file is in: check it as a download is checked
-            return prepare_image_bytes(head, description) is not None
+            usable = prepare_image_bytes(head, description) is not None
+            if usable:
+                _remember_size(url, _size_of(head))
+            return usable
     if isinstance(seen, str):
         if seen == _NOT_AN_IMAGE:
             logger.info("Image %s can't be used: it isn't an image of an accepted format", description)
@@ -241,6 +273,7 @@ def _probe(url: str) -> bool:
         return False
     if _shaped_like_a_placeholder(width, height):
         return fetch_image(url) is not None  # (downloaded, to compare it with them)
+    _remember_size(url, (width, height))
     return True
 
 
@@ -334,14 +367,19 @@ def _load(url: str) -> bytes | None:
     if not url.startswith(("http://", "https://")):
         # Local files are our own assets (such as the 10x10 transparent overlay): use them as they are
         try:
-            return Path(url).read_bytes()
+            local = Path(url).read_bytes()
         except OSError as e:
             logger.warning("Can't read image file %s: %s", url, e)
             return None
+        _remember_size(url, _size_of(local))
+        return local
     data = _download(url)
     if data is None:
         return None
-    return prepare_image_bytes(data, http_util.describe_url(url))
+    prepared = prepare_image_bytes(data, http_util.describe_url(url))
+    if prepared is not None:
+        _remember_size(url, _size_of(data))  # (the original's, before scaling down)
+    return prepared
 
 
 def _load_video(url: str) -> bytes | None:

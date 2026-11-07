@@ -35,6 +35,9 @@ class TalkStarted(_Event):
     slides: int  # how many slides it's to have (a slide that can't be made is left out)
     theme: str = "classic"  # the theme's name: "classic" (the 2019 template), or one of a family's
     style: Theme | None = None  # the theme's tokens (none for the classic theme)
+    # The language model that writes it, as "provider:model" (the one asked; the finished deck names the one that
+    # answered), or none: a classic talk
+    language_model: str | None = None
 
 
 class SlideReady(_Event):

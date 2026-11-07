@@ -57,6 +57,8 @@ class ImageData:
         # video copy (a gif too large to embed): a check that probes it tells both without its bytes
         self.usable: bool | None = None
         self.plays_video = False
+        # Its size in pixels (width, height), as its check found it: of the picture that shows (a video's poster)
+        self.size: tuple[int, int] | None = None
         # The search that found it, when talkgenerator knows (see found_with)
         self.query: str | None = None
         # How a browser may show it, as its source allows (see talkgenerator.models.deck.DisplayPolicy)

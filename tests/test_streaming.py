@@ -185,3 +185,22 @@ def test_a_streamed_slide_tells_its_images_sources_that_they_were_used(monkeypat
     used.clear()
     _made_at_once(llm=FakeModel(), theme="neon")  # (without a PowerPoint, nothing is used yet)
     assert used == []
+
+
+class RoutedModel(FakeModel):
+    """A router: asked as fake:router, it has another model answer."""
+
+    id = "fake:router"
+
+    def complete(self, request):
+        return super().complete(request).model_copy(update={"model": "fake:picked-model"})
+
+
+def test_a_streamed_talk_says_which_model_writes_it():
+    started, _, deck = _parts(_streamed(llm=RoutedModel(), theme="neon"))
+    assert started.language_model == "fake:router"  # (the one asked)
+    assert deck.language_model == "fake:picked-model"  # (the one that answered)
+    assert _made_at_once(llm=RoutedModel(), theme="neon").language_model == "fake:picked-model"
+
+    started, _, deck = _parts(_streamed(llm="none"))
+    assert started.language_model is None and deck.language_model is None  # (a classic talk)

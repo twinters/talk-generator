@@ -179,6 +179,9 @@ def generate_presentation(
         progress=progress,
     )
     slide_deck.usage = ledger.total()
+    answered = [entry.model for entry in ledger.entries if entry.error is None]
+    if slide_deck.language_model is not None and answered:
+        slide_deck.language_model = answered[-1]  # (the model that answered, which a router picks)
     if provider is not None:
         logger.info(ledger.summary())
 
@@ -298,6 +301,7 @@ class _Following:
                 slides=slide_deck.size,
                 theme=theme.name if theme is not None else "classic",
                 style=theme,
+                language_model=slide_deck.language_model,
             )
         )
 
