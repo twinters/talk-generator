@@ -216,7 +216,8 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   - its title: the persona's kind of title from the model, and half of a classic talk's titles from the persona's
     own templates ("Disrupting Penguins");
   - the presenter's name: a historian's is a famous-name pun more often, and a professor goes by "Prof.", unless
-    `--name_styles` says which styles to use.
+    `--name_styles` says which styles to use; and with a model, the presenter's job ("Founder and CEO of
+    Penguin.ly").
 - The deck and `talk.started` say which persona a talk had (`persona`: its name, label and voice, and the angle the
   model was given). `--persona none` makes the format's own talk.
 

@@ -12,7 +12,8 @@ talk names one: generate_presentation's persona), which shapes more of the talk 
 - the presenter's name (see nudge): weights over the name styles, by which the dice pick among the switched-on ones (a
   medieval historian's name is a famous-name pun more often), and for the model, how the presenter goes by (a
   professor with "Prof." before the name, a kindergarten teacher as the children call them). A talk that says which
-  name styles it may have (name_styles) goes by those alone.
+  name styles it may have (name_styles) goes by those alone;
+- the presenter's job on the title slide, for the model (job_hint: a founder is the founder and CEO of a startup).
 
 Classic talks get the slides, the titles and the name styles; the voice and the angle are for a language model. The
 persona comes from the talk's seed (its "persona" stream), before the slides are picked, so the same seed with the same
@@ -61,6 +62,9 @@ class Persona:
     titles: tuple[str, ...]  # title templates for classic talks, with the topic as {seed.title}
     name_styles: Mapping[str, float]  # weights over the name styles (1 for those it doesn't name)
     name_manner: str  # how the presenter goes by, for the language model ("with Prof. before the name")
+    # What the presenter's job on the title slide is, for the language model ("founder and CEO of their startup..."),
+    # in place of the job field's example, which free models copied whoever presented
+    job_hint: str
 
     def weight(self, tags: Iterable[str]) -> float:
         """How many times as often a slide generator with these tags comes up in the persona's talks: the product of
@@ -141,6 +145,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             ),
             {"pun": 2, "famous_pun": 1.5},
             "with Prof. before the name, a title they still cling to",
+            "the chair they held before the scandal, in an absurdly specific field",
         ),
         Persona(
             "startup_founder",
@@ -174,6 +179,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             ),
             {"fun_surname": 2.5},
             "a founder's first name and surname, without Dr. or Prof.",
+            "founder and CEO of their startup, with its made-up name",
         ),
         Persona(
             "medieval_historian",
@@ -205,6 +211,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             ),
             {"famous_pun": 2.5},
             "with Dr. or Prof. before the name",
+            "a chair in medieval studies, as grand and specific as it gets",
         ),
         Persona(
             "conspiracy_blogger",
@@ -237,6 +244,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             ),
             {"fun_surname": 2, "pun": 1.5, "famous_pun": 0.7},
             "without Dr. or Prof.: a blogger needs no degree",
+            "a title they gave themselves, as an independent researcher of something",
         ),
         Persona(
             "kindergarten_teacher",
@@ -272,6 +280,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             ),
             {"pun": 2, "fun_surname": 2, "famous_pun": 0.7},
             "as the children call their teacher: Miss, Ms. or Mr. and a surname",
+            "their role at the kindergarten, made to sound grand",
         ),
         Persona(
             "consultant",
@@ -307,6 +316,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             ),
             {"fun_surname": 2.5, "famous_pun": 0.6},
             "a corporate first name and surname, without Dr. or Prof.",
+            "a consultancy title, with Senior, Principal or Partner in it",
         ),
         Persona(
             "motivational_speaker",
@@ -337,6 +347,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             ),
             {"pun": 2, "fun_surname": 1.5},
             "a name that fits on a poster, without Dr. or Prof.",
+            "a title like a self-help guru's",
         ),
         Persona(
             "influencer",
@@ -368,6 +379,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             ),
             {"pun": 2.5, "fun_surname": 1.5, "famous_pun": 0.7},
             "a name as catchy as a channel's, without Dr. or Prof.",
+            "a title like an influencer's bio",
         ),
         Persona(
             "time_traveller",
@@ -398,6 +410,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             ),
             {"famous_pun": 2.5, "pun": 1.2},
             "with Dr. before the name, a doctor of nothing in particular",
+            "a job from a future they won't say much about",
         ),
         Persona(
             "life_coach",
@@ -430,6 +443,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             ),
             {"pun": 2, "fun_surname": 1.5},
             "a soothing first name and surname, without Dr. or Prof.",
+            "a title like a wellness guru's",
         ),
         Persona(
             "lighthouse_keeper",
@@ -462,6 +476,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             ),
             {"fun_surname": 2.5},
             "a weathered first name and surname, without Dr. or Prof.",
+            "their old post at the lighthouse",
         ),
         Persona(
             "former_athlete",
@@ -494,6 +509,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             ),
             {"fun_surname": 2, "pun": 1.5},
             "a name a stadium would chant, without Dr. or Prof.",
+            "the sport they played, and their new calling in philosophy",
         ),
         Persona(
             "passionate_expert",
@@ -524,6 +540,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             ),
             {"pun": 2, "famous_pun": 1.5},
             "with Dr. or Prof. before the name",
+            "a professorship in an absurdly specific field",
         ),
     )
 }

@@ -85,12 +85,14 @@ def spine(
     name: NameRequest | None = None,
     typed: TitleRequest | None = None,
     title_hint: str | None = None,
+    job_hint: str | None = None,
 ) -> dict[str, str]:
     """The talk's spine, which the answer starts with: what to write in each of its fields. With a name request, the
     presenter's name too, before their job (which then agrees with it). For what was typed, which could be the topic
     or the title (see talkgenerator.titles), the title as its request asks (with classic titles to pick, the model's
     own title, own_title, before the title it settles on). With a title hint (what the persona's titles are like, for a
-    title the model makes up), the title the model makes up is to be like that."""
+    title the model makes up), the title the model makes up is to be like that; with a job hint (the persona's), the
+    presenter's job too, in place of the job field's example."""
     language_name = languages.language(language).name
     fields = {
         # (Asked the other way around, as "safe_topic", the free models sometimes turned down harmless topics)
@@ -110,9 +112,9 @@ def spine(
         fields["name_plays_on"] = name.plays_on_description()
         fields["presenter_name"] = name.description(language)
         agreeing = ", agreeing with presenter_name (a Prof. is a professor of something, a Dr. a doctor)"
+    job = f"the presenter's grand, made-up job: {job_hint}" if job_hint else PRESENTER_JOB.description
     fields["presenter_job"] = (
-        f"{PRESENTER_JOB.description}, for the title slide{agreeing}, in {language_name} (at most "
-        f"{PRESENTER_JOB.max_length} characters)"
+        f"{job}, for the title slide{agreeing}, in {language_name} (at most {PRESENTER_JOB.max_length} characters)"
     )
     return fields
 
@@ -142,9 +144,10 @@ def talk_request(
     that generates pictures (with a generation), the model writes a prompt for every image that prefers one.
 
     The talk's persona (see talkgenerator.personas) is who presents it: the model writes in its voice, on the angle
-    the talk's dice pick among its angles, and a title it makes up is like the persona's titles. (Without one, the
-    request has none of that: the talk is the format's own.)"""
+    the talk's dice pick among its angles, a title it makes up is like the persona's titles, and the presenter's job
+    is the persona's kind of job. (Without one, the request has none of that: the talk is the format's own.)"""
     hint = title_hint(persona, title, typed)
+    job = persona.job_hint if persona is not None else None
     topic = topics[0] + (f" (and {', '.join(topics[1:])})" if len(topics) > 1 else "")
     kept = " (the typed title keeps its words)" if typed is not None and typed.keep else ""
     lines = [
@@ -167,7 +170,7 @@ def talk_request(
             else []
         ),
         f"Write the talk as one JSON object. First its spine, as an object called {SPINE}:",
-        *(f"- {field}: {description}" for field, description in spine(language, name, typed, hint).items()),
+        *(f"- {field}: {description}" for field, description in spine(language, name, typed, hint, job).items()),
         "",
         "Then every slide, in order (slide 1, the title slide, is made from the spine), each with its texts, a search "
         f"query for each of its images, and its concept: {CONCEPT}.",
@@ -184,7 +187,7 @@ def talk_request(
         purpose="talk plan",
         system=SYSTEM_PROMPT,
         messages=(Message(role="user", content="\n".join(lines)),),
-        json_schema=response_schema(planned, language, name, typed, generation, hint),
+        json_schema=response_schema(planned, language, name, typed, generation, hint, job),
         max_output_tokens=1000 + 300 * len(planned) + 100 * prompts,
     )
 
@@ -204,12 +207,13 @@ def response_schema(
     typed: TitleRequest | None = None,
     generation: ImageGeneration | None = None,
     title_hint: str | None = None,
+    job_hint: str | None = None,
 ) -> dict[str, Any]:
     """The JSON Schema of the answer: every property required, nothing else allowed (as strict structured outputs
     want), the spine first and the slides in order (which is alphabetical order too)."""
     fields: dict[str, Any] = {
         field: {"type": "boolean" if field == "unsafe_topic" else "string", "description": description}
-        for field, description in spine(language, name, typed, title_hint).items()
+        for field, description in spine(language, name, typed, title_hint, job_hint).items()
     }
     properties: dict[str, Any] = {SPINE: _object(fields)}
     for slide in planned:

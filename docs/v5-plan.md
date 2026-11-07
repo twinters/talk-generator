@@ -271,10 +271,48 @@ name (particular generators, or nudge)". The talk's seed picks one of thirteen p
   to"; for a kindergarten teacher, "as the children call their teacher: Miss, Ms. or Mr. and a surname". An explicit
   `name_styles=` goes alone, as before: the dice pick among those styles each as likely, without a manner.
 
+- **A job hint.** What the presenter's job on the title slide is ("founder and CEO of their startup, with its
+  made-up name"; "their role at the kindergarten, made to sound grand"), in place of the job field's example
+  ('Professor of Applied Sock Theory'), which free models copied whoever presented (below).
+
 The request stays one per talk, with the persona in its dynamic part, and the presenter's own name still never
 reaches a provider. The deck and `talk.started` have the persona (`persona`: `name`, `label`, `voice`, and the `angle`
-in a talk a model wrote), for the site to show later. Classic talks get the slides, the titles and the names, so a
-classic talk is no longer the formats' own: `--persona none` is part of what comes closest to a talk of 2019 now.
+in a talk a model wrote), for the site to show later, and `talkgenerator check`'s metrics name it. Classic talks get
+the slides, the titles and the names, so a classic talk is no longer the formats' own: `--persona none` is part of
+what comes closest to a talk of 2019 now.
+
+Measured offline (the picks of 200 seeds' 10-slide talks in the default format, per talk, against no persona): the
+kindergarten teacher's talks have 0.42 quizzes (0.15), the startup founder's 0.33 KPI tiles (0.17) and the medieval
+historian's 0.03, the historian's 0.25 timelines (0.09) and 0.98 history slides (0.76; at most one a talk), the
+conspiracy blogger's 0.40 news headlines (0.20) and 0.18 icebergs (0.06), the motivational speaker's 0.47 InspiroBot
+posters (0.10), the influencer's 1.62 gifs (0.77) and the disgraced professor's 0.29.
+
+Live on 2026-11-08, with OpenRouter's free router (10-slide talks, one request each, $0, without GIPHY and Unsplash,
+whose hourly quotas other runs share):
+
+- Round one, 8 talks: five personas on penguins with one seed (4), so that only the persona differs, and three seeds
+  whose dice picked a lighthouse keeper (coffee), a consultant (volcanoes) and a former athlete (time travel). The
+  model wrote all 80 slides, in 18 to 35 s a talk. Every title was the persona's kind: "Penguin Social: Disrupting
+  Human Connection" (the founder), "Penguins in the Margins of Medieval Manuscripts" (the historian), "Penguins and the
+  Shape of Growing Up" (the teacher), "Penguins: The Cold Truth They Don't Want You to Know" (the blogger), "Penguins:
+  The Academic Establishment's Folly" (the professor), "The Brew That Held the Horizon Together" (the keeper), "The
+  Volcano Synergy Framework: From Eruption to ROI" (the consultant), "How Losing Is Just Winning in a Different
+  Timeline" (the athlete). The names went by the persona's manner: "Marcus Waddleby" and "Percy Pengwin" without a
+  title, "Dr. Thomas Aquipenguin" (on Thomas Aquinas), "Ms. Pearl Pinguard", "Prof. Alistair Pengwin", "Silas
+  Coffeewell" (the consultant's model wrote a name that wouldn't do, so the pack's "Martin Lavalle" came). The same
+  seed's slides moved with the persona: the historian's talk had two old photos from penguins' history and a timeline,
+  the founder's a big number and a ranking, the professor's three charts and a pyramid, the blogger's a news
+  headline, a post and a Venn diagram; the consultant's had a funnel and a pyramid, the keeper's an anecdote. Three
+  jobs of the eight were "Professor of ..." whoever presented ("Ms. Pearl Pinguard, Professor of Applied Penguin
+  Studies"), after the job field's example: hence the job hints.
+- Round two, with the job hints, 5 talks: the founder, the historian and the teacher on penguins again (seed 4), and
+  the consultant and the athlete. The model wrote all 50 slides, in 19 to 28 s a talk, and every job was the
+  persona's: "Penny Pengwin, Founder and CEO of Penguin.ly", "Dr. Abbott Penguin, Professor of Medieval Penguin
+  Studies", "Mr. Pennyfeather, Director of Waddle Studies", "Peter Vesuvius, Principal Partner, Synergy Volcanics",
+  "Marcus Chronos, Olympic sprinter turned philosopher of time". The titles stayed the persona's ("Penguin.ly: Scaling
+  Trust to a Billion Users", "Penguins in the Monks' Bestiary", "Pyroclastic Strategy: A Synergy Roadmap for Volcanic
+  Disruption", "The Sprinter Who Lost to Tomorrow"), the teacher's the plainest ("Penguins and Growing Up"). Each seed
+  picked the same slides as in round one.
 
 ### 5.3 One streamed call per talk
 

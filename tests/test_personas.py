@@ -67,11 +67,14 @@ def test_every_persona_has_all_it_takes():
     for name, persona in personas.PERSONAS.items():
         assert persona.name == name and persona.label and persona.voice, name
         assert len(persona.angles) >= 3 and len(set(persona.angles)) == len(persona.angles), name
-        assert persona.title_hint and persona.name_manner, name
+        assert persona.title_hint and persona.name_manner and persona.job_hint, name
         assert len(persona.titles) >= 3, name
         for template in persona.titles:  # (a title about the topic, made offline: no wikiHow or ConceptNet)
             title = personas._templates((template,)).generate({"seed": "penguins"})
             assert title and "Penguins" in title and "{" not in title, (name, template)
+            # (also on a topic with an article, as typed: "Finding Your Inner The French Revolution" won't do)
+            title = personas._templates((template,)).generate({"seed": "the French Revolution"})
+            assert "Inner The" not in title and "The The" not in title and not title.endswith("The"), (name, title)
         assert set(persona.name_styles) <= styles and all(weight > 0 for weight in persona.name_styles.values()), name
 
 
@@ -221,11 +224,22 @@ def test_a_title_the_talk_has_already_gets_no_hint(schema, options):
     assert hint not in json.dumps(model.requests[0].model_dump())
 
 
+def test_the_presenter_s_job_is_the_persona_s_kind_of_job(schema):
+    # (in place of the job field's example, which free models copied whoever presented)
+    model = FakeModel()
+    _deck(model, persona="kindergarten_teacher")
+    description = _spine(model)["presenter_job"]["description"]
+    assert description.startswith("the presenter's grand, made-up job: their role at the kindergarten, made to sound")
+    assert "Applied Sock Theory" not in json.dumps(model.requests[0].model_dump())
+    assert f"- presenter_job: {description}" in _prompt(model)
+
+
 def test_a_talk_without_a_persona_tells_the_model_none(schema):
     model = FakeModel()
     deck = _deck(model, persona="none")
     assert "The presenter:" not in _prompt(model) and "The angle:" not in _prompt(model)
     assert _spine(model)["title"]["description"] == "the talk's title, in English (at most 80 characters)"
+    assert "such as 'Professor of Applied Sock Theory'" in _spine(model)["presenter_job"]["description"]
     assert deck.persona is None
 
 
