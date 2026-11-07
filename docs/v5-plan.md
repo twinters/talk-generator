@@ -1033,6 +1033,20 @@ As built (2026-11-07, `talkgenerator.images.generation` and `talkgenerator.image
   spends their money; take `slide.updated` as it takes `slide.ready` (the slide at that index), and keep copies of
   its pictures (`display: copy`, which its `keep_copies` already handles, as `fetch_image` reads a local file); log
   the deck's `usage.images` and `image_cost_usd`. Never set `TALKGENERATOR_IMAGE_GENERATOR` on the server (D7, D38).
+- **Live** (2026-11-07, with the user's OK for at most 10 pictures, $0.06, on OpenAI's gpt-image-2 at low quality):
+  the first request got HTTP 429 `insufficient_quota` (the account had no credits: nothing charged), which now says
+  "needs more credits" rather than a rate limit. With credits: one picture through the adapter, 1536x1024 JPEG
+  (271 KB) in 13 s, exactly what was asked; then the three usual talks (cat, peanuts, time travel, seed 1, neon),
+  written by OpenRouter's free models (one request each, $0), in 29 to 42 s each, each with 3 generated pictures
+  (slide 3's two old photos of made-up moments in the topic's history, slide 8's news photo; 9 of 9 generated, none
+  refused or failed, all embedded in the .pptx, credited "AI-generated with gpt-image-2"). By list price $0.018 a
+  talk (the deck counts the square picture's price, $0.006: the 1536x1024 ones are $0.005), so about $0.05 for the
+  whole check. The model's prompts were concrete and on the slides' texts ("a confused man in full medieval plate
+  armor standing in a brightly lit modern grocery store aisle, looking at cereal boxes", under "Medieval Knight Found
+  in Modern Supermarket"), with no real people or brands; a deck rendered again from its JSON took its 3 pictures
+  from the cache and asked nothing. Sample decks: the comparison folder's `19-v5-c4484f9-generated-images`.
+  Not tried live: OpenRouter, Gemini, FLUX and the local servers (their adapters are tested against fakes made from
+  their docs), and a price per picture from OpenAI's token counts (its answer has them; the list price stands in).
 
 ## 11. Text sources and content packs
 
