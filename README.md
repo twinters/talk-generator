@@ -140,6 +140,15 @@ presentation, slide_deck, output_file = generator.generate_presentation(
 )
 ```
 
+`generator.stream_talk(...)` makes the same talk (with the same options, minus the saving), and hands over its slides while it's made: `talk.started` once its title is known (with the theme's tokens), a `slide.ready` for every slide in order, laid out in the talk's theme, and `talk.finished` with the whole deck.
+A language model's slides come while it's still writing the rest of the talk.
+Every event is plain data (`talkgenerator.models.events`), whose `event` is its name and whose `to_json()` is what a Server-Sent Event would carry; leaving the loop stops the talk.
+
+```python
+for event in generator.stream_talk("default", 8, topic="peanuts", theme="random"):
+    print(event.event)  # talk.started, slide.ready (8 times), talk.finished
+```
+
 ## Use it with Claude
 
 Claude can write the talk itself, on your own Claude plan, and leave the rest to talkgenerator: finding images it may use, crediting them on the slides, laying out the deck and saving the PowerPoint.

@@ -16,17 +16,22 @@ the same seed gives the same talk, and generating the slides in parallel gives t
   accepted, and what's rejected for repeating used elements stays rejected when more is used. A slide whose picks
   lead to a generator it hasn't run yet starts a new round, in which the remaining slides are worked out again in
   parallel, reusing what they found so far.
+
+A talk can be followed while it's made (Progress: talkgenerator.generator.stream_talk does): its slides are settled in
+order as soon as they can be, a planned talk's while the language model is still writing the rest of it, and the
+Progress hears of each.
 """
 
 import functools
 import itertools
 import logging
+import threading
 import time
-from collections.abc import Callable, Collection, Sequence
+from collections.abc import Callable, Collection, Iterator, Sequence
 from dataclasses import dataclass, field
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
 from pptx.presentation import Presentation
 
@@ -115,10 +120,29 @@ def _add_used(state: _DeckState, generated_elements: list) -> None:
     state.used_elements.update(elements)
 
 
+class TalkCancelled(Exception):
+    """Whoever followed the talk stopped wanting it (see Progress): it's left unfinished."""
+
+
+class Progress(Protocol):
+    """Who follows a talk while it's made: told once its title and language are known (with the deck, still without
+    slides), and of every slide once it's settled, in order. Raising TalkCancelled from either stops the talk, and so
+    does setting cancelled, also while the talk waits for the language model (whose answer then isn't read further)."""
+
+    cancelled: threading.Event
+
+    def started(self, slide_deck: SlideDeck) -> None: ...
+
+    def settled(self, slide_deck: SlideDeck, slide_nr: int, slide: Any) -> None: ...
+
+
 @dataclass(eq=False)
 class _PlannedTalk:
     """A talk as the language model plans it: every slide's generator, the model's answer so far, and the first
-    attempts at realizing its slides (in parallel, while the rest of the answer comes in)."""
+    attempts at realizing its slides (in parallel, while the rest of the answer comes in).
+
+    While a talk streams, the answer comes in on a thread of its own (answering), and the slides are settled as their
+    parts of it come in: wait_for_spine and wait_for wait for what they need, or for the end of the answer."""
 
     picks: list[SlideGeneratorData | None]
     planned: dict[int, PlannedSlide]  # the slides the model writes, by slide number (from 0)
@@ -129,9 +153,14 @@ class _PlannedTalk:
     first_attempts: dict[int, Any] = field(default_factory=dict)
     pool: ThreadPool | None = None
     language: str = "en"
+    answering: threading.Thread | None = None  # (the answer coming in, while the talk streams)
+    cancelled: threading.Event = field(default_factory=threading.Event)  # (then the answer isn't read any further)
 
     def __post_init__(self) -> None:
         self._slide_numbers = {slide.key: slide_nr for slide_nr, slide in self.planned.items()}
+        self._changed = threading.Condition()
+        self._reached = -1  # the last slide whose part of the answer came in
+        self._finished = False
 
     @property
     def title(self) -> str | None:
@@ -139,43 +168,94 @@ class _PlannedTalk:
 
     def take(self, key: str, value: Any) -> None:
         """A part of the model's answer: the spine, or a slide (whose first attempt then starts, in parallel)."""
-        slide_nr = self._slide_numbers.get(key)
-        if slide_nr is None:
-            self.spine[key] = value
-            return
-        if self.spine.get("unsafe_topic") is True:  # it comes first: then no slide is looked for
-            return
-        plan = slide_plan(self.planned[slide_nr], value)
-        if plan is None:
-            return
-        self.plans[slide_nr] = plan
-        if self.pool is not None:
-            self.first_attempts[slide_nr] = self.pool.apply_async(self._realize, (slide_nr, 0))
+        with self._changed:
+            slide_nr = self._slide_numbers.get(key)
+            if slide_nr is None:
+                self.spine[key] = value
+            elif self.spine.get("unsafe_topic") is not True:  # it comes first: then no slide is looked for
+                self._reached = max(self._reached, slide_nr)
+                plan = slide_plan(self.planned[slide_nr], value)
+                if plan is not None:
+                    self.plans[slide_nr] = plan
+                    if self.pool is not None:
+                        self.first_attempts[slide_nr] = self.pool.apply_async(self._realize, (slide_nr, 0))
+            self._changed.notify_all()
+
+    def wait_for_spine(self) -> None:
+        """Wait for the spine of the answer (its title, the presenter's job, its thesis), which is in once the first
+        slide's part comes in, or the answer ends."""
+        self._wait(lambda: self._reached >= 0 or self._finished)
+
+    def wait_for_a_plan(self) -> bool:
+        """Wait for the first slide the model wrote, or the end of the answer: whether it wrote any slide."""
+        self._wait(lambda: bool(self.plans) or self._finished)
+        return bool(self.plans)
+
+    def wait_for(self, slide_nr: int) -> None:
+        """Wait for the slide's part of the answer (or a later slide's, as when its part didn't parse, or the end)."""
+        self._wait(lambda: slide_nr in self.plans or self._reached > slide_nr or self._finished)
+
+    def _wait(self, ready: Callable[[], bool]) -> None:
+        """Wait until it's ready; TalkCancelled once the talk is cancelled (which is looked at four times a second)."""
+        with self._changed:
+            while not self._changed.wait_for(lambda: ready() or self.cancelled.is_set(), timeout=0.25):
+                pass
+        if self.cancelled.is_set():
+            raise TalkCancelled()
+
+    def finish(self) -> None:
+        """The answer is in (or there won't be one)."""
+        with self._changed:
+            self._finished = True
+            self._changed.notify_all()
 
     def attempt(self, slide_nr: int, attempt: int) -> tuple[Any, list] | None:
-        if attempt == 0 and slide_nr in self.first_attempts:
-            result: tuple[Any, list] | None = self.first_attempts[slide_nr].get()
+        with self._changed:
+            first = self.first_attempts.get(slide_nr) if attempt == 0 else None
+        if first is not None:
+            result: tuple[Any, list] | None = first.get()
             return result
         return self._realize(slide_nr, attempt)
 
     def _realize(self, slide_nr: int, attempt: int) -> tuple[Any, list] | None:
         recipe = self.planned[slide_nr].recipe
+        with self._changed:
+            plan = self.plans.get(slide_nr)
+        if plan is None:
+            return None  # (dropped: by a model that declined halfway, say)
         try:
-            return realize(self.plans[slide_nr], recipe, self.contexts[slide_nr], self.rngs[slide_nr], attempt)
+            return realize(plan, recipe, self.contexts[slide_nr], self.rngs[slide_nr], attempt)
         except Exception:  # one misbehaving source shouldn't sink the talk: the slide goes classic
             logger.exception("Realizing planned slide %s crashed", slide_nr + 1)
             return None
 
     def drop(self) -> None:
         """Forget what the model wrote."""
-        self.plans.clear()
-        self.first_attempts.clear()
-        self.spine.pop("title", None)
+        with self._changed:
+            self.plans.clear()
+            self.first_attempts.clear()
+            self.spine.pop("title", None)
+            self._changed.notify_all()
+
+    def restart(self) -> None:
+        """Forget the answer, for the model to be asked again."""
+        with self._changed:
+            self.plans.clear()
+            self.first_attempts.clear()
+            self.spine.clear()
+            self._reached = -1
+            self._changed.notify_all()
 
     def close(self) -> None:
+        """Wait for the rest of the answer and for the slides being realized, unless the talk was cancelled: then
+        they finish by themselves (on daemon threads, which nothing waits for)."""
+        if self.answering is not None and not self.cancelled.is_set():
+            self.answering.join()
+        self.answering = None
         if self.pool is not None:
             self.pool.close()
-            self.pool.join()
+            if not self.cancelled.is_set():
+                self.pool.join()
             self.pool = None
 
 
@@ -222,6 +302,7 @@ class PresentationSchema:
         theme: Theme | None = None,
         style_chaos: float = 0.0,
         extreme_themes: bool = True,
+        progress: Progress | None = None,
     ) -> tuple[Presentation | None, SlideDeck]:
         """Generate a presentation about a certain topic with a certain number of slides.
 
@@ -229,7 +310,11 @@ class PresentationSchema:
         as the sources give the same answers. Without a seed, a random one is picked: the deck tells which.
 
         With a language model (llm), the model writes what goes on the slides, in the given language (see
-        _plan_talk); the slides it doesn't write, or that come out missing something, are classic."""
+        _plan_talk); the slides it doesn't write, or that come out missing something, are classic.
+
+        With a progress, the talk streams (see Progress): its slides are settled as soon as they can be, a planned
+        talk's while the model writes the rest. The one difference with a talk that doesn't stream: when the model
+        declines halfway, the slides settled by then stay (only those that come after are classic)."""
         if rng is None:
             rng = random_util.Rng(int_seed)
 
@@ -245,8 +330,11 @@ class PresentationSchema:
 
         talk = None
         if llm is not None and self.writes_with(llm):
-            talk = self._plan_talk(topics, seeds, rng, llm, language, title, parallel)
+            cancelled = progress.cancelled if progress is not None else None
+            talk = self._plan_talk(topics, seeds, rng, llm, language, title, parallel, cancelled)
         try:
+            if talk is not None:
+                talk.wait_for_spine()
             # Generate random talk title
             if not title and talk is not None:
                 title = talk.title
@@ -259,7 +347,7 @@ class PresentationSchema:
             logger.info("Generate talk title: {}".format(title))
 
             # A talk in another language needs the language model's slides: the classic ones are English
-            planned = talk is not None and bool(talk.plans)
+            planned = talk is not None and talk.wait_for_a_plan()
             talk_language = language if planned else "en"
             if language != talk_language:
                 logger.warning("Without the language model's slides, this talk is classic, and so in English")
@@ -275,6 +363,9 @@ class PresentationSchema:
             )
             slide_deck.theme, slide_deck.style_chaos, slide_deck.extreme_themes = theme, style_chaos, extreme_themes
             logger.info("Slide deck: {}".format(slide_deck))
+            if progress is not None:
+                progress.started(slide_deck)
+                slide_deck.listener = progress.settled
 
             # Create main presentation_context
             main_presentation_context = {
@@ -289,6 +380,11 @@ class PresentationSchema:
                 self._settle_planned_talk(slide_deck, talk, contexts, rng, presenter)
             else:
                 self._generate_slides(slide_deck, contexts, rng, parallel)
+            slide_deck.listener = None
+        except BaseException:
+            if talk is not None:
+                talk.cancelled.set()  # (what's still coming in isn't wanted anymore)
+            raise
         finally:
             if talk is not None:
                 talk.close()
@@ -323,10 +419,13 @@ class PresentationSchema:
         language: str,
         title: str | None,
         parallel: bool,
+        cancelled: threading.Event | None = None,
     ) -> "_PlannedTalk":
         """Pick every slide's generator, and ask the language model, in one request, what goes on the slides whose
         generators have recipes. The model's answer is read while it's written, and in parallel, every slide's first
-        attempt starts as soon as its part of the answer is in."""
+        attempt starts as soon as its part of the answer is in. For a talk that streams (that can be cancelled), the
+        answer comes in on a thread of its own, and this returns at once, for the slides to be settled while it
+        does."""
         num_slides = len(seeds)
         picks = self._pick_generators(num_slides, rng, language)
         planned = {
@@ -347,23 +446,35 @@ class PresentationSchema:
             [{"topic": topics[0], "topics": topics, "seed": seed, "language": language} for seed in seeds],
             [rng.child("slide", slide_nr, "planned") for slide_nr in range(num_slides)],
             language=language,
+            cancelled=cancelled or threading.Event(),
         )
         if not planned:
+            talk.finish()
             return talk
         if parallel:
             talk.pool = ThreadPool(processes=min(8, len(planned)))
 
-        for asked_again in (False, True):
-            self._ask(llm, talk_request(topics, list(planned.values()), rng, language, title, asked_again), talk)
-            if talk.spine.get("unsafe_topic") is not True:
-                break
-            talk.drop()
-            talk.spine.clear()
-            if asked_again:
-                logger.warning("The language model wouldn't write about this topic: the talk is classic")
-            else:  # (some of the free models get the flag wrong: one turned down "penguins")
-                logger.info("The language model found the topic unsafe: asking once more")
-        logger.info("The language model wrote %s of the %s slides", len(talk.plans), num_slides)
+        def answer() -> None:
+            try:
+                for asked_again in (False, True):
+                    request = talk_request(topics, list(planned.values()), rng, language, title, asked_again)
+                    self._ask(llm, request, talk)
+                    if talk.cancelled.is_set() or talk.spine.get("unsafe_topic") is not True:
+                        break
+                    talk.restart()
+                    if asked_again:
+                        logger.warning("The language model wouldn't write about this topic: the talk is classic")
+                    else:  # (some of the free models get the flag wrong: one turned down "penguins")
+                        logger.info("The language model found the topic unsafe: asking once more")
+                logger.info("The language model wrote %s of the %s slides", len(talk.plans), num_slides)
+            finally:
+                talk.finish()
+
+        if cancelled is not None:
+            talk.answering = threading.Thread(target=answer, name="talk plan", daemon=True)
+            talk.answering.start()
+        else:
+            answer()
         return talk
 
     @staticmethod
@@ -374,6 +485,8 @@ class PresentationSchema:
 
         def read(text: str) -> None:
             nonlocal read_anything
+            if talk.cancelled.is_set():
+                raise TalkCancelled()  # (out of the provider's stream, which then stops)
             read_anything = True
             for key, value in reader.feed(text):
                 talk.take(key, value)
@@ -390,6 +503,8 @@ class PresentationSchema:
                 logger.warning(
                     "The language model's answer was %s: slides it didn't write are classic", response.finish
                 )
+        except TalkCancelled:
+            return
         except ProviderError as error:
             logger.warning("The language model didn't write the talk (%s): its slides are classic", error)
         except Exception:  # a misbehaving provider shouldn't sink the talk either
@@ -437,6 +552,8 @@ class PresentationSchema:
         for slide_nr in range(num_slides):
             pick = talk.picks[slide_nr]
             worked_out: _WorkedOutSlide | None = None
+            if slide_nr in talk.planned:
+                talk.wait_for(slide_nr)
             if pick is not None and pick.llm is not None and pick.llm.kind == "title":
                 worked_out = self._planned_title_slide(slide_nr, pick, talk, contexts[slide_nr]["title"], presenter)
             elif pick is not None and slide_nr in talk.plans:
@@ -643,24 +760,36 @@ class PresentationSchema:
         slide_nr = 0
         while slide_nr < num_slides:
             in_parallel = parallel and num_slides - slide_nr > 1
+            pool: ThreadPool | None = None
+            worked: Iterator[Any] | None = None
             if in_parallel:
                 remaining = list(range(slide_nr, num_slides))
                 logger.info("Generating slides %s in parallel", [nr + 1 for nr in remaining])
-                with ThreadPool(processes=len(remaining)) as pool:
-                    pool.map(functools.partial(work_out, at_state=state.copy(), generate=True), remaining)
-            # Settle the slides in order, as generating them one by one would
-            while slide_nr < num_slides:
-                worked_out = work_out(slide_nr, state, not in_parallel)
-                if isinstance(worked_out, _NeedsWork):
-                    break  # the next round works out the remaining slides again, knowing the slides settled so far
-                if worked_out is None:
-                    logger.error("Gave up on generating slide %s", slide_nr + 1)
-                else:
-                    slide_deck.add_slide(slide_nr, worked_out.slide)
-                    self._update_used_elements(
-                        state.used_elements, state.used_tags, worked_out.generated_elements, worked_out.generator
-                    )
-                slide_nr += 1
+                pool = ThreadPool(processes=len(remaining))
+                worked = pool.imap(functools.partial(work_out, at_state=state.copy(), generate=True), remaining)
+            try:
+                # Settle the slides in order, as generating them one by one would: each once its work is done
+                while slide_nr < num_slides:
+                    if worked is not None:
+                        next(worked)
+                    worked_out = work_out(slide_nr, state, not in_parallel)
+                    if isinstance(worked_out, _NeedsWork):
+                        break  # the next round works out the remaining slides again, knowing the ones settled so far
+                    if worked_out is None:
+                        logger.error("Gave up on generating slide %s", slide_nr + 1)
+                    else:
+                        slide_deck.add_slide(slide_nr, worked_out.slide)
+                        self._update_used_elements(
+                            state.used_elements, state.used_tags, worked_out.generated_elements, worked_out.generator
+                        )
+                    slide_nr += 1
+            except BaseException:
+                if pool is not None:
+                    pool.close()  # (its threads finish by themselves: nothing waits for what they find)
+                raise
+            if pool is not None:
+                pool.close()
+                pool.join()  # (the next round reuses what this round's slides found)
 
     def _work_out_slide(
         self,

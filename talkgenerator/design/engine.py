@@ -101,22 +101,39 @@ class _Placement:
 def lay_out(deck: Deck, theme: Theme, style_chaos: float = 0.0, extremes: bool = True) -> Deck:
     """The deck with its elements placed and styled in the theme; with style_chaos, some slides (that share of
     them, picked by the seed) in themes of their own."""
-    rng = random_util.Rng(deck.seed if deck.seed is not None else 0).child("layout")
-    laid_out: list[DeckSlide] = []
-    used: Counter[str] = Counter()  # how often the deck has had each layout so far
-    for number, slide in enumerate(deck.slides):
-        slide_rng = rng.child("slide", number)
+    layout = DeckLayout(deck.seed, theme, style_chaos, extremes)
+    slides = tuple(layout.next(slide) for slide in deck.slides)
+    return deck.model_copy(update={"theme": theme.name, "style": theme, "slides": slides})
+
+
+class DeckLayout:
+    """Lays a deck's slides out one at a time, in order, as lay_out does all at once: a slide's layout depends on the
+    deck's seed, the slide's place, and the layouts of the slides before it, so slides can be laid out as they come
+    in (talkgenerator.generator.stream_talk)."""
+
+    def __init__(self, seed: int | None, theme: Theme, style_chaos: float = 0.0, extremes: bool = True) -> None:
+        self.theme, self.style_chaos, self.extremes = theme, style_chaos, extremes
+        self._rng = random_util.Rng(seed if seed is not None else 0).child("layout")
+        self._used: Counter[str] = Counter()  # how often the deck has had each layout so far
+        self._previous: str | None = None
+        self._number = 0
+
+    def next(self, slide: DeckSlide) -> DeckSlide:
+        """The deck's next slide, laid out."""
+        slide_rng = self._rng.child("slide", self._number)
         own = None
-        if style_chaos > 0:
+        if self.style_chaos > 0:
             with random_util.use(slide_rng.child("chaos")):
-                chaotic = random_util.random() < style_chaos
+                chaotic = random_util.random() < self.style_chaos
             if chaotic:
-                own = themes.pick(themes.RANDOM, slide_rng.child("theme"), extremes)
-        previous = laid_out[-1].layout if laid_out else None
-        placed = lay_out_slide(slide, own or theme, slide_rng, own_style=own is not None, previous=previous, used=used)
-        used[placed.layout] += 1
-        laid_out.append(placed)
-    return deck.model_copy(update={"theme": theme.name, "style": theme, "slides": tuple(laid_out)})
+                own = themes.pick(themes.RANDOM, slide_rng.child("theme"), self.extremes)
+        placed = lay_out_slide(
+            slide, own or self.theme, slide_rng, own_style=own is not None, previous=self._previous, used=self._used
+        )
+        self._used[placed.layout] += 1
+        self._previous = placed.layout
+        self._number += 1
+        return placed
 
 
 def layouts_for(slide: DeckSlide) -> list[str]:

@@ -2,19 +2,25 @@ import argparse
 import logging
 import os
 import pathlib
+import queue
 import subprocess
 import sys
+import threading
+from collections.abc import Callable, Iterator
+from typing import Any
 
 from pptx.presentation import Presentation
 
 from talkgenerator import runtime_checker, settings
-from talkgenerator.design import themes
+from talkgenerator.design import engine, themes
 from talkgenerator.llm.base import TextProvider
 from talkgenerator.llm.ledger import Budget, Ledger, MeteredProvider
 from talkgenerator.llm.providers import NoneProvider, from_settings, provider_from_spec
 from talkgenerator.models.deck import Deck
+from talkgenerator.models.events import SlideReady, TalkEvent, TalkFinished, TalkStarted
 from talkgenerator.plan import languages
 from talkgenerator.schema.content_generators import full_name_generator
+from talkgenerator.schema.presentation_schema import Progress, TalkCancelled
 from talkgenerator.schema.presentation_schema_types import get_schema, schemas
 from talkgenerator.slide.slide_deck import SlideDeck
 from talkgenerator.sources import word_frequency
@@ -80,6 +86,7 @@ def generate_presentation(
     theme: str | None = None,
     style_chaos: float = 0.0,
     extreme_themes: bool = True,
+    progress: Progress | None = None,
 ) -> tuple[Presentation | None, SlideDeck, str | None]:
     """Generate a talk. With debug_notes, every slide's speaker notes explain how it was generated.
 
@@ -94,7 +101,9 @@ def generate_presentation(
     theme is "random" (a theme of a family the seed picks, extremes such as 1997 WordArt too unless extreme_themes
     is off), "classic" (the 2019 template), a family's name such as "dark minimal", or "chaos" (every slide in a
     theme of its own): one of talkgenerator.design.themes.choices(), which catalog() describes. None is the one
-    TALKGENERATOR_THEME names, or else random. style_chaos is how many slides get a theme of their own (0 to 1)."""
+    TALKGENERATOR_THEME names, or else random. style_chaos is how many slides get a theme of their own (0 to 1).
+
+    progress follows the talk while it's made (see stream_talk, which hands it over in events)."""
     theme = theme or settings.theme()
     if theme not in themes.choices():
         raise ValueError(f"There's no theme {theme!r}; there are {', '.join(themes.choices())}")
@@ -167,6 +176,7 @@ def generate_presentation(
         theme=chosen_theme,
         style_chaos=style_chaos,
         extreme_themes=extreme_themes,
+        progress=progress,
     )
     slide_deck.usage = ledger.total()
     if provider is not None:
@@ -195,6 +205,110 @@ def generate_presentation(
         _open_file(path)
 
     return presentation, slide_deck, presentation_file
+
+
+def stream_talk(
+    schema: str,
+    slides: int,
+    topic: str | list[str] | None = None,
+    title: str | None = None,
+    presenter: str | None = None,
+    parallel: bool = True,
+    int_seed: int | None = None,
+    llm: TextProvider | str | None = None,
+    language: str = "en",
+    budget: Budget | None = None,
+    theme: str | None = None,
+    style_chaos: float = 0.0,
+    extreme_themes: bool = True,
+) -> Iterator[TalkEvent]:
+    """Make a talk as generate_presentation does (the same deck, for the same options, seed and answers), handing
+    over what's ready while it's made (see talkgenerator.models.events): talk.started once its title is known, a
+    slide.ready for every slide as soon as it's settled, in order and laid out in the talk's theme, and talk.finished
+    with the whole deck. Meanwhile, the slides after it are being made: a language model's while it writes them.
+
+    Nothing is saved: the deck in talk.finished renders as a PowerPoint (talkgenerator.render.powerpoint.render_pptx).
+    Stopping the iteration (closing the iterator, or leaving a for loop over it) stops the talk, and an error that
+    stopped it comes out of the iterator."""
+    events: queue.SimpleQueue[TalkEvent | None] = queue.SimpleQueue()  # (None: the end)
+    following = _Following(events.put)
+    failures: list[BaseException] = []
+
+    def make() -> None:
+        try:
+            _, slide_deck, _ = generate_presentation(
+                schema,
+                slides,
+                topic=topic,
+                title=title,
+                presenter=presenter,
+                parallel=parallel,
+                int_seed=int_seed,
+                save_ppt=False,
+                llm=llm,
+                language=language,
+                budget=budget,
+                theme=theme,
+                style_chaos=style_chaos,
+                extreme_themes=extreme_themes,
+                progress=following,
+            )
+            events.put(TalkFinished(deck=slide_deck.to_deck(schema_name=schema)))
+        except TalkCancelled:
+            pass
+        except BaseException as error:  # (for whoever iterates)
+            failures.append(error)
+        finally:
+            events.put(None)
+
+    threading.Thread(target=make, name="talk", daemon=True).start()
+    try:
+        while (event := events.get()) is not None:
+            yield event
+    finally:
+        following.cancelled.set()  # (stops the talk, if it isn't done)
+    if failures:
+        raise failures[0]
+
+
+class _Following:
+    """Turns a talk's progress into events (see stream_talk), and stops the talk once they're not wanted anymore."""
+
+    def __init__(self, hand_over: Callable[[TalkEvent], None]) -> None:
+        self.hand_over = hand_over
+        self.cancelled = threading.Event()
+        self._layout: engine.DeckLayout | None = None
+        self._handed_over = 0
+
+    def started(self, slide_deck: SlideDeck) -> None:
+        self._go_on()
+        theme = slide_deck.theme
+        if theme is not None:  # (laid out one by one as they come, as to_deck lays them all out)
+            self._layout = engine.DeckLayout(slide_deck.seed, theme, slide_deck.style_chaos, slide_deck.extreme_themes)
+        self.hand_over(
+            TalkStarted(
+                title=slide_deck.title,
+                presenter=slide_deck.presenter,
+                topics=slide_deck.topics,
+                language=slide_deck.language,
+                seed=slide_deck.seed,
+                slides=slide_deck.size,
+                theme=theme.name if theme is not None else "classic",
+                style=theme,
+            )
+        )
+
+    def settled(self, slide_deck: SlideDeck, slide_nr: int, slide: Any) -> None:
+        self._go_on()
+        deck_slide = slide.to_deck_slide()
+        if self._layout is not None:
+            deck_slide = self._layout.next(deck_slide)
+        self.hand_over(SlideReady(index=self._handed_over, slide=deck_slide))
+        self._handed_over += 1
+
+    def _go_on(self) -> None:
+        if self.cancelled.is_set():
+            raise TalkCancelled()
 
 
 def _language_model(llm: TextProvider | str | None) -> TextProvider | None:

@@ -1,0 +1,55 @@
+"""The events of a talk while it's made (talkgenerator.generator.stream_talk), in this order: talk.started, a
+slide.ready for every slide, and talk.finished, with the whole deck.
+
+They're plain data, as Server-Sent Events carry them: an event's `event` is its name, and to_json() is its data (the
+deck format's elements, as in talkgenerator.models.deck). A browser can draw a themed talk's slides as they come in,
+since each comes laid out in the talk's theme, whose tokens talk.started brings.
+"""
+
+from __future__ import annotations
+
+from typing import Annotated, Literal
+
+from pydantic import Field
+
+from talkgenerator.models.base import Data
+from talkgenerator.models.deck import Deck, DeckSlide
+from talkgenerator.models.theme import Theme
+
+
+class _Event(Data):
+    def to_json(self) -> str:
+        """The event's data, as one line of JSON (without what's empty)."""
+        return self.model_dump_json(exclude_none=True)
+
+
+class TalkStarted(_Event):
+    """The talk is under way: what it's called, who presents it, in which language, and how it looks."""
+
+    event: Literal["talk.started"] = "talk.started"
+    title: str | None = None
+    presenter: str | None = None
+    topics: tuple[str, ...] = ()
+    language: str = "en"
+    seed: int | None = None
+    slides: int  # how many slides it's to have (a slide that can't be made is left out)
+    theme: str = "classic"  # the theme's name: "classic" (the 2019 template), or one of a family's
+    style: Theme | None = None  # the theme's tokens (none for the classic theme)
+
+
+class SlideReady(_Event):
+    """A slide, settled, and in a themed talk laid out (every element in its box, as in the finished deck)."""
+
+    event: Literal["slide.ready"] = "slide.ready"
+    index: int  # its place in the deck, from 0
+    slide: DeckSlide
+
+
+class TalkFinished(_Event):
+    """The talk is done: the whole deck, as generate_presentation makes it, with what it asked of language models."""
+
+    event: Literal["talk.finished"] = "talk.finished"
+    deck: Deck
+
+
+TalkEvent = Annotated[TalkStarted | SlideReady | TalkFinished, Field(discriminator="event")]

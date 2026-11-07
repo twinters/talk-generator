@@ -1,5 +1,5 @@
 import logging
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 
 from talkgenerator import __version__
 from talkgenerator.datastructures.image_data import ImageData
@@ -39,9 +39,38 @@ class SlideDeck:
         self.theme: Theme | None = None
         self.style_chaos = 0.0
         self.extreme_themes = True
+        # Who wants to know about every slide once it's added (a talk that streams: see talkgenerator.generator)
+        self.listener: Callable[[SlideDeck, int, Slide], None] | None = None
+
+    @property
+    def title(self) -> str | None:
+        return self._title
+
+    @property
+    def presenter(self) -> str | None:
+        return self._presenter
+
+    @property
+    def topics(self) -> tuple[str, ...]:
+        return self._topics
+
+    @property
+    def seed(self) -> int | None:
+        return self._seed
+
+    @property
+    def language(self) -> str:
+        return self._language
+
+    @property
+    def size(self) -> int:
+        """How many slides the talk is to have (a slide that can't be made is left out)."""
+        return self._size
 
     def add_slide(self, slide_index: int, slide):
         self._slides[slide_index] = slide
+        if self.listener is not None:
+            self.listener(self, slide_index, slide)
 
     def is_complete(self):
         return len(self._slides) >= self._size and (None not in self._slides)

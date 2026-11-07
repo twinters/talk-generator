@@ -151,6 +151,13 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   a key of its own, which it keeps in the user's config folder (readable only by the user), so OpenRouter's free
   models write talks without an `OPENROUTER_API_KEY`. `--headless` signs in on a computer without a browser,
   `--status` says how many free requests are left today, and `talkgenerator logout openrouter` forgets the key.
+- `generator.stream_talk()`: a talk handed over while it's made, as events (`talkgenerator.models.events`):
+  `talk.started` (title, presenter, language, theme tokens), a `slide.ready` for every slide in order, laid out
+  in the talk's theme, and `talk.finished` with the whole deck, which is the same as `generate_presentation`
+  makes. Slides are settled as soon as they can be: a language model's while it still writes the rest, and
+  classic slides made in parallel each once its work is done. Leaving the loop stops the talk, also while it
+  waits for the model, whose answer then isn't read any further. For talkgenerator.com's view of talks that
+  stream in (docs/v5-plan.md, section 13.1).
 - `talkgenerator login chatgpt`: Sign in with ChatGPT (OpenAI's sign-in for open-source apps that run locally, in
   preview), so that the models of your ChatGPT plan write your talks (`--llm chatgpt` or `chatgpt:<model>`, and the
   default once you've signed in), at no cost to talkgenerator: their requests count toward the plan's usage. The
