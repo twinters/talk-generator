@@ -15,7 +15,7 @@ from talkgenerator import generator, settings
 from talkgenerator.checks.deck import deck_metrics
 from talkgenerator.checks.design import check_design, check_variety
 from talkgenerator.design import color, engine, fit, fonts, themes, treatments
-from talkgenerator.models.deck import Deck, ImageElement, ShapeElement, TextElement
+from talkgenerator.models.deck import Deck, ImageElement, ShapeElement, TextElement, VennDiagram
 from talkgenerator.plan import languages
 from talkgenerator.plan.kinds import KINDS
 from talkgenerator.render import preview
@@ -26,6 +26,8 @@ from talkgenerator.util import os_util, random_util
 from tests import test_seeds
 from tests.test_deck import _every_kind_of_slide, _image, _pie_chart_data
 from tests.test_deck import images as images  # the fake image downloads (a fixture)
+from tests.test_slide_types import EVERY_KIND, _built, _longest_texts
+from tests.test_slide_types import _deck as _deck_of
 from tests.test_slide_types import runs_of_new_types as _runs_of_new_types
 
 FAMILIES = list(themes.FAMILIES)
@@ -267,6 +269,51 @@ def test_a_slide_gets_the_layouts_that_fit_its_elements(images):
     titled = slides.FullImageSlide("Look at this", _image("wide"))
     assert fitting(titled) == ["v5/full-image", "v5/full-image-low", "v5/full-image-corner"]
     assert fitting(slides.ImageSlide(None, _image("wide"))) == ["v5/image-top"]  # (no title to put beside it)
+    short, long = (slides.ImageSlide(title, _image("wide")) for title in ("Cats", "Vulkaanuitbarstingen"))
+    assert fitting(short) == ["v5/image-top", "v5/image-side", "v5/image-side-right"]
+    # A title with a word too long for the side goes across the top
+    assert fitting(long) == ["v5/image-top"]
+    chart = slides.ChartSlide("Kattenliefhebbersvereniging?", XL_CHART_TYPE.PIE, _pie_chart_data(), None)
+    assert fitting(chart) == ["v5/chart"]
+
+
+# (A compound, as Dutch and German have them, can be wider than a narrow box even at the box's smallest size: a free
+# model's "Mantelstromingen" didn't fit one)
+_LONG_WORD = "Brandweerkazernedeur"
+_OLDER_KINDS = [kind for kind in KINDS if kind not in EVERY_KIND]  # (milestone 6's have a test of their own)
+
+
+def _with_long_words(kind):
+    """A slide of the kind with a 20-letter word in every text, as long as the slide takes it (and in every answer of
+    a pie chart and every bar of a ranking), and a picture in every slot."""
+    texts = _longest_texts(kind, _LONG_WORD)
+    for name, count in (("categories", 5), ("bars", 6)):
+        if name in texts:
+            texts[name] = " | ".join([_LONG_WORD] * count)
+    return _built(kind, texts, {slot: _image("wide") for slot in KINDS[kind].images})
+
+
+def _in_circles(deck, finding):
+    """Whether the finding is about a Venn diagram's labels, which go inside its circles: with three circles, a
+    20-letter word doesn't fit there even at 12 points, in any of the themes' fonts."""
+    slide = deck.slides[finding.slide - 1]
+    venn = slide.type == "diagram" and isinstance(slide.element("diagram").diagram, VennDiagram)
+    return venn and finding.message.startswith("the diagram's")
+
+
+@pytest.mark.parametrize("family", FAMILIES)
+def test_long_words_fit_the_older_layouts_in_every_theme(images, family):
+    fitting = {kind: engine.layouts_for(_with_long_words(kind).to_deck_slide()) for kind in _OLDER_KINDS}
+    # (each in a run as long as the layouts that fit it, so that every one of them comes up)
+    made = [_with_long_words(kind) for kind in _OLDER_KINDS for _ in fitting[kind]]
+    seen = set()
+    for seed in range(3):
+        deck = _deck_of(made, _theme(family, seed), seed)
+        # (a title slide's layout is named for its theme's alignment, as v5/title-left)
+        seen |= {"v5/title" if slide.type == "title" else slide.layout for slide in deck.slides}
+        overflowing = [finding for finding in check_design(deck) if finding.check == "overflow"]
+        assert [finding for finding in overflowing if not _in_circles(deck, finding)] == [], (family, seed)
+    assert {layout for layouts in fitting.values() for layout in layouts} <= seen
 
 
 def test_a_title_over_a_picture_is_drawn_over_it(images):

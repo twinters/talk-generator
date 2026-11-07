@@ -696,8 +696,8 @@ def _untitled(roles: dict[str, Content]) -> bool:
 
 
 def _beside_title(roles: dict[str, Content]) -> bool:
-    """Whether the slide has a title that fits beside a diagram: without a word too long for the side (a compound, as
-    Dutch and German have them, can be wider than the side is in a wide font)."""
+    """Whether the slide has a title that fits beside its content (a picture, a chart, a diagram): without a word too
+    long for the side (a compound, as Dutch and German have them, can be wider than the side is in a wide font)."""
     title = roles.get("title")
     return isinstance(title, TextElement) and all(len(word) <= 15 for word in title.text.split())
 
@@ -1527,8 +1527,8 @@ _LAYOUTS: Final[dict[str, tuple[_Layout, ...]]] = {
     ),
     "image": (
         _Layout("v5/image-top", _image_top),
-        _Layout("v5/image-side", _image_beside(right=False), 0.6, _titled),
-        _Layout("v5/image-side-right", _image_beside(right=True), 0.5, _titled),
+        _Layout("v5/image-side", _image_beside(right=False), 0.6, _beside_title),
+        _Layout("v5/image-side-right", _image_beside(right=True), 0.5, _beside_title),
     ),
     "full_image": (
         _Layout("v5/full-image", _full_image),
@@ -1548,7 +1548,7 @@ _LAYOUTS: Final[dict[str, tuple[_Layout, ...]]] = {
     ),
     "chart": (
         _Layout("v5/chart", _chart),
-        _Layout("v5/chart-side", _chart_side, 0.6, _titled),
+        _Layout("v5/chart-side", _chart_side, 0.6, _beside_title),
     ),
     "diagram": (_Layout("v5/diagram", _diagram),),
     # (A type's first layout fits every slide of it: the others may need short numbers, or a fourth option)

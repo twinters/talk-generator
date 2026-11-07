@@ -337,6 +337,10 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
 - WikiHow's search finds lists, quizzes and questions too, which were cut into odd actions for classic slides and
   titles ("e 20 Top Games Like Club Penguin", "arn All About the 18 Different Penguin Species"): only pages that
   teach an action count now ("How to ...", "4 Easy Ways to ...").
+- In a themed deck, a title with a word too long for the column beside a picture or a chart, as Dutch and German
+  compounds can be ("Vulkaanuitbarstingen"), goes across the top of the slide instead: in a wide font, such a word
+  didn't fit the 600-pixel column even at the smallest size. Those layouts now take a title only if it has no word
+  over 15 letters, as the side layouts of milestone 6's slide types do.
 - Texts that a language model or a plan writes a little longer than their limit (by up to an eighth) stay whole,
   and a text that has to be cut no longer ends on a little word, as in "Cats were the true scholars of the" (in
   every language, with NLTK's stopword lists). The presenter's job may be 50 characters (was 40), and the prompt
