@@ -661,9 +661,12 @@ def test_the_reference_lists_the_diagrams():
 # IN THEMES
 
 
-def _themed(*diagram_slides, family="clean keynote", seed=1):
-    """A deck of the slides, laid out in a theme of the family, and the theme."""
+def _themed(*diagram_slides, family="clean keynote", seed=1, font=None):
+    """A deck of the slides, laid out in a theme of the family, and the theme; in that font, given one (the theme's own
+    may be one of its open fonts since D42, which a seed picks)."""
     theme = themes.pick(family, random_util.Rng(seed))
+    if font is not None:
+        theme = theme.model_copy(update={"fonts": theme.fonts.model_copy(update={"heading": font, "body": font})})
     deck = Deck(generator="test", title="Cats", seed=1, slides=tuple(slide.to_deck_slide() for slide in diagram_slides))
     return engine.lay_out(deck, theme), theme
 
@@ -806,7 +809,7 @@ def test_labels_beside_the_circles_read_on_the_background():
 
 def test_a_themed_diagrams_preview_draws_its_circles_beside_its_labels():
     # (in Verdana, where neither "Brandweerkazernedeur" nor the overlap fits two circles under a title)
-    deck, theme = _themed(_venn_of(_COMPOUNDS[:2], "Kattenliefhebbers"), family="dark minimal", seed=1)
+    deck, theme = _themed(_venn_of(_COMPOUNDS[:2], "Kattenliefhebbers"), family="dark minimal", seed=1, font="Verdana")
     slide = deck.slides[0]
     element = slide.element("diagram")
     frame = diagrams.Box.on_canvas(element.box)
