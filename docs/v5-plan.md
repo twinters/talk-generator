@@ -496,6 +496,64 @@ third choice, **Automatic**, the default, next to Topic and Title.
   titles kept recognisable.
 - It changes the spine and the prompt, as the presenter names do (5.10), so it's built after them.
 
+Built on 2026-11-07 (`talkgenerator.titles`), after the presenter names and the fix for answers in alphabetical
+order (the spine is one object, `about`):
+
+- **The argument is `topic_or_title=`**, in `generate_presentation()` and `stream_talk()`, instead of `topic` and
+  `title` (a ValueError with either). The site's three choices: Automatic passes the text as `topic_or_title`,
+  Topic as `topic`, Title as `title`. Also `--topic_or_title`, and the MCP server's `generate_talk(topic_or_title=)`
+  (its `topic` is optional now: a topic, a title or a topic_or_title). The Skill needs no argument (Claude is the
+  planner there): its instructions say a request can be a title, which stays as it was asked for.
+- **The request** says `What the user typed: "<text>" (the talk's topic or its title: say which in input_is)`
+  instead of the Topic and Title lines, and in English talks lists the classic titles. The spine gets `input_is`
+  (an enum, `topic` or `title`), named to sort first, so the models that write the fields in alphabetical order say
+  it before the title too, and with classic titles, `own_title` (the model's own proposal) before `title`, which is
+  own_title unless a classic title is about the topic and funnier. A topic or a title given as such gets the same
+  request as before, so recorded talks replay.
+- **The topics are settled before the model is asked**, since the slides' words to riff on come from them: by
+  talkgenerator's guess, a title's rarest word (in the talk's language, and English), or else what was typed. Typed
+  text has misspellings, and a misspelled word is the rarest (no language knows it), so they're fixed first: a rare
+  word becomes the word one edit away that's a hundred times more frequent ("waht": "what", "pengiun": "penguin"),
+  a word no language knows the closest frequent word ("airplain": "airplane"); made-up words stay ("Zorblaxia").
+  When the model reads it the other way than the guess, the topics stay as they were (the talk was planned on them).
+- **How it was read comes from the title the model writes**, more than from `input_is`, as the free models often
+  say one thing and do the other (see the benchmark below): a title that's recognisably the typed one (about as many
+  words, none added or left out but little ones, at least 70% the same letters: `titles.recognisable`) makes it a
+  title, in the model's words; so does a longer title with the typed one in it, for what the guess calls a title of
+  three words or more ("Cats Are Liquid" out of "Cats Are Liquid: A Medieval Scientific Breakthrough"). Another
+  title makes it a topic, with the model's title, unless the model and the guess both say it's a title: then it
+  stays as typed (the model strayed from it). Without a title from the model, `input_is` decides, or else the
+  guess (a title as typed, a topic with the classic title). The guess also reads a claim as a title ("Cats are
+  liquid": a form of "to be" or a modal verb, in the talks' languages).
+- **The classic titles to weigh**: the talk's dice draw how many (one to three), from the format's title generator
+  (whose first title is the one the classic talk of the same seed gets), a wikiHow "How to ..." title
+  (`content_generators.wikihow_title_generator`) and the title generator again, each from a stream of its own,
+  leaving out those that don't mention the topic (from an odd wikiHow page: "Never, Ever Be A Secret Agent" for
+  penguins). Drawing them takes about 0.7 s before the request (one wikiHow search, cached after that). Talks in
+  other languages get none (the classic titles are English): the model writes their title. Explicit topics don't get
+  them either ("as now").
+- **WikiHow's how-tos** are only the pages that teach an action ("How to ...", "4 Easy Ways to ..."): its search now
+  also finds lists, quizzes and questions, which the 2019 code cut into actions such as "e 20 Top Games Like Club
+  Penguin". That helps the classic slides and titles too.
+- **The deck and `talk.started`** record it: `topic_or_title` = {text, `read_as` (topic or title), `by` (language
+  model or guess)}. A model that writes no title and doesn't say (or fails, or declines) leaves it to the guess.
+
+Live on 2026-11-07, with OpenRouter's free router: a benchmark of 20 typed inputs, 10 topics (two misspelled, two
+that start like titles: "The French Revolution", "The Beatles") and 10 titles (two misspelled, two short claims:
+"Cats are liquid", "Breakfast is overrated"), in talks of 4 slides with seed 1, one request each but one, $0:
+
+- First round, with the first prompt and `input_is` deciding: 14 of 20 read right, fewer than talkgenerator's
+  guess (16, before it read claims as titles). The models' label often contradicted their title:
+  `dots-studio/dots-3-note-preview:free` said "title" for "sourdough bread", "pengiuns" and "The Beatles", and then
+  wrote a title of its own or a classic one, and one title came out "Typed: Quantim Physics". Typed titles came out
+  recognisable in 9 of 10, their slips fixed ("waht my cat taught me about taxes": "What My Cat Taught Me About
+  Taxes", "how too become a profesional napper": "How to Become a Professional Napper"). Topics got the model's own
+  title in 3 of 6 and a classic one in the other 3, odd ones ("Never, Ever Improve Your Emotional Intelligence" for
+  artificial intelligence: seed 1 draws one classic title, from a "Never, Ever ..." template and a wikiHow page).
+  All 80 slides were the model's; median 24 s a talk.
+- The rules above, on the same answers: 18 of 20 read right (the misses: "The Beatles", kept as the title, and
+  "quantim physics", titled "Quantim Physics"). The guess, which now reads claims as titles, gets 18 of 20 too.
+
 ## 6. Agent mode: talkgenerator as a Claude Skill
 
 Claude can be the planner, on the user's own Claude usage (in Claude Code, Claude Desktop or claude.ai), while
@@ -958,7 +1016,7 @@ before the new formats. A milestone is a checkpoint on `v5`, not a release; only
 | 1 (done, 2026-11-05) | Groundwork | deck JSON and the models; pptx renderer from deck JSON (classic look); seeded random streams (`random_util`), with parallel generation giving the one-by-one talk; the classic engine on the new model; `--save_json`; usage ledger and budgets; `replay` and `none` providers; `talkgenerator check` for completeness, template leftovers and determinism | classic talks look like v4's; the same seed gives the same deck, serial or parallel; v4's offline tests pass |
 | 2 (under way: the TalkPlan schema, the planner, the `openrouter`, `anthropic`, `openai` and `chatgpt` adapters, `render`, `schema`, `formats`, the Skill, languages with their check, `login openrouter` and `login chatgpt`, and trend and ranking charts are in; on 2026-11-06, 30 benchmark talks by the free models had 0 errors, one request each, at $0, and 290 of 300 slides by the model) | LLM TED talks and the Claude Skill | TalkPlan schema; the LLM planner (one streamed call, dice, per-slide fallback, safety); `openrouter`, `anthropic` and `openai` adapters; languages, Dutch first; `render plan.json`, `schema`, `formats`; `skill/` with SKILL.md; `login openrouter`; the `chatgpt` adapter (may slip to milestone 3); checks for requests, cost, speed and language | on the benchmark with OpenRouter's free models: no holes, no leftovers, $0 and one request per talk; Dutch talks pass the language check; Claude Code makes a deck end to end with the Skill |
 | 3 (done, 2026-11-07: theme families and extremes, procedural palettes with contrast repair, layouts and their variants (never twice in a row), image treatments, WordArt-style heading effects, text fitting with bundled metric twins, the shapes renderer with the classic animations (columns click by click), previews and contact sheets, the design checks and the local MCP server; 0 design findings on 792 benchmark decks in 12 seeds; thumbnails in CI left out, D29) | Themes and layouts | theme tokens and families, extremes on by default; procedural palettes and font pairs; layout variants; text fitting; image treatments; the `classic` theme; thumbnails and contact sheet in CI; the local MCP server | contrast and overflow checks pass on every theme |
-| 4 (under way: `stream_talk()`, probe validation, display policies and presenter names in styles (5.10, for the site's settings) are in; since 2026-11-07, talkgenerator.com runs v5 from GitHub (D31): talks stream into the browser, the .pptx is made on download, Pixabay's images are copied, and classic talks meet the speed and memory bars on the VPS (section 14); left: the settings (being built), the site's OpenRouter key on the server, and LLM talks measured there) | Streaming and the web view | `stream_talk()`, display policies, probe validation; in talk-generator-web: the SSE endpoint, the Angular renderer, LLM talks by default with the classic switch, a language choice, Connect OpenRouter and pasted keys, .pptx on download, an Automatic topic-or-title choice (5.11), the site running `v5` from git (D31) | first slide on screen within the calibrated target on the VPS; a 20-slide talk under the memory bar; the downloaded .pptx matches the web view |
+| 4 (under way: `stream_talk()`, probe validation, display policies, presenter names in styles (5.10, for the site's settings) and what's typed read as a topic or a title (5.11, `topic_or_title=`, for the site's Automatic choice) are in; since 2026-11-07, talkgenerator.com runs v5 from GitHub (D31): talks stream into the browser, the .pptx is made on download, Pixabay's images are copied, and classic talks meet the speed and memory bars on the VPS (section 14); left: the settings (being built), the site's OpenRouter key on the server, and LLM talks measured there) | Streaming and the web view | `stream_talk()`, display policies, probe validation; in talk-generator-web: the SSE endpoint, the Angular renderer, LLM talks by default with the classic switch, a language choice, Connect OpenRouter and pasted keys, .pptx on download, an Automatic topic-or-title choice (5.11), the site running `v5` from git (D31) | first slide on screen within the calibrated target on the VPS; a 20-slide talk under the memory bar; the downloaded .pptx matches the web view |
 | 5 | Images | slots, aesthetic profiles and flavour packs, local analysis, license classes; new open and weird sources; AI image generation with the user's own keys; the optional vision pick | license policies enforced; profile checks pass (such as the grayscale share for `vintage`); generated images credited |
 | 6 | More slide types for TED-like talks | native diagrams, big numbers, quiz, memes with live captions, social posts and more; a much larger, curated TED content pack | every new slide type passes the checks in classic and LLM mode |
 | 7 | New talk formats | pitch, academic, corporate, keynote and Pecha Kucha timing, with their content packs (or in 5.1 if the TED work takes longer) | every format works in classic and LLM mode and passes the checks |

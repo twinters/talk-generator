@@ -188,6 +188,22 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   name still goes first and never reaches the model; `talk.started` and the deck carry the name the talk got.
   `names.catalog()` lists the styles for a settings menu, the MCP server's `generate_talk` takes `name_styles`
   (and `list_formats` lists them), and a plan can name its presenter (`presenter_name`), as the Skill now does.
+- What's typed for a talk can be its topic or its title: `topic_or_title=` on `generate_presentation` and
+  `stream_talk` (instead of `topic` and `title`), `--topic_or_title`, and the MCP server's
+  `generate_talk(topic_or_title=...)`, for "penguins" as well as "Why I Joined a Penguin Cult". The language model
+  that writes the talk tells which, in the same request: it says so first (`input_is`, which sorts first for the
+  models that write in alphabetical order), but the title it writes tells more, as the free models often say one
+  thing and do the other. A title it keeps stays the talk's title with only its obvious slips fixed ("waht my cat
+  taught me about taxes": "What My Cat Taught Me About Taxes"), also when the model puts it in a longer title; one
+  the model rewrites stays as typed when the model and talkgenerator both take it for a title. A topic gets the
+  model's own title, or one of up to three classic titles that the talk's seed draws (the format's tracery titles
+  and a wikiHow "How to ..." title, in English talks, and only those that mention the topic) when it's about the
+  topic and funnier. Without a language model, or when it gives no title, talkgenerator guesses: a title when it
+  has four words or more, starts like one ("How to", "Why", "The", "A", "My", also in the talk's language), ends in
+  "?" or "!", or makes a claim ("Cats are liquid"). The topics are settled before the model is asked, by that guess
+  (a title's rarest word), with misspellings fixed ("pengiuns": "penguins"). The deck and `talk.started` say how it
+  was read (`topic_or_title`: the text, `read_as` topic or title, `by` the language model or the guess). A topic or
+  a title given as such is taken as it is, with the same request as before (`talkgenerator.titles`).
 - `talkgenerator login chatgpt`: Sign in with ChatGPT (OpenAI's sign-in for open-source apps that run locally, in
   preview), so that the models of your ChatGPT plan write your talks (`--llm chatgpt` or `chatgpt:<model>`, and the
   default once you've signed in), at no cost to talkgenerator: their requests count toward the plan's usage. The
@@ -237,6 +253,9 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
 
 ### Fixed
 
+- WikiHow's search finds lists, quizzes and questions too, which were cut into odd actions for classic slides and
+  titles ("e 20 Top Games Like Club Penguin", "arn All About the 18 Different Penguin Species"): only pages that
+  teach an action count now ("How to ...", "4 Easy Ways to ...").
 - Texts that a language model or a plan writes a little longer than their limit (by up to an eighth) stay whole,
   and a text that has to be cut no longer ends on a little word, as in "Cats were the true scholars of the" (in
   every language, with NLTK's stopword lists). The presenter's job may be 50 characters (was 40), and the prompt
