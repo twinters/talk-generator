@@ -209,9 +209,9 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
             Field(
                 min_length=1,
                 description="Instead of a topic and a title: what the user asked for, as they put it, when it could "
-                "be either, such as 'penguins' or 'Why I Joined a Penguin Cult' (four words or more, or a question, "
-                "stays the title with only its obvious slips fixed; anything shorter is the topic, which gets a "
-                "funnier title)",
+                "be either, such as 'penguins' or 'Why I Joined a Penguin Cult' (in quote marks, it's the title word "
+                "for word; four words or more, or a question, stays the title with only its obvious slips fixed; "
+                "anything shorter is the topic, which gets a funnier title)",
             ),
         ] = None,
         slides: Annotated[int, Field(ge=2, le=MAX_SLIDES, description="How many slides, the title slide too")] = 10,

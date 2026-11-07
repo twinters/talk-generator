@@ -5,7 +5,9 @@ view on talkgenerator.com. So a deck holds no image bytes, python-pptx objects o
 data, and `deck_version` changes whenever the format changes in a way older readers can't handle.
 
 A slide has a type and a layout. Its content is a list of elements, each with a role that the layout knows where to
-put ("title", "caption_1", "content_1", ...), so a layout or theme can change without changing the content.
+put ("title", "caption_1", "content_1", ...), so a layout or theme can change without changing the content. A text,
+picture or shape can appear on a click of its slide instead of with it (`appears_on_click`), such as a quiz's answer:
+a renderer that plays no clicks shows it from the start.
 
 In a deck with a theme other than the classic one, every element also has its place (a box on a 1920×1080
 canvas) and every text its style, as the layout engine (`talkgenerator.design.engine`) put them: so every
@@ -122,12 +124,18 @@ class ImageAsset(_Data):
     analysis: ImageAnalysis | None = None
 
 
+# The click of its slide on which an element appears (the first is 1), when it isn't there from the start: a quiz's
+# answer, say, or the punchline of a row of figures. Elements with the same click appear together, fading in
+AppearsOnClick = Annotated[int | None, Field(ge=1)]
+
+
 class TextElement(_Data):
     kind: Literal["text"] = "text"
     role: str
     text: str
     box: Box | None = None
     style: TextStyle | None = None
+    appears_on_click: AppearsOnClick = None
 
 
 class ImageTreatment(_Data):
@@ -154,6 +162,7 @@ class ImageElement(_Data):
     box: Box | None = None
     border: str | None = None  # a frame around the image, in this colour ("#rrggbb")
     treatment: ImageTreatment | None = None  # (in a themed deck)
+    appears_on_click: AppearsOnClick = None
 
 
 class ChartSeries(_Data):
@@ -191,6 +200,7 @@ class ShapeElement(_Data):
     box: Box
     color: str
     opacity: float = 1.0  # from 0 (not there) to 1 (solid)
+    appears_on_click: AppearsOnClick = None
 
 
 class SlideBackground(_Data):

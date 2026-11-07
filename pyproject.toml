@@ -142,6 +142,7 @@ module = [
     "talkgenerator.sources.pixabay",
     "talkgenerator.sources.reddit",
     "talkgenerator.sources.shitpostbot",
+    "talkgenerator.sources.slide_texts",
     "talkgenerator.sources.unsplash",
     "talkgenerator.sources.wikihow",
     "talkgenerator.sources.wikimedia_commons",

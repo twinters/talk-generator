@@ -204,6 +204,29 @@ def test_without_a_title_from_the_model_talkgenerator_guesses(spine):
     assert (title, reading.read_as) == ("Cats are liquid", "title")
 
 
+def test_a_title_in_quote_marks_stays_word_for_word():
+    # (talkgenerator.com has no other way to say it's a title; not even its slips are fixed)
+    for quote in ('"{}"', "“{}”", "'{}'"):
+        typed = quote.format("cats are liquid")
+        assert titles.quoted(typed) and titles.guess(typed) == titles.TITLE
+        assert titles.topics_from(typed) == ["liquid"]
+        title, reading = _settled({"title": "Cats Are Liquid: The Rheology of Napping"}, typed)
+        assert (title, reading) == ("cats are liquid", TopicOrTitle(text="cats are liquid", read_as="title"))
+        title, _ = _settled({}, typed, written=False)
+        assert title == "cats are liquid"
+    assert not titles.quoted("cats are liquid") and not titles.quoted("'Twas the night") and not titles.quoted('""')
+
+
+def test_a_title_in_quote_marks_is_asked_for_word_for_word():
+    request = titles.Titling.of('"why i joind a pengiun cult"', written=True).request
+    assert request is not None and request.exact and not request.candidates
+    assert request.lines("penguin") == [
+        "Topic: penguin",
+        'Title: "why i joind a pengiun cult" (as the user typed it, in quotes: word for word)',
+    ]
+    assert request.fields()["title"].startswith("the title the user typed, word for word, exactly as it is")
+
+
 def test_without_a_language_model_the_guess_decides_and_a_title_stays_as_typed():
     # (Whatever a spine says: there's no model, so nothing it wrote counts)
     title, reading = _settled({"title": "The Penguin Gospel"}, written=False)
@@ -290,6 +313,44 @@ def test_classic_titles_that_fail_repeat_or_miss_the_topic_are_left_out():
 def _wanted(rng):
     with random_util.use(rng.child("title", "candidates")):
         return random_util.randint(1, 3)
+
+
+def test_the_talk_s_dice_pick_how_the_classic_titles_go():
+    # (As titles to pick, as inspiration only, or not at all: the user liked the titles all three gave)
+    generators = [_counting("classic", [])]
+    ways = {}
+    for seed in range(60):
+        request = titles.Titling.of("penguins", "en", True, generators, "penguins", random_util.Rng(seed)).request
+        again = titles.Titling.of("penguins", "en", True, generators, "penguins", random_util.Rng(seed)).request
+        assert request == again  # (the same seed: the same way)
+        way = "none" if not request.candidates else "inspiration" if request.inspiration else "options"
+        ways.setdefault(way, request)
+    assert set(ways) == {"options", "inspiration", "none"}
+    options, inspiration, none = ways["options"], ways["inspiration"], ways["none"]
+    assert options.lines("penguins")[2].startswith("Classic titles from talkgenerator, to pick from:")
+    assert list(options.fields()) == ["own_title", "title"]
+    assert inspiration.lines("penguins")[2].startswith(
+        "Classic talkgenerator titles, for inspiration only (write your own):"
+    )
+    assert list(inspiration.fields()) == ["title"]
+    assert len(none.lines("penguins")) == 2 and list(none.fields()) == ["title"]
+
+
+def test_without_classic_titles_none_are_made(monkeypatch):
+    # (Not even the wikiHow search before the request, which takes the most time)
+    monkeypatch.setattr(titles, "CLASSIC_TITLE_WAYS", (("none", 1.0),))
+    calls = []
+    request = titles.Titling.of("penguins", "en", True, [_counting("classic", calls)], "penguins", random_util.Rng(1))
+    assert request.request is not None and request.request.candidates == () and calls == []
+
+
+def test_a_misspelled_short_input_tells_the_model_what_it_means():
+    request = titles.Titling.of("pengiuns", written=True).request
+    assert request is not None and request.meaning == "penguins"
+    assert request.lines("penguins")[0] == (
+        'Topic: "pengiuns" (as the user typed it, meaning "penguins": the talk\'s topic, or a premise for it)'
+    )
+    assert titles.Titling.of("penguins", written=True).request.meaning is None
 
 
 def test_only_talks_in_english_get_classic_titles_to_weigh():
@@ -471,6 +532,19 @@ def test_a_short_input_gets_the_model_s_title(schema):
     deck = _talk(FakeModel(change=_writes("The Penguin Gospel", "The Penguin Gospel")), topic_or_title="penguins")
     assert (deck.title, deck.topics) == ("The Penguin Gospel", ("penguins",))
     assert deck.topic_or_title == TopicOrTitle(text="penguins", read_as="topic")
+
+
+def test_a_title_in_quote_marks_stays_word_for_word_in_a_talk(schema):
+    deck = _talk(
+        FakeModel(change=_writes("Cats Are Liquid: The Rheology of Napping")), topic_or_title='"Cats are liquid"'
+    )
+    assert (deck.title, deck.topic_or_title) == (
+        "Cats are liquid",
+        TopicOrTitle(text="Cats are liquid", read_as="title"),
+    )
+    assert deck.topics == ("liquid",)
+    classic = _talk("none", topic_or_title="“Cats are liquid”")
+    assert (classic.title, classic.topic_or_title.read_as) == ("Cats are liquid", "title")
 
 
 def test_a_premise_gets_a_funnier_title_and_stays_the_talk_s_topic(schema):

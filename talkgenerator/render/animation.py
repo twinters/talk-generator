@@ -3,7 +3,8 @@
 A slide can have several of these, each adding its clicks after those the slide has already:
 - a chart whose series after the first appear on clicks, one by one, wiping in from the left. On a trend chart, that
   makes a second line draw itself across the chart as the punchline;
-- shapes that fade in together on a click, such as a Venn diagram's overlap, or a matrix's dot with its name;
+- shapes that fade in together on a click, such as a Venn diagram's overlap, or a matrix's dot with its name, and the
+  elements of a deck that appear on a click of their own (a quiz's answer);
 - columns that fade in click by click, the one before dimming, as the 2019 template's column slides have them (a
   themed deck's columns);
 - a layout's animation, copied onto a slide made from it (the 2019 template's columns, which appear click by click).
@@ -152,6 +153,15 @@ def reveal_shapes(slide: Any, shapes: Sequence[Any]) -> None:
     if shapes:
         _add_click(slide, [("appear", shape) for shape in shapes])
         _settle(slide)
+
+
+def reveal_clicks(slide: Any, clicks: Sequence[Sequence[Any]]) -> None:
+    """Have each group of shapes appear on a click of its own, in order (the first group on the slide's next click),
+    fading in together: what a deck's elements that appear on a click are drawn with (such as a quiz's answer)."""
+    for shapes in clicks:
+        if shapes:
+            _add_click(slide, [("appear", shape) for shape in shapes])
+    _settle(slide)
 
 
 def reveal_columns(slide: Any, columns: Sequence[Sequence[Any]]) -> None:

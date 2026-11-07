@@ -259,6 +259,24 @@ FAMILIES: Final[dict[str, Family]] = {
 # Fonts that are bold already: their headings aren't made bolder
 _HEAVY_FONTS: Final = frozenset({"Impact", "Arial Black"})
 
+# The 2019 template's look, as tokens: white Calibri on black, its titles centred, with its accents (orange, which reads
+# on black, and blue, which white reads on) and its dark grey for panels. A classic deck draws the slide types that the template has no layouts for (big numbers,
+# quizzes...) as shapes in it (see talkgenerator.render.powerpoint); it's no theme a talk can ask for.
+CLASSIC_LOOK: Final = Theme(
+    name=CLASSIC,
+    family=CLASSIC,
+    palette=Palette(
+        background="#000000",
+        surface="#323232",
+        text="#ffffff",
+        muted="#bfbfbf",
+        accent="#f07f09",
+        accent_2="#1b587c",
+    ),
+    fonts=Fonts(heading="Calibri Light", body="Calibri", heading_bold=False),
+    title_align="center",
+)
+
 
 def names(extremes: bool = True) -> list[str]:
     """The families' names, with classic and random."""

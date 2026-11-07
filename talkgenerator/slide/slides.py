@@ -1,9 +1,11 @@
+import re
 from collections.abc import Sequence
 
 from talkgenerator.datastructures.image_data import CreditPart, ImageData
 from talkgenerator.images import analysis
 from talkgenerator.models import classic
 from talkgenerator.models import deck as model
+from talkgenerator.plan.languages import ENGLISH, Language
 from talkgenerator.render import charts
 from talkgenerator.render.powerpoint import render_slide
 from talkgenerator.slide import powerpoint_slide_creator
@@ -337,3 +339,308 @@ class DiagramSlide(Slide):
         if diagram is not None:
             elements.append(model.DiagramElement(role="diagram", diagram=diagram))
         return self._deck_slide(tuple(elements))
+
+
+# MILESTONE 6'S SLIDE TYPES: drawn as texts on shapes (see talkgenerator.design.engine), also in a classic deck, in the
+# 2019 template's look (talkgenerator.render.powerpoint)
+
+# A quiz's options, as its slides name them
+LETTERS = "ABCD"
+
+
+class DrawnSlide(Slide):
+    """A slide of a type that the 2019 template has no layout for (milestone 6's: big numbers, quizzes, posts...):
+    its texts (and photo) by role, which the layout engine places on shapes in a theme's colours, and a classic deck
+    in the template's (talkgenerator.models.classic.DRAWN_TYPES). Some of its elements may appear on a click."""
+
+    def to_deck_slide(self) -> model.DeckSlide:
+        clicks = self.clicks()
+        elements: list[model.TextElement | model.ImageElement | model.ChartElement | model.DiagramElement] = []
+        for argument, role in classic.CLASSIC_ROLES[self._type_name].items():
+            fit: model.ImageFit = "cover" if role in classic.COVER_ROLES else "contain"
+            element = _to_element(role, self._arguments.get(argument), fit)
+            if element is None:
+                continue
+            if role in clicks:
+                element = element.model_copy(update={"appears_on_click": clicks[role]})
+            elements.append(element)
+        return self._deck_slide(tuple(elements))
+
+    def clicks(self) -> dict[str, int]:
+        """The roles of the elements that appear on a click, and on which (the first is 1)."""
+        return {}
+
+
+class BigNumberSlide(DrawnSlide):
+    """A big number, with what it counts under it, and a title and a (made-up) source, if any."""
+
+    required_arguments = ("number", "label")
+
+    def __init__(self, title: str | None, number: str | None, label: str | None, source: str | None = None):
+        super().__init__("big_number", None, {"title": title, "number": number, "label": label, "source": source})
+
+
+class KpiSlide(DrawnSlide):
+    """Three or four figures under a title, each a number and what it measures: the last one, the punchline,
+    appears on a click."""
+
+    required_arguments = ("number_1", "label_1", "number_2", "label_2", "number_3", "label_3")
+
+    def __init__(
+        self,
+        title: str | None,
+        number_1: str | None,
+        label_1: str | None,
+        number_2: str | None,
+        label_2: str | None,
+        number_3: str | None,
+        label_3: str | None,
+        number_4: str | None = None,
+        label_4: str | None = None,
+    ):
+        fourth = bool(number_4 and label_4)  # (a fourth figure is both, or none)
+        figures = ((number_1, label_1), (number_2, label_2), (number_3, label_3), (number_4, label_4))
+        arguments: dict[str, str | None] = {"title": title}
+        for index, (number, label) in enumerate(figures, 1):
+            arguments[f"number_{index}"] = number if index < 4 or fourth else None
+            arguments[f"label_{index}"] = label if index < 4 or fourth else None
+        super().__init__("kpi", None, arguments)
+
+    def clicks(self) -> dict[str, int]:
+        last = 4 if self._arguments.get("number_4") else 3
+        return {f"number_{last}": 1, f"label_{last}": 1}
+
+
+class QuizSlide(DrawnSlide):
+    """A quiz: a question, and three or four options (A to D); on a click, the answer (the letter of the right
+    option) and its explanation, if any."""
+
+    required_arguments = ("question", "option_1", "option_2", "option_3", "answer")
+
+    def __init__(
+        self,
+        question: str | None,
+        option_1: str | None,
+        option_2: str | None,
+        option_3: str | None,
+        option_4: str | None,
+        answer: str | None,
+        explanation: str | None = None,
+    ):
+        options = (option_1, option_2, option_3, option_4)
+        arguments: dict[str, str | None] = {"question": question}
+        for index, option in enumerate(options, 1):
+            arguments[f"letter_{index}"] = LETTERS[index - 1] if option else None
+            arguments[f"option_{index}"] = option
+        # (the answer is the letter of one of the options, or none: then the slide misses it)
+        letter = (answer or "").strip()[:1].upper()
+        known = letter in LETTERS and bool(options[LETTERS.index(letter)])
+        arguments["answer"] = letter if known else None
+        arguments["explanation"] = explanation
+        super().__init__("quiz", None, arguments)
+
+    def clicks(self) -> dict[str, int]:
+        return {"answer": 1, "explanation": 1}
+
+
+def initials(name: str | None) -> str | None:
+    """The initials of a name, as on an avatar: of its first two words, leaving out titles such as "Dr."."""
+    words = [word for word in (name or "").split() if word[:1].isalpha()]
+    named = [word for word in words if not word.endswith(".")] or words
+    return "".join(word[0] for word in named[:2]).upper() or None
+
+
+def handle(name: str | None) -> str | None:
+    """A username as a post shows it: "@" and the name, without spaces."""
+    plain = re.sub(r"\s+", "_", (name or "").strip().lstrip("@"))
+    return f"@{plain}" if plain else None
+
+
+def count(number: int) -> str:
+    """A count as social media round it: 873, 12K, 3M."""
+    if number >= 1_000_000:
+        return f"{number // 1_000_000}M"
+    return f"{number // 1000}K" if number >= 1000 else str(number)
+
+
+class SocialPostSlide(DrawnSlide):
+    """A made-up social media post: its author (their initials on an avatar) and their handle, the post, its photo
+    if it has one, and how often it was liked and shared (in the talk's language)."""
+
+    required_arguments = ("author", "text")
+
+    def __init__(
+        self,
+        title: str | None,
+        author: str | None,
+        handle_name: str | None,
+        text: str | None,
+        photo: ImageData | None = None,
+        likes: int = 0,
+        shares: int = 0,
+        language: Language = ENGLISH,
+    ):
+        arguments = {
+            "title": title,
+            "initials": initials(author),
+            "author": author,
+            "handle": handle(handle_name),
+            "text": text,
+            "photo": photo,
+            "stats": f"{count(likes)} {language.likes} · {count(shares)} {language.shares}",
+        }
+        super().__init__("social_post", None, arguments)
+
+
+class NewsHeadlineSlide(DrawnSlide):
+    """A made-up news story: its outlet, its headline and subheadline, and its photo; on television, under the
+    words for breaking news (in the talk's language)."""
+
+    required_arguments = ("outlet", "headline", "photo")
+
+    def __init__(
+        self,
+        outlet: str | None,
+        headline: str | None,
+        subheadline: str | None,
+        photo: ImageData | None,
+        language: Language = ENGLISH,
+    ):
+        arguments = {
+            "photo": photo,
+            "kicker": language.breaking,
+            "outlet": outlet,
+            "headline": headline,
+            "subheadline": subheadline,
+        }
+        super().__init__("news_headline", None, arguments)
+
+
+class AgendaSlide(DrawnSlide):
+    """The talk's agenda: three to five items, numbered, under a title."""
+
+    required_arguments = ("item_1", "item_2", "item_3")
+
+    def __init__(self, title: str | None, *items: str | None):
+        listed = [item for item in items if item][:5]
+        arguments: dict[str, str | None] = {"title": title}
+        for index in range(1, 6):
+            item = listed[index - 1] if index <= len(listed) else None
+            arguments[f"number_{index}"] = str(index) if item else None
+            arguments[f"item_{index}"] = item
+        super().__init__("agenda", None, arguments)
+
+
+class SectionSlide(DrawnSlide):
+    """A section's divider: its title and subtitle, under its number (which the deck gives it: see number)."""
+
+    required_arguments = ("title",)
+
+    def __init__(self, title: str | None, subtitle: str | None = None, kicker: str | None = None):
+        super().__init__("section", None, {"kicker": kicker, "title": title, "subtitle": subtitle})
+
+    def number(self, number: int) -> None:
+        """Give the section its number, as its slide shows it ("02"), unless it has a kicker of its own."""
+        if not self._arguments.get("kicker"):
+            self._arguments["kicker"] = f"{number:02d}"
+
+
+class QuestionsSlide(DrawnSlide):
+    """The closing slide: a question to the audience ("Questions?"), and a subtitle, if any."""
+
+    required_arguments = ("title",)
+
+    def __init__(self, title: str | None, subtitle: str | None = None):
+        super().__init__("questions", None, {"title": title, "subtitle": subtitle, "mark": "?"})
+
+
+# NATIVE DIAGRAMS, drawn as texts on shapes too (Venn diagrams and 2×2 matrices have their own drawing: DiagramSlide)
+
+
+def _listed(prefix: str, most: int, items: Sequence[str | None]) -> dict[str, str | None]:
+    """The items that are there, in order, as numbered arguments (prefix_1, prefix_2...), the rest None."""
+    there = [item for item in items if item][:most]
+    return {f"{prefix}_{index}": there[index - 1] if index <= len(there) else None for index in range(1, most + 1)}
+
+
+class TimelineSlide(DrawnSlide):
+    """Three to five moments along a line, oldest first, each a date and what happened: the last one, the
+    punchline, appears on a click."""
+
+    required_arguments = ("date_1", "event_1", "date_2", "event_2", "date_3", "event_3")
+
+    def __init__(self, title: str | None, *dates_and_events: str | None):
+        moments = [
+            (date, event)
+            for date, event in zip(dates_and_events[::2], dates_and_events[1::2], strict=False)
+            if date and event
+        ][:5]
+        arguments: dict[str, str | None] = {"title": title}
+        for index in range(1, 6):
+            date, event = moments[index - 1] if index <= len(moments) else (None, None)
+            arguments[f"date_{index}"], arguments[f"event_{index}"] = date, event
+        super().__init__("timeline", None, arguments)
+
+    def clicks(self) -> dict[str, int]:
+        last = max(index for index in range(1, 6) if self._arguments.get(f"event_{index}") or index == 1)
+        return {f"date_{last}": 1, f"event_{last}": 1}
+
+
+class PyramidSlide(DrawnSlide):
+    """Three or four levels of a pyramid, from its top (the rarest, the punchline, which appears on a click) down to
+    its base."""
+
+    required_arguments = ("level_1", "level_2", "level_3")
+
+    def __init__(self, title: str | None, *levels: str | None):
+        super().__init__("pyramid", None, {"title": title, **_listed("level", 4, levels)})
+
+    def clicks(self) -> dict[str, int]:
+        return {"level_1": 1}
+
+
+class FunnelSlide(DrawnSlide):
+    """Three to five stages of a funnel, from its widest at the top to its narrowest at the bottom: the last one, the
+    punchline, appears on a click."""
+
+    required_arguments = ("stage_1", "stage_2", "stage_3")
+
+    def __init__(self, title: str | None, *stages: str | None):
+        super().__init__("funnel", None, {"title": title, **_listed("stage", 5, stages)})
+
+    def clicks(self) -> dict[str, int]:
+        last = max(index for index in range(1, 6) if self._arguments.get(f"stage_{index}") or index == 1)
+        return {f"stage_{last}": 1}
+
+
+class CycleSlide(DrawnSlide):
+    """Three to five steps around a circle, each leading to the next, and the last back to the first."""
+
+    required_arguments = ("step_1", "step_2", "step_3")
+
+    def __init__(self, title: str | None, *steps: str | None):
+        super().__init__("cycle", None, {"title": title, **_listed("step", 5, steps)})
+
+
+class OrgChartSlide(DrawnSlide):
+    """A small org chart: who's in charge (the punchline, which appears on a click) over two to four people."""
+
+    required_arguments = ("boss", "report_1", "report_2")
+
+    def __init__(self, title: str | None, boss: str | None, *reports: str | None):
+        super().__init__("org_chart", None, {"title": title, "boss": boss, **_listed("report", 4, reports)})
+
+    def clicks(self) -> dict[str, int]:
+        return {"boss": 1}
+
+
+class IcebergSlide(DrawnSlide):
+    """An iceberg: what everyone sees, above the water, and two or three things under it, which appear on a click."""
+
+    required_arguments = ("tip", "hidden_1", "hidden_2")
+
+    def __init__(self, title: str | None, tip: str | None, *hidden: str | None):
+        super().__init__("iceberg", None, {"title": title, "tip": tip, **_listed("hidden", 3, hidden)})
+
+    def clicks(self) -> dict[str, int]:
+        return {f"hidden_{index}": 1 for index in range(1, 4)}

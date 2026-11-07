@@ -36,8 +36,8 @@ by. If it's long, tell the user once that free keys give better images, and leav
 
 1. **Work out what's wanted**: the topic (several topics work too) or the title, as what's asked for can be either
    ("penguins" is a topic, "Why I Joined a Penguin Cult" a title, which stays the talk's title with only its obvious
-   slips fixed, never reworded; a few words such as "Cats are liquid" are a premise, to build a funnier, more
-   specific title on); how many slides (a "10-slide deck" is the
+   slips fixed, never reworded, and a title in quotes stays word for word; a few words such as "Cats are liquid"
+   are a premise, to build a funnier, more specific title on); how many slides (a "10-slide deck" is the
    title slide plus 9 slides in the plan, and 10 to 12 slides suit a talk of five minutes); the language; whether
    the presenter's own name should be on the title slide (without it, you make one up, which is part of the fun);
    and the format. The `default` format draws on every image source, Reddit's wilder pictures and gifs too.
@@ -112,10 +112,12 @@ that give the presenter something to work with, rather than finished jokes:
   specific claim, a chart that needs explaining. Don't explain the joke, or the image.
 - **Build one talk.** Give it a thesis and follow it. Later slides call back to earlier ones (a running gag, a
   recurring character, a strange claim from before), and the conclusions call back to several of them.
-- **Shape it like a talk.** A common arc: who the presenter is (an about-me slide), some history (a made-up
-  historical figure, old photos), the core (bold statements, contrasts such as Expectation and Reality, a three-step
-  build-up), the evidence (a chart or two, a Venn diagram or a 2×2 matrix), and conclusions that call back. Mix the
-  kinds: no two charts in a row.
+- **Shape it like a talk.** A common arc: who the presenter is (an about-me slide), maybe an agenda, some history
+  (a made-up historical figure, old photos, a timeline), the core (bold statements, contrasts such as Expectation
+  and Reality, a three-step build-up, a quiz for the audience, a social media post or a news headline), the evidence
+  (a chart or two, a big number or KPI tiles, a Venn diagram, a 2×2 matrix, a pyramid or an iceberg), and
+  conclusions that call back (or "Questions?" to end on). Mix the kinds: no two charts in a row, and each new kind
+  at most once.
 - **Write image queries that find something**: one to three common English words for one subject, such as "owl",
   "ficus", "old watering can" or "dense tropical jungle". Scenes with several parts ("plant on reception desk"),
   actions and moods ("waiting", "alone"), and words that are photo subjects themselves ("camera", "photo") find the

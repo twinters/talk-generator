@@ -1,4 +1,5 @@
 from talkgenerator.datastructures.slide_generator_data import (
+    BetweenWeight,
     ConstantWeightFunction,
     PeakedWeight,
     SlideGeneratorData,
@@ -6,8 +7,8 @@ from talkgenerator.datastructures.slide_generator_data import (
 from talkgenerator.plan.kinds import Recipe, Variant
 from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema.registry import Registry
-from talkgenerator.slide import slide_generator_types
-from talkgenerator.sources import chart, diagram
+from talkgenerator.slide import slide_generator_types, slides
+from talkgenerator.sources import chart, diagram, slide_texts
 from talkgenerator.util.generator_util import CombinedGenerator, NoneGenerator
 
 # ==============================
@@ -702,6 +703,232 @@ diagram_slide_generators = _register(
     ],
 )
 
+# MILESTONE 6'S SLIDE TYPES (docs/v5-plan.md, section 8): drawn as texts on shapes, so the ones without a photo fit
+# every format
+
+
+def _middle(weight: float) -> BetweenWeight:
+    """A weight for the slides in the middle of a talk: not the title slide, the one after it (where the presenter
+    introduces themself) or the last (the conclusions)."""
+    return BetweenWeight(weight, after=2, before=1)
+
+
+def _drawn(content, slide_class, weight, tags, name, recipe, repeats=2) -> SlideGeneratorData:
+    return SlideGeneratorData(
+        slide_generator_types.DrawnSlideGenerator(content, slide_class),
+        weight_function=weight,
+        retries=2,
+        allowed_repeated_elements=repeats,
+        tags=tags,
+        name=name,
+        llm=recipe,
+    )
+
+
+# FIGURES
+number_slide_generators = _register(
+    "numbers",
+    [
+        _drawn(
+            slide_texts.generate_big_number,
+            slides.BigNumberSlide,
+            _middle(1.2),
+            ["big_number"],
+            "Big Number",
+            Recipe(
+                "big_number",
+                brief="A suspiciously precise statistic about the concept, as one big number",
+                variants=(Variant(2), Variant(1, frozenset({"source"}), "without a source, for the presenter to give")),
+            ),
+        ),
+        _drawn(
+            slide_texts.generate_kpi,
+            slides.KpiSlide,
+            _middle(0.8),
+            ["kpi"],
+            "KPI Tiles",
+            Recipe(
+                "kpi",
+                brief="The concept's made-up key performance indicators, as on a corporate dashboard: figures that "
+                "start out plausible, the last one the punchline",
+                variants=(
+                    Variant(1, frozenset({"number_4", "label_4"}), "with three figures"),
+                    Variant(1, note="with four figures"),
+                ),
+            ),
+        ),
+    ],
+)
+
+# AUDIENCE
+quiz_slide_generators = _register(
+    "quiz",
+    [
+        _drawn(
+            slide_texts.generate_quiz,
+            slides.QuizSlide,
+            _middle(1),
+            ["quiz"],
+            "Quiz",
+            Recipe(
+                "quiz",
+                brief="A quiz question about the concept for the audience: options that all seem possible, and a "
+                "surprising answer",
+                variants=(
+                    Variant(2),
+                    Variant(1, frozenset({"option_d"}), "with three options"),
+                    Variant(1, frozenset({"explanation"}), "without an explanation, for the presenter to give"),
+                ),
+            ),
+        )
+    ],
+)
+
+# MOCKUPS: a social media post and a news story, with a photo
+_POST_BRIEF = "A made-up social media post about the concept, by someone with strong opinions about it"
+_NEWS_BRIEF = "A made-up news story about the concept, as breaking news"
+
+
+def _mockups(post_image, news_image, suffix: str = "") -> list[SlideGeneratorData]:
+    return [
+        _drawn(
+            slide_texts.social_post(post_image),
+            slides.SocialPostSlide,
+            _middle(1),
+            ["social_post"],
+            f"Social Media Post{suffix}",
+            Recipe("social_post", (post_image,), brief=_POST_BRIEF),
+            repeats=1,
+        ),
+        _drawn(
+            slide_texts.news_headline(news_image),
+            slides.NewsHeadlineSlide,
+            _middle(1),
+            ["news"],
+            f"News Headline{suffix}",
+            Recipe("news_headline", (news_image,), brief=_NEWS_BRIEF),
+            repeats=1,
+        ),
+    ]
+
+
+mockup_slide_generators = _register(
+    "mockups", _mockups(cg.neutral_or_weird_image_generator, cg.neutral_image_generator)
+)
+mockup_slide_generators_copyright_free = _register(
+    "mockups_copyright_free",
+    _mockups(cg.copyright_free_generator, cg.copyright_free_generator, " (CRF)"),
+)
+
+# THE TALK'S STRUCTURE: an agenda after the title, a section's divider in the middle, "Questions?" at the end
+structure_slide_generators = _register(
+    "structure",
+    [
+        _drawn(
+            slide_texts.generate_agenda,
+            slides.AgendaSlide,
+            PeakedWeight((1,), 4, 0),
+            ["agenda"],
+            "Agenda",
+            Recipe(
+                "agenda",
+                brief="The talk's agenda: what it will cover",
+                hints={
+                    "items": "three to five parts of the talk, in the order the slides after this one come, "
+                    "separated by |"
+                },
+            ),
+        ),
+        _drawn(
+            slide_texts.generate_section,
+            slides.SectionSlide,
+            BetweenWeight(0.8, after=3, before=2),
+            ["section"],
+            "Section Divider",
+            Recipe(
+                "section",
+                brief="A section's divider, opening the next part of the talk",
+                hints={
+                    "title": "the title of the part of the talk that starts here, without a number (the slide has it)"
+                },
+                variants=(Variant(1), Variant(1, frozenset({"subtitle"}), "without a subtitle")),
+            ),
+        ),
+        _drawn(
+            slide_texts.generate_questions,
+            slides.QuestionsSlide,
+            PeakedWeight((-1,), 1800, 0),
+            ["questions"],
+            "Questions",
+            Recipe(
+                "questions",
+                brief="The closing slide, inviting the audience's questions",
+                hints={"subtitle": "a line under it, such as a disclaimer about the answers"},
+            ),
+        ),
+    ],
+)
+
+# NATIVE DIAGRAMS: more of the diagram group's, drawn as texts on shapes
+native_diagram_slide_generators = _register(
+    "diagram",
+    [
+        _drawn(
+            slide_texts.generate_timeline,
+            slides.TimelineSlide,
+            _middle(0.4),
+            ["timeline", "diagram"],
+            "Timeline",
+            Recipe("timeline", brief="The concept's made-up history, as a timeline whose last moment is the punchline"),
+        ),
+        _drawn(
+            slide_texts.generate_pyramid,
+            slides.PyramidSlide,
+            _middle(0.4),
+            ["pyramid", "diagram"],
+            "Pyramid",
+            Recipe(
+                "pyramid", brief="A hierarchy of needs about the concept, as a pyramid with something absurd at the top"
+            ),
+        ),
+        _drawn(
+            slide_texts.generate_funnel,
+            slides.FunnelSlide,
+            _middle(0.4),
+            ["funnel", "diagram"],
+            "Funnel",
+            Recipe("funnel", brief="A sales funnel about the concept, narrowing down to something absurd"),
+        ),
+        _drawn(
+            slide_texts.generate_cycle,
+            slides.CycleSlide,
+            _middle(0.4),
+            ["cycle", "diagram"],
+            "Cycle",
+            Recipe("cycle", brief="A vicious circle about the concept: steps that lead to each other, and back"),
+        ),
+        _drawn(
+            slide_texts.generate_org_chart,
+            slides.OrgChartSlide,
+            _middle(0.4),
+            ["org_chart", "diagram"],
+            "Org Chart",
+            Recipe("org_chart", brief="Who's really in charge of the concept, as an org chart with a surprising boss"),
+        ),
+        _drawn(
+            slide_texts.generate_iceberg,
+            slides.IcebergSlide,
+            _middle(0.4),
+            ["iceberg", "diagram"],
+            "Iceberg",
+            Recipe(
+                "iceberg",
+                brief="What lies beneath the concept: an iceberg whose tip everyone knows, and what's under the water",
+            ),
+        ),
+    ],
+)
+
 # CONCLUSIONS
 conclusion_slide_generators = _register(
     "conclusion",
@@ -798,6 +1025,11 @@ all_slide_generators = (
     + captioned_images_slide_generators
     + chart_slide_generators
     + diagram_slide_generators
+    + number_slide_generators
+    + quiz_slide_generators
+    + mockup_slide_generators
+    + structure_slide_generators
+    + native_diagram_slide_generators
     + conclusion_slide_generators
 )
 
@@ -812,7 +1044,22 @@ default_max_allowed_tags = {
     "bar_chart": 1,
     "venn_diagram": 1,
     "matrix_diagram": 1,
+    "big_number": 1,
+    "kpi": 1,
+    "quiz": 1,
+    "social_post": 1,
+    "news": 1,
+    "agenda": 1,
+    "questions": 1,
+    "timeline": 1,
+    "pyramid": 1,
+    "funnel": 1,
+    "cycle": 1,
+    "org_chart": 1,
+    "iceberg": 1,
     # Relative (procentual) maxima
+    "section": 0.1,  # (none in a talk of fewer than ten slides)
+    "diagram": 0.2,
     "two_captions": 0.2,
     "three_captions": 0.2,
     "multi_captions": 0.3,
