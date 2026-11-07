@@ -50,7 +50,7 @@ from talkgenerator.render.powerpoint import render_pptx
 from talkgenerator.schema.slide_topic_generators import SlideSeedGenerator
 from talkgenerator.slide import slide_generator_types, slides
 from talkgenerator.slide.slide_deck import SlideDeck
-from talkgenerator.util import random_util
+from talkgenerator.util import image_util, random_util
 
 logger = logging.getLogger("talkgenerator")
 
@@ -178,7 +178,8 @@ class _PlannedTalk:
                 if plan is not None:
                     self.plans[slide_nr] = plan
                     if self.pool is not None:
-                        self.first_attempts[slide_nr] = self.pool.apply_async(self._realize, (slide_nr, 0))
+                        realize_it = image_util.carry(self._realize)  # (checking images as the talk does)
+                        self.first_attempts[slide_nr] = self.pool.apply_async(realize_it, (slide_nr, 0))
             self._changed.notify_all()
 
     def wait_for_spine(self) -> None:
@@ -471,7 +472,7 @@ class PresentationSchema:
                 talk.finish()
 
         if cancelled is not None:
-            talk.answering = threading.Thread(target=answer, name="talk plan", daemon=True)
+            talk.answering = threading.Thread(target=image_util.carry(answer), name="talk plan", daemon=True)
             talk.answering.start()
         else:
             answer()
@@ -692,7 +693,8 @@ class PresentationSchema:
         first_tries: dict[int, tuple[_Result, list[str]]] = {}
         if parallel and len(makeable) > 1:
             with ThreadPool(processes=min(8, len(makeable))) as pool:
-                first_tries = dict(zip(makeable, pool.map(lambda index: attempt(index, 0), makeable), strict=True))
+                first_try = image_util.carry(lambda index: attempt(index, 0))
+                first_tries = dict(zip(makeable, pool.map(first_try, makeable), strict=True))
 
         outcomes = []
         for index, planned in enumerate(plan.slides):
@@ -766,7 +768,8 @@ class PresentationSchema:
                 remaining = list(range(slide_nr, num_slides))
                 logger.info("Generating slides %s in parallel", [nr + 1 for nr in remaining])
                 pool = ThreadPool(processes=len(remaining))
-                worked = pool.imap(functools.partial(work_out, at_state=state.copy(), generate=True), remaining)
+                work = image_util.carry(functools.partial(work_out, at_state=state.copy(), generate=True))
+                worked = pool.imap(work, remaining)
             try:
                 # Settle the slides in order, as generating them one by one would: each once its work is done
                 while slide_nr < num_slides:

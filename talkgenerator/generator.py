@@ -24,7 +24,7 @@ from talkgenerator.schema.presentation_schema import Progress, TalkCancelled
 from talkgenerator.schema.presentation_schema_types import get_schema, schemas
 from talkgenerator.slide.slide_deck import SlideDeck
 from talkgenerator.sources import word_frequency
-from talkgenerator.util import os_util, random_util
+from talkgenerator.util import image_util, os_util, random_util
 
 DEFAULT_PRESENTATION_TOPIC = "cat"
 DEFAULT_OUTPUT_FOLDER = "output"
@@ -227,7 +227,9 @@ def stream_talk(
     slide.ready for every slide as soon as it's settled, in order and laid out in the talk's theme, and talk.finished
     with the whole deck. Meanwhile, the slides after it are being made: a language model's while it writes them.
 
-    Nothing is saved: the deck in talk.finished renders as a PowerPoint (talkgenerator.render.powerpoint.render_pptx).
+    Images are probed rather than downloaded (see talkgenerator.util.image_util.probing): a browser that shows the
+    slides loads them itself. Nothing is saved: the deck in talk.finished renders as a PowerPoint
+    (talkgenerator.render.powerpoint.render_pptx), which downloads them then.
     Stopping the iteration (closing the iterator, or leaving a for loop over it) stops the talk, and an error that
     stopped it comes out of the iterator."""
     events: queue.SimpleQueue[TalkEvent | None] = queue.SimpleQueue()  # (None: the end)
@@ -236,24 +238,25 @@ def stream_talk(
 
     def make() -> None:
         try:
-            _, slide_deck, _ = generate_presentation(
-                schema,
-                slides,
-                topic=topic,
-                title=title,
-                presenter=presenter,
-                parallel=parallel,
-                int_seed=int_seed,
-                save_ppt=False,
-                llm=llm,
-                language=language,
-                budget=budget,
-                theme=theme,
-                style_chaos=style_chaos,
-                extreme_themes=extreme_themes,
-                progress=following,
-            )
-            events.put(TalkFinished(deck=slide_deck.to_deck(schema_name=schema)))
+            with image_util.probing():
+                _, slide_deck, _ = generate_presentation(
+                    schema,
+                    slides,
+                    topic=topic,
+                    title=title,
+                    presenter=presenter,
+                    parallel=parallel,
+                    int_seed=int_seed,
+                    save_ppt=False,
+                    llm=llm,
+                    language=language,
+                    budget=budget,
+                    theme=theme,
+                    style_chaos=style_chaos,
+                    extreme_themes=extreme_themes,
+                    progress=following,
+                )
+                events.put(TalkFinished(deck=slide_deck.to_deck(schema_name=schema)))
         except TalkCancelled:
             pass
         except BaseException as error:  # (for whoever iterates)

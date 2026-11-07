@@ -50,6 +50,10 @@ class ImageData:
         self.video = video
         # The checked bytes of the video copy, once it plays in the image's place: data then holds its poster frame's
         self.video_data: bytes | None = None
+        # Whether it can go on a slide, once it's checked (see image_util.check_image), and whether it then plays its
+        # video copy (a gif too large to embed): a check that probes it tells both without its bytes
+        self.usable: bool | None = None
+        self.plays_video = False
         # The search that found it, when talkgenerator knows (see found_with)
         self.query: str | None = None
 
@@ -65,7 +69,7 @@ class ImageData:
     def get_shown_url(self) -> str:
         """The URL of the picture a slide shows: the image's own, or its video's poster frame once the video plays in
         the image's place. A deck names an image by this URL."""
-        if self.video is not None and self.video_data is not None:
+        if self.video is not None and self.plays_video:
             return self.video.poster_url
         return self._image_url
 

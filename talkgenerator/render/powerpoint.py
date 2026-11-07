@@ -165,6 +165,7 @@ def image_data(image: ImageAsset, images: ImageStore | None) -> ImageData:
     if image.video_url:
         found.video = VideoCopy(url=image.video_url, poster_url=image.url)
         found.video_data = image_util.fetch_video(image.video_url)
+        found.plays_video = found.video_data is not None
         if found.video_data is None:
             video = http_util.describe_url(image.video_url)
             logger.warning("Showing video %s as its poster frame: it can't be downloaded or used", video)

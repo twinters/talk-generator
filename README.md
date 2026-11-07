@@ -143,6 +143,7 @@ presentation, slide_deck, output_file = generator.generate_presentation(
 `generator.stream_talk(...)` makes the same talk (with the same options, minus the saving), and hands over its slides while it's made: `talk.started` once its title is known (with the theme's tokens), a `slide.ready` for every slide in order, laid out in the talk's theme, and `talk.finished` with the whole deck.
 A language model's slides come while it's still writing the rest of the talk.
 Every event is plain data (`talkgenerator.models.events`), whose `event` is its name and whose `to_json()` is what a Server-Sent Event would carry; leaving the loop stops the talk.
+While a talk streams, its images are probed instead of downloaded: their first bytes tell what they are and how large, as a browser that shows the slides loads them itself (a PowerPoint made from the deck downloads them then).
 
 ```python
 for event in generator.stream_talk("default", 8, topic="peanuts", theme="random"):

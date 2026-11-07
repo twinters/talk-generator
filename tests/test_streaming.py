@@ -19,12 +19,23 @@ from tests.test_llm_talks import NUM_SLIDES, FakeModel, _jpeg, fake_schema
 
 @pytest.fixture(autouse=True)
 def images(monkeypatch):
-    """Every image at example.com exists; local files load as usual."""
+    """Every image at example.com exists; local files load as usual. A probe finds what a download would, and .got
+    are the images downloaded (whole) and probed."""
     jpeg = _jpeg()
     load = image_util.fetch_image
-    monkeypatch.setattr(
-        image_util, "fetch_image", lambda url: jpeg if url.startswith("https://example.com/") else load(url)
-    )
+    got = {"downloaded": [], "probed": []}
+
+    def fetch(url):
+        got["downloaded"].append(url)
+        return jpeg if url.startswith("https://example.com/") else load(url)
+
+    def probe(url):
+        got["probed"].append(url)
+        return url.startswith("https://example.com/") or load(url) is not None
+
+    monkeypatch.setattr(image_util, "fetch_image", fetch)
+    monkeypatch.setattr(image_util, "probe", probe)
+    return got
 
 
 @pytest.fixture(autouse=True)
@@ -146,3 +157,14 @@ def test_a_talk_stops_once_nobody_wants_it():
 def test_what_stops_a_talk_comes_out_of_the_stream():
     with pytest.raises(ValueError, match="language"):
         _streamed(language="xx")
+
+
+def test_a_streamed_talk_probes_its_images_instead_of_downloading_them(images):
+    _streamed(llm=FakeModel(), theme="neon", parallel=True)
+
+    web = [url for url in images["probed"] if url.startswith("https://example.com/")]
+    assert web and not [url for url in images["downloaded"] if url.startswith("https://example.com/")]
+
+    images["probed"].clear()
+    _made_at_once(llm=FakeModel(), theme="neon", parallel=True)  # (a talk for a PowerPoint downloads them)
+    assert not images["probed"] and any(url.startswith("https://example.com/") for url in images["downloaded"])

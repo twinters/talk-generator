@@ -157,7 +157,11 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   makes. Slides are settled as soon as they can be: a language model's while it still writes the rest, and
   classic slides made in parallel each once its work is done. Leaving the loop stops the talk, also while it
   waits for the model, whose answer then isn't read any further. For talkgenerator.com's view of talks that
-  stream in (docs/v5-plan.md, section 13.1).
+  stream in (docs/v5-plan.md, section 13.1). Its images are probed rather than downloaded (`image_util.probing`):
+  their first bytes tell their format and size, so a check reads 64 KB instead of the whole file, which a
+  browser loads itself. Images that don't tell their size early, and those shaped like a known "image not
+  available" placeholder, are still downloaded whole, and a gif too large to embed probes its video copy. On 33
+  images of earlier talks, probes took 9.7 s against 43.8 s for downloading them.
 - `talkgenerator login chatgpt`: Sign in with ChatGPT (OpenAI's sign-in for open-source apps that run locally, in
   preview), so that the models of your ChatGPT plan write your talks (`--llm chatgpt` or `chatgpt:<model>`, and the
   default once you've signed in), at no cost to talkgenerator: their requests count toward the plan's usage. The

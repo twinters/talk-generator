@@ -45,7 +45,7 @@ class Slide:
         image shown elsewhere on the slide.
 
         Checking an image downloads it, and its ImageData keeps the bytes for when the slide is added to the
-        PowerPoint (see image_util.fetch_image_data).
+        PowerPoint (see image_util.check_image; a talk that streams probes it instead).
         """
         missing = []
         images_on_slide: set[ImageData] = set()
@@ -116,8 +116,8 @@ def _to_element(role: str, value: object, fit: model.ImageFit) -> model.TextElem
 
 def _to_image_asset(image: ImageData) -> model.ImageAsset:
     # Checked first (if it wasn't yet), as that settles what shows: a gif too large to embed, say, plays as its video
-    image_util.fetch_image_data(image)
-    video = image.video if image.video_data is not None else None
+    image_util.check_image(image)
+    video = image.video if image.plays_video else None
     return model.ImageAsset(
         url=image.get_shown_url(),
         video_url=video.url if video is not None else None,
@@ -133,7 +133,7 @@ def _has_content(value) -> bool:
     if value is None:
         return False
     if isinstance(value, ImageData):
-        return image_util.fetch_image_data(value) is not None
+        return image_util.check_image(value)
     if isinstance(value, str):
         if os_util.is_image(value):  # the URL or path of an image
             return image_util.is_usable_image(value)
