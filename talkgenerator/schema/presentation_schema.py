@@ -35,7 +35,7 @@ from typing import Any, Protocol
 
 from pptx.presentation import Presentation
 
-from talkgenerator import names
+from talkgenerator import names, titles
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.datastructures.slide_generator_data import SlideGeneratorData, _filter_generated_elements
 from talkgenerator.llm.base import ProviderError, TextProvider
@@ -292,7 +292,11 @@ class PresentationSchema:
         slide_generators: list[SlideGeneratorData],
         max_allowed_tags=None,
         ignore_weights=False,
+        title_candidates: Sequence[titles.TitleGenerator] = (),
     ):
+        """title_generator makes a classic talk's title, and title_candidates are more classic title generators (such
+        as wikiHow's "How to ..." titles), whose titles, with the title generator's, a language model may pick for a
+        talk on what was typed when it reads that as a topic (see talkgenerator.titles)."""
         self._powerpoint_creator = powerpoint_creator
         self._seed_generator = seed_generator
         self._slide_generators = slide_generators
@@ -302,6 +306,7 @@ class PresentationSchema:
         self._max_allowed_tags = max_allowed_tags
         self._ignore_weights = ignore_weights
         self._title_generator = title_generator
+        self._title_candidates = tuple(title_candidates)
 
     @property
     def slide_generators(self) -> list[SlideGeneratorData]:
@@ -325,8 +330,13 @@ class PresentationSchema:
         extreme_themes: bool = True,
         progress: Progress | None = None,
         name_styles: Sequence[str] = names.DEFAULT_STYLES,
+        topic_or_title: str | None = None,
     ) -> tuple[Presentation | None, SlideDeck]:
         """Generate a presentation about a certain topic with a certain number of slides.
+
+        With topic_or_title, what was typed for the talk, which could be its topic or its title: the topics come
+        from it (see talkgenerator.titles.topics_from), and the language model that writes the talk tells which it is,
+        in the same request, or else talkgenerator guesses (see talkgenerator.titles). The deck tells how it was read.
 
         The same seed (int_seed, or the talk's random generator rng) gives the same talk, in parallel or not, as long
         as the sources give the same answers. Without a seed, a random one is picked: the deck tells which.
@@ -357,6 +367,14 @@ class PresentationSchema:
         # that writes the talk (in the same request), or else by talkgenerator (see talkgenerator.names)
         writes = llm is not None and self.writes_with(llm)
         naming = names.Naming.of(name_styles, topics, rng, written=writes) if not presenter else None
+        # What was typed, when it could be the topic or the title: the language model that writes the talk tells which
+        # (and weighs classic titles for a topic), or else talkgenerator guesses (see talkgenerator.titles)
+        titling = None
+        if topic_or_title:
+            generators = self._title_candidates
+            if self._title_generator is not None:  # (its title first, and then another one, from a stream of its own)
+                generators = (self._title_generator, *generators, self._title_generator)
+            titling = titles.Titling.of(topic_or_title, language, writes, generators, topics[0], rng)
 
         talk = None
         if llm is not None and writes:
@@ -369,15 +387,16 @@ class PresentationSchema:
             if naming is not None:
                 presenter = naming.name(*(talk.presenter_name if talk is not None else ()))
                 logger.info("Presenter: {}".format(presenter))
-            # Generate random talk title
+            # The title: what was typed when it reads as one, or else the model's, or else a classic one
+            reading = None
+            if titling is not None:
+                title, reading = titling.settle(
+                    talk.spine if talk is not None else {}, lambda: self._title(topics, rng)
+                )
             if not title and talk is not None:
                 title = talk.title
             if not title:
-                with random_util.use(rng.child("title")):
-                    if self._title_generator is not None:
-                        title = self._title_generator({"seed": topics[0]})
-                    else:
-                        title = "About " + topics[0]
+                title = self._title(topics, rng)
             logger.info("Generate talk title: {}".format(title))
 
             # A talk in another language needs the language model's slides: the classic ones are English
@@ -397,6 +416,7 @@ class PresentationSchema:
             )
             slide_deck.theme, slide_deck.style_chaos, slide_deck.extreme_themes = theme, style_chaos, extreme_themes
             slide_deck.language_model = llm.id if planned and llm is not None else None
+            slide_deck.topic_or_title = reading
             logger.info("Slide deck: {}".format(slide_deck))
             if progress is not None:
                 progress.started(slide_deck)
@@ -428,6 +448,15 @@ class PresentationSchema:
             return self.render(slide_deck, debug_notes), slide_deck
 
         return None, slide_deck
+
+    def _title(self, topics: list[str], rng: random_util.Rng) -> str:
+        """A classic talk's title, from the talk's "title" stream."""
+        with random_util.use(rng.child("title")):
+            if self._title_generator is not None:
+                title = self._title_generator({"seed": topics[0]})
+                if title:
+                    return str(title)
+            return "About " + topics[0]
 
     def render(self, slide_deck: SlideDeck, debug_notes: bool = False) -> Presentation:
         """The deck as a PowerPoint presentation: in the classic template, or (with a theme) drawn as shapes."""

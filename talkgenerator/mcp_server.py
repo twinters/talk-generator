@@ -180,8 +180,18 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
     async def generate_talk(
         ctx: Context,
         topic: Annotated[
-            str, Field(min_length=1, description="What the talk is about, such as 'peanuts' (or topics, with commas)")
-        ],
+            str | None,
+            Field(min_length=1, description="What the talk is about, such as 'peanuts' (or topics, with commas)"),
+        ] = None,
+        topic_or_title: Annotated[
+            str | None,
+            Field(
+                min_length=1,
+                description="Instead of a topic and a title: what the user asked for, as they put it, when it could "
+                "be either, such as 'penguins' or 'Why I Joined a Penguin Cult' (the language model that writes the "
+                "talk tells which, and a title stays the title, with only its obvious slips fixed)",
+            ),
+        ] = None,
         slides: Annotated[int, Field(ge=2, le=MAX_SLIDES, description="How many slides, the title slide too")] = 10,
         format: Annotated[str, Field(description="The talk format (see list_formats)")] = "default",
         language: Annotated[
@@ -214,11 +224,15 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
         ] = None,
         seed: Annotated[int | None, Field(description="The seed of an earlier talk, to make it again")] = None,
     ) -> dict[str, Any]:
-        """Make a whole talk on a topic, as `talkgenerator --topic` does. The language model the user's settings name
-        writes it (OpenRouter's free models, when there's an OpenRouter key), or else the classic 2019 generator. Saves
-        the PowerPoint with the deck's JSON and a contact sheet of its images (a PNG) next to it, and returns where,
-        with the talk's title, seed and language model, how many slides the model wrote, and the checks. This takes up
-        to a minute or two."""
+        """Make a whole talk on a topic, as `talkgenerator --topic` does (or with a title, or on a topic_or_title). The
+        language model the user's settings name writes it (OpenRouter's free models, when there's an OpenRouter key),
+        or else the classic 2019 generator. Saves the PowerPoint with the deck's JSON and a contact sheet of its images
+        (a PNG) next to it, and returns where, with the talk's title, seed and language model, how many slides the
+        model wrote, and the checks. This takes up to a minute or two."""
+        if topic_or_title is not None and (topic is not None or title is not None):
+            raise ToolError("give topic_or_title instead of a topic and a title, not with them")
+        if topic is None and title is None and topic_or_title is None:
+            raise ToolError("give a topic, a title or a topic_or_title")
         _check("format", format, schemas.names())
         if theme is not None:
             _check("theme", theme, themes.choices())
@@ -231,7 +245,20 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
             raise ToolError(f"the language model the settings ask for can't be used: {error}") from error
 
         def generate() -> dict[str, Any]:
-            return _generate(model, folder, topic, slides, format, language, theme, title, presenter, seed, name_styles)
+            return _generate(
+                model,
+                folder,
+                topic,
+                slides,
+                format,
+                language,
+                theme,
+                title,
+                presenter,
+                seed,
+                name_styles,
+                topic_or_title,
+            )
 
         return await _in_a_thread(ctx, "Making the talk", generate, one_at_a_time, progress_every, folder)
 
@@ -247,7 +274,7 @@ def _check(what: str, value: str, choices: Sequence[str]) -> None:
 def _generate(
     model: TextProvider,
     folder: Path,
-    topic: str,
+    topic: str | None,
     slides: int,
     schema_name: str,
     language: str,
@@ -256,15 +283,18 @@ def _generate(
     presenter: str | None,
     seed: int | None,
     name_styles: Sequence[str] | None = None,
+    topic_or_title: str | None = None,
 ) -> dict[str, Any]:
-    """A talk on a topic, saved in the folder with its deck's JSON and contact sheet, and the report on it."""
+    """A talk on a topic (or with a title, or on a topic_or_title), saved in the folder with its deck's JSON and
+    contact sheet, and the report on it."""
     from talkgenerator import generator  # (here: the generator module imports the schemas)
 
     _, slide_deck, saved = generator.generate_presentation(
         schema=schema_name,
         slides=slides,
-        topic=topic,
+        topic=topic or None,
         title=title or None,
+        topic_or_title=topic_or_title or None,
         presenter=presenter or None,
         int_seed=seed,
         output_folder=str(folder),
@@ -302,6 +332,8 @@ def _generate(
         "checks": [asdict(finding) for finding in check_deck(deck, slides)],
         "sources_without_keys": settings.sources_without_keys(),
     }
+    if deck.topic_or_title is not None:  # (how what was typed was read: as the topic or the title, and by whom)
+        report["topic_or_title"] = deck.topic_or_title.model_dump()
     notes = []
     if writes and not written:
         notes.append("the language model wrote none of the slides, so the talk is classic (the server's log says why)")

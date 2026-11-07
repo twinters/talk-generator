@@ -13,7 +13,7 @@ from typing import Annotated, Literal
 from pydantic import Field
 
 from talkgenerator.models.base import Data
-from talkgenerator.models.deck import Deck, DeckSlide
+from talkgenerator.models.deck import Deck, DeckSlide, TopicOrTitle
 from talkgenerator.models.theme import Theme
 
 
@@ -24,12 +24,15 @@ class _Event(Data):
 
 
 class TalkStarted(_Event):
-    """The talk is under way: what it's called, who presents it, in which language, and how it looks."""
+    """The talk is under way: what it's called (the title it settled on), who presents it, in which language, and how
+    it looks."""
 
     event: Literal["talk.started"] = "talk.started"
     title: str | None = None
     presenter: str | None = None
     topics: tuple[str, ...] = ()
+    # What was typed, when it could be the topic or the title, and how it was read (as in the deck)
+    topic_or_title: TopicOrTitle | None = None
     language: str = "en"
     seed: int | None = None
     slides: int  # how many slides it's to have (a slide that can't be made is left out)

@@ -21,8 +21,10 @@ from talkgenerator.sources import (
     pixabay,
     shitpostbot,
     unsplash,
+    wikihow,
     wikimedia_commons,
 )
+from talkgenerator.util import random_util
 from talkgenerator.util.generator_util import (
     BackupGenerator,
     CombinedGenerator,
@@ -52,6 +54,13 @@ def talk_title_generator_if_not_generated(presentation_context):
     if presentation_context["title"] is not None:
         return presentation_context["title"]
     return talk_title_generator(presentation_context)
+
+
+def wikihow_title_generator(presentation_context) -> str | None:
+    """A wikiHow "How to ..." title about the seed (one of wikiHow's how-tos that its search finds), which the
+    language model that writes a talk may pick for it (see talkgenerator.titles)."""
+    action = random_util.choice_optional(wikihow.get_related_wikihow_actions(presentation_context["seed"]))
+    return f"How to {action}" if action else None
 
 
 default_slide_title_generator = create_templated_text_generator("data/text-templates/default_slide_title.txt")

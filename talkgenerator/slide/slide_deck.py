@@ -4,7 +4,7 @@ from collections.abc import Callable, Sequence
 from talkgenerator import __version__
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.design import engine
-from talkgenerator.models.deck import Deck
+from talkgenerator.models.deck import Deck, TopicOrTitle
 from talkgenerator.models.theme import Theme
 from talkgenerator.models.usage import Usage
 from talkgenerator.render.powerpoint import render_slide
@@ -41,6 +41,8 @@ class SlideDeck:
         self.extreme_themes = True
         # The language model that writes the talk ("provider:model"), or None: a classic talk
         self.language_model: str | None = None
+        # What was typed, when it could be the talk's topic or its title, and how it was read (see talkgenerator.titles)
+        self.topic_or_title: TopicOrTitle | None = None
         # Who wants to know about every slide once it's added (a talk that streams: see talkgenerator.generator)
         self.listener: Callable[[SlideDeck, int, Slide], None] | None = None
 
@@ -94,6 +96,7 @@ class SlideDeck:
             generator=f"talkgenerator {__version__}",
             title=self._title,
             topics=self._topics,
+            topic_or_title=self.topic_or_title,
             presenter=self._presenter,
             language=self._language,
             schema_name=schema_name,

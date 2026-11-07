@@ -4,6 +4,7 @@ import logging
 import re
 from functools import lru_cache
 from itertools import chain
+from typing import Final
 
 import inflect
 from bs4 import BeautifulSoup
@@ -15,10 +16,19 @@ logger = logging.getLogger("talkgenerator")
 
 _SEARCH_URL = "https://www.wikihow.com/wikiHowTo"
 
+# A how-to's title: "How to Draw a Penguin", or "4 Easy Ways to Draw Cute Cats". WikiHow's search finds other pages
+# too, which teach no action: lists ("330 Cool & Unique Names for Penguins"), quizzes, questions ("How Do You Store
+# Cheese?") and categories
+_HOW_TO: Final = re.compile(r"(?:how to|(?:\d+\s+)?(?:[^\W\d_]+\s+)?ways to)\s+(?P<action>.+)", re.IGNORECASE)
 
-def remove_how_to(wikihow_title: str) -> str:
-    index_of_to = wikihow_title.find("to")
-    return wikihow_title[index_of_to + 3 :]
+
+def action_of(wikihow_title: str) -> str | None:
+    """The action a wikiHow page's title teaches ("How to Draw a Penguin": "Draw a Penguin"), without what's in
+    brackets or after a colon ("...: 8 Simple Tricks"), or None for a page that isn't a how-to."""
+    match = _HOW_TO.fullmatch(" ".join(wikihow_title.split()))
+    if match is None:
+        return None
+    return clean_wikihow_action(match.group("action").split(": ")[0]) or None
 
 
 def clean_wikihow_action(action: str) -> str:
@@ -64,11 +74,7 @@ def get_related_wikihow_actions_basic_search(seed_word: str) -> list[str]:
     soup = BeautifulSoup(page, "html.parser")
     actions_elements = soup.find_all("a", class_="result_link")
     action_titles = list(chain.from_iterable([a.find_all("div", class_="result_title") for a in actions_elements]))
-    actions = [
-        clean_wikihow_action(remove_how_to(x.get_text()))
-        for x in action_titles
-        if x is not None and not x.get_text().startswith("Category")
-    ]
+    actions = [action_of(x.get_text()) for x in action_titles if x is not None]
     return [action for action in actions if action]
 
 

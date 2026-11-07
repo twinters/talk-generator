@@ -276,11 +276,29 @@ class DeckSlide(_Data):
         return tuple(element.image for element in self.elements if isinstance(element, ImageElement))
 
 
+# What was typed for a talk can be read as its topic ("penguins") or as its title ("Why I Joined a Penguin Cult")
+Reading = Literal["topic", "title"]
+# Who read it: the language model that wrote the talk, or talkgenerator's guess (a talk without one, or whose model
+# didn't say)
+ReadBy = Literal["language model", "guess"]
+
+
+class TopicOrTitle(_Data):
+    """What was typed for a talk that could be its topic or its title (generate_presentation's topic_or_title), and
+    how it was read (see talkgenerator.titles)."""
+
+    text: str
+    read_as: Reading
+    by: ReadBy
+
+
 class Deck(_Data):
     deck_version: Literal[1] = DECK_VERSION
     generator: str  # what made the deck, such as "talkgenerator 5.0.0"
     title: str | None = None
     topics: tuple[str, ...] = ()
+    # What was typed, when it could be the topic or the title, and how it was read (none: a topic or a title, given)
+    topic_or_title: TopicOrTitle | None = None
     presenter: str | None = None
     language: str = "en"  # the language of its texts (the credits stay as their sources word them)
     schema_name: str | None = None
