@@ -936,7 +936,11 @@ browser ([section 13.1](#131-streaming-slides-into-the-browser)) and the filters
   image for as long as its talk (7 days), and the browser and the .pptx use that copy (talk-generator-web
   `8141582`). A streamed slide tells its images' sources that they were used once it's
   handed over (Unsplash's download tracking), as a PowerPoint does when it gets the slide. To weigh: GIPHY's terms
-  forbid storing copies of its media, which a PowerPoint does by embedding a gif (as talkgenerator has since 2019).
+  forbid storing copies of its media, which a PowerPoint does by embedding a gif (as talkgenerator has since 2019),
+  and the site keeps a talk's deck JSON, GIPHY links included, for 7 days. Its API docs (read 2026-11-07) also
+  forbid caching its responses and media URLs, which talkgenerator stopped doing (D36), and want searches made in
+  the client with what the user typed; more than a beta key's 100 searches an hour takes a review and a talk about
+  pricing.
 - **Lighter validation:** while streaming, an image gets checked with a probe (its headers and first bytes, for
   type and size) instead of a full download, which saves memory on the 600 MB box. The .pptx is only built when
   someone downloads it, and it's kept no longer than today's outputs (7 days).
@@ -1075,8 +1079,9 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D33 | Presenter names may be famous-name puns ("Albert Einstone" for geology), on by default: a historical figure's name bent to fit the topic, never the real name as it is, a living person's or a dictator's. Real historical figures' names as they are aren't a style. |
 | D34 | Talks without a language model get a name from a small pack curated by hand (pun names by topic, and a few fun surnames and famous-name puns) when their topic matches one of its entries, and tracery's random names otherwise. |
 | D35 | What's typed for a talk (Automatic, topic_or_title) stays its title only when it's clearly one: four words or more, or a question or exclamation, with its slips fixed. Anything shorter is the topic, or a premise, on which the language model builds a funnier, more specific title ("The French Revolution" deserves better than itself); a title in quote marks stays word for word. The talk's dice pick whether the classic titles go with a short input as options, as inspiration only, or not at all. |
+| D36 | GIPHY's searches aren't cached: its API rules forbid caching its responses and media URLs. The other search APIs stay cached. |
 
-D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, and D28 to D35 on 2026-11-07; the others follow from the design.
+D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, and D28 to D36 on 2026-11-07; the others follow from the design.
 
 ### Open questions
 
