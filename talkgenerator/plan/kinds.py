@@ -251,7 +251,8 @@ def _kpi(texts: Mapping[str, str | None], images: Mapping[str, Any], language: L
 
 
 def _quiz(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
-    options = [texts.get(f"option_{letter.lower()}") for letter in slides.LETTERS]
+    # (without a letter of their own in front: some models write "A) Yes", and the slide adds the letters)
+    options = [_LETTERED.sub("", texts.get(f"option_{letter.lower()}") or "") or None for letter in slides.LETTERS]
     answer = texts["answer"] or ""
     if answer not in slides.LETTERS or not options[slides.LETTERS.index(answer)]:
         raise ValueError(f"the quiz's answer, {answer!r}, isn't one of its options")
@@ -295,6 +296,35 @@ def _questions(texts: Mapping[str, str | None], images: Mapping[str, Any], langu
     return slides.QuestionsSlide(texts["title"], texts.get("subtitle"))
 
 
+def _numbered(texts: Mapping[str, str | None], prefix: str, most: int) -> list[str | None]:
+    return [texts.get(f"{prefix}_{index}") for index in range(1, most + 1)]
+
+
+def _timeline(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    moments = [texts.get(f"{part}_{index}") for index in range(1, 6) for part in ("date", "event")]
+    return slides.TimelineSlide(texts["title"], *moments)
+
+
+def _pyramid(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    return slides.PyramidSlide(texts["title"], *_numbered(texts, "level", 4))
+
+
+def _funnel(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    return slides.FunnelSlide(texts["title"], *_numbered(texts, "stage", 5))
+
+
+def _cycle(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    return slides.CycleSlide(texts["title"], *_numbered(texts, "step", 5))
+
+
+def _org_chart(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    return slides.OrgChartSlide(texts["title"], texts["boss"], *_numbered(texts, "report", 4))
+
+
+def _iceberg(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    return slides.IcebergSlide(texts["title"], texts["tip"], *_numbered(texts, "hidden", 3))
+
+
 def _shortened(text: str, length: int) -> str:
     """The text, cut between words to at most this many characters (or within its first word, if that's longer)."""
     if len(text) <= length:
@@ -308,6 +338,7 @@ def _quadrant(corner: str, ends: str) -> TextField:
 
 
 _NUMBER: Final = re.compile(r"[-+]?\d+(?:[.,]\d+)?\s*%?")
+_LETTERED: Final = re.compile(r"^\(?[A-Da-d]\s*[).:]\s*")  # a quiz option's own letter, as in "A) Yes"
 _OPTIONAL_TITLE = TextField("title", "the slide's title", 60, optional=True)
 
 # The talk's own texts, on its title slide: "By <presenter>, <job>" under the title. The name is a made-up one, when
@@ -324,6 +355,21 @@ def _figure(index: int, which: str, optional: bool = False) -> tuple[TextField, 
     return (
         TextField(f"number_{index}", f"the {which} figure's number, with its unit if it has one", 10, optional),
         TextField(f"label_{index}", f"what the {which} figure measures", 40, optional),
+    )
+
+
+def _moment(index: int, which: str, optional: bool = False) -> tuple[TextField, TextField]:
+    return (
+        TextField(f"date_{index}", f"the {which} moment's date (a year, say, or a day)", 12, optional),
+        TextField(f"event_{index}", f"what happened at the {which} moment", 40, optional),
+    )
+
+
+def _items(prefix: str, length: int, *descriptions: str, required: int = 3) -> tuple[TextField, ...]:
+    """Numbered text fields (prefix_1, prefix_2...), the ones after the required ones optional."""
+    return tuple(
+        TextField(f"{prefix}_{index}", description, length, optional=index > required)
+        for index, description in enumerate(descriptions, 1)
     )
 
 
@@ -554,10 +600,10 @@ KINDS: Final[dict[str, Kind]] = {
             "click.",
             (
                 TextField("question", "the quiz question", 90),
-                TextField("option_a", "option A", 40),
-                TextField("option_b", "option B", 40),
-                TextField("option_c", "option C", 40),
-                TextField("option_d", "option D", 40, optional=True),
+                TextField("option_a", "option A (without its letter)", 50),
+                TextField("option_b", "option B", 50),
+                TextField("option_c", "option C", 50),
+                TextField("option_d", "option D", 50, optional=True),
                 TextField("answer", "the letter of the right option", 1, options=tuple(slides.LETTERS)),
                 TextField("explanation", "why that's the answer, shown with it", 90, optional=True),
             ),
@@ -617,6 +663,110 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             (),
             _questions,
+        ),
+        # Native diagrams, drawn as texts on shapes
+        Kind(
+            "timeline",
+            "A timeline of three to five moments, oldest first, each a date and what happened; the last one, the "
+            "punchline, appears on a click.",
+            (
+                TextField("title", "the timeline's title", 60),
+                *_moment(1, "first"),
+                *_moment(2, "second"),
+                *_moment(3, "third"),
+                *_moment(4, "fourth", optional=True),
+                *_moment(5, "fifth", optional=True),
+            ),
+            (),
+            _timeline,
+        ),
+        Kind(
+            "pyramid",
+            "A pyramid of three or four levels, from its top (the rarest, the punchline, which appears on a click) "
+            "down to its base.",
+            (
+                TextField("title", "the pyramid's title", 60),
+                *_items(
+                    "level",
+                    30,
+                    "the top of the pyramid: the punchline",
+                    "the level under the top",
+                    "the level under that (the base, if there's no fourth)",
+                    "the base, under that",
+                ),
+            ),
+            (),
+            _pyramid,
+        ),
+        Kind(
+            "funnel",
+            "A funnel of three to five stages, from its widest at the top to its narrowest at the bottom, the "
+            "punchline, which appears on a click.",
+            (
+                TextField("title", "the funnel's title", 60),
+                *_items(
+                    "stage",
+                    30,
+                    "the widest stage, at the top",
+                    "the next stage, narrower",
+                    "the next stage (the narrowest, if there are no more)",
+                    "the next stage",
+                    "the narrowest stage, at the bottom",
+                ),
+            ),
+            (),
+            _funnel,
+        ),
+        Kind(
+            "cycle",
+            "A cycle of three to five steps around a circle, each leading to the next, and the last back to the first.",
+            (
+                TextField("title", "the cycle's title", 60),
+                *_items(
+                    "step", 24, "the first step", "the second step", "the third step", "a fourth step", "a fifth step"
+                ),
+            ),
+            (),
+            _cycle,
+        ),
+        Kind(
+            "org_chart",
+            "A small org chart: who's in charge (the punchline, which appears on a click), over two to four people "
+            "or things.",
+            (
+                TextField("title", "the org chart's title", 60),
+                TextField("boss", "who's in charge: the punchline", 30),
+                *_items(
+                    "report",
+                    30,
+                    "the first one under them",
+                    "the second one under them",
+                    "a third one under them",
+                    "a fourth one under them",
+                    required=2,
+                ),
+            ),
+            (),
+            _org_chart,
+        ),
+        Kind(
+            "iceberg",
+            "An iceberg: what everyone sees, on its tip above the water, and two or three things under the water that "
+            "nobody sees, which appear on a click.",
+            (
+                TextField("title", "the iceberg's title", 60),
+                TextField("tip", "what everyone sees, on the tip", 30),
+                *_items(
+                    "hidden",
+                    40,
+                    "something under the water that nobody sees",
+                    "something else under the water",
+                    "something deeper under the water",
+                    required=2,
+                ),
+            ),
+            (),
+            _iceberg,
         ),
     )
 }

@@ -861,6 +861,66 @@ structure_slide_generators = _register(
     ],
 )
 
+# NATIVE DIAGRAMS: more of the diagram group's, drawn as texts on shapes
+native_diagram_slide_generators = _register(
+    "diagram",
+    [
+        _drawn(
+            slide_texts.generate_timeline,
+            slides.TimelineSlide,
+            ConstantWeightFunction(0.4),
+            ["timeline", "diagram"],
+            "Timeline",
+            Recipe("timeline", brief="The concept's made-up history, as a timeline whose last moment is the punchline"),
+        ),
+        _drawn(
+            slide_texts.generate_pyramid,
+            slides.PyramidSlide,
+            ConstantWeightFunction(0.4),
+            ["pyramid", "diagram"],
+            "Pyramid",
+            Recipe(
+                "pyramid", brief="A hierarchy of needs about the concept, as a pyramid with something absurd at the top"
+            ),
+        ),
+        _drawn(
+            slide_texts.generate_funnel,
+            slides.FunnelSlide,
+            ConstantWeightFunction(0.4),
+            ["funnel", "diagram"],
+            "Funnel",
+            Recipe("funnel", brief="A sales funnel about the concept, narrowing down to something absurd"),
+        ),
+        _drawn(
+            slide_texts.generate_cycle,
+            slides.CycleSlide,
+            ConstantWeightFunction(0.4),
+            ["cycle", "diagram"],
+            "Cycle",
+            Recipe("cycle", brief="A vicious circle about the concept: steps that lead to each other, and back"),
+        ),
+        _drawn(
+            slide_texts.generate_org_chart,
+            slides.OrgChartSlide,
+            ConstantWeightFunction(0.4),
+            ["org_chart", "diagram"],
+            "Org Chart",
+            Recipe("org_chart", brief="Who's really in charge of the concept, as an org chart with a surprising boss"),
+        ),
+        _drawn(
+            slide_texts.generate_iceberg,
+            slides.IcebergSlide,
+            ConstantWeightFunction(0.4),
+            ["iceberg", "diagram"],
+            "Iceberg",
+            Recipe(
+                "iceberg",
+                brief="What lies beneath the concept: an iceberg whose tip everyone knows, and what's under the water",
+            ),
+        ),
+    ],
+)
+
 # CONCLUSIONS
 conclusion_slide_generators = _register(
     "conclusion",
@@ -961,6 +1021,7 @@ all_slide_generators = (
     + quiz_slide_generators
     + mockup_slide_generators
     + structure_slide_generators
+    + native_diagram_slide_generators
     + conclusion_slide_generators
 )
 
@@ -982,8 +1043,15 @@ default_max_allowed_tags = {
     "news": 1,
     "agenda": 1,
     "questions": 1,
+    "timeline": 1,
+    "pyramid": 1,
+    "funnel": 1,
+    "cycle": 1,
+    "org_chart": 1,
+    "iceberg": 1,
     # Relative (procentual) maxima
     "section": 0.1,  # (none in a talk of fewer than ten slides)
+    "diagram": 0.2,
     "two_captions": 0.2,
     "three_captions": 0.2,
     "multi_captions": 0.3,

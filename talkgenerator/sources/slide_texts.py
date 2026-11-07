@@ -52,6 +52,18 @@ def _maybe(chance: float, text: str | None) -> str | None:
     return text if random_util.random() < chance else None
 
 
+def _different(name: str, presentation_context: dict[str, Any], related: list[str], count: int) -> list[str]:
+    """That many different texts from a template, each about another related word (fewer if they don't differ)."""
+    found: list[str] = []
+    for _ in range(50):
+        if len(found) == count:
+            break
+        text = _template(name)(_context(presentation_context, related))
+        if text and text not in found:
+            found.append(text)
+    return found
+
+
 # FIGURES
 
 
@@ -108,13 +120,7 @@ def generate_kpi(presentation_context: dict[str, Any]) -> tuple[str | None, ...]
     variables = _context(presentation_context, related)
     title = _template("kpi_title")(variables)
     count = 4 if random_util.random() < 0.4 else 3
-    labels: list[str] = []
-    for _ in range(50):  # (different labels, from different related words)
-        if len(labels) == count - 1:
-            break
-        label = _template("kpi_label")(_context(presentation_context, related))
-        if label and label not in labels:
-            labels.append(label)
+    labels = _different("kpi_label", presentation_context, related, count - 1)
     punchline = _template("kpi_punchline")(_context(presentation_context, related))
     if not title or len(labels) < count - 1 or not punchline:
         return None
@@ -205,14 +211,7 @@ def generate_agenda(presentation_context: dict[str, Any]) -> tuple[str | None, .
     variables = _context(presentation_context)
     title = _template("agenda_title")(variables)
     first, last = _template("agenda_first")(variables), _template("agenda_last")(variables)
-    middle: list[str] = []
-    wanted = random_util.randint(1, 3)
-    for _ in range(50):
-        if len(middle) == wanted:
-            break
-        item = _template("agenda_item")(_context(presentation_context, related))
-        if item and item not in middle:
-            middle.append(item)
+    middle = _different("agenda_item", presentation_context, related, random_util.randint(1, 3))
     if not title or not first or not last or not middle:
         return None
     return title, first, *middle, last
@@ -234,6 +233,93 @@ def generate_questions(presentation_context: dict[str, Any]) -> tuple[str, str |
     if not title:
         return None
     return title, _maybe(0.6, _template("questions_subtitle")(variables))
+
+
+# NATIVE DIAGRAMS
+
+# Dates, oldest first, for a timeline
+_DATES: Final = ("3000 BC", "1492", "1888", "1969", "2003", "Last Tuesday", "2087")
+
+
+def generate_timeline(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
+    """A made-up history of the seed: a title, then three to five dates (oldest first) each with what happened then,
+    the last one a punchline."""
+    related = related_words(presentation_context["seed"])
+    count = random_util.randint(3, 5)
+    title = _template("timeline_title")(_context(presentation_context))
+    events = _different("timeline_event", presentation_context, related, count - 1)
+    punchline = _template("timeline_punchline")(_context(presentation_context, related))
+    if not title or len(events) < count - 1 or not punchline:
+        return None
+    dates = sorted(random_util.sample(range(len(_DATES)), count))
+    moments: list[str | None] = []
+    for date, event in zip(dates, [*events, punchline], strict=True):
+        moments += [_DATES[date], event]
+    return (title, *moments)
+
+
+def generate_pyramid(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
+    """A hierarchy of needs about the seed: a title, then three or four levels from the top (the seed itself) down to
+    the base (something everyone needs), with words related to the seed between them."""
+    related = related_words(presentation_context["seed"])
+    count = 4 if len(related) >= 2 and random_util.random() < 0.5 else 3
+    if len(related) < count - 2:
+        return None
+    title = _template("pyramid_title")(_context(presentation_context))
+    base = _template("pyramid_base")({})
+    if not title or not base:
+        return None
+    return title, _capitalised(presentation_context["seed"]), *random_util.sample(related, count - 2), base
+
+
+def generate_funnel(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
+    """A funnel about the seed: a title, then three to five stages, words related to the seed narrowing down to a
+    punchline."""
+    related = related_words(presentation_context["seed"])
+    count = min(random_util.randint(3, 5), len(related) + 1)
+    if count < 3:
+        return None
+    title = _template("funnel_title")(_context(presentation_context, related))
+    punchline = _template("funnel_punchline")(_context(presentation_context))
+    if not title or not punchline:
+        return None
+    return title, *random_util.sample(related, count - 1), punchline
+
+
+def generate_cycle(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
+    """A cycle about the seed: a title, then three to five words related to it, each leading to the next."""
+    related = [word for word in related_words(presentation_context["seed"]) if len(word) <= 24]
+    count = min(random_util.randint(3, 5), len(related))
+    if count < 3:
+        return None
+    title = _template("cycle_title")(_context(presentation_context))
+    if not title:
+        return None
+    return title, *random_util.sample(related, count)
+
+
+def generate_org_chart(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
+    """Who's in charge of the seed: a title, the boss (the punchline), and two to four people under them, each in
+    charge of something related to the seed."""
+    related = related_words(presentation_context["seed"])
+    if len(related) < 2:
+        return None
+    title = _template("org_chart_title")(_context(presentation_context))
+    boss = _template("org_chart_boss")(_context(presentation_context))
+    reports = _different("org_chart_report", presentation_context, related, random_util.randint(2, 4))
+    if not title or not boss or len(reports) < 2:
+        return None
+    return title, boss, *reports
+
+
+def generate_iceberg(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
+    """An iceberg of the seed: a title, the seed on its tip, and two or three things under the water."""
+    related = related_words(presentation_context["seed"])
+    title = _template("iceberg_title")(_context(presentation_context))
+    hidden = _different("iceberg_hidden", presentation_context, related, random_util.randint(2, 3))
+    if not title or len(hidden) < 2:
+        return None
+    return title, _capitalised(presentation_context["seed"]), *hidden
 
 
 def _capitalised(text: str) -> str:

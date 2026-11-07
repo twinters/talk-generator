@@ -544,3 +544,95 @@ class QuestionsSlide(DrawnSlide):
 
     def __init__(self, title: str | None, subtitle: str | None = None):
         super().__init__("questions", None, {"title": title, "subtitle": subtitle, "mark": "?"})
+
+
+# NATIVE DIAGRAMS, drawn as texts on shapes too (Venn diagrams and 2×2 matrices have their own drawing: DiagramSlide)
+
+
+def _listed(prefix: str, most: int, items: Sequence[str | None]) -> dict[str, str | None]:
+    """The items that are there, in order, as numbered arguments (prefix_1, prefix_2...), the rest None."""
+    there = [item for item in items if item][:most]
+    return {f"{prefix}_{index}": there[index - 1] if index <= len(there) else None for index in range(1, most + 1)}
+
+
+class TimelineSlide(DrawnSlide):
+    """Three to five moments along a line, oldest first, each a date and what happened: the last one, the
+    punchline, appears on a click."""
+
+    required_arguments = ("date_1", "event_1", "date_2", "event_2", "date_3", "event_3")
+
+    def __init__(self, title: str | None, *dates_and_events: str | None):
+        moments = [
+            (date, event)
+            for date, event in zip(dates_and_events[::2], dates_and_events[1::2], strict=False)
+            if date and event
+        ][:5]
+        arguments: dict[str, str | None] = {"title": title}
+        for index in range(1, 6):
+            date, event = moments[index - 1] if index <= len(moments) else (None, None)
+            arguments[f"date_{index}"], arguments[f"event_{index}"] = date, event
+        super().__init__("timeline", None, arguments)
+
+    def clicks(self) -> dict[str, int]:
+        last = max(index for index in range(1, 6) if self._arguments.get(f"event_{index}") or index == 1)
+        return {f"date_{last}": 1, f"event_{last}": 1}
+
+
+class PyramidSlide(DrawnSlide):
+    """Three or four levels of a pyramid, from its top (the rarest, the punchline, which appears on a click) down to
+    its base."""
+
+    required_arguments = ("level_1", "level_2", "level_3")
+
+    def __init__(self, title: str | None, *levels: str | None):
+        super().__init__("pyramid", None, {"title": title, **_listed("level", 4, levels)})
+
+    def clicks(self) -> dict[str, int]:
+        return {"level_1": 1}
+
+
+class FunnelSlide(DrawnSlide):
+    """Three to five stages of a funnel, from its widest at the top to its narrowest at the bottom: the last one, the
+    punchline, appears on a click."""
+
+    required_arguments = ("stage_1", "stage_2", "stage_3")
+
+    def __init__(self, title: str | None, *stages: str | None):
+        super().__init__("funnel", None, {"title": title, **_listed("stage", 5, stages)})
+
+    def clicks(self) -> dict[str, int]:
+        last = max(index for index in range(1, 6) if self._arguments.get(f"stage_{index}") or index == 1)
+        return {f"stage_{last}": 1}
+
+
+class CycleSlide(DrawnSlide):
+    """Three to five steps around a circle, each leading to the next, and the last back to the first."""
+
+    required_arguments = ("step_1", "step_2", "step_3")
+
+    def __init__(self, title: str | None, *steps: str | None):
+        super().__init__("cycle", None, {"title": title, **_listed("step", 5, steps)})
+
+
+class OrgChartSlide(DrawnSlide):
+    """A small org chart: who's in charge (the punchline, which appears on a click) over two to four people."""
+
+    required_arguments = ("boss", "report_1", "report_2")
+
+    def __init__(self, title: str | None, boss: str | None, *reports: str | None):
+        super().__init__("org_chart", None, {"title": title, "boss": boss, **_listed("report", 4, reports)})
+
+    def clicks(self) -> dict[str, int]:
+        return {"boss": 1}
+
+
+class IcebergSlide(DrawnSlide):
+    """An iceberg: what everyone sees, above the water, and two or three things under it, which appear on a click."""
+
+    required_arguments = ("tip", "hidden_1", "hidden_2")
+
+    def __init__(self, title: str | None, tip: str | None, *hidden: str | None):
+        super().__init__("iceberg", None, {"title": title, "tip": tip, **_listed("hidden", 3, hidden)})
+
+    def clicks(self) -> dict[str, int]:
+        return {f"hidden_{index}": 1 for index in range(1, 4)}

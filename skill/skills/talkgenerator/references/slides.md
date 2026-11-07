@@ -289,10 +289,10 @@ A quiz question for the audience, with three or four options (A to D); the answe
 | Text | At most | What to write |
 | --- | --- | --- |
 | `question` | 90 | the quiz question |
-| `option_a` | 40 | option A |
-| `option_b` | 40 | option B |
-| `option_c` | 40 | option C |
-| `option_d` | 40 | option D (or empty, for none) |
+| `option_a` | 50 | option A (without its letter) |
+| `option_b` | 50 | option B |
+| `option_c` | 50 | option C |
+| `option_d` | 50 | option D (or empty, for none) |
 | `answer` | 1 | the letter of the right option: `A`, `B`, `C`, `D` |
 | `explanation` | 90 | why that's the answer, shown with it (or empty, for none) |
 
@@ -379,3 +379,120 @@ Images: none
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
 | `questions` | The closing slide, inviting the audience's questions | the default; `subtitle`: a line under it, such as a disclaimer about the answers; tags: questions |
+
+## `timeline`
+
+A timeline of three to five moments, oldest first, each a date and what happened; the last one, the punchline, appears on a click.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `title` | 60 | the timeline's title |
+| `date_1` | 12 | the first moment's date (a year, say, or a day) |
+| `event_1` | 40 | what happened at the first moment |
+| `date_2` | 12 | the second moment's date (a year, say, or a day) |
+| `event_2` | 40 | what happened at the second moment |
+| `date_3` | 12 | the third moment's date (a year, say, or a day) |
+| `event_3` | 40 | what happened at the third moment |
+| `date_4` | 12 | the fourth moment's date (a year, say, or a day) (or empty, for none) |
+| `event_4` | 40 | what happened at the fourth moment (or empty, for none) |
+| `date_5` | 12 | the fifth moment's date (a year, say, or a day) (or empty, for none) |
+| `event_5` | 40 | what happened at the fifth moment (or empty, for none) |
+
+Images: none
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `timeline` | The concept's made-up history, as a timeline whose last moment is the punchline | the default; tags: diagram, timeline |
+
+## `pyramid`
+
+A pyramid of three or four levels, from its top (the rarest, the punchline, which appears on a click) down to its base.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `title` | 60 | the pyramid's title |
+| `level_1` | 30 | the top of the pyramid: the punchline |
+| `level_2` | 30 | the level under the top |
+| `level_3` | 30 | the level under that (the base, if there's no fourth) |
+| `level_4` | 30 | the base, under that (or empty, for none) |
+
+Images: none
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `pyramid` | A hierarchy of needs about the concept, as a pyramid with something absurd at the top | the default; tags: diagram, pyramid |
+
+## `funnel`
+
+A funnel of three to five stages, from its widest at the top to its narrowest at the bottom, the punchline, which appears on a click.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `title` | 60 | the funnel's title |
+| `stage_1` | 30 | the widest stage, at the top |
+| `stage_2` | 30 | the next stage, narrower |
+| `stage_3` | 30 | the next stage (the narrowest, if there are no more) |
+| `stage_4` | 30 | the next stage (or empty, for none) |
+| `stage_5` | 30 | the narrowest stage, at the bottom (or empty, for none) |
+
+Images: none
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `funnel` | A sales funnel about the concept, narrowing down to something absurd | the default; tags: diagram, funnel |
+
+## `cycle`
+
+A cycle of three to five steps around a circle, each leading to the next, and the last back to the first.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `title` | 60 | the cycle's title |
+| `step_1` | 24 | the first step |
+| `step_2` | 24 | the second step |
+| `step_3` | 24 | the third step |
+| `step_4` | 24 | a fourth step (or empty, for none) |
+| `step_5` | 24 | a fifth step (or empty, for none) |
+
+Images: none
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `cycle` | A vicious circle about the concept: steps that lead to each other, and back | the default; tags: cycle, diagram |
+
+## `org_chart`
+
+A small org chart: who's in charge (the punchline, which appears on a click), over two to four people or things.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `title` | 60 | the org chart's title |
+| `boss` | 30 | who's in charge: the punchline |
+| `report_1` | 30 | the first one under them |
+| `report_2` | 30 | the second one under them |
+| `report_3` | 30 | a third one under them (or empty, for none) |
+| `report_4` | 30 | a fourth one under them (or empty, for none) |
+
+Images: none
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `org-chart` | Who's really in charge of the concept, as an org chart with a surprising boss | the default; tags: diagram, org_chart |
+
+## `iceberg`
+
+An iceberg: what everyone sees, on its tip above the water, and two or three things under the water that nobody sees, which appear on a click.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `title` | 60 | the iceberg's title |
+| `tip` | 30 | what everyone sees, on the tip |
+| `hidden_1` | 40 | something under the water that nobody sees |
+| `hidden_2` | 40 | something else under the water |
+| `hidden_3` | 40 | something deeper under the water (or empty, for none) |
+
+Images: none
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `iceberg` | What lies beneath the concept: an iceberg whose tip everyone knows, and what's under the water | the default; tags: diagram, iceberg |

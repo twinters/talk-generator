@@ -30,6 +30,8 @@ from tests.test_deck import images as images  # the fake image downloads (a fixt
 
 FAMILIES = list(themes.FAMILIES)
 NEW_KINDS = ("big_number", "kpi", "quiz", "social_post", "news_headline", "agenda", "section", "questions")
+DIAGRAMS = ("timeline", "pyramid", "funnel", "cycle", "org_chart", "iceberg")
+EVERY_KIND = NEW_KINDS + DIAGRAMS
 ENGLISH = languages.ENGLISH
 
 
@@ -45,6 +47,14 @@ def every_new_type(image):
         slides.AgendaSlide("Today's menu", "Why cats", "How cats", "When cats", "Questions"),
         slides.SectionSlide("The dark years", "In which the cat finds the laser pointer"),
         slides.QuestionsSlide("Questions?", "Answers not guaranteed"),
+        slides.TimelineSlide(
+            "A history of cats", "3000 BC", "Cats invent Egypt", "1888", "Cats take a photo", "Today", "This talk"
+        ),
+        slides.PyramidSlide("Maslow for cats", "Enlightenment", "Boxes", "Naps", "Food"),
+        slides.FunnelSlide("The cat funnel", "Visitors", "Petters", "Feeders", "Servants"),
+        slides.CycleSlide("The cat cycle", "Sleep", "Eat", "Judge", "Repeat"),
+        slides.OrgChartSlide("Who's in charge", "The cat", "Head of naps", "VP of boxes", "Chief mouser"),
+        slides.IcebergSlide("The cat iceberg", "Cute photos", "Years of hairballs", "A secret empire"),
     ]
     for slide in made:
         slide.add_source("Ann (via Pexels)", "https://www.pexels.com/photo/cat-123/")
@@ -53,7 +63,9 @@ def every_new_type(image):
 
 def runs_of_new_types(image, length=3):
     """Runs of slides of every new type, each run of one type, as the design tests want them."""
-    return [slide for index in range(len(NEW_KINDS)) for slide in (every_new_type(image)[index] for _ in range(length))]
+    return [
+        slide for index in range(len(EVERY_KIND)) for slide in (every_new_type(image)[index] for _ in range(length))
+    ]
 
 
 def _deck(made, theme=None, seed=1):
@@ -95,7 +107,7 @@ def _longest_texts(kind):
 
 @pytest.mark.parametrize("family", FAMILIES)
 def test_the_longest_texts_fit_and_read_in_every_theme(images, family):
-    longest = [_built(kind, _longest_texts(kind), {"photo": _image("wide")}) for kind in NEW_KINDS]
+    longest = [_built(kind, _longest_texts(kind), {"photo": _image("wide")}) for kind in EVERY_KIND]
     shortest = [
         slides.BigNumberSlide(None, "7", "naps"),
         slides.KpiSlide(None, "1", "A", "2", "B", "3", "C"),
@@ -105,6 +117,12 @@ def test_the_longest_texts_fit_and_read_in_every_theme(images, family):
         slides.AgendaSlide(None, "One", "Two", "Three"),
         slides.SectionSlide("Then"),
         slides.QuestionsSlide("?"),
+        slides.TimelineSlide(None, "1", "A", "2", "B", "3", "C"),
+        slides.PyramidSlide(None, "A", "B", "C"),
+        slides.FunnelSlide(None, "A", "B", "C"),
+        slides.CycleSlide(None, "A", "B", "C"),
+        slides.OrgChartSlide(None, "A", "B", "C"),
+        slides.IcebergSlide(None, "A", "B", "C"),
     ]
     for seed in range(3):
         deck = _deck(longest + shortest, _theme(family, seed), seed)
@@ -116,7 +134,7 @@ def test_every_new_layout_comes_up_and_needs_what_it_says(images):
     seen = set()
     for seed in range(12):
         seen |= {slide.layout for slide in _deck(runs_of_new_types(_image("wide")), _theme(seed=seed), seed).slides}
-    new_layouts = {layout.name for kind in NEW_KINDS for layout in engine._LAYOUTS[kind]}
+    new_layouts = {layout.name for kind in EVERY_KIND for layout in engine._LAYOUTS[kind]}
     assert new_layouts <= seen
 
     def fitting(slide):
@@ -182,6 +200,26 @@ def test_powerpoint_shows_the_answer_on_a_click(images, theme):
     assert texts["answer"] == "C" and texts["option_3"] == "The rooster" and texts["letter_3"] == "C"
 
 
+@pytest.mark.parametrize(
+    ("slide", "on_the_click"),
+    [
+        (slides.TimelineSlide("T", "1", "A", "2", "B", "3", "C"), {"date_3", "event_3", "dot_3"}),
+        (slides.PyramidSlide("P", "Top", "Middle", "Base"), {"level_1", "level 1 band"}),
+        (slides.FunnelSlide("F", "Wide", "Middle", "Narrow"), {"stage_3", "stage 3 band"}),
+        (slides.OrgChartSlide("O", "Boss", "One", "Two"), {"boss", "boss box"}),
+        (slides.IcebergSlide("I", "Tip", "Under", "Deeper"), {"hidden_1", "hidden_2"}),
+    ],
+    ids=["timeline", "pyramid", "funnel", "org chart", "iceberg"],
+)
+def test_a_diagrams_punchline_appears_on_a_click(images, slide, on_the_click):
+    (shown,) = _clicks(render_pptx(_deck([slide], _theme())).slides[0])
+    assert set(shown) == on_the_click
+
+
+def test_a_cycle_shows_everything_at_once(images):
+    assert _clicks(render_pptx(_deck([slides.CycleSlide("C", "A", "B", "C")], _theme())).slides[0]) == []
+
+
 def test_powerpoint_shows_the_last_figure_with_its_tile_on_a_click(images):
     deck = _deck([slides.KpiSlide("KPIs", "1", "A", "2", "B", "3", "C")], _theme())
     (shown,) = _clicks(render_pptx(deck).slides[0])
@@ -215,7 +253,7 @@ def test_the_classic_look_passes_the_design_checks(images):
     look = themes.CLASSIC_LOOK
     for made in (
         every_new_type(_image("wide")),
-        [_built(kind, _longest_texts(kind), {"photo": _image("tall")}) for kind in NEW_KINDS],
+        [_built(kind, _longest_texts(kind), {"photo": _image("tall")}) for kind in EVERY_KIND],
     ):
         classic_deck = _deck(made)
         placed = tuple(
@@ -259,6 +297,13 @@ def test_planned_slides_come_out_as_planned():
     slide, _ = _realized("agenda", {"title": "Agenda", "items": f"One | {'Very ' * 20}long | Three | | Four"})
     items = [element.text for element in slide.to_deck_slide().elements if element.role.startswith("item_")]
     assert len(items) == 4 and all(len(item) <= 45 for item in items)
+
+
+def test_a_quizs_options_lose_the_letters_a_model_wrote_in_front():
+    texts = {"question": "Why?", "option_a": "A) Yes", "option_b": "(b) No", "option_c": "C. Apples", "answer": "A"}
+    deck_slide = _built("quiz", texts).to_deck_slide()
+    assert [deck_slide.element(f"option_{index}").text for index in (1, 2, 3)] == ["Yes", "No", "Apples"]
+    assert deck_slide.element("letter_3").text == "C"
 
 
 def test_a_post_and_a_headline_speak_the_talks_language(images):
@@ -318,10 +363,16 @@ CLASSIC = {
     "agenda": (slide_texts.generate_agenda, slides.AgendaSlide),
     "section": (slide_texts.generate_section, slides.SectionSlide),
     "questions": (slide_texts.generate_questions, slides.QuestionsSlide),
+    "timeline": (slide_texts.generate_timeline, slides.TimelineSlide),
+    "pyramid": (slide_texts.generate_pyramid, slides.PyramidSlide),
+    "funnel": (slide_texts.generate_funnel, slides.FunnelSlide),
+    "cycle": (slide_texts.generate_cycle, slides.CycleSlide),
+    "org_chart": (slide_texts.generate_org_chart, slides.OrgChartSlide),
+    "iceberg": (slide_texts.generate_iceberg, slides.IcebergSlide),
 }
 
 
-@pytest.mark.parametrize("kind", NEW_KINDS)
+@pytest.mark.parametrize("kind", EVERY_KIND)
 def test_the_classic_generators_make_complete_slides(images, related, kind):
     content, slide_class = CLASSIC[kind]
     generator = SlideGeneratorData(
@@ -359,15 +410,17 @@ def test_the_classic_templates_leave_nothing_behind(related):
 def test_every_format_has_the_new_types_once_at_most(format_name):
     schema = get_schema(format_name)
     kinds = {generator.llm.kind: generator for generator in schema.slide_generators if generator.llm is not None}
-    assert set(NEW_KINDS) <= set(kinds)
+    assert set(EVERY_KIND) <= set(kinds)
     caps = schema._max_allowed_tags
-    assert all(caps[tag] == 1 for tag in ("big_number", "kpi", "quiz", "social_post", "news", "agenda", "questions"))
+    once = ("big_number", "kpi", "quiz", "social_post", "news", "agenda", "questions", *DIAGRAMS)
+    assert all(caps[tag] == 1 for tag in once)
     assert caps["section"] == 0.1  # (none in a talk of fewer than ten slides)
+    assert caps["diagram"] == 0.2  # (two in a talk of ten slides, Venn diagrams and matrices included)
     assert kinds["agenda"].get_weight_for(1, 10) > 0 == kinds["agenda"].get_weight_for(5, 10)
     assert kinds["questions"].get_weight_for(9, 10) > 0 == kinds["questions"].get_weight_for(5, 10)
     assert kinds["section"].get_weight_for(5, 10) > 0 == kinds["section"].get_weight_for(1, 10)
     choices = external.recipes_of(schema)
-    assert {external.default_recipe(choices, kind).recipe.kind for kind in NEW_KINDS} == set(NEW_KINDS)
+    assert {external.default_recipe(choices, kind).recipe.kind for kind in EVERY_KIND} == set(EVERY_KIND)
 
 
 def test_the_ted_formats_mockups_get_copyright_free_photos():
@@ -379,7 +432,7 @@ def test_the_ted_formats_mockups_get_copyright_free_photos():
 
 
 def test_the_new_types_are_drawn_types():
-    assert classic.DRAWN_TYPES == set(NEW_KINDS)
-    for kind in NEW_KINDS:
+    assert classic.DRAWN_TYPES == set(EVERY_KIND)
+    for kind in EVERY_KIND:
         slide = _built(kind, _longest_texts(kind), {"photo": ImageData("https://example.com/wide.jpg")})
         assert slide.type_name in classic.DRAWN_TYPES

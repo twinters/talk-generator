@@ -8,6 +8,7 @@ the theme's background and decoration. With style_chaos, slides get themes of th
 
 from __future__ import annotations
 
+import math
 from collections import Counter
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
@@ -132,6 +133,13 @@ SPECS: Final[dict[str, TextSpec]] = {
     "left title": TextSpec("heading", 140, 60, align="left", anchor="bottom", heading=True),
     "left subtitle": TextSpec("body", 52, 30, color="muted", align="left", anchor="top"),
     "mark": TextSpec("heading", 900, 320, color="accent", align="center", heading=True),
+    # (native diagrams)
+    "date": TextSpec("heading", 72, 32, align="center", anchor="bottom", heading=True, effect=False),
+    "row date": TextSpec("heading", 64, 30, align="right", heading=True, effect=False),
+    "level": TextSpec("body", 56, 28, align="center", on_fill=True, bold=True),
+    "disc": TextSpec("body", 44, 26, align="center", on_fill=True, bold=True),
+    "box": TextSpec("body", 48, 26, align="center", on_fill=True),
+    "boss": TextSpec("heading", 64, 30, align="center", heading=True, on_fill=True, effect=False),
 }
 
 
@@ -251,12 +259,12 @@ def lay_out_slide(
     # The credits read on what's behind them: the background (and the shapes on it, such as a panel), or a photo
     # (which could be anything) under a shade
     behind = _backgrounds(theme)
-    behind += [
-        color.mix(colour, shape.color, shape.opacity)
-        for shape in placement.shapes
-        if _overlap(shape.box, CREDITS_BOX)
-        for colour in _backgrounds(theme)
-    ]
+    stacked = list(behind)  # (and where they're on top of each other: see-through water over an iceberg, say)
+    for shape in placement.shapes:
+        if _overlap(shape.box, CREDITS_BOX):
+            behind += [color.mix(colour, shape.color, shape.opacity) for colour in _backgrounds(theme)]
+            stacked = [color.mix(colour, shape.color, shape.opacity) for colour in stacked]
+    behind += [colour for colour in stacked if colour not in behind]
     if isinstance(background, ImageElement):
         behind = [color.mix(extreme, SHADE, SHADE_OPACITY) for extreme in ("#000000", "#ffffff")]
     elif placement.photo and slide.credits:  # on a band over the picture, solid if no colour reads on it otherwise
@@ -1268,6 +1276,219 @@ def _questions_mark(roles: dict[str, Content], theme: Theme) -> _Placement:
     return placement
 
 
+# Native diagrams: a timeline, a pyramid and a funnel, a cycle, a small org chart and an iceberg
+
+
+def _dot(
+    role: str, centre: tuple[float, float], diameter: float, colour: str, click: int | None = None
+) -> ShapeElement:
+    x, y = centre
+    box = Box(x=x - diameter / 2, y=y - diameter / 2, w=diameter, h=diameter)
+    return ShapeElement(role=role, shape="ellipse", box=box, color=colour, appears_on_click=click)
+
+
+def _timeline(roles: dict[str, Content], theme: Theme) -> _Placement:
+    """The moments side by side along a line in the theme's accent, oldest first: a dot on the line for each (the
+    punchline's in the second accent, appearing with it), its date above it and what happened under it."""
+    palette = theme.palette
+    placement = _Placement("v5/timeline")
+    top = _with_title(placement, roles, theme) if "title" in roles else MARGIN
+    moments = _numbered(roles, "event", 5)
+    gap = 32
+    width = (WIDTH - 2 * MARGIN - gap * (len(moments) - 1)) / len(moments)
+    line = top + 260
+    first, last = MARGIN + width / 2, WIDTH - MARGIN - width / 2
+    placement.shapes.append(
+        ShapeElement(role="line", box=Box(x=first, y=line - 4, w=last - first, h=8), color=palette.accent)
+    )
+    for position, index in enumerate(moments):
+        x = MARGIN + position * (width + gap)
+        click = _click(roles, f"event_{index}")
+        colour = palette.accent_2 if click else palette.accent
+        placement.shapes.append(_dot(f"dot_{index}", (x + width / 2, line), 48, colour, click))
+        placement.boxes[f"date_{index}"] = (Box(x=x, y=top + 40, w=width, h=line - 48 - top - 40), "date")
+        placement.boxes[f"event_{index}"] = (Box(x=x, y=line + 48, w=width, h=_CONTENT_BOTTOM - line - 48), "step")
+    return placement
+
+
+def _timeline_down(roles: dict[str, Content], theme: Theme) -> _Placement:
+    """The moments one under the other along a line in the theme's accent, oldest first: each date on the line's
+    left, a dot on the line, and what happened on its right."""
+    palette = theme.palette
+    placement = _Placement("v5/timeline-down")
+    top = (_with_title(placement, roles, theme) if "title" in roles else MARGIN) + 16
+    moments = _numbered(roles, "event", 5)
+    gap = 12
+    y, height = _spread(top, _CONTENT_BOTTOM, len(moments), gap, 150)
+    line = MARGIN + 340
+    first, last = y + height / 2, y + (len(moments) - 1) * (height + gap) + height / 2
+    placement.shapes.append(
+        ShapeElement(role="line", box=Box(x=line - 4, y=first, w=8, h=last - first), color=palette.accent)
+    )
+    for index in moments:
+        click = _click(roles, f"event_{index}")
+        colour = palette.accent_2 if click else palette.accent
+        placement.shapes.append(_dot(f"dot_{index}", (line, y + height / 2), 44, colour, click))
+        placement.boxes[f"date_{index}"] = (Box(x=MARGIN, y=y, w=300, h=height), "row date")
+        placement.boxes[f"event_{index}"] = (Box(x=line + 56, y=y, w=WIDTH - MARGIN - line - 56, h=height), "item")
+        y += height + gap
+    return placement
+
+
+def _area(placement: _Placement, roles: dict[str, Content], theme: Theme, side: bool) -> tuple[float, float, float]:
+    """Where a diagram goes, from its left to its right and from its top down: under the title (across the slide), or
+    beside it (the title on the left, with the theme's decoration)."""
+    if side:
+        title = Box(x=MARGIN, y=MARGIN, w=_SIDE_TITLE_WIDTH, h=HEIGHT - 2 * MARGIN - 100)
+        placement.boxes["title"] = (title, "side title")
+        placement.shapes += _decoration(_left_aligned(theme), title, gap=12)
+        return MARGIN + _SIDE_TITLE_WIDTH + _SIDE_GAP, WIDTH - MARGIN, MARGIN
+    return MARGIN, WIDTH - MARGIN, _with_title(placement, roles, theme) if "title" in roles else MARGIN
+
+
+def _stack(
+    name: str, prefix: str, most: int, widening: bool, side: bool = False
+) -> Callable[[dict[str, Content], Theme], _Placement]:
+    """Bands one under the other, in the middle, each with its text: wider and wider going down (a pyramid), or
+    narrower and narrower (a funnel). In the theme's accent, a little lighter or darker with every band, and the
+    punchline's in its second accent, appearing with it."""
+
+    def stack(roles: dict[str, Content], theme: Theme) -> _Placement:
+        palette = theme.palette
+        placement = _Placement(name)
+        left, right, top = _area(placement, roles, theme, side)
+        items = _numbered(roles, prefix, most)
+        gap = 12
+        y, height = _spread(top + 24, _CONTENT_BOTTOM, len(items), gap, 170)
+        widest = min(1500.0, right - left)
+        narrowest = 0.3 * widest
+        for position, index in enumerate(items):
+            share = position / max(1, len(items) - 1)  # (from 0 at the top to 1 at the bottom)
+            width = narrowest + (widest - narrowest) * (share if widening else 1 - share)
+            click = _click(roles, f"{prefix}_{index}")
+            fill = palette.accent_2 if click else color.mix(palette.accent, palette.background, 0.2 * share)
+            band = Box(x=(left + right - width) / 2, y=y, w=width, h=height)
+            placement.shapes.append(
+                ShapeElement(role=f"{prefix} {index} band", box=band, color=fill, appears_on_click=click)
+            )
+            placement.boxes[f"{prefix}_{index}"] = (Box(x=band.x + 24, y=y + 8, w=width - 48, h=height - 16), "level")
+            placement.colors[f"{prefix}_{index}"] = _on([fill], theme)
+            y += height + gap
+        return placement
+
+    return stack
+
+
+def _cycle(side: bool) -> Callable[[dict[str, Content], Theme], _Placement]:
+    """The steps on discs in the theme's accent around a circle of dots, clockwise from the top: each leads to the
+    next, and the last back to the first."""
+
+    def cycle(roles: dict[str, Content], theme: Theme) -> _Placement:
+        accent = theme.palette.accent
+        placement = _Placement("v5/cycle-side" if side else "v5/cycle")
+        left, right, top = _area(placement, roles, theme, side)
+        steps = _numbered(roles, "step", 5)
+        middle = ((left + right) / 2, (top + _CONTENT_BOTTOM) / 2)
+        diameter = 280.0 if len(steps) <= 4 else 250.0
+        radius = min(_CONTENT_BOTTOM - top, right - left) / 2 - diameter / 2 - 8
+        for step in range(40):  # (the circle, under the discs)
+            angle = 2 * math.pi * step / 40
+            at = (middle[0] + radius * math.cos(angle), middle[1] + radius * math.sin(angle))
+            placement.shapes.append(_dot("circle", at, 16, accent))
+        for position, index in enumerate(steps):
+            angle = -math.pi / 2 + 2 * math.pi * position / len(steps)
+            at = (middle[0] + radius * math.cos(angle), middle[1] + radius * math.sin(angle))
+            disc = _dot(f"step {index} disc", at, diameter, accent)
+            placement.shapes.append(disc)
+            text = Box(
+                x=disc.box.x + 0.12 * diameter, y=disc.box.y + 0.25 * diameter, w=0.76 * diameter, h=0.5 * diameter
+            )
+            placement.boxes[f"step_{index}"] = (text, "disc")
+            placement.colors[f"step_{index}"] = _on([accent], theme)
+        return placement
+
+    return cycle
+
+
+def _org_chart(side: bool) -> Callable[[dict[str, Content], Theme], _Placement]:
+    """Who's in charge, on a box in the theme's accent at the top (appearing with them), joined by lines to the
+    people under them, on boxes in its surface colour."""
+
+    def org_chart(roles: dict[str, Content], theme: Theme) -> _Placement:
+        palette = theme.palette
+        placement = _Placement("v5/org-chart-side" if side else "v5/org-chart")
+        left, right, top = _area(placement, roles, theme, side)
+        reports = _numbered(roles, "report", 4)
+        box_height, drop = 170.0, 70.0
+        y = top + 24 + (_CONTENT_BOTTOM - top - 24 - (2 * box_height + 2 * drop)) / 2
+        centre = (left + right) / 2
+        boss = Box(x=centre - 300, y=y, w=600, h=box_height)
+        gap = 48
+        width = min(420.0, (right - left - gap * (len(reports) - 1)) / len(reports))
+        total = width * len(reports) + gap * (len(reports) - 1)
+        first = centre - total / 2
+        joint, row = boss.y + boss.h + drop, boss.y + boss.h + 2 * drop
+        ink = color.readable_on(palette.muted, _backgrounds(theme), LINE_CONTRAST)
+        placement.shapes += [
+            ShapeElement(role="line", box=Box(x=centre - 3, y=boss.y + boss.h, w=6, h=drop + 3), color=ink),
+            ShapeElement(
+                role="line", box=Box(x=first + width / 2 - 3, y=joint - 3, w=total - width + 6, h=6), color=ink
+            ),
+        ]
+        for position, index in enumerate(reports):
+            x = first + position * (width + gap)
+            placement.shapes.append(
+                ShapeElement(role="line", box=Box(x=x + width / 2 - 3, y=joint, w=6, h=drop), color=ink)
+            )
+            report = Box(x=x, y=row, w=width, h=box_height)
+            placement.shapes.append(ShapeElement(role=f"report {index} box", box=report, color=palette.surface))
+            placement.boxes[f"report_{index}"] = (_inset(report, 20), "box")
+            placement.colors[f"report_{index}"] = _on([palette.surface], theme)
+        click = _click(roles, "boss")
+        placement.shapes.append(ShapeElement(role="boss box", box=boss, color=palette.accent, appears_on_click=click))
+        placement.boxes["boss"] = (_inset(boss, 20), "boss")
+        placement.colors["boss"] = _on([palette.accent], theme, color.LARGE_TEXT_CONTRAST)
+        return placement
+
+    return org_chart
+
+
+def _iceberg(side: bool) -> Callable[[dict[str, Content], Theme], _Placement]:
+    """An iceberg in the theme's surface colour, outlined in its accent and mostly under water (the accent, see-
+    through): what everyone sees on its tip, above the water, and what's under it, below (appearing on a click)."""
+
+    def iceberg(roles: dict[str, Content], theme: Theme) -> _Placement:
+        palette = theme.palette
+        placement = _Placement("v5/iceberg-side" if side else "v5/iceberg")
+        left, right, top = _area(placement, roles, theme, side)
+        centre = (left + right) / 2
+        water = top + 300
+        width = min(1100.0, right - left - 40)
+        ice = Box(x=centre - width / 2, y=water - 280, w=width, h=1500)  # (an ellipse, its tip above the water)
+        opacity = 0.35
+        edge = color.readable_on(palette.accent, _backgrounds(theme), LINE_CONTRAST)
+        shore = left - 24 if side else 0.0  # (the water stays clear of a title beside it)
+        sea = Box(x=shore, y=water, w=WIDTH - shore, h=HEIGHT - water)
+        placement.shapes += [
+            ShapeElement(role="ice edge", shape="ellipse", box=_inset(ice, -8), color=edge),
+            ShapeElement(role="ice", shape="ellipse", box=ice, color=palette.surface),
+            ShapeElement(role="water", box=sea, color=palette.accent, opacity=opacity),
+        ]
+        placement.boxes["tip"] = (Box(x=centre - 240, y=water - 200, w=480, h=160), "box")
+        placement.colors["tip"] = _on([palette.surface], theme)
+        hidden = _numbered(roles, "hidden", 3)
+        y, height = _spread(water + 48, _CONTENT_BOTTOM, len(hidden), 16, 130)
+        under = color.mix(palette.surface, palette.accent, opacity)
+        label = min(720.0, 0.66 * width)
+        for index in hidden:
+            placement.boxes[f"hidden_{index}"] = (Box(x=centre - label / 2, y=y, w=label, h=height), "box")
+            placement.colors[f"hidden_{index}"] = _on([under], theme)
+            y += height + 16
+        return placement
+
+    return iceberg
+
+
 @dataclass(frozen=True)
 class _Layout:
     """One of a slide type's layouts: its name, what places its elements, how likely it's picked (against the type's
@@ -1347,5 +1568,29 @@ _LAYOUTS: Final[dict[str, tuple[_Layout, ...]]] = {
     "questions": (
         _Layout("v5/questions", _questions),
         _Layout("v5/questions-mark", _questions_mark, 0.8),
+    ),
+    "timeline": (
+        _Layout("v5/timeline", _timeline),
+        _Layout("v5/timeline-down", _timeline_down, 0.8),
+    ),
+    "pyramid": (
+        _Layout("v5/pyramid", _stack("v5/pyramid", "level", 4, widening=True)),
+        _Layout("v5/pyramid-side", _stack("v5/pyramid-side", "level", 4, widening=True, side=True), 0.7, _titled),
+    ),
+    "funnel": (
+        _Layout("v5/funnel", _stack("v5/funnel", "stage", 5, widening=False)),
+        _Layout("v5/funnel-side", _stack("v5/funnel-side", "stage", 5, widening=False, side=True), 0.7, _titled),
+    ),
+    "cycle": (
+        _Layout("v5/cycle", _cycle(side=False)),
+        _Layout("v5/cycle-side", _cycle(side=True), 0.7, _titled),
+    ),
+    "org_chart": (
+        _Layout("v5/org-chart", _org_chart(side=False)),
+        _Layout("v5/org-chart-side", _org_chart(side=True), 0.7, _titled),
+    ),
+    "iceberg": (
+        _Layout("v5/iceberg", _iceberg(side=False)),
+        _Layout("v5/iceberg-side", _iceberg(side=True), 0.7, _titled),
     ),
 }

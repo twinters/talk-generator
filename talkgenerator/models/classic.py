@@ -67,12 +67,27 @@ CLASSIC_ROLES: Final[dict[str, dict[str, str]]] = {
     },
     "section": {"kicker": "kicker", "title": "title", "subtitle": "subtitle"},
     "questions": {"title": "title", "subtitle": "subtitle", "mark": "mark"},
+    # (native diagrams, drawn as texts on shapes too)
+    "timeline": {
+        "title": "title",
+        **{f"{part}_{number}": f"{part}_{number}" for number in range(1, 6) for part in ("date", "event")},
+    },
+    "pyramid": {"title": "title", **{f"level_{number}": f"level_{number}" for number in range(1, 5)}},
+    "funnel": {"title": "title", **{f"stage_{number}": f"stage_{number}" for number in range(1, 6)}},
+    "cycle": {"title": "title", **{f"step_{number}": f"step_{number}" for number in range(1, 6)}},
+    "org_chart": {
+        "title": "title",
+        "boss": "boss",
+        **{f"report_{number}": f"report_{number}" for number in range(1, 5)},
+    },
+    "iceberg": {"title": "title", "tip": "tip", **{f"hidden_{number}": f"hidden_{number}" for number in range(1, 4)}},
 }
 
 # The slide types that the 2019 template has no layout for (all of milestone 6's): a classic deck draws them as a
 # themed deck does, laid out in the template's look (talkgenerator.design.themes.CLASSIC_LOOK), on its blank slide
 DRAWN_TYPES: Final = frozenset(
     {"big_number", "kpi", "quiz", "social_post", "news_headline", "agenda", "section", "questions"}
+    | {"timeline", "pyramid", "funnel", "cycle", "org_chart", "iceberg"}
 )
 
 # The roles a slide of each type can't do without: its Slide class's required_arguments, as roles
@@ -93,6 +108,12 @@ REQUIRED_ROLES: Final[dict[str, tuple[str, ...]]] = {
     "agenda": ("item_1", "item_2", "item_3"),
     "section": ("title",),
     "questions": ("title",),
+    "timeline": ("date_1", "event_1", "date_2", "event_2", "date_3", "event_3"),
+    "pyramid": ("level_1", "level_2", "level_3"),
+    "funnel": ("stage_1", "stage_2", "stage_3"),
+    "cycle": ("step_1", "step_2", "step_3"),
+    "org_chart": ("boss", "report_1", "report_2"),
+    "iceberg": ("tip", "hidden_1", "hidden_2"),
 }
 
 # Roles that only ever hold text, even when the text looks like an image's file name
