@@ -23,6 +23,7 @@ from talkgenerator.llm import providers
 from talkgenerator.models.deck import Deck
 from talkgenerator.models.plan import TalkPlan
 from talkgenerator.plan import external
+from talkgenerator.plan.prompt import SPINE
 from tests.test_llm_talks import FakeModel
 from tests.test_llm_talks import images as images  # the fake image sources (an autouse fixture)
 from tests.test_plans import CHART, STATEMENT, TWO_COLUMNS, _plan
@@ -222,11 +223,11 @@ def _deck(report):
 
 @needs_mcp
 def test_the_model_names_the_presenter_in_a_style_the_talk_asks_for(schema, server, model_in_the_settings):
-    model_in_the_settings.change = lambda answer: answer.update(presenter_name="Prof. Clawdette Purrkins")
+    model_in_the_settings.change = lambda answer: answer[SPINE].update(presenter_name="Prof. Clawdette Purrkins")
     report = _answer(_call(server, "generate_talk", {"topic": "cats", "slides": 4, "name_styles": ["famous_pun"]}))
     assert report["presenter"] == _deck(report).presenter == "Prof. Clawdette Purrkins"
     (request,) = model_in_the_settings.requests
-    description = request.json_schema["properties"]["presenter_name"]["description"]
+    description = request.json_schema["properties"][SPINE]["properties"]["presenter_name"]["description"]
     assert description.startswith(names.STYLES["famous_pun"].asked)
 
 

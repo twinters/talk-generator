@@ -12,6 +12,7 @@ import pytest
 
 from talkgenerator import generator, llm, names, runtime_checker
 from talkgenerator.models.events import TalkFinished, TalkStarted
+from talkgenerator.plan.prompt import SPINE
 from talkgenerator.schema.content_generators import full_name_generator
 from talkgenerator.util import image_util, os_util, random_util
 from tests.test_llm_talks import NUM_SLIDES, FakeModel, _jpeg, fake_schema
@@ -44,14 +45,19 @@ def _naming(model):
     """Calls a fake model's answer gets a presenter_name, as named."""
 
     def name(answer):
-        answer["presenter_name"] = model
+        answer[SPINE]["presenter_name"] = model
 
     return name
 
 
+def _spine(request):
+    """The fields of the spine a request asks for, in the response schema."""
+    return request.json_schema["properties"][SPINE]["properties"]
+
+
 def _asked(request):
     """The style of the name a request asks for (None: none)."""
-    field = request.json_schema["properties"].get("presenter_name")
+    field = _spine(request).get("presenter_name")
     if field is None:
         return None
     (style,) = [
@@ -213,12 +219,12 @@ def test_the_language_model_names_the_presenter_in_the_same_request(schema):
     assert deck.presenter == "Prof. Clawdette Purrkins"
     assert deck.slides[0].elements[1].text.endswith("Prof. Clawdette Purrkins, The presenter job")
     request = model.requests[0]
-    properties = request.json_schema["properties"]
+    properties = _spine(request)
     spine = ["unsafe_topic", "thesis", "title", "name_plays_on", "presenter_name", "presenter_job"]
-    assert list(properties)[:6] == spine
+    assert list(properties) == spine
     assert _asked(request) == "pun"
     # (What the name plays on first: it comes before the name in the schema's order and in alphabetical order, in
-    # which some free models write the answer, and before the slides either way)
+    # which some free models write the answer)
     assert sorted(spine)[:3] == ["name_plays_on", "presenter_job", "presenter_name"]
     assert properties["name_plays_on"]["description"].startswith(names.STYLES["pun"].plays_on)
     assert "agreeing with presenter_name (a Prof. is a professor" in properties["presenter_job"]["description"]
@@ -280,7 +286,7 @@ def test_a_classic_talk_gets_a_name_of_the_pack_or_a_classic_one(schema):
 
 def test_a_model_that_declines_leaves_no_name(schema):
     def decline(answer):
-        answer["presenter_name"] = "Prof. Clawdette Purrkins"
+        answer[SPINE]["presenter_name"] = "Prof. Clawdette Purrkins"
 
     class Declining(FakeModel):
         def complete(self, request):
@@ -324,7 +330,7 @@ def test_a_dutch_talk_asks_for_a_dutch_name(schema):
     model = FakeModel(change=_naming("Prof. Kat Apult"))
     deck = _deck(model, language="nl")
     request = model.requests[0]
-    assert "with wordplay that works in Dutch" in request.json_schema["properties"]["presenter_name"]["description"]
+    assert "with wordplay that works in Dutch" in _spine(request)["presenter_name"]["description"]
     assert "write the title, the presenter's name and job and every slide in Dutch" in request.messages[0].content
     assert deck.presenter == "Prof. Kat Apult"
     assert deck.slides[0].elements[1].text.split(" Prof. Kat Apult")[0] in (

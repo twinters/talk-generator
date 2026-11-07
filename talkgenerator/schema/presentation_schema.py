@@ -42,9 +42,9 @@ from talkgenerator.llm.base import ProviderError, TextProvider
 from talkgenerator.llm.providers import NoneProvider
 from talkgenerator.models.plan import SlidePlan, TalkPlan
 from talkgenerator.models.theme import Theme
-from talkgenerator.plan import languages
+from talkgenerator.plan import languages, prompt
 from talkgenerator.plan.kinds import PRESENTER_JOB, TALK_TITLE, Recipe
-from talkgenerator.plan.prompt import PlannedSlide, slide_plan, talk_request
+from talkgenerator.plan.prompt import SPINE, PlannedSlide, slide_plan, talk_request
 from talkgenerator.plan.realize import ATTEMPTS, clean_text, realize
 from talkgenerator.plan.stream import ObjectReader
 from talkgenerator.render.powerpoint import render_pptx
@@ -149,6 +149,7 @@ class _PlannedTalk:
     planned: dict[int, PlannedSlide]  # the slides the model writes, by slide number (from 0)
     contexts: list[dict[str, Any]]
     rngs: list[random_util.Rng]
+    spine_fields: frozenset[str]  # what the spine has (a model that doesn't nest the spine writes them one by one)
     spine: dict[str, Any] = field(default_factory=dict)
     plans: dict[int, SlidePlan] = field(default_factory=dict)
     first_attempts: dict[int, Any] = field(default_factory=dict)
@@ -160,6 +161,7 @@ class _PlannedTalk:
     def __post_init__(self) -> None:
         self._slide_numbers = {slide.key: slide_nr for slide_nr, slide in self.planned.items()}
         self._changed = threading.Condition()
+        self._spine_in = False  # whether all of the spine came in
         self._reached = -1  # the last slide whose part of the answer came in
         self._finished = False
 
@@ -174,11 +176,17 @@ class _PlannedTalk:
         return self.spine.get("presenter_name"), self.spine.get("name_plays_on")
 
     def take(self, key: str, value: Any) -> None:
-        """A part of the model's answer: the spine, or a slide (whose first attempt then starts, in parallel)."""
+        """A part of the model's answer: the spine (one object, or else one of its fields), or a slide (whose first
+        attempt then starts, in parallel)."""
         with self._changed:
             slide_nr = self._slide_numbers.get(key)
-            if slide_nr is None:
+            if key == SPINE:
+                if isinstance(value, dict):
+                    self.spine.update(value)
+                    self._spine_in = True
+            elif slide_nr is None:
                 self.spine[key] = value
+                self._spine_in = self._spine_in or self.spine_fields <= self.spine.keys()
             elif self.spine.get("unsafe_topic") is not True:  # it comes first: then no slide is looked for
                 self._reached = max(self._reached, slide_nr)
                 plan = slide_plan(self.planned[slide_nr], value)
@@ -190,9 +198,11 @@ class _PlannedTalk:
             self._changed.notify_all()
 
     def wait_for_spine(self) -> None:
-        """Wait for the spine of the answer (its title, the presenter's job and name, its thesis), which is in once
-        the first slide's part comes in, or the answer ends."""
-        self._wait(lambda: self._reached >= 0 or self._finished)
+        """Wait for the spine of the answer (its title, the presenter's job and name, its thesis), all of it, or the
+        end of the answer: then a talk that streams gets the spine a talk made at once gets. It comes before the
+        slides, also from models that write the answer in alphabetical order. A spine that finds the topic unsafe
+        doesn't count, as the model is then asked again."""
+        self._wait(lambda: (self._spine_in and self.spine.get("unsafe_topic") is not True) or self._finished)
 
     def wait_for_a_plan(self) -> bool:
         """Wait for the first slide the model wrote, or the end of the answer: whether it wrote any slide."""
@@ -253,6 +263,7 @@ class _PlannedTalk:
             self.plans.clear()
             self.first_attempts.clear()
             self.spine.clear()
+            self._spine_in = False
             self._reached = -1
             self._changed.notify_all()
 
@@ -460,6 +471,7 @@ class PresentationSchema:
                 pick.name or str(pick),
                 pick.llm.varied(rng.child("slide", slide_nr, "variant")),
                 seeds[slide_nr],
+                digits=len(str(num_slides)),
             )
             for slide_nr, pick in enumerate(picks)
             if pick is not None and pick.llm is not None and pick.llm.kind != "title"
@@ -470,6 +482,7 @@ class PresentationSchema:
             # What realizing a slide may know: its topic and language (not the title, which arrives with the answer)
             [{"topic": topics[0], "topics": topics, "seed": seed, "language": language} for seed in seeds],
             [rng.child("slide", slide_nr, "planned") for slide_nr in range(num_slides)],
+            frozenset(prompt.spine(language, name)),
             language=language,
             cancelled=cancelled or threading.Event(),
         )

@@ -247,6 +247,17 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   now asks the other way around, as the plan had it: `unsafe_topic`, true only for a hateful or harmful topic.
   As another free model then turned down "penguins" that way, a talk a model finds unsafe is asked for once
   more, saying so; it's classic when the second answer finds it unsafe too.
+- A talk that streams is the talk made at once also when the model writes its answer's properties in alphabetical
+  order, as `dots-studio/dots-3-note-preview:free` does (OpenRouter's free router often picks it). Its title,
+  thesis and unsafe flag came after the slides, so a streamed talk started with a classic title ("Never, Ever
+  Make A Good Pot Of Coffee") where the same answer made at once got the model's, and took slides before the flag;
+  and in a talk of 10 slides or more, `slide_10` came before `slide_2`, so a slide that wasn't in yet when its
+  turn came was taken for skipped, and came out classic. The answer is in alphabetical order now too: the spine
+  is one object, `about`, before the slides, whose numbers have as many digits as the last one's (`slide_02` to
+  `slide_10`). And a streamed talk waits for all of the spine (or the end of the answer) instead of taking what
+  there is of it once the first slide is in: as the spine comes first in either order, `talk.started` comes as
+  early as before, and a model that writes the spine last, or its fields one by one, still gives a streamed talk
+  all of it.
 - When the model's provider fails before the model writes anything ("Provider timed out after 11796ms", which
   made one benchmark talk in thirty classic), OpenRouter gets the request once more; the free router may then
   send it to another model.

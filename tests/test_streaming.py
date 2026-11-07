@@ -5,6 +5,7 @@ still writes; and a talk that stops once nobody wants it anymore.
 The talks are the fake ones of test_llm_talks: a fake schema with recipes, a fake model and fake images.
 """
 
+import json
 import threading
 
 import pytest
@@ -13,6 +14,8 @@ from pydantic import TypeAdapter
 from talkgenerator import generator
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.models.events import SlideReady, TalkEvent, TalkFinished, TalkStarted
+from talkgenerator.plan.prompt import SPINE
+from talkgenerator.plan.stream import ObjectReader
 from talkgenerator.schema.presentation_schema import TalkCancelled
 from talkgenerator.util import image_util
 from tests.test_llm_talks import NUM_SLIDES, FakeModel, _jpeg, fake_schema
@@ -49,12 +52,12 @@ def schema(monkeypatch):
 TALK = {"topic": "cats", "presenter": "Ann Example", "int_seed": 3}
 
 
-def _streamed(**options):
-    return list(generator.stream_talk("fake", NUM_SLIDES, **{**TALK, **options}))
+def _streamed(slides=NUM_SLIDES, **options):
+    return list(generator.stream_talk("fake", slides, **{**TALK, **options}))
 
 
-def _made_at_once(**options):
-    _, slide_deck, _ = generator.generate_presentation("fake", NUM_SLIDES, save_ppt=False, **{**TALK, **options})
+def _made_at_once(slides=NUM_SLIDES, **options):
+    _, slide_deck, _ = generator.generate_presentation("fake", slides, save_ppt=False, **{**TALK, **options})
     return slide_deck.to_deck(schema_name="fake")
 
 
@@ -101,15 +104,15 @@ def test_events_are_json_that_reads_back():
 class SlowModel(FakeModel):
     """Writes the talk up to its third slide, then waits until it's told to go on (or for ten seconds)."""
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, change=None):
+        super().__init__(change)
         self.go_on = threading.Event()
         self.done = threading.Event()
         self.stopped = None  # what stopped its answer halfway, if anything did
 
     def stream(self, request, on_text):
         response = self.complete(request)
-        cut = response.text.index('"slide_3"')
+        cut = response.text.index('"slide_', response.text.index('"slide_') + 1)  # (the second slide it writes)
         on_text(response.text[:cut])
         self.go_on.wait(timeout=10)
         try:
@@ -136,6 +139,86 @@ def test_slides_come_while_the_model_still_writes():
     *ready, finished = list(stream)
     assert [event.index for event in ready] == list(range(2, NUM_SLIDES))
     assert all("Planned:" in slide.notes for slide in finished.deck.slides)
+
+
+class AlphabeticalModel(SlowModel):
+    """Writes its answer's properties in alphabetical order, at every level, as some free models do (the free router
+    often picks dots-studio/dots-3-note-preview:free, which does)."""
+
+    def complete(self, request):
+        response = super().complete(request)
+        answer = json.loads(response.text.removeprefix("```json\n").removesuffix("\n```"))
+        return response.model_copy(update={"text": json.dumps(answer, sort_keys=True, indent=2)})
+
+
+def _while_the_model_writes(model, slides=NUM_SLIDES, **options):
+    """A streamed talk's events, of which talk.started and the first two slides come while the model still writes."""
+    stream = generator.stream_talk("fake", slides, llm=model, **{**TALK, **options})
+    events = [next(stream), next(stream), next(stream)]
+    assert not model.done.is_set()  # (as early as with the schema's order: once the spine and the first slide are in)
+    model.go_on.set()
+    return _parts([*events, *stream])
+
+
+def _at_once(model, slides=NUM_SLIDES, **options):
+    model.go_on.set()
+    return _made_at_once(slides, llm=model, **options)
+
+
+@pytest.mark.parametrize("slides", [NUM_SLIDES, 12], ids=["7 slides", "12 slides"])
+def test_a_model_that_writes_in_alphabetical_order_streams_the_talk_made_at_once(slides):
+    model = AlphabeticalModel()
+    started, ready, deck = _while_the_model_writes(model, slides)
+
+    # Every slide as the model wrote it (slide_10 doesn't sort before slide_2, which would have been taken for
+    # skipped), and the model's title from the start (its spine sorts before its slides)
+    assert all("Planned:" in event.slide.notes for event in ready)
+    assert started.title == deck.title == "The title"
+    assert deck.to_json() == _at_once(AlphabeticalModel(), slides).to_json()
+    keys = [key for key, _ in ObjectReader().feed(model.complete(model.requests[0]).text)]
+    assert keys == sorted(keys) and len(keys) == slides  # (the spine, and every slide but the title slide)
+
+
+def _flat(answer):
+    """The answer as a model writes it that doesn't put the spine in its object: its fields first, one by one."""
+    spine = answer.pop(SPINE)
+    slides = dict(answer)
+    answer.clear()
+    answer.update({**spine, **slides})
+
+
+def test_a_model_that_writes_the_spine_field_by_field_streams_the_talk_made_at_once():
+    started, ready, deck = _while_the_model_writes(SlowModel(change=_flat), theme="neon")
+    assert started.title == deck.title == "The title"
+    assert all("Planned:" in event.slide.notes for event in ready)
+    assert deck.to_json() == _at_once(SlowModel(change=_flat), theme="neon").to_json()
+
+
+def test_a_model_that_writes_the_spine_last_streams_the_talk_made_at_once():
+    # (Then the talk starts once the answer is in: its title and the presenter's job come last)
+    def spine_last(answer):
+        answer[SPINE] = answer.pop(SPINE)
+
+    model = SlowModel(change=spine_last)
+    threading.Timer(0.5, model.go_on.set).start()  # (a while after it wrote the first slide, without the spine)
+    started, ready, deck = _parts(_streamed(llm=model))
+    assert started.title == deck.title == "The title"
+    assert deck.slides[0].elements[1].text.endswith("Ann Example, The presenter job")
+    assert deck.to_json() == _at_once(SlowModel(change=spine_last)).to_json()
+
+
+def test_a_streamed_talk_that_a_model_wrongly_finds_unsafe_is_the_second_answers():
+    def model():
+        writer = FakeModel()
+        writer.change = lambda answer: answer[SPINE].update(
+            unsafe_topic=len(writer.requests) == 1, title=f"Take {len(writer.requests)}"
+        )
+        return writer
+
+    started, ready, deck = _parts(_streamed(llm=model()))
+    assert started.title == deck.title == "Take 2"
+    assert all("Planned:" in event.slide.notes for event in ready)
+    assert deck.to_json() == _made_at_once(llm=model()).to_json()
 
 
 def test_a_talk_stops_once_nobody_wants_it():

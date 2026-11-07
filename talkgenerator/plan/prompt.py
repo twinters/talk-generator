@@ -5,6 +5,10 @@ one JSON object, whose schema is built for this talk's slides: its spine (title,
 a made-up name for the presenter when nobody gave theirs: see talkgenerator.names) first, then one property per
 slide, in order, so the slides can be read while the model writes them. Seeded "dice" (a persona for the presenter
 and an angle on the topic) make every seed give its own talk, where current models take no sampling temperature.
+
+Some models write the properties in alphabetical order instead of the schema's (OpenRouter's free router often picks
+one that does), so the answer's properties are in alphabetical order too: the spine is one object, called "about",
+and the slides' numbers have as many digits as the last one's ("slide_02" to "slide_10").
 """
 
 from __future__ import annotations
@@ -83,10 +87,17 @@ class PlannedSlide:
     generator: str  # the name of the slide generator it stands in for
     recipe: Recipe
     seed: str  # the word the slide starts from (from the schema's topic generator)
+    digits: int = 1  # as many as the number of the talk's last slide has
 
     @property
     def key(self) -> str:
-        return f"slide_{self.number}"
+        """Its property in the answer: slide_2, or slide_02 in a talk of 10 slides or more, so that slide_10 doesn't
+        come before slide_2 in alphabetical order."""
+        return f"slide_{self.number:0{self.digits}d}"
+
+
+# The property the answer's spine is in, which sorts before the slides' (see the module's documentation)
+SPINE: Final = "about"
 
 
 def spine(language: str = "en", name: NameRequest | None = None) -> dict[str, str]:
@@ -150,7 +161,7 @@ def talk_request(
             if asked_again
             else []
         ),
-        "Write the talk as one JSON object. First its spine:",
+        f"Write the talk as one JSON object. First its spine, as an object called {SPINE}:",
         *(f"- {field}: {description}" for field, description in spine(language, name).items()),
         "",
         "Then every slide, in order (slide 1, the title slide, is made from the spine), each with its texts, a search "
@@ -175,11 +186,12 @@ def response_schema(
     planned: list[PlannedSlide], language: str = "en", name: NameRequest | None = None
 ) -> dict[str, Any]:
     """The JSON Schema of the answer: every property required, nothing else allowed (as strict structured outputs
-    want), the spine first and the slides in order."""
-    properties: dict[str, Any] = {
+    want), the spine first and the slides in order (which is alphabetical order too)."""
+    fields = {
         field: {"type": "boolean" if field == "unsafe_topic" else "string", "description": description}
         for field, description in spine(language, name).items()
     }
+    properties: dict[str, Any] = {SPINE: _object(fields)}
     for slide in planned:
         properties[slide.key] = slide_schema(slide.recipe)
     return _object(properties)

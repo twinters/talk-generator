@@ -151,13 +151,16 @@ def fake_schema():
 
 
 def _answer(schema):
-    """Fill in every property of the response schema (the only boolean, unsafe_topic, with false)."""
+    """Fill in every property of the response schema: the spine's as "The title" and so on (the only boolean,
+    unsafe_topic, with false), and every slide's as "title of slide_2"."""
     answer = {}
     for key, value in schema["properties"].items():
         if value["type"] == "boolean":
             answer[key] = False
         elif value["type"] == "string":
             answer[key] = f"The {key.replace('_', ' ')}"
+        elif key == prompt.SPINE:
+            answer[key] = _answer(value)
         else:
             answer[key] = {
                 name: "Yes | No | Only on Tuesdays" if name == "categories" else f"{name.replace('_', ' ')} of {key}"
@@ -305,7 +308,7 @@ def test_a_model_that_crashes_makes_a_classic_talk(schema):
 
 
 def test_a_topic_the_model_finds_unsafe_makes_a_classic_talk(schema):
-    model = FakeModel(change=lambda answer: answer.update(unsafe_topic=True))
+    model = FakeModel(change=lambda answer: answer[prompt.SPINE].update(unsafe_topic=True))
     deck = _talk(model)
     assert deck.title.startswith("A classic title")
     assert not any(_planned(deck))
@@ -314,7 +317,7 @@ def test_a_topic_the_model_finds_unsafe_makes_a_classic_talk(schema):
 
 def test_a_model_that_wrongly_finds_a_topic_unsafe_is_asked_once_more(schema):
     # Some of the free models get the flag wrong (one turned down "penguins"): the router may pick another one
-    model = FakeModel(change=lambda answer: answer.update(unsafe_topic=len(model.requests) == 1))
+    model = FakeModel(change=lambda answer: answer[prompt.SPINE].update(unsafe_topic=len(model.requests) == 1))
     deck = _talk(model)
     assert all(_planned(deck))
     first, second = (request.messages[0].content for request in model.requests)
@@ -459,7 +462,7 @@ def _claude_api_that_declines_halfway(request):
 def test_the_check_replays_what_the_model_answered(schema, monkeypatch):
     # A model that never answers the same twice: the second run of the check has to replay the first one's answer
     model = FakeModel()
-    model.change = lambda answer: answer.update(title=f"Take {len(model.requests)}")
+    model.change = lambda answer: answer[prompt.SPINE].update(title=f"Take {len(model.requests)}")
     monkeypatch.setitem(providers._FACTORIES, "fake", lambda argument: model)
     report = benchmark.check_talk("cats", 1, schema="fake", slides=NUM_SLIDES, llm="fake")
     assert report.deterministic is True
@@ -470,7 +473,7 @@ def test_the_check_replays_what_the_model_answered(schema, monkeypatch):
 
 
 def test_the_check_says_when_the_model_wrote_nothing(schema, monkeypatch):
-    model = FakeModel(change=lambda answer: answer.update(unsafe_topic=True))
+    model = FakeModel(change=lambda answer: answer[prompt.SPINE].update(unsafe_topic=True))
     monkeypatch.setitem(providers._FACTORIES, "fake", lambda argument: model)
     report = benchmark.check_talk("cats", 1, schema="fake", slides=NUM_SLIDES, llm="fake", determinism=False)
     assert [(finding.check, finding.severity) for finding in report.findings] == [("language model", "warning")]
@@ -513,11 +516,10 @@ def test_the_prompt_says_what_to_write_in_every_field(schema):
     _talk(model)
     request = model.requests[0]
     prompt_text = request.messages[0].content
+    assert f"First its spine, as an object called {prompt.SPINE}:\n" in prompt_text
     for key, value in request.json_schema["properties"].items():
-        if not key.startswith("slide_"):
-            assert f"- {key}: {value['description']}" in prompt_text
-            continue
-        assert f"\n{key}: " in prompt_text
+        if key != prompt.SPINE:
+            assert f"\n{key}: " in prompt_text
         for name, field in value["properties"].items():
             if name != "concept":
                 assert f"- {name}: {field['description']}" in prompt_text
@@ -525,8 +527,9 @@ def test_the_prompt_says_what_to_write_in_every_field(schema):
 
 
 def test_the_response_schema_is_strict_and_in_order():
+    digits = len(str(len(slide_schemas.slide_generators) + 1))
     planned = [
-        prompt.PlannedSlide(number, generator_.name, generator_.llm, "cat")
+        prompt.PlannedSlide(number, generator_.name, generator_.llm, "cat", digits=digits)
         for number, generator_ in enumerate(slide_schemas.slide_generators, 2)
         if generator_.llm is not None and generator_.llm.kind != "title"
     ]
@@ -540,8 +543,12 @@ def test_the_response_schema_is_strict_and_in_order():
                 check(value)
 
     check(schema)
-    assert list(schema["properties"])[:4] == ["unsafe_topic", "thesis", "title", "presenter_job"]
-    assert list(schema["properties"])[4:] == [slide.key for slide in planned]
+    assert list(schema["properties"]) == [prompt.SPINE, *(slide.key for slide in planned)]
+    spine = schema["properties"][prompt.SPINE]
+    assert list(spine["properties"]) == ["unsafe_topic", "thesis", "title", "presenter_job"]
+    # In alphabetical order too, in which some models write the answer: the spine first, and slide_02 before slide_10
+    assert planned[-1].number >= 10 and planned[0].key == f"slide_0{planned[0].number}"
+    assert sorted(schema["properties"]) == list(schema["properties"])
 
 
 def test_every_recipe_of_the_schemas_fits_its_kind():
@@ -604,9 +611,9 @@ def test_a_text_thats_cut_ends_on_a_word_that_matters():
 
 def test_the_spine_is_in_the_talks_language():
     planned = [prompt.PlannedSlide(2, "Fake", Recipe("chart_yes_no"), "cat")]
-    schema = prompt.response_schema(planned, "nl")
-    assert "in Dutch" in schema["properties"]["presenter_job"]["description"]
-    assert "in Dutch" in schema["properties"]["title"]["description"]
+    spine = prompt.response_schema(planned, "nl")["properties"][prompt.SPINE]["properties"]
+    assert "in Dutch" in spine["presenter_job"]["description"]
+    assert "in Dutch" in spine["title"]["description"]
     request = prompt.talk_request(["cat"], planned, random_util.Rng(1), "nl")
     assert "- presenter_job: the presenter's grand, made-up job, such as" in request.messages[0].content
     assert "in Dutch (at most 50 characters)" in request.messages[0].content

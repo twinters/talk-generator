@@ -243,10 +243,12 @@ of explanations, a deadpan expert voice, callbacks, and room for the presenter t
 - The prompt has a static part (style guide, slide-type catalog with field limits, output schema: about 2,000 to
   3,000 tokens, cached where the provider supports it) and a small dynamic part (topic, format, skeleton, dice,
   language).
-- The model writes the spine first, then the slides in order. Providers with structured outputs (Anthropic,
-  OpenAI, some OpenRouter models) get the JSON Schema; the others write JSON Lines, one slide per line. Either
-  way, an incremental parser hands over each slide as soon as it's complete, so slide 1 is being realized and
-  shown while the model writes slide 2.
+- The model writes the spine first, then the slides in order (which is alphabetical order too, as some models
+  write the answer that way: the spine is one object, `about`, before `slide_02` to `slide_10`; see
+  [13.1](#131-streaming-slides-into-the-browser)). Providers with structured outputs (Anthropic, OpenAI, some
+  OpenRouter models) get the JSON Schema; the others write JSON Lines, one slide per line. Either way, an
+  incremental parser hands over each slide as soon as it's complete, so slide 1 is being realized and shown while
+  the model writes slide 2.
 - Each slide is validated against its type (fields, lengths, banned strings). An invalid slide falls back to
   classic content for that slide only.
 - Regenerating one slide is one small call, with the spine and the neighbouring slides as context.
@@ -819,6 +821,31 @@ browser ([section 13.1](#131-streaming-slides-into-the-browser)) and the filters
   pixels. What a browser can't do as PowerPoint does: split black and white at a picture's own median lightness
   (it can't read another site's pixels, so it splits at half), and bend text into an arch, a wave or an inflated
   shape (a slant it can).
+- **The answer's order** (fixed on 2026-11-07): some models write the answer's properties in alphabetical order
+  instead of the schema's, at every level. `dots-studio/dots-3-note-preview:free`, which the free router often
+  picks, wrote `presenter_job`, `presenter_name`, `slide_2`, ..., `thesis`, `title`, `unsafe_topic`. A streamed
+  talk took the spine as it was once the first slide was in, so it got a classic title (a WikiHow one: "Never,
+  Ever Make A Good Pot Of Coffee") where the same answer made at once got the model's, its title slide's notes
+  had no thesis, and slides came in before the unsafe flag. And in a talk of 10 slides or more, `slide_10` comes
+  before `slide_2` in that order, which made slides that weren't in yet look skipped (they came out classic). Now
+  the answer's order is alphabetical too: the spine is one object, `about`, and slide numbers have as many digits
+  as the last one's (`slide_02` to `slide_10`). And a streamed talk waits for all of the spine (or the end of the
+  answer) before it takes its title, the presenter's name and job, instead of taking what there is of it once the
+  first slide is in: the spine comes first in either order, so `talk.started` comes as early as before, and a
+  model that writes the spine last, or its fields one by one, still gives a streamed talk all of it (then
+  later). Live (10-slide talks streamed with a $0 budget, as on the site, seed 1, one request each, $0): through
+  the free router, 5 talks, 2 of which it gave to dots, whose spine came in alphabetical order inside `about`
+  (`name_plays_on`, `presenter_job`, `presenter_name`, `thesis`, `title`, `unsafe_topic`), and 3 to
+  `nvidia/nemotron-3.5-super-vl:free`, in the schema's order: every `talk.started` had the model's title, 50 of 50
+  slides were the model's, and each talk started 4 to 13 s in, as soon as its first slide's part was in. Pinned to
+  dots (`openrouter:dots-studio/dots-3-note-preview:free`, which then thinks as long as it likes, as a model named
+  in the spec gets no effort: its answers began after 89 to 124 s, and one ran out of room after `slide_09`), 3
+  more (coffee, medicine, bees): the model's title from the start in every one, 29 of 30 slides the model's, each
+  talk started the moment its first slide came in. The same 3 on the code before the fix (`68c79e7`): every one
+  started with a classic title ("Never, Ever Make A Good Pot Of Coffee", "Never, Ever Get Rid Of Carpenter Bees")
+  where the model had written its own ("The Quantum Alchemy of Medieval Coffee"), no title slide had its thesis,
+  and the slides came in from `slide_10` on; they were the model's all the same, as dots wrote the rest within
+  5 s, faster than slides settle.
 - **talk-generator-web**, on a branch of its own: `POST /api/talks` returns an id; `GET /api/talks/<id>/events`
   streams Server-Sent Events (with nginx's buffering off); `GET /api/talks/<id>` returns the deck JSON as a
   permalink, kept for 7 days like today's outputs; `GET /api/talks/<id>.pptx` renders the .pptx on demand.
