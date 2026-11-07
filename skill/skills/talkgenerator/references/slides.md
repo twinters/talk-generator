@@ -2,7 +2,7 @@
 
 A TED-like talk: about the presenter, history, bold statements, captioned images, charts and conclusions, with images from every source (memes and gifs too).
 
-Every talk starts with a title slide, made from the plan's `title` and `presenter_job` (talkgenerator adds the presenter's name). The plan's `slides` come after it, each of one of the kinds below. A slide's `recipe` picks its look and its image sources, and makes the slide the classic way when it can't be made as planned; without one, a slide gets its kind's default recipe.
+Every talk starts with a title slide, made from the plan's `title`, `presenter_job` and `presenter_name` (or the name given to render, or one talkgenerator makes up). The plan's `slides` come after it, each of one of the kinds below. A slide's `recipe` picks its look and its image sources, and makes the slide the classic way when it can't be made as planned; without one, a slide gets its kind's default recipe.
 
 Made by `talkgenerator formats --details --format default`.
 

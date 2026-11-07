@@ -248,11 +248,13 @@ def _quadrant(corner: str, ends: str) -> TextField:
 _NUMBER: Final = re.compile(r"[-+]?\d+(?:[.,]\d+)?\s*%?")
 _OPTIONAL_TITLE = TextField("title", "the slide's title", 60, optional=True)
 
-# The talk's own texts, on its title slide: "By <presenter>, <job>" under the title
+# The talk's own texts, on its title slide: "By <presenter>, <job>" under the title. The name is a made-up one, when
+# nobody gives theirs (see talkgenerator.names), and it isn't cut when it's too long: half a name is no name
 TALK_TITLE: Final = TextField("title", "the talk's title", 80)
 PRESENTER_JOB: Final = TextField(
     "presenter_job", "the presenter's grand, made-up job, such as 'Professor of Applied Sock Theory'", 50
 )
+PRESENTER_NAME: Final = TextField("presenter_name", "a made-up name for the presenter", 40)
 
 KINDS: Final[dict[str, Kind]] = {
     kind.name: kind

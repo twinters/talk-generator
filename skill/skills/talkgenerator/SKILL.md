@@ -36,8 +36,8 @@ by. If it's long, tell the user once that free keys give better images, and leav
 
 1. **Work out what's wanted**: the topic (several topics work too); how many slides (a "10-slide deck" is the
    title slide plus 9 slides in the plan, and 10 to 12 slides suit a talk of five minutes); the language; whether
-   the presenter's name should be on the title slide (without one, talkgenerator makes one up, which is part of the
-   fun); and the format. The `default` format draws on every image source, Reddit's wilder pictures and gifs too.
+   the presenter's own name should be on the title slide (without it, you make one up, which is part of the fun);
+   and the format. The `default` format draws on every image source, Reddit's wilder pictures and gifs too.
    For a deck shown beyond a circle of friends (at a company event, on a stage, online), use `ted`: copyright-free
    images only. Don't hold things up with questions: pick sensible defaults and say which.
 2. **Look up the slides you can use** in the format's reference: [references/slides.md](references/slides.md) for
@@ -48,11 +48,14 @@ by. If it's long, tell the user once that free keys give better images, and leav
    `talkgenerator schema plan` the plan's JSON Schema.
 3. **Write the plan** as a JSON file, like [references/example-plan.json](references/example-plan.json), say
    `plans/birdwatching.json`. It has the talk's `format` (when it isn't `default`), `topic`, `title` (at most 80
-   characters), `presenter_job` (at most 50; the title slide reads "By <name>, <job>"), `thesis`, and `language`
-   when it isn't English, then its `slides`, and optionally its `theme`: without one, the user's default (a random
-   theme, unless their TALKGENERATOR_THEME says otherwise); `classic`, the 2019 template; `random`;
-   a family such as `"dark minimal"`, `"vintage paper"` or `"1997 WordArt"` (`talkgenerator render --help` lists
-   them); or `chaos`, every slide its own. The title slide is made for you, from the title. Talks can be in
+   characters), `presenter_job` (at most 50; the title slide reads "By <name>, <job>"), `presenter_name` (a made-up
+   name of at most 40 characters: a pun on the topic, such as "Prof. Anna Tomy" for medicine; an ordinary first
+   name with a surname that fits the topic too well, such as "Linda Hivesworth" for bees; or a historical figure's
+   name bent to fit it, such as "Albert Einstone" for geology; with a title such as Prof., the job agrees),
+   `thesis`, and `language` when it isn't English, then its `slides`, and optionally its `theme`: without one, the
+   user's default (a random theme, unless their TALKGENERATOR_THEME says otherwise); `classic`, the 2019 template;
+   `random`; a family such as `"dark minimal"`, `"vintage paper"` or `"1997 WordArt"` (`talkgenerator render
+   --help` lists them); or `chaos`, every slide its own. The title slide is made for you, from these. Talks can be in
    Dutch (`"nl"`), French (`"fr"`), German (`"de"`), Spanish (`"es"`), Italian (`"it"`) and Portuguese (`"pt"`):
    write every text in that language, and keep the image queries in English.
 4. **Render it**:
@@ -61,10 +64,11 @@ by. If it's long, tell the user once that free keys give better images, and leav
    talkgenerator render plans/birdwatching.json -o talks/birdwatching.pptx
    ```
 
-   Add `--presenter "Name"` for the presenter's name. Without `-o`, the PowerPoint goes in `output/`, named after
-   the plan. Next to it come `<name>.deck.json` (the deck as data, which you can leave be) and `<name>.images.png`
-   (a contact sheet of all the images). Several plans at once: `talkgenerator render plans/*.json --output_folder
-   talks`.
+   Add `--presenter "Name"` for the presenter's own name, which goes before the plan's `presenter_name` (the
+   report's `notes` say when talkgenerator couldn't use that one, and made one up). Without `-o`, the PowerPoint
+   goes in `output/`, named after the plan. Next to it come `<name>.deck.json` (the deck as data, which you can
+   leave be) and `<name>.images.png` (a contact sheet of all the images). Several plans at once: `talkgenerator
+   render plans/*.json --output_folder talks`.
 5. **Read the report** (JSON, on stdout). For every slide of the plan (`plan_index` is its place in your `slides`,
    `deck_slide` its place in the deck) it gives the `outcome`: `as planned`, `classic` (talkgenerator made the slide
    its own way, because the plan's version didn't come out), `picture` (in a talk in another language than
@@ -126,6 +130,8 @@ that give the presenter something to work with, rather than finished jokes:
 
 - No quotes put in the mouths of real people: quotes on slides belong to made-up people (the history slides are
   for made-up historical figures), or come from talkgenerator's real quotes.
+- The presenter's name is made up too: never a real person's name as it is, and a pun on a famous name only on a
+  historical figure who died long ago, never on a living person or a dictator.
 - Nothing about real private persons, and nothing that mocks people for who they are. No slurs or sexual content.
 - Images and texts are read together. A photo of a person under a caption that labels or judges ("Camouflage",
   "Patience", "Reality") can read as a joke about that person: for such captions, search for animals, objects or
@@ -144,8 +150,9 @@ Desktop, offer to set up talkgenerator's MCP server (below).
 talkgenerator's MCP server gives you the commands as tools: `list_formats`, `describe_format`
 (`formats --details`), `get_plan_schema` (`schema plan`), `render_plan` (`render`, with the plan itself as its
 input, the same report, and `seed` for `--int_seed`), and `generate_talk`, which has talkgenerator write a whole talk
-on its own. When you have those tools, use them: the steps above stay the same, and the decks go to the server's
-output folder (the report gives their paths).
+on its own (its `name_styles` pick the kinds of names it makes up for the presenter, which `list_formats` lists).
+When you have those tools, use them: the steps above stay the same, and the decks go to the server's output folder
+(the report gives their paths).
 
 If the user wants it, the server runs on their own computer, with their own keys. They install it with
 `pip install 'talkgenerator[mcp]'` (on Windows on Arm, in an x64 Python), open Claude Desktop's config (Settings >

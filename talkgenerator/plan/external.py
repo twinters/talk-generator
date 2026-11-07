@@ -28,7 +28,7 @@ from typing import Any, Final
 
 from pydantic import ValidationError
 
-from talkgenerator import settings
+from talkgenerator import names, settings
 from talkgenerator.checks.deck import check_deck
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.datastructures.slide_generator_data import SlideGeneratorData
@@ -36,7 +36,7 @@ from talkgenerator.design import themes
 from talkgenerator.models.deck import Deck, ImageElement, TextElement
 from talkgenerator.models.plan import SlidePlan, TalkPlan
 from talkgenerator.plan import languages
-from talkgenerator.plan.kinds import KINDS, PRESENTER_JOB, TALK_TITLE, Recipe, TextField
+from talkgenerator.plan.kinds import KINDS, PRESENTER_JOB, PRESENTER_NAME, TALK_TITLE, Recipe, TextField
 from talkgenerator.plan.realize import length_limit, option_of
 from talkgenerator.schema.presentation_schema import PlanOutcome, PresentationSchema
 from talkgenerator.slide.slide_deck import SlideDeck
@@ -211,21 +211,32 @@ def render_plan(
     parallel: bool = True,
     debug_notes: bool = False,
     theme: str | None = None,
+    name_styles: Sequence[str] | str | None = None,
 ) -> dict[str, Any]:
     """Realize a plan, save it as a PowerPoint (at output, or under an unused name in output_folder), with the deck's
     JSON (<name>.deck.json) and a contact sheet of its images (<name>.images.png) next to it, and return the report:
     what came out as planned, what didn't and why, what every image was searched with, and the checks.
 
     With local_images (a folder), image "queries" that name image files there put those files on the slides. Nothing
-    is saved over plan_path, the plan's own file. theme (or else the plan's own) is its look, as --theme takes it."""
+    is saved over plan_path, the plan's own file. theme (or else the plan's own) is its look, as --theme takes it.
+
+    The presenter is the one given, or else the plan's presenter_name (when it will do: see
+    talkgenerator.names.clean), or else a name talkgenerator makes up, in one of name_styles (see generate_presentation)."""
     from talkgenerator import generator  # (here: the generator module imports the schemas)
-    from talkgenerator.schema.content_generators import full_name_generator
 
     schema = generator.get_schema(schema_name)
     rng = random_util.Rng(int_seed)
+    chosen_styles = names.styles(name_styles)
+    notes: list[str] = []
     if not presenter:
-        with random_util.use(rng.child("presenter")):
-            presenter = full_name_generator()
+        presenter = names.clean(plan.presenter_name)
+        if plan.presenter_name.strip() and presenter is None:
+            notes.append(
+                f"the presenter_name {plan.presenter_name!r} isn't a name talkgenerator puts on a title slide (one of "
+                f"at most {PRESENTER_NAME.max_length} characters, with letters, spaces, dots, apostrophes and "
+                "hyphens, and no placeholder or real person's name), so it made one up"
+            )
+        presenter = presenter or names.from_pack([plan.topic], chosen_styles, rng)
 
     choices = recipes_of(schema)
     chosen = [choose_recipe(choices, slide, plan.language) for slide in plan.slides]
@@ -245,7 +256,6 @@ def render_plan(
 
     name = file_name or _file_name(plan.title or plan.topic)
     pptx = Path(_save(schema.render(slide_deck, debug_notes), output, Path(output_folder), name))
-    notes: list[str] = []
     deck_json = sheet = None
     if save_json:
         deck_json = _beside(pptx, ".deck.json", plan_path, notes)
@@ -484,8 +494,9 @@ def catalog_markdown(schema_name: str = "default") -> str:
         "",
         f"{data['description']}.",
         "",
-        "Every talk starts with a title slide, made from the plan's `title` and `presenter_job` (talkgenerator adds "
-        "the presenter's name). The plan's `slides` come after it, each of one of the kinds below. A slide's `recipe` "
+        "Every talk starts with a title slide, made from the plan's `title`, `presenter_job` and `presenter_name` "
+        "(or the name given to render, or one talkgenerator makes up). The plan's `slides` come after it, each of "
+        "one of the kinds below. A slide's `recipe` "
         "picks its look and its image sources, and makes the slide the classic way when it can't be made as "
         "planned; without one, a slide gets its kind's default recipe.",
         "",
@@ -540,7 +551,10 @@ def _render_command(argv: Sequence[str]) -> int:
     parser.add_argument(
         "--output_folder", default="output", help="where to save the PowerPoints, named after their plans"
     )
-    parser.add_argument("--presenter", help="the presenter's name, for the title slide (default: a made-up one)")
+    parser.add_argument(
+        "--presenter",
+        help="the presenter's name, for the title slide (default: the plan's presenter_name, or else a made-up one)",
+    )
     parser.add_argument(
         "--format",
         dest="schema",

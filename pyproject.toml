@@ -117,6 +117,7 @@ module = [
     "talkgenerator.models.classic",
     "talkgenerator.models.deck",
     "talkgenerator.models.usage",
+    "talkgenerator.names",
     "talkgenerator.render.animation",
     "talkgenerator.render.diagrams",
     "talkgenerator.render.powerpoint",
