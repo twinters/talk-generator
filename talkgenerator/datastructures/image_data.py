@@ -5,6 +5,8 @@ import logging
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
+from talkgenerator.models.deck import DisplayPolicy
+
 logger = logging.getLogger("talkgenerator")
 
 # A part of an image credit as it reads on a slide: its text, and the page it links to (if any)
@@ -33,6 +35,7 @@ class ImageData:
         credit: Sequence[CreditPart] | None = None,
         description: str | None = None,
         video: VideoCopy | None = None,
+        display: DisplayPolicy = "direct",
     ) -> None:
         self._image_url = image_url
         self._source = source
@@ -56,6 +59,8 @@ class ImageData:
         self.plays_video = False
         # The search that found it, when talkgenerator knows (see found_with)
         self.query: str | None = None
+        # How a browser may show it, as its source allows (see talkgenerator.models.deck.DisplayPolicy)
+        self.display: DisplayPolicy = display
 
     def found_with(self, query: str) -> ImageData:
         """This image, noting the search that found it: a copy, as a source may hand out the same object again."""

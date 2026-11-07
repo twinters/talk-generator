@@ -11,6 +11,7 @@ import pytest
 from pydantic import TypeAdapter
 
 from talkgenerator import generator
+from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.models.events import SlideReady, TalkEvent, TalkFinished, TalkStarted
 from talkgenerator.schema.presentation_schema import TalkCancelled
 from talkgenerator.util import image_util
@@ -168,3 +169,19 @@ def test_a_streamed_talk_probes_its_images_instead_of_downloading_them(images):
     images["probed"].clear()
     _made_at_once(llm=FakeModel(), theme="neon", parallel=True)  # (a talk for a PowerPoint downloads them)
     assert not images["probed"] and any(url.startswith("https://example.com/") for url in images["downloaded"])
+
+
+def test_a_streamed_slide_tells_its_images_sources_that_they_were_used(monkeypatch):
+    # (Unsplash counts a download when a photo is used: a PowerPoint tells it when it gets the slide)
+    used = []
+    monkeypatch.setattr(ImageData, "mark_used", lambda image: used.append(image.get_shown_url()))
+
+    *_, finished = _streamed(llm=FakeModel(), theme="neon")
+
+    shown = [
+        element.image.url for slide in finished.deck.slides for element in slide.elements if element.kind == "image"
+    ]
+    assert shown and sorted(used) == sorted(set(shown))
+    used.clear()
+    _made_at_once(llm=FakeModel(), theme="neon")  # (without a PowerPoint, nothing is used yet)
+    assert used == []

@@ -162,6 +162,13 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   browser loads itself. Images that don't tell their size early, and those shaped like a known "image not
   available" placeholder, are still downloaded whole, and a gif too large to embed probes its video copy. On 33
   images of earlier talks, probes took 9.7 s against 43.8 s for downloading them.
+- A deck's images say how a browser may show them (`display`), as their sources' terms and servers allow:
+  `direct` from their links (Unsplash and GIPHY require it; Wikimedia Commons, Pexels, Openverse's hosts, Reddit,
+  InspiroBot and ShitpostBot load that way too), `proxy` through a pass-through proxy (the Art Institute of
+  Chicago refuses requests without its `AIC-User-Agent` header), `copy` from the app's own copy or not at all (Pixabay doesn't
+  allow hotlinking for good, and its links stop working after a day), or `local` (talkgenerator's own files).
+  Every image source declares its policy (`DISPLAY`). A slide that streams tells its images' sources that they
+  were used once it's handed over, as a PowerPoint does, so Unsplash counts the download.
 - `talkgenerator login chatgpt`: Sign in with ChatGPT (OpenAI's sign-in for open-source apps that run locally, in
   preview), so that the models of your ChatGPT plan write your talks (`--llm chatgpt` or `chatgpt:<model>`, and the
   default once you've signed in), at no cost to talkgenerator: their requests count toward the plan's usage. The

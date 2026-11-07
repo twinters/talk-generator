@@ -30,6 +30,14 @@ ChartType = Literal["pie", "doughnut", "column", "bar", "line", "scatter"]
 ChartReveal = Literal["all", "series"]
 # How a diagram appears: all at once, or without its punchline, which appears on a click
 DiagramReveal = Literal["all", "punchline"]
+# How a browser may show an image, as its source's terms (and its server) allow:
+# - direct: from its url (and video_url), as Unsplash and GIPHY require
+# - proxy: through a pass-through proxy that keeps nothing, which adds what the source asks requests to carry (the
+#   Art Institute of Chicago refuses requests without its AIC-User-Agent header, which an <img> tag can't send)
+# - copy: from a copy of the app's own, kept as long as the deck, or not at all: Pixabay doesn't allow hotlinking for
+#   good, and its image links stop working after 24 hours
+# - local: a file of talkgenerator's own (or a plan's), which the app serves
+DisplayPolicy = Literal["direct", "proxy", "copy", "local"]
 TextAlign = Literal["left", "center", "right"]
 TextAnchor = Literal["top", "middle", "bottom"]
 ShapeKind = Literal["rectangle", "ellipse"]
@@ -80,6 +88,7 @@ class ImageAsset(_Data):
     credit: Credit = ()
     query: str | None = None  # the search that found it, for an image a plan asked for
     description: str | None = None  # what it shows, as its source describes it (for alt text, say)
+    display: DisplayPolicy = "direct"  # how a browser may show it (a PowerPoint embeds it whatever it says)
 
 
 class TextElement(_Data):

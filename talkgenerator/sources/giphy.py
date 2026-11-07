@@ -6,15 +6,19 @@ GIPHY asks apps to show "Powered by GIPHY", which the credits on the slides do.
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, Final
 
 from talkgenerator import settings
 from talkgenerator.datastructures.image_data import ImageData
+from talkgenerator.models.deck import DisplayPolicy
 from talkgenerator.util import http_util
 
 logger = logging.getLogger("talkgenerator")
 
 API_URL = "https://api.giphy.com/v1/gifs/search"
+# How a browser may show its images (see talkgenerator.models.deck.DisplayPolicy): GIPHY requires its media to be
+# loaded from its links by the browser itself: "Do not proxy requests to GIPHY", nor store copies
+DISPLAY: Final[DisplayPolicy] = "direct"
 # Renditions from largest to smallest; image_util refuses GIFs above 16 MB anyway
 _RENDITIONS = ("downsized_large", "downsized_medium", "original", "downsized")
 
@@ -38,6 +42,7 @@ def _map_gif(gif: dict[str, Any]) -> ImageData | None:
                 source=f"{creator} (Powered by GIPHY)",
                 source_url=gif.get("url"),
                 description=gif.get("title"),
+                display=DISPLAY,
             )
     return None
 

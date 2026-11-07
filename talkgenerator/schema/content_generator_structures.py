@@ -74,6 +74,7 @@ class RedditImageSearcher:
                 source_url=image.post_url,
                 # Reddit's mp4 copy of a gif, which plays in its place when the gif is too large to embed
                 video=VideoCopy(image.video_url, image.poster_url) if image.video_url and image.poster_url else None,
+                display=reddit.DISPLAY,
             )
             for image in results
         ]

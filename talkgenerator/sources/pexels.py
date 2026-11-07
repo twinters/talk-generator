@@ -4,15 +4,19 @@ Talks directly to the REST API (the old `pexels-api` wrapper is unmaintained).
 """
 
 import logging
-from typing import Any
+from typing import Any, Final
 
 from talkgenerator import settings
 from talkgenerator.datastructures.image_data import ImageData
+from talkgenerator.models.deck import DisplayPolicy
 from talkgenerator.util import http_util
 
 logger = logging.getLogger("talkgenerator")
 
 API_URL = "https://api.pexels.com/v1/search"
+# How a browser may show its images (see talkgenerator.models.deck.DisplayPolicy): Pexels' guidelines ask for credit and
+# a link, and nothing against showing its photos from its links (checked on 2026-11-07: its images load in a browser's <img>, with a referrer and without)
+DISPLAY: Final[DisplayPolicy] = "direct"
 _IMAGE_WIDTH = 1920
 
 _cooldown = http_util.Cooldown("Pexels")
@@ -54,7 +58,9 @@ def _map_to_image_data(photo: dict[str, Any]) -> ImageData | None:
     # The original upload can be huge; ask the CDN for a slide-sized version instead
     image_url = http_util.with_query_params(original, auto="compress", cs="tinysrgb", w=_IMAGE_WIDTH)
     source = photo["photographer"] + " (via Pexels)" if photo.get("photographer") else "Pexels"
-    return ImageData(image_url=image_url, source=source, source_url=photo.get("url"), description=photo.get("alt"))
+    return ImageData(
+        image_url=image_url, source=source, source_url=photo.get("url"), description=photo.get("alt"), display=DISPLAY
+    )
 
 
 def search_photos(query: str | None) -> list[ImageData]:

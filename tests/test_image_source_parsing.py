@@ -244,3 +244,24 @@ def test_pixabay_tags_say_what_a_photo_shows(fake_get, monkeypatch):
     fake_get({"hits": [{"largeImageURL": "https://x/1.jpg", "user": "Cy", "tags": "owl, bird, feathers"}]})
     (image,) = pixabay.search_photos("owl")
     assert image.description == "owl, bird, feathers"
+
+
+def test_every_source_says_how_a_browser_may_show_its_images(fake_get, monkeypatch):
+    # (as their terms ask, and as their servers allow: see talkgenerator.models.deck.DisplayPolicy)
+    from talkgenerator import settings
+    from talkgenerator.sources import inspirobot, pexels, pixabay, reddit, shitpostbot
+
+    photo = {"urls": {"raw": "https://images.unsplash.com/photo-1"}, "user": {"name": "Ann"}}
+    assert unsplash._map_to_image_data(photo).display == "direct"  # (its guidelines require it)
+    pexel = {"src": {"original": "https://images.pexels.com/1.jpg"}, "photographer": "Bo"}
+    assert pexels._map_to_image_data(pexel).display == "direct"
+    assert giphy._map_gif({"images": {"original": {"url": "https://x/1.gif"}}}).display == "direct"  # (no proxies)
+    fake_get({"config": {"iiif_url": "https://iiif"}, "data": [{"id": 7, "image_id": "abc"}]})
+    (artwork,) = art_institute.search_artworks("cat")
+    assert artwork.display == "proxy"  # (its server wants a header that an <img> can't send)
+    monkeypatch.setattr(settings, "pixabay_auth", lambda: {"pixabay_key": "test"})
+    fake_get({"hits": [{"largeImageURL": "https://pixabay.com/get/1.jpg", "user": "Cy"}]})
+    (pixabay_photo,) = pixabay.search_photos("owl")
+    assert pixabay_photo.display == "copy"  # (no hotlinking for good, and its links stop working after a day)
+    assert (openverse.DISPLAY, wikimedia_commons.DISPLAY, reddit.DISPLAY) == ("direct", "direct", "direct")
+    assert (inspirobot.DISPLAY, shitpostbot.DISPLAY) == ("direct", "direct")

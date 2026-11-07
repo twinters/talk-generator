@@ -144,6 +144,7 @@ presentation, slide_deck, output_file = generator.generate_presentation(
 A language model's slides come while it's still writing the rest of the talk.
 Every event is plain data (`talkgenerator.models.events`), whose `event` is its name and whose `to_json()` is what a Server-Sent Event would carry; leaving the loop stops the talk.
 While a talk streams, its images are probed instead of downloaded: their first bytes tell what they are and how large, as a browser that shows the slides loads them itself (a PowerPoint made from the deck downloads them then).
+Every image in a deck says how a browser may show it (`display`, as its source's terms allow): from its own link (`direct`), through a pass-through proxy (`proxy`), from a copy the app keeps as long as the deck, or not at all (`copy`, for Pixabay), or as a file of talkgenerator's own (`local`).
 
 ```python
 for event in generator.stream_talk("default", 8, topic="peanuts", theme="random"):

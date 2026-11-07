@@ -109,7 +109,8 @@ def _to_element(role: str, value: object, fit: model.ImageFit) -> model.TextElem
         if isinstance(value, ImageData):
             return model.ImageElement(role=role, image=_to_image_asset(value), fit=fit)
         if isinstance(value, str) and os_util.is_image(value):
-            return model.ImageElement(role=role, image=model.ImageAsset(url=value), fit=fit)
+            display: model.DisplayPolicy = "direct" if value.startswith(("http://", "https://")) else "local"
+            return model.ImageElement(role=role, image=model.ImageAsset(url=value, display=display), fit=fit)
     text = str(value)
     return model.TextElement(role=role, text=text) if text.strip() else None
 
@@ -118,14 +119,16 @@ def _to_image_asset(image: ImageData) -> model.ImageAsset:
     # Checked first (if it wasn't yet), as that settles what shows: a gif too large to embed, say, plays as its video
     image_util.check_image(image)
     video = image.video if image.plays_video else None
+    url = image.get_shown_url()
     return model.ImageAsset(
-        url=image.get_shown_url(),
+        url=url,
         video_url=video.url if video is not None else None,
         source=image.get_source(),
         source_url=image.get_source_url(),
         credit=tuple(model.CreditPart(text=text, url=url) for text, url in image.get_credit()),
         query=image.query,
         description=image.description,
+        display=image.display if url.startswith(("http://", "https://")) else "local",
     )
 
 

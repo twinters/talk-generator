@@ -7,16 +7,20 @@ and a download is registered when a photo ends up on a slide. New Unsplash apps 
 """
 
 import logging
-from typing import Any
+from typing import Any, Final
 
 from talkgenerator import settings
 from talkgenerator.datastructures.image_data import CreditPart, ImageData
+from talkgenerator.models.deck import DisplayPolicy
 from talkgenerator.util import http_util
 from talkgenerator.util.generator_util import planned
 
 logger = logging.getLogger("talkgenerator")
 
 API_URL = "https://api.unsplash.com"
+# How a browser may show its images (see talkgenerator.models.deck.DisplayPolicy): Unsplash's guidelines require
+# showing its photos from the links its API returns, so every view counts for the photographer
+DISPLAY: Final[DisplayPolicy] = "direct"
 UNSPLASH_URL = "https://unsplash.com/"
 _IMAGE_WIDTH = 1920
 
@@ -91,6 +95,7 @@ def _map_to_image_data(photo: dict[str, Any]) -> ImageData | None:
         source_url=profile,
         credit=credit,
         description=description,
+        display=DISPLAY,
     )
 
 

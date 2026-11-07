@@ -2,11 +2,13 @@
 
 import logging
 from functools import lru_cache
+from typing import Final
 
 from bs4 import BeautifulSoup, Tag
 
 from talkgenerator import settings
 from talkgenerator.datastructures.image_data import ImageData
+from talkgenerator.models.deck import DisplayPolicy
 from talkgenerator.util import http_util, random_util, scraper_util
 from talkgenerator.util.generator_util import planned
 
@@ -17,6 +19,9 @@ _SEARCH_URL = "https://www.shitpostbot.com/gallery/sourceimages"
 # Its source images are its users' uploads: credited to the gallery they come from
 _SOURCE = "ShitpostBot 5000"
 source_image_prefix = "https://www.shitpostbot.com/img/sourceimages/"
+# How a browser may show its images (see talkgenerator.models.deck.DisplayPolicy): from the gallery's own links
+# (checked on 2026-11-07: its images load in a browser's <img>, with a referrer and without)
+DISPLAY: Final[DisplayPolicy] = "direct"
 
 
 def _search_shitpostbot_page(search_term: str, page: int) -> list[ImageData]:
@@ -60,7 +65,7 @@ def _search_shitpostbot_page_rated(search_term: str, page: int) -> list[tuple[in
         except ValueError:
             rating = 1
         if rating > 0:
-            image_urls.append((rating, ImageData(image_url, source=_SOURCE, source_url=_SEARCH_URL)))
+            image_urls.append((rating, ImageData(image_url, source=_SOURCE, source_url=_SEARCH_URL, display=DISPLAY)))
     return image_urls
 
 

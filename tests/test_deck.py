@@ -32,7 +32,7 @@ from talkgenerator.render.powerpoint import render_pptx, render_slide
 from talkgenerator.render.shapes import EMU_PER_PIXEL
 from talkgenerator.slide import powerpoint_slide_creator, slides
 from talkgenerator.slide.slide_deck import SlideDeck
-from talkgenerator.util import image_util, random_util
+from talkgenerator.util import image_util, os_util, random_util
 
 
 def _jpeg(size):
@@ -540,3 +540,17 @@ def test_themed_columns_appear_click_by_click_too(images):
             entrances = ppt_slide.element.xpath(".//p:timing//p:cTn[@presetClass='entr']/@presetID")
             assert set(entrances) == {"10"}  # (fading in)
     assert layouts == {name for name in engine.layout_names() if name.startswith("v5/columns-")}
+
+
+def test_a_deck_says_how_a_browser_may_show_its_images(images):
+    slide = slides.TwoColumnImageSlide(
+        "Cats",
+        "Online",
+        ImageData("https://example.com/wide.jpg", display="copy"),
+        "Ours",
+        os_util.to_actual_file("data/images/black-transparent.png"),  # (a file of talkgenerator's own)
+    )
+    online, ours = (element.image for element in slide.to_deck_slide().elements if isinstance(element, ImageElement))
+    assert (online.display, ours.display) == ("copy", "local")
+    assert ImageAsset(url="https://example.com/x.jpg").display == "direct"
+    assert '"display": "copy"' in Deck(generator="test", slides=(slide.to_deck_slide(),)).to_json()

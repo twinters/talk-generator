@@ -9,15 +9,19 @@ from __future__ import annotations
 import html
 import logging
 import re
-from typing import Any
+from typing import Any, Final
 
 from talkgenerator import settings
 from talkgenerator.datastructures.image_data import ImageData
+from talkgenerator.models.deck import DisplayPolicy
 from talkgenerator.util import http_util
 
 logger = logging.getLogger("talkgenerator")
 
 API_URL = "https://commons.wikimedia.org/w/api.php"
+# How a browser may show its images (see talkgenerator.models.deck.DisplayPolicy): Commons allows hotlinking
+# (though it doesn't recommend it), credited as each file's license asks (checked on 2026-11-07: its images load in a browser's <img>, with a referrer and without)
+DISPLAY: Final[DisplayPolicy] = "direct"
 _THUMBNAIL_WIDTH = 1920
 _IMAGE_MIME_TYPES = ("image/jpeg", "image/png", "image/gif", "image/tiff", "image/webp")
 # Old photos: "deepcat" also searches all subcategories (photos per decade, per country, ...)
@@ -48,6 +52,7 @@ def _map_page(page: dict[str, Any]) -> ImageData | None:
         source=source,
         source_url=info.get("descriptionurl"),
         description=description or None,
+        display=DISPLAY,
     )
 
 

@@ -13,7 +13,7 @@ import logging
 import re
 import threading
 from functools import lru_cache
-from typing import Any, NamedTuple
+from typing import Any, Final, NamedTuple
 from urllib.parse import urlsplit
 
 import praw
@@ -27,9 +27,14 @@ from prawcore.exceptions import (
 )
 
 from talkgenerator import settings
+from talkgenerator.models.deck import DisplayPolicy
 from talkgenerator.util import http_util
 
 logger = logging.getLogger("talkgenerator")
+
+# How a browser may show its images and their mp4 copies (see talkgenerator.models.deck.DisplayPolicy): from
+# Reddit's own links (i.redd.it, preview.redd.it) (checked on 2026-11-07: its images load in a browser's <img>, with a referrer and without)
+DISPLAY: Final[DisplayPolicy] = "direct"
 
 _IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".gif")
 _ANIMATED_EXTENSIONS = (".gif", ".gifv", ".mp4")

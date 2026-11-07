@@ -1,14 +1,20 @@
 """Photos from Pixabay (https://pixabay.com/api/docs/). Needs PIXABAY_KEY."""
 
 import logging
+from typing import Final
 
 from talkgenerator import settings
 from talkgenerator.datastructures.image_data import ImageData
+from talkgenerator.models.deck import DisplayPolicy
 from talkgenerator.util import http_util
 
 logger = logging.getLogger("talkgenerator")
 
 API_URL = "https://pixabay.com/api/"
+# How a browser may show its images (see talkgenerator.models.deck.DisplayPolicy): Pixabay's API terms say
+# that "permanent hotlinking of images (using Pixabay URLs in your app) is not allowed", and to download images to
+# your own server to use them; its image links also stop working after 24 hours
+DISPLAY: Final[DisplayPolicy] = "copy"
 _MAX_QUERY_LENGTH = 100  # imposed by the Pixabay API
 
 _cooldown = http_util.Cooldown("Pixabay")
@@ -65,6 +71,7 @@ def search_photos(query: str | None, orientation: str = "all") -> list[ImageData
             source=photo["user"] + " (via Pixabay)" if photo.get("user") else "Pixabay",
             source_url=photo.get("pageURL"),
             description=photo.get("tags"),
+            display=DISPLAY,
         )
         for photo in hits
         if photo.get("largeImageURL")

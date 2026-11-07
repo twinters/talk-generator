@@ -308,6 +308,10 @@ class _Following:
             deck_slide = self._layout.next(deck_slide)
         self.hand_over(SlideReady(index=self._handed_over, slide=deck_slide))
         self._handed_over += 1
+        # A slide shown is a slide used, which some sources want to hear of (a download, at Unsplash), as a PowerPoint
+        # tells them when it gets the slide. (A PowerPoint made later from the deck doesn't tell them again.)
+        for image in slide.image_store().values():
+            image.mark_used()
 
     def _go_on(self) -> None:
         if self.cancelled.is_set():

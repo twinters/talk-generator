@@ -13,17 +13,21 @@ from __future__ import annotations
 import logging
 import threading
 import time
-from typing import Any
+from typing import Any, Final
 
 import requests
 
 from talkgenerator import settings
 from talkgenerator.datastructures.image_data import ImageData
+from talkgenerator.models.deck import DisplayPolicy
 from talkgenerator.util import http_util
 
 logger = logging.getLogger("talkgenerator")
 
 API_URL = "https://api.openverse.org/v1/images/"
+# How a browser may show its images (see talkgenerator.models.deck.DisplayPolicy): from the hosts it finds them on
+# (Flickr, museums, Wikimedia...), credited as their licenses ask (checked on 2026-11-07: its images load in a browser's <img>, with a referrer and without)
+DISPLAY: Final[DisplayPolicy] = "direct"
 TOKEN_URL = "https://api.openverse.org/v1/auth_tokens/token/"
 _MIN_LONG_SIDE = 800  # smaller images look blurry on a slide
 _TIMEOUT_SECONDS = 8
@@ -150,6 +154,7 @@ def _map_to_image_data(item: dict[str, Any]) -> ImageData | None:
         source=f"{creator} ({_license_label(item)}, via Openverse)",
         source_url=item.get("foreign_landing_url"),
         description=item.get("title"),
+        display=DISPLAY,
     )
 
 

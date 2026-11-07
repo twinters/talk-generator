@@ -7,15 +7,20 @@ image server refuses requests without one), which http_util sends to every artic
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, Final
 
 from talkgenerator import settings
 from talkgenerator.datastructures.image_data import ImageData
+from talkgenerator.models.deck import DisplayPolicy
 from talkgenerator.util import http_util
 
 logger = logging.getLogger("talkgenerator")
 
 API_URL = "https://api.artic.edu/api/v1/artworks/search"
+# How a browser may show its images (see talkgenerator.models.deck.DisplayPolicy): its image server refuses requests
+# without an AIC-User-Agent header (checked on 2026-11-07: Cloudflare answers 403, with a challenge), which an
+# <img> tag can't send, so a pass-through proxy that adds it shows them
+DISPLAY: Final[DisplayPolicy] = "proxy"
 _IIIF_URL = "https://www.artic.edu/iiif/2"
 _IMAGE_WIDTH = 1686  # twice AIC's recommended 843 pixels; available for public domain works
 
@@ -30,6 +35,7 @@ def _map_artwork(item: dict[str, Any], iiif_url: str) -> ImageData | None:
         source=f"{artist} (Art Institute of Chicago)",
         source_url=f"https://www.artic.edu/artworks/{item['id']}" if item.get("id") else None,
         description=item.get("title"),
+        display=DISPLAY,
     )
 
 
