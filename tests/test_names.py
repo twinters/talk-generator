@@ -92,9 +92,11 @@ def test_the_pack_has_names_that_go_on_a_title_slide():
     assert len(every_name) == len(set(every_name)), "a name is in the pack twice"
     for entry in pack:
         assert entry.topic and entry.words and entry.names, entry
-        for name in entry.names:
+        for name, plays_on in zip(entry.names, entry.plays_on, strict=True):
             assert names.clean(name) == name, name
             assert not re.match(r"(Dr|Prof|Professor|Doctor)\b", name), f"{name}: titles come from the jobs"
+            # A pun says what it plays on, which the language model is shown; a fun surname is plain to see
+            assert bool(plays_on) == (entry.style != "fun_surname"), name
     with open(os_util.to_actual_file(names.PACK_FILE), encoding="utf-8") as file:
         data = json.load(file)
     for style in ("pun", "fun_surname", "famous_pun"):
@@ -162,6 +164,7 @@ def test_a_name_goes_on_the_title_slide(name):
         "Taylor Swiftly",
         "Donald Trumpet",
         "Pol Potter",
+        "Dr. Marie Curie",  # (a famous name as it is: the pack bends hers)
         "A. B.",
     ],
 )
@@ -170,7 +173,7 @@ def test_a_name_that_wont_do_is_turned_down(written):
 
 
 def test_a_copy_of_an_example_is_turned_down():
-    request = names.NameRequest("pun", (("Anna Tomy", "medicine"),))
+    request = names.NameRequest("pun", (names.Example("Anna Tomy", "medicine", "anatomy"),))
     assert names.clean("Prof. Anna Tomy", request) is None
     assert names.clean("Prof. Anna Tomy") == "Prof. Anna Tomy"
 
@@ -179,16 +182,21 @@ def test_the_examples_are_for_other_topics_than_the_talks():
     for seed in range(20):
         request = names.Naming.of(["pun"], ["medicine"], random_util.Rng(seed), written=True).request
         assert request is not None and len(request.examples) == 2
-        assert not {name for name, _ in request.examples} & _pack_names("medicine", "pun")
+        assert not {example.name for example in request.examples} & _pack_names("medicine", "pun")
+        assert all(example.plays_on for example in request.examples)  # (what a pun plays on, for the model)
     first, second = (names.Naming.of(["pun"], ["cats"], random_util.Rng(seed), True).request for seed in (1, 2))
     assert first != second  # (the dice pick them)
 
 
 def test_a_name_is_asked_for_in_the_talks_language():
-    request = names.NameRequest("famous_pun", (("Albert Einstone", "geology"), ("Vincent van Goat", "goats")))
+    examples = (
+        names.Example("Albert Einstone", "geology", "Albert Einstein"),
+        names.Example("Linda Hivesworth", "bees"),
+    )
+    request = names.NameRequest("famous_pun", examples)
     description = request.description("nl")
     assert description.startswith(names.STYLES["famous_pun"].asked)
-    assert "such as 'Albert Einstone' for geology or 'Vincent van Goat' for goats" in description
+    assert "such as 'Albert Einstone' (Albert Einstein) for geology or 'Linda Hivesworth' for bees" in description
     assert "in Dutch, with wordplay that works in Dutch" in description
     assert description.endswith("(at most 40 characters)")
     assert "wordplay" not in request.description("en")

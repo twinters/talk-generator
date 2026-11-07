@@ -14,8 +14,9 @@ A name the user gives (generate_presentation's presenter) always goes first, and
 Otherwise, in a talk a language model writes, the model writes the name too, in the same request: in the talk's
 spine, in the talk's language, before the presenter's job, which agrees with it. A talk without a language model, or
 whose model doesn't write a name that will do (see clean), gets one of talkgenerator's own: a name of its pack
-(PACK_FILE, drafted with a language model and curated by hand) in a switched-on style that has names for the talk's
-topic, or else a classic one. The pack is English, as classic talks are.
+(PACK_FILE, drafted with a language model, to be curated by hand) in a switched-on style that has names for the
+talk's topic, or else a classic one. The pack is English, as classic talks are. The model is shown two of its names
+for other topics, with what they play on ("'Anna Tomy' (anatomy) for medicine").
 """
 
 from __future__ import annotations
@@ -62,7 +63,8 @@ STYLES: Final[dict[str, Style]] = {
             PUN,
             "Pun names",
             "a pun on the topic, such as Prof. Anna Tomy for a talk on medicine",
-            "a made-up name for the presenter that is a pun on the talk's topic when it's read aloud",
+            "a made-up name for the presenter that, read aloud, sounds like a word or phrase about the talk's topic "
+            "(a pun on the whole name, not just a surname that fits)",
         ),
         Style(
             FUN_SURNAME,
@@ -75,8 +77,9 @@ STYLES: Final[dict[str, Style]] = {
             FAMOUS_PUN,
             "Famous-name puns",
             "a historical figure's name bent to fit the topic, such as Albert Einstone for geology",
-            "a made-up name for the presenter that bends the name of a famous historical figure to fit the talk's "
-            "topic: never the real name as it is, and never the name of a living person, a dictator or a criminal",
+            "a made-up name for the presenter: the name of one famous historical figure that everyone knows, with a "
+            "part of it changed into a word about the talk's topic, so that both still show; never the real name as "
+            "it is, and never the name of a living person, a dictator or a criminal",
         ),
         Style(CLASSIC, "Random names", "a first and a last name at random, as in 2019", "", default=False),
     )
@@ -113,12 +116,13 @@ def styles(chosen: str | Iterable[str] | None = None) -> tuple[str, ...]:
 
 @dataclass(frozen=True)
 class PackEntry:
-    """Names of the pack in a style, for a topic."""
+    """Names of the pack in a style, for a topic, with what each plays on (a pun's word, a famous name's owner)."""
 
     style: str
     topic: str  # what its names are for, as a prompt's examples say it ("medicine")
     words: tuple[tuple[str, ...], ...]  # the words and phrases of the topics it fits, as lists of words
     names: tuple[str, ...]
+    plays_on: tuple[str, ...]  # per name ("anatomy" for "Anna Tomy"), or "" (a fun surname is plain to see)
 
     def fits(self, topics: Sequence[str]) -> bool:
         """Whether a talk on the topics fits it: one of them holds one of its words or phrases (word for word,
@@ -128,19 +132,17 @@ class PackEntry:
 
 @cache
 def pack() -> tuple[PackEntry, ...]:
-    """talkgenerator's own names (PACK_FILE), by style and topic."""
+    """talkgenerator's own names (PACK_FILE), by style and topic. In the file, a name is followed by what it plays
+    on, if anything, after " = " ("Anna Tomy = anatomy")."""
     with open(os_util.to_actual_file(PACK_FILE), encoding="utf-8") as file:
         data = json.load(file)
-    return tuple(
-        PackEntry(
-            style,
-            str(entry["topic"]),
-            tuple(tuple(_words(str(word))) for word in entry["words"]),
-            tuple(str(name) for name in entry["names"]),
-        )
-        for style in STYLES
-        for entry in data.get(style, ())
-    )
+    entries = []
+    for style in STYLES:
+        for entry in data.get(style, ()):
+            names, plays_on = zip(*(str(name).partition(" = ")[::2] for name in entry["names"]), strict=True)
+            words = tuple(tuple(_words(str(word))) for word in entry["words"])
+            entries.append(PackEntry(style, str(entry["topic"]), words, names, plays_on))
+    return tuple(entries)
 
 
 _WORD: Final = re.compile(r"[^\W_]+")
@@ -197,17 +199,29 @@ def _has_names(entries: Sequence[PackEntry], style: str) -> bool:
 
 
 @dataclass(frozen=True)
+class Example:
+    """A name of the pack that a language model is shown: for which topic, and what it plays on (if anything)."""
+
+    name: str
+    topic: str
+    plays_on: str = ""
+
+    def __str__(self) -> str:
+        return f"'{self.name}'{f' ({self.plays_on})' if self.plays_on else ''} for {self.topic}"
+
+
+@dataclass(frozen=True)
 class NameRequest:
     """What the language model that writes a talk is asked for its presenter's name: a name in a style, like the
-    examples it's shown (as name and topic: names of the pack for other topics than the talk's, not to be copied)."""
+    examples it's shown (names of the pack for other topics than the talk's, which aren't to be copied)."""
 
     style: str
-    examples: tuple[tuple[str, str], ...] = ()
+    examples: tuple[Example, ...] = ()
 
     def description(self, language: str = "en") -> str:
         """What to write, for the prompt and the response schema: in the talk's language, as long as a name gets."""
         name = languages.language(language).name
-        such_as = " or ".join(f"'{example}' for {topic}" for example, topic in self.examples)
+        such_as = " or ".join(str(example) for example in self.examples)
         wordplay = f", with wordplay that works in {name}" if language != "en" else ""
         return (
             f"{STYLES[self.style].asked}{', such as ' + such_as if such_as else ''}, for the title slide; in {name}"
@@ -216,13 +230,17 @@ class NameRequest:
         )
 
 
-def _examples(style: str, topics: Sequence[str], rng: random_util.Rng, count: int = 2) -> tuple[tuple[str, str], ...]:
+def _examples(style: str, topics: Sequence[str], rng: random_util.Rng, count: int = 2) -> tuple[Example, ...]:
     """Names of the pack in the style, for other topics than the talk's (a model that copies one gets it rejected),
-    picked by the talk's dice: as name and topic."""
+    picked by the talk's dice."""
     others = [entry for entry in pack() if entry.style == style and not entry.fits(topics)]
     with random_util.use(rng):
         picked = random_util.sample(others, min(count, len(others)))
-        return tuple((random_util.choice(entry.names), entry.topic) for entry in picked)
+        return tuple(_example(entry, random_util.randrange(len(entry.names))) for entry in picked)
+
+
+def _example(entry: PackEntry, index: int) -> Example:
+    return Example(entry.names[index], entry.topic, entry.plays_on[index])
 
 
 # What a name has: letters, and spaces, dots, apostrophes and hyphens between them (no digits, brackets, commas, ...)
@@ -316,8 +334,8 @@ def clean(value: Any, request: NameRequest | None = None) -> str | None:
     """The name as it goes on the title slide (on one line, without quote marks around it), or None when it won't
     do: when it isn't a text, is longer than a name gets (it isn't cut: half a name is no name), holds template code
     or what no name has (digits, brackets, commas, ...), is a placeholder ("Presenter Name"), names someone a talk
-    doesn't go out under (a dictator, a famous living person), or copies an example of the request (for another
-    topic than the talk's)."""
+    doesn't go out under (a dictator, a famous living person), is the real name of a famous person whose name the
+    pack bends (Marie Curie), or copies an example of the request (for another topic than the talk's)."""
     if not isinstance(value, str):
         return None
     name = " ".join(value.split()).strip(_QUOTE_MARKS + " ")
@@ -328,9 +346,35 @@ def clean(value: Any, request: NameRequest | None = None) -> str | None:
         return None
     if _PLACEHOLDERS & set(words) or _blocked(words):
         return None
-    if request is not None and any(_squashed(example) in _squashed(name) for example, _ in request.examples):
+    if any(_has_words(words, famous) for famous in _famous_names()):
+        return None
+    if request is not None and any(_squashed(example.name) in _squashed(name) for example in request.examples):
         return None
     return name
+
+
+@cache
+def _famous_names() -> tuple[tuple[str, ...], ...]:
+    """The real names of the famous people whose names the pack's famous-name puns bend, as words."""
+    return tuple(
+        sorted(
+            {
+                tuple(_plain_words(original))
+                for entry in pack()
+                if entry.style == FAMOUS_PUN
+                for original in entry.plays_on
+                if original
+            }
+        )
+    )
+
+
+def _has_words(words: Sequence[str], phrase: Sequence[str]) -> bool:
+    """Whether the words hold the phrase's words, in a row."""
+    size = len(phrase)
+    return size > 0 and any(
+        tuple(words[start : start + size]) == tuple(phrase) for start in range(len(words) - size + 1)
+    )
 
 
 def _plain_words(text: str) -> list[str]:
