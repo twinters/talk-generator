@@ -408,6 +408,32 @@ upkeep for a mode that only matters when no LLM is around.
 - On talkgenerator.com, the site's free OpenRouter quota counts as an available LLM (decided); once it runs out, a
   Dutch request gets a classic English talk with a notice.
 
+### 5.10 Topic or title
+
+The user's idea (2026-11-07, D32): what a visitor types can be a topic ("penguins") or a title ("Why I Joined a
+Penguin Cult"), and a language model can tell which. On talkgenerator.com, the Talk tab's "What you type is" gets a
+third choice, **Automatic**, the default, next to Topic and Title.
+
+- **In the same request** (5.2: one per talk). The prompt's dynamic part gives what was typed, and the model says
+  in the spine, which it writes first, whether it read a topic or a title.
+- **A title** stays the talk's title, with obvious slips fixed (spelling, grammar, capitals) and its wording and
+  joke left alone. The topic comes from it, as the rarest word does in classic mode.
+- **A topic** gets a title from the model, which picks the best of its own proposal and 1 to 3 classic candidates
+  that the seed draws (tracery titles, a wikiHow "How to ..." title), fixing a candidate where it's off. The model's
+  own titles stay a good option: the user likes them ("Why I Joined a Penguins Cult and Why You Should Too", by the
+  free models on 2026-11-07). The candidates also catch what the classic generators get wrong: an odd wikiHow page,
+  a broken plural, a title that makes no sense.
+- **Topic or Title, chosen explicitly,** work as now: the model doesn't second-guess the visitor.
+- **Without a language model**, Automatic guesses: a title when what's typed has four words or more, starts like
+  one ("How to", "Why", "The", "A", "My") or ends in "?" or "!"; a topic otherwise.
+- **The API:** a third input next to `topic` and `title` in `generate_presentation()` and `stream_talk()` (say
+  `typed=`), whose kind the planner tells. `talk.started` already carries the title the talk settles on, and the deck
+  can record how its input was read, for the checks.
+- **Checks:** a benchmark of typed inputs, half topics and half titles, some misspelled: the share read right, and
+  titles kept recognisable.
+- It changes the spine and the prompt, as the presenter names written by the model do (2026-11-07, in their own
+  session), so it's built after them.
+
 ## 6. Agent mode: talkgenerator as a Claude Skill
 
 Claude can be the planner, on the user's own Claude usage (in Claude Code, Claude Desktop or claude.ai), while
@@ -845,7 +871,7 @@ before the new formats. A milestone is a checkpoint on `v5`, not a release; only
 | 1 (done, 2026-11-05) | Groundwork | deck JSON and the models; pptx renderer from deck JSON (classic look); seeded random streams (`random_util`), with parallel generation giving the one-by-one talk; the classic engine on the new model; `--save_json`; usage ledger and budgets; `replay` and `none` providers; `talkgenerator check` for completeness, template leftovers and determinism | classic talks look like v4's; the same seed gives the same deck, serial or parallel; v4's offline tests pass |
 | 2 (under way: the TalkPlan schema, the planner, the `openrouter`, `anthropic`, `openai` and `chatgpt` adapters, `render`, `schema`, `formats`, the Skill, languages with their check, `login openrouter` and `login chatgpt`, and trend and ranking charts are in; on 2026-11-06, 30 benchmark talks by the free models had 0 errors, one request each, at $0, and 290 of 300 slides by the model) | LLM TED talks and the Claude Skill | TalkPlan schema; the LLM planner (one streamed call, dice, per-slide fallback, safety); `openrouter`, `anthropic` and `openai` adapters; languages, Dutch first; `render plan.json`, `schema`, `formats`; `skill/` with SKILL.md; `login openrouter`; the `chatgpt` adapter (may slip to milestone 3); checks for requests, cost, speed and language | on the benchmark with OpenRouter's free models: no holes, no leftovers, $0 and one request per talk; Dutch talks pass the language check; Claude Code makes a deck end to end with the Skill |
 | 3 (done, 2026-11-07: theme families and extremes, procedural palettes with contrast repair, layouts and their variants (never twice in a row), image treatments, WordArt-style heading effects, text fitting with bundled metric twins, the shapes renderer with the classic animations (columns click by click), previews and contact sheets, the design checks and the local MCP server; 0 design findings on 792 benchmark decks in 12 seeds; thumbnails in CI left out, D29) | Themes and layouts | theme tokens and families, extremes on by default; procedural palettes and font pairs; layout variants; text fitting; image treatments; the `classic` theme; thumbnails and contact sheet in CI; the local MCP server | contrast and overflow checks pass on every theme |
-| 4 (under way: `stream_talk()`, probe validation and display policies are in; since 2026-11-07, talkgenerator.com runs v5 from GitHub (D31): talks stream into the browser, the .pptx is made on download, Pixabay's images are copied, and classic talks meet the speed and memory bars on the VPS (section 14); left: the settings (being built), the site's OpenRouter key on the server, and LLM talks measured there) | Streaming and the web view | `stream_talk()`, display policies, probe validation; in talk-generator-web: the SSE endpoint, the Angular renderer, LLM talks by default with the classic switch, a language choice, Connect OpenRouter and pasted keys, .pptx on download, a preview deployment that installs `v5` from git | first slide on screen within the calibrated target on the VPS; a 20-slide talk under the memory bar; the downloaded .pptx matches the web view |
+| 4 (under way: `stream_talk()`, probe validation and display policies are in; since 2026-11-07, talkgenerator.com runs v5 from GitHub (D31): talks stream into the browser, the .pptx is made on download, Pixabay's images are copied, and classic talks meet the speed and memory bars on the VPS (section 14); left: the settings (being built), the site's OpenRouter key on the server, and LLM talks measured there) | Streaming and the web view | `stream_talk()`, display policies, probe validation; in talk-generator-web: the SSE endpoint, the Angular renderer, LLM talks by default with the classic switch, a language choice, Connect OpenRouter and pasted keys, .pptx on download, an Automatic topic-or-title choice (5.10), the site running `v5` from git (D31) | first slide on screen within the calibrated target on the VPS; a 20-slide talk under the memory bar; the downloaded .pptx matches the web view |
 | 5 | Images | slots, aesthetic profiles and flavour packs, local analysis, license classes; new open and weird sources; AI image generation with the user's own keys; the optional vision pick | license policies enforced; profile checks pass (such as the grayscale share for `vintage`); generated images credited |
 | 6 | More slide types for TED-like talks | native diagrams, big numbers, quiz, memes with live captions, social posts and more; a much larger, curated TED content pack | every new slide type passes the checks in classic and LLM mode |
 | 7 | New talk formats | pitch, academic, corporate, keynote and Pecha Kucha timing, with their content packs (or in 5.1 if the TED work takes longer) | every format works in classic and LLM mode and passes the checks |
@@ -892,8 +918,9 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D29 | Milestone 3 closes without slide thumbnails in CI: the user reviews decks in PowerPoint and in the comparison folders of sample decks, and the design checks catch what can be measured (contrast, overflow, overlap). |
 | D30 | talkgenerator.com keeps a copy of a Pixabay image for as long as its talk (7 days), the one exception to D22: Pixabay's terms don't allow permanent hotlinking, and its links stop working after 24 hours. |
 | D31 | talkgenerator.com runs `v5` before 5.0.0, installed from GitHub by commit, instead of a preview deployment on a subdomain: the site's `master` deploys it. There, a talk's slides come one after the other (`TALK_PARALLEL=0`), and the site gives memory back after every talk and download, to stay under the box's 450 MB. |
+| D32 | What's typed can be a topic or a title: by default the language model tells which, in the talk's one request, and picks the title among its own proposal and a few classic candidates, fixing what's off; the visitor can still say which it is (section 5.10). |
 
-D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, and D28 to D31 on 2026-11-07; the others follow from the design.
+D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, and D28 to D32 on 2026-11-07; the others follow from the design.
 
 ### Open questions
 
