@@ -180,11 +180,14 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   on Imgflip's pictures): white Impact in capitals with a black outline, or plain black text on the template's own
   white or pale area (Drake's panels, Gru's boards). The talk's dice pick the template, and the language model
   writes what each box says, knowing what it's for (Drake waves the first away and points at the second); a
-  classic talk takes each template's own sentences about the slide's topic and the words related to it. Gru's
-  fourth board repeats his third. A deck holds a meme as a picture, texts and shapes, which every renderer draws
-  already (talk-generator-web without changes); its picture keeps its look in every theme (no treatment moves
-  its captions). A talk has at most one, from its third slide on, and only where its license policy allows fair
-  use (not in `ted`). `talkgenerator formats --memes` lists the templates and what each caption says, for plans
+  classic talk takes each template's own sentences about the slide's topic and the words related to it, speaking
+  of it as English does ("Love penguins", "Love coffee", "Is this a lighthouse?": the `generic` and `one` template
+  functions, by wordfreq's frequencies of a noun and its plural). Gru's fourth board repeats his third. A deck holds
+  a meme as a picture, texts and shapes, which every renderer draws already (talk-generator-web without changes);
+  its picture keeps its look in every theme (no treatment moves its captions). Memes weigh four times what the
+  other slides in the middle of a talk do: about half of all 10-slide talks have one, and a talk has two at most,
+  from its third slide on, and only where its license policy allows fair use (not in `ted`).
+  `talkgenerator formats --memes` lists the templates and what each caption says, for plans
   written elsewhere, whose `template_query` names one; a picture whose boxes talkgenerator doesn't know gets its
   captions at its top and its bottom. A caption too long for a narrow box (a sign's) gets a box grown around it,
   within the picture.

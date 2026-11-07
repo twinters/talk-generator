@@ -30,24 +30,32 @@
       ],
       "classic": [
         [
-          "{related.title}",
-          "{seed.title}"
+          "{related.generic.cap}",
+          "{seed.generic.cap}"
         ],
         [
           "Doing it the normal way",
-          "Doing it with {seed.plural}"
+          "Doing it with {seed.generic}"
         ],
         [
           "Sleeping eight hours",
-          "Reading about {seed.plural} all night"
+          "Reading about {seed.generic} all night"
         ],
         [
           "Small talk",
-          "Small talk about {seed.plural}"
+          "Small talk about {seed.generic}"
         ],
         [
           "Following the instructions",
-          "Winging it with {seed.plural}"
+          "Winging it with {seed.generic}"
+        ],
+        [
+          "A normal hobby",
+          "Collecting facts about {seed.generic}"
+        ],
+        [
+          "Asking an expert",
+          "Becoming the expert on {seed.generic}"
         ]
       ]
     },
@@ -86,19 +94,24 @@
       ],
       "classic": [
         [
-          "{seed.title}",
-          "{related.title}",
+          "{seed.generic.cap}",
+          "{related.generic.cap}",
           "Me"
         ],
         [
-          "Talk about {seed.plural}",
-          "Talk about {related.plural}",
+          "Talk about {seed.generic}",
+          "Talk about {related.generic}",
           "The presenter"
         ],
         [
-          "Love {seed.plural}",
-          "Fear {seed.plural}",
+          "Love {seed.generic}",
+          "Fear {seed.generic}",
           "Everyone in this room"
+        ],
+        [
+          "Finish the talk",
+          "Keep talking about {seed.generic}",
+          "Me, right now"
         ]
       ]
     },
@@ -137,19 +150,24 @@
       ],
       "classic": [
         [
-          "{seed.title}",
+          "{seed.generic.cap}",
           "Me",
           "My actual job"
         ],
         [
-          "{related.title}",
-          "{seed.title} fans",
-          "{seed.title}"
+          "{related.generic.cap}",
+          "Me",
+          "{seed.generic.cap}"
         ],
         [
-          "Talking about {seed.plural}",
+          "Talking about {seed.generic}",
           "Me",
           "Finishing this talk"
+        ],
+        [
+          "One more fact about {seed.generic}",
+          "The presenter",
+          "The time limit"
         ]
       ]
     },
@@ -180,16 +198,20 @@
       ],
       "classic": [
         [
-          "Stop talking about {seed.plural}",
+          "Stop talking about {seed.generic}",
           "Me"
         ],
         [
-          "Admit {seed.plural} are overrated",
-          "{seed.title} fans"
+          "Say one bad thing about {seed.generic}",
+          "Fans of {seed.generic}"
         ],
         [
-          "Explain {seed.plural}",
+          "Explain {seed.generic}",
           "Experts"
+        ],
+        [
+          "Admit you don't get {seed.generic}",
+          "Everyone in this room"
         ]
       ]
     },
@@ -229,18 +251,23 @@
       "classic": [
         [
           "Being normal",
-          "{seed.title}",
+          "{seed.generic.cap}",
           "Me"
         ],
         [
           "Sleep",
-          "{seed.plural.title}",
+          "{seed.generic.cap}",
           "Me at 3 AM"
         ],
         [
           "The plan",
-          "{related.title}",
+          "{related.generic.cap}",
           "This talk"
+        ],
+        [
+          "The actual topic",
+          "More about {seed.generic}",
+          "The presenter"
         ]
       ]
     },
@@ -292,19 +319,19 @@
       ],
       "classic": [
         [
-          "Give a talk on {seed.plural}",
+          "Give a talk on {seed.generic}",
           "Pretend to be an expert",
-          "Get asked a question about {seed.plural}"
+          "Get asked a question about {seed.generic}"
         ],
         [
-          "Buy {seed.a}",
+          "Buy {seed.one}",
           "Read the manual",
-          "The manual is about {related.plural}"
+          "The manual is about {related.generic}"
         ],
         [
-          "Learn about {seed.plural}",
-          "Explain {seed.plural}",
-          "Realise you know nothing about {seed.plural}"
+          "Learn about {seed.generic}",
+          "Explain {seed.generic}",
+          "Realise you know nothing about {seed.generic}"
         ]
       ]
     },
@@ -343,19 +370,24 @@
       ],
       "classic": [
         [
-          "{seed.title} fans",
-          "{related.title} fans",
+          "Fans of {seed.generic}",
+          "Fans of {related.generic}",
           "Hating Mondays"
         ],
         [
-          "{seed.title}",
-          "{related.title}",
+          "{seed.generic.cap}",
+          "{related.generic.cap}",
           "Confusing everyone"
         ],
         [
           "Scientists",
-          "{seed.title} lovers",
-          "Not knowing what {seed.plural} are"
+          "People who love {seed.generic}",
+          "Not understanding {seed.generic}"
+        ],
+        [
+          "The audience",
+          "The presenter",
+          "Wondering why this talk is about {seed.generic}"
         ]
       ]
     },
@@ -387,15 +419,15 @@
       "classic": [
         [
           "Me waiting for someone",
-          "To ask me about {seed.plural}"
+          "To ask me about {seed.generic}"
         ],
         [
           "Waiting for",
-          "{seed.plural} to make sense"
+          "{seed.generic.cap} to make sense"
         ],
         [
           "Still waiting",
-          "For the end of {seed.plural}"
+          "For the last slide about {seed.generic}"
         ]
       ]
     },
@@ -426,11 +458,15 @@
       ],
       "classic": [
         [
-          "Wait, it's all {seed.plural}?",
+          "Wait, it's all {seed.generic}?",
           "Always has been"
         ],
         [
-          "Wait, it was {seed.plural} all along?",
+          "Wait, it was {seed.generic} all along?",
+          "Always has been"
+        ],
+        [
+          "Wait, this whole talk is about {seed.generic}?",
           "Always has been"
         ]
       ]
@@ -464,16 +500,20 @@
       ],
       "classic": [
         [
-          "You said {seed.plural} were simple!",
-          "Me, who explained {seed.plural}"
+          "You said {seed.generic} would be simple!",
+          "Me, who explained {seed.generic}"
         ],
         [
-          "{seed.title} is the future!",
-          "{related.title}"
+          "The future is {seed.generic}!",
+          "{related.generic.cap}"
         ],
         [
-          "Who ate all the {seed.plural}?",
+          "Who brought {seed.generic} to dinner?!",
           "Not me"
+        ],
+        [
+          "Stop talking about {seed.generic}!",
+          "One more slide"
         ]
       ]
     },
@@ -497,13 +537,16 @@
       ],
       "classic": [
         [
-          "{seed.title} is underrated"
+          "Nobody appreciates {seed.generic} enough"
         ],
         [
-          "{seed.plural.title} are just {related.plural}"
+          "{seed.generic.cap}? Just {related.generic} with better marketing"
         ],
         [
-          "Everything is better with {seed.plural}"
+          "Everything is better with {seed.generic}"
+        ],
+        [
+          "Every talk should be about {seed.generic}"
         ]
       ]
     },
@@ -536,12 +579,16 @@
       ],
       "classic": [
         [
-          "What about {related.plural}?",
-          "We're talking about {seed.plural}!"
+          "What about {related.generic}?",
+          "We're talking about {seed.generic}!"
         ],
         [
-          "{seed.plural.title} are boring",
+          "I don't care about {seed.generic}",
           "Take that back!"
+        ],
+        [
+          "Can we skip the part about {seed.generic}?",
+          "No!"
         ]
       ]
     },
@@ -581,13 +628,18 @@
       "classic": [
         [
           "Me",
-          "{related.title}",
-          "Is this {seed.a}?"
+          "{related.generic.cap}",
+          "Is this {seed.one}?"
         ],
         [
           "The audience",
           "Any slide",
-          "Is this about {seed.plural}?"
+          "Is this about {seed.generic}?"
+        ],
+        [
+          "The presenter",
+          "A random picture",
+          "Is this proof of {seed.generic}?"
         ]
       ]
     },
@@ -619,11 +671,15 @@
       "classic": [
         [
           "One does not simply",
-          "Explain {seed.plural} in one slide"
+          "Explain {seed.generic} in one slide"
         ],
         [
           "One does not simply",
-          "Stop thinking about {seed.plural}"
+          "Stop thinking about {seed.generic}"
+        ],
+        [
+          "One does not simply",
+          "Give a talk about {seed.generic} unprepared"
         ]
       ]
     },
@@ -654,12 +710,16 @@
       ],
       "classic": [
         [
-          "I'm not saying it was {seed.plural}",
-          "But it was {seed.plural}"
+          "I'm not saying it was {seed.generic}",
+          "But it was {seed.generic}"
         ],
         [
-          "{related.title}?",
-          "{seed.plural.title}"
+          "{related.generic.cap}?",
+          "{seed.generic.cap}"
+        ],
+        [
+          "Who built the pyramids?",
+          "{seed.generic.cap}"
         ]
       ]
     },
@@ -710,16 +770,22 @@
       ],
       "classic": [
         [
-          "{seed.title}",
-          "{seed.plural.title}",
-          "{related.title}",
-          "A whole talk about {seed.plural}"
+          "Liking {seed.generic}",
+          "Talking about {seed.generic}",
+          "Giving a talk about {seed.generic}",
+          "Becoming {seed.one}"
         ],
         [
-          "Ignoring {seed.plural}",
-          "Liking {seed.plural}",
-          "Loving {seed.plural}",
-          "Becoming {seed.a}"
+          "Ignoring {seed.generic}",
+          "Liking {seed.generic}",
+          "Loving {seed.generic}",
+          "Becoming {seed.one}"
+        ],
+        [
+          "{related.generic.cap}",
+          "{seed.generic.cap}",
+          "{related.generic.cap} and {seed.generic}",
+          "A whole talk about {seed.generic}"
         ]
       ]
     },
@@ -750,12 +816,16 @@
       ],
       "classic": [
         [
-          "{seed.plural.title} everywhere",
+          "{seed.generic.cap} everywhere",
           "Me"
         ],
         [
-          "Everything about {seed.plural}",
+          "Everything about {seed.generic}",
           "The presenter"
+        ],
+        [
+          "My slides about {seed.generic}",
+          "Me, presenting them"
         ]
       ]
     },
@@ -786,12 +856,16 @@
       ],
       "classic": [
         [
-          "Not sure if {seed.plural}",
-          "Or just {related.plural}"
+          "Not sure if {seed.generic}",
+          "Or just {related.generic}"
         ],
         [
-          "Not sure if this talk is about {seed.plural}",
+          "Not sure if this talk is about {seed.generic}",
           "Or about me"
+        ],
+        [
+          "Not sure if I'm an expert on {seed.generic}",
+          "Or just read one article"
         ]
       ]
     },
@@ -833,14 +907,19 @@
       ],
       "classic": [
         [
-          "I have to give a talk about {seed.plural}",
-          "I know everything about {seed.plural}",
-          "The talk is about {related.plural}"
+          "I have to give a talk about {seed.generic}",
+          "I know everything about {seed.generic}",
+          "The talk is about {related.generic}"
         ],
         [
-          "{seed.plural.title} are coming",
-          "They're cute",
-          "There are thousands of them"
+          "{seed.generic.cap}. Everywhere.",
+          "It's fine, I love {seed.generic}",
+          "I'm allergic to {seed.generic}"
+        ],
+        [
+          "Someone asks about {seed.generic}",
+          "I made a slide about that",
+          "The slide is a meme"
         ]
       ]
     },
@@ -891,16 +970,22 @@
       ],
       "classic": [
         [
-          "{seed.plural.title} in 1990",
-          "{seed.plural.title} now",
+          "{seed.generic.cap} in 1990",
+          "{seed.generic.cap} now",
           "I can do anything",
           "I need a nap"
         ],
         [
-          "Old {seed.plural}",
-          "New {seed.plural}",
+          "{seed.generic.cap}, the original",
+          "{seed.generic.cap}, the remake",
           "Built to last",
           "Needs an update"
+        ],
+        [
+          "Experts on {seed.generic} then",
+          "Experts on {seed.generic} now",
+          "I read books",
+          "I watched a video"
         ]
       ]
     },
@@ -942,9 +1027,14 @@
       ],
       "classic": [
         [
-          "{seed.plural.title} are nice",
-          "Actually, {seed.plural} are a complex system of {related.plural}",
-          "{seed.plural.title} are nice"
+          "I like {seed.generic}",
+          "Actually, {seed.generic}: a complex system of {related.generic} and feelings",
+          "I like {seed.generic}"
+        ],
+        [
+          "{seed.generic.cap}? Nice.",
+          "Well, it depends on {related.generic}, the context and the moon",
+          "{seed.generic.cap}? Nice."
         ]
       ]
     },
@@ -968,10 +1058,13 @@
       ],
       "classic": [
         [
-          "{seed.plural.title} are just {related.plural}"
+          "{seed.generic.cap}? Just {related.generic} with a better name"
         ],
         [
-          "Nobody understands {seed.plural}"
+          "Nobody understands {seed.generic}"
+        ],
+        [
+          "This talk is not really about {seed.generic}"
         ]
       ]
     },
@@ -1003,11 +1096,15 @@
       "classic": [
         [
           "Your attention",
-          "Facts about {seed.plural}"
+          "Facts about {seed.generic}"
         ],
         [
-          "Your {seed.plural}",
-          "My {related.plural}"
+          "Your weekend",
+          "Everything I know about {seed.generic}"
+        ],
+        [
+          "Your applause",
+          "More slides about {seed.generic}"
         ]
       ]
     },
@@ -1038,12 +1135,16 @@
       ],
       "classic": [
         [
-          "{seed.plural.title}?",
+          "{seed.generic.cap}?",
           "I did that"
         ],
         [
-          "The talk about {seed.plural}",
+          "The talk about {seed.generic}",
           "Went exactly as planned"
+        ],
+        [
+          "Everyone's confused about {seed.generic}",
+          "My work here is done"
         ]
       ]
     },
@@ -1074,12 +1175,16 @@
       ],
       "classic": [
         [
-          "You can't be wrong about {seed.plural}",
-          "If you never talk about {seed.plural}"
+          "You can't be wrong about {seed.generic}",
+          "If you never talk about {seed.generic}"
         ],
         [
-          "Can't fail at {seed.plural}",
-          "If you call it {related.plural}"
+          "Can't fail at {seed.generic}",
+          "If you call it {related.generic}"
+        ],
+        [
+          "Can't forget your slides about {seed.generic}",
+          "If every slide is a meme"
         ]
       ]
     }

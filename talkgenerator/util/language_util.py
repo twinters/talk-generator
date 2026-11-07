@@ -6,9 +6,11 @@ import string
 from collections.abc import Callable
 from functools import cache, lru_cache
 from pathlib import Path
+from typing import Final
 
 import inflect
 import nltk
+from wordfreq import zipf_frequency
 
 logger = logging.getLogger("talkgenerator")
 
@@ -233,6 +235,85 @@ def add_article(word: str) -> str:
     if word_lower.startswith(("a", "e", "i", "o")):
         article = "an"
     return article + " " + word
+
+
+# HOW ENGLISH SPEAKS OF A THING IN GENERAL: "I love penguins", but "I love coffee" (not "coffees") and "I love the
+# French Revolution". A slide's seed can be any of these, so templates that say "Love {seed.generic}" or "Is this
+# {seed.one}?" read right for each (and leave out verbs that would have to agree with it).
+
+# Words that open a phrase with an article of its own: such a phrase stays as it is
+_DETERMINERS: Final = frozenset(
+    ("the", "a", "an", "my", "your", "our", "their", "his", "her", "its", "this", "that")
+    + ("these", "those", "some", "every", "no", "all")
+)
+# How much rarer than a noun its plural may be in English (on wordfreq's Zipf scale) for the noun to be one English
+# counts: "penguins" is about as common as "penguin", "lighthouses" 0.8 rarer than "lighthouse", but "coffees" 1.8
+# rarer than "coffee", "music" and "happiness" have no plurals to speak of, and "rains" is a verb as often as not
+_RARER_PLURAL: Final = 0.9
+
+
+@lru_cache(maxsize=4096)
+def _zipf(word: str) -> float:
+    return float(zipf_frequency(word, "en"))
+
+
+def _has_article(phrase: str) -> bool:
+    words = phrase.lower().split()
+    return len(words) > 1 and words[0] in _DETERMINERS
+
+
+def is_plural_noun(phrase: str) -> bool:
+    """Whether the phrase ends in a plural noun ("penguins", "glasses"): one whose singular is a word as common as it,
+    give or take (so "bus" and "cactus" are no plurals of "bu" and "cactu", nor "physics" or "data")."""
+    last = phrase.split()[-1] if phrase.split() else ""
+    if not last:
+        return False
+    singular = inflect_engine.singular_noun(last)
+    return bool(singular) and singular != last and _zipf(singular) >= _zipf(last) - 1.0
+
+
+def is_countable(phrase: str) -> bool:
+    """Whether English counts what the phrase ends in ("a penguin, two penguins") rather than speaking of it as an
+    amount ("coffee", "happiness", "running", "physics"): whether the plural of its last word is about as common as
+    that word, by wordfreq's English frequencies."""
+    last = phrase.split()[-1] if phrase.split() else ""
+    if not last or is_plural_noun(last):
+        return False
+    plural = inflect_engine.plural_noun(last)
+    if not plural or plural == last:
+        return False  # (sheep, fish, news: the same in the plural)
+    many = _zipf(plural)
+    return many > 0 and _zipf(last) - many < _RARER_PLURAL
+
+
+def _without_a(phrase: str) -> str:
+    """The phrase without an "a" or "an" in front ("a cup": "cup")."""
+    words = phrase.split()
+    return " ".join(words[1:]) if len(words) > 1 and words[0].lower() in ("a", "an") else phrase
+
+
+def generic(phrase: str) -> str:
+    """The phrase as English speaks of such things in general ("I love ..."): a countable noun in the plural
+    ("penguins", "lighthouses"), and as it is a mass noun ("coffee", "happiness"), a plural, a name, or a phrase with
+    an article of its own ("the French Revolution")."""
+    text = _without_a(phrase.strip())
+    if not text or _has_article(text) or is_plural_noun(text) or not is_countable(text):
+        return text
+    return to_plural(text)
+
+
+def one(phrase: str) -> str:
+    """One of the phrase ("Is this ...?"): a countable noun with its article ("a lighthouse", "an owl", "an hour"),
+    and the others as generic has them ("coffee", "penguins", "the French Revolution")."""
+    text = _without_a(phrase.strip())
+    if not text or _has_article(text) or is_plural_noun(text) or not is_countable(text):
+        return text
+    return str(inflect_engine.a(text))
+
+
+def capitalised(text: str) -> str:
+    """The text with its first letter in capitals (and the others as they are: "French fries", not "French Fries")."""
+    return text[:1].upper() + text[1:]
 
 
 # Pronouns

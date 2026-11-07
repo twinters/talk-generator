@@ -30,6 +30,52 @@ class LanguageUtilTest(unittest.TestCase):
         self.assertEqual("cat", language_util.to_singular("cat"))
         self.assertEqual("cat", language_util.to_singular("cats"))
 
+    def test_generic(self):
+        # Countable nouns in the plural, and mass nouns, plurals, names and phrases with an article as they are
+        cases = {
+            "penguin": "penguins",
+            "lighthouse": "lighthouses",
+            "swimming pool": "swimming pools",
+            "child": "children",
+            "a cat": "cats",
+            "coffee": "coffee",
+            "happiness": "happiness",
+            "running": "running",
+            "music": "music",
+            "ice cream": "ice cream",
+            "physics": "physics",
+            "data": "data",
+            "sheep": "sheep",
+            "penguins": "penguins",
+            "glasses": "glasses",
+            "the French Revolution": "the French Revolution",
+            "Belgium": "Belgium",
+            "": "",
+        }
+        self.assertEqual(cases, {phrase: language_util.generic(phrase) for phrase in cases})
+
+    def test_one(self):
+        cases = {
+            "penguin": "a penguin",
+            "owl": "an owl",
+            "hour": "an hour",
+            "unicorn": "a unicorn",
+            "coffee": "coffee",
+            "penguins": "penguins",
+            "the moon": "the moon",
+        }
+        self.assertEqual(cases, {phrase: language_util.one(phrase) for phrase in cases})
+
+    def test_countable_and_plural_nouns(self):
+        self.assertTrue(language_util.is_countable("penguin") and language_util.is_countable("swimming pool"))
+        self.assertFalse(language_util.is_countable("coffee") or language_util.is_countable("penguins"))
+        self.assertTrue(language_util.is_plural_noun("penguins") and language_util.is_plural_noun("glasses"))
+        self.assertFalse(language_util.is_plural_noun("bus") or language_util.is_plural_noun("physics"))
+
+    def test_capitalised(self):
+        self.assertEqual("French fries", language_util.capitalised("french fries"))
+        self.assertEqual("", language_util.capitalised(""))
+
     def test_ing(self):
         self.assertEqual("toying", language_util.to_ing_form("toy"))
         self.assertEqual("playing", language_util.to_ing_form("play"))

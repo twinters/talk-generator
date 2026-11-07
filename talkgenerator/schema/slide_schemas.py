@@ -820,8 +820,11 @@ mockup_slide_generators_copyright_free = _register(
 
 # MEMES WITH LIVE CAPTIONS: one of Imgflip's templates, with captions of the talk's own in its boxes (see
 # talkgenerator.sources.memes): the dice pick the template, and the language model writes what each box says (or, in
-# a classic talk, the template's own sentences about the slide's topic)
+# a classic talk, the template's own sentences about the slide's topic). The user loves them (2026-11-07), so they
+# weigh four times what the other middle slides weigh: about half of all 10-slide talks have one (one in five did),
+# and a talk has two at most (caption_meme), with memes from Reddit two in ten slides (meme)
 _MEME_BRIEF = "A meme about the concept"
+MEME_WEIGHT = 4
 
 
 def _meme_variants() -> tuple[Variant, ...]:
@@ -849,7 +852,7 @@ meme_slide_generators = _register(
         _drawn(
             slide_texts.meme(cg.meme_template_generator),
             slides.MemeSlide,
-            _middle(1),
+            _middle(MEME_WEIGHT),
             ["meme", "caption_meme"],
             "Meme",
             Recipe("meme", (cg.meme_template_generator,), brief=_MEME_BRIEF, variants=_meme_variants()),
@@ -1088,7 +1091,7 @@ default_max_allowed_tags = {
     "quiz": 1,
     "social_post": 1,
     "news": 1,
-    "caption_meme": 1,
+    "caption_meme": 2,  # (memes with live captions; and every meme, from Reddit too, two in ten slides: "meme")
     "agenda": 1,
     "questions": 1,
     "timeline": 1,

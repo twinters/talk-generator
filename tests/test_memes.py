@@ -341,9 +341,47 @@ def test_previews_draw_a_meme(pictures):
 # FORMATS
 
 
-def test_memes_are_in_talks_that_allow_fair_use_once_at_most():
+def test_memes_are_in_talks_that_allow_fair_use_twice_at_most():
     default = get_schema("default")
     assert "Meme" in {generator.name for generator in default.slide_generators}
-    assert default._max_allowed_tags["caption_meme"] == 1
+    assert default._max_allowed_tags["caption_meme"] == 2 and default._max_allowed_tags["meme"] == 0.2
     assert "Meme" not in {generator.name for generator in get_schema("ted").slide_generators}
     assert classic.CLASSIC_ROLES["meme"]["template"] == "template" and "template" not in classic.TEXT_ROLES
+
+
+def test_memes_come_up_in_most_talks_but_never_all_over_them():
+    # (the user loves them: four times the weight of the other middle slides, from the third slide to the one before
+    # the conclusions)
+    default = get_schema("default")
+    by_name = {generator.name: generator for generator in default.slide_generators}
+    meme, quiz = by_name["Meme"], by_name["Quiz"]
+    assert meme.get_weight_for(5, 10) == 4 * quiz.get_weight_for(5, 10)
+    assert meme.get_weight_for(1, 10) == 0 == meme.get_weight_for(9, 10)
+    counts = []
+    for seed in range(1, 121):
+        picks = default._pick_generators(10, random_util.Rng(seed))
+        counts.append(sum(1 for pick in picks if pick is not None and pick.name == "Meme"))
+    assert 0.45 <= sum(1 for count in counts if count) / len(counts) <= 0.7  # (one in five talks, before)
+    assert max(counts) == 2
+
+
+@pytest.mark.parametrize(
+    ("seed", "related", "said", "never"),
+    [
+        ("coffee", "bean", "coffee", ("coffees", "a coffee")),
+        ("happiness", "smile", "happiness", ("happinesses", "a happiness")),
+        ("penguin", "fish", "penguins", ("penguin is", "penguins is")),
+        ("the french revolution", "guillotine", "the french revolution", ("the the", "a the", "revolutions")),
+    ],
+)
+def test_classic_captions_speak_of_the_seed_as_english_does(seed, related, said, never):
+    # (a seed's plural, "coffees" or "happinesses", read wrong on four memes in five, before)
+    filled = [
+        slide_texts.text_generator.apply_variables_to_template(caption, {"seed": seed, "related": related})
+        for template in TEMPLATES
+        for captions in template.classic
+        for caption in captions
+    ]
+    assert all(filled) and any(said in caption.lower() for caption in filled)
+    assert not [caption for caption in filled if any(wrong in caption.lower() for wrong in never)]
+    assert not [caption for caption in filled if "{" in caption or "  " in caption]
