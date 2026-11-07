@@ -7,6 +7,27 @@ from environs import Env
 os.environ.setdefault("DISABLE_CACHE", "1")
 
 
+def pytest_addoption(parser):
+    parser.addoption(
+        "--bundled-fonts-only",
+        action="store_true",
+        help="measure texts as a computer without the themes' fonts does (CI's Ubuntu): with talkgenerator's own fonts "
+        "and width tables only, and none of this computer's",
+    )
+
+
+def pytest_configure(config):
+    if config.getoption("--bundled-fonts-only"):
+        from pathlib import Path
+
+        from talkgenerator.design import fonts
+        from talkgenerator.util import os_util
+
+        bundled = Path(os_util.to_actual_file("data/fonts"))
+        fonts._font_folders = lambda: [bundled]
+        fonts._font_index.cache_clear()
+
+
 @pytest.fixture(autouse=True)
 def _offline_tests_use_no_real_credentials(request, monkeypatch, tmp_path):
     """Run offline tests as in CI: without the API keys from a local .env or the environment.

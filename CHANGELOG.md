@@ -126,10 +126,11 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   --theme`), which the Skill knows about. The layout engine (`talkgenerator.design.engine`) puts
   every element in its box and gives every text the largest size at which it fits, measured with the fonts' own
   files or fonts with the same metrics (`talkgenerator.design.fonts`; talkgenerator comes with the open ones: Liberation
-  Sans, Serif and Mono, Carlito, Caladea and Gelasio, in `data/fonts`, so texts measure the same on a computer
-  without Arial, Calibri and the rest), so a themed deck's JSON holds every
-  element's place and style, and every renderer draws it the same way. `talkgenerator.render.shapes` draws it in
-  PowerPoint, and `talkgenerator.render.preview` as pictures with Pillow, with a contact sheet of a whole deck.
+  Sans, Serif and Mono, Carlito, Caladea and Gelasio, in `data/fonts`, and with every character's width in the fonts
+  that have no such twin, so texts measure the same on a computer without Arial, Calibri and the rest), so a themed
+  deck's JSON holds every element's place and style, and every renderer draws it the same way.
+  `talkgenerator.render.shapes` draws it in PowerPoint, and `talkgenerator.render.preview` as pictures with Pillow,
+  with a contact sheet of a whole deck.
   Every slide type has its layouts, twenty in all: a full-screen picture with its title on a band at the top or
   the bottom, or on a panel in a corner (and framed when it has no title), two pictures side by side with their
   captions under or above them, in zig-zag rows or on the two halves of the slide, a chart or picture beside its
@@ -341,6 +342,13 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   compounds can be ("Vulkaanuitbarstingen"), goes across the top of the slide instead: in a wide font, such a word
   didn't fit the 600-pixel column even at the smallest size. Those layouts now take a title only if it has no word
   over 15 letters, as the side layouts of milestone 6's slide types do.
+- Themed decks laid out on a computer without Verdana, Trebuchet MS, Arial Black, Impact or Comic Sans MS, as a
+  Linux server or CI is, get the font sizes they get on Windows. Texts in those fonts were estimated from an
+  average letter: up to twice as wide as they are, so they came out smaller than they had to, and in capitals or
+  wide letters up to a quarter too narrow, so that a title in capitals could run out of its box, unseen by the
+  design checks, which estimated the same way. talkgenerator now comes with every character's width in those fonts
+  (`data/fonts/widths.json`, made by `scripts/font_widths.py`), and measures texts without kerning on every
+  computer: Pillow kerns where it finds raqm, as on some Linux computers, so a text could get another size there.
 - Texts that a language model or a plan writes a little longer than their limit (by up to an eighth) stay whole,
   and a text that has to be cut no longer ends on a little word, as in "Cats were the true scholars of the" (in
   every language, with NLTK's stopword lists). The presenter's job may be 50 characters (was 40), and the prompt

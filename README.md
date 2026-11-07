@@ -274,6 +274,7 @@ Tests live in `tests/`. Many of them talk to the live APIs, and are marked as `n
 ```sh
 uv run pytest                     # everything (tests needing missing API keys are skipped)
 uv run pytest -m "not network"    # only the offline tests, as in CI
+uv run pytest -m "not network" --bundled-fonts-only  # measuring texts as CI does, without this computer's fonts
 uv run ruff check . && uv run ruff format --check .
 uv run mypy                       # type checking
 ```

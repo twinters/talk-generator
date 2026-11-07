@@ -720,8 +720,10 @@ optional memory of recently shown quotes and images, so popular topics don't kee
   widely installed fonts (Arial, Calibri, Georgia, Verdana, Trebuchet MS, Impact, Comic Sans MS, Courier New,
   Times New Roman...), and the browser view maps each one to a web font. Text gets measured with bundled open
   fonts that share the main fonts' metrics (Liberation Sans, Serif and Mono for Arial, Times New Roman and
-  Courier New; Carlito for Calibri; Caladea for Cambria; Gelasio for Georgia), with a safety margin for fonts
-  without such a twin, so font sizes are picked deterministically and text doesn't overflow. PowerPoint's
+  Courier New; Carlito for Calibri; Caladea for Cambria; Gelasio for Georgia), and the fonts without such a twin
+  (Arial Black, Verdana, Trebuchet MS, Impact, Comic Sans MS) with a table of every character's width in them,
+  measured once from their own files, so font sizes are picked deterministically, the same on every computer, and
+  text doesn't overflow. Only a character outside those tables gets a safety margin. PowerPoint's
   shrink-on-overflow stays on as a safety net.
 - **Rendering:** the pptx renderer draws shapes (text boxes, pictures, shapes, charts) on a blank slide instead
   of filling the template's placeholders. v4's `template.pptx` lives on as the `classic` theme, for the paper
