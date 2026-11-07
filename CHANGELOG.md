@@ -12,6 +12,34 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
 
 ### Added
 
+- Generated pictures (`talkgenerator.images.generation`, `talkgenerator.images.generators`): in talks a language
+  model writes (and plans from the Skill or the MCP server), an image generator draws what stock photos can't show
+  well: the presenter's weird hobby, the cover of the book they wrote, old photos of moments in a made-up history,
+  the portrait of a made-up historical figure, a made-up news story's photo (slots with `generate`). The model writes
+  a prompt for each (plans: `SlidePlan.prompts`), the slide comes with a stock photo, and the generated picture takes
+  its place once it's in; a planned slide whose images can't be found at all gets generated ones on its last try.
+  One `ImageGenerator` interface (a prompt, an aspect ratio, a style, what to avoid and a seed in; the picture, its
+  model, its cost and moderation's flags out), with adapters for OpenAI's Image API (`openai`, gpt-image-2),
+  OpenRouter's (`openrouter`), Google's Gemini (`gemini`), Black Forest Labs' FLUX (`flux`), and ComfyUI and
+  Automatic1111-style servers of your own (`comfyui`, `automatic1111`), picked by `--image_generator` (also on
+  `talkgenerator render`), `image_generator=` (`generate_presentation`, `stream_talk`, `render_plan`) or
+  `TALKGENERATOR_IMAGE_GENERATOR`, and never because a key is set; `DISABLE_IMAGE_GENERATION=1` switches them off.
+  The default models and list prices are config (`talkgenerator/data/image_generators.json`, and an
+  `image_generators.json` in the config folder over it; `talkgenerator formats --generators` lists them), as image
+  models come and go. A talk generates 3 pictures at most (`--generated_images`, `ImageBudget`), granted in the order
+  of its slides (so the same seed generates for the same slides, in parallel or not), estimates their cost by list
+  price before it generates any, keeps to `TALKGENERATOR_IMAGE_COST_LIMIT` if it's set, and its deck's usage counts
+  them (`images`, `image_cost_usd`, `failed_images`), apart from its language model requests. Generated pictures are
+  credited "AI-generated with <model>", in the `generated` license class (the provider's terms in the deck), shown in
+  a browser from the app's own copy (`display: copy`, as Pixabay's), and kept on disk by model, prompt, shape and
+  seed (`generated-images/` in the cache folder), so a talk made again, or a deck rendered again, generates nothing
+  again. Talkgenerator's own rules come before the provider's moderation (`talkgenerator.images.safety`): a prompt
+  that names a real person, the talk's presenter, a brand or a trademarked character, or asks for gore or sexual
+  content, is never sent, every prompt asks for none of that, and a talk whose topic a slide shouldn't make light of
+  generates nothing; a refused or failed picture keeps its stock photo.
+- `slide.updated` (`talkgenerator.models.events.SlideUpdated`): in a talk that streams, a slide handed over before
+  comes again, at its index and laid out as before (`DeckLayout.again`), once a generated picture takes its stock
+  photo's place; `talk.finished` comes once every picture is in.
 - License classes and policies (`talkgenerator.images.licenses`): every image source declares the license classes
   of its images (`LICENSES`, next to its `DISPLAY`): `public-domain`, `open` (CC BY and BY-SA), `stock`
   (Unsplash, Pexels and Pixabay), `generated` and `fair-use` (Reddit, GIPHY, InspiroBot, ShitpostBot); Openverse's
@@ -114,6 +142,12 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   slides are English), and recipes that find English texts, such as real quotes, aren't used. A deck says its
   language, and a new check reads its texts with NLTK's stopword lists: a talk that reads as English when it
   shouldn't is an error, and such a slide a warning. `talkgenerator check --language nl --llm ...` checks them.
+- Talks in Swedish (`--language sv`), as in the other languages: talkgenerator's own words are Swedish ("Av ...",
+  "Ja" and "Nej", a post's "gilla-markeringar" and "delningar", a news story's "JUST NU"); without a language model,
+  what's typed reads as a title when it starts like a Swedish one ("Varför", "Därför", "Så", "Hur") or makes a claim
+  ("Katter är flytande"), but not for its "is", which is ice ("Pingviner på is"); and the language check doesn't
+  count Swedish words that are English stopwords too ("in", "all", "just", "is") as English
+  (`Language.english_lookalikes`). talkgenerator.com lists it among its languages once it runs a v5 with it.
 - Themes (`--theme`, docs/v5-plan.md section 9): besides the 2019 template (`classic`), talks can be drawn as
   shapes on a 1920×1080 canvas, in a theme of one of twelve families, from `clean keynote` and
   `dark minimal` to `vintage paper` and `neon`, with `1997 WordArt`, `Comic Sans everywhere` and `clip-art
@@ -126,10 +160,11 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   --theme`), which the Skill knows about. The layout engine (`talkgenerator.design.engine`) puts
   every element in its box and gives every text the largest size at which it fits, measured with the fonts' own
   files or fonts with the same metrics (`talkgenerator.design.fonts`; talkgenerator comes with the open ones: Liberation
-  Sans, Serif and Mono, Carlito, Caladea and Gelasio, in `data/fonts`, so texts measure the same on a computer
-  without Arial, Calibri and the rest), so a themed deck's JSON holds every
-  element's place and style, and every renderer draws it the same way. `talkgenerator.render.shapes` draws it in
-  PowerPoint, and `talkgenerator.render.preview` as pictures with Pillow, with a contact sheet of a whole deck.
+  Sans, Serif and Mono, Carlito, Caladea and Gelasio, in `data/fonts`, and with every character's width in the fonts
+  that have no such twin, so texts measure the same on a computer without Arial, Calibri and the rest), so a themed
+  deck's JSON holds every element's place and style, and every renderer draws it the same way.
+  `talkgenerator.render.shapes` draws it in PowerPoint, and `talkgenerator.render.preview` as pictures with Pillow,
+  with a contact sheet of a whole deck.
   Every slide type has its layouts, twenty in all: a full-screen picture with its title on a band at the top or
   the bottom, or on a panel in a corner (and framed when it has no title), two pictures side by side with their
   captions under or above them, in zig-zag rows or on the two halves of the slide, a chart or picture beside its
@@ -325,6 +360,12 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
 
 ### Changed
 
+- A deck's `usage` counts its generated pictures too (`images`, `image_cost_usd`, `unpriced_images`,
+  `failed_images`, apart from `requests`, which stay its language model's), and the talk's log line says what they
+  cost. A deck's `language_model` is the language model that answered, never an image generator.
+- The credits of generated pictures name their model, not a license (`licenses.SHOWN` is open and public domain
+  licenses only); `talkgenerator formats --details` (and the Skill's slide references) say which images prefer a
+  generated picture.
 - Images come through the image finder (see the image slots above): classic talks draw on the same sources with
   about the same weights as before, but history slides now show old photographs in black and white or sepia (by
   preference; no more r/ColorizedHistory or the Art Institute's paintings among them), statements' backdrops come from
@@ -376,10 +417,24 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
 - WikiHow's search finds lists, quizzes and questions too, which were cut into odd actions for classic slides and
   titles ("e 20 Top Games Like Club Penguin", "arn All About the 18 Different Penguin Species"): only pages that
   teach an action count now ("How to ...", "4 Easy Ways to ...").
+- The spelling fixes of what's typed for a talk in another language than English no longer turn its words into
+  English ones ("matare", Swedish for a feeder, became "mature"; Dutch "attractieve" became "attractive"), and in
+  Dutch, German and Swedish, which write compounds as one word (`Language.compounds`), a word no language knows
+  that's two of the language's words put together stays as typed, where it was taken for a near word ("tomatbok"
+  became "tomato", "maanspion" "mansion", "Computerkrise" "computerised", "robotarmé" "robotar"). A word one edit
+  from a known one is still fixed, and so is a Swedish word typed without its ring ("faglar": "fåglar", was
+  "naglar"). On samples of typos of common words, as many are fixed as before in every language.
 - In a themed deck, a title with a word too long for the column beside a picture or a chart, as Dutch and German
   compounds can be ("Vulkaanuitbarstingen"), goes across the top of the slide instead: in a wide font, such a word
   didn't fit the 600-pixel column even at the smallest size. Those layouts now take a title only if it has no word
   over 15 letters, as the side layouts of milestone 6's slide types do.
+- Themed decks laid out on a computer without Verdana, Trebuchet MS, Arial Black, Impact or Comic Sans MS, as a
+  Linux server or CI is, get the font sizes they get on Windows. Texts in those fonts were estimated from an
+  average letter: up to twice as wide as they are, so they came out smaller than they had to, and in capitals or
+  wide letters up to a quarter too narrow, so that a title in capitals could run out of its box, unseen by the
+  design checks, which estimated the same way. talkgenerator now comes with every character's width in those fonts
+  (`data/fonts/widths.json`, made by `scripts/font_widths.py`), and measures texts without kerning on every
+  computer: Pillow kerns where it finds raqm, as on some Linux computers, so a text could get another size there.
 - Texts that a language model or a plan writes a little longer than their limit (by up to an eighth) stay whole,
   and a text that has to be cut no longer ends on a little word, as in "Cats were the true scholars of the" (in
   every language, with NLTK's stopword lists). The presenter's job may be 50 characters (was 40), and the prompt
@@ -435,6 +490,28 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   for a picture of its frame's own shape: on a full-picture slide, a 9:16 picture came out 43% too wide and a 4:3
   one 8% too narrow, and in the three columns of an "About me" slide, which are taller than wide, a square
   picture came out 6% too narrow. v4 drew them like that too.
+- A talk with an InspiroBot poster comes out the same every time its seed makes it. InspiroBot's API makes a new
+  poster for every request, so `talkgenerator check` found that no such talk (about one classic talk in eight)
+  came out the same in parallel and one by one. The poster is now drawn with the talk's seed from InspiroBot's
+  older posters, at their predictable addresses (73 folders of 9,999 posters, from 2015 to 2017), which used to
+  fill in when the API didn't answer. Talks without a seed get a random one, so they still get any of those
+  posters, and no request goes to InspiroBot's API any more.
+- `talkgenerator check` no longer finds a talk that came out differently because an answer of the on-disk cache
+  expired between its two runs: Pixabay's expire after a day, and a fresh answer links the same pictures under other
+  addresses, so a slide's picture changed its link. The second run now gets the answers the first one got
+  (`http_util.same_answers`), as it gets a language model's; GIPHY's, which may not be kept, are still asked twice.
+- The on-disk cache of API responses reads back what it keeps. Unsplash's searches, and Openverse's once it's
+  signed in, were stored but never read back: their answers say they vary on `Authorization`, which the cache's keys
+  leave out. And Pixabay's, Commons' and Openverse's, which say they vary on `Cookie`, stopped being read back once
+  any host had set a cookie. Those searches went out again every time, using up rate limits (Unsplash's demo key
+  allows 50 an hour). The cache no longer stores answers as varying on either header.
+- A source that's skipped for a while, after an outage or a rate limit, still answers the searches it answered
+  before, from its caches, and asks nothing new: before, it was skipped altogether. A cooldown that started in the
+  middle of a talk, as Unsplash's demo key often makes one, lost the rest of the talk images that were found already,
+  and made `talkgenerator check` find that a talk's second run came out differently. A source that's cooling down
+  also keeps its place among a look's sources, so the sources searched together stay the same. That holds for
+  Pixabay, Pexels, Unsplash, Openverse, Reddit and ConceptNet; GIPHY's answers aren't kept, so it finds nothing
+  meanwhile, as before.
 
 ## [4.0.1] - 2026-11-05
 

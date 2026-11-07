@@ -142,8 +142,9 @@ _access_token = _AccessToken()
 
 
 def available() -> bool:
-    """Whether a search can go out now: Openverse isn't switched off, nor skipped for a while (see _cooldown)."""
-    return not settings.is_source_disabled("OPENVERSE") and not _cooldown.active
+    """Whether Openverse can be searched: it isn't switched off. (While it's skipped for a while, see _cooldown, a
+    search finds what it found before, from the caches, and the others nothing.)"""
+    return not settings.is_source_disabled("OPENVERSE")
 
 
 def _license_label(item: dict[str, Any]) -> str:
@@ -199,7 +200,7 @@ def search_photos(
     """Openly licensed images for the query: of the license classes (public domain and open, without any), of a
     category (one of CATEGORIES), an orientation (landscape, portrait or square), and from some of Openverse's
     sources (separated by commas, such as "met,clevelandmuseum"), if given."""
-    if not query or settings.is_source_disabled("OPENVERSE") or _cooldown.active:
+    if not query or settings.is_source_disabled("OPENVERSE"):
         return []
     codes = [code for license_class in sorted(classes or LICENSES) for code in _LICENSE_CODES.get(license_class, ())]
     if not codes:
@@ -211,13 +212,19 @@ def search_photos(
         params["aspect_ratio"] = ASPECT_RATIOS[orientation]
     if sources:
         params["source"] = sources
-    token = _access_token.get()
+    # While Openverse is skipped for a while, only the answers that are kept will do (signing in would ask it, and
+    # the cache doesn't tell searches apart by their tokens)
+    cooling = _cooldown.active
+    token = None if cooling else _access_token.get()
     response = http_util.get(
         API_URL,
         params=params,
         headers={"Authorization": f"Bearer {token}"} if token else {},
         timeout=_TIMEOUT_SECONDS,
+        cached_only=cooling,
     )
+    if response is None and cooling:
+        return []
     if response is None:
         # Openverse can be slow; don't let every slide wait for it
         _cooldown.trigger(10 * 60, f"no answer within {_TIMEOUT_SECONDS} seconds")

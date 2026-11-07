@@ -55,8 +55,9 @@ def get_pixabay_session() -> str | None:
 
 
 def available() -> bool:
-    """Whether a search can go out now: there's a key, and Pixabay isn't skipped for a while (see _cooldown)."""
-    return get_pixabay_session() is not None and not _cooldown.active
+    """Whether Pixabay can be searched: there's a key. (While it's skipped for a while, see _cooldown, a search finds
+    what it found before, from the caches, and the others nothing.)"""
+    return get_pixabay_session() is not None
 
 
 def search_horizontal(query: str) -> list[ImageData]:
@@ -73,7 +74,7 @@ def search_photos(
     """Images for the query: photos, illustrations or vector graphics (image_type); horizontal or vertical (or
     landscape and portrait), and of some of COLORS (separated by commas), if given."""
     api_key = get_pixabay_session()
-    if not api_key or not query or _cooldown.active:
+    if not api_key or not query:
         return []
     params = {
         "key": api_key,
@@ -86,7 +87,10 @@ def search_photos(
     chosen_colors = ",".join(color.strip() for color in (colors or "").split(",") if color.strip() in COLORS)
     if chosen_colors:
         params["colors"] = chosen_colors
-    response = http_util.get(API_URL, params=params)
+    cooling = _cooldown.active  # (then only the answers that are kept will do)
+    response = http_util.get(API_URL, params=params, cached_only=cooling)
+    if response is None and cooling:
+        return []
     if response is None or response.status_code >= 500:
         _cooldown.trigger_outage(response)
         return []

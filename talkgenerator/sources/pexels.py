@@ -49,20 +49,24 @@ def _api_key() -> str | None:
 
 
 def available() -> bool:
-    """Whether a search can go out now: there's a key, and Pexels isn't skipped for a while (see _cooldown)."""
-    return _api_key() is not None and not _cooldown.active
+    """Whether Pexels can be searched: there's a key. (While it's skipped for a while, see _cooldown, a search finds
+    what it found before, from the caches, and the others nothing.)"""
+    return _api_key() is not None
 
 
 def _search_pexels(query: str, color: str | None = None, orientation: str | None = None) -> Any:
     api_key = _api_key()
-    if not api_key or _cooldown.active:
+    if not api_key:
         return None
     params: dict[str, Any] = {"query": query, "per_page": 40}
     if color in COLORS:
         params["color"] = color
     if orientation in ORIENTATIONS:
         params["orientation"] = ORIENTATIONS[orientation]
-    response = http_util.get(API_URL, params=params, headers={"Authorization": api_key})
+    cooling = _cooldown.active  # (then only the answers that are kept will do)
+    response = http_util.get(API_URL, params=params, headers={"Authorization": api_key}, cached_only=cooling)
+    if response is None and cooling:
+        return None
     if response is None or response.status_code >= 500:
         _cooldown.trigger_outage(response)
         return None

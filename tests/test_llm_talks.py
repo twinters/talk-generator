@@ -358,12 +358,26 @@ def test_a_dutch_talk_has_dutch_words_of_its_own(schema):
     assert element.chart.categories == ("Ja", "Nee", "Soms")
 
 
-def test_a_slide_of_a_dutch_talk_that_doesnt_come_out_becomes_a_picture(schema):
+def test_a_swedish_talk_has_swedish_words_of_its_own(schema):
+    model = FakeModel()
+    deck = _talk(model, language="sv")
+    assert deck.language == "sv"
+    assert "every slide in Swedish" in model.requests[0].messages[0].content
+    by = deck.slides[0].elements[1].text.split(" Ann Example")[0]
+    assert by in ("Av", "En presentation av", "Presenterad av")
+    swedish = languages.language("sv")
+    chart = KINDS["chart_yes_no"].build({"question": "Någonsin?", "funny_answer": "Ibland"}, {}, swedish)
+    (element,) = [element for element in chart.to_deck_slide().elements if element.kind == "chart"]
+    assert element.chart.categories == ("Ja", "Nej", "Ibland")
+
+
+@pytest.mark.parametrize("language", ["nl", "sv"])
+def test_a_slide_of_a_talk_in_another_language_that_doesnt_come_out_becomes_a_picture(schema, language):
     def spoil(answer):
         first = next(key for key in answer if key.startswith("slide_"))
         answer[first] = {key: "{seed}" for key in answer[first]}  # template code: it can't come out
 
-    deck = _talk(FakeModel(change=spoil), language="nl")
+    deck = _talk(FakeModel(change=spoil), language=language)
     spoiled = deck.slides[1]
     assert spoiled.type == "full_image"
     assert [element for element in spoiled.elements if element.kind == "text"] == []  # no English classic slide

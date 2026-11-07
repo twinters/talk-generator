@@ -42,8 +42,9 @@ _cooldown = http_util.Cooldown("Cleveland Museum of Art")
 
 
 def available() -> bool:
-    """Whether a search can go out now: Cleveland isn't switched off (DISABLE_CLEVELAND), nor skipped for a while."""
-    return not settings.is_source_disabled("CLEVELAND") and not _cooldown.active
+    """Whether Cleveland can be searched: it isn't switched off (DISABLE_CLEVELAND). (While it's skipped for a while,
+    see _cooldown, a search finds what it found before, from the caches, and the others nothing.)"""
+    return not settings.is_source_disabled("CLEVELAND")
 
 
 def _number(value: Any) -> int | None:

@@ -37,9 +37,9 @@ _cooldown = http_util.Cooldown("Wellcome Collection")
 
 
 def available() -> bool:
-    """Whether a search can go out now: the Wellcome Collection isn't switched off (DISABLE_WELLCOME), nor skipped for a
-    while."""
-    return not settings.is_source_disabled("WELLCOME") and not _cooldown.active
+    """Whether the Wellcome Collection can be searched: it isn't switched off (DISABLE_WELLCOME). (While it's skipped
+    for a while, see _cooldown, a search finds what it found before, from the caches, and the others nothing.)"""
+    return not settings.is_source_disabled("WELLCOME")
 
 
 def _iiif(info_url: str, size: str) -> str:

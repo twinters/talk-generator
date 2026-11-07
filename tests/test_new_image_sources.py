@@ -46,11 +46,16 @@ class _Answer:
 @pytest.fixture
 def answers(monkeypatch):
     """Answer requests from fixtures, by the start of their address; remember the requests (address, parameters).
-    Every source starts out of its cooldown."""
+    Every source starts out of its cooldown; while one cools down, nothing is kept for it (no cache), unless a test
+    keeps answers in served["kept"]."""
     served: dict[str, object] = {}
     requests = []
+    kept: dict[str, object] = {}
 
-    def get(url, **kwargs):
+    def get(url, cached_only=False, **kwargs):
+        if cached_only:  # (only a kept answer will do, and the server isn't asked)
+            found = next((answer for prefix, answer in kept.items() if url.startswith(prefix)), None)
+            return _Answer(found) if found is not None else None
         requests.append((url, kwargs.get("params") or {}))
         found = next((answer for prefix, answer in served.items() if url.startswith(prefix)), None)
         if found is None:
@@ -62,6 +67,7 @@ def answers(monkeypatch):
         monkeypatch.setattr(module, "_cooldown", http_util.Cooldown(f"{module.__name__} (test)"))
     monkeypatch.setattr(flags, "_codes", None)
     served["requests"] = requests  # (not an address: a handle on them, for the tests)
+    served["kept"] = kept
     return served
 
 
@@ -97,7 +103,8 @@ def test_the_met_keeps_its_public_domain_objects(answers):
 def test_the_met_backs_off_when_it_cant_answer(answers):
     answers[met.SEARCH_URL] = _Answer({}, 503)
     assert met.search_artworks("cat") == [] and met.search_artworks("dog") == []
-    assert len(_requests(answers)) == 1 and not met.available()
+    # (one request: the other search waits out the cooldown; and the Met keeps its place among a look's sources)
+    assert len(_requests(answers)) == 1 and met._cooldown.active and met.available()
 
 
 # CLEVELAND
@@ -233,7 +240,7 @@ def test_flags_by_a_countrys_name(answers):
 def test_flags_wait_for_flagcdn_when_it_cant_answer(answers):
     answers[flags.CODES_URL] = _Answer({}, 503)
     assert flags.search_flags("Belgium") == []
-    assert not flags.available()
+    assert flags._cooldown.active and flags.available()
 
 
 # IMGFLIP
@@ -358,7 +365,7 @@ def test_an_object_the_met_lists_but_doesnt_give_is_no_warning(answers, caplog):
     answers[met.OBJECT_URL.format(1)] = _Answer({}, 404)
     with caplog.at_level("WARNING"):
         assert met._object(1) is None
-    assert "404" not in caplog.text and met.available()  # (and no cooldown)
+    assert "404" not in caplog.text and not met._cooldown.active
 
 
 def test_the_countries_of_classic_about_me_slides_have_flags(answers):
@@ -376,3 +383,13 @@ def test_the_countries_of_classic_about_me_slides_have_flags(answers):
         "ru",
         "mm",
     ]
+
+
+def test_a_source_that_cools_down_still_answers_what_it_answered_before(answers):
+    answers[nasa.API_URL] = _Answer({}, 503)
+    assert nasa.search_images("pizza") == [] and nasa._cooldown.active  # (an outage: skipped for a while)
+    answers["kept"][nasa.API_URL] = fixture("nasa.json")  # (as the on-disk cache would keep an earlier answer)
+    sent = len(_requests(answers))
+    assert (
+        len(nasa.search_images("pizza")) == 3 and len(_requests(answers)) == sent
+    )  # (from what's kept, asking nothing)

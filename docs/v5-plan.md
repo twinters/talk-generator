@@ -387,12 +387,57 @@ image ([section 10.5](#105-generated-images)).
 ### 5.9 Languages
 
 Built on 2026-11-06: `talkgenerator.plan.languages` has what talkgenerator writes itself in en, nl, fr, de, es, it
-and pt (the title slide's "By ...", a chart's "Yes" and "No"); a slide of a non-English talk that doesn't come
-out becomes a full-screen picture of its concept, without text, rather than an English classic slide (or is left
-out, in a format without such pictures); recipes with `texts_from` (real quotes, which are English) are left
-out of non-English talks; decks have a `language`; and `check_language` reads a deck's texts with NLTK's
-stopwords (only the words that tell the language and English apart), flagging slides and talks that read as
-English. Dutch Wikipedia and Wikiquote as sources are still to do.
+and pt, and since 2026-11-07 sv (the title slide's "By ...", a chart's "Yes" and "No"); a slide of a non-English
+talk that doesn't come out becomes a full-screen picture of its concept, without text, rather than an English
+classic slide (or is left out, in a format without such pictures); recipes with `texts_from` (real quotes, which
+are English) are left out of non-English talks; decks have a `language`; and `check_language` reads a deck's texts
+with NLTK's stopwords (only the words that tell the language and English apart), flagging slides and talks that
+read as English. Dutch Wikipedia and Wikiquote as sources are still to do.
+
+Swedish (`sv`) joined on 2026-11-07, at the user's request (D41). Besides its own words ("Av ...", "Ja" and "Nej", a
+post's "gilla-markeringar" and "delningar", a news story's "JUST NU"), it needed three things the other languages
+didn't:
+
+- What's typed reads as a title, without a model, when it starts like a Swedish one ("Hur", "Varför", and "Därför"
+  and "Så", where English headlines say "Why" and "How to") or makes a Swedish claim ("är", "måste", ...). But
+  English "is" isn't a claim in Swedish, where it means ice ("Pingviner på is").
+- The language check leaves out Swedish words that are English stopwords too but missing from NLTK's Swedish list
+  (`Language.english_lookalikes`: "in", "all", "just", "be", "by", "is"), which made a terse Swedish slide ("All
+  glass in", or a chart of "Is" and "All mat") read as English.
+- The spelling fixes of what's typed (`word_frequency.fix_spelling`), which take English words as candidates in
+  every language, turned rare words of the talk's language into English ones, and compounds into near words.
+  Measured on samples (600 rare words and about 790 made-up compounds per language, wordfreq's lists): 27 Swedish,
+  38 Dutch and 65 French rare words became English-leaning ones ("matare", Swedish for a feeder: "mature"; Dutch
+  "attractieve": "attractive"), and 17 Swedish, 13 Dutch and 8 German compounds became near words ("tomatbok":
+  "tomato"; "maanspion": "mansion"; "Computerkrise": "computerised"). Now a word that the language knows at least
+  as well as English only becomes another word of that language. And in a language that writes compounds as one
+  word (`Language.compounds`: nl, de and sv), a word made of two or more of its words stays as typed: the first
+  word may be joined on with an "s", or lose its last "e" or "a". The exception is a word one edit from a known
+  word, which still gets fixed: 2 Swedish, 4 Dutch and 2 German compounds still change, all a letter away from a
+  real word ("issekt": "insekt"). The English-leaning changes left (10, 20 and 29) are of words that are more
+  English than the language's own. Typos of common words get fixed as often as before in all eight languages (476
+  of 540 in Swedish before, 478 now, as "å" joined the letters an edit may use).
+
+Swedish compounds are as long as Dutch ones. Titles with a word over 15 letters already keep off the side
+layouts, and the Swedish 20-letter words measured (with å, ä and ö: "Kärnkraftsolyckornas", "Pingvinkaffekulterna")
+are no wider than the Dutch word that the long-word tests use, in any theme font: those tests passed with Swedish
+words in all twelve families. Words of 22 letters can
+still overflow a few narrow boxes in any language (a timeline's moment, a 2×2 matrix's axis end, a slide type's
+title at its smallest size), in four of the families.
+
+Live (2026-11-07, OpenRouter's free router, one request a talk, $0): seven Swedish talks, four on what was typed
+("kanelbullar", "älgar", "Varför jag gick med i en pingvinsekt", "katter är flytande") and the three sample talks
+(cat, peanuts and time travel). There were no language findings, and every title was Swedish: the typed title was
+kept as typed, the premise kept its words ("Katter är flytande: En medeltida guide till livets flyt"), and the
+topics got titles of their own ("Älgar: De glömda makarna i medeltiden"). So were the names: "Prof. Kanel
+Bullarsson", "Prof. Olof Älgkonung", "Prof. Albert Pingvinstein", "Dr. Tor Tidström". The model wrote 62 of the 70
+slides: one answer stopped at its output cap (11,700 tokens, where the others needed 674 to 1,008), and that talk's
+other eight slides became pictures, as designed. `deck_metrics` counts those pictures as written by the model, as
+their notes start with "Planned:". One presenter job came out in English ("Professor of Antarctic Entomology"),
+which the check doesn't see on a title slide that also says "Presenterad av". Two three-circle Venn diagrams didn't
+fit a long label ("Hantverksföreningar", "Medeltidsentusiaster"); laid out again with the Venn branch's labels
+beside their circles (`2126dc5`), both fit. The free models' Swedish has slips that no stopword check can see
+("Erdnöten" for jordnötter, a headline that reads Norwegian).
 
 Decided: talks in Dutch, and later other languages, whenever an LLM is available. The classic engine and its
 grammars stay English: translating them would mean keeping parallel grammars in step for every language, a lot of
@@ -743,8 +788,10 @@ optional memory of recently shown quotes and images, so popular topics don't kee
   widely installed fonts (Arial, Calibri, Georgia, Verdana, Trebuchet MS, Impact, Comic Sans MS, Courier New,
   Times New Roman...), and the browser view maps each one to a web font. Text gets measured with bundled open
   fonts that share the main fonts' metrics (Liberation Sans, Serif and Mono for Arial, Times New Roman and
-  Courier New; Carlito for Calibri; Caladea for Cambria; Gelasio for Georgia), with a safety margin for fonts
-  without such a twin, so font sizes are picked deterministically and text doesn't overflow. PowerPoint's
+  Courier New; Carlito for Calibri; Caladea for Cambria; Gelasio for Georgia), and the fonts without such a twin
+  (Arial Black, Verdana, Trebuchet MS, Impact, Comic Sans MS) with a table of every character's width in them,
+  measured once from their own files, so font sizes are picked deterministically, the same on every computer, and
+  text doesn't overflow. Only a character outside those tables gets a safety margin. PowerPoint's
   shrink-on-overflow stays on as a safety net.
 - **Rendering:** the pptx renderer draws shapes (text boxes, pictures, shapes, charts) on a blank slide instead
   of filling the template's placeholders. v4's `template.pptx` lives on as the `classic` theme, for the paper
@@ -1052,6 +1099,95 @@ the Smithsonian's teapot), and every new source's canary test passed. In whole t
   never generates anything again.
 - **On talkgenerator.com** (decided): only on the visitor's own account or key, never on the site's budget.
 
+As built (2026-11-07, `talkgenerator.images.generation` and `talkgenerator.images.generators`; D38, D39):
+
+- **Interface:** `ImageGenerator.generate(ImageRequest)`: a prompt, an aspect ratio (1:1, 3:2, 2:3, 4:3, 3:4, 16:9,
+  9:16; a generator makes the nearest it can), a style, what to avoid, a seed and a quality (low by default) in; a
+  `GeneratedImage` out, with its bytes, model, cost (as the provider says), moderation's flags, seed and revised
+  prompt. Errors are `GenerationError`s: `GeneratorUnavailable` (no key, a key or model turned down, no credits, a
+  server error), `GenerationRateLimited`, `GenerationRefused` (moderation's, or our rules'). `estimate_cost` gives a
+  picture's list price (none for an unknown one, 0 for a local server's). Capabilities say whether a generator takes
+  a seed, follows instructions (what to avoid goes in the prompt for OpenAI's and Gemini's models, as a negative
+  prompt on local servers, and not at all for FLUX, which would draw what it names), and runs locally.
+- **Adapters**, over plain HTTP (`requests`, through `http_util`: no SDK needed), checked against the providers'
+  docs on 2026-11-07: `openai` (`POST /v1/images/generations`: sizes 1024x1024, 1536x1024, 1024x1536, quality,
+  JPEG out, moderation `auto`, whose `moderation_blocked` turns into a refusal with its categories); `openrouter` (its
+  Image API, `POST /api/v1/images`, sending of resolution, quality, output format and seed only what the model's
+  `GET /api/v1/images/models/<model>/endpoints` says it takes, asked once, which also gives a per-picture price for
+  a model priced by the picture; usage.cost is what a picture cost); `gemini` (`models/<model>:generateContent` with
+  responseModalities IMAGE, an imageConfig and a seed; draft images marked as thoughts are skipped; a blockReason or
+  an IMAGE_SAFETY finish is a refusal); `flux` (BFL's `POST /v1/<model>`, FLUX 3's aspect ratio and resolution or
+  FLUX.2's width and height of about a megapixel, safety tolerance 2, polling the `polling_url` until Ready, Request
+  Moderated or Content Moderated, its cost in credits at a cent each); `comfyui` (a text-to-image workflow in the API
+  format with the server's first checkpoint, or `COMFYUI_WORKFLOW`'s own with placeholders, through `/prompt`,
+  `/history` and `/view`) and `automatic1111` (`/sdapi/v1/txt2img`, with a negative prompt, switching checkpoints only
+  when the spec names one). Specs: `provider[:model]`, as `TALKGENERATOR_IMAGE_GENERATOR` or `--image_generator`
+  names them; a talk only generates when it's given one (D38).
+- **Models and prices are config** (`talkgenerator/data/image_generators.json`, checked on the providers' pages on
+  2026-11-07, and an `image_generators.json` in the config folder over it): OpenAI's gpt-image-2 (the default) $0.006
+  a picture at low quality, $0.053 at medium, $0.211 at high (the 2.5 and 2.6 models are priced by the token only, so
+  not listed); OpenRouter's gpt-image-2 (its default), FLUX 3 Image Klein $0.009 and Gemini 3.1 Flash-Lite Image
+  $0.0336 (none free); Gemini 3.1 Flash-Lite Image (the default) and Nano Banana 2.1 $0.0336, 3.1 Flash Image $0.067,
+  3 Pro Image $0.134, 2.5 Flash Image $0.039 (to be shut down on 2027-03-15; no free tier for pictures); FLUX 3 Image
+  Klein (the default) $0.009, FLUX 3 Image $0.048, FLUX.2 klein 4B $0.014, 9B $0.015, pro $0.03, flex $0.05, max
+  $0.07 (the first megapixel); OpenAI's gpt-image-1 was shut down on 2026-10-23. `talkgenerator formats
+  --generators` lists them.
+- **When:** only on planned slides (a language model's or a plan's), whose texts say what a picture is to show;
+  classic talks generate nothing. Slots that prefer a generated picture (`ImageSlot.generate`): the weird hobby (on
+  both about-me slides and its own), the about-me book's cover, history's two old photos and its made-up figure's
+  portrait (in `ted` too), and the news story's photo. For those the language model writes a prompt (`<image>_prompt`,
+  only in a talk that generates; `SlidePlan.prompts` in a plan), the stock photo is searched for as before and the
+  slide comes with it, and once the slide is settled its picture is generated in the background (4 at once), taking
+  the stock photo's place, and its credit's, when it's in. A planned slide whose images aren't found at all, after
+  its query and its concept, gets them generated on its last try (which runs while it's settled), all of them or
+  none, for looks talkgenerator knows how to ask for (photographs, paintings, illustrations, book covers; not gifs,
+  memes or InspiroBot's posters). A slot that prefers a generated picture can be served without a source of its own
+  (the book cover under `open`). The product shot for a pitch waits for the pitch format (milestone 7).
+- **Limits:** 3 pictures a talk by default (`ImageBudget`, `--generated_images`, `TALKGENERATOR_GENERATED_IMAGES`),
+  granted in the order of the slides as they're settled, the cache's included (so the same seed generates for the same
+  slides, in parallel or one by one, the first time or again), and an optional dollar limit by list price
+  (`TALKGENERATOR_IMAGE_COST_LIMIT`; a model without a known price is then not asked). The talk logs its estimate
+  ("up to 3 pictures with openai:gpt-image-2, at about $0.0060 each: $0.0180 at most") before its first picture, and
+  `generation.estimate(spec, budget)` gives it beforehand, for a settings page. The talk's ledger counts what was
+  generated: `Usage.images`, `image_cost_usd`, `unpriced_images`, `failed_images`, apart from its requests.
+- **Pictures:** credited "AI-generated with <model>" (the model without its provider: "gpt-image-2"), in the
+  `generated` class, under the provider's terms (the deck's `license` and `license_url`; the credit doesn't name
+  them), described by their prompt, kept as `generated-images/<hash>.<jpg|png>` in the cache folder with a JSON file
+  of what made them, keyed by model, prompt, style, what to avoid, shape, quality and seed (only for generators that
+  take a seed). The deck names a picture by that file, with display `copy` (D39). Their look at the bytes
+  (`analysis.analyse`) lets a colour "old photo" turn sepia in a theme, as a found one does.
+- **Safety** (`talkgenerator.images.safety`): a prompt is screened before it's sent: real people talkgenerator knows
+  by name (`names.real_person`: dictators and famous living people, and the famous figures the name pack bends, by
+  their whole name or their last name), "a celebrity" and the like, the talk's presenter's name, brands and
+  trademarked characters (Disney's, Nintendo's, Coca-Cola, ...; a logo), gore and sexual content, and the words a
+  slide shouldn't make light of (`slide_texts.sensitive`). Every prompt then asks for no real or famous people, no
+  logos, brands or trademarked characters, no gore, nudity or sexual content, and no writing (but on a book cover).
+  A talk whose topic is sensitive generates nothing; one whose topic the language model flags is classic, so it
+  generates nothing either. A refused prompt, a picture moderation turns down, or a failed one, keeps the stock photo.
+- **Streaming:** `stream_talk` sends `slide.updated` (`SlideUpdated`: the index of the slide.ready it replaces, and
+  the slide, laid out as before by `DeckLayout.again`), and `talk.finished` once every picture is in. A cancelled talk
+  stops what hasn't started generating.
+- **The site's side** (talk-generator-web, not built yet): pass a visitor's generator with their key
+  (`OpenAIImageGenerator(model, api_key=...)`, `OpenRouterImageGenerator(model, api_key=...)`, or a `client=` of its
+  own, as its language models take a client), with an `ImageBudget`; show `generation.estimate(...)` before a talk
+  spends their money; take `slide.updated` as it takes `slide.ready` (the slide at that index), and keep copies of
+  its pictures (`display: copy`, which its `keep_copies` already handles, as `fetch_image` reads a local file); log
+  the deck's `usage.images` and `image_cost_usd`. Never set `TALKGENERATOR_IMAGE_GENERATOR` on the server (D7, D38).
+- **Live** (2026-11-07, with the user's OK for at most 10 pictures, $0.06, on OpenAI's gpt-image-2 at low quality):
+  the first request got HTTP 429 `insufficient_quota` (the account had no credits: nothing charged), which now says
+  "needs more credits" rather than a rate limit. With credits: one picture through the adapter, 1536x1024 JPEG
+  (271 KB) in 13 s, exactly what was asked; then the three usual talks (cat, peanuts, time travel, seed 1, neon),
+  written by OpenRouter's free models (one request each, $0), in 29 to 42 s each, each with 3 generated pictures
+  (slide 3's two old photos of made-up moments in the topic's history, slide 8's news photo; 9 of 9 generated, none
+  refused or failed, all embedded in the .pptx, credited "AI-generated with gpt-image-2"). By list price $0.018 a
+  talk (the deck counts the square picture's price, $0.006: the 1536x1024 ones are $0.005), so about $0.05 for the
+  whole check. The model's prompts were concrete and on the slides' texts ("a confused man in full medieval plate
+  armor standing in a brightly lit modern grocery store aisle, looking at cereal boxes", under "Medieval Knight Found
+  in Modern Supermarket"), with no real people or brands; a deck rendered again from its JSON took its 3 pictures
+  from the cache and asked nothing. Sample decks: the comparison folder's `19-v5-c4484f9-generated-images`.
+  Not tried live: OpenRouter, Gemini, FLUX and the local servers (their adapters are tested against fakes made from
+  their docs), and a price per picture from OpenAI's token counts (its answer has them; the list price stands in).
+
 ## 11. Text sources and content packs
 
 - **Kept:** Datamuse, WordNet, Goodreads, Wikiquote, WikiHow (brittle, and off on the site), InspiroBot.
@@ -1096,7 +1232,8 @@ the Smithsonian's teapot), and every new source's canary test passed. In whole t
 - **The library:** `stream_talk()` yields `talk.started` (title, theme, slide count), `slide.ready` (index and
   slide JSON), `slide.updated` (images that came in late) and `talk.finished` (credits, usage, fallbacks). Slides
   arrive in order, and later slides get prepared in parallel. As built (2026-11-07): a slide is handed over whole,
-  so there's no `slide.updated` (a later one would replace the slide at its index, as the site takes it);
+  and `slide.updated` hands it over again, whole, at the same index and laid out as before, once a generated
+  picture takes its stock photo's place (10.5); `talk.finished` waits for every picture;
   `talk.started` also names the language model that writes the talk (none: classic), and every image its size in
   pixels. What a browser can't do as PowerPoint does: split black and white at a picture's own median lightness
   (it can't read another site's pixels, so it splits at half), and bend text into an arch, a wave or an inflated
@@ -1182,7 +1319,9 @@ the Smithsonian's teapot), and every new source's canary test passed. In whole t
   talk (sent over HTTPS with that request, used once, never stored or logged); and Sign in with ChatGPT once
   OpenAI admits the site, through the interest form linked from
   [OpenAI's Sign in with ChatGPT docs](https://developers.openai.com/siwc).
-- **Switches:** `DISABLE_LLM=1`, `DISABLE_IMAGE_GENERATION=1`, and `DISABLE_<PROVIDER>=1` per provider.
+- **Switches:** `DISABLE_LLM=1`, `DISABLE_IMAGE_GENERATION=1` (built: no generated pictures at all, even with a
+  generator given), and `DISABLE_<PROVIDER>=1` per provider. The site never sets `TALKGENERATOR_IMAGE_GENERATOR`,
+  and passes a visitor's own generator per talk (D38).
 - **Visibility:** one usage line per talk in the logs (requests, tokens, estimated cost, which must stay $0 on the
   site's own key, fallbacks taken, time to first slide), and a daily summary.
 
@@ -1243,7 +1382,7 @@ before the new formats. A milestone is a checkpoint on `v5`, not a release; only
 | 2 (under way: the TalkPlan schema, the planner, the `openrouter`, `anthropic`, `openai` and `chatgpt` adapters, `render`, `schema`, `formats`, the Skill, languages with their check, `login openrouter` and `login chatgpt`, and trend and ranking charts are in; on 2026-11-06, 30 benchmark talks by the free models had 0 errors, one request each, at $0, and 290 of 300 slides by the model) | LLM TED talks and the Claude Skill | TalkPlan schema; the LLM planner (one streamed call, dice, per-slide fallback, safety); `openrouter`, `anthropic` and `openai` adapters; languages, Dutch first; `render plan.json`, `schema`, `formats`; `skill/` with SKILL.md; `login openrouter`; the `chatgpt` adapter (may slip to milestone 3); checks for requests, cost, speed and language | on the benchmark with OpenRouter's free models: no holes, no leftovers, $0 and one request per talk; Dutch talks pass the language check; Claude Code makes a deck end to end with the Skill |
 | 3 (done, 2026-11-07: theme families and extremes, procedural palettes with contrast repair, layouts and their variants (never twice in a row), image treatments, WordArt-style heading effects, text fitting with bundled metric twins, the shapes renderer with the classic animations (columns click by click), previews and contact sheets, the design checks and the local MCP server; 0 design findings on 792 benchmark decks in 12 seeds; thumbnails in CI left out, D29) | Themes and layouts | theme tokens and families, extremes on by default; procedural palettes and font pairs; layout variants; text fitting; image treatments; the `classic` theme; thumbnails and contact sheet in CI; the local MCP server | contrast and overflow checks pass on every theme |
 | 4 (under way: `stream_talk()`, probe validation, display policies, presenter names in styles (5.10, for the site's settings) and what's typed read as a topic or a title (5.11, `topic_or_title=`, for the site's Automatic choice) are in; since 2026-11-07, talkgenerator.com runs v5 from GitHub (D31): talks stream into the browser, the .pptx is made on download, Pixabay's images are copied, and classic and LLM talks meet the speed and memory bars on the VPS (section 14), but for the first talk after a restart; left: deploying the streamed-titles fix (`be09a7e`: on the site, a free model that writes its answer's fields in alphabetical order put `slide_10` before `slide_2`, so slides 2 to 9 fell back to classic ones, or were left out of a Dutch copyright-free talk), the new settings with 5.10's and 5.11's options, and loading the library before the first talk) | Streaming and the web view | `stream_talk()`, display policies, probe validation; in talk-generator-web: the SSE endpoint, the Angular renderer, LLM talks by default with the classic switch, a language choice, Connect OpenRouter and pasted keys, .pptx on download, an Automatic topic-or-title choice (5.11), the site running `v5` from git (D31) | first slide on screen within the calibrated target on the VPS; a 20-slide talk under the memory bar; the downloaded .pptx matches the web view |
-| 5 (under way: image slots and the finder, license classes and policies, aesthetic profiles with local analysis, and the first flavour packs are in, 2026-11-07; then new sources (10.4): the Met, Cleveland, the Wellcome Collection, NASA, Flagpedia's flags, Imgflip's templates and the Smithsonian (with the user's api.data.gov key), with the museums' type and date filters and more subreddits; left: AI images, the vision pick, and the Library of Congress, Flickr and Iconify, which need an exception, a paid key or a new dependency) | Images | slots, aesthetic profiles and flavour packs, local analysis, license classes; new open and weird sources; AI image generation with the user's own keys; the optional vision pick | license policies enforced; profile checks pass (such as the grayscale share for `vintage`); generated images credited |
+| 5 (under way: image slots and the finder, license classes and policies, aesthetic profiles with local analysis, and the first flavour packs are in, 2026-11-07; generated images too, on the user's own key or server, credited "AI-generated with <model>" in the `generated` class (10.5, D38, D39); and new sources (10.4): the Met, Cleveland, the Wellcome Collection, NASA, Flagpedia's flags, Imgflip's templates and the Smithsonian (with the user's api.data.gov key), with the museums' type and date filters and more subreddits; left: the vision pick, generated pictures on talkgenerator.com on a visitor's key, and the Library of Congress, Flickr and Iconify, which need an exception, a paid key or a new dependency) | Images | slots, aesthetic profiles and flavour packs, local analysis, license classes; new open and weird sources; AI image generation with the user's own keys; the optional vision pick | license policies enforced; profile checks pass (such as the grayscale share for `vintage`); generated images credited |
 | 6 (under way: fourteen slide types are in, drawn as texts on shapes (D37, section 8); on 2026-11-07, benchmark talks over seeds that bring each of them up had no design, completeness, leftover or language findings: 63 classic talks, and 63 by OpenRouter's free models (620 of 630 slides by the model, at $0), plus 20 classic `ted` talks and 8 Dutch ones, where a long Dutch compound overflowed a narrow box (since, every new layout takes a 20-letter word in every theme); the only other findings were InspiroBot's and Reddit's live answers differing between a talk's two runs. talk-generator-web draws them all unchanged, and needs a small change to hold back what appears on a click in its presentations (a branch of its own, not merged). Memes with live captions came in later that day (D40). Left: the TED content pack, and section 8's other candidates) | More slide types for TED-like talks | native diagrams, big numbers, quiz, memes with live captions, social posts and more; a much larger, curated TED content pack | every new slide type passes the checks in classic and LLM mode |
 | 7 | New talk formats | pitch, academic, corporate, keynote and Pecha Kucha timing, with their content packs (or in 5.1 if the TED work takes longer) | every format works in classic and LLM mode and passes the checks |
 | 8 | Integration | the site runs `v5` on the preview, then in production behind a switch; Sign in with ChatGPT on the site, if OpenAI has admitted it; docs and deprecation warnings | the site runs `v5` for a week without quota or memory incidents |
@@ -1295,10 +1434,12 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D35 | What's typed for a talk (Automatic, topic_or_title) stays its title only when it's clearly one: four words or more, or a question or exclamation, with its slips fixed. Anything shorter is the topic, or a premise, on which the language model builds a funnier, more specific title ("The French Revolution" deserves better than itself); a title in quote marks stays word for word. The talk's dice pick whether the classic titles go with a short input as options, as inspiration only, or not at all. |
 | D36 | GIPHY's searches aren't cached: its API rules forbid caching its responses and media URLs. The other search APIs stay cached. |
 | D37 | Milestone 6's slide types are built from the deck's texts, shapes and pictures, which the layout engine places, so every renderer draws them as it draws the other slides (talk-generator-web without changes); a classic deck draws them on the 2019 template's blank slide, laid out in the template's look. What appears on a click is a property of an element (`appears_on_click`), which a renderer that plays no clicks ignores. |
+| D38 | A talk generates pictures only when it's given an image generator (`image_generator=`, `--image_generator`, `TALKGENERATOR_IMAGE_GENERATOR`), never because a key is set, and only on planned slides, whose texts say what a picture is to show: for the slots that prefer one, in place of a stock photo that stands in until it's in (or for good, when it's refused or fails), and for a planned slide whose images can't be found at all, on its last try. A few per talk (3 by default), granted in the order of the slides, the cache's included, so the same seed generates for the same slides; for a paid generator, a cost estimate by list price first, and an optional dollar limit. talkgenerator.com never sets a generator of its own: it passes a visitor's, with their key (D7). |
+| D39 | A generated picture is credited "AI-generated with <model>", in the `generated` class, under its provider's terms (in the deck, not in the credit), kept on disk by model, prompt, shape and seed, and named in the deck by that file, which a browser can't load: its display is `copy`, as for Pixabay's pictures (D30), so an app shows it from a copy of its own. A prompt that names a real person, a brand or a trademarked character, or asks for gore or sexual content, is never sent, and every prompt asks for none of that. |
 | D40 | Memes are captioned live by talkgenerator, never drawn into the picture: the template's picture from Imgflip (fair use, so not in talks without fair use), its captions as texts in boxes measured once per template (`data/memes.json`, 25 templates), and the template picked by the talk's dice before the language model writes its captions (a recipe can fix a slot's query). New image sources join only where their terms allow a talk to show them, without working around a bot check, and without the user's paying for a key. |
+| D41 | Swedish (`sv`) is a talk language too, on the terms of D19 and D25: a language model writes the talk in Swedish, with talkgenerator's own words in Swedish; without one, the talk is classic and English. |
 
-D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, and D28 to D37 and D40 on 2026-11-07 (D38 and D39 are the generated images', on their own branch); the others follow from the
-design.
+D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, and D28 to D41 on 2026-11-07; the others follow from the design.
 
 ### Open questions
 

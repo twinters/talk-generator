@@ -44,8 +44,9 @@ def _api_key() -> str | None:
 
 
 def available() -> bool:
-    """Whether a search can go out now: there's a key, and the Smithsonian isn't skipped for a while."""
-    return _api_key() is not None and not _cooldown.active
+    """Whether the Smithsonian can be searched: there's a key. (While it's skipped for a while, see _cooldown, a search
+    finds what it found before, from the caches, and the others nothing.)"""
+    return _api_key() is not None
 
 
 def _text(field: Any) -> str:
@@ -96,7 +97,7 @@ def _map_row(row: dict[str, Any]) -> ImageData | None:
 def search_images(query: str, kind: str | None = None, limit: int = 20) -> list[ImageData]:
     """CC0 images for the query, of a type of object (one of TYPES), if given."""
     api_key = _api_key()
-    if not query or not api_key or _cooldown.active:
+    if not query or not api_key:
         return []
     terms = [query.replace('"', " "), "online_media_type:Images", "media_usage:CC0"]
     if kind in TYPES:

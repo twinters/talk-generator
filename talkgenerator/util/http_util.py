@@ -8,6 +8,8 @@ Responses of the search APIs are also cached on disk (see `CACHE_EXPIRY`): repea
 generate faster, rate limits last longer, and Pixabay asks API users to cache for 24 hours.
 GIPHY's aren't, as its API rules forbid caching them, and neither are images and HTML pages.
 Set DISABLE_CACHE=1 to switch the cache off, or TALKGENERATOR_CACHE_DIR to choose where it lives.
+While a block of `same_answers` runs, a search asked before in it gets the same answer again, even
+if that answer expired in the meantime: for `talkgenerator check`, which makes every talk twice.
 """
 
 from __future__ import annotations
@@ -16,6 +18,8 @@ import logging
 import re
 import threading
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import timedelta
 from pathlib import Path
 from typing import Any
@@ -24,7 +28,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 import requests
 import requests_cache
 from requests.adapters import HTTPAdapter
-from requests_cache.policy.expiration import ExpirationPatterns
+from requests_cache.policy.expiration import ExpirationPatterns, get_url_expiration
 from urllib3.util.retry import Retry
 
 from talkgenerator import __version__, settings
@@ -141,6 +145,7 @@ def get_session() -> requests.Session:
                 allowable_methods=("GET",),
                 ignored_parameters=_CACHE_IGNORED_PARAMETERS,
             )
+            session.hooks["response"].append(_matchable)
         else:
             session = requests.Session()
         session.mount("https://", adapter)
@@ -148,6 +153,28 @@ def get_session() -> requests.Session:
         session.headers["User-Agent"] = USER_AGENT
         _thread_local.session = session
     return session
+
+
+# Headers that an answer the cache keeps may not vary on: requests_cache wouldn't read it back. One that varies on a
+# header the cache keys leave out (see _CACHE_IGNORED_PARAMETERS) never matches a request that sends it, as all
+# Unsplash's searches do, and Openverse's with a token (they say "Vary: ..., Authorization"); and one that varies on
+# Cookie (Pixabay's, Commons', Openverse's) only matches while the session holds the same cookies, from any host,
+# as when it was stored. What these searches answer depends on neither.
+_UNMATCHED_VARY = frozenset({"authorization", "cookie"})
+
+
+def _matchable(response: requests.Response, *args: Any, **kwargs: Any) -> requests.Response:
+    """A response hook: an answer the cache keeps, without the Vary headers it couldn't be matched on."""
+    vary = response.headers.get("Vary")
+    if vary and _kept_on_disk(response.url):
+        names = [name.strip() for name in vary.split(",") if name.strip()]
+        kept = [name for name in names if name.lower() not in _UNMATCHED_VARY]
+        if len(kept) < len(names):
+            if kept:
+                response.headers["Vary"] = ", ".join(kept)
+            else:
+                del response.headers["Vary"]
+    return response
 
 
 def reset_sessions() -> None:
@@ -187,9 +214,15 @@ def _host_headers(url: str) -> dict[str, str]:
     return headers
 
 
-def get(url: str, *, timeout: float = DEFAULT_TIMEOUT, **kwargs: Any) -> requests.Response | None:
-    """GET a URL. Returns None instead of raising on connection errors and timeouts."""
-    return _request("GET", url, timeout=timeout, **kwargs)
+def get(
+    url: str, *, timeout: float = DEFAULT_TIMEOUT, cached_only: bool = False, **kwargs: Any
+) -> requests.Response | None:
+    """GET a URL. Returns None instead of raising on connection errors and timeouts.
+
+    With cached_only, the server isn't asked: only an answer that's kept will do (one given in a block of
+    same_answers, or one of the on-disk cache), and None if there's none. For a source that's skipped for a while
+    (see Cooldown): the searches it made before still get their answers."""
+    return _request("GET", url, timeout=timeout, cached_only=cached_only, **kwargs)
 
 
 def post(url: str, *, timeout: float = DEFAULT_TIMEOUT, **kwargs: Any) -> requests.Response | None:
@@ -197,10 +230,83 @@ def post(url: str, *, timeout: float = DEFAULT_TIMEOUT, **kwargs: Any) -> reques
     return _request("POST", url, timeout=timeout, **kwargs)
 
 
-def _request(method: str, url: str, *, timeout: float, **kwargs: Any) -> requests.Response | None:
+class _Answer:
+    """What a request got, kept while a block of same_answers runs: the first to ask gives it, the others wait."""
+
+    def __init__(self) -> None:
+        self.given = threading.Event()
+        self.response: requests.Response | None = None
+
+
+_answers: dict[tuple[str, str], _Answer] | None = None  # (see same_answers)
+_answers_lock = threading.Lock()
+
+
+@contextmanager
+def same_answers() -> Iterator[None]:
+    """In this block, a search that the on-disk cache keeps (see CACHE_EXPIRY) and that was asked before in it gets
+    the answer it got then, in every thread of the process, even if that answer expired in the meantime.
+
+    For `talkgenerator check`, which makes every talk twice and compares the two: an answer of the cache that expires
+    in between is asked for anew, and the fresh answer can differ (Pixabay's image links change from one day to the
+    next), and so would the talk. Other requests are asked as always: GIPHY's API rules forbid keeping its answers,
+    and images and pages are kept in memory by image_util and the sources themselves."""
+    global _answers
+    with _answers_lock:
+        outer, _answers = _answers, {}
+    try:
+        yield
+    finally:
+        with _answers_lock:
+            _answers = outer
+
+
+def _request(
+    method: str, url: str, *, timeout: float, cached_only: bool = False, **kwargs: Any
+) -> requests.Response | None:
     extra_headers = _host_headers(url)
     if extra_headers:
         kwargs["headers"] = {**extra_headers, **(kwargs.get("headers") or {})}
+    answers = _answers
+    if answers is None or method != "GET" or kwargs.get("stream") or not _kept_on_disk(url):
+        return _from_cache(url, timeout, kwargs) if cached_only else _send(method, url, timeout, kwargs)
+    params = kwargs.get("params")
+    key = (url, repr(sorted(params.items())) if isinstance(params, dict) else repr(params))
+    with _answers_lock:
+        answer = answers.get(key)
+        asking = answer is None and not cached_only
+        if asking:
+            answer = answers[key] = _Answer()
+    if answer is None:  # (only a kept answer will do, and this block gave none yet)
+        return _from_cache(url, timeout, kwargs)
+    if asking:
+        try:
+            answer.response = _send(method, url, timeout, kwargs)
+        finally:
+            answer.given.set()
+    else:
+        answer.given.wait()
+    return answer.response
+
+
+def _kept_on_disk(url: str) -> bool:
+    return get_url_expiration(url, _cache_expiry_patterns()) is not None
+
+
+def _from_cache(url: str, timeout: float, kwargs: dict[str, Any]) -> requests.Response | None:
+    """The on-disk cache's answer to a GET, without asking the server: None if it has none that's still fresh (or
+    if it's switched off)."""
+    session = get_session()
+    if not isinstance(session, requests_cache.CachedSession):
+        return None
+    try:
+        response = session.request("GET", url, timeout=timeout, only_if_cached=True, **kwargs)
+    except requests.RequestException:
+        return None
+    return response if response.status_code == 200 else None  # (else "504 Not Cached": the cache keeps only 200s)
+
+
+def _send(method: str, url: str, timeout: float, kwargs: dict[str, Any]) -> requests.Response | None:
     try:
         return get_session().request(method, url, timeout=timeout, **kwargs)
     except requests.RequestException as e:
@@ -240,11 +346,13 @@ def search_json(
 ) -> Any | None:
     """GET a search API's JSON answer, keeping a service that can't answer now out for a while (its cooldown): no
     answer or a server error (5 minutes), a rate limit (15 minutes, or as long as it asks), a refusal (an hour: a
-    rejected key, or a network it won't serve). None on any failure, and while the cooldown lasts. With missing_ok,
-    a 404 is an answer too (nothing there), not worth a warning."""
-    if cooldown.active:
+    rejected key, or a network it won't serve). None on any failure. While the cooldown lasts, only an answer that's
+    kept will do (see get's cached_only): the searches made before still get their answers, and new ones none. With
+    missing_ok, a 404 is an answer too (nothing there), not worth a warning."""
+    cooling = cooldown.active
+    response = get(url, params=params, headers=headers, timeout=timeout, cached_only=cooling)
+    if response is None and cooling:  # (none kept: not an outage, so the cooldown doesn't get longer)
         return None
-    response = get(url, params=params, headers=headers, timeout=timeout)
     if response is None or response.status_code >= 500:
         cooldown.trigger_outage(response)
         return None
@@ -275,7 +383,11 @@ def _retry_after(response: requests.Response) -> float:
 
 class Cooldown:
     """Remembers that a service is unavailable (down, rate limited, bad key) for a while,
-    so we stop hammering it and fall through to other sources straight away."""
+    so we stop hammering it and fall through to other sources straight away.
+
+    Meanwhile, the searches it answered before still get their answers from the caches (see get's
+    cached_only): only the others wait. So a cooldown that starts in the middle of a talk, or between
+    the two runs of `talkgenerator check`, doesn't change what was found already."""
 
     def __init__(self, name: str):
         self._name = name

@@ -18,5 +18,11 @@ Caladea is the 2013 release from Chrome OS, as the one in google/fonts has been 
 than Cambria. Measured on Windows' own fonts (a sentence at 100 pixels), every one of these comes out as wide as the
 font it stands in for, within half a percent.
 
-The other fonts themes use (Arial Black, Verdana, Trebuchet MS, Impact, Comic Sans MS) have no open twin: where
-they aren't installed, their texts are estimated, generously (`ESTIMATE_MARGIN`).
+The other fonts themes use (Arial Black, Verdana, Trebuchet MS, Impact, Comic Sans MS) have no open twin. For them,
+`widths.json` has every character's width (in pixels, in text 100 pixels high), measured from their own files on
+Windows 11 by `scripts/font_widths.py`: ASCII, Latin-1, Latin Extended-A and the rest of Windows' code page 1252,
+339 characters in each of their regular and bold files. Where those fonts aren't installed, texts in them are measured
+with these widths, which come out as wide as the fonts themselves; only a character outside the table is estimated,
+generously (`ESTIMATE_MARGIN`). The table holds numbers, not the fonts: no outlines, nothing to draw or install with.
+Run the script again on a computer with the fonts when a theme gets a font without a twin, or the fonts change (the
+tests compare the table with the fonts where they're installed).

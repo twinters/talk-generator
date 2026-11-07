@@ -103,9 +103,30 @@ Only OpenRouter's free models, and your ChatGPT plan's once you've signed in wit
 The first sign-in registers talkgenerator with your account; talkgenerator keeps the sign-in in your config folder and refreshes it as it runs out (a talk a month keeps you signed in). `--status` says which account is signed in and which models it has (talks use the first, and `--llm chatgpt:<model>` picks another), `--new-account` switches accounts, and `talkgenerator logout chatgpt` ends the sign-in. It needs a browser on the computer that runs talkgenerator, and talkgenerator.com can't offer it yet: OpenAI only lets hosted apps in from a waitlist.
 `--llm none` (or `DISABLE_LLM=1`) makes a classic talk, as the 2019 generator did.
 `TALKGENERATOR_LLM_EFFORT` (such as `none`, `minimal`, `low` or `medium`) sets how hard the model thinks before it writes, for the models that take it. Unless it's set, Claude and your ChatGPT plan's models think at `low`, and OpenRouter's free models don't think at all (thinking made them take minutes, and they write as well without), or as little as they can when they have to.
-`--language nl` has the model write the talk in Dutch, and so do `fr`, `de`, `es`, `it` and `pt` in French, German, Spanish, Italian and Portuguese; the image searches stay in English.
+`--language nl` has the model write the talk in Dutch, and so do `fr`, `de`, `es`, `it`, `pt` and `sv` in French, German, Spanish, Italian, Portuguese and Swedish; the image searches stay in English.
 The classic generator only speaks English, so in such a talk, a slide that doesn't come out as the model wrote it becomes a picture without text instead of a classic slide, and the talk as a whole is English (and says so in the logs) when the model doesn't write it.
 After every talk, the logs tell how many requests it made and what they cost, and so does the talk's deck JSON.
+
+### Generated pictures
+
+In a talk a language model writes, an image generator can draw what stock photos can't show well: the presenter's weird hobby, the cover of the book they wrote (with its title), an old photo of a moment in a made-up history, the portrait of a made-up historical figure, a made-up news story's photo.
+The model writes a prompt for each, the slide comes with a stock photo, and the generated picture takes its place once it's in (in a talk that streams, the slide comes again). A slide whose images can't be found at all gets a generated one on its last try, too.
+Pictures are only generated when you ask for them, with your own key or server, never because a key is set:
+
+| Generator | `--image_generator` | Key | Price a picture (list prices, checked 2026-11-07) |
+| --- | --- | --- | --- |
+| OpenAI | `openai` (gpt-image-2), or `openai:<model>` | `OPENAI_API_KEY` | $0.006 at low quality (`TALKGENERATOR_IMAGE_QUALITY` asks for `medium` or `high`) |
+| [OpenRouter](https://openrouter.ai/)'s image models | `openrouter` (OpenAI's gpt-image-2 there), or `openrouter:<model>`, such as `openrouter:black-forest-labs/flux-3-image-klein` | the key that writes your talks | from $0.006 (none are free) |
+| Google's Gemini (Nano Banana) | `gemini` (gemini-3.1-flash-lite-image), or `gemini:<model>` | `GEMINI_API_KEY` | $0.034 |
+| Black Forest Labs' FLUX | `flux` (FLUX 3 Image Klein), or `flux:<model>`, such as `flux:flux-2-pro` | `BFL_API_KEY` | $0.009 |
+| A ComfyUI server of your own | `comfyui`, or `comfyui:<checkpoint>` | none (`COMFYUI_URL`, `COMFYUI_WORKFLOW`) | nothing |
+| An Automatic1111 (or Forge) server of your own | `automatic1111`, or `automatic1111:<checkpoint>` | none (`AUTOMATIC1111_URL`) | nothing |
+
+`TALKGENERATOR_IMAGE_GENERATOR` sets one for every talk, and `DISABLE_IMAGE_GENERATION=1` switches them all off.
+A talk generates 3 pictures at most (`--generated_images`, or `TALKGENERATOR_GENERATED_IMAGES`), estimates what they'll cost before it generates any (by list price: `talkgenerator formats --generators` lists the models and their prices), and keeps to `TALKGENERATOR_IMAGE_COST_LIMIT` (in dollars) if it's set; the logs and the deck JSON say what it spent.
+Generated pictures are credited "AI-generated with <model>", in the `generated` license class (`--license_policy` can leave them out), and kept in your cache folder, so making the talk again with the same seed, or rendering its deck again, generates nothing again.
+A prompt that names a real person, a brand or a trademarked character, or asks for gore or sexual content, is never sent (the stock photo stays), every prompt asks for none of that, and the generator's moderation has its say too.
+Prices and default models are in `talkgenerator/data/image_generators.json`; an `image_generators.json` in your config folder adds models or changes them, as image models come and go.
 
 ### Themes
 
@@ -140,10 +161,12 @@ For a settings menu, `talkgenerator.design.themes.catalog()` lists every theme w
 | `--print_logs` / `--verbose` | Print progress (*default: true*); `--verbose` adds debug logs |
 | `--debug_notes` | Explain in each slide's speaker notes how it was generated. Off by default, since presenters see the notes |
 | `--llm` | The language model that writes the slides, as `provider:model` (see [Language models](#language-models)). `none` makes a classic talk (*default: what `TALKGENERATOR_LLM` says, or else your ChatGPT plan's models once you've signed in with ChatGPT, or else OpenRouter's free models when there's an `OPENROUTER_API_KEY`, or else `none`*) |
-| `--language` | The language of the slides: `en`, `nl`, `fr`, `de`, `es`, `it` or `pt`, for talks a language model writes (classic talks are in English) (*default: en*) |
+| `--language` | The language of the slides: `en`, `nl`, `fr`, `de`, `es`, `it`, `pt` or `sv`, for talks a language model writes (classic talks are in English) (*default: en*) |
 | `--theme` | The look (see [Themes](#themes)): `random`, `classic` (the 2019 template), a family's name such as `"dark minimal"`, or `chaos` (*default: `TALKGENERATOR_THEME`'s, or else random*) |
 | `--style_chaos` | How many slides get a theme of their own, from 0 to 1 (*default: 0*) |
 | `--no_extreme_themes` | Leave the themes for laughs out of `--theme random` |
+| `--image_generator` | Generates pictures, at your own cost (see [Generated pictures](#generated-pictures)): `openai`, `openrouter`, `gemini`, `flux`, `comfyui` or `automatic1111`, each with `:<model>` if you like, or `none` (*default: `TALKGENERATOR_IMAGE_GENERATOR`'s, or else none*) |
+| `--generated_images` | How many pictures a talk generates at most (*default: 3*) |
 
 ### Using it from Python
 
@@ -275,6 +298,7 @@ Tests live in `tests/`. Many of them talk to the live APIs, and are marked as `n
 ```sh
 uv run pytest                     # everything (tests needing missing API keys are skipped)
 uv run pytest -m "not network"    # only the offline tests, as in CI
+uv run pytest -m "not network" --bundled-fonts-only  # measuring texts as CI does, without this computer's fonts
 uv run ruff check . && uv run ruff format --check .
 uv run mypy                       # type checking
 ```

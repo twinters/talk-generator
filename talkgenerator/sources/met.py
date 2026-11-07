@@ -45,8 +45,9 @@ _objects = ThreadPoolExecutor(max_workers=4, thread_name_prefix="the Met")
 
 
 def available() -> bool:
-    """Whether a search can go out now: the Met isn't switched off (DISABLE_MET), nor skipped for a while."""
-    return not settings.is_source_disabled("MET") and not _cooldown.active
+    """Whether the Met can be searched: it isn't switched off (DISABLE_MET). (While it's skipped for a while, see
+    _cooldown, a search finds what it found before, from the caches, and the others nothing.)"""
+    return not settings.is_source_disabled("MET")
 
 
 def _map_object(item: dict[str, Any]) -> ImageData | None:

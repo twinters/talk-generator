@@ -7,6 +7,27 @@ from environs import Env
 os.environ.setdefault("DISABLE_CACHE", "1")
 
 
+def pytest_addoption(parser):
+    parser.addoption(
+        "--bundled-fonts-only",
+        action="store_true",
+        help="measure texts as a computer without the themes' fonts does (CI's Ubuntu): with talkgenerator's own fonts "
+        "and width tables only, and none of this computer's",
+    )
+
+
+def pytest_configure(config):
+    if config.getoption("--bundled-fonts-only"):
+        from pathlib import Path
+
+        from talkgenerator.design import fonts
+        from talkgenerator.util import os_util
+
+        bundled = Path(os_util.to_actual_file("data/fonts"))
+        fonts._font_folders = lambda: [bundled]
+        fonts._font_index.cache_clear()
+
+
 @pytest.fixture(autouse=True)
 def _offline_tests_use_no_real_credentials(request, monkeypatch, tmp_path):
     """Run offline tests as in CI: without the API keys from a local .env or the environment.
@@ -26,9 +47,14 @@ def _offline_tests_use_no_real_credentials(request, monkeypatch, tmp_path):
     # No language model either, unless a test brings its own: offline talks are classic
     credentials |= {"TALKGENERATOR_LLM", "OPENROUTER_API_KEY", "ANTHROPIC_API_KEY", "OPENAI_API_KEY"}
     credentials |= {"TALKGENERATOR_LLM_EFFORT", "DISABLE_LLM"}
+    # Nor an image generator (offline talks generate no pictures, unless a test brings its own), nor its keys
+    credentials |= {"TALKGENERATOR_IMAGE_GENERATOR", "DISABLE_IMAGE_GENERATION", "TALKGENERATOR_GENERATED_IMAGES"}
+    credentials |= {"TALKGENERATOR_IMAGE_COST_LIMIT", "TALKGENERATOR_IMAGE_QUALITY", "GEMINI_API_KEY", "GOOGLE_API_KEY"}
+    credentials |= {"BFL_API_KEY", "COMFYUI_URL", "COMFYUI_CHECKPOINT", "COMFYUI_WORKFLOW", "AUTOMATIC1111_URL"}
     for name in sorted(credentials):
         monkeypatch.delenv(name, raising=False)
-    # Nor the key that `talkgenerator login` keeps in the user's config folder
+    # Nor the key that `talkgenerator login` keeps in the user's config folder, nor the pictures generated before
     monkeypatch.setenv("TALKGENERATOR_CONFIG_DIR", str(tmp_path / "config"))
+    monkeypatch.setenv("TALKGENERATOR_CACHE_DIR", str(tmp_path / "cache"))
     # Talks are classic unless a test asks for a theme (the default is random: see test_the_default_theme_is_random)
     monkeypatch.setenv("TALKGENERATOR_THEME", "classic")

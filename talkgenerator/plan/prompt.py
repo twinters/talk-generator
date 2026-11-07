@@ -14,8 +14,9 @@ and the slides' numbers have as many digits as the last one's ("slide_02" to "sl
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Final
+from typing import TYPE_CHECKING, Any, Final
 
+from talkgenerator.images.generation import PROMPT_DESCRIPTION, prompt_field
 from talkgenerator.llm.base import Message, TextRequest
 from talkgenerator.models.plan import SlidePlan
 from talkgenerator.names import NameRequest
@@ -23,6 +24,9 @@ from talkgenerator.plan import languages
 from talkgenerator.plan.kinds import KINDS, PRESENTER_JOB, TALK_TITLE, Recipe, TextField
 from talkgenerator.titles import TitleRequest
 from talkgenerator.util import random_util
+
+if TYPE_CHECKING:
+    from talkgenerator.images.generation import ImageGeneration
 
 SYSTEM_PROMPT: Final = """\
 You write the slides of talks for improv theatre, for formats such as PowerPoint karaoke and improvised TED talks. A \
@@ -144,11 +148,13 @@ def talk_request(
     asked_again: bool = False,
     name: NameRequest | None = None,
     typed: TitleRequest | None = None,
+    generation: ImageGeneration | None = None,
 ) -> TextRequest:
     """The request for a talk (with the presenter's name, when there's a name request). Asked again, it says that a
     model found the topic unsafe: some of the free models get the flag wrong whichever way it's asked (one turned
     down "penguins"). For what was typed, which could be the topic or the title (see talkgenerator.titles), it says
-    what the title is to be: what was typed, with its slips fixed, or a title of the model's own on it."""
+    what the title is to be: what was typed, with its slips fixed, or a title of the model's own on it. In a talk
+    that generates pictures (with a generation), the model writes a prompt for every image that prefers one."""
     with random_util.use(rng.child("dice")):
         persona, angle = random_util.choice(_PERSONAS), random_util.choice(_ANGLES)
     topic = topics[0] + (f" (and {', '.join(topics[1:])})" if len(topics) > 1 else "")
@@ -185,12 +191,14 @@ def talk_request(
         lines += ["", f"{slide.key}: {brief}. A word to riff on: {slide.seed}"]
         lines += [f"- {text.name}: {field_description(slide.recipe, text)}" for text in slide.recipe.written_fields()]
         lines += [f"- {slot}_query: {_query_description(slot)}" for slot in slide.recipe.image_queries()]
+        lines += [f"- {prompt_field(slot)}: {about}" for slot, about in generated(slide.recipe, generation)]
+    prompts = sum(len(generated(slide.recipe, generation)) for slide in planned)
     return TextRequest(
         purpose="talk plan",
         system=SYSTEM_PROMPT,
         messages=(Message(role="user", content="\n".join(lines)),),
-        json_schema=response_schema(planned, language, name, typed),
-        max_output_tokens=1000 + 300 * len(planned),
+        json_schema=response_schema(planned, language, name, typed, generation),
+        max_output_tokens=1000 + 300 * len(planned) + 100 * prompts,
     )
 
 
@@ -199,6 +207,7 @@ def response_schema(
     language: str = "en",
     name: NameRequest | None = None,
     typed: TitleRequest | None = None,
+    generation: ImageGeneration | None = None,
 ) -> dict[str, Any]:
     """The JSON Schema of the answer: every property required, nothing else allowed (as strict structured outputs
     want), the spine first and the slides in order (which is alphabetical order too)."""
@@ -208,11 +217,11 @@ def response_schema(
     }
     properties: dict[str, Any] = {SPINE: _object(fields)}
     for slide in planned:
-        properties[slide.key] = slide_schema(slide.recipe)
+        properties[slide.key] = slide_schema(slide.recipe, generation)
     return _object(properties)
 
 
-def slide_schema(recipe: Recipe) -> dict[str, Any]:
+def slide_schema(recipe: Recipe, generation: ImageGeneration | None = None) -> dict[str, Any]:
     properties: dict[str, Any] = {"concept": {"type": "string", "description": CONCEPT}}
     for text in recipe.written_fields():
         properties[text.name] = {"type": "string", "description": field_description(recipe, text)}
@@ -220,7 +229,30 @@ def slide_schema(recipe: Recipe) -> dict[str, Any]:
             properties[text.name]["enum"] = [*text.options, *([""] if text.optional else [])]
     for slot in recipe.image_queries():
         properties[f"{slot}_query"] = {"type": "string", "description": _query_description(slot)}
+    for slot, about in generated(recipe, generation):
+        properties[prompt_field(slot)] = {"type": "string", "description": about}
     return _object(properties)
+
+
+def generated(recipe: Recipe, generation: ImageGeneration | None) -> list[tuple[str, str]]:
+    """The image slots the language model writes a prompt for, to generate their pictures from (those that prefer a
+    generated picture, in a talk that generates them), with what to write."""
+    if generation is None:
+        return []
+    queried = set(recipe.image_queries())
+    return [
+        (name, _prompt_description(source))
+        for name, source in recipe.slots()
+        if name in queried and generation.prefers(source)
+    ]
+
+
+def _prompt_description(source: Any) -> str:
+    intent = getattr(source, "intent", "") or "the picture"
+    cover = getattr(source, "aesthetic", "") == "book-covers"
+    return f"{PROMPT_DESCRIPTION}, for {intent}" + (
+        "; a book cover has the book's title on it, in quotes" if cover else ""
+    )
 
 
 def field_description(recipe: Recipe, text: TextField) -> str:
@@ -254,6 +286,11 @@ def slide_plan(slide: PlannedSlide, value: Any) -> SlidePlan | None:
         for slot in slide.recipe.image_queries()
         if isinstance(value.get(f"{slot}_query"), str)
     }
+    prompts = {
+        slot: value[prompt_field(slot)]
+        for slot in slide.recipe.image_queries()
+        if isinstance(value.get(prompt_field(slot)), str) and value[prompt_field(slot)].strip()
+    }
     concept = value.get("concept")
     return SlidePlan(
         kind=slide.recipe.kind,
@@ -261,4 +298,5 @@ def slide_plan(slide: PlannedSlide, value: Any) -> SlidePlan | None:
         concept=concept if isinstance(concept, str) else "",
         texts=texts,
         images=queries,
+        prompts=prompts,
     )

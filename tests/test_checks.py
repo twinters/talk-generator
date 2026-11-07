@@ -1,7 +1,9 @@
 """Offline tests of the automated checks: findings on hand-made decks, and benchmark runs with fake sources."""
 
+import itertools
 import json
 import sys
+from datetime import timedelta
 
 import pytest
 
@@ -29,6 +31,7 @@ from talkgenerator.models.deck import (
     TextElement,
 )
 from talkgenerator.slide import slides
+from talkgenerator.util import http_util
 from tests import test_seeds
 
 
@@ -59,9 +62,9 @@ TITLE = _slide("title", _text("title", "Cats"), _text("subtitle", "By Ann"))
 # CHECKS OF A DECK
 
 
-def _talk_in(language, *texts):
+def _talk_in(language, *texts, by="Door"):
     """A deck in the language, with a slide for every text."""
-    title = _slide("title", _text("title", texts[0]), _text("subtitle", "Door Ann Example"))
+    title = _slide("title", _text("title", texts[0]), _text("subtitle", f"{by} Ann Example"))
     return Deck(
         generator="test",
         language=language,
@@ -96,6 +99,44 @@ def test_a_dutch_talk_in_english_doesnt():
 def test_one_english_slide_in_a_dutch_talk_is_a_warning():
     deck = _talk_in("nl", "Het geheime leven van katten", "Waarom de kat altijd wint", "What we have learned from them")
     assert check_language(deck) == [Finding("language", "warning", "reads as English, not Dutch", 3)]
+
+
+def test_a_swedish_talk_in_swedish_passes_the_language_check():
+    deck = _talk_in(
+        "sv",
+        "Kattens hemliga liv",
+        "Varför katten alltid vinner",
+        "En katt i soffan är en kung",
+        "Det här har vi lärt oss",
+        by="Av",
+    )
+    assert check_language(deck) == []
+
+
+def test_a_swedish_talk_in_english_doesnt():
+    deck = _talk_in(
+        "sv",
+        "The secret life of cats",
+        "Why the cat always wins",
+        "A cat on the couch is a king",
+        "What we have learned from them",
+        by="Av",
+    )
+    findings = check_language(deck)
+    assert findings[0] == Finding("language", "error", "the talk reads as English, not Swedish")
+    assert {finding.slide for finding in findings[1:]} == {2, 3, 4}  # (the title slide's "Av" is Swedish)
+    one = _talk_in(
+        "sv", "Det hemliga livet för katter", "Varför katten alltid vinner", "What we have learned from them", by="Av"
+    )
+    assert check_language(one) == [Finding("language", "warning", "reads as English, not Swedish", 3)]
+
+
+def test_swedish_words_that_look_like_english_ones_dont_make_a_slide_read_as_english():
+    # (all, into, just, ice: English stopwords, and words of Swedish that its stopwords leave out)
+    deck = _talk_in("sv", "Kattens hemliga liv", "All glass in", "Just is", by="Av")
+    assert check_language(deck) == []
+    english = _talk_in("sv", "Kattens hemliga liv", "All of the ice", by="Av")
+    assert check_language(english) == [Finding("language", "warning", "reads as English, not Swedish", 2)]
 
 
 def test_english_talks_have_no_language_to_check():
@@ -276,6 +317,39 @@ def test_a_difference_says_what_differs(monkeypatch):
     monkeypatch.setattr(benchmark, "generate_deck", lambda *args, **kwargs: next(decks))
     (error,) = benchmark.check_talk("cat", 1, slides=2).errors
     assert error.message.endswith("other slides came out: slide 2 (notes)")
+
+
+def test_the_second_run_gets_the_answers_the_first_run_got(monkeypatch):
+    """An answer of the on-disk cache can expire between a talk's two runs (Pixabay's do, after a day) and come back
+    different (Pixabay's image links change from one day to the next): the talk came out differently, but no slide
+    had."""
+    monkeypatch.setitem(http_util.CACHE_EXPIRY, "words.example/api", timedelta(days=1))
+    words = (f"word {number}" for number in itertools.count())
+
+    class Answer:
+        ok = True
+        status_code = 200
+
+        def __init__(self):
+            self.word = next(words)
+
+        def json(self):
+            return {"word": self.word}
+
+    class Source:
+        def request(self, method, url, timeout, **kwargs):
+            return Answer()
+
+    def search():
+        return http_util.get_json("https://words.example/api", params={"q": "cat"})["word"]
+
+    monkeypatch.setattr(http_util, "get_session", Source)
+    monkeypatch.setattr(
+        benchmark, "generate_deck", lambda *args, **kwargs: _deck(_slide("title", _text("title", search())))
+    )
+
+    assert benchmark.check_talk("cat", 1, slides=1).deterministic
+    assert search() == "word 1"  # (the check asked once; now, outside it, it's asked again)
 
 
 def test_a_crash_is_what_the_check_finds(monkeypatch):

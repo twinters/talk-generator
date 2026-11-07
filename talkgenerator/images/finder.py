@@ -2,7 +2,8 @@
 
 1. Which sources, in which order: those of the slot's look that the talk's license policy allows, by weight and
    without putting one back (as v4 picked a source by weight, and another one when it found nothing), and of those,
-   the ones that can be searched now (their keys, their cooldowns).
+   the ones that can be searched (their keys). One that's skipped for a while (see http_util.Cooldown) stays, and
+   finds only what it found before, from its caches.
 2. Search them a few at a time (the look's breadth), in parallel, with v4's caches of answers and its cooldowns.
 3. Filter the candidates: their license (one by one, for sources whose images each have their own), their size and
    orientation (as the sources tell them), what they're described as (nothing unsafe), the same image found twice,
@@ -85,9 +86,13 @@ def find(slot: ImageSlot, query: str | None, avoid: Collection[ImageData] = ()) 
 
 
 def servable(slot: ImageSlot, policy: licenses.LicensePolicy) -> bool:
-    """Whether the policy allows the sources of the slot's look, its fallbacks or its backups (whatever their keys)."""
+    """Whether the policy allows the sources of the slot's look, its fallbacks or its backups (whatever their keys),
+    or a generated picture, for a slot that prefers one in a talk that generates them (see
+    talkgenerator.images.generation)."""
     allowed = policy.narrowed(slot.license_classes)
     talk = context.current()
+    if talk.generation is not None and talk.generation.prefers(slot):
+        return True
     tried: set[str] = set()
     for first in (slot.aesthetic, *slot.backups):
         name: str | None = talk.look(first)
@@ -112,8 +117,9 @@ def _find_with(
     if look.needs_query and not query.strip():
         return None
     planned = generator_util.planned()
-    # (Drawn among every source the policy allows, then without those that can't be searched now: the same order of
-    # the others either way, so a source's cooldown changes only what it would have found)
+    # (Drawn among every source the policy allows, then without those that can't be searched: the same order of the
+    # others either way. A source that's cooling down keeps its place, so its cooldown changes neither the batches nor
+    # what it found before, only what it would have found now)
     order = [use for use in _order([use for use in look.sources if _allows(policy, use, slot)]) if _available(use)]
     # A classic search gets one of the look's words before its query, as v4's did (a plan's goes as written)
     word = random_util.choice(look.modifiers) if look.modifiers and not planned else None

@@ -42,8 +42,9 @@ _cooldown = http_util.Cooldown("NASA's Image and Video Library")
 
 
 def available() -> bool:
-    """Whether a search can go out now: NASA isn't switched off (DISABLE_NASA), nor skipped for a while."""
-    return not settings.is_source_disabled("NASA") and not _cooldown.active
+    """Whether NASA can be searched: it isn't switched off (DISABLE_NASA). (While it's skipped for a while, see
+    _cooldown, a search finds what it found before, from the caches, and the others nothing.)"""
+    return not settings.is_source_disabled("NASA")
 
 
 def _rendition(links: list[dict[str, Any]], names: tuple[str, ...]) -> dict[str, Any] | None:

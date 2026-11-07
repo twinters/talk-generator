@@ -25,6 +25,8 @@ def fake_get(monkeypatch):
 
     def install(data, status_code=200):
         def get(url, **kwargs):
+            if kwargs.get("cached_only"):  # (a source that's skipped for a while: nothing is kept)
+                return None
             requests_made.append((url, kwargs))
             return _FakeResponse(data, status_code)
 

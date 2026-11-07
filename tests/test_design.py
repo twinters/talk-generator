@@ -104,7 +104,7 @@ def test_the_bundled_twins_measure_where_the_fonts_themselves_are_missing(monkey
     try:
         for (font, bold), twin in _TWINS.items():
             assert fonts.font_file(font, bold) == _BUNDLED / twin
-        assert fonts.measured("Calibri") and not fonts.measured("Impact")  # (no open twin: estimated)
+        assert fonts.measured("Calibri") and fonts.font_file("Impact") is None  # (no open twin: see its width table)
     finally:
         fonts._font_index.cache_clear()
 
@@ -112,7 +112,7 @@ def test_the_bundled_twins_measure_where_the_fonts_themselves_are_missing(monkey
 def test_every_bundled_font_is_credited_with_its_license():
     readme = (_BUNDLED / "README.md").read_text(encoding="utf-8")
     assert sorted(path.name for path in _BUNDLED.glob("*.ttf")) == sorted(_TWINS.values())
-    assert all(twin in readme for twin in _TWINS.values())
+    assert all(twin in readme for twin in _TWINS.values()) and "widths.json" in readme
     for license_file in ("LICENSE-Liberation.txt", "OFL-Carlito.txt", "LICENSE-Caladea.txt", "OFL-Gelasio.txt"):
         assert (_BUNDLED / license_file).is_file() and license_file in readme
 
@@ -139,6 +139,56 @@ def test_the_twins_are_as_wide_as_the_fonts_they_stand_in_for():
     for key, original in files.items():
         twin = ImageFont.truetype(str(_BUNDLED / _TWINS[key]), 100).getlength(sentence)
         assert twin == pytest.approx(ImageFont.truetype(str(originals / original), 100).getlength(sentence), rel=0.005)
+
+
+# The fonts themes use that have no open twin: where they're missing, texts in them are measured with the widths of
+# their characters, measured from their own files (data/fonts/widths.json)
+_UNTWINNED = ("Arial Black", "Verdana", "Trebuchet MS", "Impact", "Comic Sans MS")
+_ACROSS_EUROPE = "Brandweerkazernedeur — Über Größenwahn, «Œuvres», Ça va? 1,000,000,000 €"
+
+
+def test_the_fonts_without_a_twin_are_measured_with_their_characters_widths(monkeypatch):
+    monkeypatch.setattr(fonts, "_font_folders", lambda: [_BUNDLED])  # (a computer without any fonts of its own)
+    fonts._font_index.cache_clear()
+    try:
+        for font, bold in itertools.product(_UNTWINNED, (False, True)):
+            table = fonts.width_table(font, bold)
+            assert fonts.font_file(font, bold) is None and table is not None and fonts.measured(font)
+            for text in (_ACROSS_EUROPE, _ACROSS_EUROPE.upper()):
+                assert fonts.text_width(text, font, 50, bold) == pytest.approx(sum(table[c] for c in text) / 2)
+            # (wider in capitals, as the fonts are: an estimate from an average letter took them as wide)
+            assert fonts.text_width("CAPITALS", font, 50, bold) > fonts.text_width("Capitals", font, 50, bold)
+            # A character that isn't in the table is estimated, generously
+            estimate = 100 * fonts.FONTS[font].average * (1.08 if bold else 1.0) * fonts.ESTIMATE_MARGIN
+            assert fonts.text_width("Cat 猫", font, 100, bold) == pytest.approx(
+                sum(table[c] for c in "Cat ") + estimate
+            )
+        assert fonts.width_table("Arial") is None and not fonts.measured("Papyrus")  # (a twin; no font of the themes)
+    finally:
+        fonts._font_index.cache_clear()
+
+
+def test_the_width_tables_are_as_wide_as_the_fonts_they_stand_in_for():
+    """(scripts/font_widths.py measures them, on a computer with the fonts: again, if the fonts change)"""
+    originals = Path(os.environ.get("WINDIR", "C:/Windows")) / "Fonts"
+    files = {
+        (font, bold): (fonts.FONTS[font].bold if bold else fonts.FONTS[font].regular)[0]
+        for font, bold in itertools.product(_UNTWINNED, (False, True))
+    }
+    if not all((originals / name).is_file() for name in files.values()):
+        pytest.skip("needs the fonts themselves to compare with (as Windows has them)")
+    sentence = "The quick brown fox jumps over the lazy dog: Expectation vs Reality, 1997 WordArt?"
+    for (font, bold), name in files.items():
+        original = ImageFont.truetype(str(originals / name), 100, layout_engine=ImageFont.Layout.BASIC)
+        table = fonts.width_table(font, bold)
+        for text in (sentence, _ACROSS_EUROPE, _ACROSS_EUROPE.upper()):
+            assert sum(table[c] for c in text) == pytest.approx(original.getlength(text), rel=0.005), (font, bold)
+
+
+def test_texts_are_measured_without_kerning_on_every_computer():
+    """(Pillow kerns where it finds raqm, as on some Linux computers: so a text would get another size there, and
+    another one than the width tables give it)"""
+    assert fonts._truetype(str(_BUNDLED / "Carlito-Regular.ttf")).layout_engine == ImageFont.Layout.BASIC
 
 
 def test_a_text_gets_the_largest_size_at_which_it_fits():
@@ -278,6 +328,11 @@ def test_a_slide_gets_the_layouts_that_fit_its_elements(images):
     assert fitting(long) == ["v5/image-top"]
     chart = slides.ChartSlide("Kattenliefhebbersvereniging?", XL_CHART_TYPE.PIE, _pie_chart_data(), None)
     assert fitting(chart) == ["v5/chart"]
+    # Swedish compounds as well (of 20 letters, "Kärnkraftsolyckornas" is no wider than the long word below)
+    swedish, compound = (
+        slides.ImageSlide(title, _image("wide")) for title in ("Pingvinernas liv", "Kärnkraftsolyckan")
+    )
+    assert (fitting(swedish), fitting(compound)) == (fitting(short), ["v5/image-top"])
 
 
 # (A compound, as Dutch and German have them, can be wider than a narrow box even at the box's smallest size: a free

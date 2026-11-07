@@ -72,8 +72,9 @@ _codes: dict[str, str] | None = None  # (code: name, once flagcdn.com has listed
 
 
 def available() -> bool:
-    """Whether a search can go out now: flags aren't switched off (DISABLE_FLAGS), nor skipped for a while."""
-    return not settings.is_source_disabled("FLAGS") and not _cooldown.active
+    """Whether flags can be searched: they aren't switched off (DISABLE_FLAGS). (While it's skipped for a while, see
+    _cooldown, a search finds what it found before, from the caches, and the others nothing.)"""
+    return not settings.is_source_disabled("FLAGS")
 
 
 def _plain(name: str) -> str:

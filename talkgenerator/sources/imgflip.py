@@ -49,8 +49,9 @@ class Template:
 
 
 def available() -> bool:
-    """Whether a search can go out now: Imgflip isn't switched off (DISABLE_IMGFLIP), nor skipped for a while."""
-    return not settings.is_source_disabled("IMGFLIP") and not _cooldown.active
+    """Whether Imgflip can be searched: it isn't switched off (DISABLE_IMGFLIP). (While it's skipped for a while, see
+    _cooldown, a search finds what it found before, from the caches, and the others nothing.)"""
+    return not settings.is_source_disabled("IMGFLIP")
 
 
 def _template(item: dict[str, Any]) -> Template | None:

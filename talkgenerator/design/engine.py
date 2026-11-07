@@ -185,23 +185,37 @@ class DeckLayout:
         self._used: Counter[str] = Counter()  # how often the deck has had each layout so far
         self._previous: str | None = None
         self._number = 0
+        # What the deck had laid out before each slide (the layout before it, and how often each came up), for a slide
+        # that's laid out again
+        self._before: list[tuple[str | None, Counter[str]]] = []
 
     def next(self, slide: DeckSlide) -> DeckSlide:
         """The deck's next slide, laid out."""
-        slide_rng = self._rng.child("slide", self._number)
+        self._before.append((self._previous, Counter(self._used)))
+        placed = self._lay_out(slide, self._number, self._previous, self._used)
+        self._used[placed.layout] += 1
+        self._previous = placed.layout
+        self._number += 1
+        return placed
+
+    def again(self, number: int, slide: DeckSlide) -> DeckSlide:
+        """A slide laid out before (the number-th, from 0) laid out again, as it was: for a slide that got a picture
+        later (see talkgenerator.images.generation), which has the same elements, so it gets the same layout, as the
+        deck laid out at once gives it."""
+        previous, used = self._before[number]
+        return self._lay_out(slide, number, previous, used)
+
+    def _lay_out(self, slide: DeckSlide, number: int, previous: str | None, used: Counter[str]) -> DeckSlide:
+        slide_rng = self._rng.child("slide", number)
         own = None
         if self.style_chaos > 0:
             with random_util.use(slide_rng.child("chaos")):
                 chaotic = random_util.random() < self.style_chaos
             if chaotic:
                 own = themes.pick(themes.RANDOM, slide_rng.child("theme"), self.extremes)
-        placed = lay_out_slide(
-            slide, own or self.theme, slide_rng, own_style=own is not None, previous=self._previous, used=self._used
+        return lay_out_slide(
+            slide, own or self.theme, slide_rng, own_style=own is not None, previous=previous, used=used
         )
-        self._used[placed.layout] += 1
-        self._previous = placed.layout
-        self._number += 1
-        return placed
 
 
 def layouts_for(slide: DeckSlide) -> list[str]:

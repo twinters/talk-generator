@@ -37,8 +37,9 @@ def _api_key() -> str | None:
 
 
 def available() -> bool:
-    """Whether a search can go out now: there's a key, and GIPHY isn't skipped for a while (see _cooldown)."""
-    return _api_key() is not None and not _cooldown.active
+    """Whether GIPHY can be searched: there's a key. (While it's skipped for a while, see _cooldown, a search finds
+    nothing: GIPHY's answers aren't kept. Its place among a look's sources stays the same, as other sources' do.)"""
+    return _api_key() is not None
 
 
 def _map_gif(gif: dict[str, Any]) -> ImageData | None:

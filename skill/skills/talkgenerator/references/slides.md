@@ -18,7 +18,7 @@ Images: `image`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `weird-hobby` | The presenter's weird hobby | `title`: the presenter's weird hobby; images: `image` meme-chaos; tags: about_me |
+| `weird-hobby` | The presenter's weird hobby | `title`: the presenter's weird hobby; images: `image` meme-chaos (or generated, from its prompt, with an image generator set up); tags: about_me |
 | `single-image-gif` | A gif with a title | images: `image` gifs; tags: gif, single_image |
 | `inspirobot` | An inspirational poster (made by InspiroBot) that the presenter has to explain | `title`: a title such as 'Something my father always told me'; images: `image` inspirobot; needs no `image_query`; tags: inspiration, statement |
 | `single-image-copyright-free` | A photo with a title | the default; images: `image` photo; tags: single_image |
@@ -71,7 +71,7 @@ Images: `image_1`, `image_2`
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
 | `about-me-location-job` | About the presenter: where they come from and their job | `title`: a title such as 'About me' or 'Who am I?'; `caption_1`: where the presenter comes from: a country, a city or a place; `caption_2`: the presenter's (possibly made-up) job; images: `image_1` country, `image_2` neutral; tags: about_me |
-| `two-history-pictures` | Two old photos from the history of the slide's concept | `title`: a title about the concept's history; `caption_1`: a moment from long ago; `caption_2`: a later moment; images: `image_1` vintage, `image_2` vintage; tags: history, two_images |
+| `two-history-pictures` | Two old photos from the history of the slide's concept | `title`: a title about the concept's history; `caption_1`: a moment from long ago; `caption_2`: a later moment; images: `image_1` vintage (or generated, from its prompt, with an image generator set up), `image_2` vintage (or generated, from its prompt, with an image generator set up); tags: history, two_images |
 | `two-captions-gifs` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | images: `image_2` gifs, else weird; tags: gif, multi_caption, two_captions |
 | `two-captions-weird-reddit` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | images: `image_1` weird, `image_2` meme-chaos; tags: multi_caption, reddit, two_captions |
 | `two-captions-weird` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | images: `image_1` meme-chaos, `image_2` meme-chaos; tags: multi_caption, reddit, two_captions |
@@ -93,8 +93,8 @@ Images: `image_1`, `image_2`, `image_3`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `about-me-location-job-weirdhobby` | About the presenter: where they come from, their job and their weird hobby | `title`: a title such as 'About me' or 'Who am I?'; `caption_1`: where the presenter comes from: a country, a city or a place; `caption_2`: the presenter's (possibly made-up) job; `caption_3`: the presenter's weird hobby; images: `image_1` country, `image_2` neutral, `image_3` meme-chaos; tags: about_me |
-| `about-me-location-book-weirdhobby` | About the presenter: where they come from, the book they wrote, and their weird hobby | `title`: a title such as 'About me' or 'Who am I?'; `caption_1`: where the presenter comes from: a country, a city or a place; `caption_2`: the title of a book the presenter wrote; `caption_3`: the presenter's weird hobby; images: `image_1` country, `image_2` book-covers, `image_3` meme-chaos; tags: about_me |
+| `about-me-location-job-weirdhobby` | About the presenter: where they come from, their job and their weird hobby | `title`: a title such as 'About me' or 'Who am I?'; `caption_1`: where the presenter comes from: a country, a city or a place; `caption_2`: the presenter's (possibly made-up) job; `caption_3`: the presenter's weird hobby; images: `image_1` country, `image_2` neutral, `image_3` meme-chaos (or generated, from its prompt, with an image generator set up); tags: about_me |
+| `about-me-location-book-weirdhobby` | About the presenter: where they come from, the book they wrote, and their weird hobby | `title`: a title such as 'About me' or 'Who am I?'; `caption_1`: where the presenter comes from: a country, a city or a place; `caption_2`: the title of a book the presenter wrote; `caption_3`: the presenter's weird hobby; images: `image_1` country, `image_2` book-covers (or generated, from its prompt, with an image generator set up), `image_3` meme-chaos (or generated, from its prompt, with an image generator set up); tags: about_me |
 | `three-captions-weird` | Three captioned images that build up, like 'Good, Better, Best' or three steps of a plan | images: `image_2` meme-chaos, `image_3` meme-chaos-still; tags: multi_caption, reddit, three_captions |
 | `3-conclusions` | The talk's conclusions | `title`: a title for the conclusions, in a few words of your own; `caption_1`: a lesson from the talk, calling back to an earlier slide; `caption_2`: a lesson from the talk, calling back to an earlier slide; `caption_3`: a lesson from the talk, calling back to an earlier slide; images: `image_1` neutral, `image_2` weird, `image_3` gifs, else weird; tags: conclusion |
 | `three-captions-weird-crf` | Three captioned images that build up, like 'Good, Better, Best' or three steps of a plan | the default; images: `image_1` photo, `image_3` weird-stock; tags: multi_caption, three_captions |
@@ -113,8 +113,8 @@ Images: `portrait`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `historical-figure-quote` | What a made-up historical figure once said about the slide's concept | images: `portrait` old-people; tags: history, quote |
-| `historical-figure-quote-crf` | What a made-up historical figure once said about the slide's concept | the default; images: `portrait` portrait; tags: history, quote |
+| `historical-figure-quote` | What a made-up historical figure once said about the slide's concept | images: `portrait` old-people (or generated, from its prompt, with an image generator set up); tags: history, quote |
+| `historical-figure-quote-crf` | What a made-up historical figure once said about the slide's concept | the default; images: `portrait` portrait (or generated, from its prompt, with an image generator set up); tags: history, quote |
 
 ## `chart_yes_no`
 
@@ -333,7 +333,7 @@ Images: `photo`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `news-headline` | A made-up news story about the concept, as breaking news | the default; images: `photo` neutral; tags: news |
+| `news-headline` | A made-up news story about the concept, as breaking news | the default; images: `photo` neutral (or generated, from its prompt, with an image generator set up); tags: news |
 
 ## `agenda`
 

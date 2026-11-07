@@ -61,8 +61,8 @@ by. If it's long, tell the user once that free keys give better images, and leav
    user's default (a random theme, unless their TALKGENERATOR_THEME says otherwise); `classic`, the 2019 template;
    `random`; a family such as `"dark minimal"`, `"vintage paper"` or `"1997 WordArt"` (`talkgenerator render
    --help` lists them); or `chaos`, every slide its own. The title slide is made for you, from these. Talks can be in
-   Dutch (`"nl"`), French (`"fr"`), German (`"de"`), Spanish (`"es"`), Italian (`"it"`) and Portuguese (`"pt"`):
-   write every text in that language, and keep the image queries in English.
+   Dutch (`"nl"`), French (`"fr"`), German (`"de"`), Spanish (`"es"`), Italian (`"it"`), Portuguese (`"pt"`) and
+   Swedish (`"sv"`): write every text in that language, and keep the image queries in English.
 4. **Render it**:
 
    ```bash
@@ -138,6 +138,14 @@ that give the presenter something to work with, rather than finished jokes:
   Bling": `text_1` what Drake waves away, `text_2` what he points at instead). Keep captions to a few words.
 - **Your own pictures**: an image "query" may be the path of an image file, relative to the plan's folder. That
   puts the user's own photo on the slide, for an about-me slide, say.
+- **Generated pictures**, only when the user has set up an image generator (`TALKGENERATOR_IMAGE_GENERATOR`, or
+  render's `--image_generator`): they cost money on the user's own key, a few per plan at most, so never set one up
+  or pass it without the user asking. The images the reference marks "or generated" (the weird hobby, the book's
+  cover, history's old photos and made-up figures, the news story's photo) are then generated from the slide's
+  `prompts` (by image name: one English sentence of 10 to 40 words saying what the picture shows, with made-up
+  people only, no real or famous ones, and no logos or brands; a book cover's title in quotes), or else from the
+  image's query, and an image whose search finds nothing may be too. Write the queries as ever: the stock photo
+  stays when a picture isn't generated. The report's `generated_images` says what was made and what it cost.
 
 ## Keep it kind
 

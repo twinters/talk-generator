@@ -27,6 +27,8 @@ def conceptnet_down(monkeypatch):
     calls = []
 
     def fake_get(url, **kwargs):
+        if kwargs.get("cached_only"):  # (while ConceptNet is skipped, only a kept answer will do: there's none)
+            return None
         calls.append(url)
         return _FakeResponse(502)
 

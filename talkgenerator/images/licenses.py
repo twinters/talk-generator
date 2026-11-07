@@ -37,8 +37,9 @@ DESCRIPTIONS: Final[dict[LicenseClass, str]] = {
 }
 # The classes whose credits name the license: Creative Commons licenses ask for it (and a public domain mark tells
 # what may be done with the image). Stock photos are credited to their photographer and platform, as the platforms'
-# guidelines ask, and fair use has no license to name.
-SHOWN: Final[frozenset[LicenseClass]] = frozenset({"public-domain", "open", "generated"})
+# guidelines ask, generated pictures to their model ("AI-generated with gpt-image-2": the deck keeps the provider's
+# terms they're under), and fair use has no license to name.
+SHOWN: Final[frozenset[LicenseClass]] = frozenset({"public-domain", "open"})
 
 # The stock licenses: what an image's credit and its deck say it's under
 UNSPLASH_LICENSE: Final = ("Unsplash License", "https://unsplash.com/license")

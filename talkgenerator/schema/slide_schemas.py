@@ -80,7 +80,7 @@ about_me_slide_generators = _register(
             name="About Me: Location-Job-WeirdHobby",
             llm=Recipe(
                 "three_columns",
-                (cg.country_image_generator, cg.neutral_image_generator, cg.weird_punchline_image_generator),
+                (cg.country_image_generator, cg.neutral_image_generator, cg.hobby_image_generator),
                 brief="About the presenter: where they come from, their job and their weird hobby",
                 hints={"title": _ABOUT_ME_TITLE, "caption_1": _FROM, "caption_2": _JOB, "caption_3": _HOBBY},
             ),
@@ -117,7 +117,7 @@ about_me_slide_generators = _register(
             name="About Me: Location-Book-WeirdHobby",
             llm=Recipe(
                 "three_columns",
-                (cg.country_image_generator, cg.reddit_book_cover_generator, cg.weird_punchline_image_generator),
+                (cg.country_image_generator, cg.book_cover_generator, cg.hobby_image_generator),
                 brief="About the presenter: where they come from, the book they wrote, and their weird hobby",
                 hints={
                     "title": _ABOUT_ME_TITLE,
@@ -136,7 +136,7 @@ about_me_slide_generators = _register(
             name="Weird Hobby",
             llm=Recipe(
                 "image",
-                (cg.weird_punchline_image_generator,),
+                (cg.hobby_image_generator,),
                 brief="The presenter's weird hobby",
                 hints={"title": _HOBBY},
             ),
@@ -169,7 +169,7 @@ history_slide_generators = _register(
             allowed_repeated_elements=0,
             tags=["history", "quote"],
             name="Historical Figure Quote",
-            llm=Recipe("history_quote", (cg.vintage_person_generator,), brief=_HISTORY_QUOTE_BRIEF),
+            llm=Recipe("history_quote", (cg.historic_figure_generator,), brief=_HISTORY_QUOTE_BRIEF),
         ),
         SlideGeneratorData(
             # slide_templates.generate_two_column_images_slide_tuple_caption(
@@ -185,7 +185,7 @@ history_slide_generators = _register(
             name="Two History Pictures",
             llm=Recipe(
                 "two_columns",
-                (cg.vintage_picture_generator, cg.vintage_picture_generator),
+                (cg.historic_moment_generator, cg.historic_moment_generator),
                 brief=_HISTORY_PICTURES_BRIEF,
                 hints=_HISTORY_PICTURES_HINTS,
             ),
@@ -208,7 +208,7 @@ history_slide_generators_copyright_free = _register(
             allowed_repeated_elements=2,
             tags=["history", "quote"],
             name="Historical Figure Quote (CRF)",
-            llm=Recipe("history_quote", (cg.historic_person_copyright_free_generator,), brief=_HISTORY_QUOTE_BRIEF),
+            llm=Recipe("history_quote", (cg.historic_figure_copyright_free_generator,), brief=_HISTORY_QUOTE_BRIEF),
         ),
         SlideGeneratorData(
             # slide_templates.generate_two_column_images_slide_tuple_caption(
@@ -224,7 +224,7 @@ history_slide_generators_copyright_free = _register(
             name="Two History Pictures (CRF)",
             llm=Recipe(
                 "two_columns",
-                (cg.historic_copyright_free_generator, cg.historic_copyright_free_generator),
+                (cg.historic_moment_generator, cg.historic_moment_generator),
                 brief=_HISTORY_PICTURES_BRIEF,
                 hints=_HISTORY_PICTURES_HINTS,
             ),
@@ -812,12 +812,10 @@ def _mockups(post_image, news_image, suffix: str = "") -> list[SlideGeneratorDat
     ]
 
 
-mockup_slide_generators = _register(
-    "mockups", _mockups(cg.neutral_or_weird_image_generator, cg.neutral_image_generator)
-)
+mockup_slide_generators = _register("mockups", _mockups(cg.neutral_or_weird_image_generator, cg.news_photo_generator))
 mockup_slide_generators_copyright_free = _register(
     "mockups_copyright_free",
-    _mockups(cg.copyright_free_generator, cg.copyright_free_generator, " (CRF)"),
+    _mockups(cg.copyright_free_generator, cg.news_photo_copyright_free_generator, " (CRF)"),
 )
 
 # MEMES WITH LIVE CAPTIONS: one of Imgflip's templates, with captions of the talk's own in its boxes (see

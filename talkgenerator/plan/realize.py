@@ -12,6 +12,8 @@ from typing import Any, Final
 
 from talkgenerator.checks.deck import leftovers_in
 from talkgenerator.datastructures.image_data import ImageData
+from talkgenerator.images import context as image_context
+from talkgenerator.images.generation import FALLBACK, FIRST, Wish
 from talkgenerator.images.slots import ImageSlot
 from talkgenerator.models.plan import SlidePlan
 from talkgenerator.plan import languages
@@ -122,6 +124,11 @@ def realize(
 
         images: dict[str, Any] = dict.fromkeys(slot for slot in kind.images if slot in recipe.omit)
         queries: dict[str, str] = {}
+        talk = image_context.current()
+        generation = talk.generation
+        last = attempt >= ATTEMPTS - 1
+        wishes: list[tuple[str, Wish]] = []  # the pictures to generate in place of their stock photos
+        unfound: list[Wish] = []  # the pictures to generate, as their slots found none (on the last try)
         for slot, source in recipe.slots():
             # (what the recipe has it search for, such as a meme's template, or the plan's query)
             query = recipe.queries.get(slot) or plan.images.get(slot, "").strip()
@@ -137,19 +144,45 @@ def realize(
             if found is None:
                 _note(problems, f"{slot}: no image found for {queries[slot]!r}")
                 # (a query of the recipe's own stays: a meme's captions are for its template, and no other)
-                if attempt >= ATTEMPTS - 1 and queries[slot] != concept and slot not in recipe.queries:
+                if last and queries[slot] != concept and slot not in recipe.queries:
                     queries[slot] = concept
                     with generator_util.as_planned():
                         found = _find(source, concept, presentation_context, others)
+            wish = None
+            if generation is not None and isinstance(source, ImageSlot):
+                look = talk.look(source.aesthetic)
+                prompt = plan.prompts.get(slot)
+                stream = rng.child("generated", slot)  # (the same seed on every try)
+                if found is None and last and generation.fills(source, look):
+                    wish = generation.wish(source, slot, FALLBACK, query or concept, stream, prompt, look)
+                elif found is not None and generation.prefers(source):
+                    wish = generation.wish(source, slot, FIRST, query or concept, stream, prompt, look)
+            if found is None and wish is not None:
+                unfound.append(wish)
+                continue
             if found is None:
                 return None
             images[slot] = found.found_with(queries[slot]) if isinstance(found, ImageData) else found
+            if wish is not None and isinstance(images[slot], ImageData):
+                wishes.append((slot, wish))
+
+        if unfound:
+            # (the slide's last try, which runs while it's settled, in order: so the talk grants the same pictures,
+            # made in parallel or one by one; and all of them or none, as the slide needs them all)
+            assert generation is not None
+            pictures = generation.fill(unfound)
+            if pictures is None:
+                _note(problems, "no picture could be generated for " + ", ".join(wish.slot for wish in unfound))
+                return None
+            for wish, picture in zip(unfound, pictures, strict=True):
+                images[wish.slot] = picture.found_with(queries[wish.slot])
 
         try:
             slide = kind.build(texts, images, languages.language(language))
         except (ValueError, KeyError) as error:
             _note(problems, str(error))
             return None
+        slide.wishes = [(images[slot], wish) for slot, wish in wishes]
 
     missing = slide.missing_content()
     if missing:
@@ -158,10 +191,11 @@ def realize(
     slide.set_note(
         f"Seed: {presentation_context.get('seed')}\nPlanned: a {recipe.kind} slide for {plan.recipe}, about {concept!r}"
         f"\nTexts: {texts}\nImage queries: {queries}"
+        + "".join(f"\nTo generate ({wish.reason}) for {wish.slot}: {wish.request.prompt!r}" for _, wish in slide.wishes)
     )
     for image in images.values():
         if isinstance(image, ImageData):
-            slide.add_source(image.get_source(), image.get_source_url(), image.get_credit())
+            slide.add_source(image.get_source(), image.get_source_url(), image.get_credit(), image=image)
     generated = [value for value in (*texts.values(), *images.values()) if value is not None]
     return slide, generated
 

@@ -333,6 +333,21 @@ def test_a_post_and_a_headline_speak_the_talks_language(images):
     assert news.to_deck_slide().element("kicker").text == "NIEUWSFLITS"
 
 
+def test_a_swedish_post_and_headline_too(images):
+    swedish = languages.language("sv")
+    with random_util.use(random_util.Rng(2)):
+        post = KINDS["social_post"].build(
+            {"title": None, "author": "Åsa Ölander", "handle": "åsa ölander", "text": "Hej"}, {"photo": None}, swedish
+        )
+        news = KINDS["news_headline"].build(
+            {"outlet": "Kattposten", "headline": "Katt vinner", "subheadline": None}, {"photo": _image("wide")}, swedish
+        )
+    elements = {element.role: element for element in post.to_deck_slide().elements}
+    assert elements["initials"].text == "ÅÖ" and elements["handle"].text == "@åsa_ölander"
+    assert elements["stats"].text.endswith(" delningar") and " gilla-markeringar · " in elements["stats"].text
+    assert news.to_deck_slide().element("kicker").text == "JUST NU"
+
+
 def test_names_and_counts_read_like_a_posts():
     assert slides.initials("Prof. Anna Tomy") == "AT" and slides.initials("Cher") == "C" and slides.initials("") is None
     assert slides.handle("@sock lover") == "@sock_lover" and slides.handle("  ") is None
@@ -458,7 +473,9 @@ def test_the_ted_formats_mockups_get_copyright_free_photos():
 
     ted = {generator.name: generator for generator in get_schema("ted").slide_generators}
     assert ted["Social Media Post (CRF)"].llm.images == (cg.copyright_free_generator,)
-    assert ted["News Headline (CRF)"].llm.images == (cg.copyright_free_generator,)
+    # (the news story's photo prefers a generated picture, in a talk that generates them: copyright free either way)
+    assert ted["News Headline (CRF)"].llm.images == (cg.news_photo_copyright_free_generator,)
+    assert cg.news_photo_copyright_free_generator.aesthetic == cg.copyright_free_generator.aesthetic == "photo"
 
 
 def test_the_new_types_are_drawn_types():
