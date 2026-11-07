@@ -6,8 +6,8 @@ responses, and log lines that never contain API keys.
 
 Responses of the search APIs are also cached on disk (see `CACHE_EXPIRY`): repeated topics
 generate faster, rate limits last longer, and Pixabay asks API users to cache for 24 hours.
-Images and HTML pages aren't cached. Set DISABLE_CACHE=1 to switch the cache off, or
-TALKGENERATOR_CACHE_DIR to choose where it lives.
+GIPHY's aren't, as its API rules forbid caching them, and neither are images and HTML pages.
+Set DISABLE_CACHE=1 to switch the cache off, or TALKGENERATOR_CACHE_DIR to choose where it lives.
 """
 
 from __future__ import annotations
@@ -35,7 +35,8 @@ USER_AGENT = f"talkgenerator/{__version__} (+https://github.com/twinters/talk-ge
 DEFAULT_TIMEOUT = 10  # seconds
 OUTAGE_COOLDOWN_SECONDS = 5 * 60
 
-# How long successful responses are reused, per URL prefix. Anything else is never cached.
+# How long successful responses are reused, per URL prefix. Anything else is never cached, such as GIPHY's
+# searches: "Do not cache API responses or media URLs" (https://developers.giphy.com/docs/api).
 CACHE_EXPIRY: ExpirationPatterns = {
     "api.datamuse.com": timedelta(days=30),
     "pixabay.com/api": timedelta(hours=24),  # Pixabay's API terms ask to cache requests for 24 hours
@@ -44,7 +45,6 @@ CACHE_EXPIRY: ExpirationPatterns = {
     "api.openverse.org/v1/images": timedelta(hours=24),
     "commons.wikimedia.org/w/api.php": timedelta(days=7),
     "api.artic.edu/api/v1": timedelta(days=30),
-    "api.giphy.com/v1/gifs/search": timedelta(hours=24),
     "en.wikiquote.org/w/api.php": timedelta(days=30),
 }
 

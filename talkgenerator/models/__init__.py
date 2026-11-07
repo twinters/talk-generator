@@ -22,6 +22,7 @@ from talkgenerator.models.deck import (
     SlideBackground,
     TextElement,
     TextStyle,
+    TopicOrTitle,
     VennDiagram,
 )
 from talkgenerator.models.events import SlideReady, TalkEvent, TalkFinished, TalkStarted
@@ -58,6 +59,7 @@ __all__ = [
     "TextElement",
     "TextStyle",
     "Theme",
+    "TopicOrTitle",
     "Usage",
     "VennDiagram",
 ]

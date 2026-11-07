@@ -42,6 +42,7 @@ presentation_schema = schemas.register(
         powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
         seed_generator=slide_topic_generators.SideTrackingTopicGenerator,
         title_generator=cg.talk_title_generator,
+        title_candidates=(cg.wikihow_title_generator,),
         slide_generators=slide_generators.groups(*DEFAULT_GROUPS),
         max_allowed_tags=default_max_allowed_tags,
     ),
@@ -57,6 +58,7 @@ interview_schema = schemas.register(
         powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
         seed_generator=slide_topic_generators.SideTrackingTopicGenerator,
         title_generator=cg.talk_title_generator,
+        title_candidates=(cg.wikihow_title_generator,),
         slide_generators=slide_generators.groups(*DEFAULT_GROUPS),
         max_allowed_tags=interview_max_allowed_tags,
     ),
@@ -80,6 +82,7 @@ test_schema = schemas.register(
     PresentationSchema(
         powerpoint_slide_creator.create_new_powerpoint,
         title_generator=cg.talk_title_generator,
+        title_candidates=(cg.wikihow_title_generator,),
         seed_generator=slide_topic_generators.IdentityTopicGenerator,
         slide_generators=slide_generators.groups("title", "test"),
     ),
@@ -96,6 +99,7 @@ ted_schema = schemas.register(
             topics=topics, num_slides=num_slides, topic_return_period_range=range(2, 4)
         ),
         title_generator=cg.talk_ted_title_generator,
+        title_candidates=(cg.wikihow_title_generator,),
         slide_generators=slide_generators.groups(*COPYRIGHT_FREE_GROUPS),
         max_allowed_tags={
             # Absolute maxima

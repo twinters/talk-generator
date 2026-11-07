@@ -7,7 +7,9 @@ from datetime import timedelta
 import pytest
 import requests
 import requests_cache
+from requests_cache.policy.expiration import get_url_expiration
 
+from talkgenerator.sources import giphy
 from talkgenerator.util import http_util
 
 
@@ -67,6 +69,13 @@ def test_images_and_other_urls_are_not_cached(server, cache_dir):
     http_util.get(f"http://{server}/image.jpg")
     http_util.get(f"http://{server}/image.jpg")
     assert _Handler.hits["/image.jpg"] == 2
+
+
+def test_giphy_searches_are_never_cached(cache_dir):
+    # GIPHY's API rules: "Do not cache API responses or media URLs"
+    patterns = http_util.get_session().settings.urls_expire_after
+    assert get_url_expiration("https://api.pexels.com/v1/search?query=cat", patterns)  # (other searches are)
+    assert get_url_expiration(giphy.API_URL + "?q=cat&limit=25", patterns) is None
 
 
 def test_errors_are_not_cached(server, cache_dir):

@@ -11,7 +11,7 @@ from typing import Any
 
 from pptx.presentation import Presentation
 
-from talkgenerator import names, runtime_checker, settings
+from talkgenerator import names, runtime_checker, settings, titles
 from talkgenerator.design import engine, themes
 from talkgenerator.images import context as image_context
 from talkgenerator.images import licenses
@@ -51,6 +51,7 @@ def generate_presentation_using_cli_arguments(args) -> tuple[Presentation | None
         slides=args.num_slides,
         topic=args.topic,
         title=args.title,
+        topic_or_title=getattr(args, "topic_or_title", None),
         presenter=args.presenter,
         parallel=args.parallel,
         int_seed=args.int_seed,
@@ -92,9 +93,19 @@ def generate_presentation(
     extreme_themes: bool = True,
     progress: Progress | None = None,
     name_styles: str | Iterable[str] | None = None,
+    topic_or_title: str | None = None,
     license_policy: str | Iterable[str] | None = None,
 ) -> tuple[Presentation | None, SlideDeck, str | None]:
     """Generate a talk. With debug_notes, every slide's speaker notes explain how it was generated.
+
+    topic is what the talk is about (or topics, separated by commas), and title its title; without a title, it gets
+    one. topic_or_title stands for both, when what's given could be either, as what someone types can be: "penguins",
+    "Cats are liquid" or "Why I Joined a Penguin Cult". What's clearly a title (four words or more, or a question or an
+    exclamation) stays the talk's title, with only its obvious slips fixed; anything shorter is the topic (or a
+    premise), on which the language model that writes the talk builds a funnier, more specific title, in the same
+    request. Without a language model, talkgenerator guesses: a title when it's clearly one, starts like one ("How
+    to", "Why", "The", "A", "My") or makes a claim ("Cats are liquid"), which stays as typed. The deck tells how it was
+    read (see talkgenerator.titles). It's given instead of topic and title, never with them.
 
     With save_json, the talk is also saved as a deck (see talkgenerator.models.deck): as JSON, next to the PowerPoint
     and with the same name, or on its own in output_folder when save_ppt is off. slide_deck.to_deck() gives the same
@@ -126,6 +137,10 @@ def generate_presentation(
     if theme not in themes.choices():
         raise ValueError(f"There's no theme {theme!r}; there are {', '.join(themes.choices())}")
     chosen_styles = names.styles(name_styles)  # (a ValueError for a style there isn't)
+    languages.language(language)  # (a ValueError for a language talkgenerator doesn't know)
+    if topic_or_title is not None and (topic or title):
+        raise ValueError("topic_or_title stands for both the topic and the title: give it without them")
+    typed = titles.normalised(topic_or_title) if topic_or_title else None
     presentation_schema = get_schema(schema)
     # (a ValueError for a policy there isn't)
     policy = licenses.policy(license_policy if license_policy is not None else presentation_schema.license_policy)
@@ -150,6 +165,8 @@ def generate_presentation(
     logger.info("Presentation schema: {}".format(presentation_schema))
     logger.info("License policy: {} ({})".format(policy.name, ", ".join(sorted(policy.classes))))
 
+    if typed:  # (its topics, before a language model reads it: by talkgenerator's guess)
+        topic = titles.topics_from(typed, language)
     if not topic:
         topic = (word_frequency.get_rarest_word(title) if title else None) or DEFAULT_PRESENTATION_TOPIC
 
@@ -165,13 +182,14 @@ def generate_presentation(
         "Presentation presenter: {}".format(presenter or "made up ({})".format(", ".join(chosen_styles) or "classic"))
     )
     logger.info("Presentation title: {}".format(title))
+    if typed:
+        logger.info("Presentation topic or title: {}".format(typed))
     logger.info("Presentation parallel: {}".format(parallel))
     logger.info("Presentation int_seed: {}".format(int_seed))
     logger.info("Presentation save_ppt: {}".format(save_ppt))
 
     # The language model that writes the talk, if any; every request it gets is written down in the talk's ledger
     provider = _language_model(llm)
-    languages.language(language)  # (a ValueError for a language talkgenerator doesn't know)
     ledger = Ledger()
     if provider is not None:
         logger.info("Language model: {}".format(provider.id))
@@ -198,6 +216,7 @@ def generate_presentation(
             extreme_themes=extreme_themes,
             progress=progress,
             name_styles=chosen_styles,
+            topic_or_title=typed,
         )
     slide_deck.license_policy = policy.name
     slide_deck.usage = ledger.total()
@@ -247,12 +266,14 @@ def stream_talk(
     style_chaos: float = 0.0,
     extreme_themes: bool = True,
     name_styles: str | Iterable[str] | None = None,
+    topic_or_title: str | None = None,
     license_policy: str | Iterable[str] | None = None,
 ) -> Iterator[TalkEvent]:
     """Make a talk as generate_presentation does (the same deck, for the same options, seed and answers), handing
-    over what's ready while it's made (see talkgenerator.models.events): talk.started once its title is known, a
-    slide.ready for every slide as soon as it's settled, in order and laid out in the talk's theme, and talk.finished
-    with the whole deck. Meanwhile, the slides after it are being made: a language model's while it writes them.
+    over what's ready while it's made (see talkgenerator.models.events): talk.started once its title is known (the
+    one it settles on, and for a topic_or_title, how that was read), a slide.ready for every slide as soon as it's
+    settled, in order and laid out in the talk's theme, and talk.finished with the whole deck. Meanwhile, the slides
+    after it are being made: a language model's while it writes them.
 
     Images are probed rather than downloaded (see talkgenerator.util.image_util.probing): a browser that shows the
     slides loads them itself. Nothing is saved: the deck in talk.finished renders as a PowerPoint
@@ -283,6 +304,7 @@ def stream_talk(
                     extreme_themes=extreme_themes,
                     progress=following,
                     name_styles=name_styles,
+                    topic_or_title=topic_or_title,
                     license_policy=license_policy,
                 )
                 events.put(TalkFinished(deck=slide_deck.to_deck(schema_name=schema)))
@@ -322,6 +344,7 @@ class _Following:
                 title=slide_deck.title,
                 presenter=slide_deck.presenter,
                 topics=slide_deck.topics,
+                topic_or_title=slide_deck.topic_or_title,
                 language=slide_deck.language,
                 seed=slide_deck.seed,
                 slides=slide_deck.size,
@@ -518,6 +541,15 @@ def get_argument_parser():
         default=None,
         type=str,
         help="The title of the talk, leave blank to randomise",
+    )
+    parser.add_argument(
+        "--topic_or_title",
+        default=None,
+        type=str,
+        help="Instead of --topic and --title: what the talk is about or its title, such as 'penguins' or 'Why I "
+        "Joined a Penguin Cult'. Four words or more, or a question or exclamation, is the talk's title (its obvious "
+        "slips fixed); anything shorter is the topic, on which the language model builds a funnier title. Without a "
+        "model, a title is also what starts like one ('How to', 'Why', 'The', 'A', 'My') or makes a claim",
     )
     parser.add_argument(
         "--license_policy",

@@ -103,6 +103,7 @@ def test_the_server_has_tools_to_look_things_up_and_to_make_talks(server):
     # The language model comes from the user's settings, never from a tool call (so a model can't pick a paid one)
     assert set(tools["generate_talk"].input_schema["properties"]) == {
         "topic",
+        "topic_or_title",
         "slides",
         "format",
         "language",
@@ -267,6 +268,25 @@ def test_without_a_language_model_the_talk_is_classic_and_english(schema, server
         "talks in other languages than English need slides a language model wrote, and this one has none, so it's in "
         "English (the settings name no language model)"
     ]
+
+
+@needs_mcp
+def test_a_talk_on_what_the_user_asked_for_says_how_it_was_read(schema, server):
+    typed = "Why I joined a penguin cult"
+    report = _answer(_call(server, "generate_talk", {"topic_or_title": typed, "slides": 4}))
+    assert report["topic_or_title"] == {"text": typed, "read_as": "title"}  # (no language model: the guess)
+    assert (report["title"], report["topics"]) == (typed, ["penguin"])
+    assert _deck(report).topic_or_title.read_as == "title"
+    assert "topic_or_title" not in _answer(_call(server, "generate_talk", {"topic": "cats", "slides": 4}))
+
+
+@needs_mcp
+def test_a_topic_or_title_goes_without_a_topic_and_a_title(schema, server):
+    for given in ({"topic": "cats"}, {"title": "Cats!"}):
+        problem = _error(_call(server, "generate_talk", {"topic_or_title": "penguins", **given}))
+        assert "give topic_or_title instead of a topic and a title" in problem
+    assert "give a topic, a title or a topic_or_title" in _error(_call(server, "generate_talk", {"slides": 4}))
+    assert "at least 1 character" in _error(_call(server, "generate_talk", {"topic_or_title": ""}))
 
 
 @needs_mcp

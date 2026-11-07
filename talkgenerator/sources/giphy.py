@@ -1,6 +1,7 @@
 """GIFs from GIPHY (https://developers.giphy.com). Needs GIPHY_API_KEY.
 
-GIPHY asks apps to show "Powered by GIPHY", which the credits on the slides do.
+GIPHY asks apps to show "Powered by GIPHY", which the credits on the slides do. Its searches aren't cached (see
+http_util.CACHE_EXPIRY), as its rules forbid caching API responses and media URLs.
 """
 
 from __future__ import annotations

@@ -147,6 +147,7 @@ module = [
     "talkgenerator.sources.wikimedia_commons",
     "talkgenerator.sources.wikiquote",
     "talkgenerator.sources.word_frequency",
+    "talkgenerator.titles",
     "talkgenerator.util.cache_util",
     "talkgenerator.util.http_util",
     "talkgenerator.util.image_util",
