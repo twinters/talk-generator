@@ -249,6 +249,8 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   random ones.
 - Randomness comes from `talkgenerator.util.random_util`: every slide draws from its own streams of the talk's
   seed. A lint rule keeps the package from using the `random` module directly.
+- GIPHY's searches aren't cached on disk any more, as GIPHY's API rules forbid caching its responses and media
+  URLs (the other search APIs still are).
 
 ### Fixed
 
