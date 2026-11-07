@@ -36,8 +36,8 @@ by. If it's long, tell the user once that free keys give better images, and leav
 
 1. **Work out what's wanted**: the topic (several topics work too) or the title, as what's asked for can be either
    ("penguins" is a topic, "Why I Joined a Penguin Cult" a title, which stays the talk's title with only its obvious
-   slips fixed, never reworded; a few words such as "Cats are liquid" are a premise, to build a funnier, more
-   specific title on); how many slides (a "10-slide deck" is the
+   slips fixed, never reworded, and a title in quotes stays word for word; a few words such as "Cats are liquid"
+   are a premise, to build a funnier, more specific title on); how many slides (a "10-slide deck" is the
    title slide plus 9 slides in the plan, and 10 to 12 slides suit a talk of five minutes); the language; whether
    the presenter's own name should be on the title slide (without it, you make one up, which is part of the fun);
    and the format. The `default` format draws on every image source, Reddit's wilder pictures and gifs too.

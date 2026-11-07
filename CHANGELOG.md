@@ -190,14 +190,16 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   (and `list_formats` lists them), and a plan can name its presenter (`presenter_name`), as the Skill now does.
 - What's typed for a talk can be its topic or its title: `topic_or_title=` on `generate_presentation` and
   `stream_talk` (instead of `topic` and `title`), `--topic_or_title`, and the MCP server's
-  `generate_talk(topic_or_title=...)`, for "penguins" as well as "Why I Joined a Penguin Cult". What's clearly a
+  `generate_talk(topic_or_title=...)`, for "penguins" as well as "Why I Joined a Penguin Cult". What's typed in
+  quote marks is the title, word for word (talkgenerator.com has no other way to say so). What's clearly a
   title (four words or more, or a question or exclamation) stays the talk's title, with only its obvious slips fixed
   by the language model that writes the talk, in the same request ("waht my cat taught me about taxes": "What My
   Cat Taught Me About Taxes"); a title the model rewrites stays as typed, with the slips fixed that talkgenerator
   can fix itself (misspellings, a capital start). Anything shorter is the topic, or a premise, on which the model
   builds a funnier, more specific title ("Cats are liquid": "Cats Are Liquid: The Future of Fluid Startups"),
-  with up to three classic titles to pick from in English talks, that the talk's seed draws (the format's tracery
-  titles and a wikiHow "How to ..." title, only those that mention the topic). Without a language model,
+  spelled right; in English talks, the talk's seed picks whether up to three classic titles go with that, as titles
+  to pick or as inspiration only, or none at all (the format's tracery titles and a wikiHow "How to ..." title, only
+  those that mention the topic). Without a language model,
   talkgenerator guesses: a title also when it starts like one ("How to", "Why", "The", "A", "My", in the talk's
   language too) or makes a claim, which stays as typed. The topics are settled before the model is asked (a clear
   title's rarest word, or else what was typed), with misspellings fixed ("pengiuns": "penguins"). The deck and

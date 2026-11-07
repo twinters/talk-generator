@@ -502,8 +502,9 @@ is kept as the title only when it's clearly one; anything shorter is a topic or 
 the model's, as "The French Revolution" deserves better than itself.
 
 - **The argument is `topic_or_title=`**, in `generate_presentation()` and `stream_talk()`, instead of `topic` and
-  `title` (a ValueError with either). The site's three choices: Automatic passes the text as `topic_or_title`,
-  Topic as `topic`, Title as `title` (a short title the visitor wants word for word). Also `--topic_or_title`, and
+  `title` (a ValueError with either). talkgenerator.com sends what's typed as `topic_or_title` (its "What you type
+  is" choice is gone since the evening of 2026-11-07), and **what's typed in quote marks is the title, word for
+  word** (`titles.quoted`): not even its slips are fixed. Also `--topic_or_title`, and
   the MCP server's `generate_talk(topic_or_title=)` (its `topic` is optional now: a topic, a title or a
   topic_or_title). The Skill needs no argument (Claude is the planner there): its instructions say the same.
 - **Clearly a title** (`titles.clearly_a_title`): a part of four words or more, or a question or exclamation. The
@@ -515,16 +516,19 @@ the model's, as "The French Revolution" deserves better than itself.
 - **Anything shorter is the topic, or a premise** ("Cats are liquid"): the request says `Topic: "<typed>" (as the
   user typed it: the talk's topic, or a premise for it)` and `Title: come up with one, funnier and more specific
   than what the user typed`, and the model's title goes (its own_title rather than an echo of what was typed). The
-  topics are what was typed.
+  topics are what was typed. A misspelled input comes with what it means (`"pengiuns" (as the user typed it,
+  meaning "penguins": ...)`), as the model otherwise kept the typo in its title now and then.
 - **Misspellings** are fixed before the topics are taken (`word_frequency.fix_spelling`): a rare word becomes the
   likest word one edit away that's a hundred times more frequent ("waht": "what", "joind": "joined"), a word no
   language knows the closest frequent word ("airplain": "airplane"); made-up words stay ("Zorblaxia").
 - **The classic titles**, for a short input in an English talk: the talk's dice draw one to three, from the format's
   title generator, a wikiHow "How to ..." title (`content_generators.wikihow_title_generator`) and the title
   generator again, each from a stream of its own, leaving out those that don't mention the topic ("Never, Ever Be A
-  Secret Agent" for penguins); about 0.7 s before the request (one wikiHow search, cached after that). They're
-  offered as titles to pick (`titles.CLASSIC_TITLES`, "options"), which the free models did in about half the talks,
-  copied as listed; the user is to choose between that, inspiration only, and none, from a live comparison.
+  Secret Agent" for penguins); about 0.7 s before the request (one wikiHow search, cached after that). The talk's
+  dice pick how they go (`titles.CLASSIC_TITLE_WAYS`, a third each): as titles to pick (an `own_title` first, then
+  the title, which may be a classic one), as inspiration only (`for inspiration only (write your own)`, and one
+  title field), or not at all (no wikiHow search either). The user liked the titles of all three in a live
+  comparison (below), and chose to have them all.
 - **Without a language model** (or when it writes no title), talkgenerator's guess goes: a title also when it starts
   like one ("How to", "Why", "The", "A", "My") or makes a claim (a form of "to be", or a modal verb), in the talks'
   languages, which stays as typed (polished); a topic gets the classic title.
@@ -550,6 +554,13 @@ that start like titles: "The French Revolution", "The Beatles") and 10 titles (t
   Friend", "What Your Sourdough Bread Says About You", "Why Beatles Will Ruin Your Life"); the models' own were often
   spicier ("How Medieval Cheese Will Save Your Startup", "The Hidden Medieval History of Quantum Physics").
 - Median 17 to 24 s for a 4-slide talk; all 80 slides of a round by the model.
+- The classic titles three ways, with the request asking for a funnier, more specific title (12 short inputs, one
+  model, `nvidia/nemotron-3.5-super-vl:free`, seed 2, 3-slide talks): the model never picked a classic title, as
+  options or as inspiration, and the titles were as spicy with them as without ("Your Tax Return Is a Peasant's Pig
+  Declaration", "The Domesday Deduction: Why Your Tax Return Is a Feudal Confession", "The French Revolution: A
+  12th-Century Property Dispute That Got Out of Hand"). With classic titles listed, it kept a typed misspelling
+  three times ("Pengiuns: ...", "Quantim Physics ..."): hence the meaning that now goes with it. Seed 2's dice give
+  every talk the same persona, a medieval historian, so every title was medieval.
 
 ## 6. Agent mode: talkgenerator as a Claude Skill
 
@@ -1063,7 +1074,7 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D32 | What's typed can be a topic or a title: by default the language model tells which, in the talk's one request, and picks the title among its own proposal and a few classic candidates, fixing what's off; the visitor can still say which it is (section 5.11). |
 | D33 | Presenter names may be famous-name puns ("Albert Einstone" for geology), on by default: a historical figure's name bent to fit the topic, never the real name as it is, a living person's or a dictator's. Real historical figures' names as they are aren't a style. |
 | D34 | Talks without a language model get a name from a small pack curated by hand (pun names by topic, and a few fun surnames and famous-name puns) when their topic matches one of its entries, and tracery's random names otherwise. |
-| D35 | What's typed for a talk (Automatic, topic_or_title) stays its title only when it's clearly one: four words or more, or a question or exclamation, with its slips fixed. Anything shorter is the topic, or a premise, on which the language model builds a funnier, more specific title ("The French Revolution" deserves better than itself); the Title choice keeps a short title word for word. |
+| D35 | What's typed for a talk (Automatic, topic_or_title) stays its title only when it's clearly one: four words or more, or a question or exclamation, with its slips fixed. Anything shorter is the topic, or a premise, on which the language model builds a funnier, more specific title ("The French Revolution" deserves better than itself); a title in quote marks stays word for word. The talk's dice pick whether the classic titles go with a short input as options, as inspiration only, or not at all. |
 
 D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, and D28 to D35 on 2026-11-07; the others follow from the design.
 

@@ -95,10 +95,10 @@ def generate_presentation(
 
     topic is what the talk is about (or topics, separated by commas), and title its title; without a title, it gets
     one. topic_or_title stands for both, when what's given could be either, as what someone types can be: "penguins",
-    "Cats are liquid" or "Why I Joined a Penguin Cult". What's clearly a title (four words or more, or a question or an
-    exclamation) stays the talk's title, with only its obvious slips fixed; anything shorter is the topic (or a
-    premise), on which the language model that writes the talk builds a funnier, more specific title, in the same
-    request. Without a language model, talkgenerator guesses: a title when it's clearly one, starts like one ("How
+    "Cats are liquid" or "Why I Joined a Penguin Cult". What's in quote marks is the title, word for word. What's
+    clearly a title (four words or more, or a question or an exclamation) stays the talk's title, with only its obvious
+    slips fixed; anything shorter is the topic (or a premise), on which the language model that writes the talk builds
+    a funnier, more specific title, in the same request. Without a language model, talkgenerator guesses: a title when it's clearly one, starts like one ("How
     to", "Why", "The", "A", "My") or makes a claim ("Cats are liquid"), which stays as typed. The deck tells how it was
     read (see talkgenerator.titles). It's given instead of topic and title, never with them.
 
@@ -131,7 +131,8 @@ def generate_presentation(
     languages.language(language)  # (a ValueError for a language talkgenerator doesn't know)
     if topic_or_title is not None and (topic or title):
         raise ValueError("topic_or_title stands for both the topic and the title: give it without them")
-    typed = titles.normalised(topic_or_title) if topic_or_title else None
+    # (on one line, but with its quote marks, if any: they make it a title, word for word)
+    typed = " ".join(topic_or_title.split()) if topic_or_title and titles.normalised(topic_or_title) else None
     if print_logs:
         os_util.show_logs(logger)
     logger.info("**************************")
@@ -514,9 +515,10 @@ def get_argument_parser():
         default=None,
         type=str,
         help="Instead of --topic and --title: what the talk is about or its title, such as 'penguins' or 'Why I "
-        "Joined a Penguin Cult'. Four words or more, or a question or exclamation, is the talk's title (its obvious "
-        "slips fixed); anything shorter is the topic, on which the language model builds a funnier title. Without a "
-        "model, a title is also what starts like one ('How to', 'Why', 'The', 'A', 'My') or makes a claim",
+        "Joined a Penguin Cult'. In quote marks, it's the title, word for word. Four words or more, or a question or "
+        "exclamation, is the talk's title (its obvious slips fixed); anything shorter is the topic, on which the "
+        "language model builds a funnier title. Without a model, a title is also what starts like one ('How to', "
+        "'Why', 'The', 'A', 'My') or makes a claim",
     )
     parser.add_argument(
         "--parallel",
