@@ -21,7 +21,7 @@ import os
 import re
 import sys
 import textwrap
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Final
@@ -33,6 +33,8 @@ from talkgenerator.checks.deck import check_deck
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.datastructures.slide_generator_data import SlideGeneratorData
 from talkgenerator.design import themes
+from talkgenerator.images import context as image_context
+from talkgenerator.images import licenses
 from talkgenerator.models.deck import Deck, ImageElement, TextElement
 from talkgenerator.models.plan import SlidePlan, TalkPlan
 from talkgenerator.plan import languages
@@ -126,16 +128,26 @@ def default_recipe(choices: Sequence[RecipeChoice], kind: str) -> RecipeChoice |
 
 
 def choose_recipe(
-    choices: Sequence[RecipeChoice], slide: SlidePlan, language: str = "en"
+    choices: Sequence[RecipeChoice],
+    slide: SlidePlan,
+    language: str = "en",
+    unservable: Collection[SlideGeneratorData] = frozenset(),
 ) -> tuple[RecipeChoice | None, list[str]]:
     """The recipe a planned slide gets (None if it can't be made), and warnings about the one it asked for. In a
-    talk in another language than English, that's never one that finds its texts itself: they'd be English."""
+    talk in another language than English, that's never one that finds its texts itself: they'd be English; and
+    never one whose images the license policy allows no source for (unservable: their slide generators)."""
     if slide.kind not in PLANNABLE_KINDS:
         return None, [f"there's no slide kind {slide.kind!r}; the kinds are {', '.join(PLANNABLE_KINDS)}"]
     warnings = []
+    choices = [choice for choice in choices if choice.generator not in unservable] if unservable else choices
     if slide.recipe:
         found = next((choice for choice in choices if choice.id == recipe_id(slide.recipe)), None)
-        if found is None:
+        if found is None and any(choice.id == recipe_id(slide.recipe) for choice in _choices(unservable)):
+            warnings.append(
+                f"the images of recipe {slide.recipe!r} are fair use, or of another license class the talk's license "
+                f"policy doesn't allow: the default one for {slide.kind} was used"
+            )
+        elif found is None:
             warnings.append(f"this format has no recipe {slide.recipe!r}: the default one for {slide.kind} was used")
         elif found.recipe.kind != slide.kind:
             warnings.append(
@@ -179,6 +191,8 @@ def plan_warnings(slide: SlidePlan, recipe: Recipe) -> list[str]:
     for slot, query in slide.images.items():
         if slot not in kind.images:
             warnings.append(f"{kind.name} slides have no image {slot!r}; they have {_listed(kind.images)}")
+        elif slot in recipe.omit:
+            warnings.append(f"this recipe shows no {slot}")
         elif _URL.match(query):
             warnings.append(f"{slot} is an address: images are searched for with words (or are files of your own)")
     for slot in recipe.image_queries():
@@ -212,6 +226,7 @@ def render_plan(
     debug_notes: bool = False,
     theme: str | None = None,
     name_styles: Sequence[str] | str | None = None,
+    license_policy: str | Sequence[str] | None = None,
 ) -> dict[str, Any]:
     """Realize a plan, save it as a PowerPoint (at output, or under an unused name in output_folder), with the deck's
     JSON (<name>.deck.json) and a contact sheet of its images (<name>.images.png) next to it, and return the report:
@@ -221,11 +236,17 @@ def render_plan(
     is saved over plan_path, the plan's own file. theme (or else the plan's own) is its look, as --theme takes it.
 
     The presenter is the one given, or else the plan's presenter_name (when it will do: see
-    talkgenerator.names.clean), or else a name talkgenerator makes up, in one of name_styles (see generate_presentation)."""
+    talkgenerator.names.clean), or else a name talkgenerator makes up, in one of name_styles (see generate_presentation).
+
+    license_policy is the license classes its images may have (see generate_presentation): the format's, without one."""
     from talkgenerator import generator  # (here: the generator module imports the schemas)
 
     schema = generator.get_schema(schema_name)
+    policy = licenses.policy(license_policy if license_policy is not None else schema.license_policy)
     rng = random_util.Rng(int_seed)
+    # The look first, for the images to go with its colours (it has a random stream of its own: the same either way)
+    look = theme or plan.theme or settings.theme()
+    chosen_theme = themes.pick(themes.RANDOM if look == themes.CHAOS else look, rng.child("theme"))
     chosen_styles = names.styles(name_styles)
     notes: list[str] = []
     if not presenter:
@@ -238,20 +259,23 @@ def render_plan(
             )
         presenter = presenter or names.from_pack([plan.topic], chosen_styles, rng)
 
-    choices = recipes_of(schema)
-    chosen = [choose_recipe(choices, slide, plan.language) for slide in plan.slides]
-    recipes = [(choice.generator, choice.recipe) if choice else None for choice, _ in chosen]
-    # The recipes as chosen, which the slides' notes then name
-    resolved = tuple(
-        slide.model_copy(update={"recipe": choice.id}) if choice else slide
-        for slide, (choice, _) in zip(plan.slides, chosen, strict=True)
-    )
-    slide_deck, outcomes = schema.realize_plan(
-        plan.model_copy(update={"slides": resolved}), recipes, presenter, rng, local_images, parallel
-    )
-    look = theme or plan.theme or settings.theme()
-    slide_deck.theme = themes.pick(themes.RANDOM if look == themes.CHAOS else look, rng.child("theme"))
+    images = image_context.ImageContext(policy, generator.palette(chosen_theme), schema.looks)
+    with image_context.for_talk(images):
+        choices = recipes_of(schema)
+        unservable = schema.unservable()
+        chosen = [choose_recipe(choices, slide, plan.language, unservable) for slide in plan.slides]
+        recipes = [(choice.generator, choice.recipe) if choice else None for choice, _ in chosen]
+        # The recipes as chosen, which the slides' notes then name
+        resolved = tuple(
+            slide.model_copy(update={"recipe": choice.id}) if choice else slide
+            for slide, (choice, _) in zip(plan.slides, chosen, strict=True)
+        )
+        slide_deck, outcomes = schema.realize_plan(
+            plan.model_copy(update={"slides": resolved}), recipes, presenter, rng, local_images, parallel
+        )
+    slide_deck.theme = chosen_theme
     slide_deck.style_chaos = 1.0 if look == themes.CHAOS else 0.0
+    slide_deck.license_policy = policy.name
     deck = slide_deck.to_deck(schema_name=schema_name)
 
     name = file_name or _file_name(plan.title or plan.topic)
@@ -283,6 +307,7 @@ def render_plan(
         "format": schema_name,
         "language": deck.language,
         "theme": deck.theme,
+        "license_policy": deck.license_policy,
         "seed": rng.root_seed,
         "summary": {
             "deck_slides": len(deck.slides),  # the title slide too
@@ -338,6 +363,8 @@ def _slide_report(
                 "shows": element.image.description,
                 "credit": element.image.source or "your file",
                 "page": element.image.source_url,
+                "license": element.image.license or element.image.license_class,
+                "look": element.image.look,
             }
             for element in deck.slides[deck_slide - 1].elements
             if isinstance(element, ImageElement)
@@ -479,11 +506,26 @@ def _recipe_entry(choice: RecipeChoice, is_default: bool) -> dict[str, Any]:
     }
     if recipe.hints:
         entry["hints"] = dict(recipe.hints)
+    looks = _looks(recipe)
+    if looks:
+        entry["image_looks"] = looks
     if recipe.omit:
         entry["leaves_out"] = sorted(recipe.omit)
     if recipe.texts_from:
         entry["finds_itself"] = sorted(recipe.texts_from)
     return entry
+
+
+def _looks(recipe: Recipe) -> dict[str, str]:
+    """The look of each of a recipe's images, as its image slot asks for it (see talkgenerator.images.profiles): what
+    the images will look like, and where they come from."""
+    from talkgenerator.images.slots import ImageSlot
+
+    return {
+        name: source.aesthetic + "".join(f", else {backup}" for backup in source.backups)
+        for name, source in recipe.slots()
+        if isinstance(source, ImageSlot)
+    }
 
 
 def catalog_markdown(schema_name: str = "default") -> str:
@@ -498,7 +540,10 @@ def catalog_markdown(schema_name: str = "default") -> str:
         "(or the name given to render, or one talkgenerator makes up). The plan's `slides` come after it, each of "
         "one of the kinds below. A slide's `recipe` "
         "picks its look and its image sources, and makes the slide the classic way when it can't be made as "
-        "planned; without one, a slide gets its kind's default recipe.",
+        "planned; without one, a slide gets its kind's default recipe. The look of a recipe's images (its "
+        "aesthetic profile) says what they look like and where they come from: `photo` is stock photos, `vintage` "
+        "old photographs in black and white or sepia, `meme-chaos` Reddit's weird pictures, ShitpostBot's images, "
+        "gifs and memes, and so on (`talkgenerator formats --looks` lists them all).",
         "",
         f"Made by `talkgenerator formats --details --format {schema_name}`.",
     ]
@@ -515,6 +560,9 @@ def catalog_markdown(schema_name: str = "default") -> str:
         for recipe in kind["recipes"]:
             notes = ["the default"] if recipe["default"] else []
             notes += [f"`{name}`: {hint}" for name, hint in recipe.get("hints", {}).items()]
+            looks = recipe.get("image_looks", {})
+            if looks:
+                notes.append("images: " + ", ".join(f"`{name}` {look}" for name, look in looks.items()))
             for name in recipe.get("leaves_out", []):
                 notes.append(f"needs no `{name}`" if name.endswith("_query") else f"shows no `{name}`")
             notes += [f"finds its `{name}` itself (don't write one)" for name in recipe.get("finds_itself", [])]
@@ -581,9 +629,19 @@ def _render_command(argv: Sequence[str]) -> int:
         help="the look: random, classic (the 2019 template), a theme family, or chaos (default: the plan's own, or "
         "else TALKGENERATOR_THEME's, or random)",
     )
+    parser.add_argument(
+        "--license_policy",
+        help="the license classes the images may have: all, open (no fair use: no memes, gifs or Reddit's posts), or "
+        "classes separated by commas (default: the format's: open for ted, else all)",
+    )
     parser.add_argument("--open", action="store_true", help="open the PowerPoint afterwards")
     parser.add_argument("--verbose", "-v", action="store_true", help="show the generator's logs (on stderr)")
     args = parser.parse_args(argv)
+    if args.license_policy is not None:
+        try:
+            licenses.policy(args.license_policy)
+        except ValueError as error:
+            parser.error(str(error))
 
     paths = _expand(args.plans)
     if args.output and len(paths) > 1:
@@ -624,6 +682,7 @@ def _render_command(argv: Sequence[str]) -> int:
             plan_path=Path(path),
             local_images=Path(path).resolve().parent,
             theme=args.theme,
+            license_policy=args.license_policy,
         )
         reports.append({"plan": path, **report})
         if args.open:
@@ -679,18 +738,48 @@ def _formats_command(argv: Sequence[str]) -> int:
         description="The talk formats; with --details, the slides a plan for one can have (kinds, texts, recipes).",
     )
     parser.add_argument("--details", action="store_true", help="the slides a plan for the format can have")
+    parser.add_argument(
+        "--looks", action="store_true", help="the looks images can be found in (aesthetic profiles and flavour packs)"
+    )
+    parser.add_argument(
+        "--licenses", action="store_true", help="the license policies, and the license classes they pick from"
+    )
     parser.add_argument("--format", dest="schema", default="default", choices=schemas.names(), help="the format")
     parser.add_argument("--json", action="store_true", help="as JSON instead of Markdown")
     args = parser.parse_args(argv)
 
-    if args.details:
+    if args.looks or args.licenses:
+        from talkgenerator.images import licenses as license_policies
+        from talkgenerator.images import profiles
+
+        entries = profiles.catalog() if args.looks else license_policies.catalog()
+        if args.json:
+            text = json.dumps(entries, indent=2)
+        else:
+            text = "\n".join(
+                f"{entry['name']}: {entry['description']}"
+                + (" (a flavour pack)" if entry.get("kind") == "flavour pack" else "")
+                for entry in entries
+            )
+    elif args.details:
         text = json.dumps(catalog(args.schema), indent=2) if args.json else catalog_markdown(args.schema)
     elif args.json:
         text = json.dumps(
-            [{"format": name, "description": FORMATS.get(name, "")} for name in schemas.names()], indent=2
+            [
+                {
+                    "format": name,
+                    "description": FORMATS.get(name, ""),
+                    "license_policy": schemas.get(name).license_policy,
+                }
+                for name in schemas.names()
+            ],
+            indent=2,
         )
     else:
-        text = "\n".join(f"{name}: {FORMATS.get(name, '')}" for name in schemas.names())
+        text = "\n".join(
+            f"{name}: {FORMATS.get(name, '')} (license policy: {schemas.get(name).license_policy})"
+            for name in schemas.names()
+        )
     _print(text)
     return 0
 

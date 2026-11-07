@@ -30,6 +30,7 @@ from typing import Any, TypeVar
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 from talkgenerator.datastructures.image_data import ImageData
+from talkgenerator.images import context as image_context
 from talkgenerator.util import http_util, os_util, video_util
 
 logger = logging.getLogger("talkgenerator")
@@ -134,6 +135,21 @@ def check_image(image: ImageData) -> bool:
     return image.usable
 
 
+def served_size(
+    width: object, height: object, *, max_width: int | None = None, max_side: int | None = None
+) -> tuple[int, int] | None:
+    """The size in pixels (width, height) of an image as a source serves it: its original size, as the source says
+    (None if it doesn't), scaled down to the width or the longest side it's served at, if it's larger."""
+    if not isinstance(width, int | float) or not isinstance(height, int | float) or width <= 0 or height <= 0:
+        return None
+    scale = 1.0
+    if max_width is not None and width > max_width:
+        scale = max_width / width
+    if max_side is not None and max(width, height) * scale > max_side:
+        scale = max_side / max(width, height)
+    return max(1, round(width * scale)), max(1, round(height * scale))
+
+
 def image_size(url: str) -> tuple[int, int] | None:
     """The size in pixels (width, height) of an image that a check let through (probed or downloaded), if known."""
     with _cache_lock:
@@ -194,13 +210,16 @@ def probing() -> Iterator[None]:
 
 
 def carry(function: Callable[..., _T]) -> Callable[..., _T]:
-    """The function, checking images the way they're checked here, in whichever thread runs it (a pool's, say)."""
+    """The function, checking images the way they're checked here, and finding them as this talk does (by its license
+    policy and theme: see talkgenerator.images.context), in whichever thread runs it (a pool's, say)."""
     checks = _checks.get()
+    images = image_context.current()
 
     def run(*args: Any, **kwargs: Any) -> _T:
         token = _checks.set(checks)
         try:
-            return function(*args, **kwargs)
+            with image_context.for_talk(images):
+                return function(*args, **kwargs)
         finally:
             _checks.reset(token)
 

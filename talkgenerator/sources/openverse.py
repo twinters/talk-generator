@@ -4,8 +4,9 @@ Openverse is WordPress's search engine for Creative Commons and public domain me
 museums, Wikimedia and more. No key is needed: anonymous use is limited to 20 requests per minute
 and 200 per day, which the response cache stretches a long way. With the credentials of a registered
 app (OPENVERSE_CLIENT_ID and OPENVERSE_CLIENT_SECRET), searches are signed in with an access token,
-and get higher limits. Only licenses that allow commercial use are requested, since decks get shown
-at (possibly paid) shows.
+and get higher limits. Only public domain and open licenses (CC0, the public domain mark, CC BY and CC BY-SA) are
+requested: they allow commercial use, since decks get shown at (possibly paid) shows, and adaptations, since a theme
+recolours its pictures.
 """
 
 from __future__ import annotations
@@ -19,8 +20,9 @@ import requests
 
 from talkgenerator import settings
 from talkgenerator.datastructures.image_data import ImageData
-from talkgenerator.models.deck import DisplayPolicy
-from talkgenerator.util import http_util
+from talkgenerator.images import licenses
+from talkgenerator.models.deck import DisplayPolicy, LicenseClass
+from talkgenerator.util import http_util, image_util
 
 logger = logging.getLogger("talkgenerator")
 
@@ -28,6 +30,13 @@ API_URL = "https://api.openverse.org/v1/images/"
 # How a browser may show its images (see talkgenerator.models.deck.DisplayPolicy): from the hosts it finds them on
 # (Flickr, museums, Wikimedia...), credited as their licenses ask (checked on 2026-11-07: its images load in a browser's <img>, with a referrer and without)
 DISPLAY: Final[DisplayPolicy] = "direct"
+# The license classes of its images (see talkgenerator.images.licenses), each its own: public domain or open
+LICENSES: Final[frozenset[LicenseClass]] = frozenset({"public-domain", "open"})
+# The licenses it's asked for, by class: the ones that allow commercial use and adaptations
+_LICENSE_CODES: Final[dict[LicenseClass, tuple[str, ...]]] = {"public-domain": ("cc0", "pdm"), "open": ("by", "by-sa")}
+# The filters its search takes (https://api.openverse.org/v1/#tag/images/operation/images_search)
+CATEGORIES: Final = ("photograph", "illustration", "digitized_artwork")
+ASPECT_RATIOS: Final = {"landscape": "wide", "portrait": "tall", "square": "square"}
 TOKEN_URL = "https://api.openverse.org/v1/auth_tokens/token/"
 _MIN_LONG_SIDE = 800  # smaller images look blurry on a slide
 _TIMEOUT_SECONDS = 8
@@ -132,6 +141,11 @@ def _sign_in_failure(response: requests.Response | None) -> tuple[float, str]:
 _access_token = _AccessToken()
 
 
+def available() -> bool:
+    """Whether a search can go out now: Openverse isn't switched off, nor skipped for a while (see _cooldown)."""
+    return not settings.is_source_disabled("OPENVERSE") and not _cooldown.active
+
+
 def _license_label(item: dict[str, Any]) -> str:
     code = str(item.get("license") or "").lower()
     if code == "pdm":
@@ -148,23 +162,59 @@ def _map_to_image_data(item: dict[str, Any]) -> ImageData | None:
     width, height = item.get("width") or 0, item.get("height") or 0
     if width and height and max(width, height) < _MIN_LONG_SIDE:
         return None
+    found = licenses.creative_commons(str(item.get("license") or ""), item.get("license_version"))
+    if found is None:  # a license that isn't public domain or open (it wasn't asked for)
+        return None
+    license_class, license_name, license_url = found
+    label = _license_label(item)
     creator = item.get("creator") or "Unknown creator"
     return ImageData(
         image_url=url,
-        source=f"{creator} ({_license_label(item)}, via Openverse)",
+        source=f"{creator} ({label}, via Openverse)",
         source_url=item.get("foreign_landing_url"),
+        # The credit Creative Commons licenses ask for: who made it (linking its page), and the license (its deed)
+        credit=(
+            (creator, item.get("foreign_landing_url")),
+            (" (", None),
+            (label, item.get("license_url") or license_url),
+            (", via Openverse)", None),
+        ),
         description=item.get("title"),
         display=DISPLAY,
+        license_class=license_class,
+        license=label if license_class == "open" else license_name,
+        license_url=item.get("license_url") or license_url,
+        thumbnail_url=item.get("thumbnail"),
+        declared_size=image_util.served_size(width, height),
     )
 
 
-def search_photos(query: str) -> list[ImageData]:
+def search_photos(
+    query: str,
+    classes: frozenset[LicenseClass] | None = None,
+    category: str | None = None,
+    orientation: str | None = None,
+    sources: str | None = None,
+) -> list[ImageData]:
+    """Openly licensed images for the query: of the license classes (public domain and open, without any), of a
+    category (one of CATEGORIES), an orientation (landscape, portrait or square), and from some of Openverse's
+    sources (separated by commas, such as "met,clevelandmuseum"), if given."""
     if not query or settings.is_source_disabled("OPENVERSE") or _cooldown.active:
         return []
+    codes = [code for license_class in sorted(classes or LICENSES) for code in _LICENSE_CODES.get(license_class, ())]
+    if not codes:
+        return []
+    params: dict[str, Any] = {"q": query, "page_size": 20, "license": ",".join(codes), "mature": "false"}
+    if category in CATEGORIES:
+        params["category"] = category
+    if orientation in ASPECT_RATIOS:
+        params["aspect_ratio"] = ASPECT_RATIOS[orientation]
+    if sources:
+        params["source"] = sources
     token = _access_token.get()
     response = http_util.get(
         API_URL,
-        params={"q": query, "page_size": 20, "license_type": "commercial", "mature": "false"},
+        params=params,
         headers={"Authorization": f"Bearer {token}"} if token else {},
         timeout=_TIMEOUT_SECONDS,
     )

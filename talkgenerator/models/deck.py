@@ -38,6 +38,10 @@ DiagramReveal = Literal["all", "punchline"]
 #   good, and its image links stop working after 24 hours
 # - local: a file of talkgenerator's own (or a plan's), which the app serves
 DisplayPolicy = Literal["direct", "proxy", "copy", "local"]
+# The license class of an image (see talkgenerator.images.licenses): public domain and CC0; Creative Commons BY and
+# BY-SA; the stock licenses of Unsplash, Pexels and Pixabay; AI images, under their provider's terms; and fair use
+# (Reddit's posts, GIPHY's gifs, InspiroBot's posters, ShitpostBot's images)
+LicenseClass = Literal["public-domain", "open", "stock", "generated", "fair-use"]
 TextAlign = Literal["left", "center", "right"]
 TextAnchor = Literal["top", "middle", "bottom"]
 ShapeKind = Literal["rectangle", "ellipse"]
@@ -76,6 +80,21 @@ class CreditPart(_Data):
 Credit = tuple[CreditPart, ...]
 
 
+class ImageAnalysis(_Data):
+    """What a look at an image's thumbnail found (see talkgenerator.images.analysis), from 0 to 1: how light it is,
+    how colourful, how much of it is without colour (gray), whether it's all one colour (gray, or a tint such as
+    sepia), and how much detail it has where a slide's text goes over it (if it does); its main colours, most first;
+    and a perceptual hash (16 hex digits), which near-duplicates share but for a few bits."""
+
+    brightness: float
+    colourfulness: float
+    grayscale: float
+    monochrome: bool
+    detail: float | None = None
+    colors: tuple[str, ...] = ()
+    hash: str = ""
+
+
 class ImageAsset(_Data):
     """An image, and where it came from. The url is a web address or a local path."""
 
@@ -93,6 +112,14 @@ class ImageAsset(_Data):
     # place a picture before it has loaded it
     width: int | None = None
     height: int | None = None
+    # Its license class, and its license as its credit names it, with the license's page (none for a file of
+    # talkgenerator's own or a plan's, and no license for fair use)
+    license_class: LicenseClass | None = None
+    license: str | None = None
+    license_url: str | None = None
+    # The look it was found for (an aesthetic profile: see talkgenerator.images.profiles), and what a look at it found
+    look: str | None = None
+    analysis: ImageAnalysis | None = None
 
 
 class TextElement(_Data):
@@ -289,6 +316,9 @@ class Deck(_Data):
     style: Theme | None = None  # the theme's tokens (none for the classic theme)
     # The language model that wrote the talk, as "provider:model" (the one that answered), or none: a classic talk
     language_model: str | None = None
+    # The license classes its images may have: "all", "open" (everything but fair use), or the classes, as
+    # "public-domain,open" (see talkgenerator.images.licenses)
+    license_policy: str = "all"
     slides: tuple[DeckSlide, ...] = ()
     usage: Usage = Usage()  # what the talk asked of language models, and what that cost
 

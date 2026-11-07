@@ -11,8 +11,9 @@ from typing import Any, Final
 
 from talkgenerator import settings
 from talkgenerator.datastructures.image_data import CreditPart, ImageData
-from talkgenerator.models.deck import DisplayPolicy
-from talkgenerator.util import http_util
+from talkgenerator.images import licenses
+from talkgenerator.models.deck import DisplayPolicy, LicenseClass
+from talkgenerator.util import http_util, image_util
 from talkgenerator.util.generator_util import planned
 
 logger = logging.getLogger("talkgenerator")
@@ -21,8 +22,25 @@ API_URL = "https://api.unsplash.com"
 # How a browser may show its images (see talkgenerator.models.deck.DisplayPolicy): Unsplash's guidelines require
 # showing its photos from the links its API returns, so every view counts for the photographer
 DISPLAY: Final[DisplayPolicy] = "direct"
+# The license classes of its images (see talkgenerator.images.licenses): the Unsplash License
+LICENSES: Final[frozenset[LicenseClass]] = frozenset({"stock"})
 UNSPLASH_URL = "https://unsplash.com/"
 _IMAGE_WIDTH = 1920
+# The filters its search takes (https://unsplash.com/documentation#search-photos)
+COLORS: Final = (
+    "black_and_white",
+    "black",
+    "white",
+    "yellow",
+    "orange",
+    "red",
+    "purple",
+    "magenta",
+    "green",
+    "teal",
+    "blue",
+)
+ORIENTATIONS: Final = {"landscape": "landscape", "portrait": "portrait", "square": "squarish"}
 
 _cooldown = http_util.Cooldown("Unsplash")
 
@@ -31,6 +49,11 @@ def _access_key() -> str | None:
     if settings.is_source_disabled("UNSPLASH"):
         return None
     return settings.unsplash_auth()["unsplash_access_key"] or None
+
+
+def available() -> bool:
+    """Whether a search can go out now: there's a key, and Unsplash isn't skipped for a while (see _cooldown)."""
+    return _access_key() is not None and not _cooldown.active
 
 
 def _api_get(path: str, params: dict[str, Any] | None = None) -> Any:
@@ -75,6 +98,7 @@ def _map_to_image_data(photo: dict[str, Any]) -> ImageData | None:
         image_url = urls.get("full") or urls.get("regular")
     if not image_url:
         return None
+    thumbnail = urls.get("thumb") or urls.get("small")
     user = photo.get("user") or {}
     name = user.get("name")
     profile = _profile_link(user)
@@ -96,6 +120,11 @@ def _map_to_image_data(photo: dict[str, Any]) -> ImageData | None:
         credit=credit,
         description=description,
         display=DISPLAY,
+        license_class="stock",
+        license=licenses.UNSPLASH_LICENSE[0],
+        license_url=licenses.UNSPLASH_LICENSE[1],
+        thumbnail_url=thumbnail,
+        declared_size=image_util.served_size(photo.get("width"), photo.get("height"), max_width=_IMAGE_WIDTH),
     )
 
 
@@ -124,13 +153,19 @@ def random_as_list(_: object = None) -> list[ImageData]:
     return [result] if result else []
 
 
-def search_photos(query: str | None) -> list[ImageData]:
+def search_photos(query: str | None, color: str | None = None, orientation: str | None = None) -> list[ImageData]:
+    """Photos for the query, of a color (one of COLORS) and an orientation (landscape, portrait or square), if given."""
     if not query:
         return random_as_list()
     if not _access_key():
         logger.debug("Unsplash is disabled or UNSPLASH_ACCESS_KEY is missing")
         return []
-    results = _api_get("/search/photos", params={"query": query, "per_page": 30, "content_filter": "high"})
+    params: dict[str, Any] = {"query": query, "per_page": 30, "content_filter": "high"}
+    if color in COLORS:
+        params["color"] = color
+    if orientation in ORIENTATIONS:
+        params["orientation"] = ORIENTATIONS[orientation]
+    results = _api_get("/search/photos", params=params)
     photos = (results or {}).get("results") or []
     images = [image for image in map(_map_to_image_data, photos) if image]
     if not images:

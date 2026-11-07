@@ -28,6 +28,7 @@ from talkgenerator import __version__, generator
 from talkgenerator import topics as topic_list
 from talkgenerator.checks.deck import Finding, check_deck, deck_metrics
 from talkgenerator.design import themes
+from talkgenerator.images import licenses
 from talkgenerator.llm.base import TextProvider
 from talkgenerator.llm.providers import provider_from_spec
 from talkgenerator.llm.replay import ReplayProvider
@@ -101,6 +102,7 @@ def generate_deck(
     llm: TextProvider | str = "none",
     language: str = "en",
     theme: str | None = None,
+    license_policy: str | None = None,
 ) -> Deck:
     _, slide_deck, _ = generator.generate_presentation(
         schema=schema,
@@ -112,6 +114,7 @@ def generate_deck(
         llm=llm,
         language=language,
         theme=theme,
+        license_policy=license_policy,
     )
     return slide_deck.to_deck(schema_name=schema)
 
@@ -126,6 +129,7 @@ def check_talk(
     language: str = "en",
     decks: Path | None = None,
     theme: str | None = None,
+    license_policy: str | None = None,
 ) -> TalkReport:
     """Generate a talk and check it; with determinism, generate it again one by one, which has to give the same.
 
@@ -138,7 +142,7 @@ def check_talk(
             recording = ReplayProvider(cassette, record=provider_from_spec(llm))
         start = time.monotonic()
         try:
-            deck = generate_deck(topic, seed, schema, slides, True, recording, language, theme)
+            deck = generate_deck(topic, seed, schema, slides, True, recording, language, theme, license_policy)
         except Exception as error:  # a talk should never fail: if it does, that's what the check found
             logger.exception("Generating a talk about %r crashed", topic)
             crash = Finding("generation", "error", f"generating the talk crashed: {error!r}")
@@ -158,7 +162,7 @@ def check_talk(
             )
         if determinism:
             replaying: TextProvider | str = ReplayProvider(cassette) if llm != "none" else "none"
-            again = generate_deck(topic, seed, schema, slides, False, replaying, language, theme)
+            again = generate_deck(topic, seed, schema, slides, False, replaying, language, theme, license_policy)
             # What the talks asked of language models differs (the second one replayed); their slides may not
             report.deterministic = again.model_copy(update={"usage": deck.usage}).to_json() == deck.to_json()
             if not report.deterministic:
@@ -177,16 +181,19 @@ def run(
     language: str = "en",
     decks: Path | None = None,
     theme: str | None = None,
+    license_policy: str | None = None,
 ) -> dict[str, Any]:
     """Check a talk for every topic and seed, and return the report."""
     talks = []
     for topic in topics:
         for seed in seeds:
-            talk = check_talk(topic, seed, schema, slides, determinism, llm, language, decks, theme)
+            talk = check_talk(topic, seed, schema, slides, determinism, llm, language, decks, theme, license_policy)
             talks.append(talk)
             if on_talk is not None:
                 on_talk(talk)
-    return _report(talks, schema, slides, seeds, llm, language, theme)
+    report = _report(talks, schema, slides, seeds, llm, language, theme)
+    report["license_policy"] = license_policy or generator.get_schema(schema).license_policy
+    return report
 
 
 def _report(
@@ -222,6 +229,12 @@ def _report(
             "images_matching_their_query": f"{_sum_of(talks, 'images_matching_their_query')} of "
             f"{_sum_of(talks, 'images_with_query_and_description')} with a query and a description",
             "repeated_titles": _sum_of(talks, "repeated_titles"),
+            "license_classes": _summed(talks, "license_classes"),
+            # Per look: how many of its pictures were looked at, and how many of those have the look
+            "looks": {
+                look: f"{counts['with_the_look']} of {counts['looked_at']} with the look ({counts['images']} images)"
+                for look, counts in sorted(_looks_of(talks).items())
+            },
         },
         "talks": [
             {
@@ -239,6 +252,25 @@ def _report(
 
 def _sum_of(talks: list[TalkReport], metric: str) -> int:
     return sum(talk.metrics.get(metric, 0) for talk in talks)
+
+
+def _summed(talks: list[TalkReport], metric: str) -> dict[str, int]:
+    """A metric that counts things by name, summed over the talks."""
+    total: dict[str, int] = {}
+    for talk in talks:
+        for name, count in (talk.metrics.get(metric) or {}).items():
+            total[name] = total.get(name, 0) + count
+    return dict(sorted(total.items()))
+
+
+def _looks_of(talks: list[TalkReport]) -> dict[str, dict[str, int]]:
+    total: dict[str, dict[str, int]] = {}
+    for talk in talks:
+        for look, counts in (talk.metrics.get("looks") or {}).items():
+            summed = total.setdefault(look, {"images": 0, "looked_at": 0, "with_the_look": 0})
+            for name, count in counts.items():
+                summed[name] = summed.get(name, 0) + count
+    return total
 
 
 def _differences(deck: Deck, again: Deck) -> str:
@@ -300,6 +332,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         choices=themes.choices(),
         help="the talks' look (default: TALKGENERATOR_THEME's, or else random); themed talks get the design checks too",
     )
+    parser.add_argument(
+        "--license_policy",
+        help="the license classes the talks' images may have: all, open (no fair use), or classes separated by "
+        "commas (default: the schema's)",
+    )
     parser.add_argument("--verbose", "-v", action="store_true", help="show the generator's logs")
     args = parser.parse_args(argv)
 
@@ -307,6 +344,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         seeds = [int(seed) for seed in args.seeds.split(",")]
         generator.get_schema(args.schema)
         provider_from_spec(args.llm)
+        if args.license_policy is not None:
+            licenses.policy(args.license_policy)
     except (ValueError, KeyError) as error:
         parser.error(str(error))
     if args.topics:
@@ -341,6 +380,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         language=args.language,
         decks=Path(args.decks) if args.decks else None,
         theme=args.theme,
+        license_policy=args.license_policy,
     )
     summary = report["summary"]
     print(

@@ -106,6 +106,111 @@ def test_wikimedia_commons(fake_get):
     assert [image.get_image_url() for image in images] == ["https://upload/1.jpg", "https://upload/2.jpg"]
     assert images[0].get_source() == "Jan de Vries (Public domain, via Wikimedia Commons)"
     assert images[1].get_source() == "Unknown author (via Wikimedia Commons)"
+    # Its license, and its license class: what the talk's license policy allows
+    assert (images[0].license_class, images[0].license) == ("public-domain", "Public domain")
+    assert images[0].get_credit()[2] == ("Public domain", None)  # (the credit names it)
+    assert wikimedia_commons._once("Unknown author Unknown author") == "Unknown author"
+    assert wikimedia_commons._once("Jan de Vries") == "Jan de Vries"
+
+
+def test_openverse_images_have_their_own_license_classes_and_only_open_ones_are_asked_for(fake_get):
+    requests_made = fake_get(
+        {
+            "results": [
+                {
+                    "url": "https://x/1.jpg",
+                    "creator": "Ann",
+                    "license": "by-sa",
+                    "license_version": "4.0",
+                    "width": 1024,
+                    "height": 768,
+                },
+                {"url": "https://x/2.jpg", "license": "cc0", "width": 1024, "height": 768, "thumbnail": "https://t/2"},
+                {"url": "https://x/3.jpg", "license": "by-nd", "license_version": "4.0", "width": 1024, "height": 768},
+            ]
+        }
+    )
+    images = openverse.search_photos("cat")
+    assert [(image.license_class, image.license) for image in images] == [
+        ("open", "CC BY-SA 4.0"),
+        ("public-domain", "CC0"),
+    ]
+    assert images[0].get_credit()[2] == ("CC BY-SA 4.0", "https://creativecommons.org/licenses/by-sa/4.0/")
+    assert images[1].thumbnail_url == "https://t/2" and images[1].declared_size == (1024, 768)
+    assert requests_made[0][1]["params"]["license"] == "by,by-sa,cc0,pdm"
+    openverse.search_photos(
+        "dog", classes=frozenset({"public-domain"}), category="illustration", orientation="landscape"
+    )
+    params = requests_made[1][1]["params"]
+    assert (params["license"], params["category"], params["aspect_ratio"]) == ("cc0,pdm", "illustration", "wide")
+
+
+def test_stock_photos_say_their_licenses_and_take_the_looks_filters(fake_get, monkeypatch):
+    from talkgenerator import settings
+    from talkgenerator.sources import pexels, pixabay
+
+    monkeypatch.setattr(settings, "pixabay_auth", lambda: {"pixabay_key": "test"})
+    requests_made = fake_get(
+        {
+            "hits": [
+                {
+                    "largeImageURL": "https://x/1.jpg",
+                    "previewURL": "https://t/1.jpg",
+                    "imageWidth": 4000,
+                    "imageHeight": 2000,
+                }
+            ]
+        }
+    )
+    (photo,) = pixabay.search_photos("owl", orientation="landscape", colors="grayscale,nonsense", image_type="vector")
+    assert (photo.license_class, photo.license) == ("stock", "Pixabay Content License")
+    assert (photo.thumbnail_url, photo.declared_size) == ("https://t/1.jpg", (1280, 640))
+    params = requests_made[0][1]["params"]
+    assert (params["orientation"], params["colors"], params["image_type"]) == ("horizontal", "grayscale", "vector")
+    pexel = {
+        "src": {"original": "https://images.pexels.com/1.jpg"},
+        "photographer": "Bo",
+        "width": 3840,
+        "height": 2560,
+    }
+    image = pexels._map_to_image_data(pexel)
+    assert (image.license, image.declared_size) == ("Pexels License", (1920, 1280))
+    assert "w=240" in image.thumbnail_url
+    photo = {"urls": {"raw": "https://images.unsplash.com/photo-1", "thumb": "https://t/u"}, "user": {"name": "Ann"}}
+    image = unsplash._map_to_image_data({**photo, "width": 5000, "height": 2500})
+    assert (image.license_class, image.thumbnail_url, image.declared_size) == ("stock", "https://t/u", (1920, 960))
+
+
+def test_fair_use_sources_say_so(fake_get, monkeypatch):
+    from talkgenerator.sources import inspirobot, reddit
+
+    monkeypatch.setenv("GIPHY_API_KEY", "test-key")
+    fake_get(
+        {
+            "data": [
+                {
+                    "images": {
+                        "original": {"url": "https://media/1.gif", "width": "480", "height": "270"},
+                        "fixed_width_still": {"url": "https://media/1_s.gif"},
+                    }
+                }
+            ]
+        }
+    )
+    (gif,) = giphy.search_gifs("cat")
+    assert (gif.license_class, gif.license, gif.thumbnail_url, gif.declared_size) == (
+        "fair-use",
+        None,
+        "https://media/1_s.gif",
+        (480, 270),
+    )
+    assert (
+        reddit.image_data(
+            reddit.RedditImage("https://i.redd.it/1.jpg", "u/ann (on r/pics)", None, title="A cat")
+        ).license_class
+        == "fair-use"
+    )
+    assert inspirobot.LICENSES == {"fair-use"}
 
 
 def test_art_institute(fake_get):

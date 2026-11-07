@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup, Tag
 
 from talkgenerator import settings
 from talkgenerator.datastructures.image_data import ImageData
-from talkgenerator.models.deck import DisplayPolicy
+from talkgenerator.models.deck import DisplayPolicy, LicenseClass
 from talkgenerator.util import http_util, random_util, scraper_util
 from talkgenerator.util.generator_util import planned
 
@@ -22,6 +22,13 @@ source_image_prefix = "https://www.shitpostbot.com/img/sourceimages/"
 # How a browser may show its images (see talkgenerator.models.deck.DisplayPolicy): from the gallery's own links
 # (checked on 2026-11-07: its images load in a browser's <img>, with a referrer and without)
 DISPLAY: Final[DisplayPolicy] = "direct"
+# The license classes of its images (see talkgenerator.images.licenses): fair use
+LICENSES: Final[frozenset[LicenseClass]] = frozenset({"fair-use"})
+
+
+def available() -> bool:
+    """Whether a search can go out: ShitpostBot isn't switched off (DISABLE_SHITPOSTBOT)."""
+    return not settings.is_source_disabled("SHITPOSTBOT")
 
 
 def _search_shitpostbot_page(search_term: str, page: int) -> list[ImageData]:
@@ -65,8 +72,24 @@ def _search_shitpostbot_page_rated(search_term: str, page: int) -> list[tuple[in
         except ValueError:
             rating = 1
         if rating > 0:
-            image_urls.append((rating, ImageData(image_url, source=_SOURCE, source_url=_SEARCH_URL, display=DISPLAY)))
+            found = ImageData(
+                image_url,
+                source=_SOURCE,
+                source_url=_SEARCH_URL,
+                display=DISPLAY,
+                license_class="fair-use",
+                # (the gallery shows a smaller copy of it)
+                thumbnail_url=_absolute(source),
+            )
+            image_urls.append((rating, found))
     return image_urls
+
+
+def _absolute(image_url: str) -> str:
+    """An address on the gallery's page as a whole address."""
+    if image_url.startswith(("http://", "https://")):
+        return image_url
+    return "https://www.shitpostbot.com/" + image_url.lstrip("/")
 
 
 def _get_source_image(image_url: str) -> str:

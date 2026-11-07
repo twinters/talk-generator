@@ -81,8 +81,8 @@ def _summary(deck_slides, as_planned=0, classic=0, picture=0, left_out=0):
     }
 
 
-def _image(searched, credit="Fake photos", page=None, shows=None):
-    return {"searched": searched, "shows": shows, "credit": credit, "page": page}
+def _image(searched, credit="Fake photos", page=None, shows=None, license=None, look=None):
+    return {"searched": searched, "shows": shows, "credit": credit, "page": page, "license": license, "look": look}
 
 
 def test_a_plan_becomes_a_deck(schema, tmp_path):

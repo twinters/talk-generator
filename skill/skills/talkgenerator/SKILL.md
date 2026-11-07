@@ -39,7 +39,9 @@ by. If it's long, tell the user once that free keys give better images, and leav
    the presenter's own name should be on the title slide (without it, you make one up, which is part of the fun);
    and the format. The `default` format draws on every image source, Reddit's wilder pictures and gifs too.
    For a deck shown beyond a circle of friends (at a company event, on a stage, online), use `ted`: copyright-free
-   images only. Don't hold things up with questions: pick sensible defaults and say which.
+   images only (its license policy, `open`, allows every image but fair use: no memes, gifs or Reddit's posts).
+   Another format can keep to it too: `talkgenerator render plan.json --license_policy open`. Don't hold things up
+   with questions: pick sensible defaults and say which.
 2. **Look up the slides you can use** in the format's reference: [references/slides.md](references/slides.md) for
    `default`, [references/slides-ted.md](references/slides-ted.md) for `ted`. They list the slide kinds, their
    texts, length limits, images and recipes. (`ted` has no full-screen images and no recipes for slides about the
@@ -118,9 +120,12 @@ that give the presenter something to work with, rather than finished jokes:
   language; the queries stay in English, which the image sources know best.
 - **Give every slide with images a `concept`**: its subject as a search of one to three words ("medieval bread").
   An image whose query finds nothing is searched for with it (an image that's merely wrong isn't).
-- **Pick recipes for flavour.** A slide's `recipe` decides where its images come from. In the default format, many
-  recipes mix in Reddit images and gifs, which are wilder, need Reddit or GIPHY keys, and change from one render to
-  the next; recipes with `copyright-free` or `crf` in their id use stock photos, artworks and old photos only. Some
+- **Pick recipes for flavour.** A slide's `recipe` decides where its images come from, and their look (the
+  reference names each image's look, such as `vintage` for old photographs in black and white or sepia, or
+  `meme-chaos` for Reddit's weird pictures, gifs and memes). In the default format, many recipes mix in Reddit
+  images and gifs, which are wilder, need Reddit or GIPHY keys, and change from one render to the next; recipes
+  with `copyright-free` or `crf` in their id use stock photos, artworks and old photos only. Write a query for what
+  the image shows, not for its look: "a baker in 1900" for a vintage slot, not "old black and white photo". Some
   recipes find their texts themselves (real quotes, say): the reference says so, and then you don't write that text.
   Those texts are English, so a talk in another language gets the kind's default recipe instead.
 - **Your own pictures**: an image "query" may be the path of an image file, relative to the plan's folder. That

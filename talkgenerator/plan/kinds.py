@@ -2,8 +2,9 @@
 
 A kind names its text fields (with a description and a length limit, for the language model and the Skill) and its
 image slots, and builds one of v4's Slide classes from them. A Recipe ties a kind to a slide generator of a
-presentation schema: which of v4's image sources fill its slots, what this particular slide is about (its brief and
-hints), which fields it leaves out, and which texts come from classic sources instead (real quotes, for instance).
+presentation schema: what its slots ask for (image slots, see talkgenerator.images.slots: which look, from which
+sources), what this particular slide is about (its brief and hints), which fields and slots it leaves out, and which
+texts come from classic sources instead (real quotes, for instance).
 """
 
 from __future__ import annotations
@@ -12,7 +13,7 @@ import dataclasses
 import re
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
-from typing import Any, Final
+from typing import TYPE_CHECKING, Any, Final
 
 from pptx.chart.data import ChartData, XyChartData
 from pptx.enum.chart import XL_CHART_TYPE
@@ -22,6 +23,9 @@ from talkgenerator.plan.languages import Language
 from talkgenerator.slide import slides
 from talkgenerator.sources import chart, diagram
 from talkgenerator.util import random_util
+
+if TYPE_CHECKING:
+    from talkgenerator.images.slots import ImageSlot
 
 
 @dataclass(frozen=True)
@@ -49,8 +53,9 @@ class Kind:
 
 @dataclass(frozen=True)
 class Variant:
-    """A way a recipe's slide can come out, which the talk's dice pick by weight: the text fields it does without,
-    and a note for the language model (added to the slide's brief)."""
+    """A way a recipe's slide can come out, which the talk's dice pick by weight: the text fields and image slots it
+    does without (a slot left out isn't searched, and its builder gets None for it), and a note for the language model
+    (added to the slide's brief)."""
 
     weight: float
     omit: frozenset[str] = frozenset()
@@ -64,10 +69,13 @@ ContentSource = Callable[[dict[str, Any]], Any]
 @dataclass(frozen=True, eq=False)
 class Recipe:
     kind: str
-    images: tuple[ContentSource, ...] = ()  # one per image slot of the kind, in order
+    # One per image slot of the kind, in order: what the slot asks for (an ImageSlot), or a v4 content generator
+    images: tuple[ImageSlot | ContentSource, ...] = ()
     brief: str = ""  # what this slide is, for the language model
     hints: Mapping[str, str] = field(default_factory=dict)  # per text field: what to write here, instead of the kind's
-    omit: frozenset[str] = frozenset()  # text fields, or "<slot>_query" image queries, that this slide does without
+    # Text fields and image slots that this slide does without, and "<slot>_query" image queries it doesn't need
+    # (that slot is searched for with the slide's concept)
+    omit: frozenset[str] = frozenset()
     texts_from: Mapping[str, ContentSource] = field(default_factory=dict)  # texts found by classic sources instead
     variants: tuple[Variant, ...] = ()  # ways a slide can come out, such as a chart with or without labels
 
@@ -79,7 +87,15 @@ class Recipe:
 
     def image_queries(self) -> list[str]:
         """The image slots the language model writes a search query for."""
-        return [slot for slot in KINDS[self.kind].images if f"{slot}_query" not in self.omit]
+        return [slot for slot in KINDS[self.kind].images if f"{slot}_query" not in self.omit and slot not in self.omit]
+
+    def slots(self) -> list[tuple[str, ImageSlot | ContentSource]]:
+        """The image slots this slide has, by name, with what they ask for (not the ones it leaves out)."""
+        return [
+            (name, source)
+            for name, source in zip(KINDS[self.kind].images, self.images, strict=True)
+            if name not in self.omit
+        ]
 
     def varied(self, rng: random_util.Rng) -> Recipe:
         """The recipe as one of its variants, picked by weight with the random stream (itself, without variants)."""

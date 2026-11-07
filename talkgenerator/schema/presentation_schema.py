@@ -27,7 +27,7 @@ import itertools
 import logging
 import threading
 import time
-from collections.abc import Callable, Collection, Iterator, Sequence
+from collections.abc import Callable, Collection, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
@@ -36,8 +36,10 @@ from typing import Any, Protocol
 from pptx.presentation import Presentation
 
 from talkgenerator import names
-from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.datastructures.slide_generator_data import SlideGeneratorData, _filter_generated_elements
+from talkgenerator.images import context as image_context
+from talkgenerator.images import finder, licenses, profiles
+from talkgenerator.images.slots import ImageSlot
 from talkgenerator.llm.base import ProviderError, TextProvider
 from talkgenerator.llm.providers import NoneProvider
 from talkgenerator.models.plan import SlidePlan, TalkPlan
@@ -292,8 +294,18 @@ class PresentationSchema:
         slide_generators: list[SlideGeneratorData],
         max_allowed_tags=None,
         ignore_weights=False,
+        license_policy: str = licenses.DEFAULT,
+        looks: Mapping[str, str] | None = None,
     ):
         self._powerpoint_creator = powerpoint_creator
+        # The license classes its talks' images may have, unless a talk says otherwise (see talkgenerator.images.licenses)
+        self.license_policy = licenses.policy(license_policy).name
+        # Its own looks for the looks its slides ask for, such as "corporate-stock" for "photo" (see
+        # talkgenerator.images.profiles)
+        self.looks: Mapping[str, str] = dict(looks or {})
+        for look in (*self.looks, *self.looks.values()):
+            profiles.profile(look)
+        self._unservable: dict[str, frozenset[SlideGeneratorData]] = {}
         self._seed_generator = seed_generator
         self._slide_generators = slide_generators
         self._generator_indices = {id(generator): index for index, generator in enumerate(slide_generators)}
@@ -889,9 +901,9 @@ class PresentationSchema:
     @staticmethod
     def _is_new_enough(result: tuple[Any, list], generator: SlideGeneratorData, state: _DeckState) -> bool:
         """Whether a slide repeats no more of the slides before it than its generator allows, and none of their
-        images: conclusions may repeat texts (as they sum up), but a picture twice is a picture too few."""
-        if any(isinstance(element, ImageData) and element in state.used_elements for element in result[1]):
-            return False
+        images: conclusions may repeat texts (as they sum up), but a picture twice is a picture too few (nearly the same
+        picture too, such as one photo found at two sources). It's the rule slide generators keep to themselves (see
+        slide_generator_types.is_different_enough_for_allowed_repeated): what one generated, it accepts."""
         return slide_generator_types.is_different_enough_for_allowed_repeated(
             result[1], state.used_elements, generator.get_allowed_repeated_elements()
         )
@@ -1008,12 +1020,30 @@ class PresentationSchema:
                 if value >= max_number_of_slides:
                     prohibited_tags.add(key)
 
-        prohibited_generators = set()
+        prohibited_generators = set(self.unservable())
         for generator in self._slide_generators:
             if set(generator.get_tags()) & prohibited_tags:
                 prohibited_generators.add(generator)
 
         return prohibited_generators
+
+    def unservable(self) -> frozenset[SlideGeneratorData]:
+        """The slide generators whose images the talk's license policy allows no source for (a meme slide in a talk
+        without fair use, say), by the image slots of their recipes, which their classic slides use too."""
+        policy = image_context.current().policy
+        known = self._unservable.get(policy.name)
+        if known is None:
+            known = frozenset(
+                generator
+                for generator in self._slide_generators
+                if generator.llm is not None
+                and any(
+                    isinstance(source, ImageSlot) and not finder.servable(source, policy)
+                    for _, source in generator.llm.slots()
+                )
+            )
+            self._unservable[policy.name] = known
+        return known
 
 
 # Helper functions

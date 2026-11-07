@@ -2,7 +2,7 @@
 
 A TED-like talk with copyright-free images only (stock photos, artworks and old photos), for decks shown in public; it has no full-screen images, gifs or memes, and no recipes for slides about the presenter.
 
-Every talk starts with a title slide, made from the plan's `title`, `presenter_job` and `presenter_name` (or the name given to render, or one talkgenerator makes up). The plan's `slides` come after it, each of one of the kinds below. A slide's `recipe` picks its look and its image sources, and makes the slide the classic way when it can't be made as planned; without one, a slide gets its kind's default recipe.
+Every talk starts with a title slide, made from the plan's `title`, `presenter_job` and `presenter_name` (or the name given to render, or one talkgenerator makes up). The plan's `slides` come after it, each of one of the kinds below. A slide's `recipe` picks its look and its image sources, and makes the slide the classic way when it can't be made as planned; without one, a slide gets its kind's default recipe. The look of a recipe's images (its aesthetic profile) says what they look like and where they come from: `photo` is stock photos, `vintage` old photographs in black and white or sepia, `meme-chaos` Reddit's weird pictures, ShitpostBot's images, gifs and memes, and so on (`talkgenerator formats --looks` lists them all).
 
 Made by `talkgenerator formats --details --format ted`.
 
@@ -18,7 +18,7 @@ Images: `image`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `single-image-copyright-free` | A photo with a title | the default; tags: single_image |
+| `single-image-copyright-free` | A photo with a title | the default; images: `image` photo; tags: single_image |
 
 ## `statement`
 
@@ -32,11 +32,11 @@ Images: `background`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `full-screen-pixabay-deep` | A deep question over a photo | `text`: a short, deep question, such as 'But... why?'; tags: deep, full_image |
-| `full-screen-pixabay-quote` | A real quote over a photo (talkgenerator finds the quote, about the concept) | finds its `text` itself (don't write one); tags: full_image, quote |
-| `wikihow-bold-statement-crf` | A bold statement over a photo | the default; `text`: a bold claim or question about the concept, such as 'Don't we all secretly want to ...?'; tags: bold_statement, statement |
-| `quote-crf` | A real quote over a photo (talkgenerator finds the quote, about the concept) | finds its `text` itself (don't write one); tags: quote, statement |
-| `anecdote-crf` | A personal anecdote the presenter now has to tell | `text`: the title of the anecdote, such as 'The time I ...'; tags: anecdote |
+| `full-screen-pixabay-deep` | A deep question over a photo | `text`: a short, deep question, such as 'But... why?'; images: `background` calm-backdrop; tags: deep, full_image |
+| `full-screen-pixabay-quote` | A real quote over a photo (talkgenerator finds the quote, about the concept) | images: `background` calm-backdrop; finds its `text` itself (don't write one); tags: full_image, quote |
+| `wikihow-bold-statement-crf` | A bold statement over a photo | the default; `text`: a bold claim or question about the concept, such as 'Don't we all secretly want to ...?'; images: `background` calm-backdrop; tags: bold_statement, statement |
+| `quote-crf` | A real quote over a photo (talkgenerator finds the quote, about the concept) | images: `background` calm-backdrop; finds its `text` itself (don't write one); tags: quote, statement |
+| `anecdote-crf` | A personal anecdote the presenter now has to tell | `text`: the title of the anecdote, such as 'The time I ...'; images: `background` calm-backdrop; tags: anecdote |
 
 ## `two_columns`
 
@@ -52,9 +52,9 @@ Images: `image_1`, `image_2`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `two-history-pictures-crf` | Two old photos from the history of the slide's concept | `title`: a title about the concept's history; `caption_1`: a moment from long ago; `caption_2`: a later moment; tags: history, two_images |
+| `two-history-pictures-crf` | Two old photos from the history of the slide's concept | `title`: a title about the concept's history; `caption_1`: a moment from long ago; `caption_2`: a later moment; images: `image_1` vintage, `image_2` vintage; tags: history, two_images |
 | `two-captions-copyright-free` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | the default; tags: multi_caption, two_captions |
-| `2-conclusions-crf` | The talk's conclusions | `title`: a title for the conclusions, in a few words of your own; `caption_1`: a lesson from the talk, calling back to an earlier slide; `caption_2`: a lesson from the talk, calling back to an earlier slide; tags: conclusion |
+| `2-conclusions-crf` | The talk's conclusions | `title`: a title for the conclusions, in a few words of your own; `caption_1`: a lesson from the talk, calling back to an earlier slide; `caption_2`: a lesson from the talk, calling back to an earlier slide; images: `image_1` photo, `image_2` weird-stock; tags: conclusion |
 
 ## `three_columns`
 
@@ -71,8 +71,8 @@ Images: `image_1`, `image_2`, `image_3`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `three-captions-weird-crf` | Three captioned images that build up, like 'Good, Better, Best' or three steps of a plan | the default; tags: multi_caption, three_captions |
-| `3-conclusions-crf` | The talk's conclusions | `title`: a title for the conclusions, in a few words of your own; `caption_1`: a lesson from the talk, calling back to an earlier slide; `caption_2`: a lesson from the talk, calling back to an earlier slide; `caption_3`: a lesson from the talk, calling back to an earlier slide; tags: conclusion |
+| `three-captions-weird-crf` | Three captioned images that build up, like 'Good, Better, Best' or three steps of a plan | the default; images: `image_1` photo, `image_3` weird-stock; tags: multi_caption, three_captions |
+| `3-conclusions-crf` | The talk's conclusions | `title`: a title for the conclusions, in a few words of your own; `caption_1`: a lesson from the talk, calling back to an earlier slide; `caption_2`: a lesson from the talk, calling back to an earlier slide; `caption_3`: a lesson from the talk, calling back to an earlier slide; images: `image_1` photo, `image_3` weird-stock; tags: conclusion |
 
 ## `history_quote`
 
@@ -88,7 +88,7 @@ Images: `portrait`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `historical-figure-quote-crf` | What a made-up historical figure once said about the slide's concept | the default; tags: history, quote |
+| `historical-figure-quote-crf` | What a made-up historical figure once said about the slide's concept | the default; images: `portrait` portrait; tags: history, quote |
 
 ## `chart_yes_no`
 

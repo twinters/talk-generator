@@ -5,7 +5,8 @@ import logging
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
-from talkgenerator.models.deck import DisplayPolicy
+from talkgenerator.images.licenses import SHOWN as _LICENSE_SHOWN
+from talkgenerator.models.deck import DisplayPolicy, ImageAnalysis, LicenseClass
 
 logger = logging.getLogger("talkgenerator")
 
@@ -36,6 +37,11 @@ class ImageData:
         description: str | None = None,
         video: VideoCopy | None = None,
         display: DisplayPolicy = "direct",
+        license_class: LicenseClass | None = None,
+        license: str | None = None,
+        license_url: str | None = None,
+        thumbnail_url: str | None = None,
+        declared_size: tuple[int, int] | None = None,
     ) -> None:
         self._image_url = image_url
         self._source = source
@@ -63,6 +69,19 @@ class ImageData:
         self.query: str | None = None
         # How a browser may show it, as its source allows (see talkgenerator.models.deck.DisplayPolicy)
         self.display: DisplayPolicy = display
+        # Its license class (see talkgenerator.images.licenses), and its license as a credit names it, with the
+        # license's page: as its source says (None for a file of talkgenerator's own, and no license for fair use)
+        self.license_class: LicenseClass | None = license_class
+        self.license = license
+        self.license_url = license_url
+        # A small version of it, for a look at it (see talkgenerator.images.analysis), and its size in pixels (width,
+        # height) as its source says before it's checked, if the source says
+        self.thumbnail_url = thumbnail_url
+        self.declared_size = declared_size
+        # The look it was found for (an aesthetic profile, see talkgenerator.images.profiles), and what a look at its
+        # thumbnail found, once the image finder had one
+        self.look: str | None = None
+        self.analysis: ImageAnalysis | None = None
 
     def found_with(self, query: str) -> ImageData:
         """This image, noting the search that found it: a copy, as a source may hand out the same object again."""
@@ -87,10 +106,18 @@ class ImageData:
         return self._source_url
 
     def get_credit(self) -> tuple[CreditPart, ...]:
-        """The credit as it reads on a slide: by default the source, linking to the source's page."""
-        if self._credit:
-            return self._credit
-        return ((self._source, self._source_url),) if self._source else ()
+        """The credit as it reads on a slide: by default the source, linking to the source's page. For an image whose
+        license a credit names (an open or public domain one), the license too, linking to it, unless the credit
+        names it already."""
+        credit = self._credit or (((self._source, self._source_url),) if self._source else ())
+        if (
+            credit
+            and self.license
+            and self.license_class in _LICENSE_SHOWN
+            and not any(self.license.lower() in text.lower() for text, _ in credit)
+        ):
+            credit = (*credit, (" (", None), (self.license, self.license_url), (")", None))
+        return credit
 
     def mark_used(self) -> None:
         callback, self._on_use = self._on_use, None

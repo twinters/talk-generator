@@ -10,8 +10,8 @@ from typing import Any, Final
 
 from talkgenerator import settings
 from talkgenerator.datastructures.image_data import ImageData
-from talkgenerator.models.deck import DisplayPolicy
-from talkgenerator.util import http_util
+from talkgenerator.models.deck import DisplayPolicy, LicenseClass
+from talkgenerator.util import http_util, image_util
 
 logger = logging.getLogger("talkgenerator")
 
@@ -19,6 +19,10 @@ API_URL = "https://api.giphy.com/v1/gifs/search"
 # How a browser may show its images (see talkgenerator.models.deck.DisplayPolicy): GIPHY requires its media to be
 # loaded from its links by the browser itself: "Do not proxy requests to GIPHY", nor store copies
 DISPLAY: Final[DisplayPolicy] = "direct"
+# The license classes of its gifs (see talkgenerator.images.licenses): fair use
+LICENSES: Final[frozenset[LicenseClass]] = frozenset({"fair-use"})
+# A still of a gif, small, for a look at it (see talkgenerator.images.analysis)
+_STILLS = ("fixed_width_still", "480w_still", "downsized_still")
 # Renditions from largest to smallest; image_util refuses GIFs above 16 MB anyway
 _RENDITIONS = ("downsized_large", "downsized_medium", "original", "downsized")
 
@@ -31,20 +35,38 @@ def _api_key() -> str | None:
     return settings.giphy_auth()["giphy_api_key"] or None
 
 
+def available() -> bool:
+    """Whether a search can go out now: there's a key, and GIPHY isn't skipped for a while (see _cooldown)."""
+    return _api_key() is not None and not _cooldown.active
+
+
 def _map_gif(gif: dict[str, Any]) -> ImageData | None:
     images = gif.get("images") or {}
+    still = next((images[name]["url"] for name in _STILLS if (images.get(name) or {}).get("url")), None)
     for rendition in _RENDITIONS:
         url = (images.get(rendition) or {}).get("url")
         if url:
             creator = gif.get("username") or "GIPHY"
+            size = images[rendition]
             return ImageData(
                 image_url=url,
                 source=f"{creator} (Powered by GIPHY)",
                 source_url=gif.get("url"),
                 description=gif.get("title"),
                 display=DISPLAY,
+                license_class="fair-use",
+                thumbnail_url=still,
+                declared_size=image_util.served_size(_number(size.get("width")), _number(size.get("height"))),
             )
     return None
+
+
+def _number(value: Any) -> int | None:
+    """A number GIPHY gives as text, such as a width ("480")."""
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def search_gifs(query: str) -> list[ImageData]:

@@ -56,7 +56,8 @@ Every key is optional: sources without a key are skipped, and the other sources 
 These sources need no key: [Datamuse](https://www.datamuse.com/api/) and WordNet (related words), Goodreads and [Wikiquote](https://en.wikiquote.org/) (quotes), WikiHow (actions), [Wikimedia Commons](https://commons.wikimedia.org/) (old photos), the [Art Institute of Chicago](https://api.artic.edu/docs/) (public domain artworks), InspiroBot and ShitpostBot 5000 (images).
 Most kinds of content come from more than one source, so a source that is down or rate limited leaves no holes: the others fill in.
 A slide that still can't get all its images (say, a gif slide without Reddit or GIPHY) is replaced by another kind of slide, and the generator logs which sources it skips for lack of keys.
-Image credits on the slides link to the photographer's or the image's page.
+Image credits on the slides link to the photographer's or the image's page, and name the license of openly licensed and public domain images (such as "CC BY 2.0", linking to it).
+
 Related words used to come from [ConceptNet](https://conceptnet.io/), whose public API has been down since late 2025.
 The generator still tries it (or a self-hosted copy set with `CONCEPTNET_API_URL`), and falls back to Datamuse and WordNet when it doesn't answer.
 
@@ -66,6 +67,19 @@ Search API responses (Datamuse, ConceptNet, Pixabay, Pexels, Unsplash) are cache
 That keeps you within rate limits and is what Pixabay's API terms ask for.
 API keys are never stored in the cache.
 Set `TALKGENERATOR_CACHE_DIR` to put the cache elsewhere, or `DISABLE_CACHE=1` to turn it off.
+
+### Images: licenses and looks
+
+Every image has a license class: `public-domain` (public domain and CC0), `open` (Creative Commons BY and BY-SA), `stock` (the Unsplash, Pexels and Pixabay licenses), `generated` (AI images, under their provider's terms) or `fair-use` (Reddit's posts, GIPHY's gifs, InspiroBot's posters and ShitpostBot's images).
+A talk's license policy picks the classes its images may have: `--license_policy open` allows everything but fair use, for decks shown in public, and `all` (the default) every class; license classes separated by commas work too, such as `public-domain,open`.
+The `ted` format keeps to `open` by default.
+The search keeps to the policy (slides whose images it allows no source for, such as memes, aren't picked), the deck says each image's class and license, and `talkgenerator check` reports an image the policy doesn't allow as an error.
+`talkgenerator formats --licenses` lists the policies.
+
+Every image a slide asks for has a look (an aesthetic profile), with the sources that have it and the filters that get it: `photo` (stock photos), `calm-backdrop` (photos with little detail where a slide's big text goes), `vintage` (old photographs in black and white or sepia), `museum` (public domain art), `space-science` (NASA's photos and the like), `corporate-stock`, `illustration`, `meme-chaos` (Reddit's weird pictures, ShitpostBot's images, gifs and memes), and flavour packs of weird content, curated sets of subreddits such as `cursed`, `wholesome`, `bad-charts`, `medieval` and `liminal`.
+The image finder searches a look's sources in parallel, filters what they find (license, size, orientation), takes a look at the thumbnails of a few (their colours, how gray they are, how much detail they have where the text goes, and a perceptual hash that keeps nearly the same picture from coming back on another slide), and picks with the talk's seed: the same seed finds the same images, in parallel or not.
+In a themed talk, pictures that go with the theme's colours come first, and a vintage picture that isn't black and white or sepia turns sepia in a theme without a filter of its own.
+`talkgenerator formats --looks` lists the looks, and `talkgenerator check` how many of every look's pictures have it.
 
 ### Language models
 
@@ -109,6 +123,7 @@ For a settings menu, `talkgenerator.design.themes.catalog()` lists every theme w
 | `--topic` | The topic of the generator. This works best if it is a common, well-known noun. Use comma-separated words to generate a slide deck about multiple topics |
 | `--num_slides` | The number of slides in the generated presentation (*default: 10*) |
 | `--schema` | The presentation schema to use: `default`, `ted` (only copyright-free images), `interview` (no "about me" slides) or `test` |
+| `--license_policy` | The license classes the talk's images may have (see [Images: licenses and looks](#images-licenses-and-looks)): `all`, `open` (everything but fair use: no memes, gifs or Reddit's posts), or classes separated by commas (*default: the schema's: `open` for `ted`, else `all`*) |
 | `--list` | List the schemas and the slide generators each one uses, then exit |
 | `--title` | Title of the presentation. Either `topic` or this one should be set (just setting `topic` is usually more fun though). With only a title, its rarest word becomes the topic |
 | `--presenter` | The name that will be present on the first slide. Leave blank for a made-up one (see `--name_styles`) |
@@ -146,6 +161,7 @@ A language model's slides come while it's still writing the rest of the talk.
 Every event is plain data (`talkgenerator.models.events`), whose `event` is its name and whose `to_json()` is what a Server-Sent Event would carry; leaving the loop stops the talk.
 While a talk streams, its images are probed instead of downloaded: their first bytes tell what they are and how large, as a browser that shows the slides loads them itself (a PowerPoint made from the deck downloads them then).
 Every image in a deck says how a browser may show it (`display`, as its source's terms allow): from its own link (`direct`), through a pass-through proxy (`proxy`), from a copy the app keeps as long as the deck, or not at all (`copy`, for Pixabay), or as a file of talkgenerator's own (`local`).
+It also says its license class, its license (with a link), the look it was found for, and what a look at its thumbnail found (brightness, colourfulness, how gray it is, its main colours, and a perceptual hash); `stream_talk` and `generate_presentation` take a `license_policy`.
 
 ```python
 for event in generator.stream_talk("default", 8, topic="peanuts", theme="random"):

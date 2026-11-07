@@ -12,9 +12,10 @@ from typing import Any, Final
 
 from talkgenerator.checks.deck import leftovers_in
 from talkgenerator.datastructures.image_data import ImageData
+from talkgenerator.images.slots import ImageSlot
 from talkgenerator.models.plan import SlidePlan
 from talkgenerator.plan import languages
-from talkgenerator.plan.kinds import KINDS, Recipe, TextField
+from talkgenerator.plan.kinds import KINDS, ContentSource, Recipe, TextField
 from talkgenerator.slide.slides import Slide
 from talkgenerator.util import generator_util, language_util, os_util, random_util
 
@@ -119,23 +120,25 @@ def realize(
                 _note(problems, why)
                 return None
 
-        images: dict[str, Any] = {}
+        images: dict[str, Any] = dict.fromkeys(slot for slot in kind.images if slot in recipe.omit)
         queries: dict[str, str] = {}
-        for slot, source in zip(kind.images, recipe.images, strict=True):
+        for slot, source in recipe.slots():
             query = plan.images.get(slot, "").strip()
             local = _local_image(query, local_images)
             if local is not None:
                 queries[slot], images[slot] = query, ImageData(local).found_with(query)
                 continue
             queries[slot] = query or concept
+            # (not one of the slide's other images, nor nearly)
+            others = [image for image in images.values() if isinstance(image, ImageData)]
             with generator_util.as_planned():  # searched as written, among the best results
-                found = source({**presentation_context, "seed": queries[slot]})
+                found = _find(source, queries[slot], presentation_context, others)
             if found is None:
                 _note(problems, f"{slot}: no image found for {queries[slot]!r}")
                 if attempt >= ATTEMPTS - 1 and queries[slot] != concept:
                     queries[slot] = concept
                     with generator_util.as_planned():
-                        found = source({**presentation_context, "seed": concept})
+                        found = _find(source, concept, presentation_context, others)
             if found is None:
                 return None
             images[slot] = found.found_with(queries[slot]) if isinstance(found, ImageData) else found
@@ -159,6 +162,15 @@ def realize(
             slide.add_source(image.get_source(), image.get_source_url(), image.get_credit())
     generated = [value for value in (*texts.values(), *images.values()) if value is not None]
     return slide, generated
+
+
+def _find(
+    source: ImageSlot | ContentSource, query: str, presentation_context: dict[str, Any], others: list[ImageData]
+) -> Any:
+    """What a slot finds for the query (a v4 content generator: for the query as its seed)."""
+    if isinstance(source, ImageSlot):
+        return source.find(query, avoid=others)
+    return source({**presentation_context, "seed": query})
 
 
 def _local_image(query: str, folder: Path | None) -> str | None:

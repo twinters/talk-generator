@@ -111,6 +111,7 @@ def test_the_server_has_tools_to_look_things_up_and_to_make_talks(server):
         "presenter",
         "name_styles",
         "seed",
+        "license_policy",
     }
     # A plan's JSON Schema is in render_plan's input too, so a client knows it without asking
     assert "SlidePlan" in json.dumps(tools["render_plan"].input_schema)
@@ -125,6 +126,11 @@ def test_the_formats_themes_and_languages_are_listed(server):
     assert all(theme["description"] for theme in listed["themes"])  # (for a menu)
     assert {"code": "nl", "name": "Dutch"} in listed["languages"]
     assert listed["name_styles"] == names.catalog()
+    policies = {entry["format"]: entry["license_policy"] for entry in listed["formats"]}
+    assert (policies["ted"], policies["default"]) == ("open", "all")
+    assert {"all", "open", "public-domain"} <= {policy["name"] for policy in listed["license_policies"]}
+    looks = {look["name"]: look["kind"] for look in listed["image_looks"]}
+    assert (looks["vintage"], looks["cursed"]) == ("look", "flavour pack")
 
 
 @needs_mcp
@@ -222,6 +228,13 @@ def _deck(report):
 
 
 @needs_mcp
+def test_a_talk_keeps_to_the_license_policy_it_asks_for(schema, server, model_in_the_settings):
+    report = _answer(_call(server, "generate_talk", {"topic": "cats", "slides": 3, "license_policy": "open"}))
+    assert report["license_policy"] == _deck(report).license_policy == "open"
+    assert _answer(_call(server, "generate_talk", {"topic": "cats", "slides": 3}))["license_policy"] == "all"
+
+
+@needs_mcp
 def test_the_model_names_the_presenter_in_a_style_the_talk_asks_for(schema, server, model_in_the_settings):
     model_in_the_settings.change = lambda answer: answer[SPINE].update(presenter_name="Prof. Clawdette Purrkins")
     report = _answer(_call(server, "generate_talk", {"topic": "cats", "slides": 4, "name_styles": ["famous_pun"]}))
@@ -283,6 +296,9 @@ def test_what_a_talk_cant_be_is_refused(schema, server, monkeypatch):
         _call(server, "generate_talk", {"topic": "cats", "name_styles": ["pun", "custom"]})
     )
     assert "less than or equal to 40" in _error(_call(server, "generate_talk", {"topic": "cats", "slides": 400}))
+    assert "no license policy 'copyleft'" in _error(
+        _call(server, "generate_talk", {"topic": "cats", "license_policy": "copyleft"})
+    )
     assert "at least 1 character" in _error(_call(server, "generate_talk", {"topic": ""}))
     monkeypatch.setenv("TALKGENERATOR_LLM", "no-such-provider")
     assert "the language model the settings ask for can't be used" in _error(

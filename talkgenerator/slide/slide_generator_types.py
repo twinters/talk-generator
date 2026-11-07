@@ -1,6 +1,8 @@
 import logging
 from abc import ABCMeta, abstractmethod
 
+from talkgenerator.datastructures.image_data import ImageData
+from talkgenerator.images import analysis
 from talkgenerator.slide import slides
 from talkgenerator.util import generator_util
 
@@ -481,9 +483,26 @@ def is_different_enough(generated, used):
 
 
 def is_different_enough_for_allowed_repeated(generated, used_elements, allowed_repeated_elements):
+    """Whether the generated elements repeat no more of the used ones than allowed, and no image (nor nearly the same
+    image): a slide may repeat texts (conclusions sum up), but a picture twice is a picture too few. (The schema
+    settles slides by the same rule, so generating them in parallel gives what generating them one by one does.)"""
     if generated:
         if not used_elements:
             return True
-        intersection = set(generated) & used_elements
-        return allowed_repeated_elements >= len(intersection)
+        if any(
+            isinstance(element, ImageData) and (element in used_elements or nearly_used(element, used_elements))
+            for element in generated
+        ):
+            return False
+        return allowed_repeated_elements >= len(set(generated) & used_elements)
     return False
+
+
+def nearly_used(image: ImageData, used_elements) -> bool:
+    """Whether an image is nearly the same as one of the used images (by what a look at both found)."""
+    if image.analysis is None:
+        return False
+    return any(
+        isinstance(element, ImageData) and analysis.near_duplicates(image.analysis, element.analysis)
+        for element in used_elements
+    )

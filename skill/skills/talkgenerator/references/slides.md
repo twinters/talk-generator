@@ -2,7 +2,7 @@
 
 A TED-like talk: about the presenter, history, bold statements, captioned images, charts and conclusions, with images from every source (memes and gifs too).
 
-Every talk starts with a title slide, made from the plan's `title`, `presenter_job` and `presenter_name` (or the name given to render, or one talkgenerator makes up). The plan's `slides` come after it, each of one of the kinds below. A slide's `recipe` picks its look and its image sources, and makes the slide the classic way when it can't be made as planned; without one, a slide gets its kind's default recipe.
+Every talk starts with a title slide, made from the plan's `title`, `presenter_job` and `presenter_name` (or the name given to render, or one talkgenerator makes up). The plan's `slides` come after it, each of one of the kinds below. A slide's `recipe` picks its look and its image sources, and makes the slide the classic way when it can't be made as planned; without one, a slide gets its kind's default recipe. The look of a recipe's images (its aesthetic profile) says what they look like and where they come from: `photo` is stock photos, `vintage` old photographs in black and white or sepia, `meme-chaos` Reddit's weird pictures, ShitpostBot's images, gifs and memes, and so on (`talkgenerator formats --looks` lists them all).
 
 Made by `talkgenerator formats --details --format default`.
 
@@ -18,10 +18,10 @@ Images: `image`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `weird-hobby` | The presenter's weird hobby | `title`: the presenter's weird hobby; tags: about_me |
-| `single-image-gif` | A gif with a title | tags: gif, single_image |
-| `inspirobot` | An inspirational poster (made by InspiroBot) that the presenter has to explain | `title`: a title such as 'Something my father always told me'; needs no `image_query`; tags: inspiration, statement |
-| `single-image-copyright-free` | A photo with a title | the default; tags: single_image |
+| `weird-hobby` | The presenter's weird hobby | `title`: the presenter's weird hobby; images: `image` meme-chaos; tags: about_me |
+| `single-image-gif` | A gif with a title | images: `image` gifs; tags: gif, single_image |
+| `inspirobot` | An inspirational poster (made by InspiroBot) that the presenter has to explain | `title`: a title such as 'Something my father always told me'; images: `image` inspirobot; needs no `image_query`; tags: inspiration, statement |
+| `single-image-copyright-free` | A photo with a title | the default; images: `image` photo; tags: single_image |
 
 ## `full_image`
 
@@ -35,10 +35,10 @@ Images: `image`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `full-screen-gif` | A gif, filling the slide | `title`: two to four words of your own that build up to the gif, or empty for none; tags: full_image, gif |
-| `full-screen-meme` | A meme, filling the slide | shows no `title`; tags: full_image, meme |
-| `full-screen-neutral-images` | A photo, filling the slide | the default; tags: full_image, neutral |
-| `reddit-chart` | A chart, filling the slide | shows no `title`; tags: chart |
+| `full-screen-gif` | A gif, filling the slide | `title`: two to four words of your own that build up to the gif, or empty for none; images: `image` gifs; tags: full_image, gif |
+| `full-screen-meme` | A meme, filling the slide | images: `image` memes; shows no `title`; tags: full_image, meme |
+| `full-screen-neutral-images` | A photo, filling the slide | the default; images: `image` neutral; tags: full_image, neutral |
+| `reddit-chart` | A chart, filling the slide | images: `image` bad-charts; shows no `title`; tags: chart |
 
 ## `statement`
 
@@ -52,9 +52,9 @@ Images: `background`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `wikihow-bold-statement` | A bold statement over a photo | the default; `text`: a bold claim or question about the concept, such as 'Don't we all secretly want to ...?'; tags: bold_statement, statement |
-| `quote` | A real quote over a photo (talkgenerator finds the quote, about the concept) | finds its `text` itself (don't write one); tags: quote, statement |
-| `anecdote` | A personal anecdote the presenter now has to tell | `text`: the title of the anecdote, such as 'The time I ...'; tags: anecdote |
+| `wikihow-bold-statement` | A bold statement over a photo | the default; `text`: a bold claim or question about the concept, such as 'Don't we all secretly want to ...?'; images: `background` calm-backdrop; tags: bold_statement, statement |
+| `quote` | A real quote over a photo (talkgenerator finds the quote, about the concept) | images: `background` calm-backdrop; finds its `text` itself (don't write one); tags: quote, statement |
+| `anecdote` | A personal anecdote the presenter now has to tell | `text`: the title of the anecdote, such as 'The time I ...'; images: `background` calm-backdrop; tags: anecdote |
 
 ## `two_columns`
 
@@ -70,12 +70,12 @@ Images: `image_1`, `image_2`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `about-me-location-job` | About the presenter: where they come from and their job | `title`: a title such as 'About me' or 'Who am I?'; `caption_1`: where the presenter comes from: a country, a city or a place; `caption_2`: the presenter's (possibly made-up) job; tags: about_me |
-| `two-history-pictures` | Two old photos from the history of the slide's concept | `title`: a title about the concept's history; `caption_1`: a moment from long ago; `caption_2`: a later moment; tags: history, two_images |
-| `two-captions-gifs` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | tags: gif, multi_caption, two_captions |
-| `two-captions-weird-reddit` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | tags: multi_caption, reddit, two_captions |
-| `two-captions-weird` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | tags: multi_caption, reddit, two_captions |
-| `2-conclusions` | The talk's conclusions | `title`: a title for the conclusions, in a few words of your own; `caption_1`: a lesson from the talk, calling back to an earlier slide; `caption_2`: a lesson from the talk, calling back to an earlier slide; tags: conclusion |
+| `about-me-location-job` | About the presenter: where they come from and their job | `title`: a title such as 'About me' or 'Who am I?'; `caption_1`: where the presenter comes from: a country, a city or a place; `caption_2`: the presenter's (possibly made-up) job; images: `image_1` neutral, `image_2` neutral; tags: about_me |
+| `two-history-pictures` | Two old photos from the history of the slide's concept | `title`: a title about the concept's history; `caption_1`: a moment from long ago; `caption_2`: a later moment; images: `image_1` vintage, `image_2` vintage; tags: history, two_images |
+| `two-captions-gifs` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | images: `image_2` gifs, else weird; tags: gif, multi_caption, two_captions |
+| `two-captions-weird-reddit` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | images: `image_1` weird, `image_2` meme-chaos; tags: multi_caption, reddit, two_captions |
+| `two-captions-weird` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | images: `image_1` meme-chaos, `image_2` meme-chaos; tags: multi_caption, reddit, two_captions |
+| `2-conclusions` | The talk's conclusions | `title`: a title for the conclusions, in a few words of your own; `caption_1`: a lesson from the talk, calling back to an earlier slide; `caption_2`: a lesson from the talk, calling back to an earlier slide; images: `image_1` neutral, `image_2` weird; tags: conclusion |
 | `two-captions-copyright-free` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | the default; tags: multi_caption, two_captions |
 
 ## `three_columns`
@@ -93,11 +93,11 @@ Images: `image_1`, `image_2`, `image_3`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `about-me-location-job-weirdhobby` | About the presenter: where they come from, their job and their weird hobby | `title`: a title such as 'About me' or 'Who am I?'; `caption_1`: where the presenter comes from: a country, a city or a place; `caption_2`: the presenter's (possibly made-up) job; `caption_3`: the presenter's weird hobby; tags: about_me |
-| `about-me-location-book-weirdhobby` | About the presenter: where they come from, the book they wrote, and their weird hobby | `title`: a title such as 'About me' or 'Who am I?'; `caption_1`: where the presenter comes from: a country, a city or a place; `caption_2`: the title of a book the presenter wrote; `caption_3`: the presenter's weird hobby; tags: about_me |
-| `three-captions-weird` | Three captioned images that build up, like 'Good, Better, Best' or three steps of a plan | tags: multi_caption, reddit, three_captions |
-| `3-conclusions` | The talk's conclusions | `title`: a title for the conclusions, in a few words of your own; `caption_1`: a lesson from the talk, calling back to an earlier slide; `caption_2`: a lesson from the talk, calling back to an earlier slide; `caption_3`: a lesson from the talk, calling back to an earlier slide; tags: conclusion |
-| `three-captions-weird-crf` | Three captioned images that build up, like 'Good, Better, Best' or three steps of a plan | the default; tags: multi_caption, three_captions |
+| `about-me-location-job-weirdhobby` | About the presenter: where they come from, their job and their weird hobby | `title`: a title such as 'About me' or 'Who am I?'; `caption_1`: where the presenter comes from: a country, a city or a place; `caption_2`: the presenter's (possibly made-up) job; `caption_3`: the presenter's weird hobby; images: `image_1` neutral, `image_2` neutral, `image_3` meme-chaos; tags: about_me |
+| `about-me-location-book-weirdhobby` | About the presenter: where they come from, the book they wrote, and their weird hobby | `title`: a title such as 'About me' or 'Who am I?'; `caption_1`: where the presenter comes from: a country, a city or a place; `caption_2`: the title of a book the presenter wrote; `caption_3`: the presenter's weird hobby; images: `image_1` neutral, `image_2` book-covers, `image_3` meme-chaos; tags: about_me |
+| `three-captions-weird` | Three captioned images that build up, like 'Good, Better, Best' or three steps of a plan | images: `image_2` meme-chaos, `image_3` meme-chaos-still; tags: multi_caption, reddit, three_captions |
+| `3-conclusions` | The talk's conclusions | `title`: a title for the conclusions, in a few words of your own; `caption_1`: a lesson from the talk, calling back to an earlier slide; `caption_2`: a lesson from the talk, calling back to an earlier slide; `caption_3`: a lesson from the talk, calling back to an earlier slide; images: `image_1` neutral, `image_2` weird, `image_3` gifs, else weird; tags: conclusion |
+| `three-captions-weird-crf` | Three captioned images that build up, like 'Good, Better, Best' or three steps of a plan | the default; images: `image_1` photo, `image_3` weird-stock; tags: multi_caption, three_captions |
 
 ## `history_quote`
 
@@ -113,8 +113,8 @@ Images: `portrait`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `historical-figure-quote` | What a made-up historical figure once said about the slide's concept | tags: history, quote |
-| `historical-figure-quote-crf` | What a made-up historical figure once said about the slide's concept | the default; tags: history, quote |
+| `historical-figure-quote` | What a made-up historical figure once said about the slide's concept | images: `portrait` old-people; tags: history, quote |
+| `historical-figure-quote-crf` | What a made-up historical figure once said about the slide's concept | the default; images: `portrait` portrait; tags: history, quote |
 
 ## `chart_yes_no`
 

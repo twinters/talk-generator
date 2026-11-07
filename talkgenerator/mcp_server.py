@@ -33,6 +33,7 @@ from pydantic import Field
 from talkgenerator import __version__, names, settings
 from talkgenerator.checks.deck import check_deck, deck_metrics
 from talkgenerator.design import themes
+from talkgenerator.images import licenses, profiles
 from talkgenerator.llm import providers
 from talkgenerator.llm.base import TextProvider
 from talkgenerator.models.plan import TalkPlan
@@ -46,6 +47,12 @@ T = TypeVar("T")
 F = TypeVar("F", bound=Callable[..., Any])
 
 MAX_SLIDES: Final = 40  # for a talk on a topic: a guard against a typo that would keep the sources busy for an hour
+# The license_policy argument of the tools that make talks
+_LICENSE_POLICY: Final = (
+    "The license classes the talk's images may have: 'all', 'open' (everything but fair use: no memes, gifs or "
+    "Reddit's posts, for decks shown in public), or classes separated by commas, such as 'public-domain,open' (see "
+    "list_formats; without one, the format's: 'open' for 'ted', else 'all')"
+)
 PROGRESS_EVERY: Final = 5.0  # seconds between the notifications that say a talk is still being made
 
 # What the client may tell its model about the server, besides the tools' own descriptions (after the Skill, skill/)
@@ -116,13 +123,24 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
     @tool("List the talk formats, themes and languages", _LOOKS_UP)
     def list_formats() -> dict[str, Any]:
         """The talk formats (such as 'default', with images from every source, and 'ted', with copyright-free images
-        only, for decks shown in public), the themes (the looks a talk can have), the languages it can be in, and the
-        styles of the presenter's names that generate_talk makes up."""
+        only, for decks shown in public), the themes (the looks a talk can have), the languages it can be in, the
+        styles of the presenter's names that generate_talk makes up, the license policies (the license classes a
+        talk's images may have), and the looks a talk's images can be found in (aesthetic profiles and flavour
+        packs)."""
         return {
-            "formats": [{"format": name, "description": external.FORMATS.get(name, "")} for name in schemas.names()],
+            "formats": [
+                {
+                    "format": name,
+                    "description": external.FORMATS.get(name, ""),
+                    "license_policy": schemas.get(name).license_policy,
+                }
+                for name in schemas.names()
+            ],
             "themes": themes.catalog(),
             "languages": [{"code": code, "name": language.name} for code, language in languages.LANGUAGES.items()],
             "name_styles": names.catalog(),
+            "license_policies": licenses.catalog(),
+            "image_looks": profiles.catalog(),
         }
 
     @tool("Describe the slides of a talk format", _LOOKS_UP)
@@ -154,6 +172,7 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
                 description="The seed of an earlier render of this plan, which keeps the images of what didn't change"
             ),
         ] = None,
+        license_policy: Annotated[str | None, Field(description=_LICENSE_POLICY)] = None,
     ) -> dict[str, Any]:
         """Turn a talk plan into a PowerPoint. talkgenerator finds images for the plan's queries and credits them,
         makes a slide that doesn't come out as planned the classic way instead, and saves the PowerPoint with the
@@ -164,6 +183,7 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
         problem = external.plan_error(plan)
         if problem is not None:
             raise ToolError(problem)
+        _check_policy(license_policy)
 
         def render() -> dict[str, Any]:
             return external.render_plan(
@@ -172,6 +192,7 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
                 presenter=presenter or None,
                 int_seed=seed,
                 output_folder=folder,
+                license_policy=license_policy or None,
             )
 
         return await _in_a_thread(ctx, "Rendering the plan", render, one_at_a_time, progress_every, folder)
@@ -213,6 +234,7 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
             ),
         ] = None,
         seed: Annotated[int | None, Field(description="The seed of an earlier talk, to make it again")] = None,
+        license_policy: Annotated[str | None, Field(description=_LICENSE_POLICY)] = None,
     ) -> dict[str, Any]:
         """Make a whole talk on a topic, as `talkgenerator --topic` does. The language model the user's settings name
         writes it (OpenRouter's free models, when there's an OpenRouter key), or else the classic 2019 generator. Saves
@@ -225,13 +247,27 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
         _check("language", language, list(languages.LANGUAGES))
         for style in name_styles or ():
             _check("name style", style, list(names.STYLES))
+        _check_policy(license_policy)
         try:
             model = providers.from_settings()  # never from the tool's arguments: only the user picks a paid model
         except ValueError as error:
             raise ToolError(f"the language model the settings ask for can't be used: {error}") from error
 
         def generate() -> dict[str, Any]:
-            return _generate(model, folder, topic, slides, format, language, theme, title, presenter, seed, name_styles)
+            return _generate(
+                model,
+                folder,
+                topic,
+                slides,
+                format,
+                language,
+                theme,
+                title,
+                presenter,
+                seed,
+                name_styles,
+                license_policy,
+            )
 
         return await _in_a_thread(ctx, "Making the talk", generate, one_at_a_time, progress_every, folder)
 
@@ -242,6 +278,14 @@ def _check(what: str, value: str, choices: Sequence[str]) -> None:
     problem = external.unknown_choice(what, value, choices)
     if problem is not None:
         raise ToolError(problem)
+
+
+def _check_policy(license_policy: str | None) -> None:
+    if license_policy:
+        try:
+            licenses.policy(license_policy)
+        except ValueError as error:
+            raise ToolError(str(error)) from error
 
 
 def _generate(
@@ -256,6 +300,7 @@ def _generate(
     presenter: str | None,
     seed: int | None,
     name_styles: Sequence[str] | None = None,
+    license_policy: str | None = None,
 ) -> dict[str, Any]:
     """A talk on a topic, saved in the folder with its deck's JSON and contact sheet, and the report on it."""
     from talkgenerator import generator  # (here: the generator module imports the schemas)
@@ -273,6 +318,7 @@ def _generate(
         language=language,
         theme=theme,
         name_styles=name_styles,
+        license_policy=license_policy or None,
     )
     if saved is None:
         raise ToolError(f"couldn't save the PowerPoint in {folder}")
@@ -295,6 +341,7 @@ def _generate(
         "format": schema_name,
         "language": deck.language,
         "theme": deck.theme,
+        "license_policy": deck.license_policy,
         "seed": deck.seed,
         "language_model": model.id if writes else None,  # None: the classic generator
         "summary": {"deck_slides": len(deck.slides), "written_by_language_model": written},

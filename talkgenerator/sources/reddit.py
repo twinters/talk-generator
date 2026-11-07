@@ -27,7 +27,8 @@ from prawcore.exceptions import (
 )
 
 from talkgenerator import settings
-from talkgenerator.models.deck import DisplayPolicy
+from talkgenerator.datastructures.image_data import ImageData, VideoCopy
+from talkgenerator.models.deck import DisplayPolicy, LicenseClass
 from talkgenerator.util import http_util
 
 logger = logging.getLogger("talkgenerator")
@@ -35,6 +36,10 @@ logger = logging.getLogger("talkgenerator")
 # How a browser may show its images and their mp4 copies (see talkgenerator.models.deck.DisplayPolicy): from
 # Reddit's own links (i.redd.it, preview.redd.it) (checked on 2026-11-07: its images load in a browser's <img>, with a referrer and without)
 DISPLAY: Final[DisplayPolicy] = "direct"
+# The license classes of its images (see talkgenerator.images.licenses): fair use
+LICENSES: Final[frozenset[LicenseClass]] = frozenset({"fair-use"})
+# The width of the preview talkgenerator looks at (see talkgenerator.images.analysis), at least
+_SMALL_WIDTH = 200
 
 _IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".gif")
 _ANIMATED_EXTENSIONS = (".gif", ".gifv", ".mp4")
@@ -51,13 +56,17 @@ _cooldown = http_util.Cooldown("Reddit")
 
 class RedditImage(NamedTuple):
     """The image of a post, its credit and the post's page; for a gif, Reddit's mp4 copy of it and a still of it (the
-    video's poster frame), if Reddit has them (see get_video_copy)."""
+    video's poster frame), if Reddit has them (see get_video_copy); and a small preview of it and its size (width,
+    height), as Reddit says (see get_preview)."""
 
     url: str
     credit: str
     post_url: str | None
     video_url: str | None = None
     poster_url: str | None = None
+    thumbnail_url: str | None = None
+    size: tuple[int, int] | None = None
+    title: str | None = None
 
 
 def _has_credentials() -> bool:
@@ -85,6 +94,11 @@ def has_reddit_access() -> bool:
     return get_reddit() is not None
 
 
+def available() -> bool:
+    """Whether a search can go out now: there are credentials, and Reddit isn't skipped for a while (see _cooldown)."""
+    return _has_credentials() and not _cooldown.active
+
+
 def get_subreddit(name: str) -> Any:
     reddit = get_reddit()
     if reddit:
@@ -104,8 +118,58 @@ def _search_images(name: str, query: str, sort: str, limit: int, animated: bool 
         if image_url:
             video_url, poster_url = get_video_copy(submission) or (None, None)
             credit, post_url = get_source_name(submission), get_post_url(submission)
-            images.append(RedditImage(image_url, credit, post_url, video_url, poster_url))
+            thumbnail_url, size = get_preview(submission)
+            title = vars(submission).get("title")
+            images.append(
+                RedditImage(
+                    image_url,
+                    credit,
+                    post_url,
+                    video_url,
+                    poster_url,
+                    thumbnail_url,
+                    size,
+                    title if isinstance(title, str) else None,
+                )
+            )
     return tuple(images)
+
+
+def image_data(image: RedditImage) -> ImageData:
+    """A post's image as an image: credited to its poster and subreddit, linking the post, its title saying what it
+    shows; fair use."""
+    return ImageData(
+        image_url=image.url,
+        source=image.credit,
+        source_url=image.post_url,
+        # Reddit's mp4 copy of a gif, which plays in its place when the gif is too large to embed
+        video=VideoCopy(image.video_url, image.poster_url) if image.video_url and image.poster_url else None,
+        display=DISPLAY,
+        description=image.title,
+        license_class="fair-use",
+        thumbnail_url=image.thumbnail_url,
+        declared_size=image.size,
+    )
+
+
+def get_preview(submission: Any) -> tuple[str | None, tuple[int, int] | None]:
+    """A small preview of a post's image (one of the sizes Reddit made of it, at least _SMALL_WIDTH wide), and the
+    image's size (width, height), as Reddit's preview says; None for what it doesn't say."""
+    images = (vars(submission).get("preview") or {}).get("images") or []
+    if not images:
+        return None, None
+    preview = images[0]
+    source = preview.get("source") or {}
+    width, height = source.get("width"), source.get("height")
+    size = (width, height) if isinstance(width, int) and isinstance(height, int) and width > 0 < height else None
+    smaller = [
+        resolution
+        for resolution in preview.get("resolutions") or []
+        if isinstance(resolution.get("width"), int) and resolution["width"] >= _SMALL_WIDTH and resolution.get("url")
+    ]
+    if not smaller:
+        return None, size
+    return html.unescape(min(smaller, key=lambda resolution: resolution["width"])["url"]), size
 
 
 def search_images(

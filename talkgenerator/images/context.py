@@ -1,0 +1,46 @@
+"""What a talk's images are found by while the talk is made: its license policy, its theme's colours, and its format's
+own looks. The talk sets it (see `for_talk`), and the image finder reads it, in whichever thread finds the images
+(talkgenerator.util.image_util.carry takes it into a talk's threads)."""
+
+from __future__ import annotations
+
+from collections.abc import Iterator, Mapping
+from contextlib import contextmanager
+from contextvars import ContextVar
+from dataclasses import dataclass, field
+
+from talkgenerator.images import licenses
+
+
+@dataclass(frozen=True)
+class ImageContext:
+    """The license policy of a talk; the colours of its theme (none for the classic one), which its pictures had better
+    go with; and its format's own looks for the looks its slides ask for (a corporate format's "corporate-stock" for
+    "photo", say)."""
+
+    policy: licenses.LicensePolicy = licenses.ALL
+    palette: tuple[str, ...] = ()
+    looks: Mapping[str, str] = field(default_factory=dict)
+
+    def look(self, name: str) -> str:
+        """The look a slide's look is in this talk (its format's own, if it has one)."""
+        return self.looks.get(name, name)
+
+
+_EVERY_IMAGE = ImageContext()  # (outside a talk)
+_CURRENT: ContextVar[ImageContext | None] = ContextVar("talkgenerator_images", default=None)
+
+
+@contextmanager
+def for_talk(context: ImageContext) -> Iterator[ImageContext]:
+    """Find images the talk's way in this block (and in the threads that image_util.carry takes it to)."""
+    token = _CURRENT.set(context)
+    try:
+        yield context
+    finally:
+        _CURRENT.reset(token)
+
+
+def current() -> ImageContext:
+    """The context images are found by here: the talk's, or else every license, no theme and no format of its own."""
+    return _CURRENT.get() or _EVERY_IMAGE

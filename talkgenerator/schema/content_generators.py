@@ -1,5 +1,6 @@
 from collections.abc import Collection
 
+from talkgenerator.images.slots import ImageSlot
 from talkgenerator.schema.content_generator_structures import (
     ConceptNetMapper,
     CountryPrefixApplier,
@@ -7,33 +8,18 @@ from talkgenerator.schema.content_generator_structures import (
     JobPrefixApplier,
     SplitCaptionsGenerator,
     WikiquoteQuoteGenerator,
-    create_reddit_image_generator,
     create_templated_text_generator,
     create_tracery_generator,
     generate_wikihow_bold_statement,
 )
-from talkgenerator.sources import (
-    art_institute,
-    giphy,
-    inspirobot,
-    openverse,
-    pexels,
-    pixabay,
-    shitpostbot,
-    unsplash,
-    wikimedia_commons,
-)
 from talkgenerator.util.generator_util import (
-    BackupGenerator,
     CombinedGenerator,
-    ExternalImageListGenerator,
     InspiredTupleGenerator,
     MappedGenerator,
     NoneGenerator,
     PrefixedGenerator,
     SeededGenerator,
     TupledGenerator,
-    UnseededGenerator,
 )
 
 # ===============================
@@ -117,120 +103,55 @@ conclusion_three_captions_tuple_generator = SplitCaptionsGenerator(
 )
 
 # === IMAGE GENERATORS ===
+# Image slots (see talkgenerator.images.slots): what kind of image a slide asks for, in which look. Called with a
+# presentation context, a slot finds an image for its seed, the slide's topic, as v4's image generators did; and
+# their weighted mixes of sources became the looks' source weights (see talkgenerator.images.profiles).
 
 # INSPIROBOT
-inspirobot_image_generator = inspirobot.get_random_inspirobot_image
+inspirobot_image_generator = ImageSlot("an inspirational poster, made by InspiroBot", aesthetic="inspirobot")
 
 # GIFS
+reddit_gif_generator = ImageSlot("a gif from Reddit", aesthetic="gifs", sources=("reddit:gifs",))
+giphy_gif_generator = ImageSlot("a gif from GIPHY", aesthetic="gifs", sources=("giphy",))
+combined_gif_generator = ImageSlot("a gif", aesthetic="gifs")
 
-reddit_gif_generator = create_reddit_image_generator("gifs", "gif", "gifextra", "nonononoYES", animated=True)
-giphy_gif_generator = SeededGenerator(ExternalImageListGenerator(giphy.search_gifs))
+# REDDIT, AND SHITPOSTBOT
+meme_reddit_image_generator = ImageSlot("a meme", aesthetic="memes")
+weird_reddit_image_generator = ImageSlot("a weird picture from Reddit", aesthetic="weird", sources=("reddit:weird",))
+neutral_reddit_image_generator = ImageSlot("a photo or artwork from Reddit", aesthetic="pictures")
+shitpostbot_image_generator = ImageSlot("one of ShitpostBot's images", aesthetic="weird", sources=("shitpostbot",))
 
-combined_gif_generator = CombinedGenerator((1, reddit_gif_generator), (1, giphy_gif_generator))
-
-# REDDIT
-
-meme_reddit_image_generator = create_reddit_image_generator(
-    "meme",
-    "memes",
-    "MemeEconomy",
-    "wholesomememes",
-    "dankmemes",
-    "AdviceAnimals",
-    "comics",
+weird_punchline_static_image_generator = ImageSlot(
+    "a weird picture or meme, as a punchline", aesthetic="meme-chaos-still"
 )
-weird_reddit_image_generator = create_reddit_image_generator(
-    "hmmm",
-    "hmm",
-    "wtf",
-    "wtfstockphotos",
-    "weirdstockphotos",
-    "darkstockphotos",
-    "photoshopbattles",
-    "confusing_perspective",
-    "cursedimages",
-    "HybridAnimals",
-    "EyeBleach",
-    "natureismetal",
-    "195",
-)
+weird_punchline_image_generator = ImageSlot("a weird picture, gif or meme, as a punchline", aesthetic="meme-chaos")
 
-neutral_reddit_image_generator = create_reddit_image_generator(
-    "Cinemagraphs",
-    "itookapicture",
-    "Art",
-    "artstore",
-    "pics",
-    "analog",
-    "ExposurePorn",
-    "Illustration",
-)
+# STOCK PHOTOS
+generate_unsplash_image = ImageSlot("a photo from Unsplash", sources=("unsplash", "unsplash-random"))
+generate_unsplash_image_from_word = generate_unsplash_image.from_word
+generate_random_unsplash_image = ImageSlot("a random photo from Unsplash", sources=("unsplash-random",))
+generate_random_unsplash_image_from_word = generate_random_unsplash_image.from_word
+generate_pixabay_image = ImageSlot("a photo from Pixabay", sources=("pixabay",))
+generate_pixabay_image_from_word = generate_pixabay_image.from_word
+generate_pexels_image = ImageSlot("a photo from Pexels", sources=("pexels",))
+generate_pexels_image_from_word = generate_pexels_image.from_word
+generate_openverse_image = ImageSlot("an openly licensed photo", sources=("openverse",))
+generate_openverse_image_from_word = generate_openverse_image.from_word
 
-shitpostbot_image_generator = ExternalImageListGenerator(
-    SeededGenerator(BackupGenerator(shitpostbot.search_images_rated, shitpostbot.get_random_images_rated)),
-    weighted=True,
-)
-
-weird_punchline_static_image_generator = CombinedGenerator(
-    (4, weird_reddit_image_generator),
-    (6, shitpostbot_image_generator),
-    (1, meme_reddit_image_generator),
-)
-
-weird_punchline_image_generator = CombinedGenerator(
-    (10, weird_reddit_image_generator),
-    (8, shitpostbot_image_generator),
-    (6, combined_gif_generator),
-    (1, meme_reddit_image_generator),
-)
-
-
-# UNSPLASH
-generate_unsplash_image_from_word = ExternalImageListGenerator(unsplash.search_photos)
-generate_random_unsplash_image_from_word = ExternalImageListGenerator(unsplash.random_as_list)
-generate_unsplash_image = SeededGenerator(generate_unsplash_image_from_word)
-generate_random_unsplash_image = SeededGenerator(generate_random_unsplash_image_from_word)
-
-# PIXABAY
-generate_pixabay_image_from_word = ExternalImageListGenerator(pixabay.search_photos)
-generate_horizontal_pixabay_image_from_word = ExternalImageListGenerator(pixabay.search_horizontal)
-generate_pixabay_image = SeededGenerator(generate_pixabay_image_from_word)
-# PEXELS
-
-generate_pexels_image_from_word = ExternalImageListGenerator(pexels.search_photos)
-generate_pexels_image = SeededGenerator(generate_pexels_image_from_word)
-
-# OPENVERSE (openly licensed photos from Flickr, museums, Wikimedia, ...)
-generate_openverse_image_from_word = ExternalImageListGenerator(openverse.search_photos)
-generate_openverse_image = SeededGenerator(generate_openverse_image_from_word)
-
-# WIKIMEDIA COMMONS & ART INSTITUTE OF CHICAGO (old photos and public domain artworks)
-generate_historic_photo_from_word = ExternalImageListGenerator(wikimedia_commons.search_historic_photos)
-generate_artwork_from_word = ExternalImageListGenerator(art_institute.search_artworks)
+# OLD PHOTOS AND ARTWORKS (public domain and openly licensed)
+generate_historic_photo_from_word = ImageSlot(
+    "an old photograph", aesthetic="vintage", sources=("wikimedia",)
+).from_word
+generate_artwork_from_word = ImageSlot("an artwork", aesthetic="museum", sources=("art-institute",)).from_word
 generate_portrait_artwork_from_word = PrefixedGenerator("portrait", generate_artwork_from_word)
 
-# COPYRIGHT FREE
+# COPYRIGHT FREE (no fair use: the stock sites, and openly licensed photos now and then)
+copyright_free_generator = ImageSlot("a photo of the slide's topic", aesthetic="photo")
+copyright_free_generator_from_word = copyright_free_generator.from_word
 
-copyright_free_generator = CombinedGenerator(
-    (1, generate_unsplash_image),
-    (1, generate_pixabay_image),
-    (1, generate_pexels_image),
-    (0.1, generate_openverse_image),
-    (0.01, generate_random_unsplash_image),
-)
-copyright_free_generator_from_word = CombinedGenerator(
-    (1, generate_unsplash_image_from_word),
-    (1, generate_pixabay_image_from_word),
-    (1, generate_pexels_image_from_word),
-    (0.1, generate_openverse_image_from_word),
-    (0.01, generate_random_unsplash_image_from_word),
-)
-
-generate_horizontal_pixabay_image = CombinedGenerator(
-    (100, SeededGenerator(generate_horizontal_pixabay_image_from_word)),
-    # Backup:
-    (0.01, copyright_free_generator),
-)
+# Behind a slide's big text: a calm landscape photo (v4 took Pixabay's horizontal photos)
+generate_horizontal_pixabay_image = ImageSlot("a calm photo behind the slide's text", aesthetic="calm-backdrop")
+generate_horizontal_pixabay_image_from_word = generate_horizontal_pixabay_image.from_word
 
 copyright_free_related_generator_from_word = ConceptNetMapper(copyright_free_generator_from_word)
 copyright_free_related_generator = SeededGenerator(copyright_free_related_generator_from_word)
@@ -247,59 +168,34 @@ def copyright_free_prefixed_generator_from_word(prefixes: str | Collection[str])
     return CombinedGenerator(*generators)
 
 
-weird_copyright_free_generator = copyright_free_prefixed_generator(["weird", "humor", "funny"])
+weird_copyright_free_generator = ImageSlot("a weird or funny stock photo", aesthetic="weird-stock")
 normal_or_weird_copyright_free_generator = CombinedGenerator(
     (1, copyright_free_generator), (1, weird_copyright_free_generator)
 )
 
-# NEUTRAL
-
-neutral_image_generator = CombinedGenerator(
-    (1000, copyright_free_generator),
-    (300, neutral_reddit_image_generator),
-)
-
-neutral_image_generator_from_word = CombinedGenerator(
-    (1000, copyright_free_generator_from_word),
-    (300, UnseededGenerator(neutral_reddit_image_generator)),
-)
+# NEUTRAL: stock photos, and now and then Reddit's photos and art
+neutral_image_generator = ImageSlot("a photo of the slide's topic", aesthetic="neutral")
+neutral_image_generator_from_word = neutral_image_generator.from_word
 
 neutral_or_weird_image_generator = CombinedGenerator((1, neutral_image_generator), (1, weird_punchline_image_generator))
 
-# WITH BACKUPS: Reddit and GIPHY need keys, and Reddit can be blocked or rate limited. These use them when
-# they can, and otherwise fall back to sources that need no key, so that slides needing them stay possible.
-weird_image_with_backup_generator = BackupGenerator(
-    weird_reddit_image_generator, shitpostbot_image_generator, weird_copyright_free_generator
-)
-gif_with_backup_generator = BackupGenerator(combined_gif_generator, weird_image_with_backup_generator)
+# WITH BACKUPS: Reddit and GIPHY need keys, and Reddit can be blocked or rate limited. These use them when they can,
+# and otherwise looks with sources that need no key (or stock photos of weird things), so that slides needing them
+# stay possible.
+weird_image_with_backup_generator = ImageSlot("a weird picture", aesthetic="weird")
+gif_with_backup_generator = ImageSlot("a gif, or else a weird picture", aesthetic="gifs", backups=("weird",))
 
-# OLD/VINTAGE: Reddit's vintage subreddits, with old photos and artworks as reliable alternatives
-vintage_person_generator = CombinedGenerator(
-    (3, create_reddit_image_generator("OldSchoolCool")),
-    (1, SeededGenerator(generate_portrait_artwork_from_word)),
-)
-vintage_picture_generator = CombinedGenerator(
-    (3, create_reddit_image_generator("TheWayWeWere", "100yearsago", "ColorizedHistory")),
-    (1, SeededGenerator(generate_historic_photo_from_word)),
-    (1, SeededGenerator(generate_artwork_from_word)),
-)
+# OLD/VINTAGE: old photos in black and white or sepia, and old photos of people and painted portraits
+vintage_person_generator = ImageSlot("an old photo or a painted portrait of someone", aesthetic="old-people")
+vintage_picture_generator = ImageSlot("an old photograph", aesthetic="vintage")
 
 # Copyright-free versions (ted schema)
-historic_person_copyright_free_generator = CombinedGenerator(
-    (2, copyright_free_prefixed_generator(["historic person", "person", "man", "woman"])),
-    (1, SeededGenerator(generate_portrait_artwork_from_word)),
-)
-historic_copyright_free_generator = CombinedGenerator(
-    (2, copyright_free_prefixed_generator(["vintage", "historic", "old", "ancient"])),
-    (1, SeededGenerator(generate_historic_photo_from_word)),
-    (1, SeededGenerator(generate_artwork_from_word)),
-)
+historic_person_copyright_free_generator = ImageSlot("a portrait of someone", aesthetic="portrait")
+historic_copyright_free_generator = ImageSlot("an old photograph", aesthetic="vintage")
 
-reddit_book_cover_generator = create_reddit_image_generator("BookCovers", "fakebookcovers", "coverdesign", "bookdesign")
+reddit_book_cover_generator = ImageSlot("a book cover", aesthetic="book-covers")
 
-reddit_location_image_generator = create_reddit_image_generator(
-    "evilbuildings", "itookapicture", "SkyPorn", "EarthPorn"
-)
+reddit_location_image_generator = ImageSlot("a place", aesthetic="places")
 
 # TUPLED ABOUT ME
 
@@ -323,4 +219,4 @@ about_me_location_or_country_tuple_generator = CombinedGenerator(
 
 # Charts
 
-reddit_chart_generator = create_reddit_image_generator("dataisbeautiful", "funnycharts", "charts")
+reddit_chart_generator = ImageSlot("a chart, badly made or funny", aesthetic="bad-charts")

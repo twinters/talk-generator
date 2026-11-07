@@ -177,7 +177,7 @@ def lay_out_slide(
     backdrop: list[Content] = []  # a photo behind everything, and the shapes behind the content
     if isinstance(background, ImageElement):
         with random_util.use(rng.child("treatment", background.role)):
-            look = treatments.treatment(theme, framed=False)
+            look = treatments.for_look(treatments.treatment(theme, framed=False), background.image, theme)
         backdrop.append(background.model_copy(update={"box": FULL, "fit": "cover", "treatment": look}))
     backdrop += placement.shapes
     content: list[Content] = []  # pictures, charts and diagrams; the bands over them; then the texts, on top
@@ -193,7 +193,7 @@ def lay_out_slide(
         elif isinstance(element, ImageElement):
             framed = box != FULL and not placement.photo  # (a picture over the whole slide gets no frame)
             with random_util.use(rng.child("treatment", element.role)):
-                look = treatments.treatment(theme, framed)
+                look = treatments.for_look(treatments.treatment(theme, framed), element.image, theme)
             polaroid = look is not None and look.frame == "polaroid"  # (its own white frame instead of a border)
             border = palette.text if theme.image_border and framed and not polaroid else None
             content.append(element.model_copy(update={"box": box, "border": border, "treatment": look}))

@@ -85,10 +85,12 @@ test_schema = schemas.register(
     ),
 )
 
-# TED schema: only images from sources that allow reuse
+# TED schema: only images from sources that allow reuse, by its slide generators (as in v4) and its license policy:
+# everything but fair use (see talkgenerator.images.licenses)
 ted_schema = schemas.register(
     "ted",
     PresentationSchema(
+        license_policy="open",
         powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
         seed_generator=lambda topics, num_slides: slide_topic_generators.SideTrackingTopicGenerator(
             topics=topics, num_slides=num_slides, topic_return_period_range=range(2, 4)

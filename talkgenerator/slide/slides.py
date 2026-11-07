@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 
 from talkgenerator.datastructures.image_data import CreditPart, ImageData
+from talkgenerator.images import analysis
 from talkgenerator.models import classic
 from talkgenerator.models import deck as model
 from talkgenerator.render import charts
@@ -42,20 +43,22 @@ class Slide:
 
     def missing_content(self) -> list[str]:
         """The required arguments that are empty, hold an image that can't be downloaded or used, or repeat an
-        image shown elsewhere on the slide.
+        image shown elsewhere on the slide (or nearly: see talkgenerator.images.analysis.near_duplicates).
 
         Checking an image downloads it, and its ImageData keeps the bytes for when the slide is added to the
         PowerPoint (see image_util.check_image; a talk that streams probes it instead).
         """
         missing = []
-        images_on_slide: set[ImageData] = set()
+        images_on_slide: list[ImageData] = []
         for name in self.required_arguments:
             value = self._arguments.get(name)
-            repeated = isinstance(value, ImageData) and value in images_on_slide
+            repeated = isinstance(value, ImageData) and any(
+                value == other or analysis.near_duplicates(value.analysis, other.analysis) for other in images_on_slide
+            )
             if repeated or not _has_content(value):
                 missing.append(name)
             elif isinstance(value, ImageData):
-                images_on_slide.add(value)
+                images_on_slide.append(value)
         return missing
 
     def create_powerpoint_slide(self, prs, debug_notes: bool = False):
@@ -131,6 +134,11 @@ def _to_image_asset(image: ImageData) -> model.ImageAsset:
         display=image.display if url.startswith(("http://", "https://")) else "local",
         width=image.size[0] if image.size else None,
         height=image.size[1] if image.size else None,
+        license_class=image.license_class,
+        license=image.license,
+        license_url=image.license_url,
+        look=image.look,
+        analysis=image.analysis,
     )
 
 

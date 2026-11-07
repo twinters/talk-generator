@@ -663,6 +663,36 @@ orientation, metadata, prohibited and duplicate images), scores them (fit with t
 analysis, optionally a vision model), validates the winner (download or probe), and picks with the talk's random
 generator. v4's weighted mixes of sources become source weights per aesthetic profile.
 
+As built (2026-11-07, `talkgenerator.images`): `ImageSlot` has those fields (and `backups`, looks that take over in
+order, and `generate`, for 10.5); a recipe's images are slots, and v4's image generators in `content_generators` are
+slots under their old names, so classic slides and recipes ask the same way (a recipe or a variant can leave a slot
+out: the builder gets None, and the model writes no query for it). The finder (`finder.py`):
+
+1. orders the look's sources by weight, without putting one back (what v4's `CombinedGenerator` did one at a
+   time), leaving out those the talk's license policy allows none of the classes of, and those that can't be
+   searched now (no key, a cooldown);
+2. searches them two at a time for most looks (a look's `breadth`), in parallel, each search in a thread of its own
+   with a random stream from one number of the slide's, so the same seed finds the same, whatever comes back first;
+3. filters: the license class of every image (Openverse's and Wikimedia's each have their own), size and
+   orientation as the source tells them, descriptions that say NSFW, the same address twice, and the slide's own
+   images;
+4. a look without preferences takes the first source in the order that found any, and one of its images at random
+   (a plan's among its source's best five), as v4 did; a look with preferences (or any look in a themed talk) takes
+   a look at the thumbnails of a few candidates, drawn by their sources' weights (6 for `vintage` and
+   `calm-backdrop`, 6 more when none has the look, 3 for colours in a themed talk), and picks among those that
+   have the look, by weight and by how well their colours go with the theme's;
+5. checks the winner as before (`check_image`: a probe while streaming, a download otherwise), and the next one
+   when it won't do (8 at most per batch of sources);
+6. hands over to the look's fallback when its sources find nothing (or none is allowed), then to the slot's backups.
+
+Every picked image gets a look at its thumbnail (one small download, the same while streaming and when made at
+once, so a streamed talk stays the talk made at once), whose perceptual hash keeps nearly the same picture off other
+slides: the schema's rule that no slide repeats an image now counts near-duplicates, and slide generators keep to it
+themselves (they could repeat an image when allowed to repeat something, which parallel generation then rejected
+round after round; found by this work's determinism test). Searching two sources at once asks about twice as many
+requests of them as v4 did (cached for a day, as before): to watch on talkgenerator.com, where Unsplash is at 50 an
+hour until its review.
+
 ### 10.2 License classes
 
 They generalize v4's separate groups of copyright-free slide generators:
@@ -678,6 +708,19 @@ They generalize v4's separate groups of copyright-free slide generators:
 A talk's license policy picks the classes it allows: `open` (v4's `ted` schema) allows everything except
 `fair-use`, and the default allows all of them. `ImageData` gains a `license` and a `license_url`, and the credits
 on the slides show them.
+
+As built (2026-11-07, `talkgenerator.images.licenses`): every source module declares `LICENSES` next to `DISPLAY`,
+and its images carry `license_class`, `license` and `license_url` (Openverse: by the item's license, asking only for
+CC0, the public domain mark, CC BY and CC BY-SA, as NC can't be shown at a paid show and ND not in a theme's
+colours; Wikimedia Commons: by its `LicenseShortName`, `License` and `LicenseUrl`; the Art Institute: CC0; the stock
+sites their own licenses; Reddit, GIPHY, InspiroBot and ShitpostBot fair use, without a license). Credits name the
+license of open and public domain images, linking it; stock photos are credited to their photographer and platform,
+as the platforms ask. A policy is `all`, `open`, or classes ("public-domain,open"); the `ted` schema keeps to `open`
+(its own copyright-free generators, as in v4, and now the search too), and any talk takes `license_policy`. Slide
+generators whose recipes' slots the policy allows no source for (gifs, memes, InspiroBot, Reddit's charts, the
+about-me book cover, under `open`) aren't picked, and a plan's recipe of that kind gets its kind's default, with a
+warning. The deck keeps the policy (`Deck.license_policy`) and every image's class and license; `talkgenerator check`
+reports an image the policy doesn't allow as an error.
 
 ### 10.3 Aesthetic profiles and smart filters
 
@@ -713,6 +756,49 @@ Filters, cheapest first:
    vision model that returns its picks. That's one request per talk, so it fits a free tier; off on the site until
    measured.
 5. **Post-processing** to the theme: filters, crops, duotone.
+
+As built (2026-11-07, `profiles.py`, `catalog.py`, `analysis.py`):
+
+- **Looks**: `photo` (v4's copyright-free mix: Unsplash, Pixabay and Pexels 1 each, Openverse 0.1, a random
+  Unsplash photo as a classic last resort), `neutral` (that, and Reddit's pictures at 0.93: v4's 1000 to 300),
+  `weird-stock`, `corporate-stock` (blue and teal colour filters, "business" and "office"), `calm-backdrop` (Pixabay
+  3, Unsplash and Pexels 1, landscape; at most 0.08 of detail where the text goes (a sky is 0.02, a landscape 0.06 to 0.09, a street 0.12 and more), brightness 0.12 to 0.7: statements'
+  backdrops, which were Pixabay's only), `vintage` (Reddit's old photos 3, Commons' black and white photographs 2,
+  Openverse's archives (NYPL, the Finnish Heritage Agency, DigitaltMuseum, the Smithsonian's archives), Unsplash's
+  and Pixabay's black and white; monochrome preferred, sepia applied: history slides, which took Reddit's colourised
+  photos and the Art Institute's paintings too), `old-photo`, `old-people` and `portrait` (historical figures),
+  `museum` (the Art Institute 3, Openverse's museums 1.5: the Met, Cleveland, the Rijksmuseum, SMK, Brooklyn, the
+  Smithsonian American Art Museum; Commons' paintings), `space-science` (Commons' "Images from NASA" 2, Openverse's
+  NASA, SpaceX and Air and Space Museum 2, stock "space"), `illustration` (Pixabay's illustrations and vectors,
+  Openverse's illustrations and the Biodiversity Heritage Library's drawings), `meme-chaos` (v4's weird punchline
+  mix: Reddit's weird 10, ShitpostBot 8, gifs 3 and 3, memes 1), `meme-chaos-still`, `weird`, `gifs` and
+  `inspirobot`. The slide types got them through the content generators; a format can map looks to its own
+  (`PresentationSchema(looks=...)`, for the new formats); `talkgenerator formats --looks` lists them, and the
+  formats' slide references (and the Skill's) name each recipe's image looks.
+- **Flavour packs**: v4's sets of subreddits (gifs, memes, weird, pictures, old photos and people, book covers,
+  places) and `cursed` (cursedimages, blursedimages, hmmm), `wholesome` (wholesomememes, MadeMeSmile,
+  AnimalsBeingBros, aww), `bad-charts` (funnycharts, dataisugly, dataisbeautiful, charts: Reddit's chart slides),
+  `medieval` (MedievalMemes, medievalart), `liminal`, `retro-futurism`, `accidental-art`, `pareidolia` and
+  `corporate-cringe`; each is a source (`reddit:<pack>`) and a look. All their subreddits were checked on
+  2026-11-07: each has pictures among its hot posts (r/MadeMeSmile few, mostly videos: hence r/aww in `wholesome`). Reddit's NSFW mark and the finder's NSFW words
+  keep them safe for work.
+- **Local analysis**, with Pillow on thumbnails (the sources' own: Unsplash's `thumb`, Pexels' 240 px, Pixabay's
+  preview, Openverse's, Commons' 330 px, the Art Institute's 200 px IIIF, Reddit's preview, GIPHY's still,
+  ShitpostBot's gallery copy; InspiroBot has none), at 96 pixels: brightness, Hasler and Süsstrunk's colourfulness,
+  the share without colour (channels within 24 of 255), monochrome (that share at 0.85, or 0.6 at next to no colour,
+  or coloured pixels sharing one hue at 0.995 or more at a colourfulness up to 0.4: calibrated on 75 thumbnails, in
+  which Commons' black and white photographs had a gray share of 1.0, sepia ones one hue at 0.997 to 1.0, and
+  Pixabay's colour photos one hue at 0.99 or less but for one nearly gray one), detail (mean edge strength) in the
+  text area, four main colours, and a difference hash (64 bits; near-duplicates within 10). Looks taken are
+  remembered in memory (2048 at most).
+- **Checks** (`talkgenerator check`, and every render's report): an image of a class the policy doesn't allow is an
+  error; a credit that doesn't name its open license, nearly the same picture on two slides, a vintage picture in
+  colour without a monochrome treatment, and a calm backdrop with half again as much detail as it prefers are
+  warnings; the report counts per look how many pictures have it (`looks`) and the images per license class.
+- **Treatment**: a vintage picture that isn't monochrome gets its look's sepia in a theme without a filter of its
+  own (`treatments.for_look`); the classic template keeps its pictures as they are.
+- Not yet: the museums' date and classification filters (the Art Institute's search takes them), icon sets for
+  `illustration`, and the vision pick (4.) and generated images (10.5), for which slots have room (`generate`).
 
 ### 10.4 More image sources
 
@@ -914,7 +1000,7 @@ the formats × 3 seeds, in classic mode with replay and, at every milestone, liv
 | Completeness | no missing slides, every required element present, no empty placeholders | 100% |
 | Text | no template leftovers (`{seed}`, `#tag#`, `None`); fits its box at the minimum font size or above; within its length limits | 100% |
 | Contrast | text against its background, or against the photo behind it after dimming | at least 4.5:1 for body text, 3:1 for titles |
-| Images | loads; not enlarged beyond 1.3×; no near-duplicates within a talk; credited with its license; license policy respected | 100% |
+| Images | loads; not enlarged beyond 1.3×; no near-duplicates within a talk; credited with its license; license policy respected; its look's preference (black and white or sepia for `vintage`, little detail behind the text for `calm-backdrop`) | 100% (the near-duplicates, licenses, policy and looks checked since 2026-11-07) |
 | Variety | distinct slide types and layouts per talk, no layout twice in a row; across seeds, the share of distinct titles and images | targets per format, set from milestone 1's measurements |
 | Image fit | of the images searched for with a query whose source describes them (alt texts, post titles), the share that shares a word with its query (`talkgenerator check` counts them since milestone 2) | a rough signal to follow, without a bar |
 | Determinism | the same seed with replay gives an identical deck JSON; serial equals parallel | 100% |
@@ -959,7 +1045,7 @@ before the new formats. A milestone is a checkpoint on `v5`, not a release; only
 | 2 (under way: the TalkPlan schema, the planner, the `openrouter`, `anthropic`, `openai` and `chatgpt` adapters, `render`, `schema`, `formats`, the Skill, languages with their check, `login openrouter` and `login chatgpt`, and trend and ranking charts are in; on 2026-11-06, 30 benchmark talks by the free models had 0 errors, one request each, at $0, and 290 of 300 slides by the model) | LLM TED talks and the Claude Skill | TalkPlan schema; the LLM planner (one streamed call, dice, per-slide fallback, safety); `openrouter`, `anthropic` and `openai` adapters; languages, Dutch first; `render plan.json`, `schema`, `formats`; `skill/` with SKILL.md; `login openrouter`; the `chatgpt` adapter (may slip to milestone 3); checks for requests, cost, speed and language | on the benchmark with OpenRouter's free models: no holes, no leftovers, $0 and one request per talk; Dutch talks pass the language check; Claude Code makes a deck end to end with the Skill |
 | 3 (done, 2026-11-07: theme families and extremes, procedural palettes with contrast repair, layouts and their variants (never twice in a row), image treatments, WordArt-style heading effects, text fitting with bundled metric twins, the shapes renderer with the classic animations (columns click by click), previews and contact sheets, the design checks and the local MCP server; 0 design findings on 792 benchmark decks in 12 seeds; thumbnails in CI left out, D29) | Themes and layouts | theme tokens and families, extremes on by default; procedural palettes and font pairs; layout variants; text fitting; image treatments; the `classic` theme; thumbnails and contact sheet in CI; the local MCP server | contrast and overflow checks pass on every theme |
 | 4 (under way: `stream_talk()`, probe validation, display policies and presenter names in styles (5.10, for the site's settings) are in; since 2026-11-07, talkgenerator.com runs v5 from GitHub (D31): talks stream into the browser, the .pptx is made on download, Pixabay's images are copied, and classic talks meet the speed and memory bars on the VPS (section 14); left: the settings (being built), the site's OpenRouter key on the server, and LLM talks measured there) | Streaming and the web view | `stream_talk()`, display policies, probe validation; in talk-generator-web: the SSE endpoint, the Angular renderer, LLM talks by default with the classic switch, a language choice, Connect OpenRouter and pasted keys, .pptx on download, an Automatic topic-or-title choice (5.11), the site running `v5` from git (D31) | first slide on screen within the calibrated target on the VPS; a 20-slide talk under the memory bar; the downloaded .pptx matches the web view |
-| 5 | Images | slots, aesthetic profiles and flavour packs, local analysis, license classes; new open and weird sources; AI image generation with the user's own keys; the optional vision pick | license policies enforced; profile checks pass (such as the grayscale share for `vintage`); generated images credited |
+| 5 (under way: image slots and the finder, license classes and policies, aesthetic profiles with local analysis, and the first flavour packs are in, 2026-11-07; left: new sources, AI images, the vision pick) | Images | slots, aesthetic profiles and flavour packs, local analysis, license classes; new open and weird sources; AI image generation with the user's own keys; the optional vision pick | license policies enforced; profile checks pass (such as the grayscale share for `vintage`); generated images credited |
 | 6 | More slide types for TED-like talks | native diagrams, big numbers, quiz, memes with live captions, social posts and more; a much larger, curated TED content pack | every new slide type passes the checks in classic and LLM mode |
 | 7 | New talk formats | pitch, academic, corporate, keynote and Pecha Kucha timing, with their content packs (or in 5.1 if the TED work takes longer) | every format works in classic and LLM mode and passes the checks |
 | 8 | Integration | the site runs `v5` on the preview, then in production behind a switch; Sign in with ChatGPT on the site, if OpenAI has admitted it; docs and deprecation warnings | the site runs `v5` for a week without quota or memory incidents |

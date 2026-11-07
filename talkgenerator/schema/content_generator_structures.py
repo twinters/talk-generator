@@ -2,7 +2,6 @@
 This file contains structures that are helpful for certain content generators, but not general enough for generator_util
 """
 
-from talkgenerator.datastructures.image_data import ImageData, VideoCopy
 from talkgenerator.sources import conceptnet, goodreads, reddit, text_generator, wikihow, wikiquote
 from talkgenerator.util import os_util, random_util
 from talkgenerator.util.generator_util import (
@@ -67,17 +66,7 @@ class RedditImageSearcher:
         results = reddit.search_images(self._subreddit, str(seed or ""), animated=self._animated)
         if not results:
             return None
-        return [
-            ImageData(
-                image_url=image.url,
-                source=image.credit,
-                source_url=image.post_url,
-                # Reddit's mp4 copy of a gif, which plays in its place when the gif is too large to embed
-                video=VideoCopy(image.video_url, image.poster_url) if image.video_url and image.poster_url else None,
-                display=reddit.DISPLAY,
-            )
-            for image in results
-        ]
+        return [reddit.image_data(image) for image in results]
 
 
 class RedditImageGenerator:

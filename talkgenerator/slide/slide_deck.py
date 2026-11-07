@@ -41,6 +41,8 @@ class SlideDeck:
         self.extreme_themes = True
         # The language model that writes the talk ("provider:model"), or None: a classic talk
         self.language_model: str | None = None
+        # The license classes its images may have (see talkgenerator.images.licenses)
+        self.license_policy = "all"
         # Who wants to know about every slide once it's added (a talk that streams: see talkgenerator.generator)
         self.listener: Callable[[SlideDeck, int, Slide], None] | None = None
 
@@ -99,6 +101,7 @@ class SlideDeck:
             schema_name=schema_name,
             seed=self._seed,
             language_model=self.language_model,
+            license_policy=self.license_policy,
             slides=tuple(slide.to_deck_slide() for slide in self._slides if slide is not None),
             usage=self.usage,
         )

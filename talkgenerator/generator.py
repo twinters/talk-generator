@@ -13,11 +13,14 @@ from pptx.presentation import Presentation
 
 from talkgenerator import names, runtime_checker, settings
 from talkgenerator.design import engine, themes
+from talkgenerator.images import context as image_context
+from talkgenerator.images import licenses
 from talkgenerator.llm.base import TextProvider
 from talkgenerator.llm.ledger import Budget, Ledger, MeteredProvider
 from talkgenerator.llm.providers import NoneProvider, from_settings, provider_from_spec
 from talkgenerator.models.deck import Deck
 from talkgenerator.models.events import SlideReady, TalkEvent, TalkFinished, TalkStarted
+from talkgenerator.models.theme import Theme
 from talkgenerator.plan import languages
 from talkgenerator.schema.presentation_schema import Progress, TalkCancelled
 from talkgenerator.schema.presentation_schema_types import get_schema, schemas
@@ -63,6 +66,7 @@ def generate_presentation_using_cli_arguments(args) -> tuple[Presentation | None
         style_chaos=getattr(args, "style_chaos", 0.0) or 0.0,
         extreme_themes=getattr(args, "extreme_themes", True),
         name_styles=getattr(args, "name_styles", None),
+        license_policy=getattr(args, "license_policy", None),
     )
 
 
@@ -88,6 +92,7 @@ def generate_presentation(
     extreme_themes: bool = True,
     progress: Progress | None = None,
     name_styles: str | Iterable[str] | None = None,
+    license_policy: str | Iterable[str] | None = None,
 ) -> tuple[Presentation | None, SlideDeck, str | None]:
     """Generate a talk. With debug_notes, every slide's speaker notes explain how it was generated.
 
@@ -112,11 +117,18 @@ def generate_presentation(
     won't do), talkgenerator has names of its own for some topics, and makes up a classic name otherwise. None: the
     first three; none at all: classic names only.
 
+    license_policy is the license classes the talk's images may have (see talkgenerator.images.licenses): "all", "open"
+    (everything but fair use: no memes, gifs or Reddit's posts, for decks shown in public), or the classes, as a list
+    or separated by commas ("public-domain,open"). None is the schema's: "open" for ted, else "all".
+
     progress follows the talk while it's made (see stream_talk, which hands it over in events)."""
     theme = theme or settings.theme()
     if theme not in themes.choices():
         raise ValueError(f"There's no theme {theme!r}; there are {', '.join(themes.choices())}")
     chosen_styles = names.styles(name_styles)  # (a ValueError for a style there isn't)
+    presentation_schema = get_schema(schema)
+    # (a ValueError for a policy there isn't)
+    policy = licenses.policy(license_policy if license_policy is not None else presentation_schema.license_policy)
     if print_logs:
         os_util.show_logs(logger)
     logger.info("**************************")
@@ -135,9 +147,8 @@ def generate_presentation(
     if chosen_theme is not None:
         logger.info("Theme: {}".format(chosen_theme.name))
 
-    # Retrieve the schema to generate the presentation with
-    presentation_schema = get_schema(schema)
     logger.info("Presentation schema: {}".format(presentation_schema))
+    logger.info("License policy: {} ({})".format(policy.name, ", ".join(sorted(policy.classes))))
 
     if not topic:
         topic = (word_frequency.get_rarest_word(title) if title else None) or DEFAULT_PRESENTATION_TOPIC
@@ -167,25 +178,28 @@ def generate_presentation(
     elif language != "en":
         logger.warning("Talks in other languages than English need a language model: this one is in English")
 
-    # Generate the presentation object
-    presentation, slide_deck = presentation_schema.generate_presentation(
-        topics=topics,
-        num_slides=slides,
-        presenter=presenter,
-        title=title,
-        parallel=parallel,
-        int_seed=int_seed,
-        save_ppt=save_ppt,
-        debug_notes=debug_notes,
-        rng=rng,
-        llm=MeteredProvider(provider, ledger, budget or Budget()) if provider is not None else None,
-        language=language,
-        theme=chosen_theme,
-        style_chaos=style_chaos,
-        extreme_themes=extreme_themes,
-        progress=progress,
-        name_styles=chosen_styles,
-    )
+    # Generate the presentation object, finding its images by its license policy, theme and format
+    images = image_context.ImageContext(policy, palette(chosen_theme), presentation_schema.looks)
+    with image_context.for_talk(images):
+        presentation, slide_deck = presentation_schema.generate_presentation(
+            topics=topics,
+            num_slides=slides,
+            presenter=presenter,
+            title=title,
+            parallel=parallel,
+            int_seed=int_seed,
+            save_ppt=save_ppt,
+            debug_notes=debug_notes,
+            rng=rng,
+            llm=MeteredProvider(provider, ledger, budget or Budget()) if provider is not None else None,
+            language=language,
+            theme=chosen_theme,
+            style_chaos=style_chaos,
+            extreme_themes=extreme_themes,
+            progress=progress,
+            name_styles=chosen_styles,
+        )
+    slide_deck.license_policy = policy.name
     slide_deck.usage = ledger.total()
     answered = [entry.model for entry in ledger.entries if entry.error is None]
     if slide_deck.language_model is not None and answered:
@@ -233,6 +247,7 @@ def stream_talk(
     style_chaos: float = 0.0,
     extreme_themes: bool = True,
     name_styles: str | Iterable[str] | None = None,
+    license_policy: str | Iterable[str] | None = None,
 ) -> Iterator[TalkEvent]:
     """Make a talk as generate_presentation does (the same deck, for the same options, seed and answers), handing
     over what's ready while it's made (see talkgenerator.models.events): talk.started once its title is known, a
@@ -268,6 +283,7 @@ def stream_talk(
                     extreme_themes=extreme_themes,
                     progress=following,
                     name_styles=name_styles,
+                    license_policy=license_policy,
                 )
                 events.put(TalkFinished(deck=slide_deck.to_deck(schema_name=schema)))
         except TalkCancelled:
@@ -330,6 +346,15 @@ class _Following:
     def _go_on(self) -> None:
         if self.cancelled.is_set():
             raise TalkCancelled()
+
+
+def palette(theme: Theme | None) -> tuple[str, ...]:
+    """The colours of a theme its pictures had better go with: its accents, background and panels (none for the
+    classic theme)."""
+    if theme is None:
+        return ()
+    colors = theme.palette
+    return (colors.accent, colors.accent_2, colors.background, colors.surface)
 
 
 def _language_model(llm: TextProvider | str | None) -> TextProvider | None:
@@ -403,6 +428,14 @@ def describe_schemas() -> str:
         lines.append(f"{name} ({len(generators)} slide generators)")
         lines.extend(f"    {generator}" for generator in generators)
     return "\n".join(lines)
+
+
+def _license_policy(value: str) -> str:
+    """--license_policy's value, once it's known to name a policy or license classes."""
+    try:
+        return licenses.policy(value).name
+    except ValueError as error:
+        raise argparse.ArgumentTypeError(str(error)) from error
 
 
 def _name_styles(value: str) -> tuple[str, ...]:
@@ -485,6 +518,14 @@ def get_argument_parser():
         default=None,
         type=str,
         help="The title of the talk, leave blank to randomise",
+    )
+    parser.add_argument(
+        "--license_policy",
+        default=None,
+        type=_license_policy,
+        help="The license classes the talk's images may have: all, open (everything but fair use: no memes, gifs or "
+        "Reddit's posts, for decks shown in public), or license classes separated by commas (public-domain, open, "
+        "stock, generated, fair-use) (default: the schema's: open for ted, else all)",
     )
     parser.add_argument(
         "--parallel",

@@ -246,6 +246,7 @@ def test_a_gif_search_gives_the_gifs_with_their_video_copies(subreddit):
             "https://www.reddit.com/r/gifs/comments/big/",
             "https://preview.redd.it/big.gif?format=mp4&s=video",
             "https://preview.redd.it/big.gif?format=png8&s=still",
+            size=(1200, 900),  # (as its preview says)
         ),
         reddit.RedditImage("https://i.redd.it/small.gif", "Reddit (r/gifs)", None),
     ]

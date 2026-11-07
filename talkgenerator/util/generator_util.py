@@ -56,7 +56,7 @@ class Generator:
 
 
 class PrefixedGenerator(Generator):
-    def __init__(self, prefix: str, generator: Generator):
+    def __init__(self, prefix: str, generator: Callable[[str], Any]):
         self._prefix = prefix
         self._generator = generator
 

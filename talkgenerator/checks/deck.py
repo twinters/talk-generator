@@ -1,8 +1,9 @@
 """Automated checks of a deck (docs/v5-plan.md, section 14): a deck in, findings out.
 
-An error is a broken talk: a slide without what it needs, or template code on a slide. A warning is worth a look,
-such as an image without a credit, or one that comes back on another slide. Checks of contrast and overflowing text
-follow with the themes (docs/v5-plan.md, milestone 3).
+An error is a broken talk: a slide without what it needs, template code on a slide, or an image its license policy
+doesn't allow. A warning is worth a look, such as an image without a credit, one that comes back on another slide
+(or nearly the same one), or one without the look it was found for (a vintage photo in colour). Checks of contrast
+and overflowing text are in talkgenerator.checks.design.
 """
 
 from __future__ import annotations
@@ -66,6 +67,8 @@ def check_deck(deck: Deck, expected_slides: int | None = None) -> list[Finding]:
         *check_completeness(deck, expected_slides),
         *check_leftovers(deck),
         *check_images(deck),
+        *check_licenses(deck),
+        *check_looks(deck),
         *check_language(deck),
         *check_design(deck),
     ]
@@ -166,9 +169,13 @@ def check_leftovers(deck: Deck) -> list[Finding]:
 
 
 def check_images(deck: Deck) -> list[Finding]:
-    """Images from the web are credited, and no image comes back on another slide."""
+    """Images from the web are credited, and no image comes back on another slide, nor nearly the same one (by the
+    perceptual hashes of the images the image finder looked at: see talkgenerator.images.analysis)."""
+    from talkgenerator.images import analysis  # (here: the checks don't need it otherwise)
+
     findings = []
     first_slide_of: dict[str, int] = {}
+    hashes: list[tuple[str, int]] = []
     for number, slide in enumerate(deck.slides, 1):
         for element in slide.elements:
             if not isinstance(element, ImageElement):
@@ -178,8 +185,139 @@ def check_images(deck: Deck) -> list[Finding]:
                 findings.append(Finding("images", "warning", f"an image without a credit: {url}", number))
             if url in first_slide_of and first_slide_of[url] != number:
                 findings.append(Finding("images", "warning", f"the same image as slide {first_slide_of[url]}", number))
+            elif element.image.analysis is not None and element.image.analysis.hash:
+                own = element.image.analysis.hash
+                near = next(
+                    (
+                        slide_number
+                        for other, slide_number in hashes
+                        if slide_number != number and analysis.distance(own, other) <= analysis.NEAR_DUPLICATE
+                    ),
+                    None,
+                )
+                if near is not None:
+                    findings.append(Finding("images", "warning", f"nearly the same image as slide {near}", number))
+                hashes.append((own, number))
             first_slide_of.setdefault(url, number)
     return findings
+
+
+def check_licenses(deck: Deck) -> list[Finding]:
+    """The images have license classes the talk's license policy allows (an error otherwise), and an image whose
+    license a credit names (an open or public domain one) has its credit name it (see talkgenerator.images.licenses).
+    Under a policy narrower than "all", a web image without a class is worth a look too: its class can't be told."""
+    from talkgenerator.images import licenses  # (here: the checks don't need it otherwise)
+
+    try:
+        policy = licenses.policy(deck.license_policy)
+    except ValueError as error:
+        return [Finding("licenses", "error", str(error))]
+    findings = []
+    for number, slide in enumerate(deck.slides, 1):
+        for element in slide.elements:
+            if not isinstance(element, ImageElement):
+                continue
+            image = element.image
+            if image.license_class is None:
+                if image.url.startswith("http") and policy.classes != licenses.ALL.classes:
+                    findings.append(
+                        Finding(
+                            "licenses",
+                            "warning",
+                            f"an image without a license class, which the license policy ({policy.name}) can't be "
+                            f"checked for: {image.url}",
+                            number,
+                        )
+                    )
+                continue
+            if not policy.allows(image.license_class):
+                findings.append(
+                    Finding(
+                        "licenses",
+                        "error",
+                        f"a {image.license_class} image, which the license policy ({policy.name}) doesn't allow: "
+                        f"{image.source or image.url}",
+                        number,
+                    )
+                )
+            if image.license_class in licenses.SHOWN:
+                credit = "".join(part.text for part in image.credit)
+                if not image.license:
+                    findings.append(
+                        Finding("licenses", "warning", f"a {image.license_class} image without its license", number)
+                    )
+                elif image.license.lower() not in credit.lower():
+                    findings.append(
+                        Finding("licenses", "warning", f"its credit doesn't name its license ({image.license})", number)
+                    )
+    return findings
+
+
+# How far a picture may be from what its look prefers before it's worth a look: half again as much detail where the
+# text goes, and a tenth outside the brightness asked for
+_DETAIL_TOLERANCE = 1.5
+_BRIGHTNESS_TOLERANCE = 0.1
+
+
+def check_looks(deck: Deck) -> list[Finding]:
+    """Every image the image finder looked at has what its look prefers (see talkgenerator.images.profiles), or the
+    treatment its look gives a picture that doesn't: a vintage picture is in black and white or sepia, or turned so,
+    and a calm backdrop has little detail where the text goes."""
+    from talkgenerator.images import profiles  # (here: the checks don't need them otherwise)
+
+    findings = []
+    for number, slide in enumerate(deck.slides, 1):
+        for element in slide.elements:
+            if not isinstance(element, ImageElement) or element.image.look is None:
+                continue
+            look = profiles.PROFILES.get(element.image.look)
+            seen = element.image.analysis
+            if look is None:
+                findings.append(
+                    Finding("looks", "warning", f"an image of a look there isn't: {element.image.look}", number)
+                )
+                continue
+            prefers = look.prefers
+            if prefers is None or seen is None:
+                continue
+            treated = element.treatment is not None and element.treatment.filter in _MONOCHROME_FILTERS
+            if prefers.monochrome and not seen.monochrome and not treated:
+                findings.append(
+                    Finding(
+                        "looks",
+                        "warning",
+                        f"a {look.name} picture in colour ({seen.grayscale:.0%} of it gray), and not turned to "
+                        "black and white or sepia",
+                        number,
+                    )
+                )
+            if (
+                prefers.detail is not None
+                and seen.detail is not None
+                and seen.detail > _DETAIL_TOLERANCE * prefers.detail
+            ):
+                findings.append(
+                    Finding(
+                        "looks",
+                        "warning",
+                        f"a {look.name} picture with much detail where the text goes ({seen.detail:.2f})",
+                        number,
+                    )
+                )
+            if prefers.brightness and not (
+                prefers.brightness[0] - _BRIGHTNESS_TOLERANCE
+                <= seen.brightness
+                <= prefers.brightness[1] + _BRIGHTNESS_TOLERANCE
+            ):
+                findings.append(
+                    Finding(
+                        "looks", "warning", f"a {look.name} picture too light or dark ({seen.brightness:.2f})", number
+                    )
+                )
+    return findings
+
+
+_MONOCHROME_FILTERS = frozenset({"grayscale", "sepia", "black and white", "duotone"})
 
 
 def deck_metrics(deck: Deck) -> dict[str, Any]:
@@ -199,6 +337,8 @@ def deck_metrics(deck: Deck) -> dict[str, Any]:
         ),
         "images": sum(1 for slide in deck.slides for element in slide.elements if isinstance(element, ImageElement)),
         **_image_matches(deck),
+        "license_classes": _license_classes(deck),
+        "looks": _looks(deck),
         "repeated_titles": _repeated_titles(deck),
         "usage": deck.usage.model_dump(),
     }
@@ -215,6 +355,42 @@ def _image_matches(deck: Deck) -> dict[str, int]:
                 described += 1
                 matching += bool(_content_words(element.image.query) & _content_words(element.image.description))
     return {"images_with_query_and_description": described, "images_matching_their_query": matching}
+
+
+def _license_classes(deck: Deck) -> dict[str, int]:
+    """How many of the deck's images have each license class ("none": files of talkgenerator's own, or a plan's)."""
+    counts = Counter(
+        element.image.license_class or "none"
+        for slide in deck.slides
+        for element in slide.elements
+        if isinstance(element, ImageElement)
+    )
+    return dict(sorted(counts.items()))
+
+
+def _looks(deck: Deck) -> dict[str, dict[str, int]]:
+    """Per look the images were found for: how many, how many of them were looked at, and how many of those have
+    what the look prefers (or get its treatment): for the profile checks across talks, such as the share of vintage
+    pictures in black and white or sepia."""
+    from talkgenerator.images import profiles  # (here: the checks don't need them otherwise)
+
+    looks: dict[str, dict[str, int]] = {}
+    for slide in deck.slides:
+        for element in slide.elements:
+            if not isinstance(element, ImageElement) or element.image.look is None:
+                continue
+            counts = looks.setdefault(element.image.look, {"images": 0, "looked_at": 0, "with_the_look": 0})
+            counts["images"] += 1
+            seen = element.image.analysis
+            if seen is None:
+                continue
+            counts["looked_at"] += 1
+            look = profiles.PROFILES.get(element.image.look)
+            prefers = look.prefers if look is not None else None
+            treated = element.treatment is not None and element.treatment.filter in _MONOCHROME_FILTERS
+            if prefers is None or prefers.met_by(seen) or (prefers.monochrome and treated):
+                counts["with_the_look"] += 1
+    return dict(sorted(looks.items()))
 
 
 def _content_words(text: str) -> set[str]:

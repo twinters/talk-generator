@@ -248,12 +248,19 @@ def test_a_slide_doesnt_show_the_same_image_twice(images):
 
 
 def test_images_already_in_the_deck_count_as_repeated(images):
-    # Different ImageData objects for the same picture are the same element of the deck
+    # Different ImageData objects for the same picture are the same element of the deck. A slide may repeat a few
+    # texts (conclusions sum up), but never a picture: a picture twice is a picture too few (and the schema settles
+    # slides by that rule too, so in parallel they come out as one by one)
     url = "https://example.com/burning-piano.jpg"
     used = {_image(images, url)}
     generator = _two_images_generator(StaticGenerator(_image(images, url)), StaticGenerator(_image(images)))
     assert generator.generate_slide(CONTEXT, (used, 0)) is None
-    assert generator.generate_slide(CONTEXT, (used, 1)) is not None
+    assert generator.generate_slide(CONTEXT, (used, 1)) is None
+    fresh = _two_images_generator(
+        StaticGenerator(_image(images, "https://example.com/new.jpg")), StaticGenerator(_image(images))
+    )
+    assert fresh.generate_slide(CONTEXT, ({"Title"}, 0)) is None  # (its title, used before)
+    assert fresh.generate_slide(CONTEXT, ({"Title"}, 1)) is not None
 
 
 def test_missing_content_lists_what_is_missing(images):

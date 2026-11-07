@@ -5,8 +5,9 @@ from typing import Final
 
 from talkgenerator import settings
 from talkgenerator.datastructures.image_data import ImageData
-from talkgenerator.models.deck import DisplayPolicy
-from talkgenerator.util import http_util
+from talkgenerator.images import licenses
+from talkgenerator.models.deck import DisplayPolicy, LicenseClass
+from talkgenerator.util import http_util, image_util
 
 logger = logging.getLogger("talkgenerator")
 
@@ -15,7 +16,34 @@ API_URL = "https://pixabay.com/api/"
 # that "permanent hotlinking of images (using Pixabay URLs in your app) is not allowed", and to download images to
 # your own server to use them; its image links also stop working after 24 hours
 DISPLAY: Final[DisplayPolicy] = "copy"
+# The license classes of its images (see talkgenerator.images.licenses): the Pixabay Content License
+LICENSES: Final[frozenset[LicenseClass]] = frozenset({"stock"})
 _MAX_QUERY_LENGTH = 100  # imposed by the Pixabay API
+_LARGE_SIDE = 1280  # (its largeImageURL is at most this wide or high)
+# The filters its search takes (https://pixabay.com/api/docs/#api_search_images)
+COLORS: Final = (
+    "grayscale",
+    "transparent",
+    "red",
+    "orange",
+    "yellow",
+    "green",
+    "turquoise",
+    "blue",
+    "lilac",
+    "pink",
+    "white",
+    "gray",
+    "black",
+    "brown",
+)
+IMAGE_TYPES: Final = ("photo", "illustration", "vector")
+ORIENTATIONS: Final = {
+    "landscape": "horizontal",
+    "portrait": "vertical",
+    "horizontal": "horizontal",
+    "vertical": "vertical",
+}
 
 _cooldown = http_util.Cooldown("Pixabay")
 
@@ -26,6 +54,11 @@ def get_pixabay_session() -> str | None:
     return settings.pixabay_auth()["pixabay_key"] or None
 
 
+def available() -> bool:
+    """Whether a search can go out now: there's a key, and Pixabay isn't skipped for a while (see _cooldown)."""
+    return get_pixabay_session() is not None and not _cooldown.active
+
+
 def search_horizontal(query: str) -> list[ImageData]:
     return search_photos(query, orientation="horizontal")
 
@@ -34,18 +67,25 @@ def search_vertical(query: str) -> list[ImageData]:
     return search_photos(query, orientation="vertical")
 
 
-def search_photos(query: str | None, orientation: str = "all") -> list[ImageData]:
+def search_photos(
+    query: str | None, orientation: str = "all", colors: str | None = None, image_type: str = "photo"
+) -> list[ImageData]:
+    """Images for the query: photos, illustrations or vector graphics (image_type); horizontal or vertical (or
+    landscape and portrait), and of some of COLORS (separated by commas), if given."""
     api_key = get_pixabay_session()
     if not api_key or not query or _cooldown.active:
         return []
     params = {
         "key": api_key,
         "q": query[:_MAX_QUERY_LENGTH],
-        "image_type": "photo",
-        "orientation": orientation,
+        "image_type": image_type if image_type in IMAGE_TYPES else "photo",
+        "orientation": ORIENTATIONS.get(orientation, "all"),
         "safesearch": "true",
         "per_page": 50,
     }
+    chosen_colors = ",".join(color.strip() for color in (colors or "").split(",") if color.strip() in COLORS)
+    if chosen_colors:
+        params["colors"] = chosen_colors
     response = http_util.get(API_URL, params=params)
     if response is None or response.status_code >= 500:
         _cooldown.trigger_outage(response)
@@ -72,6 +112,13 @@ def search_photos(query: str | None, orientation: str = "all") -> list[ImageData
             source_url=photo.get("pageURL"),
             description=photo.get("tags"),
             display=DISPLAY,
+            license_class="stock",
+            license=licenses.PIXABAY_LICENSE[0],
+            license_url=licenses.PIXABAY_LICENSE[1],
+            thumbnail_url=photo.get("previewURL"),
+            declared_size=image_util.served_size(
+                photo.get("imageWidth"), photo.get("imageHeight"), max_side=_LARGE_SIDE
+            ),
         )
         for photo in hits
         if photo.get("largeImageURL")

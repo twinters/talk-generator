@@ -12,6 +12,45 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
 
 ### Added
 
+- License classes and policies (`talkgenerator.images.licenses`): every image source declares the license classes
+  of its images (`LICENSES`, next to its `DISPLAY`): `public-domain`, `open` (CC BY and BY-SA), `stock`
+  (Unsplash, Pexels and Pixabay), `generated` and `fair-use` (Reddit, GIPHY, InspiroBot, ShitpostBot); Openverse's
+  and Wikimedia Commons' images each have their own, and Openverse is only asked for CC0, the public domain mark,
+  CC BY and CC BY-SA. A talk's license policy (`--license_policy`, `license_policy=` in `generate_presentation`,
+  `stream_talk`, `render_plan`, the MCP server's tools and `talkgenerator check`) picks the classes it allows:
+  `open` everything but fair use, `all` (the default) every class, or the classes, as `public-domain,open`. The
+  `ted` format keeps to `open` by default. The image search keeps to it, slides whose images it allows no source
+  for aren't picked, images and decks say their class, license and license link (`ImageData.license`,
+  `ImageAsset.license_class`, `Deck.license_policy`), credits name open and public domain licenses ("CC BY 2.0",
+  linking its deed), and `talkgenerator check` reports an image the policy doesn't allow as an error, and a credit
+  that doesn't name its license as a warning. `talkgenerator formats --licenses` lists the policies.
+- Image slots and the image finder (`talkgenerator.images.slots`, `.finder`): every image a slide asks for is a
+  slot (`ImageSlot`: its intent, queries, orientation, fewest pixels, where its text goes, its look, license classes
+  and sources) instead of a call to a source, and v4's image generators are slots too, under their old names.
+  The finder searches a look's sources a few at once, in parallel (with v4's caches and cooldowns), filters what
+  they find (license, size and orientation as the sources tell them, unsafe descriptions, the same image twice,
+  the slide's own images), scores a few by a look at their thumbnails, checks the winner as before (a probe while
+  streaming, a download otherwise) and picks with the talk's seed: the same seed finds the same images, whichever
+  search comes back first. v4's weighted mixes of sources became the looks' source weights. A recipe (or one of
+  its variants) can leave a slot out: its builder gets None for it, and the language model writes no query for it.
+- Aesthetic profiles (`talkgenerator.images.profiles`): named looks, with their sources, the sources' own filters
+  (Unsplash's and Pexels' colours and orientations, Pixabay's colours, image types and orientations, Openverse's
+  categories and collections, Wikimedia Commons' categories), query modifiers, preferences and a treatment:
+  `photo`, `neutral`, `calm-backdrop`, `vintage`, `museum`, `space-science`, `corporate-stock`, `illustration`,
+  `meme-chaos` and more, attached to the slide types (history pictures are `vintage`, statements' backdrops
+  `calm-backdrop`, ...), and a format can have looks of its own. A look whose sources can't or don't find anything
+  hands over to its fallback. Flavour packs, looks of weird content from curated subreddits: `cursed`,
+  `wholesome`, `bad-charts` (Reddit chart slides), `medieval`, `liminal`, `retro-futurism`, `accidental-art`,
+  `pareidolia`, `corporate-cringe`, and v4's sets of subreddits. `talkgenerator formats --looks` lists them, and
+  the formats' slide references name each recipe's image looks.
+- A look at images (`talkgenerator.images.analysis`), with Pillow, on thumbnails: brightness, colourfulness, the
+  share without colour, whether a picture is monochrome (black and white, or toned such as sepia), detail where a
+  slide's text goes, main colours, and a perceptual hash. A vintage slot prefers black and white and sepia, a calm
+  backdrop little detail where its text goes, and a themed talk pictures that go with its theme's colours; a
+  vintage picture in colour turns sepia in a theme without a filter of its own. Decks keep what the look found
+  (`ImageAsset.analysis`, and `look`), nearly the same picture doesn't come back on another slide, and
+  `talkgenerator check` warns about pictures without their look's preference (a vintage picture in colour) and
+  about near-duplicates, and counts per look how many pictures have it.
 - The deck format: a generated talk as plain, versioned JSON data (`talkgenerator.models.deck`), which the
   PowerPoint renderer (`talkgenerator.render.powerpoint`) draws. `--save_json` (or `save_json=True`) saves it
   next to the PowerPoint, `slide_deck.to_deck()` returns it, and a saved deck renders again on its own.
@@ -212,6 +251,12 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
 
 ### Changed
 
+- Images come through the image finder (see the image slots above): classic talks draw on the same sources with
+  about the same weights as before, but history slides now show old photographs (in black and white or sepia, by
+  preference) instead of Reddit's colourised ones and the Art Institute's paintings, statements' backdrops come from
+  Pixabay, Unsplash and Pexels (they were Pixabay's only), Reddit's chart slides also take charts from
+  r/dataisugly, and Reddit's images say what they show (their post's title). Searching sources at once asks more
+  of them per image than before (two at a time, for most looks).
 - Every slide is now drawn from its deck form, so a .pptx and its deck JSON always match. Slides look the same
   as before.
 - `SlideDeck.to_slide_deck_dictionary()` returns the deck format's slides, which are JSON-ready, instead of
@@ -237,6 +282,10 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
 
 ### Fixed
 
+- A classic slide generator could show an image a slide before it had shown (when it was allowed to repeat
+  something, such as a text), which generating in parallel then kept rejecting, round after round: now no slide
+  repeats an image (nor nearly the same one), whichever way it's made.
+- Wikimedia Commons credits named some authors twice ("Unknown author Unknown author").
 - Texts that a language model or a plan writes a little longer than their limit (by up to an eighth) stay whole,
   and a text that has to be cut no longer ends on a little word, as in "Cats were the true scholars of the" (in
   every language, with NLTK's stopword lists). The presenter's job may be 50 characters (was 40), and the prompt

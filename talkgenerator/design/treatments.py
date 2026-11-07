@@ -17,7 +17,7 @@ from typing import Final
 from PIL import Image, ImageDraw, ImageOps
 
 from talkgenerator.design import color
-from talkgenerator.models.deck import Box, ImageTreatment
+from talkgenerator.models.deck import Box, ImageAsset, ImageTreatment
 from talkgenerator.models.theme import Palette, Theme
 from talkgenerator.util import random_util
 
@@ -69,6 +69,23 @@ def treatment(theme: Theme, framed: bool) -> ImageTreatment | None:
         grain=theme.image_grain,
         vignette=theme.image_vignette,
     )
+
+
+def for_look(treatment: ImageTreatment | None, image: ImageAsset, theme: Theme) -> ImageTreatment | None:
+    """The theme's treatment of a picture, with the filter its look gives a picture that doesn't have the look, in a
+    theme without a filter of its own: sepia for a vintage picture that isn't in black and white or sepia, say (see
+    talkgenerator.images.profiles)."""
+    from talkgenerator.images import profiles  # (here: the looks aren't needed otherwise)
+
+    look = profiles.PROFILES.get(image.look or "")
+    if look is None or look.treatment is None or theme.image_filter != "none":
+        return treatment
+    if look.prefers is not None and look.prefers.met_by(image.analysis):
+        return treatment
+    dark, light = (
+        SEPIA if look.treatment == "sepia" else duotone(theme.palette) if look.treatment == "duotone" else (None, None)
+    )
+    return (treatment or ImageTreatment()).model_copy(update={"filter": look.treatment, "dark": dark, "light": light})
 
 
 def polaroid(box: Box, width: float, height: float, cover: bool) -> tuple[Box, Box]:
