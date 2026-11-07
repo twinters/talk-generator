@@ -106,6 +106,8 @@ module = [
     "talkgenerator.datastructures.image_data",
     "talkgenerator.llm",
     "talkgenerator.llm.base",
+    "talkgenerator.llm.chatgpt",
+    "talkgenerator.llm.chatgpt_login",
     "talkgenerator.llm.ledger",
     "talkgenerator.llm.prices",
     "talkgenerator.llm.providers",

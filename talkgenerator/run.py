@@ -19,7 +19,7 @@ def main(args):
 def main_cli():
     # `talkgenerator check ...` checks generated talks; `render`, `schema` and `formats` are for talks planned
     # elsewhere (by Claude, through the Skill); `mcp` serves them as an MCP server; `login` and `logout` sign in to
-    # OpenRouter; everything else is the command line that makes a talk
+    # OpenRouter, or with ChatGPT; everything else is the command line that makes a talk
     if len(sys.argv) > 1 and sys.argv[1] == "mcp":
         sys.exit(_mcp(sys.argv[2:]))
     if len(sys.argv) > 1 and sys.argv[1] == "check":

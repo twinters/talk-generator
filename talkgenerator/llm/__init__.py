@@ -13,6 +13,7 @@ from talkgenerator.llm.base import (
     TextRequest,
     TextResponse,
 )
+from talkgenerator.llm.chatgpt import ChatGPTProvider
 from talkgenerator.llm.claude import ClaudeProvider
 from talkgenerator.llm.ledger import Budget, Ledger, LedgerEntry, MeteredProvider
 from talkgenerator.llm.openai_responses import OpenAIProvider
@@ -25,6 +26,7 @@ __all__ = [
     "BudgetExceeded",
     "Capabilities",
     "CassetteMiss",
+    "ChatGPTProvider",
     "ClaudeProvider",
     "Finish",
     "Ledger",

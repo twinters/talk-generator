@@ -378,8 +378,9 @@ def get_argument_parser():
         "--llm",
         default=None,
         type=_llm_spec,
-        help="The language model that writes the talk, as provider:model: openrouter[:<model>], anthropic[:<model>] "
-        "or openai:<model>; 'none' makes a classic talk (default: TALKGENERATOR_LLM's, or else OpenRouter's free "
+        help="The language model that writes the talk, as provider:model: openrouter[:<model>], anthropic[:<model>], "
+        "openai:<model> or chatgpt[:<model>]; 'none' makes a classic talk (default: TALKGENERATOR_LLM's, or else "
+        "your ChatGPT plan's models once you've signed in with talkgenerator login chatgpt, or else OpenRouter's free "
         "models when there's an OpenRouter key: OPENROUTER_API_KEY, or talkgenerator login openrouter)",
     )
     parser.add_argument(

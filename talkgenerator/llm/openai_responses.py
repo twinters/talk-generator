@@ -30,6 +30,9 @@ _INCOMPLETE: Final[dict[str, Finish]] = {"max_output_tokens": "truncated", "cont
 
 class OpenAIProvider(TextProvider):
     capabilities = Capabilities(structured_output=True, streaming=True, vision=True)
+    # Who answers, in messages, and the provider's name in model ids (the chatgpt provider has the same API)
+    service = "OpenAI"
+    prefix = "openai"
 
     def __init__(self, model: str, *, client: Any = None) -> None:
         if not model.strip():
@@ -60,12 +63,11 @@ class OpenAIProvider(TextProvider):
                 elif event.type in ("response.completed", "response.incomplete"):
                     final = event.response
                 elif event.type == "response.failed":
-                    reason = getattr(getattr(event.response, "error", None), "message", None) or "no reason given"
-                    raise ProviderError(f"OpenAI: the answer failed ({redact(reason)})")
+                    raise self.failed(getattr(event.response, "error", None))
                 elif event.type == "error":
-                    raise ProviderError(f"OpenAI: {redact(getattr(event, 'message', None) or 'the stream broke off')}")
+                    raise self.failed(event)
         except sdk.OpenAIError as error:
-            raise provider_error(error, sdk, "OpenAI") from error
+            raise self.error(error, sdk) from error
 
         ending: Finish = "complete"
         if final is None:
@@ -82,7 +84,7 @@ class OpenAIProvider(TextProvider):
             text=text,
             data=parse_json(text) if request.json_schema is not None else None,
             finish=ending,
-            model=f"openai:{getattr(final, 'model', None) or self.model}",
+            model=f"{self.prefix}:{getattr(final, 'model', None) or self.model}",
             input_tokens=max(input_tokens - cached_tokens, 0),
             cached_input_tokens=cached_tokens,
             output_tokens=getattr(usage, "output_tokens", 0) or 0,
@@ -107,6 +109,15 @@ class OpenAIProvider(TextProvider):
         if effort:
             arguments["reasoning"] = {"effort": effort}
         return arguments
+
+    def failed(self, error: Any) -> ProviderError:
+        """The ProviderError for an answer that failed while it streamed (the error the stream ended with)."""
+        reason = getattr(error, "message", None) or "no reason given"
+        return ProviderError(f"{self.service}: the answer failed ({redact(reason)})")
+
+    def error(self, error: Exception, sdk: Any) -> ProviderError:
+        """The ProviderError for an error of the SDK (a request turned down, say)."""
+        return provider_error(error, sdk, self.service)
 
     def _new_client(self, sdk: Any) -> Any:
         key = settings.openai_api_key()

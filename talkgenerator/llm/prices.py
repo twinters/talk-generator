@@ -2,7 +2,7 @@
 
 Prices are in dollars per million tokens, as published by the providers. A model missing from the table has no known
 price, which budgets treat as possibly costly. OpenRouter's free models (ids ending in ":free") and replayed answers
-cost nothing.
+cost nothing, and so do the models of a ChatGPT plan: their requests count toward the plan's usage instead.
 """
 
 from __future__ import annotations
@@ -52,7 +52,7 @@ def price_of(model: str) -> Price | None:
     if model in PRICES:
         return PRICES[model]
     provider = model.split(":", 1)[0]
-    if provider in ("none", "replay"):
+    if provider in ("none", "replay", "chatgpt"):
         return FREE
     if provider == "openrouter" and (model.endswith(":free") or model == OPENROUTER_FREE_ROUTER):
         return FREE

@@ -3,6 +3,8 @@
 - "openrouter" (OpenRouter's free models), or "openrouter:<model>[,<fallback model>...]"
 - "anthropic" (Claude Opus 5.5), or "anthropic:<model>"
 - "openai:<model>"
+- "chatgpt" (the models of your ChatGPT plan, once you've signed in: talkgenerator login chatgpt), or
+  "chatgpt:<model>"
 - "replay:<cassette.json>": answers recorded earlier (talkgenerator.llm.replay)
 - "none": no language model; talks are classic
 
@@ -15,6 +17,7 @@ from collections.abc import Callable
 
 from talkgenerator import settings
 from talkgenerator.llm.base import Capabilities, ProviderUnavailable, TextProvider, TextRequest, TextResponse
+from talkgenerator.llm.chatgpt import ChatGPTProvider
 from talkgenerator.llm.claude import ClaudeProvider
 from talkgenerator.llm.openai_responses import OpenAIProvider
 from talkgenerator.llm.openrouter import OpenRouterProvider
@@ -72,3 +75,4 @@ register("replay", _replay)
 register("openrouter", lambda models: OpenRouterProvider(models.split(",")))
 register("anthropic", lambda model: ClaudeProvider(model))
 register("openai", lambda model: OpenAIProvider(model))
+register("chatgpt", lambda model: ChatGPTProvider(model))

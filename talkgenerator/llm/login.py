@@ -1,6 +1,8 @@
 """`talkgenerator login openrouter`: sign in to OpenRouter in your browser, and talkgenerator gets a key of its own,
 so OpenRouter's free models write your talks without setting OPENROUTER_API_KEY. `talkgenerator logout openrouter`
 forgets it again, and `talkgenerator login openrouter --status` tells how many free requests are left today.
+(`talkgenerator login chatgpt` signs in with ChatGPT instead: see talkgenerator.llm.chatgpt_login, which shares the
+PKCE and the callback server here.)
 
 It's OpenRouter's OAuth flow with PKCE (https://openrouter.ai/docs/use-cases/oauth-pkce). talkgenerator opens
 OpenRouter's sign-in page with a code challenge and waits on localhost; once you agree, OpenRouter sends your browser
@@ -37,6 +39,7 @@ from talkgenerator.util import credentials
 from talkgenerator.util.http_util import redact
 
 PROVIDER: Final = "openrouter"
+CHATGPT: Final = "chatgpt"  # (Sign in with ChatGPT: talkgenerator.llm.chatgpt_login)
 AUTH_URL: Final = "https://openrouter.ai/auth"
 KEYS_URL: Final = "https://openrouter.ai/api/v1/auth/keys"
 KEY_URL: Final = "https://openrouter.ai/api/v1/key"
@@ -134,44 +137,70 @@ _PAGE: Final = (
 )
 
 
-class _CallbackServer(http.server.ThreadingHTTPServer):
-    """Waits on localhost for the browser to come back from OpenRouter, with a code (or without one, when the user
-    said no). Every connection gets a thread of its own, so connections that browsers open ahead of time, without a
-    request, don't hold up the one with the code."""
+class CallbackServer(http.server.ThreadingHTTPServer):
+    """Waits on 127.0.0.1 for the browser to come back from a sign-in page (OpenRouter's by default), with a code, or
+    without one when the user said no. Every connection gets a thread of its own, so connections that browsers open
+    ahead of time, without a request, don't hold up the one with the code. Strict, it only takes an answer that has
+    the sign-in's state, also when it holds no code (Sign in with ChatGPT's way)."""
 
-    def __init__(self, state: str) -> None:
+    def __init__(
+        self,
+        state: str,
+        *,
+        service: str = "OpenRouter",
+        path: str = "/callback",
+        host: str = "localhost",
+        strict: bool = False,
+        done: str = "talkgenerator is getting its key from OpenRouter: you can close this tab.",
+        refused: str = "OpenRouter gave talkgenerator no key. You can close this tab.",
+    ) -> None:
+        self.host = host  # (as the callback URL names this computer)
         super().__init__(("127.0.0.1", 0), _CallbackHandler)
-        self.state = state
+        self.state, self.service, self.callback_path, self.strict = state, service, path, strict
+        self.done, self.refused = done, refused
         self.answer: dict[str, str] | None = None
 
     def server_bind(self) -> None:
         socketserver.TCPServer.server_bind(self)  # without HTTPServer's lookup of the host's name, which can be slow
-        self.server_name, self.server_port = "localhost", self.server_address[1]
+        self.server_name, self.server_port = self.host, self.server_address[1]
 
     @property
     def callback_url(self) -> str:
-        return f"http://localhost:{self.server_port}/callback"
+        return f"http://{self.host}:{self.server_port}{self.callback_path}"
+
+    def wait(self, wait_seconds: float) -> dict[str, str]:
+        """The browser's answer, once it comes back with one."""
+        self.timeout = 0.1  # (how often to look whether a handler's thread got the answer)
+        deadline = time.monotonic() + wait_seconds
+        while self.answer is None:
+            if time.monotonic() > deadline:
+                raise LoginError(f"no answer from the browser in {wait_seconds:g} seconds; try again")
+            self.handle_request()
+        return self.answer
 
 
 class _CallbackHandler(http.server.BaseHTTPRequestHandler):
-    server: _CallbackServer
+    server: CallbackServer
     timeout = 5  # (and those connections are dropped after a while)
 
     def do_GET(self) -> None:
         url = urlsplit(self.path)
-        if url.path != "/callback":
-            self._respond(404, "Nothing here", "This is talkgenerator, waiting for you to sign in to OpenRouter.")
+        server = self.server
+        if url.path != server.callback_path:
+            self._respond(
+                404, "Nothing here", f"This is talkgenerator, waiting for you to sign in to {server.service}."
+            )
             return
         answer = {name: values[0] for name, values in parse_qs(url.query).items()}
-        if answer.get("code") and answer.get("state") != self.server.state:
-            # A code of another sign-in (which its verifier wouldn't fit anyway): keep waiting for ours
+        if answer.get("state") != server.state and (server.strict or answer.get("code")):
+            # The answer of another sign-in (whose code this one's verifier wouldn't fit anyway): keep waiting for ours
             self._respond(400, "That's not this sign-in", "Go back to talkgenerator, and sign in from there.")
             return
-        self.server.answer = answer
+        server.answer = answer
         if answer.get("code"):
-            self._respond(200, "Signed in", "talkgenerator is getting its key from OpenRouter: you can close this tab.")
+            self._respond(200, "Signed in", server.done)
         else:
-            self._respond(200, "Not signed in", "OpenRouter gave talkgenerator no key. You can close this tab.")
+            self._respond(200, "Not signed in", server.refused)
 
     def _respond(self, status: int, heading: str, text: str) -> None:
         body = _PAGE.format(heading=html.escape(heading), text=html.escape(text)).encode("utf-8")
@@ -188,19 +217,13 @@ class _CallbackHandler(http.server.BaseHTTPRequestHandler):
 
 def _code_from_browser(challenge: str, open_browser: Callable[[str], bool], wait_seconds: float, out: TextIO) -> str:
     state = secrets.token_urlsafe(16)
-    with _CallbackServer(state) as server:
+    with CallbackServer(state) as server:
         url = authorization_url(challenge, server.callback_url, state)
         print(f"Sign in to OpenRouter in your browser. If it doesn't open, go to:\n\n  {url}\n", file=out)
         if not open_browser(url):
             print("(No browser to open here: on a computer without one, use --headless.)", file=out)
         print("Waiting for you to sign in (Ctrl+C stops)...", file=out, flush=True)
-        server.timeout = 0.1  # (how often to look whether a handler's thread got the answer)
-        deadline = time.monotonic() + wait_seconds
-        while server.answer is None:
-            if time.monotonic() > deadline:
-                raise LoginError(f"no answer from the browser in {wait_seconds:g} seconds; try again")
-            server.handle_request()
-        answer = server.answer
+        answer = server.wait(wait_seconds)
     if not answer.get("code"):
         why = answer.get("error_description") or answer.get("error")
         raise LoginError("OpenRouter gave no code" + (f" ({why})" if why else ": did you say no?"))
@@ -312,16 +335,20 @@ def _free_requests(details: dict[str, Any]) -> str:
 
 
 def main(command: str, argv: Sequence[str]) -> int:
-    """`talkgenerator login` and `talkgenerator logout`."""
+    """`talkgenerator login` and `talkgenerator logout`: OpenRouter's (the default), or with ChatGPT (see
+    talkgenerator.llm.chatgpt_login)."""
     parser = argparse.ArgumentParser(
         prog=f"talkgenerator {command}",
         description=(
-            "Sign in to OpenRouter, so its free models write your talks (talkgenerator keeps the key it gets)."
+            "Sign in, so that language models write your talks: to OpenRouter, for its free models (talkgenerator "
+            "keeps the key it gets), or with ChatGPT, for the models of your ChatGPT plan."
             if command == "login"
-            else "Forget the OpenRouter key that talkgenerator login got."
+            else "Sign out: forget the OpenRouter key that talkgenerator login got, or end the sign-in with ChatGPT."
         ),
     )
-    parser.add_argument("provider", nargs="?", default=PROVIDER, choices=[PROVIDER], help="where to sign in")
+    parser.add_argument(
+        "provider", nargs="?", default=PROVIDER, choices=[PROVIDER, CHATGPT], help="openrouter (the default) or chatgpt"
+    )
     if command == "login":
         parser.add_argument(
             "--headless",
@@ -331,9 +358,21 @@ def main(command: str, argv: Sequence[str]) -> int:
         parser.add_argument(
             "--status",
             action="store_true",
-            help="say whether you're signed in, and how many free requests are left today",
+            help="say whether you're signed in: how many free requests OpenRouter has left today, or which ChatGPT "
+            "account and models talks use",
+        )
+        parser.add_argument(
+            "--new-account",
+            action="store_true",
+            help="(chatgpt) sign in with another ChatGPT account than the one talkgenerator signed in with before",
         )
     args = parser.parse_args(argv)
+    if args.provider == CHATGPT:
+        from talkgenerator.llm import chatgpt_login
+
+        return chatgpt_login.main(command, args)
+    if command == "login" and args.new_account:
+        parser.error("--new-account is for signing in with ChatGPT (talkgenerator login chatgpt --new-account)")
     if command == "logout":
         return logout()
     if args.status:

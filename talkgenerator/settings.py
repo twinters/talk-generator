@@ -97,15 +97,24 @@ def theme() -> str:
 def llm_spec() -> str:
     """The language model to write talks with, as "provider:model" (see talkgenerator.llm.providers).
 
-    Without TALKGENERATOR_LLM, OpenRouter's free models write the talks when there's an OpenRouter key (they cost
-    nothing; see openrouter_api_key), and talks are classic otherwise: a paid model only writes talks when it's asked for. With
-    DISABLE_LLM=1, it's "none": talks are then classic, as the 2019 generator made them."""
+    Without TALKGENERATOR_LLM, the models of your ChatGPT plan write the talks once you've signed in with ChatGPT
+    (talkgenerator login chatgpt), else OpenRouter's free models when there's an OpenRouter key (they cost nothing;
+    see openrouter_api_key), and talks are classic otherwise: a paid model only writes talks when it's asked for.
+    With DISABLE_LLM=1, it's "none": talks are then classic, as the 2019 generator made them."""
     if is_source_disabled("LLM"):
         return "none"
     spec = env.str("TALKGENERATOR_LLM", "").strip()
     if spec:
         return spec
+    if chatgpt_signed_in():
+        return "chatgpt"
     return "openrouter" if openrouter_api_key() else "none"
+
+
+def chatgpt_signed_in() -> bool:
+    """Whether `talkgenerator login chatgpt` signed in, with the permission to use your ChatGPT plan."""
+    record = credentials.stored(config_dir(), "chatgpt")
+    return record.get("plan_usage") is True and bool(record.get("refresh_token") or record.get("access_token"))
 
 
 def openrouter_api_key() -> str:

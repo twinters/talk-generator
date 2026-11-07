@@ -151,6 +151,13 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   a key of its own, which it keeps in the user's config folder (readable only by the user), so OpenRouter's free
   models write talks without an `OPENROUTER_API_KEY`. `--headless` signs in on a computer without a browser,
   `--status` says how many free requests are left today, and `talkgenerator logout openrouter` forgets the key.
+- `talkgenerator login chatgpt`: Sign in with ChatGPT (OpenAI's sign-in for open-source apps that run locally, in
+  preview), so that the models of your ChatGPT plan write your talks (`--llm chatgpt` or `chatgpt:<model>`, and the
+  default once you've signed in), at no cost to talkgenerator: their requests count toward the plan's usage. The
+  first sign-in registers talkgenerator with the account (OAuth with PKCE, back to 127.0.0.1), the ID token is
+  checked against OpenAI's published keys, and the access token is refreshed as it runs out (one refresh at a
+  time, also across processes). `--status` names the account and its models, `--new-account` switches accounts,
+  and `talkgenerator logout chatgpt` ends the sign-in at OpenAI. A usage limit says where to manage it.
 - A list of 736 topics for talks (`talkgenerator/data/topics.txt`, read with `talkgenerator.topics`), from cats
   and sourdough to "a printer that jams", inspired by the improv suggestion lists of Impy and
   improbotics-interface: for suggestions (talk-generator-web's random topic button keeps a copy) and for checks
