@@ -331,6 +331,8 @@ def deck_metrics(deck: Deck) -> dict[str, Any]:
             1 for slide in deck.slides if any(line.startswith("Planned:") for line in slide.notes.splitlines())
         ),
         "slide_types": dict(sorted(Counter(types).items())),
+        # Who presented it, whose kinds of slides come up more often (see talkgenerator.personas)
+        "persona": deck.persona.name if deck.persona is not None else None,
         "same_type_in_a_row": sum(1 for before, after in itertools.pairwise(types) if before == after),
         "layouts": len({slide.layout for slide in deck.slides}),
         "same_layout_in_a_row": sum(

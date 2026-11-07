@@ -20,6 +20,9 @@ the same seed gives the same talk, and generating the slides in parallel gives t
 A talk can be followed while it's made (Progress: talkgenerator.generator.stream_talk does): its slides are settled in
 order as soon as they can be, a planned talk's while the language model is still writing the rest of it, and the
 Progress hears of each.
+
+A talk's persona (see talkgenerator.personas) weighs in on every pick of a slide generator, classic or planned: a
+generator's weight for a slide is its own, times the persona's multiplier for its tags. The tag caps hold as before.
 """
 
 import functools
@@ -44,6 +47,7 @@ from talkgenerator.llm.base import ProviderError, TextProvider
 from talkgenerator.llm.providers import NoneProvider
 from talkgenerator.models.plan import SlidePlan, TalkPlan
 from talkgenerator.models.theme import Theme
+from talkgenerator.personas import Persona
 from talkgenerator.plan import languages, prompt
 from talkgenerator.plan.kinds import PRESENTER_JOB, TALK_TITLE, Recipe
 from talkgenerator.plan.prompt import SPINE, PlannedSlide, slide_plan, talk_request
@@ -362,8 +366,9 @@ class PresentationSchema:
         style_chaos: float = 0.0,
         extreme_themes: bool = True,
         progress: Progress | None = None,
-        name_styles: Sequence[str] = names.DEFAULT_STYLES,
+        name_styles: Sequence[str] | None = None,
         topic_or_title: str | None = None,
+        persona: Persona | None = None,
     ) -> tuple[Presentation | None, SlideDeck]:
         """Generate a presentation about a certain topic with a certain number of slides.
 
@@ -377,8 +382,13 @@ class PresentationSchema:
         With a language model (llm), the model writes what goes on the slides, in the given language (see
         _plan_talk); the slides it doesn't write, or that come out missing something, are classic.
 
+        With a persona (see talkgenerator.personas), the talk is theirs: they weigh in on its kinds of slides, its
+        title and the style of its presenter's name, and the language model writes in their voice. The deck tells
+        which persona it had.
+
         Without a presenter, the presenter's name is made up in one of the name styles (see talkgenerator.names): by
-        the language model, in the same request, or else by talkgenerator.
+        the language model, in the same request, or else by talkgenerator. Without name_styles, in one of the default
+        styles, nudged by the persona; with them, in one of those alone.
 
         With a progress, the talk streams (see Progress): its slides are settled as soon as they can be, a planned
         talk's while the model writes the rest. The one difference with a talk that doesn't stream: when the model
@@ -397,16 +407,22 @@ class PresentationSchema:
                 seeds.append(seed_generator.get_seed(slide_nr))
 
         # The presenter's name, unless it's given: made up in a style the talk's dice pick, by the language model
-        # that writes the talk (in the same request), or else by talkgenerator (see talkgenerator.names)
+        # that writes the talk (in the same request), or else by talkgenerator (see talkgenerator.names); in one of
+        # the default styles, nudged by the persona, unless the talk says which styles it may have
         writes = llm is not None and self.writes_with(llm)
-        naming = names.Naming.of(name_styles, topics, rng, written=writes) if not presenter else None
+        nudge = persona.nudge if persona is not None and name_styles is None else None
+        styles = names.DEFAULT_STYLES if name_styles is None else name_styles
+        naming = names.Naming.of(styles, topics, rng, written=writes, nudge=nudge) if not presenter else None
         # What was typed, when it could be the topic or the title: the language model that writes the talk tells which
         # (and weighs classic titles for a topic), or else talkgenerator guesses (see talkgenerator.titles)
         titling = None
         if topic_or_title:
-            generators = self._title_candidates
-            if self._title_generator is not None:  # (its title first, and then another one, from a stream of its own)
-                generators = (self._title_generator, *generators, self._title_generator)
+            # The classic talk's title first (the persona's or the title generator's), and then another one of the
+            # title generator's, from a stream of its own
+            classic = self._classic_title_generator(persona)
+            generators = (*([classic] if classic is not None else []), *self._title_candidates)
+            if self._title_generator is not None:
+                generators = (*generators, self._title_generator)
             titling = titles.Titling.of(topic_or_title, language, writes, generators, topics[0], rng)
 
         talk = None
@@ -414,7 +430,9 @@ class PresentationSchema:
             cancelled = progress.cancelled if progress is not None else None
             name = naming.request if naming is not None else None
             typed = titling.request if titling is not None else None
-            talk = self._plan_talk(topics, seeds, rng, llm, language, title, parallel, cancelled, name, typed)
+            talk = self._plan_talk(
+                topics, seeds, rng, llm, language, title, parallel, cancelled, name, typed, persona=persona
+            )
         try:
             if talk is not None:
                 talk.wait_for_spine()
@@ -425,12 +443,12 @@ class PresentationSchema:
             reading = None
             if titling is not None:
                 title, reading = titling.settle(
-                    talk.spine if talk is not None else {}, lambda: self._title(topics, rng)
+                    talk.spine if talk is not None else {}, lambda: self._title(topics, rng, persona)
                 )
             if not title and talk is not None:
                 title = talk.title
             if not title:
-                title = self._title(topics, rng)
+                title = self._title(topics, rng, persona)
             logger.info("Generate talk title: {}".format(title))
 
             # A talk in another language needs the language model's slides: the classic ones are English
@@ -451,6 +469,8 @@ class PresentationSchema:
             slide_deck.theme, slide_deck.style_chaos, slide_deck.extreme_themes = theme, style_chaos, extreme_themes
             slide_deck.language_model = llm.id if planned and llm is not None else None
             slide_deck.topic_or_title = reading
+            if persona is not None:  # (with the angle the language model was given, for a talk it writes)
+                slide_deck.persona = persona.record(persona.angle(rng) if planned else None)
             logger.info("Slide deck: {}".format(slide_deck))
             if progress is not None:
                 progress.started(slide_deck)
@@ -467,9 +487,9 @@ class PresentationSchema:
             }
             contexts = [create_slide_presentation_context(main_presentation_context, seed) for seed in seeds]
             if talk is not None and planned:
-                self._settle_planned_talk(slide_deck, talk, contexts, rng, presenter)
+                self._settle_planned_talk(slide_deck, talk, contexts, rng, presenter, persona)
             else:
-                self._generate_slides(slide_deck, contexts, rng, parallel)
+                self._generate_slides(slide_deck, contexts, rng, parallel, persona)
             slide_deck.listener = None
             _finish_generating(slide_deck, progress.cancelled if progress is not None else None)
         except BaseException:
@@ -488,14 +508,22 @@ class PresentationSchema:
 
         return None, slide_deck
 
-    def _title(self, topics: list[str], rng: random_util.Rng) -> str:
-        """A classic talk's title, from the talk's "title" stream."""
+    def _title(self, topics: list[str], rng: random_util.Rng, persona: Persona | None = None) -> str:
+        """A classic talk's title, from the talk's "title" stream: its persona's or the title generator's."""
         with random_util.use(rng.child("title")):
-            if self._title_generator is not None:
-                title = self._title_generator({"seed": topics[0]})
+            generator = self._classic_title_generator(persona)
+            if generator is not None:
+                title = generator({"seed": topics[0]})
                 if title:
                     return str(title)
             return "About " + topics[0]
+
+    def _classic_title_generator(self, persona: Persona | None) -> titles.TitleGenerator | None:
+        """What makes a classic talk's title: the title generator, or with a persona, theirs (which half the time
+        makes one of their own titles, and else the title generator's)."""
+        if persona is None or not persona.titles:
+            return self._title_generator
+        return persona.title_generator(self._title_generator)
 
     def render(self, slide_deck: SlideDeck, debug_notes: bool = False) -> Presentation:
         """The deck as a PowerPoint presentation: in the classic template, or (with a theme) drawn as shapes."""
@@ -525,15 +553,16 @@ class PresentationSchema:
         cancelled: threading.Event | None = None,
         name: names.NameRequest | None = None,
         typed: titles.TitleRequest | None = None,
+        persona: Persona | None = None,
     ) -> "_PlannedTalk":
-        """Pick every slide's generator, and ask the language model, in one request, what goes on the slides whose
-        generators have recipes (and the presenter's name, with a name request, and for what was typed, whether it's
-        the topic or the title, with a title request: see talkgenerator.titles). The model's answer is read while
-        it's written, and in parallel, every slide's first attempt starts as soon as its part of the answer is in.
-        For a talk that streams (that can be cancelled), the answer comes in on a thread of its own, and this returns
-        at once, for the slides to be settled while it does."""
+        """Pick every slide's generator (as the persona weighs them), and ask the language model, in one request, what
+        goes on the slides whose generators have recipes (and the presenter's name, with a name request, and for what
+        was typed, whether it's the topic or the title, with a title request: see talkgenerator.titles), in the
+        persona's voice. The model's answer is read while it's written, and in parallel, every slide's first attempt
+        starts as soon as its part of the answer is in. For a talk that streams (that can be cancelled), the answer
+        comes in on a thread of its own, and this returns at once, for the slides to be settled while it does."""
         num_slides = len(seeds)
-        picks = self._pick_generators(num_slides, rng, language)
+        picks = self._pick_generators(num_slides, rng, language, persona)
         planned = {
             # (a recipe with variants comes out as one of them, such as a chart with labels or without)
             slide_nr: PlannedSlide(
@@ -567,7 +596,16 @@ class PresentationSchema:
                 generation = image_context.current().generation  # (its images' prompts, if it generates pictures)
                 for asked_again in (False, True):
                     request = talk_request(
-                        topics, list(planned.values()), rng, language, title, asked_again, name, typed, generation
+                        topics,
+                        list(planned.values()),
+                        rng,
+                        language,
+                        title,
+                        asked_again,
+                        name,
+                        typed,
+                        generation,
+                        persona=persona,
                     )
                     self._ask(llm, request, talk)
                     if talk.cancelled.is_set() or talk.spine.get("unsafe_topic") is not True:
@@ -622,11 +660,12 @@ class PresentationSchema:
             logger.exception("Asking the language model for the talk crashed: its slides are classic")
 
     def _pick_generators(
-        self, num_slides: int, rng: random_util.Rng, language: str = "en"
+        self, num_slides: int, rng: random_util.Rng, language: str = "en", persona: Persona | None = None
     ) -> list[SlideGeneratorData | None]:
-        """Every slide's generator, before there's any content: by weight for the slide's position, among the ones
-        the tags of the slides before it still allow (as generating the slides one by one picks them). A talk in
-        another language than English gets none whose recipes find English texts (such as real quotes)."""
+        """Every slide's generator, before there's any content: by weight for the slide's position (as the persona
+        weighs it), among the ones the tags of the slides before it still allow (as generating the slides one by one
+        picks them). A talk in another language than English gets none whose recipes find English texts (such as real
+        quotes)."""
         english_only = {
             generator for generator in self._slide_generators if generator.llm is not None and generator.llm.texts_from
         }
@@ -638,7 +677,7 @@ class PresentationSchema:
                 prohibited |= english_only
             with random_util.use(rng.child("slide", slide_nr, "plan")):
                 try:
-                    generator = self._select_generator(slide_nr, num_slides, prohibited)
+                    generator = self._select_generator(slide_nr, num_slides, prohibited, persona)
                 except ValueError:
                     generator = None
             picks.append(generator)
@@ -653,11 +692,12 @@ class PresentationSchema:
         contexts: list[dict],
         rng: random_util.Rng,
         presenter: str | None,
+        persona: Persona | None = None,
     ) -> None:
         """Settle the slides in order: the title slide from the plan's title, a planned slide in up to ATTEMPTS
-        tries (each must not repeat what the slides before it used), and a classic slide wherever that fails. In a
-        talk in another language than English, where classic slides would be English, that's a picture of what the
-        slide was about, without text (or no slide, without pictures in the schema)."""
+        tries (each must not repeat what the slides before it used), and a classic slide wherever that fails (picked as
+        the persona weighs them). In a talk in another language than English, where classic slides would be English,
+        that's a picture of what the slide was about, without text (or no slide, without pictures in the schema)."""
         num_slides = len(contexts)
         state = _DeckState()
         for slide_nr in range(num_slides):
@@ -683,7 +723,14 @@ class PresentationSchema:
                 )
             elif worked_out is None:
                 classic = self._work_out_slide(
-                    slide_nr, num_slides, contexts[slide_nr], rng.child("slide", slide_nr), state, {}, generate=True
+                    slide_nr,
+                    num_slides,
+                    contexts[slide_nr],
+                    rng.child("slide", slide_nr),
+                    state,
+                    {},
+                    generate=True,
+                    persona=persona,
                 )
                 worked_out = classic if isinstance(classic, _WorkedOutSlide) else None
             if worked_out is None:
@@ -858,8 +905,10 @@ class PresentationSchema:
         contexts: list[dict],
         rng: random_util.Rng,
         parallel: bool,
+        persona: Persona | None = None,
     ) -> None:
-        """Work out every slide and add it to the deck (see the module's docstring for how parallel works)."""
+        """Work out every slide and add it to the deck, picking their generators as the persona weighs them (see the
+        module's docstring for how parallel works)."""
         num_slides = len(contexts)
         slide_rngs = [rng.child("slide", slide_nr) for slide_nr in range(num_slides)]
         results: list[_Results] = [{} for _ in range(num_slides)]
@@ -867,7 +916,14 @@ class PresentationSchema:
 
         def work_out(slide_nr: int, at_state: _DeckState, generate: bool) -> _WorkedOutSlide | _NeedsWork | None:
             return self._work_out_slide(
-                slide_nr, num_slides, contexts[slide_nr], slide_rngs[slide_nr], at_state, results[slide_nr], generate
+                slide_nr,
+                num_slides,
+                contexts[slide_nr],
+                slide_rngs[slide_nr],
+                at_state,
+                results[slide_nr],
+                generate,
+                persona=persona,
             )
 
         slide_nr = 0
@@ -915,10 +971,11 @@ class PresentationSchema:
         results: _Results,
         generate: bool,
         extra_prohibited: Collection[SlideGeneratorData] = (),
+        persona: Persona | None = None,
     ) -> _WorkedOutSlide | _NeedsWork | None:
         """Work out a slide the way generating the slides one by one does: pick a slide generator (with the slide's
-        stream for that pick) among the ones the used tags still allow, run it (with its own stream for this slide),
-        and pick another one when it fails.
+        stream for that pick, as the persona weighs them) among the ones the used tags still allow, run it (with its
+        own stream for this slide), and pick another one when it fails.
 
         results holds what the generators produced for this slide before, given fewer used elements, and gets what
         they produce now. A failure stays a failure, and a slide still holds as long as it doesn't repeat what's used
@@ -928,7 +985,7 @@ class PresentationSchema:
         for pick in itertools.count():
             with random_util.use(rng.child("pick", pick)):
                 try:
-                    generator = self._select_generator(slide_nr, num_slides, prohibited)
+                    generator = self._select_generator(slide_nr, num_slides, prohibited, persona)
                 except ValueError as e:
                     logger.error(
                         "Could not generate slide %s about '%s': %s", slide_nr + 1, presentation_context["seed"], e
@@ -1036,29 +1093,32 @@ class PresentationSchema:
             return None
         return worked_out.slide, worked_out.generated_elements, worked_out.generator, slide_nr
 
-    def _select_generator(self, slide_nr, total_slides, prohibited_generators):
-        """Select a generator for a certain slide number"""
+    def _select_generator(self, slide_nr, total_slides, prohibited_generators, persona: Persona | None = None):
+        """Select a generator for a certain slide number (by weight, as the persona weighs them)"""
         if self._ignore_weights:
             return random_util.choice_optional(
                 [generator for generator in self._slide_generators if generator not in prohibited_generators]
             )
         _selected_generator = random_util.weighted_random(
-            self._get_weighted_generators_for_slide_nr(slide_nr, total_slides, prohibited_generators)
+            self._get_weighted_generators_for_slide_nr(slide_nr, total_slides, prohibited_generators, persona)
         )
         logger.debug("_selected_generator: {}".format(_selected_generator))
         return _selected_generator
 
-    def _get_weighted_generators_for_slide_nr(self, slide_nr, total_slides, prohibited_generators):
+    def _get_weighted_generators_for_slide_nr(
+        self, slide_nr, total_slides, prohibited_generators, persona: Persona | None = None
+    ):
+        """Every generator that's allowed, with its weight for the slide: its own, times the persona's multiplier for
+        its tags (see talkgenerator.personas.Persona.weight)."""
         weighted_generators = []
         for i in range(len(self._slide_generators)):
             generator = self._slide_generators[i]
             if generator in prohibited_generators:
                 continue
-            weighted_generator = (
-                generator.get_weight_for(slide_nr, total_slides),
-                generator,
-            )
-            weighted_generators.append(weighted_generator)
+            weight = generator.get_weight_for(slide_nr, total_slides)
+            if persona is not None:
+                weight *= persona.weight(generator.get_tags())
+            weighted_generators.append((weight, generator))
 
         if len(weighted_generators) == 0:
             raise ValueError("No generators left to generate slides with!")

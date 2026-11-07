@@ -327,6 +327,18 @@ class TopicOrTitle(_Data):
     read_as: Reading
 
 
+class TalkPersona(_Data):
+    """Who presented a talk, as its dice picked them (or the talk named them: see talkgenerator.personas), which shaped
+    its kinds of slides, its title and its presenter's name, and in a talk a language model wrote, its voice."""
+
+    name: str  # such as "startup_founder" (what generate_presentation's persona takes)
+    label: str  # for a site to show: "Startup founder"
+    voice: str  # who presents, as the language model was told: "a startup founder who has pivoted eleven times"
+    # The kind of talk they gave, as the language model was told ("scaling the topic to a billion users"); none for a
+    # classic talk
+    angle: str | None = None
+
+
 class Deck(_Data):
     deck_version: Literal[1] = DECK_VERSION
     generator: str  # what made the deck, such as "talkgenerator 5.0.0"
@@ -335,6 +347,8 @@ class Deck(_Data):
     # What was typed, when it could be the topic or the title, and how it was read (none: a topic or a title, given)
     topic_or_title: TopicOrTitle | None = None
     presenter: str | None = None
+    # Who presented it, as its dice picked them (see talkgenerator.personas); none for a plan written elsewhere
+    persona: TalkPersona | None = None
     language: str = "en"  # the language of its texts (the credits stay as their sources word them)
     schema_name: str | None = None
     seed: int | None = None

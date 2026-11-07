@@ -302,8 +302,9 @@ class TitleRequest:
                 lines.append(f"Classic titles from talkgenerator, to pick from: {listed}")
         return lines
 
-    def fields(self, language: str = "en") -> dict[str, str]:
-        """The spine's fields about the title, in order (instead of its title)."""
+    def fields(self, language: str = "en", hint: str = "") -> dict[str, str]:
+        """The spine's fields about the title, in order (instead of its title). A hint says what a title of the model's
+        own is to be like (its persona's titles: see talkgenerator.personas)."""
         name = languages.language(language).name
         limit = f"at most {TALK_TITLE.max_length} characters"
         if self.exact:
@@ -313,9 +314,10 @@ class TitleRequest:
                 "title": "the title the user typed, word for word, with only its spelling, grammar and capitals "
                 f"fixed (not translated) ({limit})"
             }
+        like = f", {hint}" if hint else ""
         own = (
             f"a title of your own for the talk, in {name}: funnier and more specific than what the user typed, "
-            f"building on it, spelled right (a premise such as 'Cats are liquid' keeps its words) ({limit})"
+            f"building on it{like}, spelled right (a premise such as 'Cats are liquid' keeps its words) ({limit})"
         )
         if self.candidates and not self.inspiration:
             return {

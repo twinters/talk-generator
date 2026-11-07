@@ -3,8 +3,9 @@
 Python picks the slides (see PresentationSchema); the model writes what goes on them, in one request. The response is
 one JSON object, whose schema is built for this talk's slides: its spine (title, the presenter's job, the thesis, and
 a made-up name for the presenter when nobody gave theirs: see talkgenerator.names) first, then one property per
-slide, in order, so the slides can be read while the model writes them. Seeded "dice" (a persona for the presenter
-and an angle on the topic) make every seed give its own talk, where current models take no sampling temperature.
+slide, in order, so the slides can be read while the model writes them. Seeded "dice" make every seed give its own
+talk, where current models take no sampling temperature: the talk's persona (see talkgenerator.personas), whose voice
+the model writes in, with one of its angles on the topic and what its titles are like.
 
 Some models write the properties in alphabetical order instead of the schema's (OpenRouter's free router often picks
 one that does), so the answer's properties are in alphabetical order too: the spine is one object, called "about",
@@ -27,6 +28,7 @@ from talkgenerator.util import random_util
 
 if TYPE_CHECKING:
     from talkgenerator.images.generation import ImageGeneration
+    from talkgenerator.personas import Persona
 
 SYSTEM_PROMPT: Final = """\
 You write the slides of talks for improv theatre, for formats such as PowerPoint karaoke and improvised TED talks. A \
@@ -56,33 +58,6 @@ Never write:
 If the topic asks for something hateful or harmful, set "unsafe_topic" to true, and keep everything else short.
 Answer with one JSON object in the shape you're given, and nothing else."""
 
-_PERSONAS: Final = (
-    "a world-leading expert who is slightly too passionate about the topic",
-    "a startup founder who has pivoted eleven times",
-    "a retired lighthouse keeper with strong opinions",
-    "a motivational speaker who just lost a bet",
-    "a scientist whose research was never peer reviewed",
-    "an influencer with exactly 31 followers",
-    "a professor who has studied this for forty years",
-    "a former athlete turned philosopher",
-    "a consultant who bills by the slide",
-    "a time traveller trying not to give too much away",
-    "a medieval historian who sees the Middle Ages in everything",
-    "a life coach who is suspiciously calm",
-)
-_ANGLES: Final = (
-    "the topic's hidden history",
-    "why everyone gets the topic wrong",
-    "how the topic will change the future",
-    "the presenter's personal journey with the topic",
-    "the economics of the topic that nobody talks about",
-    "the topic as a metaphor for life",
-    "a scientific breakthrough about the topic",
-    "mastering the topic in five steps",
-    "the dark side of the topic",
-    "a love letter to the topic",
-)
-
 
 @dataclass(frozen=True, eq=False)
 class PlannedSlide:
@@ -105,11 +80,17 @@ class PlannedSlide:
 SPINE: Final = "about"
 
 
-def spine(language: str = "en", name: NameRequest | None = None, typed: TitleRequest | None = None) -> dict[str, str]:
+def spine(
+    language: str = "en",
+    name: NameRequest | None = None,
+    typed: TitleRequest | None = None,
+    title_hint: str | None = None,
+) -> dict[str, str]:
     """The talk's spine, which the answer starts with: what to write in each of its fields. With a name request, the
     presenter's name too, before their job (which then agrees with it). For what was typed, which could be the topic
     or the title (see talkgenerator.titles), the title as its request asks (with classic titles to pick, the model's
-    own title, own_title, before the title it settles on)."""
+    own title, own_title, before the title it settles on). With a title hint (what the persona's titles are like, for a
+    title the model makes up), the title the model makes up is to be like that."""
     language_name = languages.language(language).name
     fields = {
         # (Asked the other way around, as "safe_topic", the free models sometimes turned down harmless topics)
@@ -118,9 +99,12 @@ def spine(language: str = "en", name: NameRequest | None = None, typed: TitleReq
         "thesis": "the talk's thesis, its absurd claim in one sentence (not shown)",
     }
     if typed is not None:
-        fields.update(typed.fields(language))
+        fields.update(typed.fields(language, title_hint or ""))
     else:
-        fields["title"] = f"{TALK_TITLE.description}, in {language_name} (at most {TALK_TITLE.max_length} characters)"
+        like = f", {title_hint}" if title_hint else ""
+        fields["title"] = (
+            f"{TALK_TITLE.description}{like}, in {language_name} (at most {TALK_TITLE.max_length} characters)"
+        )
     agreeing = ""
     if name is not None:
         fields["name_plays_on"] = name.plays_on_description()
@@ -149,14 +133,18 @@ def talk_request(
     name: NameRequest | None = None,
     typed: TitleRequest | None = None,
     generation: ImageGeneration | None = None,
+    persona: Persona | None = None,
 ) -> TextRequest:
     """The request for a talk (with the presenter's name, when there's a name request). Asked again, it says that a
     model found the topic unsafe: some of the free models get the flag wrong whichever way it's asked (one turned
     down "penguins"). For what was typed, which could be the topic or the title (see talkgenerator.titles), it says
     what the title is to be: what was typed, with its slips fixed, or a title of the model's own on it. In a talk
-    that generates pictures (with a generation), the model writes a prompt for every image that prefers one."""
-    with random_util.use(rng.child("dice")):
-        persona, angle = random_util.choice(_PERSONAS), random_util.choice(_ANGLES)
+    that generates pictures (with a generation), the model writes a prompt for every image that prefers one.
+
+    The talk's persona (see talkgenerator.personas) is who presents it: the model writes in its voice, on the angle
+    the talk's dice pick among its angles, and a title it makes up is like the persona's titles. (Without one, the
+    request has none of that: the talk is the format's own.)"""
+    hint = title_hint(persona, title, typed)
     topic = topics[0] + (f" (and {', '.join(topics[1:])})" if len(topics) > 1 else "")
     kept = " (the typed title keeps its words)" if typed is not None and typed.keep else ""
     lines = [
@@ -167,8 +155,7 @@ def talk_request(
         ),
         f"Language: write the title{kept}, the presenter's {'name and ' if name is not None else ''}job and every "
         f"slide in {languages.language(language).name}, and the image search queries in English",
-        f"The presenter: {persona}",
-        f"The angle: {angle}",
+        *([f"The presenter: {persona.voice}", f"The angle: {persona.angle(rng)}"] if persona is not None else []),
         "",
         *(
             [
@@ -180,7 +167,7 @@ def talk_request(
             else []
         ),
         f"Write the talk as one JSON object. First its spine, as an object called {SPINE}:",
-        *(f"- {field}: {description}" for field, description in spine(language, name, typed).items()),
+        *(f"- {field}: {description}" for field, description in spine(language, name, typed, hint).items()),
         "",
         "Then every slide, in order (slide 1, the title slide, is made from the spine), each with its texts, a search "
         f"query for each of its images, and its concept: {CONCEPT}.",
@@ -197,9 +184,17 @@ def talk_request(
         purpose="talk plan",
         system=SYSTEM_PROMPT,
         messages=(Message(role="user", content="\n".join(lines)),),
-        json_schema=response_schema(planned, language, name, typed, generation),
+        json_schema=response_schema(planned, language, name, typed, generation, hint),
         max_output_tokens=1000 + 300 * len(planned) + 100 * prompts,
     )
+
+
+def title_hint(persona: Persona | None, title: str | None = None, typed: TitleRequest | None = None) -> str | None:
+    """What the persona's titles are like, for a title the model makes up: none when the talk has its title already
+    (given, or typed and kept), or no persona."""
+    if persona is None or title or (typed is not None and typed.keep):
+        return None
+    return persona.title_hint
 
 
 def response_schema(
@@ -208,12 +203,13 @@ def response_schema(
     name: NameRequest | None = None,
     typed: TitleRequest | None = None,
     generation: ImageGeneration | None = None,
+    title_hint: str | None = None,
 ) -> dict[str, Any]:
     """The JSON Schema of the answer: every property required, nothing else allowed (as strict structured outputs
     want), the spine first and the slides in order (which is alphabetical order too)."""
     fields: dict[str, Any] = {
         field: {"type": "boolean" if field == "unsafe_topic" else "string", "description": description}
-        for field, description in spine(language, name, typed).items()
+        for field, description in spine(language, name, typed, title_hint).items()
     }
     properties: dict[str, Any] = {SPINE: _object(fields)}
     for slide in planned:

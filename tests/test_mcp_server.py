@@ -19,7 +19,7 @@ import anyio
 import pytest
 
 import talkgenerator
-from talkgenerator import names, run
+from talkgenerator import names, personas, run
 from talkgenerator.llm import providers
 from talkgenerator.models.deck import Deck
 from talkgenerator.models.plan import TalkPlan
@@ -114,6 +114,7 @@ def test_the_server_has_tools_to_look_things_up_and_to_make_talks(server):
         "name_styles",
         "seed",
         "license_policy",
+        "persona",
     }
     # A plan's JSON Schema is in render_plan's input too, so a client knows it without asking
     assert "SlidePlan" in json.dumps(tools["render_plan"].input_schema)
@@ -129,6 +130,7 @@ def test_the_formats_themes_and_languages_are_listed(server):
     assert {"code": "nl", "name": "Dutch"} in listed["languages"]
     assert {"code": "sv", "name": "Swedish"} in listed["languages"]
     assert listed["name_styles"] == names.catalog()
+    assert listed["personas"] == personas.catalog()
     policies = {entry["format"]: entry["license_policy"] for entry in listed["formats"]}
     assert (policies["ted"], policies["default"]) == ("open", "all")
     assert {"all", "open", "public-domain"} <= {policy["name"] for policy in listed["license_policies"]}
@@ -248,6 +250,15 @@ def test_the_model_names_the_presenter_in_a_style_the_talk_asks_for(schema, serv
 
 
 @needs_mcp
+def test_a_talk_has_the_persona_it_asks_for(schema, server, model_in_the_settings):
+    report = _answer(_call(server, "generate_talk", {"topic": "cats", "slides": 4, "persona": "time_traveller"}))
+    assert report["persona"]["name"] == _deck(report).persona.name == "time_traveller"
+    (request,) = model_in_the_settings.requests
+    assert "The presenter: a time traveller trying not to give too much away" in request.messages[0].content
+    assert "persona" not in _answer(_call(server, "generate_talk", {"topic": "cats", "slides": 4, "persona": "none"}))
+
+
+@needs_mcp
 def test_a_talk_can_be_made_again_with_its_seed(schema, server, model_in_the_settings):
     talk = {"topic": "cats", "slides": 4, "presenter": "Ann Example"}
     first, other, again = (
@@ -331,6 +342,9 @@ def test_what_a_talk_cant_be_is_refused(schema, server, monkeypatch):
     assert "there's no language 'xx'" in _error(_call(server, "generate_talk", {"topic": "cats", "language": "xx"}))
     assert "there's no name style 'custom'" in _error(
         _call(server, "generate_talk", {"topic": "cats", "name_styles": ["pun", "custom"]})
+    )
+    assert "there's no persona 'pirate'" in _error(
+        _call(server, "generate_talk", {"topic": "cats", "persona": "pirate"})
     )
     assert "less than or equal to 40" in _error(_call(server, "generate_talk", {"topic": "cats", "slides": 400}))
     assert "no license policy 'copyleft'" in _error(

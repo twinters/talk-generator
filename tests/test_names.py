@@ -10,7 +10,7 @@ import re
 
 import pytest
 
-from talkgenerator import generator, llm, names, runtime_checker
+from talkgenerator import generator, llm, names, personas, runtime_checker
 from talkgenerator.models.events import TalkFinished, TalkStarted
 from talkgenerator.plan.prompt import SPINE
 from talkgenerator.schema.content_generators import full_name_generator
@@ -272,14 +272,20 @@ def test_a_given_name_goes_first_and_no_name_is_asked_for(schema):
     assert "Ann Example" not in request.system + json.dumps(request.model_dump())
 
 
+def _nudge(seed):
+    """The name nudge of the persona a talk with this seed gets (see talkgenerator.personas)."""
+    return personas.pick(None, random_util.Rng(seed)).nudge
+
+
 def test_a_talk_whose_model_fails_gets_a_name_of_talkgenerators_own(schema):
     deck = _deck(FakeModel(fail=llm.RateLimited("free quota used up")))
-    assert deck.presenter == names.from_pack(["cats"], names.DEFAULT_STYLES, random_util.Rng(1))
+    assert deck.presenter == names.from_pack(["cats"], names.DEFAULT_STYLES, random_util.Rng(1), _nudge(1))
     assert deck.presenter in _pack_names("cats", *names.DEFAULT_STYLES)
 
 
 def test_a_classic_talk_gets_a_name_of_the_pack_or_a_classic_one(schema):
-    assert _deck(None, int_seed=2).presenter == names.from_pack(["cats"], names.DEFAULT_STYLES, random_util.Rng(2))
+    expected = names.from_pack(["cats"], names.DEFAULT_STYLES, random_util.Rng(2), _nudge(2))
+    assert _deck(None, int_seed=2).presenter == expected
     assert _deck(None, int_seed=2, topic="zxqv").presenter == names.classic(random_util.Rng(2))
     assert _deck(None, int_seed=2, name_styles="classic").presenter == names.classic(random_util.Rng(2))
 

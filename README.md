@@ -64,7 +64,8 @@ talkgenerator --topic_or_title "Why I Joined a Penguin Cult"   # a topic or a ti
 talkgenerator --topic penguins --language nl                 # in Dutch (with a language model)
 talkgenerator --topic penguins --theme "1997 WordArt"        # a look; by default, the talk's seed picks one
 talkgenerator --topic penguins --schema ted                  # copyright-free images only, for decks shown in public
-talkgenerator --topic penguins --llm none --theme classic --name_styles classic   # closest to a talk of 2019
+talkgenerator --topic penguins --persona kindergarten_teacher # who presents it: by default, the seed picks
+talkgenerator --topic penguins --llm none --theme classic --name_styles classic --persona none   # closest to 2019
 ```
 
 [The command line](https://github.com/twinters/talk-generator/blob/master/docs/command-line.md) lists every option, and the commands for plans, checks, sign-ins and the MCP server.
@@ -72,10 +73,11 @@ talkgenerator --topic penguins --llm none --theme classic --name_styles classic 
 ## How it works
 
 talkgenerator picks a talk's slides with the talk's seed: a title slide, then slides about the presenter, history, bold statements, quotes, captioned images, gifs and memes, charts, diagrams, quizzes and more, each kind in its place and at most a few times, and conclusions at the end.
+The seed also picks who presents it, a persona such as a startup founder or a medieval historian, whose favourite kinds of slides come up more often (a founder's KPI tiles, a historian's timelines), and who colours the title and the presenter's name.
 The same seed gives the same talk.
 
 - **A language model** can write what goes on those slides: the whole talk in one request, with a thesis, callbacks to earlier slides, and a made-up name and job for the presenter. OpenRouter's free models do so whenever there's an OpenRouter key, at no cost, and so do your ChatGPT plan's once you've signed in with ChatGPT; a paid model only when you ask for it ([Language models](https://github.com/twinters/talk-generator/blob/master/docs/language-models.md)).
-- **The classic generator** writes them otherwise, and every slide the model gets wrong: templates and grammars, words related to the topic, quotes, how-tos and pictures from many sources. It's the method of the [EvoMUSART 2019 paper](#credits), with more kinds of slides since: `--llm none --theme classic --name_styles classic` (the classic generator, the 2019 template and random names) comes closest to a talk of 2019.
+- **The classic generator** writes them otherwise, and every slide the model gets wrong: templates and grammars, words related to the topic, quotes, how-tos and pictures from many sources. It's the method of the [EvoMUSART 2019 paper](#credits), with more kinds of slides since: `--llm none --theme classic --name_styles classic --persona none` (the classic generator, the 2019 template, random names and no persona) comes closest to a talk of 2019.
 - **Claude** can write the talk too, as a plan that talkgenerator renders, through the Skill or the MCP server ([Use it with Claude](https://github.com/twinters/talk-generator/blob/master/docs/use-with-claude.md)).
 
 Images come from Unsplash, Pexels, Pixabay, Openverse, Wikimedia Commons, the Art Institute of Chicago, Reddit, GIPHY, InspiroBot and ShitpostBot, in a look that fits the slide (stock photos, old photographs, museum art, weird pictures...), each credited on its slide, with its license when it's openly licensed or public domain.
@@ -172,7 +174,7 @@ with contributions from
 and [Julian Faid](https://github.com/jfaid).
 
 If you would like to refer to this project in academic work, please cite the following paper.
-Its method lives on as the classic generator, which makes every talk without a language model: `talkgenerator --llm none --theme classic --name_styles classic` comes closest to the paper's talks, in their look (with the kinds of slides added since).
+Its method lives on as the classic generator, which makes every talk without a language model: `talkgenerator --llm none --theme classic --name_styles classic --persona none` comes closest to the paper's talks, in their look (with the kinds of slides added since).
 
 Winters T., Mathewson K.W. (2019) **Automatically Generating Engaging Presentation Slide Decks**. In: Ekárt A., Liapis A., Castro Pena M. (eds) Computational Intelligence in Music, Sound, Art and Design. EvoMUSART 2019. Lecture Notes in Computer Science, vol 11453. Springer, Cham
 

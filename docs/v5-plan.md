@@ -240,6 +240,42 @@ twice per talk.
 The prompt also encodes what makes karaoke decks work: short titles, no paragraphs, odd juxtapositions instead
 of explanations, a deadpan expert voice, callbacks, and room for the presenter to justify each slide.
 
+**Personas** came in on 2026-11-08 (`talkgenerator.personas`, D43), after the user's idea: "having already like random
+persona loaded that only has particular types of talks, and that helps inspire llm for title (...) and maybe even for
+name (particular generators, or nudge)". The talk's seed picks one of thirteen personas (from a stream of its own,
+`persona`), before the slides are picked. `persona=` names one instead (`--persona`, the MCP server's
+`generate_talk`), and `none` makes the format's own talk. A persona has:
+
+- **A voice, and its kinds of talk.** The request's "The presenter:" line ("a startup founder who has pivoted eleven
+  times", the voices of before, and new ones: a disgraced professor, a conspiracy blogger, a kindergarten teacher),
+  and three or four angles of its own, of which the dice pick one ("a pitch for a startup that will disrupt the
+  topic"). Before, the dice combined twelve voices with ten angles at random, such as a life coach on "the
+  economics of the topic that nobody talks about".
+- **The slides it favours, and those it doesn't.** Multipliers on the format's weights, by the slide generators' tags,
+  wherever a generator is picked: for classic slides and for the skeleton of a planned talk alike, so the tag caps
+  still hold. A medieval historian has ×3 for history and timelines and ×0.3 for KPI tiles; a startup founder ×3 for
+  KPI tiles, ×2.5 for funnels and ×0.3 for history; a kindergarten teacher ×3 for quizzes. A generator with several
+  tags gets the product. No multiplier is under 0.2, so no kind of slide disappears, and over all the personas they
+  average 0.98 to 1.25 per tag, so the mix of all talks stays the formats'. The base weights stay with the slide
+  generators (`slide_schemas.py`, where the work on real karaoke decks tunes them); a test fails when a persona names
+  a tag that no generator has.
+- **Its titles.** A hint for the model in the title's field ("like a startup's pitch, promising to disrupt
+  something"), when the model makes the title up (not for a given title, or a typed one it keeps), and four templates
+  of its own for classic talks ("Disrupting {seed.title}", "{seed.title} as a Service"), which half of the classic
+  titles come from; the format's title generator makes the others. They use the topic as typed, without the classic
+  grammar's plurals ("Coffees"). For a short input (5.11), the classic title that goes to the model as an option or as
+  inspiration is that same title.
+- **A nudge for the presenter's name.** Weights over the default styles (a medieval historian's name is a famous-name
+  pun 2.5 times as often as a pun), for the model's names and for talkgenerator's own, and how the presenter goes by,
+  in place of "with a title such as Dr. or Prof. if it suits": "with Prof. before the name, a title they still cling
+  to"; for a kindergarten teacher, "as the children call their teacher: Miss, Ms. or Mr. and a surname". An explicit
+  `name_styles=` goes alone, as before: the dice pick among those styles each as likely, without a manner.
+
+The request stays one per talk, with the persona in its dynamic part, and the presenter's own name still never
+reaches a provider. The deck and `talk.started` have the persona (`persona`: `name`, `label`, `voice`, and the `angle`
+in a talk a model wrote), for the site to show later. Classic talks get the slides, the titles and the names, so a
+classic talk is no longer the formats' own: `--persona none` is part of what comes closest to a talk of 2019 now.
+
 ### 5.3 One streamed call per talk
 
 - The prompt has a static part (style guide, slide-type catalog with field limits, output schema: about 2,000 to
@@ -1225,7 +1261,8 @@ As built (2026-11-07, `talkgenerator.images.generation` and `talkgenerator.image
 ## 12. Determinism, seeds, tests and the paper baseline
 
 - **The classic engine** is v4's algorithm on the new data model. It's the default when no LLM is configured,
-  the per-slide fallback, and the paper baseline: `--planner classic --theme classic` is the 2019 method with the
+  the per-slide fallback, and the paper baseline: `--planner classic --theme classic` (as built: `--llm none --theme
+  classic --name_styles classic --persona none`) is the 2019 method with the
   2019 look.
 - **Seeds:** one `random.Random(seed)` per talk, with streams derived per slide and purpose (for instance
   `rng.child("slide", 3, "images")`, derived by hashing), so results don't depend on thread scheduling. There are
@@ -1399,7 +1436,7 @@ before the new formats. A milestone is a checkpoint on `v5`, not a release; only
 | 3 (done, 2026-11-07: theme families and extremes, procedural palettes with contrast repair, layouts and their variants (never twice in a row), image treatments, WordArt-style heading effects, text fitting with bundled metric twins, the shapes renderer with the classic animations (columns click by click), previews and contact sheets, the design checks and the local MCP server; 0 design findings on 792 benchmark decks in 12 seeds; thumbnails in CI left out, D29) | Themes and layouts | theme tokens and families, extremes on by default; procedural palettes and font pairs; layout variants; text fitting; image treatments; the `classic` theme; thumbnails and contact sheet in CI; the local MCP server | contrast and overflow checks pass on every theme |
 | 4 (under way: `stream_talk()`, probe validation, display policies, presenter names in styles (5.10, for the site's settings) and what's typed read as a topic or a title (5.11, `topic_or_title=`, for the site's Automatic choice) are in; since 2026-11-07, talkgenerator.com runs v5 from GitHub (D31): talks stream into the browser, the .pptx is made on download, Pixabay's images are copied, and classic and LLM talks meet the speed and memory bars on the VPS (section 14), but for the first talk after a restart; left: deploying the streamed-titles fix (`be09a7e`: on the site, a free model that writes its answer's fields in alphabetical order put `slide_10` before `slide_2`, so slides 2 to 9 fell back to classic ones, or were left out of a Dutch copyright-free talk), the new settings with 5.10's and 5.11's options, and loading the library before the first talk) | Streaming and the web view | `stream_talk()`, display policies, probe validation; in talk-generator-web: the SSE endpoint, the Angular renderer, LLM talks by default with the classic switch, a language choice, Connect OpenRouter and pasted keys, .pptx on download, an Automatic topic-or-title choice (5.11), the site running `v5` from git (D31) | first slide on screen within the calibrated target on the VPS; a 20-slide talk under the memory bar; the downloaded .pptx matches the web view |
 | 5 (under way: image slots and the finder, license classes and policies, aesthetic profiles with local analysis, and the first flavour packs are in, 2026-11-07; generated images too, on the user's own key or server, credited "AI-generated with <model>" in the `generated` class (10.5, D38, D39); and new sources (10.4): the Met, Cleveland, the Wellcome Collection, NASA, Flagpedia's flags, Imgflip's templates and the Smithsonian (with the user's api.data.gov key), with the museums' type and date filters and more subreddits; left: the vision pick, generated pictures on talkgenerator.com on a visitor's key, and the Library of Congress, Flickr and Iconify, which need an exception, a paid key or a new dependency) | Images | slots, aesthetic profiles and flavour packs, local analysis, license classes; new open and weird sources; AI image generation with the user's own keys; the optional vision pick | license policies enforced; profile checks pass (such as the grayscale share for `vintage`); generated images credited |
-| 6 (under way: fourteen slide types are in, drawn as texts on shapes (D37, section 8); on 2026-11-07, benchmark talks over seeds that bring each of them up had no design, completeness, leftover or language findings: 63 classic talks, and 63 by OpenRouter's free models (620 of 630 slides by the model, at $0), plus 20 classic `ted` talks and 8 Dutch ones, where a long Dutch compound overflowed a narrow box (since, every new layout takes a 20-letter word in every theme, a Venn diagram's labels beside its circles when they don't fit in them); the only other findings were InspiroBot's and Reddit's live answers differing between a talk's two runs. talk-generator-web draws them all unchanged, and needs a small change to hold back what appears on a click in its presentations (merged into the site's master, not deployed yet). Memes with live captions came in later that day (D40). Left: the TED content pack, section 8's other candidates, and the user's ideas of 2026-11-07: memes more often ("I really love the generated memes"), slide styles and types from real PowerPoint karaoke decks, personas that shape a talk (5.2), and bolder themes with subtler, rarer image filters (section 9)) | More slide types for TED-like talks | native diagrams, big numbers, quiz, memes with live captions, social posts and more; a much larger, curated TED content pack; memes more often; what real PowerPoint karaoke decks do; personas that shape a talk; bolder themes | every new slide type passes the checks in classic and LLM mode |
+| 6 (under way: fourteen slide types are in, drawn as texts on shapes (D37, section 8); on 2026-11-07, benchmark talks over seeds that bring each of them up had no design, completeness, leftover or language findings: 63 classic talks, and 63 by OpenRouter's free models (620 of 630 slides by the model, at $0), plus 20 classic `ted` talks and 8 Dutch ones, where a long Dutch compound overflowed a narrow box (since, every new layout takes a 20-letter word in every theme, a Venn diagram's labels beside its circles when they don't fit in them); the only other findings were InspiroBot's and Reddit's live answers differing between a talk's two runs. talk-generator-web draws them all unchanged, and needs a small change to hold back what appears on a click in its presentations (merged into the site's master, not deployed yet). Memes with live captions came in later that day (D40). Left: the TED content pack, section 8's other candidates, and the user's ideas of 2026-11-07: memes more often ("I really love the generated memes"), slide styles and types from real PowerPoint karaoke decks, personas that shape a talk (5.2: in on 2026-11-08, D43), and bolder themes with subtler, rarer image filters (section 9)) | More slide types for TED-like talks | native diagrams, big numbers, quiz, memes with live captions, social posts and more; a much larger, curated TED content pack; memes more often; what real PowerPoint karaoke decks do; personas that shape a talk; bolder themes | every new slide type passes the checks in classic and LLM mode |
 | 7 | New talk formats | pitch, academic, corporate, keynote and Pecha Kucha timing, with their content packs (or in 5.1 if the TED work takes longer) | every format works in classic and LLM mode and passes the checks |
 | 8 | Integration | the site runs `v5` on the preview, then in production behind a switch; Sign in with ChatGPT on the site, if OpenAI has admitted it; docs and deprecation warnings | the site runs `v5` for a week without quota or memory incidents |
 | 5.0.0 | The release | freeze and fix; merge `v5` into `master`; release 5.0.0 with the release script; the site pins `talkgenerator==5.0.0`; 4.x ends | |
@@ -1455,8 +1492,9 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D40 | Memes are captioned live by talkgenerator, never drawn into the picture: the template's picture from Imgflip (fair use, so not in talks without fair use), its captions as texts in boxes measured once per template (`data/memes.json`, 25 templates), and the template picked by the talk's dice before the language model writes its captions (a recipe can fix a slot's query). New image sources join only where their terms allow a talk to show them, without working around a bot check, and without the user's paying for a key. |
 | D41 | Swedish (`sv`) is a talk language too, on the terms of D19 and D25: a language model writes the talk in Swedish, with talkgenerator's own words in Swedish; without one, the talk is classic and English. |
 | D42 | Themes use open fonts from Google Fonts besides the installed ones: two pairings per family (not the extremes), which a member has two times in three. They're bundled, so they're measured everywhere, and embedded in every .pptx that uses them, whole, as uncompressed EOT (python-pptx can't embed fonts; PowerPoint for Windows showed one, regular and bold, on a computer without it). Each has an installed stand-in that its texts fit too, for where embedded fonts are ignored (PowerPoint for the web, Keynote). |
+| D43 | A talk's persona, which its seed picks (or the talk names; `none` for none), shapes the talk with a language model or without: multipliers on the format's slide weights by the generators' tags (none under 0.2, and about 1 on average over the personas, so the formats' mix holds), its kind of title (a hint for the model, and half of a classic talk's titles from the persona's templates), and weights over the default name styles with how the presenter goes by (an explicit `name_styles` goes alone), besides the model's voice and an angle of the persona's. The deck and `talk.started` record it. |
 
-D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, and D28 to D42 on 2026-11-07; the others follow from the design.
+D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, and D43 on 2026-11-08; the others follow from the design.
 
 ### Open questions
 

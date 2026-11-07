@@ -41,6 +41,7 @@ The options, after the format (`"default"`, `"ted"`, `"interview"` or `"test"`) 
 | `topic`, `title` | What the talk is about (a string, comma-separated topics, or a list), and its title |
 | `topic_or_title` | Instead of `topic` and `title`: what someone typed, which could be either (see [`--topic_or_title`](command-line.md#what-the-talk-is-about)); the deck's `topic_or_title` says how it was read |
 | `presenter`, `name_styles` | The presenter's name, which never goes to a language model, or else the styles of made-up names, as a list or separated by commas |
+| `persona` | Who presents the talk, such as `"startup_founder"` (see [`--persona`](command-line.md#what-the-talk-is-about)), `"none"`, or `None` for one the talk's seed picks; the deck's `persona` (and `talk.started`'s) says which it was |
 | `language` | `"en"`, `"nl"`, `"fr"`, `"de"`, `"es"`, `"it"`, `"pt"` or `"sv"` |
 | `llm` | The language model: a spec, such as `"openrouter"` or `"anthropic:claude-haiku-5-5"`, a provider object, or `None` for your settings' (see [Language models](language-models.md)) |
 | `budget` | What the talk may spend: `talkgenerator.llm.ledger.Budget(max_cost_usd=0)` lets only free models write it |
@@ -121,6 +122,7 @@ It takes `schema_name`, `presenter`, `theme`, `license_policy`, `name_styles`, `
 | --- | --- |
 | `talkgenerator.design.themes.catalog()` | every theme, with a label, a line on what it looks like, and whether it's one for laughs (`themes.choices()`: just the names) |
 | `talkgenerator.names.catalog()` | the name styles, with a label, a description and whether they're on by default |
+| `talkgenerator.personas.catalog()` | the personas who can present a talk, with a label and who they are (`personas.choices()`: just the names, with `random` and `none`) |
 | `talkgenerator.images.licenses.catalog()` | the license policies |
 | `talkgenerator.images.profiles.catalog()` | the image looks and flavour packs |
 | `talkgenerator.plan.languages.LANGUAGES` | the languages a talk can be in |

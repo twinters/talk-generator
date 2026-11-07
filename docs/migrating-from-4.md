@@ -30,12 +30,13 @@ model with `--llm`. [Language models](language-models.md) has the details.
 
 ## What a talk looks like
 
-Three things changed, and two of them can be set back, to come as close to 4.x's talks as talkgenerator 5 gets:
+Four things changed, and three of them can be set back, to come as close to 4.x's talks as talkgenerator 5 gets:
 
 | | talkgenerator 4 | talkgenerator 5 | To keep 4.x's |
 | --- | --- | --- | --- |
 | The look | the 2019 template | a theme the talk's seed picks (`--theme random`) | `--theme classic`, or `TALKGENERATOR_THEME=classic` |
 | The presenter's made-up name | a random first and last name | a pun on the topic, a fun surname or a famous-name pun: the language model's, or else one of talkgenerator's own, which cover 642 of the 736 topics of its topic list (other topics get a random name) | `--name_styles classic` |
+| Who presents it | nobody in particular | a persona the talk's seed picks (a startup founder, a medieval historian...), whose kinds of slides come up more often, and whose own titles half of the classic titles are | `--persona none` |
 | The slides | v4's slide types | fourteen more (big numbers, quizzes, timelines, social media posts, news headlines, agendas...), trend and ranking charts, Venn diagrams and 2×2 matrices | |
 
 Classic slides look as they did, and their images come from about the same sources, with a few changes: history

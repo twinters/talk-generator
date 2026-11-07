@@ -17,6 +17,11 @@ whose model doesn't write a name that will do (see clean), gets one of talkgener
 (PACK_FILE, drafted with a language model, to be curated by hand) in a switched-on style that has names for the
 talk's topic, or else a classic one. The pack is English, as classic talks are. The model is shown two of its names
 for other topics, with what they play on ("'Anna Tomy' (anatomy) for medicine").
+
+A talk that doesn't say which styles it may have gets the default ones, nudged by its persona (see Nudge and
+talkgenerator.personas): the dice pick its style by the persona's weights (a medieval historian's name is a famous-name
+pun more often), and the model hears how the presenter goes by (a professor with "Prof." before the name). A talk that
+says which styles it may have goes by those alone.
 """
 
 from __future__ import annotations
@@ -26,8 +31,8 @@ import json
 import logging
 import re
 import unicodedata
-from collections.abc import Iterable, Sequence
-from dataclasses import dataclass
+from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import dataclass, field
 from functools import cache, lru_cache
 from typing import Any, Final
 
@@ -118,6 +123,29 @@ def styles(chosen: str | Iterable[str] | None = None) -> tuple[str, ...]:
     return tuple(name for name in STYLES if name in wanted)
 
 
+@dataclass(frozen=True)
+class Nudge:
+    """How a talk's persona would have its presenter named (see talkgenerator.personas), for a talk that doesn't say
+    which styles it may have: weights over the styles (1 for those it doesn't name), by which the talk's dice pick
+    among the switched-on ones, and how the presenter goes by, for the language model that writes the name ("with Prof.
+    before the name"), in place of "with a title such as Dr. or Prof. if it suits"."""
+
+    weights: Mapping[str, float] = field(default_factory=dict)
+    manner: str = ""
+
+    def weight(self, style: str) -> float:
+        return self.weights.get(style, 1.0)
+
+
+def _pick_style(options: Sequence[str], nudge: Nudge | None) -> str:
+    """One of the styles, as the current random stream picks it: by the nudge's weights, if there's a nudge, and
+    else each as likely (as before there were personas)."""
+    if nudge is None or not nudge.weights:
+        return random_util.choice(options)
+    picked = random_util.weighted_random([(nudge.weight(style), style) for style in options])
+    return picked if picked is not None else options[-1]
+
+
 # TALKGENERATOR'S OWN NAMES
 
 
@@ -184,15 +212,15 @@ def classic(rng: random_util.Rng) -> str:
         return str(full_name_generator())
 
 
-def from_pack(topics: Sequence[str], chosen: Sequence[str], rng: random_util.Rng) -> str:
+def from_pack(topics: Sequence[str], chosen: Sequence[str], rng: random_util.Rng, nudge: Nudge | None = None) -> str:
     """The name of a talk whose presenter no language model names (a classic talk, or one whose model didn't write a
     name that will do): a name of the pack in a chosen style that has names for one of the talk's topics, or else a
-    classic name. The talk's dice pick the style among those (and the classic names, when they're chosen), and then
-    one of its names."""
+    classic name. The talk's dice pick the style among those (and the classic names, when they're chosen), by the
+    nudge's weights if there's one, and then one of its names."""
     fitting = [entry for entry in pack() if entry.style in chosen and entry.fits(topics)]
     options = [style for style in STYLES if style in chosen and (style == CLASSIC or _has_names(fitting, style))]
     with random_util.use(rng.child("presenter", "pack")):
-        style = random_util.choice(options) if options else CLASSIC
+        style = _pick_style(options, nudge) if options else CLASSIC
         if style != CLASSIC:
             return random_util.choice([name for entry in fitting if entry.style == style for name in entry.names])
     return classic(rng)
@@ -220,20 +248,22 @@ class Example:
 @dataclass(frozen=True)
 class NameRequest:
     """What the language model that writes a talk is asked for its presenter's name: a name in a style, like the
-    examples it's shown (names of the pack for other topics than the talk's, which aren't to be copied)."""
+    examples it's shown (names of the pack for other topics than the talk's, which aren't to be copied), and how the
+    presenter goes by, as their persona has it (manner: see Nudge)."""
 
     style: str
     examples: tuple[Example, ...] = ()
+    manner: str = ""
 
     def description(self, language: str = "en") -> str:
         """What to write, for the prompt and the response schema: in the talk's language, as long as a name gets."""
         name = languages.language(language).name
         such_as = " or ".join(str(example) for example in self.examples)
         wordplay = f", with wordplay that works in {name}" if language != "en" else ""
+        manner = self.manner or "with a title such as Dr. or Prof. if it suits"
         return (
             f"{STYLES[self.style].asked}{', such as ' + such_as if such_as else ''}, for the title slide; in {name}"
-            f"{wordplay}, with a title such as Dr. or Prof. if it suits (at most {PRESENTER_NAME.max_length} "
-            "characters)"
+            f"{wordplay}, {manner} (at most {PRESENTER_NAME.max_length} characters)"
         )
 
     def plays_on_description(self) -> str:
@@ -439,28 +469,39 @@ def _blocked(words: Sequence[str]) -> bool:
 @dataclass(frozen=True, eq=False)
 class Naming:
     """How a talk gets its presenter's name when nobody gives one, as decided before its language model is asked (if
-    a model writes it): the styles it may have, and for a talk a model writes, the style its dice picked and what the
-    model is asked to write (None: nothing, for a classic name)."""
+    a model writes it): the styles it may have (and its persona's nudge, if the talk didn't say which), and for a talk
+    a model writes, the style its dice picked and what the model is asked to write (None: nothing, for a classic
+    name)."""
 
     styles: tuple[str, ...]
     topics: tuple[str, ...]
     rng: random_util.Rng  # the talk's
     style: str | None = None
     request: NameRequest | None = None
+    nudge: Nudge | None = None
 
     @classmethod
-    def of(cls, chosen: Sequence[str], topics: Sequence[str], rng: random_util.Rng, written: bool) -> Naming:
+    def of(
+        cls,
+        chosen: Sequence[str],
+        topics: Sequence[str],
+        rng: random_util.Rng,
+        written: bool,
+        nudge: Nudge | None = None,
+    ) -> Naming:
         """How a talk on the topics names its presenter, in one of the chosen styles: for a talk a language model
-        writes (written), in a style its dice pick among those, which the model writes (but the classic names)."""
-        naming = cls(tuple(style for style in STYLES if style in chosen), tuple(topics), rng)
+        writes (written), in a style its dice pick among those (by the nudge's weights, if there's one), which the
+        model writes (but the classic names), told how the presenter goes by (the nudge's manner)."""
+        naming = cls(tuple(style for style in STYLES if style in chosen), tuple(topics), rng, nudge=nudge)
         if not written or not naming.styles:
             return naming
         with random_util.use(rng.child("presenter", "style")):
-            style = random_util.choice(naming.styles)
+            style = _pick_style(naming.styles, nudge)
         if style == CLASSIC:
             return dataclasses.replace(naming, style=style)
         examples = _examples(style, topics, rng.child("presenter", "examples"))
-        return dataclasses.replace(naming, style=style, request=NameRequest(style, examples))
+        manner = nudge.manner if nudge is not None else ""
+        return dataclasses.replace(naming, style=style, request=NameRequest(style, examples, manner))
 
     def name(self, written: Any = None, plays_on: Any = None) -> str:
         """The presenter's name: the one the language model wrote (its answer's presenter_name, and name_plays_on,
@@ -482,4 +523,4 @@ class Naming:
                 )
         if self.style == CLASSIC:
             return classic(self.rng)
-        return from_pack(self.topics, self.styles, self.rng)
+        return from_pack(self.topics, self.styles, self.rng, self.nudge)

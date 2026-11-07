@@ -30,7 +30,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
 from pydantic import Field
 
-from talkgenerator import __version__, names, settings
+from talkgenerator import __version__, names, personas, settings
 from talkgenerator.checks.deck import check_deck, deck_metrics
 from talkgenerator.design import themes
 from talkgenerator.images import licenses, profiles
@@ -124,9 +124,9 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
     def list_formats() -> dict[str, Any]:
         """The talk formats (such as 'default', with images from every source, and 'ted', with copyright-free images
         only, for decks shown in public), the themes (the looks a talk can have), the languages it can be in, the
-        styles of the presenter's names that generate_talk makes up, the license policies (the license classes a
-        talk's images may have), and the looks a talk's images can be found in (aesthetic profiles and flavour
-        packs)."""
+        styles of the presenter's names that generate_talk makes up, the personas who can present its talks, the
+        license policies (the license classes a talk's images may have), and the looks a talk's images can be found
+        in (aesthetic profiles and flavour packs)."""
         return {
             "formats": [
                 {
@@ -139,6 +139,7 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
             "themes": themes.catalog(),
             "languages": [{"code": code, "name": language.name} for code, language in languages.LANGUAGES.items()],
             "name_styles": names.catalog(),
+            "personas": personas.catalog(),
             "license_policies": licenses.catalog(),
             "image_looks": profiles.catalog(),
         }
@@ -246,6 +247,14 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
         ] = None,
         seed: Annotated[int | None, Field(description="The seed of an earlier talk, to make it again")] = None,
         license_policy: Annotated[str | None, Field(description=_LICENSE_POLICY)] = None,
+        persona: Annotated[
+            str | None,
+            Field(
+                description="Who presents the talk, such as 'startup_founder' or 'kindergarten_teacher' (see "
+                "list_formats): they shape its kinds of slides, its title, the style of the presenter's name and the "
+                "language model's voice; 'none' for none (without one, the talk's seed picks one)"
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Make a whole talk on a topic, as `talkgenerator --topic` does (or with a title, or on a topic_or_title). The
         language model the user's settings name writes it (OpenRouter's free models, when there's an OpenRouter key),
@@ -262,6 +271,8 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
         _check("language", language, list(languages.LANGUAGES))
         for style in name_styles or ():
             _check("name style", style, list(names.STYLES))
+        if persona is not None:
+            _check("persona", persona, personas.choices())
         _check_policy(license_policy)
         try:
             model = providers.from_settings()  # never from the tool's arguments: only the user picks a paid model
@@ -283,6 +294,7 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
                 name_styles,
                 topic_or_title,
                 license_policy,
+                persona,
             )
 
         return await _in_a_thread(ctx, "Making the talk", generate, one_at_a_time, progress_every, folder)
@@ -318,6 +330,7 @@ def _generate(
     name_styles: Sequence[str] | None = None,
     topic_or_title: str | None = None,
     license_policy: str | None = None,
+    persona: str | None = None,
 ) -> dict[str, Any]:
     """A talk on a topic (or with a title, or on a topic_or_title), saved in the folder with its deck's JSON and
     contact sheet, and the report on it."""
@@ -338,6 +351,7 @@ def _generate(
         theme=theme,
         name_styles=name_styles,
         license_policy=license_policy or None,
+        persona=persona or None,
     )
     if saved is None:
         raise ToolError(f"couldn't save the PowerPoint in {folder}")
@@ -370,6 +384,8 @@ def _generate(
     }
     if deck.topic_or_title is not None:  # (how what was typed was read: as the topic or as the title)
         report["topic_or_title"] = deck.topic_or_title.model_dump()
+    if deck.persona is not None:  # (who presented it, as its seed picked them or as asked)
+        report["persona"] = deck.persona.model_dump(exclude_none=True)
     notes = []
     if writes and not written:
         notes.append("the language model wrote none of the slides, so the talk is classic (the server's log says why)")

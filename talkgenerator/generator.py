@@ -12,7 +12,7 @@ from typing import Any, Final
 
 from pptx.presentation import Presentation
 
-from talkgenerator import names, runtime_checker, settings, titles
+from talkgenerator import names, personas, runtime_checker, settings, titles
 from talkgenerator.design import engine, themes
 from talkgenerator.images import context as image_context
 from talkgenerator.images import generation as image_generation
@@ -83,6 +83,7 @@ def generate_presentation_using_cli_arguments(args) -> tuple[Presentation | None
         license_policy=getattr(args, "license_policy", None),
         image_generator=getattr(args, "image_generator", None),
         image_budget=_image_budget(getattr(args, "generated_images", None)),
+        persona=getattr(args, "persona", None),
     )
 
 
@@ -119,6 +120,7 @@ def generate_presentation(
     license_policy: str | Iterable[str] | None = None,
     image_generator: ImageGenerator | str | None = None,
     image_budget: ImageBudget | None = None,
+    persona: str | None = None,
 ) -> tuple[Presentation | None, SlideDeck, str | None]:
     """Deprecated, for talkgenerator 4's callers: generate a talk, save it as a PowerPoint in output_folder (unless
     save_ppt is off), and return the PowerPoint, the talk and the file it went to (see _generate_presentation for the
@@ -157,6 +159,7 @@ def generate_presentation(
         license_policy=license_policy,
         image_generator=image_generator,
         image_budget=image_budget,
+        persona=persona,
     )
 
 
@@ -186,6 +189,7 @@ def _generate_presentation(
     license_policy: str | Iterable[str] | None = None,
     image_generator: ImageGenerator | str | None = None,
     image_budget: ImageBudget | None = None,
+    persona: str | None = None,
 ) -> tuple[Presentation | None, SlideDeck, str | None]:
     """Generate a talk, as talkgenerator's own commands and stream_talk do: what generate_presentation does, without
     its DeprecationWarning. With debug_notes, every slide's speaker notes explain how it was generated.
@@ -218,7 +222,15 @@ def _generate_presentation(
     first and last name, as in 2019), as a list or one string separated by commas (see talkgenerator.names.catalog).
     The language model that writes the talk writes the name too, in the same request; without one (or when its name
     won't do), talkgenerator has names of its own for some topics, and makes up a classic name otherwise. None: the
-    first three; none at all: classic names only.
+    first three, the talk's persona favouring some (a medieval historian's name is a famous-name pun more often); none
+    at all: classic names only.
+
+    persona is who presents the talk (see talkgenerator.personas.catalog): a name such as "startup_founder" or
+    "kindergarten_teacher", None (or "random") for one the talk's seed picks, or "none" for none, which makes the
+    format's own talk. They shape the talk: which kinds of slides it favours (a startup founder's KPI tiles and
+    funnels), its title (their kind of title, from the language model, or in a classic talk half the time one of their
+    own templates), the style of the presenter's name (unless name_styles says), and the voice and angle the language
+    model writes in. The deck says which persona it had.
 
     license_policy is the license classes the talk's images may have (see talkgenerator.images.licenses): "all", "open"
     (everything but fair use: no memes, gifs or Reddit's posts, for decks shown in public), or the classes, as a list
@@ -263,6 +275,13 @@ def _generate_presentation(
     chosen_theme = themes.pick(theme, rng.child("theme"), extreme_themes)
     if chosen_theme is not None:
         logger.info("Theme: {}".format(chosen_theme.name))
+
+    # Who presents it: a persona its seed picks, unless it names one, or none (see talkgenerator.personas)
+    chosen_persona = personas.pick(persona, rng)
+    if chosen_persona is not None:
+        logger.info("Persona: {} ({})".format(chosen_persona.label, chosen_persona.voice))
+    else:
+        logger.info("Persona: none (the format's own talk)")
 
     logger.info("Presentation schema: {}".format(presentation_schema))
     logger.info("License policy: {} ({})".format(policy.name, ", ".join(sorted(policy.classes))))
@@ -328,8 +347,10 @@ def _generate_presentation(
             style_chaos=style_chaos,
             extreme_themes=extreme_themes,
             progress=progress,
-            name_styles=chosen_styles,
+            # (None: the default styles, as the persona nudges them; styles given go alone)
+            name_styles=chosen_styles if name_styles is not None else None,
             topic_or_title=typed,
+            persona=chosen_persona,
         )
     slide_deck.license_policy = policy.name
     slide_deck.usage = ledger.total()
@@ -383,6 +404,7 @@ def stream_talk(
     license_policy: str | Iterable[str] | None = None,
     image_generator: ImageGenerator | str | None = None,
     image_budget: ImageBudget | None = None,
+    persona: str | None = None,
 ) -> Iterator[TalkEvent]:
     """Make a talk as generate_presentation does (the same deck, for the same options, seed and answers), handing
     over what's ready while it's made (see talkgenerator.models.events): talk.started once its title is known (the
@@ -427,6 +449,7 @@ def stream_talk(
                     license_policy=license_policy,
                     image_generator=image_generator,
                     image_budget=image_budget,
+                    persona=persona,
                 )
                 events.put(TalkFinished(deck=slide_deck.to_deck(schema_name=schema)))
         except TalkCancelled:
@@ -467,6 +490,7 @@ class _Following:
             TalkStarted(
                 title=slide_deck.title,
                 presenter=slide_deck.presenter,
+                persona=slide_deck.persona,
                 topics=slide_deck.topics,
                 topic_or_title=slide_deck.topic_or_title,
                 language=slide_deck.language,
@@ -683,7 +707,15 @@ def get_argument_parser():
         "pun (such as Prof. Anna Tomy, for a talk on medicine), fun_surname (Linda Hivesworth, for bees), famous_pun "
         "(Albert Einstone, for geology) and classic (a random first and last name, as in 2019). The language model "
         "that writes the talk writes the name; without one, talkgenerator has names of its own for some topics, and "
-        "makes up a classic one otherwise (default: pun,fun_surname,famous_pun)",
+        "makes up a classic one otherwise (default: pun,fun_surname,famous_pun, as the talk's persona favours them)",
+    )
+    parser.add_argument(
+        "--persona",
+        default=None,
+        choices=personas.choices(),
+        help="Who presents the talk, such as startup_founder or kindergarten_teacher: they shape which kinds of slides "
+        "it favours, its title, the style of the presenter's name, and the language model's voice; none makes the "
+        "format's own talk (default: random, a persona the talk's seed picks)",
     )
     parser.add_argument(
         "--title",

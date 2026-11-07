@@ -205,6 +205,21 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   talkgenerator has names of its own for 642 of the 736 topics in its topic list. A plan can name its presenter
   (`presenter_name`).
 
+### Personas
+
+- Every talk has a presenter persona, which its seed picks: a disgraced professor, a startup founder, a medieval
+  historian, a conspiracy blogger, a kindergarten teacher and eight more (`--persona`, `persona=`, the MCP server's
+  `generate_talk`; `talkgenerator.personas.catalog()` lists them). The persona is more than the voice the language
+  model writes in and the kind of talk they give. With a model or without, it shapes the talk:
+  - the kinds of slides it favours: a historian's timelines and history, a founder's KPI tiles and funnels, a
+    teacher's quizzes. No kind of slide is left out, and the format's caps still hold;
+  - its title: the persona's kind of title from the model, and half of a classic talk's titles from the persona's
+    own templates ("Disrupting Penguins");
+  - the presenter's name: a historian's is a famous-name pun more often, and a professor goes by "Prof.", unless
+    `--name_styles` says which styles to use.
+- The deck and `talk.started` say which persona a talk had (`persona`: its name, label and voice, and the angle the
+  model was given). `--persona none` makes the format's own talk.
+
 ### Talks that stream, and decks
 
 - Every talk is a deck (`talkgenerator.models.deck`): plain, versioned JSON data with every text, image, credit and
@@ -240,6 +255,7 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   `TALKGENERATOR_THEME=classic` keeps the template.
 - A classic talk on a topic talkgenerator has presenter names for gets one of them, instead of a random first and
   last name: `--name_styles classic` keeps the random ones.
+- A classic talk's mix of slides and its title depend on its persona: `--persona none` keeps the format's own.
 - A seed gives another talk than in 4.x: every slide draws from its own random streams of the talk's seed now
   (`talkgenerator.util.random_util`), and the new kinds of slides (about one in six of a talk's slides) and names come
   into it. A talk without a seed gets a random one, which the logs and the deck mention, so any talk can be made

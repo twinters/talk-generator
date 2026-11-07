@@ -6,7 +6,7 @@ from typing import Final
 from talkgenerator import __version__
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.design import engine
-from talkgenerator.models.deck import Deck, TopicOrTitle
+from talkgenerator.models.deck import Deck, TalkPersona, TopicOrTitle
 from talkgenerator.models.theme import Theme
 from talkgenerator.models.usage import Usage
 from talkgenerator.render.powerpoint import render_slide
@@ -54,6 +54,8 @@ class SlideDeck:
         self.license_policy = "all"
         # What was typed, when it could be the talk's topic or its title, and how it was read (see talkgenerator.titles)
         self.topic_or_title: TopicOrTitle | None = None
+        # Who presents it, as its dice picked them (see talkgenerator.personas)
+        self.persona: TalkPersona | None = None
         # Who wants to know about every slide once it's added (a talk that streams: see talkgenerator.generator), and
         # about a slide that changed after it was added (a generated picture in its stock photo's place)
         self.listener: Callable[[SlideDeck, int, Slide], None] | None = None
@@ -119,6 +121,7 @@ class SlideDeck:
             topics=self._topics,
             topic_or_title=self.topic_or_title,
             presenter=self._presenter,
+            persona=self.persona,
             language=self._language,
             schema_name=schema_name,
             seed=self._seed,

@@ -8,7 +8,7 @@ import json
 
 import pytest
 
-from talkgenerator import generator, llm, titles
+from talkgenerator import generator, llm, personas, titles
 from talkgenerator.models.deck import TopicOrTitle
 from talkgenerator.models.events import TalkStarted
 from talkgenerator.plan.prompt import SPINE
@@ -523,13 +523,15 @@ def test_a_short_input_is_asked_for_a_funnier_title_with_classic_ones_to_pick(sc
 
 def test_a_topic_or_title_given_as_such_is_asked_for_as_before(schema):
     model = FakeModel()
-    _talk(model, topic="penguins")
+    deck = _talk(model, topic="penguins")
     lines = _lines(model.requests[0])
     assert lines[:2] == ["Topic: penguins", "Title: come up with one"]
     assert lines[2].startswith("Language: write the title, the presenter's job and every slide in English")
     spine = _spine_schema(model.requests[0])
     assert "own_title" not in spine
-    assert spine["title"]["description"] == "the talk's title, in English (at most 80 characters)"
+    # (like the titles of the talk's persona)
+    hint = personas.persona(deck.persona.name).title_hint
+    assert spine["title"]["description"] == f"the talk's title, {hint}, in English (at most 80 characters)"
 
 
 def test_a_clear_title_keeps_its_words_with_its_slips_fixed(schema):
