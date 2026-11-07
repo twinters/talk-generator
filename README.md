@@ -111,6 +111,7 @@ For a settings menu, `talkgenerator.design.themes.catalog()` lists every theme w
 | `--schema` | The presentation schema to use: `default`, `ted` (only copyright-free images), `interview` (no "about me" slides) or `test` |
 | `--list` | List the schemas and the slide generators each one uses, then exit |
 | `--title` | Title of the presentation. Either `topic` or this one should be set (just setting `topic` is usually more fun though). With only a title, its rarest word becomes the topic |
+| `--topic_or_title` | Instead of `--topic` and `--title`: something that could be either, such as `penguins` or `Why I Joined a Penguin Cult`. The language model that writes the talk tells which (a title stays the title, with its obvious slips fixed; a topic gets the best of the model's title and a few classic ones). Without one, it's a title when it has four words or more, starts like one ("How to", "Why", "The", "A", "My") or ends in "?" or "!". In Python: `generate_presentation(topic_or_title=...)`, and the deck's `topic_or_title` says how it was read |
 | `--presenter` | The name that will be present on the first slide. Leave blank for a made-up one (see `--name_styles`) |
 | `--name_styles` | Without `--presenter`, the kinds of made-up names the talk's seed picks from, separated by commas: `pun` ("Prof. Anna Tomy" for a talk on medicine), `fun_surname` ("Linda Hivesworth" for bees), `famous_pun` ("Albert Einstone" for geology) and `classic` (a random first and last name, as in 2019). The language model writes the name; without one, talkgenerator has names of its own for many topics, and makes up a classic one otherwise (*default: `pun,fun_surname,famous_pun`*) |
 | `--output_folder` | The folder to output the generated presentations (*default: `./output/`*) |
@@ -205,7 +206,7 @@ The client starts it on your own computer, where it uses your own keys and saves
 | `describe_format` | The slides a plan for a format can have (as `talkgenerator formats --details --json`) |
 | `get_plan_schema` | The plan format, as a JSON Schema (as `talkgenerator schema plan`) |
 | `render_plan` | Turns a plan into a PowerPoint, and returns the report of `talkgenerator render`, with the paths of the files it saved |
-| `generate_talk` | Makes a whole talk on a topic, as `talkgenerator --topic` does: the language model of your settings writes it (OpenRouter's free models, when you have an OpenRouter key), or else the classic generator. Returns where the files are, the talk's seed, and the checks |
+| `generate_talk` | Makes a whole talk on a topic, as `talkgenerator --topic` does (or with a title, or on a `topic_or_title`): the language model of your settings writes it (OpenRouter's free models, when you have an OpenRouter key), or else the classic generator. Returns where the files are, the talk's seed, and the checks |
 
 1. Install talkgenerator with the MCP SDK on your computer: `pip install 'talkgenerator[mcp]'`.
    On Windows on Arm, install it in an x64 Python: the MCP SDK needs the `cryptography` package, which has no wheels for Windows on Arm.
