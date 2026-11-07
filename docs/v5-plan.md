@@ -209,7 +209,7 @@ talkgenerator check                                         # automated quality 
 | Step | v4 | v5 with an LLM | Fallback |
 | --- | --- | --- | --- |
 | Topic expansion | ConceptNet walk around the topic | concepts per slide that drift away and come back, chosen with the spine in mind | classic walk (Datamuse, WordNet) |
-| Talk spine (new) | none | title, subtitle, thesis, presenter persona, running gag, two or three callbacks | tracery title |
+| Talk spine (new) | none | title, subtitle, thesis, presenter persona, running gag, two or three callbacks, and the presenter's made-up name ([5.10](#510-presenter-names)) | tracery title; the name from talkgenerator's pack or tracery |
 | Slide text | templates and grammars | titles, captions, statements, chart questions and categories, fake facts, about-me lines, conclusions that call back to earlier slides | the classic generator for that field |
 | Image queries | the slide's seed word, sometimes with a prefix | a search query (and a generation prompt) per image slot, written for the slot's intent and look | seed-based query |
 | Coherence | none: slides are independent | the whole talk in one pass, with callbacks and no repeated jokes | none |
@@ -251,6 +251,7 @@ of explanations, a deadpan expert voice, callbacks, and room for the presenter t
   classic content for that slide only.
 - Regenerating one slide is one small call, with the spine and the neighbouring slides as context.
 - The presenter's name never goes to a provider: plans use a `{presenter}` placeholder that's filled in locally.
+  Without a name, the model makes one up in the spine, in the same request ([section 5.10](#510-presenter-names)).
 
 ### 5.4 Provider interface
 
@@ -407,6 +408,46 @@ upkeep for a mode that only matters when no LLM is around.
   download, no new dependency).
 - On talkgenerator.com, the site's free OpenRouter quota counts as an available LLM (decided); once it runs out, a
   Dutch request gets a classic English talk with a notice.
+
+### 5.10 Presenter names
+
+Built on 2026-11-07 (`talkgenerator.names`), from the user's idea: "have the chosen LLM model generate something
+fun" instead of tracery's random first-plus-last-name combiner. A talk without a given name gets one in a style
+its seed picks among the switched-on ones (`name_styles=` on `generate_presentation` and `stream_talk`,
+`--name_styles`, the MCP server's `generate_talk`; `names.catalog()` lists them for a settings menu):
+
+| Style | On by default | Example |
+| --- | --- | --- |
+| `pun` | yes | "Prof. Anna Tomy" for a talk on medicine, "Dr. Matthew Mathics" for maths |
+| `fun_surname` | yes | an ordinary first name with a surname that fits too well: "Linda Hivesworth" for bees |
+| `famous_pun` | yes (D31) | a historical figure's name bent to fit: "Albert Einstone" for geology, "Vincent van Goat" for goats |
+| `classic` | no | tracery's random first and last name, as in 2019 |
+
+- **A given name goes first** (`presenter=`, the site's "custom name"), and never reaches the model: the request
+  then has no name field at all.
+- **One request.** The model writes the name in the spine, after the title and before the presenter's job, which
+  agrees with it (a "Prof." is a professor of something). `talk.started` doesn't wait longer: the spine is in
+  before the first slide. The prompt shows two names of the style for other topics than the talk's, drawn by the
+  talk's dice from the pack below, and a name that copies one of them is turned down, as free models copy
+  examples.
+- **Checked like the other fields.** A name is turned down when it's longer than 45 characters (a name isn't cut:
+  half a name is no name), holds template code or what no name has (digits, brackets, commas), is a placeholder
+  ("Presenter Name", in the talks' languages), or names a dictator or one of the living people models reach for
+  most (a short blocklist, which word beginnings match too: "Donald Trumpet"). Then the talk gets the name a talk
+  without a model gets.
+- **The talk's language.** The model writes the name in it, with wordplay that works in that language.
+- **Without a model** (none configured, the quota used up, a refusal, or a name that won't do), the name comes
+  from talkgenerator's own pack (`data/text-templates/presenter_names.json`, D32): 279 names by style and topic,
+  drafted with a language model, for the user to curate by hand. A talk whose topic matches an entry's words
+  (singular or plural, phrases word for word) gets one in a switched-on style the pack has for it: puns for 642 of
+  the 736 topics of `topics.txt`, fun surnames for 83, famous-name puns for 41. Other talks get a classic name,
+  from the same random stream as before, so a seed keeps its classic name.
+- **Plans** (the Skill, `render`, the MCP server's `render_plan`) can name the presenter themselves
+  (`presenter_name`): the agent is the language model there. `--presenter` goes first; a name that won't do gets
+  a note in the report and a made-up name.
+- **Determinism.** The style, the examples and the pack's name all come from the talk's seed (streams under
+  `presenter`), and the styles' order doesn't matter, so the same seed with the same answers gives the same name,
+  streamed or made at once.
 
 ## 6. Agent mode: talkgenerator as a Claude Skill
 
@@ -845,7 +886,7 @@ before the new formats. A milestone is a checkpoint on `v5`, not a release; only
 | 1 (done, 2026-11-05) | Groundwork | deck JSON and the models; pptx renderer from deck JSON (classic look); seeded random streams (`random_util`), with parallel generation giving the one-by-one talk; the classic engine on the new model; `--save_json`; usage ledger and budgets; `replay` and `none` providers; `talkgenerator check` for completeness, template leftovers and determinism | classic talks look like v4's; the same seed gives the same deck, serial or parallel; v4's offline tests pass |
 | 2 (under way: the TalkPlan schema, the planner, the `openrouter`, `anthropic`, `openai` and `chatgpt` adapters, `render`, `schema`, `formats`, the Skill, languages with their check, `login openrouter` and `login chatgpt`, and trend and ranking charts are in; on 2026-11-06, 30 benchmark talks by the free models had 0 errors, one request each, at $0, and 290 of 300 slides by the model) | LLM TED talks and the Claude Skill | TalkPlan schema; the LLM planner (one streamed call, dice, per-slide fallback, safety); `openrouter`, `anthropic` and `openai` adapters; languages, Dutch first; `render plan.json`, `schema`, `formats`; `skill/` with SKILL.md; `login openrouter`; the `chatgpt` adapter (may slip to milestone 3); checks for requests, cost, speed and language | on the benchmark with OpenRouter's free models: no holes, no leftovers, $0 and one request per talk; Dutch talks pass the language check; Claude Code makes a deck end to end with the Skill |
 | 3 (done, 2026-11-07: theme families and extremes, procedural palettes with contrast repair, layouts and their variants (never twice in a row), image treatments, WordArt-style heading effects, text fitting with bundled metric twins, the shapes renderer with the classic animations (columns click by click), previews and contact sheets, the design checks and the local MCP server; 0 design findings on 792 benchmark decks in 12 seeds; thumbnails in CI left out, D29) | Themes and layouts | theme tokens and families, extremes on by default; procedural palettes and font pairs; layout variants; text fitting; image treatments; the `classic` theme; thumbnails and contact sheet in CI; the local MCP server | contrast and overflow checks pass on every theme |
-| 4 (under way: `stream_talk()`, probe validation and display policies are in; talk-generator-web's branch `claude/v5-streaming-5a95ef` streams talks into the browser, makes the .pptx on download and copies Pixabay's images; left: the settings, the preview deployment and the measurements on the VPS) | Streaming and the web view | `stream_talk()`, display policies, probe validation; in talk-generator-web: the SSE endpoint, the Angular renderer, LLM talks by default with the classic switch, a language choice, Connect OpenRouter and pasted keys, .pptx on download, a preview deployment that installs `v5` from git | first slide on screen within the calibrated target on the VPS; a 20-slide talk under the memory bar; the downloaded .pptx matches the web view |
+| 4 (under way: `stream_talk()`, probe validation, display policies and presenter names in styles (for the site's settings) are in; talk-generator-web's branch `claude/v5-streaming-5a95ef` streams talks into the browser, makes the .pptx on download and copies Pixabay's images; left: the settings, the preview deployment and the measurements on the VPS) | Streaming and the web view | `stream_talk()`, display policies, probe validation; in talk-generator-web: the SSE endpoint, the Angular renderer, LLM talks by default with the classic switch, a language choice, Connect OpenRouter and pasted keys, .pptx on download, a preview deployment that installs `v5` from git | first slide on screen within the calibrated target on the VPS; a 20-slide talk under the memory bar; the downloaded .pptx matches the web view |
 | 5 | Images | slots, aesthetic profiles and flavour packs, local analysis, license classes; new open and weird sources; AI image generation with the user's own keys; the optional vision pick | license policies enforced; profile checks pass (such as the grayscale share for `vintage`); generated images credited |
 | 6 | More slide types for TED-like talks | native diagrams, big numbers, quiz, memes with live captions, social posts and more; a much larger, curated TED content pack | every new slide type passes the checks in classic and LLM mode |
 | 7 | New talk formats | pitch, academic, corporate, keynote and Pecha Kucha timing, with their content packs (or in 5.1 if the TED work takes longer) | every format works in classic and LLM mode and passes the checks |
@@ -891,8 +932,10 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D28 | `random` is the default theme: a talk that doesn't ask for one gets a theme its seed picks. `TALKGENERATOR_THEME` sets another default (`classic` keeps the 2019 template), and `generate_presentation(theme=...)` takes one per talk, which talk-generator-web can offer in its settings (`themes.catalog()`). |
 | D29 | Milestone 3 closes without slide thumbnails in CI: the user reviews decks in PowerPoint and in the comparison folders of sample decks, and the design checks catch what can be measured (contrast, overflow, overlap). |
 | D30 | talkgenerator.com keeps a copy of a Pixabay image for as long as its talk (7 days), the one exception to D22: Pixabay's terms don't allow permanent hotlinking, and its links stop working after 24 hours. |
+| D31 | Presenter names may be famous-name puns ("Albert Einstone" for geology), on by default: a historical figure's name bent to fit the topic, never the real name as it is, a living person's or a dictator's. Real historical figures' names as they are aren't a style. |
+| D32 | Talks without a language model get a name from a small pack curated by hand (pun names by topic, and a few fun surnames and famous-name puns) when their topic matches one of its entries, and tracery's random names otherwise. |
 
-D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, and D28 to D30 on 2026-11-07; the others follow from the design.
+D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, and D28 to D32 on 2026-11-07; the others follow from the design.
 
 ### Open questions
 

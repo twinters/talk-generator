@@ -174,6 +174,19 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   size in pixels (`width` and `height`, the original's, probed or downloaded), so a browser can place a picture
   before it loads, and a deck (and `talk.started`) says which language model writes the talk (`language_model`:
   the one asked at the start, the one that answered in the deck; none for a classic talk).
+- Presenter names in styles (`talkgenerator.names`): a talk without a presenter's name gets one made up in a style
+  its seed picks among the switched-on ones (`name_styles=` on `generate_presentation` and `stream_talk`,
+  `--name_styles`): `pun` ("Prof. Anna Tomy" for a talk on medicine), `fun_surname` ("Linda Hivesworth" for bees)
+  and `famous_pun` ("Albert Einstone" for geology; never a real name as it is, nor a living person's or a
+  dictator's) by default, and `classic`, the random first and last name of 2019. The language model that writes
+  the talk writes the name in the same request, in the talk's language and before the presenter's job, which
+  agrees with it; a name that won't do (too long, template code, a placeholder, a name on a short blocklist) is
+  made up by talkgenerator instead. Talks without a language model get a name from talkgenerator's own pack
+  (`data/text-templates/presenter_names.json`: 279 names by style and topic, drafted with a language model) when
+  their topic is one it has names for, and a classic one otherwise, the same as before for the same seed. A given
+  name still goes first and never reaches the model; `talk.started` and the deck carry the name the talk got.
+  `names.catalog()` lists the styles for a settings menu, the MCP server's `generate_talk` takes `name_styles`
+  (and `list_formats` lists them), and a plan can name its presenter (`presenter_name`), as the Skill now does.
 - `talkgenerator login chatgpt`: Sign in with ChatGPT (OpenAI's sign-in for open-source apps that run locally, in
   preview), so that the models of your ChatGPT plan write your talks (`--llm chatgpt` or `chatgpt:<model>`, and the
   default once you've signed in), at no cost to talkgenerator: their requests count toward the plan's usage. The
@@ -215,6 +228,9 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   mcp (for `talkgenerator mcp`).
 - A talk without a seed gets a random one, which the logs and the deck JSON mention, so any talk can be made
   again.
+- A classic talk on a topic that talkgenerator's pack of presenter names knows (642 of the 736 topics of
+  `topics.txt`) gets a name from it, instead of a random first and last name: `--name_styles classic` keeps the
+  random ones.
 - Randomness comes from `talkgenerator.util.random_util`: every slide draws from its own streams of the talk's
   seed. A lint rule keeps the package from using the `random` module directly.
 
