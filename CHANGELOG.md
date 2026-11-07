@@ -396,6 +396,12 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   for a picture of its frame's own shape: on a full-picture slide, a 9:16 picture came out 43% too wide and a 4:3
   one 8% too narrow, and in the three columns of an "About me" slide, which are taller than wide, a square
   picture came out 6% too narrow. v4 drew them like that too.
+- A talk with an InspiroBot poster comes out the same every time its seed makes it. InspiroBot's API makes a new
+  poster for every request, so `talkgenerator check` found that no such talk (about one classic talk in eight)
+  came out the same in parallel and one by one. The poster is now drawn with the talk's seed from InspiroBot's
+  older posters, at their predictable addresses (73 folders of 9,999 posters, from 2015 to 2017), which used to
+  fill in when the API didn't answer. Talks without a seed get a random one, so they still get any of those
+  posters, and no request goes to InspiroBot's API any more.
 
 ## [4.0.1] - 2026-11-05
 
