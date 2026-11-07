@@ -4,7 +4,9 @@ A language model (or an agent's plan) writes a talk in its language, and talkgen
 the title slide's "By ...", a chart's "Yes" and "No", a social media post's likes and shares, and a news story's
 breaking news, which this module has in every language. The classic
 generator only speaks English, so in a talk in another language, a slide that doesn't come out as planned becomes a
-picture without text instead of a classic slide. The language check reads texts with NLTK's stopword lists.
+picture without text instead of a classic slide. The language check reads texts with NLTK's stopword lists (and a
+language's words that look like English ones, which they leave out), and the spelling fixes of what's typed for a
+talk leave the compounds alone of a language that writes them as one word.
 """
 
 from __future__ import annotations
@@ -24,6 +26,12 @@ class Language:
     likes: str = "likes"  # under a social media post, as in "12K likes"
     shares: str = "shares"
     breaking: str = "BREAKING NEWS"  # over a news story on television
+    # Whether it writes compounds as one word ("pinguïnsekte", "Pinguinsekte", "pingvinsekt"), which the spelling
+    # fixes of what's typed for a talk then leave alone (see talkgenerator.sources.word_frequency)
+    compounds: bool = False
+    # Its words that are English stopwords too but missing from its own NLTK list, which the language check then
+    # doesn't count as English (Swedish "in", "all" and "just", and "is", ice)
+    english_lookalikes: frozenset[str] = frozenset()
 
 
 ENGLISH: Final = Language("en", "English", ("By", "A presentation by", "Presented by"), "Yes", "No", "english")
@@ -42,6 +50,7 @@ LANGUAGES: Final[dict[str, Language]] = {
             likes="likes",
             shares="keer gedeeld",
             breaking="NIEUWSFLITS",
+            compounds=True,
         ),
         Language(
             "fr",
@@ -64,6 +73,7 @@ LANGUAGES: Final[dict[str, Language]] = {
             likes="Likes",
             shares="Mal geteilt",
             breaking="EILMELDUNG",
+            compounds=True,
         ),
         Language(
             "es",
@@ -97,6 +107,20 @@ LANGUAGES: Final[dict[str, Language]] = {
             likes="curtidas",
             shares="compartilhamentos",
             breaking="ÚLTIMA HORA",
+        ),
+        Language(
+            "sv",
+            "Swedish",
+            ("Av", "En presentation av", "Presenterad av"),
+            "Ja",
+            "Nej",
+            "swedish",
+            likes="gilla-markeringar",  # (as Facebook and Instagram say it in Swedish)
+            shares="delningar",
+            breaking="JUST NU",  # (as Swedish news sites and SVT flag breaking news)
+            compounds=True,
+            # (into, all, just, to ask, a village and ice)
+            english_lookalikes=frozenset({"in", "all", "just", "be", "by", "is"}),
         ),
     )
 }

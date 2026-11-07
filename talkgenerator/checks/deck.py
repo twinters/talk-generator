@@ -89,7 +89,8 @@ def check_language(deck: Deck) -> list[Finding]:
     language = languages.language(deck.language)
     expected = language_util.stopwords(language.stopwords)
     english = language_util.stopwords("english")
-    own, foreign = expected - english, english - expected  # the words that tell the two apart
+    # The words that tell the two apart (but the language's words that look like English ones: Swedish "is", ice)
+    own, foreign = expected - english, english - expected - language.english_lookalikes
     findings = []
     own_in_talk = english_in_talk = 0
     for number, slide in enumerate(deck.slides, 1):

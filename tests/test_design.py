@@ -325,6 +325,11 @@ def test_a_slide_gets_the_layouts_that_fit_its_elements(images):
     assert fitting(long) == ["v5/image-top"]
     chart = slides.ChartSlide("Kattenliefhebbersvereniging?", XL_CHART_TYPE.PIE, _pie_chart_data(), None)
     assert fitting(chart) == ["v5/chart"]
+    # Swedish compounds as well (of 20 letters, "Kärnkraftsolyckornas" is no wider than the long word below)
+    swedish, compound = (
+        slides.ImageSlide(title, _image("wide")) for title in ("Pingvinernas liv", "Kärnkraftsolyckan")
+    )
+    assert (fitting(swedish), fitting(compound)) == (fitting(short), ["v5/image-top"])
 
 
 # (A compound, as Dutch and German have them, can be wider than a narrow box even at the box's smallest size: a free

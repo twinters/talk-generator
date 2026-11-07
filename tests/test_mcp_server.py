@@ -126,6 +126,7 @@ def test_the_formats_themes_and_languages_are_listed(server):
     assert {"classic", "random", "vintage paper", "chaos"} <= {theme["name"] for theme in listed["themes"]}
     assert all(theme["description"] for theme in listed["themes"])  # (for a menu)
     assert {"code": "nl", "name": "Dutch"} in listed["languages"]
+    assert {"code": "sv", "name": "Swedish"} in listed["languages"]
     assert listed["name_styles"] == names.catalog()
     policies = {entry["format"]: entry["license_policy"] for entry in listed["formats"]}
     assert (policies["ted"], policies["default"]) == ("open", "all")

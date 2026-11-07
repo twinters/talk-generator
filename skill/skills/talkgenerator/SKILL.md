@@ -61,8 +61,8 @@ by. If it's long, tell the user once that free keys give better images, and leav
    user's default (a random theme, unless their TALKGENERATOR_THEME says otherwise); `classic`, the 2019 template;
    `random`; a family such as `"dark minimal"`, `"vintage paper"` or `"1997 WordArt"` (`talkgenerator render
    --help` lists them); or `chaos`, every slide its own. The title slide is made for you, from these. Talks can be in
-   Dutch (`"nl"`), French (`"fr"`), German (`"de"`), Spanish (`"es"`), Italian (`"it"`) and Portuguese (`"pt"`):
-   write every text in that language, and keep the image queries in English.
+   Dutch (`"nl"`), French (`"fr"`), German (`"de"`), Spanish (`"es"`), Italian (`"it"`), Portuguese (`"pt"`) and
+   Swedish (`"sv"`): write every text in that language, and keep the image queries in English.
 4. **Render it**:
 
    ```bash

@@ -102,7 +102,7 @@ Only OpenRouter's free models, and your ChatGPT plan's once you've signed in wit
 The first sign-in registers talkgenerator with your account; talkgenerator keeps the sign-in in your config folder and refreshes it as it runs out (a talk a month keeps you signed in). `--status` says which account is signed in and which models it has (talks use the first, and `--llm chatgpt:<model>` picks another), `--new-account` switches accounts, and `talkgenerator logout chatgpt` ends the sign-in. It needs a browser on the computer that runs talkgenerator, and talkgenerator.com can't offer it yet: OpenAI only lets hosted apps in from a waitlist.
 `--llm none` (or `DISABLE_LLM=1`) makes a classic talk, as the 2019 generator did.
 `TALKGENERATOR_LLM_EFFORT` (such as `none`, `minimal`, `low` or `medium`) sets how hard the model thinks before it writes, for the models that take it. Unless it's set, Claude and your ChatGPT plan's models think at `low`, and OpenRouter's free models don't think at all (thinking made them take minutes, and they write as well without), or as little as they can when they have to.
-`--language nl` has the model write the talk in Dutch, and so do `fr`, `de`, `es`, `it` and `pt` in French, German, Spanish, Italian and Portuguese; the image searches stay in English.
+`--language nl` has the model write the talk in Dutch, and so do `fr`, `de`, `es`, `it`, `pt` and `sv` in French, German, Spanish, Italian, Portuguese and Swedish; the image searches stay in English.
 The classic generator only speaks English, so in such a talk, a slide that doesn't come out as the model wrote it becomes a picture without text instead of a classic slide, and the talk as a whole is English (and says so in the logs) when the model doesn't write it.
 After every talk, the logs tell how many requests it made and what they cost, and so does the talk's deck JSON.
 
@@ -160,7 +160,7 @@ For a settings menu, `talkgenerator.design.themes.catalog()` lists every theme w
 | `--print_logs` / `--verbose` | Print progress (*default: true*); `--verbose` adds debug logs |
 | `--debug_notes` | Explain in each slide's speaker notes how it was generated. Off by default, since presenters see the notes |
 | `--llm` | The language model that writes the slides, as `provider:model` (see [Language models](#language-models)). `none` makes a classic talk (*default: what `TALKGENERATOR_LLM` says, or else your ChatGPT plan's models once you've signed in with ChatGPT, or else OpenRouter's free models when there's an `OPENROUTER_API_KEY`, or else `none`*) |
-| `--language` | The language of the slides: `en`, `nl`, `fr`, `de`, `es`, `it` or `pt`, for talks a language model writes (classic talks are in English) (*default: en*) |
+| `--language` | The language of the slides: `en`, `nl`, `fr`, `de`, `es`, `it`, `pt` or `sv`, for talks a language model writes (classic talks are in English) (*default: en*) |
 | `--theme` | The look (see [Themes](#themes)): `random`, `classic` (the 2019 template), a family's name such as `"dark minimal"`, or `chaos` (*default: `TALKGENERATOR_THEME`'s, or else random*) |
 | `--style_chaos` | How many slides get a theme of their own, from 0 to 1 (*default: 0*) |
 | `--no_extreme_themes` | Leave the themes for laughs out of `--theme random` |

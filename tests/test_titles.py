@@ -73,6 +73,23 @@ def test_titles_start_like_titles_and_claims_read_like_claims_in_the_talk_s_lang
     assert titles.guess("Katten zijn vloeibaar", "nl") == titles.TITLE
 
 
+def test_swedish_titles_start_like_swedish_titles_and_its_ice_is_no_claim():
+    assert titles.guess("Varför katter", "sv") == titles.TITLE
+    assert titles.guess("Därför ljuger katter", "sv") == titles.TITLE  # ("That's why cats lie", a headline's start)
+    assert titles.guess("Katter är flytande", "sv") == titles.TITLE
+    assert titles.guess("Pingviner på is", "sv") == titles.TOPIC  # (penguins on ice: "is" is no English verb here)
+    assert titles.guess("Penguins on ice", "sv") == titles.TOPIC
+    assert titles.guess("Cats are liquid", "sv") == titles.TITLE  # (English goes for every language)
+    assert titles.guess("Kanelbullar", "sv") == titles.TOPIC
+
+
+def test_a_swedish_title_keeps_its_words_and_its_rarest_is_the_topic():
+    assert titles.topics_from("Varför jag gick med i en pingvinsekt", "sv") == ["pingvinsekt"]
+    assert titles.topics_from("kanelbullar, fika", "sv") == ["kanelbullar", "fika"]
+    assert titles.topics_from("pingvner", "sv") == ["pingviner"]  # (a misspelling, fixed)
+    assert titles.polished("varför jag gick med i en pingvinsekt", "sv") == "Varför jag gick med i en pingvinsekt"
+
+
 def test_the_topics_come_from_a_title_s_rarest_word_and_otherwise_from_what_was_typed():
     assert titles.topics_from("Why I Joined a Penguin Cult") == ["Penguin"]
     assert titles.topics_from('  "My trip to Zorblaxia"  ') == ["Zorblaxia"]  # (unknown: the rarest)
