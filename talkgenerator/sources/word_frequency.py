@@ -7,6 +7,7 @@ whose domain no longer exists.
 import difflib
 import re
 from functools import cache, lru_cache
+from typing import Final
 
 from wordfreq import top_n_list, zipf_frequency
 
@@ -14,6 +15,10 @@ from talkgenerator.util import language_util
 
 _KNOWN_WORDS = 50_000  # how many of a language's most frequent words a misspelling is matched against
 _LEAST_LIKENESS = 0.85  # (difflib's ratio: "pengiun" is 0.86 like "penguin", "zorblax" 0.83 like "zorba")
+# A word rarer than this on the Zipf scale (0.3 in a million words) may be a misspelling of a word one edit away that's
+# this much more frequent (a hundred times): misspellings that are common enough have frequencies of their own ("teh")
+_RARE = 2.5
+_MORE_FREQUENT = 2.0
 
 
 @lru_cache(maxsize=4096)
@@ -53,21 +58,74 @@ def _letters(word: str) -> str:
     return re.sub(r"[^\w'’-]|[\d_]", "", word)
 
 
+_WORD: Final = re.compile(r"[^\W\d_]+(?:['’-][^\W\d_]+)*")
+
+
+def fix_spelling(text: str, language: str = "en") -> str:
+    """The text with its misspelled words fixed: every word the language doesn't know (nor English) taken as the
+    known word it's most likely a misspelling of, if there's one that close, in the same case ("Pengiuns":
+    "Penguins"). Made-up words, such as "Zorblaxia", stay."""
+    return _WORD.sub(lambda match: _in_case_of(match.group(), _spelled(match.group(), language)), text)
+
+
+def _in_case_of(original: str, word: str) -> str:
+    if word.casefold() == original.casefold():
+        return original
+    if original.isupper() and len(original) > 1:
+        return word.upper()
+    return word[:1].upper() + word[1:] if original[:1].isupper() else word
+
+
 def _spelled(word: str, language: str) -> str:
-    """The word, or the known word it's most likely a misspelling of, when the language doesn't know it: one of the
-    language's most frequent words (or English's) that starts with the same letter and is about as long."""
-    if _frequency(word, language) > 0:
+    """The word, or the known word it's most likely a misspelling of: for a rare word (or one the language doesn't
+    know, nor English), the most frequent word one edit away (a letter left out, two swapped, one changed or one
+    added) that's at least a hundred times more frequent ("waht" is "what", "teh" "the", "pengiun" "penguin"); or
+    else, for a word no language knows, one of the language's most frequent words that starts with the same letter,
+    is about as long and is mostly the same letters ("airplain": "airplane")."""
+    frequency = _frequency(word, language)
+    if len(word) < 3 or frequency >= _RARE:
         return word
     lowered = word.casefold()
+    languages = (language, "en") if language != "en" else ("en",)
+    known = frozenset().union(*(_known_set(each) for each in languages))
+    edited = [
+        candidate
+        for candidate in sorted(_edits(lowered) & known)
+        if _frequency(candidate, language) >= frequency + _MORE_FREQUENT
+    ]
+    if edited:
+        return max(edited, key=lambda candidate: _frequency(candidate, language))
+    if frequency > 0:
+        return word  # (a rare word, but a word)
     pool = [
-        known
-        for known in _known_words(language) + (_known_words("en") if language != "en" else ())
-        if known[:1] == lowered[:1] and abs(len(known) - len(lowered)) <= 2
+        candidate
+        for each in languages
+        for candidate in _known_words(each)
+        if candidate[:1] == lowered[:1] and abs(len(candidate) - len(lowered)) <= 2
     ]
     matches = difflib.get_close_matches(lowered, pool, n=1, cutoff=_LEAST_LIKENESS)
     return matches[0] if matches else word
 
 
+_LETTERS: Final = "abcdefghijklmnopqrstuvwxyzàáâäçèéêëìíîïñòóôöùúûü"
+
+
+def _edits(word: str) -> set[str]:
+    """The strings one edit away from the word: a letter left out, two letters swapped, one changed or one added."""
+    splits = [(word[:index], word[index:]) for index in range(len(word) + 1)]
+    return {
+        *(left + right[1:] for left, right in splits if right),
+        *(left + right[1] + right[0] + right[2:] for left, right in splits if len(right) > 1),
+        *(left + letter + right[1:] for left, right in splits if right for letter in _LETTERS),
+        *(left + letter + right for left, right in splits for letter in _LETTERS),
+    }
+
+
 @cache
 def _known_words(language: str) -> tuple[str, ...]:
     return tuple(word for word in top_n_list(language, _KNOWN_WORDS) if word.isalpha())
+
+
+@cache
+def _known_set(language: str) -> frozenset[str]:
+    return frozenset(_known_words(language))

@@ -88,13 +88,15 @@ def guess(text: str, language: str = "en") -> str:
 
 def topics_from(text: str, language: str = "en") -> list[str]:
     """The topics of a talk on what was typed, as settled before its language model reads it (by the guess): a
-    title's rarest word in its language (as for a title given as such, but with its misspellings fixed first, so
-    that "pengiun" doesn't become the topic: a misspelled word is unknown, and so the rarest), or else the topics it
-    names, separated by commas."""
+    title's rarest word in its language (as for a title given as such), or else the topics it names, separated by
+    commas. Either with its misspellings fixed ("pengiuns": "penguins"), as what's typed often has them: the topics
+    give the slides their words to riff on, and a misspelled word would be a title's rarest, as no language knows
+    it."""
     text = normalised(text)
     if guess(text, language) == TITLE:
         return [word_frequency.get_rarest_word(text, language, fix_spelling=True) or text]
-    return [part.strip() for part in text.split(",") if part.strip()] or [text]
+    fixed = word_frequency.fix_spelling(text, language)
+    return [part.strip() for part in fixed.split(",") if part.strip()] or [text]
 
 
 # A TITLE THAT WAS TYPED

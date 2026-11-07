@@ -72,9 +72,20 @@ def test_the_topics_come_from_a_title_s_rarest_word_and_otherwise_from_what_was_
 
 
 def test_a_misspelled_word_doesnt_become_the_topic():
-    # A misspelling is a word no language knows, so the rarest: it's taken as the word it's most likely to be
+    # A misspelling is a word no language knows (or hardly), so the rarest: it's taken as the word it's likely to be
     assert titles.topics_from("why i joind a pengiun cult") == ["penguin"]
+    assert titles.topics_from("waht my cat taught me about taxes") == ["taxes"]  # (not "waht")
+    assert titles.topics_from("how too become a profesional napper") == ["napper"]  # (a rare word, but a word)
     assert word_frequency.get_rarest_word("why i joind a pengiun cult") == "joind"  # (as before, without the fix)
+
+
+def test_a_misspelled_topic_is_fixed_too():
+    assert titles.topics_from("pengiuns") == ["penguins"]
+    assert titles.topics_from("Quantim physics, blockchian") == ["Quantum physics", "blockchain"]
+    assert titles.topics_from("axolotls") == ["axolotls"]  # (rare, but no misspelling)
+    assert word_frequency.fix_spelling("Waht a PROFESIONAL airplain") == "What a PROFESSIONAL airplane"
+    assert word_frequency.fix_spelling("Zorblaxia") == "Zorblaxia"  # (made up: nothing like it)
+    assert word_frequency.fix_spelling("un profesional", "es") == "un profesional"  # (Spanish)
 
 
 def test_the_rarest_word_of_a_title_in_another_language_keeps_its_accents():
