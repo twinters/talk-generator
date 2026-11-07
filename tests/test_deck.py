@@ -16,12 +16,23 @@ from pydantic import ValidationError
 
 from talkgenerator import generator
 from talkgenerator.datastructures.image_data import ImageData
-from talkgenerator.models.deck import ChartSeries, ChartSpec, Deck, DeckSlide, ImageAsset, ImageElement, TextElement
+from talkgenerator.design import engine, themes
+from talkgenerator.models.deck import (
+    ChartSeries,
+    ChartSpec,
+    Deck,
+    DeckSlide,
+    ImageAsset,
+    ImageElement,
+    ShapeElement,
+    TextElement,
+)
 from talkgenerator.render import charts
 from talkgenerator.render.powerpoint import render_pptx, render_slide
+from talkgenerator.render.shapes import EMU_PER_PIXEL
 from talkgenerator.slide import powerpoint_slide_creator, slides
 from talkgenerator.slide.slide_deck import SlideDeck
-from talkgenerator.util import image_util
+from talkgenerator.util import image_util, random_util
 
 
 def _jpeg(size):
@@ -393,9 +404,10 @@ def test_cli_flag():
 _P = "{http://schemas.openxmlformats.org/presentationml/2006/main}"
 
 
-def _steps(ppt_slide):
-    """A slide's clicks: per click, what each effect does (appear, dim, play) to which shape (by its name)."""
-    names = {str(shape.shape_id): shape.name for shape in ppt_slide.shapes}
+def _steps(ppt_slide, name=lambda shape: shape.name):
+    """A slide's clicks: per click, what each effect does (appear, dim, play) to which shape (by its name, or by what
+    name says of it)."""
+    names = {str(shape.shape_id): name(shape) for shape in ppt_slide.shapes}
     timing = ppt_slide.element.find(_P + "timing")
     assert timing is not None
     targets = [target.get("spid") for target in timing.iter(_P + "spTgt")]
@@ -474,3 +486,57 @@ def test_a_deck_of_column_slides_saves_and_opens_again(images, tmp_path):
 
     reopened = Presentation(str(tmp_path / "columns.pptx"))
     assert all(slide.element.find(_P + "timing") is not None for slide in list(reopened.slides)[-2:])
+
+
+def _role(shape, deck_slide):
+    """The role of the column's element a shape of a themed slide is drawn for (the one in whose box its middle is),
+    or else its name."""
+    x = (shape.left + shape.width / 2) / EMU_PER_PIXEL
+    y = (shape.top + shape.height / 2) / EMU_PER_PIXEL
+    for element in deck_slide.elements:
+        box = element.box
+        if element.role.startswith(("content_", "caption_")) and box.x <= x <= box.x + box.w:
+            if box.y <= y <= box.y + box.h:
+                return element.role
+    return shape.name
+
+
+def test_themed_columns_appear_click_by_click_too(images):
+    """In every layout for columns, and every theme family (some frame their pictures as polaroids, with grain on
+    them, say), the columns appear as the 2019 template's do, each with all it's drawn with."""
+    families = list(themes.FAMILIES)
+    layouts = set()
+    for seed in range(12):
+        three_columns = slides.ThreeColumnImageSlide(
+            "Cats", "One", _image("wide"), "Two", _image("tall"), "Three", _image("square")
+        )
+        two_columns = slides.TwoColumnImageSlide("Cats", "Expectation", _image("wide"), "Reality", _image("tall"))
+        slide_deck = SlideDeck(2, title="Cats", seed=seed)
+        for index, slide in enumerate((three_columns, two_columns)):
+            slide.add_source("Test", "https://example.com")  # (a credits line, which stays as it is)
+            slide_deck.add_slide(index, slide)
+        slide_deck.theme = themes.pick(families[seed % len(families)], random_util.Rng(seed))
+        deck = slide_deck.to_deck()
+        output = io.BytesIO()
+        render_pptx(deck, images=slide_deck.image_store()).save(output)
+        three, two = Presentation(output).slides  # (saved and opened again)
+
+        for deck_slide, ppt_slide in ((deck.slides[0], three), (deck.slides[1], two)):
+            layouts.add(deck_slide.layout)
+            clicks = [
+                ({role for what, role in step if what == "appear"}, {role for what, role in step if what == "dim"})
+                for step in _steps(ppt_slide, lambda shape, deck_slide=deck_slide: _role(shape, deck_slide))
+            ]
+            first, second, third = ({f"content_{index}", f"caption_{index}"} for index in (1, 2, 3))
+            if deck_slide.type == "three_column_image":  # each on a click, the one before dimming
+                assert clicks == [(first, set()), (second, first), (third, second)], deck_slide.layout
+            else:  # the first from the start, the second on the click, as the first dims
+                assert clicks == [(second, first)], deck_slide.layout
+            # Everything but the title, the credits and the theme's own shapes (its decoration, a band, a panel)
+            animated = {target.get("spid") for target in ppt_slide.element.iter(_P + "spTgt")}
+            still = [shape for shape in ppt_slide.shapes if str(shape.shape_id) not in animated]
+            shapes = sum(isinstance(element, ShapeElement) for element in deck_slide.elements)
+            assert len(still) == shapes + 2, (deck_slide.layout, [shape.name for shape in still])
+            entrances = ppt_slide.element.xpath(".//p:timing//p:cTn[@presetClass='entr']/@presetID")
+            assert set(entrances) == {"10"}  # (fading in)
+    assert layouts == {name for name in engine.layout_names() if name.startswith("v5/columns-")}

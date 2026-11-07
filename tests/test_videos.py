@@ -15,6 +15,8 @@ from types import SimpleNamespace
 import pptx
 import pytest
 from PIL import Image
+from pptx.chart.data import ChartData
+from pptx.enum.chart import XL_CHART_TYPE
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 from pptx.oxml.ns import qn
 from pydantic import ValidationError
@@ -22,6 +24,7 @@ from pydantic import ValidationError
 from talkgenerator.datastructures.image_data import ImageData, VideoCopy
 from talkgenerator.design import themes
 from talkgenerator.models.deck import Deck, DeckSlide, ImageAsset, ImageElement
+from talkgenerator.render import animation
 from talkgenerator.render.powerpoint import render_pptx, render_slide
 from talkgenerator.slide import powerpoint_slide_creator, slides
 from talkgenerator.slide.slide_deck import SlideDeck
@@ -557,12 +560,22 @@ def _clicks(ppt_slide):
     return steps
 
 
-def test_a_video_in_a_column_appears_and_plays_with_it(served):
+def _classic(slide):
+    return slide.create_powerpoint_slide(_presentation())
+
+
+def _in_a_theme(slide):
+    _, (ppt_slide,) = _themed(slide, family="vintage paper")  # (its pictures in polaroid frames, with grain)
+    return ppt_slide
+
+
+@pytest.mark.parametrize("draw", [_classic, _in_a_theme], ids=["classic", "themed"])
+def test_a_video_in_a_column_appears_and_plays_with_it(served, draw):
     served.images["https://example.com/one.png"] = served.images["https://example.com/two.png"] = _png()
     one, two = ImageData("https://example.com/one.png"), ImageData("https://example.com/two.png")
     slide = slides.ThreeColumnImageSlide("Peanuts", "One", one, "Two", two, "Three", _big_gif())
 
-    ppt_slide = slide.create_powerpoint_slide(_presentation())
+    ppt_slide = draw(slide)
 
     (movie,) = _movies(ppt_slide)
     steps = _clicks(ppt_slide)
@@ -573,14 +586,52 @@ def test_a_video_in_a_column_appears_and_plays_with_it(served):
     assert looping == ["indefinite"]
 
 
-def test_a_video_in_the_first_of_two_columns_plays_from_the_start(served):
+@pytest.mark.parametrize("draw", [_classic, _in_a_theme], ids=["classic", "themed"])
+def test_a_video_in_the_first_of_two_columns_plays_from_the_start(served, draw):
     served.images["https://example.com/reality.png"] = _png()
     reality = ImageData("https://example.com/reality.png")
     slide = slides.TwoColumnImageSlide("Peanuts", "Expectation", _big_gif(), "Reality", reality)
 
-    ppt_slide = slide.create_powerpoint_slide(_presentation())
+    ppt_slide = draw(slide)
 
     (movie,) = _movies(ppt_slide)
     steps = _clicks(ppt_slide)
     assert steps[0] == ("by itself", [("mediacall", movie.name)])  # (the first column shows from the start)
     assert ("emph", movie.name) in steps[1][1]  # and dims as the second appears
+
+
+@pytest.mark.parametrize("video_first", [True, False], ids=["video first", "reveals first"])
+def test_a_slides_animations_add_up(served, video_first):
+    """A slide's reveals and its video's playing don't take each other's place, whatever comes first."""
+    presentation = pptx.Presentation()
+    ppt_slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+    punchline = ppt_slide.shapes.add_textbox(0, 0, 914400, 914400)
+    punchline.text_frame.text = "Cheese"
+    data = ChartData()
+    data.categories = ["Monday", "Tuesday"]
+    data.add_series("Me", (1, 2))
+    data.add_series("My cat", (2, 1))
+    chart = ppt_slide.shapes.add_chart(XL_CHART_TYPE.LINE, 0, 0, 914400, 914400, data)
+
+    def video():
+        still = ppt_slide.shapes.add_picture(io.BytesIO(_png()), 0, 0)
+        powerpoint_slide_creator.play_video(ppt_slide, still, _mp4(2.5), _png(), True)
+
+    def reveals():
+        animation.reveal_shapes(ppt_slide, [punchline])
+        animation.reveal_chart_series(ppt_slide, chart, 2)
+
+    for add in (video, reveals) if video_first else (reveals, video):
+        add()
+
+    (movie,) = _movies(ppt_slide)
+    assert _clicks(ppt_slide) == [
+        ("by itself", [("mediacall", movie.name)]),
+        ("click", [("entr", punchline.name)]),
+        ("click", [("entr", chart.name)]),
+    ]
+    timing = ppt_slide.element.find(qn("p:timing"))
+    assert timing.xpath("./p:bldLst/*/@spid") == [str(punchline.shape_id), str(chart.shape_id)]
+    assert timing.xpath("./p:tnLst/p:par/p:cTn/p:childTnLst/p:video//p:spTgt/@spid") == [str(movie.shape_id)]
+    ids = timing.xpath(".//p:cTn/@id")
+    assert ids == [str(number) for number in range(1, len(ids) + 1)]

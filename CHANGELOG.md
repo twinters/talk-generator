@@ -96,7 +96,9 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   captions under or above them, in zig-zag rows or on the two halves of the slide, a chart or picture beside its
   title, a statement centred, aligned left by a bar or on a band. A slide never gets the layout of the slide before
   it when another one fits, and less often the ones the deck has had already. Pictures, charts and diagrams go
-  under the bands and texts over them.
+  under the bands and texts over them. Slides animate as the 2019 template's do: two or three columns appear click
+  by click (fading in), the one before dimming, and a video in a column starts playing as its column appears; a
+  slide's reveals and videos add up, instead of the last taking the others' place.
   Pictures get their theme's treatment, so that pictures from mixed sources share one look
   (`talkgenerator.design.treatments`): grayscale, sepia, a duotone in the theme's colours, or black and white (split
   at the picture's own median lightness), rounded corners or a white polaroid frame tilted a few degrees, grain and

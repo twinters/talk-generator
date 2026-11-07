@@ -3,7 +3,10 @@
 Every element of a themed deck has its box on the 1920×1080 canvas (see `talkgenerator.design.engine`), and every
 text its style, so this renderer only draws them: a canvas pixel is 6350 EMU, and half a point. PowerPoint breaks
 the texts into lines itself, with the same fonts as the engine measured them with; shrink-on-overflow stays on as a
-safety net. Classic decks go to `talkgenerator.render.powerpoint`, which fills the 2019 template.
+safety net. Slides animate as classic ones do (`talkgenerator.render.animation`): two or three columns appear click
+by click, the one before dimming, a chart's second line draws itself in and a diagram's punchline fades in on a
+click, and videos play by themselves. Classic decks go to `talkgenerator.render.powerpoint`, which fills the 2019
+template.
 """
 
 from __future__ import annotations
@@ -53,6 +56,9 @@ EMU_PER_PIXEL: Final = 6350  # 12192000 EMU (13.333 inches) across 1920 pixels
 _BLANK_LAYOUT: Final = 6  # in python-pptx's default template
 _ALIGN: Final = {"left": PP_ALIGN.LEFT, "center": PP_ALIGN.CENTER, "right": PP_ALIGN.RIGHT}
 _ANCHOR: Final = {"top": MSO_ANCHOR.TOP, "middle": MSO_ANCHOR.MIDDLE, "bottom": MSO_ANCHOR.BOTTOM}
+# The slide types whose columns appear click by click, as in the 2019 template (animation.reveal_columns), and how
+# many columns they have
+_COLUMNS: Final = {"two_column_image": 2, "three_column_image": 3}
 
 
 def new_presentation() -> Presentation:
@@ -85,7 +91,9 @@ def draw_slide(
 ) -> Slide:
     ppt_slide = presentation.slides.add_slide(presentation.slide_layouts[_BLANK_LAYOUT])
     _background(ppt_slide, slide, theme)
+    drawn: dict[str, list[Any]] = {}  # the shapes each element is drawn with, by its role
     for element in slide.elements:
+        before = {shape.shape_id for shape in ppt_slide.shapes}
         try:
             if isinstance(element, ShapeElement):
                 _shape(ppt_slide, element)
@@ -99,6 +107,13 @@ def draw_slide(
                 _text_box(ppt_slide, element.box, element.style, [(element.text, None)])
         except (ValueError, KeyError, AttributeError, OSError) as error:  # one element that won't draw stays out
             logger.error("Could not draw a %s on a %s slide: %s", element.kind, slide.type, error)
+        drawn[element.role] = [shape for shape in ppt_slide.shapes if shape.shape_id not in before]
+    columns = _COLUMNS.get(slide.type, 0)
+    if columns:  # (each its picture or text, with what the picture's treatment lays on it, and its caption)
+        animation.reveal_columns(
+            ppt_slide,
+            [drawn.get(f"content_{index}", []) + drawn.get(f"caption_{index}", []) for index in range(1, columns + 1)],
+        )
     if slide.credits and slide.credits_box is not None and slide.credits_style is not None:
         parts: list[tuple[str, str | None]] = [("Image sources: ", None)]
         for index, credit in enumerate(slide.credits):
