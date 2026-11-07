@@ -134,8 +134,8 @@ SPECS: Final[dict[str, TextSpec]] = {
     "left subtitle": TextSpec("body", 52, 30, color="muted", align="left", anchor="top"),
     "mark": TextSpec("heading", 900, 320, color="accent", align="center", heading=True),
     # (native diagrams)
-    "date": TextSpec("heading", 72, 32, align="center", anchor="bottom", heading=True, effect=False),
-    "row date": TextSpec("heading", 64, 30, align="right", heading=True, effect=False),
+    "date": TextSpec("body", 72, 28, align="center", anchor="bottom", bold=True),  # (not in capitals: too wide)
+    "row date": TextSpec("body", 64, 28, align="right", bold=True),
     "level": TextSpec("body", 56, 28, align="center", on_fill=True, bold=True),
     "disc": TextSpec("body", 44, 26, align="center", on_fill=True, bold=True),
     "box": TextSpec("body", 48, 26, align="center", on_fill=True),
@@ -693,6 +693,23 @@ def _titled(roles: dict[str, Content]) -> bool:
 
 def _untitled(roles: dict[str, Content]) -> bool:
     return "title" not in roles
+
+
+def _beside_title(roles: dict[str, Content]) -> bool:
+    """Whether the slide has a title that fits beside a diagram: without a word too long for the side (a compound, as
+    Dutch and German have them, can be wider than the side is in a wide font)."""
+    title = roles.get("title")
+    return isinstance(title, TextElement) and all(len(word) <= 15 for word in title.text.split())
+
+
+def _beside_title_with_room(prefix: str, most: int) -> Callable[[dict[str, Content]], bool]:
+    """Whether the slide has a title that fits beside a diagram, and at most so many of the items (an org chart's
+    people, a cycle's steps), for whose boxes there's room beside the title."""
+
+    def fits(roles: dict[str, Content]) -> bool:
+        return _beside_title(roles) and f"{prefix}_{most + 1}" not in roles
+
+    return fits
 
 
 def _has(role: str) -> Callable[[dict[str, Content]], bool]:
@@ -1320,7 +1337,7 @@ def _timeline_down(roles: dict[str, Content], theme: Theme) -> _Placement:
     moments = _numbered(roles, "event", 5)
     gap = 12
     y, height = _spread(top, _CONTENT_BOTTOM, len(moments), gap, 150)
-    line = MARGIN + 340
+    line = MARGIN + 370
     first, last = y + height / 2, y + (len(moments) - 1) * (height + gap) + height / 2
     placement.shapes.append(
         ShapeElement(role="line", box=Box(x=line - 4, y=first, w=8, h=last - first), color=palette.accent)
@@ -1329,7 +1346,7 @@ def _timeline_down(roles: dict[str, Content], theme: Theme) -> _Placement:
         click = _click(roles, f"event_{index}")
         colour = palette.accent_2 if click else palette.accent
         placement.shapes.append(_dot(f"dot_{index}", (line, y + height / 2), 44, colour, click))
-        placement.boxes[f"date_{index}"] = (Box(x=MARGIN, y=y, w=300, h=height), "row date")
+        placement.boxes[f"date_{index}"] = (Box(x=MARGIN, y=y, w=330, h=height), "row date")
         placement.boxes[f"event_{index}"] = (Box(x=line + 56, y=y, w=WIDTH - MARGIN - line - 56, h=height), "item")
         y += height + gap
     return placement
@@ -1361,7 +1378,7 @@ def _stack(
         gap = 12
         y, height = _spread(top + 24, _CONTENT_BOTTOM, len(items), gap, 170)
         widest = min(1500.0, right - left)
-        narrowest = 0.3 * widest
+        narrowest = 460.0  # (wide enough for a long word at the top of a pyramid, or at the bottom of a funnel)
         for position, index in enumerate(items):
             share = position / max(1, len(items) - 1)  # (from 0 at the top to 1 at the bottom)
             width = narrowest + (widest - narrowest) * (share if widening else 1 - share)
@@ -1380,8 +1397,8 @@ def _stack(
 
 
 def _cycle(side: bool) -> Callable[[dict[str, Content], Theme], _Placement]:
-    """The steps on discs in the theme's accent around a circle of dots, clockwise from the top: each leads to the
-    next, and the last back to the first."""
+    """The steps on ovals in the theme's accent around a ring of dots, clockwise from the top: each leads to the next,
+    and the last back to the first. (Ovals, wide enough for a long word, on an oval ring as wide as there's room.)"""
 
     def cycle(roles: dict[str, Content], theme: Theme) -> _Placement:
         accent = theme.palette.accent
@@ -1389,20 +1406,20 @@ def _cycle(side: bool) -> Callable[[dict[str, Content], Theme], _Placement]:
         left, right, top = _area(placement, roles, theme, side)
         steps = _numbered(roles, "step", 5)
         middle = ((left + right) / 2, (top + _CONTENT_BOTTOM) / 2)
-        diameter = 280.0 if len(steps) <= 4 else 250.0
-        radius = min(_CONTENT_BOTTOM - top, right - left) / 2 - diameter / 2 - 8
-        for step in range(40):  # (the circle, under the discs)
-            angle = 2 * math.pi * step / 40
-            at = (middle[0] + radius * math.cos(angle), middle[1] + radius * math.sin(angle))
-            placement.shapes.append(_dot("circle", at, 16, accent))
+        width, height = 440.0, 200.0
+        across = (right - left) / 2 - width / 2 - 8  # (the ring's radii)
+        down = (_CONTENT_BOTTOM - top) / 2 - height / 2 - 8
+
+        def on_ring(angle: float) -> tuple[float, float]:  # (from the top, clockwise)
+            return middle[0] + across * math.sin(angle), middle[1] - down * math.cos(angle)
+
+        for step in range(48):  # (the ring, under the ovals)
+            placement.shapes.append(_dot("ring", on_ring(2 * math.pi * step / 48), 16, accent))
         for position, index in enumerate(steps):
-            angle = -math.pi / 2 + 2 * math.pi * position / len(steps)
-            at = (middle[0] + radius * math.cos(angle), middle[1] + radius * math.sin(angle))
-            disc = _dot(f"step {index} disc", at, diameter, accent)
-            placement.shapes.append(disc)
-            text = Box(
-                x=disc.box.x + 0.12 * diameter, y=disc.box.y + 0.25 * diameter, w=0.76 * diameter, h=0.5 * diameter
-            )
+            x, y = on_ring(2 * math.pi * position / len(steps))
+            oval = Box(x=x - width / 2, y=y - height / 2, w=width, h=height)
+            placement.shapes.append(ShapeElement(role=f"step {index} oval", shape="ellipse", box=oval, color=accent))
+            text = Box(x=x - 0.4 * width, y=y - 0.27 * height, w=0.8 * width, h=0.54 * height)
             placement.boxes[f"step_{index}"] = (text, "disc")
             placement.colors[f"step_{index}"] = _on([accent], theme)
         return placement
@@ -1423,7 +1440,8 @@ def _org_chart(side: bool) -> Callable[[dict[str, Content], Theme], _Placement]:
         y = top + 24 + (_CONTENT_BOTTOM - top - 24 - (2 * box_height + 2 * drop)) / 2
         centre = (left + right) / 2
         boss = Box(x=centre - 300, y=y, w=600, h=box_height)
-        gap = 48
+        gap = 24.0 if side else 48.0  # (beside a title, the boxes need all the room there is)
+        inset = 12.0 if side else 20.0
         width = min(420.0, (right - left - gap * (len(reports) - 1)) / len(reports))
         total = width * len(reports) + gap * (len(reports) - 1)
         first = centre - total / 2
@@ -1442,7 +1460,7 @@ def _org_chart(side: bool) -> Callable[[dict[str, Content], Theme], _Placement]:
             )
             report = Box(x=x, y=row, w=width, h=box_height)
             placement.shapes.append(ShapeElement(role=f"report {index} box", box=report, color=palette.surface))
-            placement.boxes[f"report_{index}"] = (_inset(report, 20), "box")
+            placement.boxes[f"report_{index}"] = (_inset(report, inset), "box")
             placement.colors[f"report_{index}"] = _on([palette.surface], theme)
         click = _click(roles, "boss")
         placement.shapes.append(ShapeElement(role="boss box", box=boss, color=palette.accent, appears_on_click=click))
@@ -1559,7 +1577,7 @@ _LAYOUTS: Final[dict[str, tuple[_Layout, ...]]] = {
     "agenda": (
         _Layout("v5/agenda", _agenda),
         _Layout("v5/agenda-steps", _agenda_steps, 0.8),
-        _Layout("v5/agenda-side", _agenda_side, 0.6, _titled),
+        _Layout("v5/agenda-side", _agenda_side, 0.6, _beside_title),
     ),
     "section": (
         _Layout("v5/section", _section),
@@ -1575,22 +1593,22 @@ _LAYOUTS: Final[dict[str, tuple[_Layout, ...]]] = {
     ),
     "pyramid": (
         _Layout("v5/pyramid", _stack("v5/pyramid", "level", 4, widening=True)),
-        _Layout("v5/pyramid-side", _stack("v5/pyramid-side", "level", 4, widening=True, side=True), 0.7, _titled),
+        _Layout("v5/pyramid-side", _stack("v5/pyramid-side", "level", 4, widening=True, side=True), 0.7, _beside_title),
     ),
     "funnel": (
         _Layout("v5/funnel", _stack("v5/funnel", "stage", 5, widening=False)),
-        _Layout("v5/funnel-side", _stack("v5/funnel-side", "stage", 5, widening=False, side=True), 0.7, _titled),
+        _Layout("v5/funnel-side", _stack("v5/funnel-side", "stage", 5, widening=False, side=True), 0.7, _beside_title),
     ),
     "cycle": (
         _Layout("v5/cycle", _cycle(side=False)),
-        _Layout("v5/cycle-side", _cycle(side=True), 0.7, _titled),
+        _Layout("v5/cycle-side", _cycle(side=True), 0.7, _beside_title_with_room("step", 4)),
     ),
     "org_chart": (
         _Layout("v5/org-chart", _org_chart(side=False)),
-        _Layout("v5/org-chart-side", _org_chart(side=True), 0.7, _titled),
+        _Layout("v5/org-chart-side", _org_chart(side=True), 0.7, _beside_title_with_room("report", 3)),
     ),
     "iceberg": (
         _Layout("v5/iceberg", _iceberg(side=False)),
-        _Layout("v5/iceberg-side", _iceberg(side=True), 0.7, _titled),
+        _Layout("v5/iceberg-side", _iceberg(side=True), 0.7, _beside_title),
     ),
 }

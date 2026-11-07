@@ -81,11 +81,12 @@ def _theme(family="clean keynote", seed=1):
 
 
 def _longest(text_field, word="Expectation"):
-    """A text of the field as long as a slide takes it (its length limit), of words: or one of its options."""
+    """A text of the field as long as a slide takes it (its length limit), of words, starting with the word: or one
+    of its options."""
     if text_field.options:
         return text_field.options[0]
     limit = length_limit(text_field)
-    return " ".join([word] * (limit // len(word) + 1))[:limit].strip()
+    return " ".join([word] + ["Expectation"] * (limit // 11 + 1))[:limit].strip()
 
 
 def _built(kind, texts, images=None, seed=1):
@@ -93,8 +94,8 @@ def _built(kind, texts, images=None, seed=1):
         return KINDS[kind].build(texts, images or {}, ENGLISH)
 
 
-def _longest_texts(kind):
-    texts = {text.name: _longest(text) for text in KINDS[kind].texts}
+def _longest_texts(kind, word="Expectation"):
+    texts = {text.name: _longest(text, word) for text in KINDS[kind].texts}
     if kind == "agenda":  # (five items, each as long as an item may be)
         texts["items"] = " | ".join(["Expectation " * 4] * 5)
     if kind in ("big_number", "kpi"):  # numbers have no spaces
@@ -128,6 +129,17 @@ def test_the_longest_texts_fit_and_read_in_every_theme(images, family):
         deck = _deck(longest + shortest, _theme(family, seed), seed)
         assert check_design(deck) == [], (family, seed)
         assert [finding for finding in check_completeness(deck) if finding.severity == "error"] == []
+
+
+@pytest.mark.parametrize("family", FAMILIES)
+def test_long_words_fit_in_every_theme(images, family):
+    # (compounds, as Dutch and German have them: a free model's "Mantelstromingen" didn't fit a narrow box)
+    made = [
+        _built(kind, _longest_texts(kind, "Brandweerkazernedeur"), {"photo": _image("wide")}) for kind in EVERY_KIND
+    ]
+    for seed in range(3):
+        deck = _deck(made, _theme(family, seed), seed)
+        assert [finding for finding in check_design(deck) if finding.check == "overflow"] == [], (family, seed)
 
 
 def test_every_new_layout_comes_up_and_needs_what_it_says(images):
