@@ -91,29 +91,7 @@ def draw_slide(
 ) -> Slide:
     ppt_slide = presentation.slides.add_slide(presentation.slide_layouts[_BLANK_LAYOUT])
     _background(ppt_slide, slide, theme)
-    drawn: dict[str, list[Any]] = {}  # the shapes each element is drawn with, by its role
-    for element in slide.elements:
-        before = {shape.shape_id for shape in ppt_slide.shapes}
-        try:
-            if isinstance(element, ShapeElement):
-                _shape(ppt_slide, element)
-            elif isinstance(element, ImageElement) and element.box is not None:
-                _picture(ppt_slide, element, images)
-            elif isinstance(element, ChartElement) and element.box is not None:
-                _chart(ppt_slide, element, theme, slide)
-            elif isinstance(element, DiagramElement) and element.box is not None:
-                diagrams.draw_diagram(ppt_slide, diagrams.Box.on_canvas(element.box), element.diagram, element.style)
-            elif isinstance(element, TextElement) and element.box is not None and element.style is not None:
-                _text_box(ppt_slide, element.box, element.style, [(element.text, None)])
-        except (ValueError, KeyError, AttributeError, OSError) as error:  # one element that won't draw stays out
-            logger.error("Could not draw a %s on a %s slide: %s", element.kind, slide.type, error)
-        drawn[element.role] = [shape for shape in ppt_slide.shapes if shape.shape_id not in before]
-    columns = _COLUMNS.get(slide.type, 0)
-    if columns:  # (each its picture or text, with what the picture's treatment lays on it, and its caption)
-        animation.reveal_columns(
-            ppt_slide,
-            [drawn.get(f"content_{index}", []) + drawn.get(f"caption_{index}", []) for index in range(1, columns + 1)],
-        )
+    draw_elements(ppt_slide, slide, theme, images=images)
     if slide.credits and slide.credits_box is not None and slide.credits_style is not None:
         parts: list[tuple[str, str | None]] = [("Image sources: ", None)]
         for index, credit in enumerate(slide.credits):
@@ -126,6 +104,42 @@ def draw_slide(
         if notes is not None:
             notes.text = slide.notes
     return ppt_slide
+
+
+def draw_elements(ppt_slide: Slide, slide: DeckSlide, theme: Theme, *, images: ImageStore | None = None) -> None:
+    """Draw the slide's elements on the PowerPoint slide, each in its box, and animate them: the columns of a column
+    slide click by click, and the elements that appear on a click on theirs. (A classic deck draws the slide types
+    that the 2019 template has no layouts for with this too, on the template's blank slide.)"""
+    drawn: dict[str, list[Any]] = {}  # the shapes each element is drawn with, by its role
+    clicks: dict[int, list[Any]] = {}  # the shapes that appear on each click
+    for element in slide.elements:
+        before = {shape.shape_id for shape in ppt_slide.shapes}
+        try:
+            if isinstance(element, ShapeElement):
+                _shape(ppt_slide, element)
+            elif isinstance(element, ImageElement) and element.box is not None:
+                _picture(ppt_slide, element, images)
+            elif isinstance(element, ChartElement) and element.box is not None:
+                _chart(ppt_slide, element, theme, slide)
+            elif isinstance(element, DiagramElement) and element.box is not None:
+                diagrams.draw_diagram(ppt_slide, diagrams.Box.on_canvas(element.box), element.diagram, element.style)
+            elif isinstance(element, TextElement) and element.box is not None and element.style is not None:
+                _text_box(ppt_slide, element.box, element.style, [(element.text, None)], name=element.role)
+        except (ValueError, KeyError, AttributeError, OSError) as error:  # one element that won't draw stays out
+            logger.error("Could not draw a %s on a %s slide: %s", element.kind, slide.type, error)
+        shapes = [shape for shape in ppt_slide.shapes if shape.shape_id not in before]
+        drawn[element.role] = shapes
+        click = getattr(element, "appears_on_click", None)
+        if click:
+            clicks.setdefault(click, []).extend(shapes)
+    columns = _COLUMNS.get(slide.type, 0)
+    if columns:  # (each its picture or text, with what the picture's treatment lays on it, and its caption)
+        animation.reveal_columns(
+            ppt_slide,
+            [drawn.get(f"content_{index}", []) + drawn.get(f"caption_{index}", []) for index in range(1, columns + 1)],
+        )
+    if clicks:
+        animation.reveal_clicks(ppt_slide, [clicks[number] for number in sorted(clicks)])
 
 
 # DRAWING
@@ -173,9 +187,16 @@ def _shape(ppt_slide: Slide, element: ShapeElement) -> None:
 
 
 def _text_box(
-    ppt_slide: Slide, box: Box, style: TextStyle, runs: list[tuple[str, str | None]], shrink: bool = True
+    ppt_slide: Slide,
+    box: Box,
+    style: TextStyle,
+    runs: list[tuple[str, str | None]],
+    shrink: bool = True,
+    name: str | None = None,
 ) -> None:
     shape = ppt_slide.shapes.add_textbox(_emu(box.x), _emu(box.y), _emu(box.w), _emu(box.h))
+    if name:  # (its role, as the selection pane shows it, as a shape's is)
+        shape.name = name
     frame = shape.text_frame
     frame.word_wrap = True
     frame.margin_left = frame.margin_right = frame.margin_top = frame.margin_bottom = 0

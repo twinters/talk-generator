@@ -33,7 +33,47 @@ CLASSIC_ROLES: Final[dict[str, dict[str, str]]] = {
     "chart": {"title": "title", "chart_data": "chart"},
     # (New in v5: a Venn diagram or a 2×2 matrix, drawn as shapes where the 2019 template has its content)
     "diagram": {"title": "title", "diagram": "diagram"},
+    # (New in v5 too, and drawn as shapes in the template's colours, on its blank slide: see DRAWN_TYPES)
+    "big_number": {"title": "title", "number": "number", "label": "label", "source": "source"},
+    "kpi": {
+        "title": "title",
+        **{f"{part}_{number}": f"{part}_{number}" for number in range(1, 5) for part in ("number", "label")},
+    },
+    "quiz": {
+        "question": "title",
+        **{f"{part}_{number}": f"{part}_{number}" for number in range(1, 5) for part in ("letter", "option")},
+        "answer": "answer",
+        "explanation": "explanation",
+    },
+    "social_post": {
+        "title": "title",
+        "initials": "initials",
+        "author": "author",
+        "handle": "handle",
+        "text": "text",
+        "photo": "photo",
+        "stats": "stats",
+    },
+    "news_headline": {
+        "photo": "photo",
+        "kicker": "kicker",
+        "outlet": "outlet",
+        "headline": "headline",
+        "subheadline": "subheadline",
+    },
+    "agenda": {
+        "title": "title",
+        **{f"{part}_{number}": f"{part}_{number}" for number in range(1, 6) for part in ("number", "item")},
+    },
+    "section": {"kicker": "kicker", "title": "title", "subtitle": "subtitle"},
+    "questions": {"title": "title", "subtitle": "subtitle", "mark": "mark"},
 }
+
+# The slide types that the 2019 template has no layout for (all of milestone 6's): a classic deck draws them as a
+# themed deck does, laid out in the template's look (talkgenerator.design.themes.CLASSIC_LOOK), on its blank slide
+DRAWN_TYPES: Final = frozenset(
+    {"big_number", "kpi", "quiz", "social_post", "news_headline", "agenda", "section", "questions"}
+)
 
 # The roles a slide of each type can't do without: its Slide class's required_arguments, as roles
 REQUIRED_ROLES: Final[dict[str, tuple[str, ...]]] = {
@@ -45,13 +85,24 @@ REQUIRED_ROLES: Final[dict[str, tuple[str, ...]]] = {
     "three_column_image": ("content_1", "content_2", "content_3"),
     "chart": ("chart",),
     "diagram": ("diagram",),
+    "big_number": ("number", "label"),
+    "kpi": ("number_1", "label_1", "number_2", "label_2", "number_3", "label_3"),
+    "quiz": ("title", "option_1", "option_2", "option_3", "answer"),
+    "social_post": ("author", "text"),
+    "news_headline": ("outlet", "headline", "photo"),
+    "agenda": ("item_1", "item_2", "item_3"),
+    "section": ("title",),
+    "questions": ("title",),
 }
 
 # Roles that only ever hold text, even when the text looks like an image's file name
-TEXT_ROLES: Final = frozenset({"title", "subtitle", "text", "caption_1", "caption_2", "caption_3"})
+TEXT_ROLES: Final = frozenset(
+    {"title", "subtitle", "text", "caption_1", "caption_2", "caption_3"}
+    | {role for slide_type in DRAWN_TYPES for role in CLASSIC_ROLES[slide_type].values() if role != "photo"}
+)
 
 # Images that fill their frame (cropped where needed) instead of being shown whole
-COVER_ROLES: Final = frozenset({"background"})
+COVER_ROLES: Final = frozenset({"background", "photo"})
 
 
 def layout_id(slide_type: str) -> str:

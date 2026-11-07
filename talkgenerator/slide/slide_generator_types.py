@@ -459,6 +459,19 @@ class DiagramSlideGenerator(SlideGenerator):
         return slides.DiagramSlide
 
 
+class DrawnSlideGenerator(SlideGenerator):
+    """A slide of one of milestone 6's types (a big number, a quiz, a post...: see slides.DrawnSlide), from a
+    generator of its Slide class's arguments (see talkgenerator.sources.slide_texts)."""
+
+    def __init__(self, slide_content_generator, slide_class: type[slides.DrawnSlide]):
+        super().__init__(slide_content_generator)
+        self._slide_class = slide_class
+
+    @property
+    def slide_type(self):
+        return self._slide_class
+
+
 # HELPERS
 
 

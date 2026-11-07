@@ -8,7 +8,7 @@ from talkgenerator.models.deck import Deck
 from talkgenerator.models.theme import Theme
 from talkgenerator.models.usage import Usage
 from talkgenerator.render.powerpoint import render_slide
-from talkgenerator.slide.slides import Slide
+from talkgenerator.slide.slides import SectionSlide, Slide
 
 logger = logging.getLogger("talkgenerator")
 
@@ -70,6 +70,8 @@ class SlideDeck:
         return self._size
 
     def add_slide(self, slide_index: int, slide):
+        if isinstance(slide, SectionSlide):  # (numbered after the sections before it: the talk's opening is the first)
+            slide.number(2 + sum(isinstance(other, SectionSlide) for other in self._slides[:slide_index]))
         self._slides[slide_index] = slide
         if self.listener is not None:
             self.listener(self, slide_index, slide)

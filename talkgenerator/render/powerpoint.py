@@ -3,7 +3,9 @@
 The classic slide creators (`talkgenerator.slide.powerpoint_slide_creator`) still do the drawing: the renderer turns
 each deck slide back into their arguments (see `talkgenerator.models.classic`), so a deck renders exactly like the
 slides it was made from. Charts are rebuilt from their numbers and styled by their type (`talkgenerator.render.charts`),
-and diagrams are drawn as shapes (`talkgenerator.render.diagrams`).
+and diagrams are drawn as shapes (`talkgenerator.render.diagrams`). The slide types that the template has no layout
+for (milestone 6's: big numbers, quizzes, posts...) are laid out as in a themed deck, in the template's colours and
+fonts, and drawn as shapes on its blank slide.
 
 Images come from `images` when given (the images checked while generating, with their downloaded bytes and what to do
 once they end up on a slide), and are downloaded otherwise. An image with a video plays it in its place, by itself and
@@ -32,7 +34,7 @@ from talkgenerator.models.deck import (
 )
 from talkgenerator.render import animation, charts
 from talkgenerator.slide import powerpoint_slide_creator as creator
-from talkgenerator.util import http_util, image_util
+from talkgenerator.util import http_util, image_util, random_util
 
 logger = logging.getLogger("talkgenerator")
 
@@ -89,6 +91,8 @@ def render_slide(
         ppt_slide: Slide | None = _create_chart_slide(presentation, slide)
     elif slide.type == "diagram":
         ppt_slide = _create_diagram_slide(presentation, slide)
+    elif slide.type in classic.DRAWN_TYPES:
+        ppt_slide = _create_drawn_slide(presentation, slide, images)
     elif slide.type in _CREATORS:
         ppt_slide = _CREATORS[slide.type](presentation, **_creator_arguments(slide, images))
     else:
@@ -151,6 +155,22 @@ def _create_diagram_slide(presentation: Presentation, slide: DeckSlide) -> Slide
     ppt_slide: Slide = creator.create_diagram_slide(
         presentation, title.text if isinstance(title, TextElement) else None, diagram_element.diagram
     )
+    return ppt_slide
+
+
+def _create_drawn_slide(presentation: Presentation, slide: DeckSlide, images: ImageStore | None) -> Slide:
+    """A slide of a type that the 2019 template has no layout for (a big number, a quiz...): laid out in the
+    template's look and drawn as shapes on its blank slide, as a themed deck draws it, with its credits where the
+    template has them (see _finish). Every slide of a type and its elements gets the same layout."""
+    from talkgenerator.design import engine, themes  # (they draw on this module)
+    from talkgenerator.render import shapes
+
+    look = themes.CLASSIC_LOOK
+    ppt_slide: Slide = presentation.slides.add_slide(presentation.slide_layouts[creator.LAYOUT_BLANK])
+    placed = engine.lay_out_slide(slide, look, random_util.Rng(0).child("classic", slide.type))
+    # (without the band that the credits of a themed deck's full-screen photo go on: the template has its own place)
+    elements = tuple(element for element in placed.elements if element.role != "credits band")
+    shapes.draw_elements(ppt_slide, placed.model_copy(update={"elements": elements}), look, images=images)
     return ppt_slide
 
 

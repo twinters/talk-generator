@@ -216,3 +216,140 @@ Images: none
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
 | `2x2-matrix` | A 2×2 matrix about the concept along two odd axes, with one surprising dot as the punchline | the default; tags: diagram, matrix_diagram |
+
+## `big_number`
+
+A big, made-up number, with what it counts under it: a figure the presenter has to explain.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `title` | 60 | the slide's title (or empty, for none) |
+| `number` | 12 | the big number, with its unit if it has one: a percentage, an amount or a count |
+| `label` | 90 | what the number counts or measures, in a few words |
+| `source` | 60 | a made-up, unreliable source for the number (or empty, for none) |
+
+Images: none
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `big-number` | A suspiciously precise statistic about the concept, as one big number | the default; tags: big_number |
+
+## `kpi`
+
+Three or four made-up figures on tiles, as on a dashboard, each a number and what it measures; the last one, the punchline, appears on a click.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `title` | 60 | the dashboard's title |
+| `number_1` | 10 | the first figure's number, with its unit if it has one |
+| `label_1` | 40 | what the first figure measures |
+| `number_2` | 10 | the second figure's number, with its unit if it has one |
+| `label_2` | 40 | what the second figure measures |
+| `number_3` | 10 | the third figure's number, with its unit if it has one |
+| `label_3` | 40 | what the third figure measures |
+| `number_4` | 10 | the fourth figure's number, with its unit if it has one (or empty, for none) |
+| `label_4` | 40 | what the fourth figure measures (or empty, for none) |
+
+Images: none
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `kpi-tiles` | The concept's made-up key performance indicators, as on a corporate dashboard: figures that start out plausible, the last one the punchline | the default; tags: kpi |
+
+## `quiz`
+
+A quiz question for the audience, with three or four options (A to D); the answer, and why, appear on a click.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `question` | 90 | the quiz question |
+| `option_a` | 40 | option A |
+| `option_b` | 40 | option B |
+| `option_c` | 40 | option C |
+| `option_d` | 40 | option D (or empty, for none) |
+| `answer` | 1 | the letter of the right option: `A`, `B`, `C`, `D` |
+| `explanation` | 90 | why that's the answer, shown with it (or empty, for none) |
+
+Images: none
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `quiz` | A quiz question about the concept for the audience: options that all seem possible, and a surprising answer | the default; tags: quiz |
+
+## `social_post`
+
+A made-up social media post with a photo: who posted it, and what they wrote (talkgenerator adds its likes and shares).
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `title` | 60 | the slide's title (or empty, for none) |
+| `author` | 30 | the made-up name of who posted it (never a real person) |
+| `handle` | 24 | their made-up username, without the @ |
+| `text` | 160 | the post: what they wrote, without hashtags or emoji |
+
+Images: `photo`
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `social-media-post-crf` | A made-up social media post about the concept, by someone with strong opinions about it | the default; tags: social_post |
+
+## `news_headline`
+
+A made-up news story with a photo, as breaking news on television or on a newspaper's front page.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `outlet` | 30 | the made-up name of the newspaper or the channel |
+| `headline` | 90 | the headline |
+| `subheadline` | 100 | a line under the headline, with more of the story (or empty, for none) |
+
+Images: `photo`
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `news-headline-crf` | A made-up news story about the concept, as breaking news | the default; tags: news |
+
+## `agenda`
+
+The talk's agenda: three to five items it will cover, numbered.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `title` | 40 | the agenda's title |
+| `items` | 200 | three to five items, separated by \|, each at most 45 characters |
+
+Images: none
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `agenda` | The talk's agenda: what it will cover | the default; `items`: three to five parts of the talk, in the order the slides after this one come, separated by \|; tags: agenda |
+
+## `section`
+
+A section's divider, opening a new part of the talk: its title, under its number (talkgenerator adds it).
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `title` | 50 | the new section's title |
+| `subtitle` | 90 | a line under it (or empty, for none) |
+
+Images: none
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `section-divider` | A section's divider, opening the next part of the talk | the default; `title`: the title of the part of the talk that starts here; tags: section |
+
+## `questions`
+
+The closing slide, inviting the audience's questions.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `title` | 30 | a question that invites the audience's questions |
+| `subtitle` | 80 | a line under it (or empty, for none) |
+
+Images: none
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `questions` | The closing slide, inviting the audience's questions | the default; `subtitle`: a line under it, such as a disclaimer about the answers; tags: questions |
