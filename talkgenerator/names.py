@@ -53,6 +53,9 @@ class Style:
     label: str  # for a settings menu
     description: str  # what its names are like, for a settings menu
     asked: str  # what a language model is asked to write (before the examples); none for the classic names
+    # What the model works out first, in a field of its own before the name (name_plays_on), which helps the free
+    # models make a pun instead of a name that only fits
+    plays_on: str = ""
     default: bool = True  # whether talks that don't say which styles they may have get it
 
 
@@ -65,6 +68,7 @@ STYLES: Final[dict[str, Style]] = {
             "a pun on the topic, such as Prof. Anna Tomy for a talk on medicine",
             "a made-up name for the presenter that, read aloud, sounds like a word or phrase about the talk's topic "
             "(a pun on the whole name, not just a surname that fits)",
+            "the word or phrase about the talk's topic that the presenter's name will sound like",
         ),
         Style(
             FUN_SURNAME,
@@ -72,6 +76,7 @@ STYLES: Final[dict[str, Style]] = {
             "an ordinary first name with a surname that fits the topic too well, such as Linda Hivesworth for bees",
             "a made-up name for the presenter: an ordinary first name with a surname that fits the talk's topic a "
             "little too well",
+            "the word about the talk's topic that the presenter's surname will be made from",
         ),
         Style(
             FAMOUS_PUN,
@@ -80,6 +85,8 @@ STYLES: Final[dict[str, Style]] = {
             "a made-up name for the presenter: the name of one famous historical figure that everyone knows, with a "
             "part of it changed into a word about the talk's topic, so that both still show; never the real name as "
             "it is, and never the name of a living person, a dictator or a criminal",
+            "the famous historical figure whose name the presenter's name will bend, and the word about the talk's "
+            "topic that goes into it",
         ),
         Style(CLASSIC, "Random names", "a first and a last name at random, as in 2019", "", default=False),
     )
@@ -228,6 +235,10 @@ class NameRequest:
             f"{wordplay}, with a title such as Dr. or Prof. if it suits (at most {PRESENTER_NAME.max_length} "
             "characters)"
         )
+
+    def plays_on_description(self) -> str:
+        """What the model works out before the name (name_plays_on, which the talk doesn't show)."""
+        return f"{STYLES[self.style].plays_on}, worked out before the name (not shown)"
 
 
 def _examples(style: str, topics: Sequence[str], rng: random_util.Rng, count: int = 2) -> tuple[Example, ...]:
@@ -429,14 +440,17 @@ class Naming:
         examples = _examples(style, topics, rng.child("presenter", "examples"))
         return dataclasses.replace(naming, style=style, request=NameRequest(style, examples))
 
-    def name(self, written: Any = None) -> str:
-        """The presenter's name: the one the language model wrote (its answer's presenter_name), when it was asked for
-        one and it will do (see clean); or else a classic one, when that's the style the talk's dice picked; or else
-        the name a talk without a language model gets (see from_pack)."""
+    def name(self, written: Any = None, plays_on: Any = None) -> str:
+        """The presenter's name: the one the language model wrote (its answer's presenter_name, and name_plays_on,
+        what it worked out first), when it was asked for one and it will do (see clean); or else a classic one, when
+        that's the style the talk's dice picked; or else the name a talk without a language model gets (see
+        from_pack)."""
         if self.request is not None:
             name = clean(written, self.request)
             if name is not None:
-                logger.info("The language model named the presenter (%s): %s", self.request.style, name)
+                logger.info(
+                    "The language model named the presenter (%s, on %r): %s", self.request.style, plays_on, name
+                )
                 return name
             if written is None:
                 logger.info("The language model didn't name the presenter: talkgenerator makes up a name")

@@ -214,11 +214,17 @@ def test_the_language_model_names_the_presenter_in_the_same_request(schema):
     assert deck.slides[0].elements[1].text.endswith("Prof. Clawdette Purrkins, The presenter job")
     request = model.requests[0]
     properties = request.json_schema["properties"]
-    assert list(properties)[:5] == ["unsafe_topic", "thesis", "title", "presenter_name", "presenter_job"]
+    spine = ["unsafe_topic", "thesis", "title", "name_plays_on", "presenter_name", "presenter_job"]
+    assert list(properties)[:6] == spine
     assert _asked(request) == "pun"
+    # (What the name plays on first: it comes before the name in the schema's order and in alphabetical order, in
+    # which some free models write the answer, and before the slides either way)
+    assert sorted(spine)[:3] == ["name_plays_on", "presenter_job", "presenter_name"]
+    assert properties["name_plays_on"]["description"].startswith(names.STYLES["pun"].plays_on)
     assert "agreeing with presenter_name (a Prof. is a professor" in properties["presenter_job"]["description"]
     prompt = request.messages[0].content
     assert f"- presenter_name: {properties['presenter_name']['description']}" in prompt
+    assert f"- name_plays_on: {properties['name_plays_on']['description']}" in prompt
     assert "write the title, the presenter's name and job and every slide in English" in prompt
 
 

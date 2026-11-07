@@ -168,9 +168,10 @@ class _PlannedTalk:
         return clean_text(self.spine.get("title"), TALK_TITLE, self.language)
 
     @property
-    def presenter_name(self) -> Any:
-        """The presenter's name the model wrote, if it was asked for one (as written: see talkgenerator.names)."""
-        return self.spine.get("presenter_name")
+    def presenter_name(self) -> tuple[Any, Any]:
+        """The presenter's name the model wrote, if it was asked for one, and what it plays on (both as written: see
+        talkgenerator.names)."""
+        return self.spine.get("presenter_name"), self.spine.get("name_plays_on")
 
     def take(self, key: str, value: Any) -> None:
         """A part of the model's answer: the spine, or a slide (whose first attempt then starts, in parallel)."""
@@ -243,6 +244,7 @@ class _PlannedTalk:
             self.first_attempts.clear()
             self.spine.pop("title", None)
             self.spine.pop("presenter_name", None)
+            self.spine.pop("name_plays_on", None)
             self._changed.notify_all()
 
     def restart(self) -> None:
@@ -354,7 +356,7 @@ class PresentationSchema:
             if talk is not None:
                 talk.wait_for_spine()
             if naming is not None:
-                presenter = naming.name(talk.presenter_name if talk is not None else None)
+                presenter = naming.name(*(talk.presenter_name if talk is not None else ()))
                 logger.info("Presenter: {}".format(presenter))
             # Generate random talk title
             if not title and talk is not None:

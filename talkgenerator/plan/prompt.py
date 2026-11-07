@@ -102,6 +102,7 @@ def spine(language: str = "en", name: NameRequest | None = None) -> dict[str, st
     }
     agreeing = ""
     if name is not None:
+        fields["name_plays_on"] = name.plays_on_description()
         fields["presenter_name"] = name.description(language)
         agreeing = ", agreeing with presenter_name (a Prof. is a professor of something, a Dr. a doctor)"
     fields["presenter_job"] = (
