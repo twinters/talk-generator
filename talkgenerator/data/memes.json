@@ -89,7 +89,7 @@
           "w": 0.94,
           "h": 0.15,
           "style": "impact",
-          "says": "who can't choose"
+          "says": "who sweats over the choice: a person or a group, such as the presenter"
         }
       ],
       "classic": [
@@ -622,7 +622,7 @@
           "w": 0.94,
           "h": 0.12,
           "style": "impact",
-          "says": "his wrong question: 'Is this ...?'"
+          "says": "his wrong question, 'Is this ...?', naming what he mistakes the butterfly for"
         }
       ],
       "classic": [
@@ -995,7 +995,7 @@
       "url": "https://i.imgflip.com/8tw3vb.png",
       "width": 675,
       "height": 499,
-      "about": "a bell curve: the simple and the wise say the same thing, while the expert in the middle overthinks it",
+      "about": "a bell curve: the simple one and the wise one say the same thing (the same caption), while the expert in the middle overthinks it",
       "boxes": [
         {
           "x": 0.01,
@@ -1021,20 +1021,19 @@
           "w": 0.32,
           "h": 0.13,
           "style": "plain",
-          "says": "what the wise one says: the same as the simple one",
-          "fill": "#ffffff"
+          "fill": "#ffffff",
+          "says": "(the simple one's words again: the wise one says the same)",
+          "same_as": 1
         }
       ],
       "classic": [
         [
           "I like {seed.generic}",
-          "Actually, {seed.generic}: a complex system of {related.generic} and feelings",
-          "I like {seed.generic}"
+          "Actually, {seed.generic}: a complex system of {related.generic} and feelings"
         ],
         [
           "{seed.generic.cap}? Nice.",
-          "Well, it depends on {related.generic}, the context and the moon",
-          "{seed.generic.cap}? Nice."
+          "Well, it depends on {related.generic}, the context and the moon"
         ]
       ]
     },
@@ -1052,7 +1051,7 @@
           "w": 0.16,
           "h": 0.18,
           "style": "plain",
-          "says": "the truth on the scroll, which nobody wants to hear",
+          "says": "the truth written on the scroll: a short, plain sentence that nobody wants to hear",
           "fill": "#ffffff"
         }
       ],

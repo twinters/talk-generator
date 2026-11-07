@@ -182,7 +182,8 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   writes what each box says, knowing what it's for (Drake waves the first away and points at the second); a
   classic talk takes each template's own sentences about the slide's topic and the words related to it, speaking
   of it as English does ("Love penguins", "Love coffee", "Is this a lighthouse?": the `generic` and `one` template
-  functions, by wordfreq's frequencies of a noun and its plural). Gru's fourth board repeats his third. A deck holds
+  functions, by wordfreq's frequencies of a noun and its plural). Gru's fourth board repeats his third, and the Bell
+  Curve's wise one says what its simple one said. A deck holds
   a meme as a picture, texts and shapes, which every renderer draws already (talk-generator-web without changes);
   its picture keeps its look in every theme (no treatment moves its captions). Memes weigh four times what the
   other slides in the middle of a talk do: about half of all 10-slide talks have one, and a talk has two at most,
