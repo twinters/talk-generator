@@ -1,0 +1,51 @@
+{
+  "about": "The image generators' models and list prices (dollars per picture of about one megapixel, by quality where the model has qualities), checked on the providers' own pages on 2026-11-07: developers.openai.com/api/docs/pricing and /guides/image-generation, aistudio.google.com/docs/pricing, bfl.ai/pricing, openrouter.ai/api/v1/images/models/<model>/endpoints. Where a picture's price depends on its shape, the higher one. A model without a price here costs what its provider says, which a talk's estimate can't tell beforehand. Models come and go (several were retired in 2026, OpenAI's gpt-image-1 on 2026-10-23), so a model is named in TALKGENERATOR_IMAGE_GENERATOR or --image_generator, and these are the defaults; image_generators.json in talkgenerator's config folder adds to this file, or changes it.",
+  "checked": "2026-11-07",
+  "providers": {
+    "openai": {
+      "default": "gpt-image-2",
+      "terms": ["OpenAI's terms of use", "https://openai.com/policies/terms-of-use/"],
+      "prices": {
+        "gpt-image-2": {"low": 0.006, "medium": 0.053, "high": 0.211},
+        "gpt-image-1.5": {"low": 0.013, "medium": 0.05, "high": 0.2},
+        "gpt-image-1-mini": {"low": 0.006, "medium": 0.015, "high": 0.052}
+      }
+    },
+    "openrouter": {
+      "default": "openai/gpt-image-2",
+      "terms": ["OpenRouter's terms and the model's", "https://openrouter.ai/terms"],
+      "prices": {
+        "openai/gpt-image-2": {"low": 0.006, "medium": 0.053, "high": 0.211},
+        "black-forest-labs/flux-3-image-klein": 0.009,
+        "google/gemini-3.1-flash-lite-image": 0.0336
+      }
+    },
+    "gemini": {
+      "default": "gemini-3.1-flash-lite-image",
+      "terms": ["the Gemini API's terms", "https://ai.google.dev/gemini-api/terms"],
+      "prices": {
+        "gemini-3.1-flash-lite-image": 0.0336,
+        "gemini-nano-banana-2.1": 0.0336,
+        "gemini-3.1-flash-image": 0.067,
+        "gemini-3-pro-image": 0.134,
+        "gemini-2.5-flash-image": 0.039
+      },
+      "retiring": {"gemini-2.5-flash-image": "2027-03-15"}
+    },
+    "flux": {
+      "default": "flux-3-image-klein",
+      "terms": ["Black Forest Labs' terms", "https://bfl.ai/legal/terms-of-service"],
+      "prices": {
+        "flux-3-image-klein": 0.009,
+        "flux-3-image": 0.048,
+        "flux-2-klein-4b": 0.014,
+        "flux-2-klein-9b": 0.015,
+        "flux-2-pro": 0.03,
+        "flux-2-flex": 0.05,
+        "flux-2-max": 0.07
+      }
+    },
+    "comfyui": {"default": "", "prices": {}},
+    "automatic1111": {"default": "", "prices": {}}
+  }
+}

@@ -14,12 +14,15 @@ from pptx.presentation import Presentation
 from talkgenerator import names, runtime_checker, settings, titles
 from talkgenerator.design import engine, themes
 from talkgenerator.images import context as image_context
-from talkgenerator.images import licenses
+from talkgenerator.images import generation as image_generation
+from talkgenerator.images import generators, licenses
+from talkgenerator.images.generation import ImageBudget
+from talkgenerator.images.generators import ImageGenerator
 from talkgenerator.llm.base import TextProvider
 from talkgenerator.llm.ledger import Budget, Ledger, MeteredProvider
 from talkgenerator.llm.providers import NoneProvider, from_settings, provider_from_spec
 from talkgenerator.models.deck import Deck
-from talkgenerator.models.events import SlideReady, TalkEvent, TalkFinished, TalkStarted
+from talkgenerator.models.events import SlideReady, SlideUpdated, TalkEvent, TalkFinished, TalkStarted
 from talkgenerator.models.theme import Theme
 from talkgenerator.plan import languages
 from talkgenerator.schema.presentation_schema import Progress, TalkCancelled
@@ -68,7 +71,16 @@ def generate_presentation_using_cli_arguments(args) -> tuple[Presentation | None
         extreme_themes=getattr(args, "extreme_themes", True),
         name_styles=getattr(args, "name_styles", None),
         license_policy=getattr(args, "license_policy", None),
+        image_generator=getattr(args, "image_generator", None),
+        image_budget=_image_budget(getattr(args, "generated_images", None)),
     )
+
+
+def _image_budget(generated_images: int | None) -> ImageBudget | None:
+    """The image budget of --generated_images (with TALKGENERATOR_IMAGE_COST_LIMIT's dollars), or None: the settings'."""
+    if generated_images is None:
+        return None
+    return ImageBudget(max_images=max(0, generated_images), max_cost_usd=settings.image_cost_limit())
 
 
 def generate_presentation(
@@ -95,6 +107,8 @@ def generate_presentation(
     name_styles: str | Iterable[str] | None = None,
     topic_or_title: str | None = None,
     license_policy: str | Iterable[str] | None = None,
+    image_generator: ImageGenerator | str | None = None,
+    image_budget: ImageBudget | None = None,
 ) -> tuple[Presentation | None, SlideDeck, str | None]:
     """Generate a talk. With debug_notes, every slide's speaker notes explain how it was generated.
 
@@ -131,6 +145,15 @@ def generate_presentation(
     license_policy is the license classes the talk's images may have (see talkgenerator.images.licenses): "all", "open"
     (everything but fair use: no memes, gifs or Reddit's posts, for decks shown in public), or the classes, as a list
     or separated by commas ("public-domain,open"). None is the schema's: "open" for ted, else "all".
+
+    image_generator generates pictures for the slides stock photos can't show well (the presenter's weird hobby, the
+    cover of the book they wrote, an old photo of a moment in the made-up history of something), and for a slide whose
+    images can't be found: a generator (see talkgenerator.images.generators), a spec such as "openai:gpt-image-2", or
+    None for the one TALKGENERATOR_IMAGE_GENERATOR names (without one, nothing is generated: a key alone never makes a
+    talk generate). Only slides a language model writes (or a plan) get them, as their texts say what a picture is to
+    show; their pictures are generated while the talk is made, a few at most (image_budget: by default 3, and no
+    dollar limit), at the cost of the generator's owner, which the deck's usage says. See
+    talkgenerator.images.generation.
 
     progress follows the talk while it's made (see stream_talk, which hands it over in events)."""
     theme = theme or settings.theme()
@@ -197,8 +220,19 @@ def generate_presentation(
     elif language != "en":
         logger.warning("Talks in other languages than English need a language model: this one is in English")
 
+    # The pictures it may generate (with a generator it's given, or the settings'), counted in the same ledger: for the
+    # slides a language model writes, whose texts say what a picture is to show
+    generation = image_generation.for_talk(image_generator, image_budget, policy, ledger, topics, presenter)
+    if generation is not None and provider is None:
+        logger.info("Classic talks generate no pictures: {} isn't asked".format(generation.generator.id))
+        generation = None
+    if generation is not None:
+        logger.info(
+            "Image generator: {} (this talk may generate {})".format(generation.generator.id, generation.estimate())
+        )
+
     # Generate the presentation object, finding its images by its license policy, theme and format
-    images = image_context.ImageContext(policy, palette(chosen_theme), presentation_schema.looks)
+    images = image_context.ImageContext(policy, palette(chosen_theme), presentation_schema.looks, generation)
     with image_context.for_talk(images):
         presentation, slide_deck = presentation_schema.generate_presentation(
             topics=topics,
@@ -221,10 +255,10 @@ def generate_presentation(
         )
     slide_deck.license_policy = policy.name
     slide_deck.usage = ledger.total()
-    answered = [entry.model for entry in ledger.entries if entry.error is None]
+    answered = ledger.language_models()
     if slide_deck.language_model is not None and answered:
         slide_deck.language_model = answered[-1]  # (the model that answered, which a router picks)
-    if provider is not None:
+    if provider is not None or generation is not None:
         logger.info(ledger.summary())
 
     logger.info("**************************")
@@ -269,12 +303,18 @@ def stream_talk(
     name_styles: str | Iterable[str] | None = None,
     topic_or_title: str | None = None,
     license_policy: str | Iterable[str] | None = None,
+    image_generator: ImageGenerator | str | None = None,
+    image_budget: ImageBudget | None = None,
 ) -> Iterator[TalkEvent]:
     """Make a talk as generate_presentation does (the same deck, for the same options, seed and answers), handing
     over what's ready while it's made (see talkgenerator.models.events): talk.started once its title is known (the
     one it settles on, and for a topic_or_title, how that was read), a slide.ready for every slide as soon as it's
     settled, in order and laid out in the talk's theme, and talk.finished with the whole deck. Meanwhile, the slides
     after it are being made: a language model's while it writes them.
+
+    In a talk that generates pictures (image_generator: see generate_presentation), a slide comes with its stock photo
+    where a generated picture is to go, and comes again (slide.updated, at the same index, laid out the same way) once
+    that's in; talk.finished comes once all of them are in.
 
     Images are probed rather than downloaded (see talkgenerator.util.image_util.probing): a browser that shows the
     slides loads them itself. Nothing is saved: the deck in talk.finished renders as a PowerPoint
@@ -307,6 +347,8 @@ def stream_talk(
                     name_styles=name_styles,
                     topic_or_title=topic_or_title,
                     license_policy=license_policy,
+                    image_generator=image_generator,
+                    image_budget=image_budget,
                 )
                 events.put(TalkFinished(deck=slide_deck.to_deck(schema_name=schema)))
         except TalkCancelled:
@@ -334,6 +376,9 @@ class _Following:
         self.cancelled = threading.Event()
         self._layout: engine.DeckLayout | None = None
         self._handed_over = 0
+        self._indices: dict[int, int] = {}  # every handed-over slide's index, by its slide number
+        # (a slide is laid out again, and handed over again, while later ones are being handed over)
+        self._lock = threading.RLock()
 
     def started(self, slide_deck: SlideDeck) -> None:
         self._go_on()
@@ -357,15 +402,31 @@ class _Following:
 
     def settled(self, slide_deck: SlideDeck, slide_nr: int, slide: Any) -> None:
         self._go_on()
-        deck_slide = slide.to_deck_slide()
-        if self._layout is not None:
-            deck_slide = self._layout.next(deck_slide)
-        self.hand_over(SlideReady(index=self._handed_over, slide=deck_slide))
-        self._handed_over += 1
+        with self._lock:
+            deck_slide = slide.to_deck_slide()
+            if self._layout is not None:
+                deck_slide = self._layout.next(deck_slide)
+            index = self._indices[slide_nr] = self._handed_over
+            self.hand_over(SlideReady(index=index, slide=deck_slide))
+            self._handed_over += 1
         # A slide shown is a slide used, which some sources want to hear of (a download, at Unsplash), as a PowerPoint
         # tells them when it gets the slide. (A PowerPoint made later from the deck doesn't tell them again.)
         for image in slide.image_store().values():
             image.mark_used()
+
+    def updated(self, slide_deck: SlideDeck, slide_nr: int, slide: Any) -> None:
+        """A slide handed over before has changed (a generated picture in its stock photo's place): hand it over
+        again, at its index, laid out as it was."""
+        if self.cancelled.is_set():
+            return
+        with self._lock:
+            index = self._indices.get(slide_nr)
+            if index is None:
+                return
+            deck_slide = slide.to_deck_slide()
+            if self._layout is not None:
+                deck_slide = self._layout.again(index, deck_slide)
+            self.hand_over(SlideUpdated(index=index, slide=deck_slide))
 
     def _go_on(self) -> None:
         if self.cancelled.is_set():
@@ -460,6 +521,15 @@ def _license_policy(value: str) -> str:
         return licenses.policy(value).name
     except ValueError as error:
         raise argparse.ArgumentTypeError(str(error)) from error
+
+
+def _image_generator_spec(value: str) -> str:
+    """--image_generator's value, once it's known to name an image generator."""
+    try:
+        generators.generator_from_spec(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError(str(error)) from error
+    return value
 
 
 def _name_styles(value: str) -> tuple[str, ...]:
@@ -560,6 +630,23 @@ def get_argument_parser():
         help="The license classes the talk's images may have: all, open (everything but fair use: no memes, gifs or "
         "Reddit's posts, for decks shown in public), or license classes separated by commas (public-domain, open, "
         "stock, generated, fair-use) (default: the schema's: open for ted, else all)",
+    )
+    parser.add_argument(
+        "--image_generator",
+        default=None,
+        type=_image_generator_spec,
+        help="Generates pictures, in talks a language model writes, for the slides stock photos can't show well (the "
+        "presenter's weird hobby, the cover of the book they wrote, an old photo of a moment in a made-up history) and "
+        "for slides whose images can't be found: openai[:<model>], openrouter[:<model>], gemini[:<model>], "
+        "flux[:<model>], comfyui or automatic1111 (servers of your own, for nothing), or none. Generated pictures cost "
+        "money, on your own key: a few per talk at most (see --generated_images) (default: "
+        "TALKGENERATOR_IMAGE_GENERATOR's, or else none)",
+    )
+    parser.add_argument(
+        "--generated_images",
+        default=None,
+        type=int,
+        help="How many pictures a talk generates at most (default: TALKGENERATOR_GENERATED_IMAGES's, or else 3)",
     )
     parser.add_argument(
         "--parallel",

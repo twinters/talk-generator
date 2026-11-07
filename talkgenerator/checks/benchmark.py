@@ -115,6 +115,9 @@ def generate_deck(
         language=language,
         theme=theme,
         license_policy=license_policy,
+        # (a benchmark makes many talks, each twice: never with generated pictures, which cost money, whatever
+        # TALKGENERATOR_IMAGE_GENERATOR says)
+        image_generator="none",
     )
     return slide_deck.to_deck(schema_name=schema)
 

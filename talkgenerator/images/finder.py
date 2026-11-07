@@ -85,9 +85,13 @@ def find(slot: ImageSlot, query: str | None, avoid: Collection[ImageData] = ()) 
 
 
 def servable(slot: ImageSlot, policy: licenses.LicensePolicy) -> bool:
-    """Whether the policy allows the sources of the slot's look, its fallbacks or its backups (whatever their keys)."""
+    """Whether the policy allows the sources of the slot's look, its fallbacks or its backups (whatever their keys),
+    or a generated picture, for a slot that prefers one in a talk that generates them (see
+    talkgenerator.images.generation)."""
     allowed = policy.narrowed(slot.license_classes)
     talk = context.current()
+    if talk.generation is not None and talk.generation.prefers(slot):
+        return True
     tried: set[str] = set()
     for first in (slot.aesthetic, *slot.backups):
         name: str | None = talk.look(first)

@@ -1,5 +1,7 @@
 """The events of a talk while it's made (talkgenerator.generator.stream_talk), in this order: talk.started, a
-slide.ready for every slide, and talk.finished, with the whole deck.
+slide.ready for every slide, and talk.finished, with the whole deck. In a talk that generates pictures, a slide can
+come again, as slide.updated, once a generated picture takes the place of its stock photo: whenever that comes in,
+after the slide's slide.ready and before talk.finished.
 
 They're plain data, as Server-Sent Events carry them: an event's `event` is its name, and to_json() is its data (the
 deck format's elements, as in talkgenerator.models.deck). A browser can draw a themed talk's slides as they come in,
@@ -51,11 +53,22 @@ class SlideReady(_Event):
     slide: DeckSlide
 
 
+class SlideUpdated(_Event):
+    """A slide handed over before, again, laid out as it was: with a picture that came in later (a generated one, in
+    the place of the stock photo it had: see talkgenerator.images.generation). It takes the place of the slide at its
+    index."""
+
+    event: Literal["slide.updated"] = "slide.updated"
+    index: int  # its place in the deck, from 0, as its slide.ready said
+    slide: DeckSlide
+
+
 class TalkFinished(_Event):
-    """The talk is done: the whole deck, as generate_presentation makes it, with what it asked of language models."""
+    """The talk is done: the whole deck, as generate_presentation makes it, with what it asked of language models and
+    image generators."""
 
     event: Literal["talk.finished"] = "talk.finished"
     deck: Deck
 
 
-TalkEvent = Annotated[TalkStarted | SlideReady | TalkFinished, Field(discriminator="event")]
+TalkEvent = Annotated[TalkStarted | SlideReady | SlideUpdated | TalkFinished, Field(discriminator="event")]

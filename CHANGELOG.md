@@ -12,6 +12,34 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
 
 ### Added
 
+- Generated pictures (`talkgenerator.images.generation`, `talkgenerator.images.generators`): in talks a language
+  model writes (and plans from the Skill or the MCP server), an image generator draws what stock photos can't show
+  well: the presenter's weird hobby, the cover of the book they wrote, old photos of moments in a made-up history,
+  the portrait of a made-up historical figure, a made-up news story's photo (slots with `generate`). The model writes
+  a prompt for each (plans: `SlidePlan.prompts`), the slide comes with a stock photo, and the generated picture takes
+  its place once it's in; a planned slide whose images can't be found at all gets generated ones on its last try.
+  One `ImageGenerator` interface (a prompt, an aspect ratio, a style, what to avoid and a seed in; the picture, its
+  model, its cost and moderation's flags out), with adapters for OpenAI's Image API (`openai`, gpt-image-2),
+  OpenRouter's (`openrouter`), Google's Gemini (`gemini`), Black Forest Labs' FLUX (`flux`), and ComfyUI and
+  Automatic1111-style servers of your own (`comfyui`, `automatic1111`), picked by `--image_generator` (also on
+  `talkgenerator render`), `image_generator=` (`generate_presentation`, `stream_talk`, `render_plan`) or
+  `TALKGENERATOR_IMAGE_GENERATOR`, and never because a key is set; `DISABLE_IMAGE_GENERATION=1` switches them off.
+  The default models and list prices are config (`talkgenerator/data/image_generators.json`, and an
+  `image_generators.json` in the config folder over it; `talkgenerator formats --generators` lists them), as image
+  models come and go. A talk generates 3 pictures at most (`--generated_images`, `ImageBudget`), granted in the order
+  of its slides (so the same seed generates for the same slides, in parallel or not), estimates their cost by list
+  price before it generates any, keeps to `TALKGENERATOR_IMAGE_COST_LIMIT` if it's set, and its deck's usage counts
+  them (`images`, `image_cost_usd`, `failed_images`), apart from its language model requests. Generated pictures are
+  credited "AI-generated with <model>", in the `generated` license class (the provider's terms in the deck), shown in
+  a browser from the app's own copy (`display: copy`, as Pixabay's), and kept on disk by model, prompt, shape and
+  seed (`generated-images/` in the cache folder), so a talk made again, or a deck rendered again, generates nothing
+  again. Talkgenerator's own rules come before the provider's moderation (`talkgenerator.images.safety`): a prompt
+  that names a real person, the talk's presenter, a brand or a trademarked character, or asks for gore or sexual
+  content, is never sent, every prompt asks for none of that, and a talk whose topic a slide shouldn't make light of
+  generates nothing; a refused or failed picture keeps its stock photo.
+- `slide.updated` (`talkgenerator.models.events.SlideUpdated`): in a talk that streams, a slide handed over before
+  comes again, at its index and laid out as before (`DeckLayout.again`), once a generated picture takes its stock
+  photo's place; `talk.finished` comes once every picture is in.
 - License classes and policies (`talkgenerator.images.licenses`): every image source declares the license classes
   of its images (`LICENSES`, next to its `DISPLAY`): `public-domain`, `open` (CC BY and BY-SA), `stock`
   (Unsplash, Pexels and Pixabay), `generated` and `fair-use` (Reddit, GIPHY, InspiroBot, ShitpostBot); Openverse's
@@ -295,6 +323,12 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
 
 ### Changed
 
+- A deck's `usage` counts its generated pictures too (`images`, `image_cost_usd`, `unpriced_images`,
+  `failed_images`, apart from `requests`, which stay its language model's), and the talk's log line says what they
+  cost. A deck's `language_model` is the language model that answered, never an image generator.
+- The credits of generated pictures name their model, not a license (`licenses.SHOWN` is open and public domain
+  licenses only); `talkgenerator formats --details` (and the Skill's slide references) say which images prefer a
+  generated picture.
 - Images come through the image finder (see the image slots above): classic talks draw on the same sources with
   about the same weights as before, but history slides now show old photographs in black and white or sepia (by
   preference; no more r/ColorizedHistory or the Art Institute's paintings among them), statements' backdrops come from

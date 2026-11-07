@@ -45,8 +45,10 @@ class SlideDeck:
         self.license_policy = "all"
         # What was typed, when it could be the talk's topic or its title, and how it was read (see talkgenerator.titles)
         self.topic_or_title: TopicOrTitle | None = None
-        # Who wants to know about every slide once it's added (a talk that streams: see talkgenerator.generator)
+        # Who wants to know about every slide once it's added (a talk that streams: see talkgenerator.generator), and
+        # about a slide that changed after it was added (a generated picture in its stock photo's place)
         self.listener: Callable[[SlideDeck, int, Slide], None] | None = None
+        self.update_listener: Callable[[SlideDeck, int, Slide], None] | None = None
 
     @property
     def title(self) -> str | None:
@@ -79,6 +81,12 @@ class SlideDeck:
         self._slides[slide_index] = slide
         if self.listener is not None:
             self.listener(self, slide_index, slide)
+
+    def slide_updated(self, slide_index: int) -> None:
+        """The slide at the index changed since it was added (it has a generated picture now, say)."""
+        slide = self._slides[slide_index]
+        if slide is not None and self.update_listener is not None:
+            self.update_listener(self, slide_index, slide)
 
     def is_complete(self):
         return len(self._slides) >= self._size and (None not in self._slides)

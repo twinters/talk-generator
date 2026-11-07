@@ -1,6 +1,6 @@
-"""What a talk's images are found by while the talk is made: its license policy, its theme's colours, and its format's
-own looks. The talk sets it (see `for_talk`), and the image finder reads it, in whichever thread finds the images
-(talkgenerator.util.image_util.carry takes it into a talk's threads)."""
+"""What a talk's images are found by while the talk is made: its license policy, its theme's colours, its format's
+own looks, and its generated pictures, if it has any. The talk sets it (see `for_talk`), and the image finder reads
+it, in whichever thread finds the images (talkgenerator.util.image_util.carry takes it into a talk's threads)."""
 
 from __future__ import annotations
 
@@ -8,19 +8,25 @@ from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 from talkgenerator.images import licenses
+
+if TYPE_CHECKING:
+    from talkgenerator.images.generation import ImageGeneration
 
 
 @dataclass(frozen=True)
 class ImageContext:
     """The license policy of a talk; the colours of its theme (none for the classic one), which its pictures had better
-    go with; and its format's own looks for the looks its slides ask for (a corporate format's "corporate-stock" for
-    "photo", say)."""
+    go with; its format's own looks for the looks its slides ask for (a corporate format's "corporate-stock" for
+    "photo", say); and its image generation, for a talk that generates pictures (see
+    talkgenerator.images.generation)."""
 
     policy: licenses.LicensePolicy = licenses.ALL
     palette: tuple[str, ...] = ()
     looks: Mapping[str, str] = field(default_factory=dict)
+    generation: ImageGeneration | None = None
 
     def look(self, name: str) -> str:
         """The look a slide's look is in this talk (its format's own, if it has one)."""

@@ -43,6 +43,15 @@ class SlidePlan(Data):
         "'image_1'): a few plain English words saying what the image shows. Or the path of an image file of your "
         "own. Never an image's address: talkgenerator finds, licenses and credits the images.",
     )
+    prompts: dict[str, str] = Field(
+        default_factory=dict,
+        description="For a talk that generates pictures (with an image generator set up: TALKGENERATOR_IMAGE_GENERATOR), "
+        "a prompt for any of the slide's images, by the names its kind gives them: one English sentence of 10 to 40 "
+        "words saying what the picture shows, concretely, as a photographer or painter would describe it (made-up "
+        "people only, never real or famous ones, and no logos, brands or trademarked characters). The images that "
+        "prefer a generated picture (see `talkgenerator formats --details`) are generated from it, and an image "
+        "whose search finds nothing may be. Optional: without one, a picture is generated from the image's query.",
+    )
 
 
 class TalkPlan(Data):

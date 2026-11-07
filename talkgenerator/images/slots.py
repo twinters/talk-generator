@@ -9,8 +9,10 @@ A recipe asks for its images with slots (talkgenerator.plan.kinds.Recipe.images)
 slots too (talkgenerator.schema.content_generators): called with a presentation context, a slot searches for its
 "seed", as v4's image generators did.
 
-Left room for: an image a vision model picks among the candidates (10.3's vision pick), and one that's generated
-instead (10.5): `generate` says a slot may be generated.
+A slot that stock photos can't show well (the presenter's weird hobby, a fake book cover, a "historical photo" of
+an event that never happened) prefers a generated picture (`generate`): in a talk that generates pictures (see
+talkgenerator.images.generation), its stock photo is searched for as before, and a generated one takes its place
+once it's in. Left room for: an image a vision model picks among the candidates (10.3's vision pick).
 """
 
 from __future__ import annotations
@@ -39,7 +41,8 @@ class ImageSlot:
     sources: tuple[str, ...] = ()  # the only sources it may come from, of its look's (see talkgenerator.images.catalog)
     # Looks that take over, in order, when its own finds none (after the look's own fallbacks)
     backups: tuple[str, ...] = ()
-    generate: bool = False  # may be generated instead (docs/v5-plan.md, 10.5): not yet
+    # Prefers a generated picture (docs/v5-plan.md, 10.5), in a talk that generates them: its stock photo stands in
+    generate: bool = False
 
     def __post_init__(self) -> None:
         for look in (self.aesthetic, *self.backups):

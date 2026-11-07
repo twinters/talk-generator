@@ -37,7 +37,8 @@ DiagramReveal = Literal["all", "punchline"]
 # - proxy: through a pass-through proxy that keeps nothing, which adds what the source asks requests to carry (the
 #   Art Institute of Chicago refuses requests without its AIC-User-Agent header, which an <img> tag can't send)
 # - copy: from a copy of the app's own, kept as long as the deck, or not at all: Pixabay doesn't allow hotlinking for
-#   good, and its image links stop working after 24 hours
+#   good, and its image links stop working after 24 hours; and a generated picture is a file on the computer that
+#   made it (its url is the file's path)
 # - local: a file of talkgenerator's own (or a plan's), which the app serves
 DisplayPolicy = Literal["direct", "proxy", "copy", "local"]
 # The license class of an image (see talkgenerator.images.licenses): public domain and CC0; Creative Commons BY and

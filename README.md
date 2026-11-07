@@ -106,6 +106,27 @@ The first sign-in registers talkgenerator with your account; talkgenerator keeps
 The classic generator only speaks English, so in such a talk, a slide that doesn't come out as the model wrote it becomes a picture without text instead of a classic slide, and the talk as a whole is English (and says so in the logs) when the model doesn't write it.
 After every talk, the logs tell how many requests it made and what they cost, and so does the talk's deck JSON.
 
+### Generated pictures
+
+In a talk a language model writes, an image generator can draw what stock photos can't show well: the presenter's weird hobby, the cover of the book they wrote (with its title), an old photo of a moment in a made-up history, the portrait of a made-up historical figure, a made-up news story's photo.
+The model writes a prompt for each, the slide comes with a stock photo, and the generated picture takes its place once it's in (in a talk that streams, the slide comes again). A slide whose images can't be found at all gets a generated one on its last try, too.
+Pictures are only generated when you ask for them, with your own key or server, never because a key is set:
+
+| Generator | `--image_generator` | Key | Price a picture (list prices, checked 2026-11-07) |
+| --- | --- | --- | --- |
+| OpenAI | `openai` (gpt-image-2), or `openai:<model>` | `OPENAI_API_KEY` | $0.006 at low quality (`TALKGENERATOR_IMAGE_QUALITY` asks for `medium` or `high`) |
+| [OpenRouter](https://openrouter.ai/)'s image models | `openrouter` (OpenAI's gpt-image-2 there), or `openrouter:<model>`, such as `openrouter:black-forest-labs/flux-3-image-klein` | the key that writes your talks | from $0.006 (none are free) |
+| Google's Gemini (Nano Banana) | `gemini` (gemini-3.1-flash-lite-image), or `gemini:<model>` | `GEMINI_API_KEY` | $0.034 |
+| Black Forest Labs' FLUX | `flux` (FLUX 3 Image Klein), or `flux:<model>`, such as `flux:flux-2-pro` | `BFL_API_KEY` | $0.009 |
+| A ComfyUI server of your own | `comfyui`, or `comfyui:<checkpoint>` | none (`COMFYUI_URL`, `COMFYUI_WORKFLOW`) | nothing |
+| An Automatic1111 (or Forge) server of your own | `automatic1111`, or `automatic1111:<checkpoint>` | none (`AUTOMATIC1111_URL`) | nothing |
+
+`TALKGENERATOR_IMAGE_GENERATOR` sets one for every talk, and `DISABLE_IMAGE_GENERATION=1` switches them all off.
+A talk generates 3 pictures at most (`--generated_images`, or `TALKGENERATOR_GENERATED_IMAGES`), estimates what they'll cost before it generates any (by list price: `talkgenerator formats --generators` lists the models and their prices), and keeps to `TALKGENERATOR_IMAGE_COST_LIMIT` (in dollars) if it's set; the logs and the deck JSON say what it spent.
+Generated pictures are credited "AI-generated with <model>", in the `generated` license class (`--license_policy` can leave them out), and kept in your cache folder, so making the talk again with the same seed, or rendering its deck again, generates nothing again.
+A prompt that names a real person, a brand or a trademarked character, or asks for gore or sexual content, is never sent (the stock photo stays), every prompt asks for none of that, and the generator's moderation has its say too.
+Prices and default models are in `talkgenerator/data/image_generators.json`; an `image_generators.json` in your config folder adds models or changes them, as image models come and go.
+
 ### Themes
 
 `--theme` picks a talk's look: by default `random`, a theme the talk's seed picks; `classic` is the 2019 template.
@@ -143,6 +164,8 @@ For a settings menu, `talkgenerator.design.themes.catalog()` lists every theme w
 | `--theme` | The look (see [Themes](#themes)): `random`, `classic` (the 2019 template), a family's name such as `"dark minimal"`, or `chaos` (*default: `TALKGENERATOR_THEME`'s, or else random*) |
 | `--style_chaos` | How many slides get a theme of their own, from 0 to 1 (*default: 0*) |
 | `--no_extreme_themes` | Leave the themes for laughs out of `--theme random` |
+| `--image_generator` | Generates pictures, at your own cost (see [Generated pictures](#generated-pictures)): `openai`, `openrouter`, `gemini`, `flux`, `comfyui` or `automatic1111`, each with `:<model>` if you like, or `none` (*default: `TALKGENERATOR_IMAGE_GENERATOR`'s, or else none*) |
+| `--generated_images` | How many pictures a talk generates at most (*default: 3*) |
 
 ### Using it from Python
 
