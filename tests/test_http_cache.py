@@ -112,6 +112,32 @@ def test_answers_that_vary_on_cookies_are_read_back_whatever_cookies_came_in(ser
     assert _Handler.hits["/api/varies-on-cookie"] == 1
 
 
+# CACHED ONLY (for a source that's skipped for a while: see http_util.Cooldown)
+
+
+def test_a_cached_only_get_takes_what_the_cache_keeps_and_asks_nothing(server, cache_dir):
+    url = f"http://{server}/api/words"
+    http_util.get(url, params={"q": "cat"})
+    assert http_util.get(url, params={"q": "cat"}, cached_only=True).json() == {"ok": True}
+    assert http_util.get(url, params={"q": "dog"}, cached_only=True) is None
+    assert _Handler.hits["/api/words"] == 1
+
+
+def test_a_cached_only_get_finds_nothing_without_the_cache(server):
+    assert http_util.get(f"http://{server}/api/words", cached_only=True) is None  # (the tests switch the cache off)
+    assert _Handler.hits == {}
+
+
+def test_a_cached_only_get_takes_the_answer_a_block_of_same_answers_gave(server, monkeypatch):
+    monkeypatch.setitem(http_util.CACHE_EXPIRY, server + "/api", timedelta(hours=1))  # (the cache itself is off)
+    url = f"http://{server}/api/counter"
+    with http_util.same_answers():
+        first = http_util.get(url).json()
+        assert http_util.get(url, cached_only=True).json() == first
+        assert http_util.get(url, params={"q": "other"}, cached_only=True) is None
+    assert _Handler.hits["/api/counter"] == 1
+
+
 def test_errors_are_not_cached(server, cache_dir):
     http_util.get(f"http://{server}/api/missing")
     http_util.get(f"http://{server}/api/missing")

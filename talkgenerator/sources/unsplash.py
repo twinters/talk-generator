@@ -52,19 +52,24 @@ def _access_key() -> str | None:
 
 
 def available() -> bool:
-    """Whether a search can go out now: there's a key, and Unsplash isn't skipped for a while (see _cooldown)."""
-    return _access_key() is not None and not _cooldown.active
+    """Whether Unsplash can be searched: there's a key. (While it's skipped for a while, see _cooldown, a search finds
+    what it found before, from the caches, and the others nothing.)"""
+    return _access_key() is not None
 
 
 def _api_get(path: str, params: dict[str, Any] | None = None) -> Any:
     access_key = _access_key()
-    if not access_key or _cooldown.active:
+    if not access_key:
         return None
+    cooling = _cooldown.active  # (then only the answers that are kept will do)
     response = http_util.get(
         API_URL + path,
         params=params,
         headers={"Authorization": "Client-ID " + access_key, "Accept-Version": "v1"},
+        cached_only=cooling,
     )
+    if response is None and cooling:
+        return None
     if response is None or response.status_code >= 500:
         _cooldown.trigger_outage(response)
         return None

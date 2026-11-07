@@ -206,9 +206,15 @@ def _host_headers(url: str) -> dict[str, str]:
     return headers
 
 
-def get(url: str, *, timeout: float = DEFAULT_TIMEOUT, **kwargs: Any) -> requests.Response | None:
-    """GET a URL. Returns None instead of raising on connection errors and timeouts."""
-    return _request("GET", url, timeout=timeout, **kwargs)
+def get(
+    url: str, *, timeout: float = DEFAULT_TIMEOUT, cached_only: bool = False, **kwargs: Any
+) -> requests.Response | None:
+    """GET a URL. Returns None instead of raising on connection errors and timeouts.
+
+    With cached_only, the server isn't asked: only an answer that's kept will do (one given in a block of
+    same_answers, or one of the on-disk cache), and None if there's none. For a source that's skipped for a while
+    (see Cooldown): the searches it made before still get their answers."""
+    return _request("GET", url, timeout=timeout, cached_only=cached_only, **kwargs)
 
 
 def post(url: str, *, timeout: float = DEFAULT_TIMEOUT, **kwargs: Any) -> requests.Response | None:
@@ -247,20 +253,24 @@ def same_answers() -> Iterator[None]:
             _answers = outer
 
 
-def _request(method: str, url: str, *, timeout: float, **kwargs: Any) -> requests.Response | None:
+def _request(
+    method: str, url: str, *, timeout: float, cached_only: bool = False, **kwargs: Any
+) -> requests.Response | None:
     extra_headers = _host_headers(url)
     if extra_headers:
         kwargs["headers"] = {**extra_headers, **(kwargs.get("headers") or {})}
     answers = _answers
     if answers is None or method != "GET" or kwargs.get("stream") or not _kept_on_disk(url):
-        return _send(method, url, timeout, kwargs)
+        return _from_cache(url, timeout, kwargs) if cached_only else _send(method, url, timeout, kwargs)
     params = kwargs.get("params")
     key = (url, repr(sorted(params.items())) if isinstance(params, dict) else repr(params))
     with _answers_lock:
         answer = answers.get(key)
-        asking = answer is None
-        if answer is None:
+        asking = answer is None and not cached_only
+        if asking:
             answer = answers[key] = _Answer()
+    if answer is None:  # (only a kept answer will do, and this block gave none yet)
+        return _from_cache(url, timeout, kwargs)
     if asking:
         try:
             answer.response = _send(method, url, timeout, kwargs)
@@ -273,6 +283,19 @@ def _request(method: str, url: str, *, timeout: float, **kwargs: Any) -> request
 
 def _kept_on_disk(url: str) -> bool:
     return get_url_expiration(url, _cache_expiry_patterns()) is not None
+
+
+def _from_cache(url: str, timeout: float, kwargs: dict[str, Any]) -> requests.Response | None:
+    """The on-disk cache's answer to a GET, without asking the server: None if it has none that's still fresh (or
+    if it's switched off)."""
+    session = get_session()
+    if not isinstance(session, requests_cache.CachedSession):
+        return None
+    try:
+        response = session.request("GET", url, timeout=timeout, only_if_cached=True, **kwargs)
+    except requests.RequestException:
+        return None
+    return response if response.status_code == 200 else None  # (else "504 Not Cached": the cache keeps only 200s)
 
 
 def _send(method: str, url: str, timeout: float, kwargs: dict[str, Any]) -> requests.Response | None:
@@ -306,7 +329,11 @@ def get_json(
 
 class Cooldown:
     """Remembers that a service is unavailable (down, rate limited, bad key) for a while,
-    so we stop hammering it and fall through to other sources straight away."""
+    so we stop hammering it and fall through to other sources straight away.
+
+    Meanwhile, the searches it answered before still get their answers from the caches (see get's
+    cached_only): only the others wait. So a cooldown that starts in the middle of a talk, or between
+    the two runs of `talkgenerator check`, doesn't change what was found already."""
 
     def __init__(self, name: str):
         self._name = name

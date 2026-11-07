@@ -51,6 +51,10 @@ class _ConceptNetUnavailable(Exception):
     pass
 
 
+class _CoolingDown(Exception):
+    """A word ConceptNet wasn't asked about before, while it's skipped for a while (see _cooldown)."""
+
+
 # Helpers
 def _remove_prohibited_words(word):
     return [part for part in word.split(" ") if part not in _PROHIBITED_SEARCH_TERMS]
@@ -95,18 +99,18 @@ def remove_nones(entries):
 # RETRIEVING DATA
 
 
-def _conceptnet_enabled():
-    return not settings.is_source_disabled("CONCEPTNET") and not _cooldown.active
-
-
 @lru_cache(maxsize=256)
 def _fetch_edges(word, arguments):
-    """Edges of a ConceptNet node. Failures raise instead of returning, so they aren't cached."""
+    """Edges of a ConceptNet node. Failures raise instead of returning, so they aren't cached. While ConceptNet is
+    skipped for a while (see _cooldown), only what it answered before will do: from memory, or the on-disk cache."""
     search_term = "_".join(_remove_prohibited_words(word.lower()))
     url = "{}/c/en/{}?{}".format(settings.conceptnet_api_url(), quote(search_term), urlencode(arguments, safe="/"))
     start = time.perf_counter()
-    response = http_util.get(url, timeout=_REQUEST_TIMEOUT_SECONDS)
+    cooling = _cooldown.active
+    response = http_util.get(url, timeout=_REQUEST_TIMEOUT_SECONDS, cached_only=cooling)
     logger.debug("Took %.2f seconds to poll ConceptNet for '%s'", time.perf_counter() - start, word)
+    if response is None and cooling:
+        raise _CoolingDown
     if response is None:
         raise _ConceptNetUnavailable("no response")
     if not response.ok:
@@ -123,10 +127,12 @@ def _fetch_edges(word, arguments):
 
 def _get_edges(word, arguments=None):
     """ConceptNet edges for a word, or None if ConceptNet can't be used right now."""
-    if not word or not word.strip() or not _conceptnet_enabled():
+    if not word or not word.strip() or settings.is_source_disabled("CONCEPTNET"):
         return None
     try:
         return _fetch_edges(word, arguments or _DEFAULT_ARGUMENTS)
+    except _CoolingDown:
+        return None
     except _ConceptNetUnavailable as e:
         _cooldown.trigger(_UNAVAILABLE_COOLDOWN_SECONDS, f"{e}; using Datamuse and WordNet instead")
         return None

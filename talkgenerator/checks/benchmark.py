@@ -10,7 +10,9 @@ second run replays the answers the first run got: the same answers have to give 
 Live sources answer the second run as they answered the first: their searches come from the on-disk cache of API
 responses, or from the first run's answer when that one expires in between (http_util.same_answers: Pixabay's expire
 after a day, and its image links change), and Reddit's searches, WikiHow's pages and the images from memory. A source
-that fails, or starts limiting requests, between the two runs can still make a talk come out differently.
+that's skipped for a while (an outage, a rate limit) still answers what it answered before, from those caches
+(http_util.Cooldown). What can still make a talk come out differently: a search that fails in one run only, and a
+cooldown that ends between the two, so that the second run asks what the first one skipped.
 """
 
 from __future__ import annotations

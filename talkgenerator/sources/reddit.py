@@ -95,8 +95,9 @@ def has_reddit_access() -> bool:
 
 
 def available() -> bool:
-    """Whether a search can go out now: there are credentials, and Reddit isn't skipped for a while (see _cooldown)."""
-    return _has_credentials() and not _cooldown.active
+    """Whether Reddit can be searched: there are credentials. (While it's skipped for a while, see _cooldown, a search
+    finds what it found before, from memory, and the others nothing.)"""
+    return _has_credentials()
 
 
 def get_subreddit(name: str) -> Any:
@@ -105,9 +106,20 @@ def get_subreddit(name: str) -> Any:
         return reddit.subreddit(name)
 
 
+class _CoolingDown(Exception):
+    """A search that Reddit wasn't asked before, while it's skipped for a while (see _cooldown)."""
+
+
 @lru_cache(maxsize=128)
 def _search_images(name: str, query: str, sort: str, limit: int, animated: bool = False) -> tuple[RedditImage, ...]:
-    # Raises on API errors, so that failures don't end up in the cache
+    # Raises on API errors, so that failures don't end up in the cache. While Reddit is skipped for a while, the cache
+    # still answers the searches made before: only the others wait
+    if _cooldown.active:
+        raise _CoolingDown
+    return _search_reddit(name, query, sort, limit, animated)
+
+
+def _search_reddit(name: str, query: str, sort: str, limit: int, animated: bool) -> tuple[RedditImage, ...]:
     subreddit = get_subreddit(name)
     submissions = subreddit.search(query, sort=sort, limit=limit) if query else subreddit.hot(limit=limit)
     images = []
@@ -179,15 +191,16 @@ def search_images(
     posts whose image moves.
 
     Searches for the query, or takes the current hot posts if there's no query. Returns None without
-    Reddit access or when Reddit fails.
+    Reddit access or when Reddit fails, and while it's skipped for a while (see _cooldown), for a search
+    that wasn't made before.
     """
     if not has_reddit_access():
         logger.debug("No Reddit access")
         return None
-    if _cooldown.active:
-        return None
     try:
         return list(_search_images(name, (query or "").strip(), sort, limit, animated))
+    except _CoolingDown:
+        return None
     except PrawcoreException as err:
         cooldown = _cooldown_for(err)
         if cooldown:

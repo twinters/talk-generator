@@ -419,6 +419,13 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   leave out. And Pixabay's, Commons' and Openverse's, which say they vary on `Cookie`, stopped being read back once
   any host had set a cookie. Those searches went out again every time, using up rate limits (Unsplash's demo key
   allows 50 an hour). The cache no longer stores answers as varying on either header.
+- A source that's skipped for a while, after an outage or a rate limit, still answers the searches it answered
+  before, from its caches, and asks nothing new: before, it was skipped altogether. A cooldown that started in the
+  middle of a talk, as Unsplash's demo key often makes one, lost the rest of the talk images that were found already,
+  and made `talkgenerator check` find that a talk's second run came out differently. A source that's cooling down
+  also keeps its place among a look's sources, so the sources searched together stay the same. That holds for
+  Pixabay, Pexels, Unsplash, Openverse, Reddit and ConceptNet; GIPHY's answers aren't kept, so it finds nothing
+  meanwhile, as before.
 
 ## [4.0.1] - 2026-11-05
 

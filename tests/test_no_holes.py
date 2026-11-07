@@ -169,17 +169,19 @@ class _Response:
 def failing_reddit(monkeypatch):
     monkeypatch.setattr(reddit, "_cooldown", http_util.Cooldown("Reddit (test)"))
     monkeypatch.setattr(reddit, "has_reddit_access", lambda: True)
+    reddit._search_images.cache_clear()
     searches = []
 
     def install(error):
-        def search(*args):
+        def search(*args):  # (what asks Reddit, behind the cache of searches)
             searches.append(args)
             raise error
 
-        monkeypatch.setattr(reddit, "_search_images", search)
+        monkeypatch.setattr(reddit, "_search_reddit", search)
         return searches
 
-    return install
+    yield install
+    reddit._search_images.cache_clear()
 
 
 @pytest.mark.parametrize(
@@ -214,7 +216,9 @@ def test_image_apis_are_skipped_for_a_while_when_they_are_down(monkeypatch, modu
     monkeypatch.setattr(module, "_cooldown", http_util.Cooldown(module.__name__ + " (test)"))
     requests_made = []
 
-    def get(url, **kwargs):
+    def get(url, cached_only=False, **kwargs):
+        if cached_only:  # (while skipped, only a kept answer will do: there's none)
+            return None
         requests_made.append(url)
         return None if status_code is None else SimpleNamespace(status_code=status_code, ok=False, headers={})
 
@@ -230,7 +234,9 @@ def test_openverse_is_skipped_for_a_while_when_it_refuses_this_network(monkeypat
     monkeypatch.setattr(openverse, "_cooldown", http_util.Cooldown("Openverse (test)"))
     requests_made = []
 
-    def get(url, **kwargs):
+    def get(url, cached_only=False, **kwargs):
+        if cached_only:  # (while skipped, only a kept answer will do: there's none)
+            return None
         requests_made.append(url)
         return SimpleNamespace(status_code=403, ok=False, headers={})
 
