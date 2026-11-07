@@ -1,0 +1,465 @@
+{
+ "status": 200,
+ "responseCode": 1,
+ "response": {
+  "rows": [
+   {
+    "id": "ld1-1643399887910-1643399955659-1",
+    "title": "Sidewall",
+    "unitCode": "CHNDM",
+    "type": "edanmdm",
+    "url": "edanmdm:chndm_1981-65-53",
+    "content": {
+     "descriptiveNonRepeating": {
+      "guid": "http://n2t.net/ark:/65665/kq4d409f5f4-1b96-46f9-9f63-edb2f77ab888",
+      "title": {
+       "label": "Title",
+       "content": "Sidewall"
+      },
+      "record_ID": "chndm_1981-65-53",
+      "unit_code": "CHNDM",
+      "title_sort": "SIDEWALL",
+      "data_source": "Cooper Hewitt, Smithsonian Design Museum",
+      "record_link": "https://collection.cooperhewitt.org/view/objects/asitem/id/178188",
+      "online_media": {
+       "media": [
+        {
+         "id": "media:CHSDM-638FD9FAE8322-000001",
+         "guid": "http://n2t.net/ark:/65665/vc9ce39ec24-af22-46b1-953c-75ce7cec886d",
+         "type": "Images",
+         "idsId": "CHSDM-638FD9FAE8322-000001",
+         "usage": {
+          "access": "CC0"
+         },
+         "width": 7680,
+         "height": 6796,
+         "content": "https://ids.si.edu/ids/deliveryService?id=CHSDM-638FD9FAE8322-000001",
+         "maxsize": 0,
+         "thumbnail": "https://ids.si.edu/ids/deliveryService?id=CHSDM-638FD9FAE8322-000001",
+         "altTextAccessibility": "",
+         "extDescrAccessibility": "Imitation leather. Embossed symmetricaly arranged floral (sunflowers), fruit (grapes), and foliate (acanthus) design; printed in slate gray, beige. Similar to Morris Sunflower pattern."
+        }
+       ],
+       "mediaCount": 2
+      },
+      "metadata_usage": {
+       "access": "CC0"
+      }
+     },
+     "freetext": {
+      "date": [
+       {
+        "label": "Date",
+        "content": "1875–99"
+       }
+      ],
+      "notes": [
+       {
+        "label": "Catalogue Status",
+        "content": "Research in Progress"
+       },
+       {
+        "label": "Description",
+        "content": "Imitation leather. Embossed symmetricaly arranged floral (sunflowers), fruit (grapes), and foliate (acanthus) design; printed in slate gray, beige. Similar to Morris Sunflower pattern."
+       }
+      ],
+      "place": [
+       {
+        "label": "Place",
+        "content": "Japan"
+       }
+      ],
+      "setName": [
+       {
+        "label": "See more items in",
+        "content": "Cooper Hewitt, Smithsonian Design Museum Collection"
+       },
+       {
+        "label": "See more items in",
+        "content": "Wallcoverings Department"
+       }
+      ],
+      "creditLine": [
+       {
+        "label": "Credit Line",
+        "content": "Gift of Arlene M. and Thomas C. Ellis"
+       }
+      ],
+      "dataSource": [
+       {
+        "label": "Data Source",
+        "content": "Cooper Hewitt, Smithsonian Design Museum"
+       }
+      ],
+      "identifier": [
+       {
+        "label": "Accession Number",
+        "content": "1981-65-53"
+       }
+      ],
+      "objectType": [
+       {
+        "label": "Type",
+        "content": "Wallcoverings"
+       },
+       {
+        "label": "Type",
+        "content": "Sidewall"
+       }
+      ],
+      "objectRights": [
+       {
+        "label": "Restrictions & Rights",
+        "content": "CC0"
+       }
+      ],
+      "physicalDescription": [
+       {
+        "label": "Medium",
+        "content": "Block-printed paper, embossed"
+       },
+       {
+        "label": "Dimensions",
+        "content": "94 x 80 cm (37 x 31 1/2 in.)"
+       }
+      ]
+     },
+     "indexedStructured": {
+      "date": [
+       "1890s",
+       "1870s"
+      ],
+      "place": [
+       "Japan"
+      ],
+      "geoLocation": [
+       {
+        "L2": {
+         "type": "Country",
+         "content": "Japan"
+        }
+       }
+      ],
+      "object_type": [
+       "Fill papers",
+       "Wall coverings"
+      ],
+      "online_media_type": [
+       "Images"
+      ]
+     }
+    },
+    "hash": "90a19819f400342d4d925cb62da6ba1e8bf0d8e6",
+    "docSignature": "f9b243a53fdb1a7d1945c54eeccbc5cf",
+    "timestamp": "1663784559",
+    "lastTimeUpdated": "1793443075",
+    "version": "1793439012"
+   },
+   {
+    "id": "ld1-1643399887910-1643399955663-0",
+    "title": "Sidewall",
+    "unitCode": "CHNDM",
+    "type": "edanmdm",
+    "url": "edanmdm:chndm_1981-65-60",
+    "content": {
+     "descriptiveNonRepeating": {
+      "guid": "http://n2t.net/ark:/65665/kq45dbf1afd-b389-48f3-b675-5fa79d7d0f80",
+      "title": {
+       "label": "Title",
+       "content": "Sidewall"
+      },
+      "record_ID": "chndm_1981-65-60",
+      "unit_code": "CHNDM",
+      "title_sort": "SIDEWALL",
+      "data_source": "Cooper Hewitt, Smithsonian Design Museum",
+      "record_link": "https://collection.cooperhewitt.org/view/objects/asitem/id/178196",
+      "online_media": {
+       "media": [
+        {
+         "id": "media:CHSDM-1981-65-60MattFlynn",
+         "guid": "http://n2t.net/ark:/65665/vc96d36eb82-c3d5-43a6-a4b7-7f3d2e6f1f8e",
+         "type": "Images",
+         "idsId": "CHSDM-1981-65-60MattFlynn",
+         "usage": {
+          "access": "CC0"
+         },
+         "width": 6720,
+         "height": 6720,
+         "content": "https://ids.si.edu/ids/deliveryService?id=CHSDM-1981-65-60MattFlynn",
+         "maxsize": 3000,
+         "thumbnail": "https://ids.si.edu/ids/deliveryService?id=CHSDM-1981-65-60MattFlynn",
+         "altTextAccessibility": "",
+         "extDescrAccessibility": "Imitation leather. Bands of strapwork entwined in grapevine tendrils framing crested bird perched on branch. Pomegranates, sunflowers, grapes and grape leaves, fantastic floral and foliate forms. Printed in metallic gold and scarlet."
+        }
+       ],
+       "mediaCount": 3
+      },
+      "metadata_usage": {
+       "access": "CC0"
+      }
+     },
+     "freetext": {
+      "date": [
+       {
+        "label": "Date",
+        "content": "1880–90"
+       }
+      ],
+      "notes": [
+       {
+        "label": "Catalogue Status",
+        "content": "Research in Progress"
+       },
+       {
+        "label": "Description",
+        "content": "Imitation leather. Bands of strapwork entwined in grapevine tendrils framing crested bird perched on branch. Pomegranates, sunflowers, grapes and grape leaves, fantastic floral and foliate forms. Printed in metallic gold and scarlet."
+       }
+      ],
+      "place": [
+       {
+        "label": "made in",
+        "content": "Japan"
+       }
+      ],
+      "setName": [
+       {
+        "label": "See more items in",
+        "content": "Cooper Hewitt, Smithsonian Design Museum Collection"
+       },
+       {
+        "label": "See more items in",
+        "content": "Wallcoverings Department"
+       }
+      ],
+      "creditLine": [
+       {
+        "label": "Credit Line",
+        "content": "Gift of Arlene M. and Thomas C. Ellis"
+       }
+      ],
+      "dataSource": [
+       {
+        "label": "Data Source",
+        "content": "Cooper Hewitt, Smithsonian Design Museum"
+       }
+      ],
+      "identifier": [
+       {
+        "label": "Accession Number",
+        "content": "1981-65-60"
+       }
+      ],
+      "objectType": [
+       {
+        "label": "Type",
+        "content": "Wallcoverings"
+       },
+       {
+        "label": "Type",
+        "content": "Sidewall"
+       }
+      ],
+      "objectRights": [
+       {
+        "label": "Restrictions & Rights",
+        "content": "CC0"
+       }
+      ],
+      "physicalDescription": [
+       {
+        "label": "Medium",
+        "content": "Block-printed paper, embossed"
+       },
+       {
+        "label": "Dimensions",
+        "content": "114 x 91 cm (44 7/8 x 35 13/16 in.)"
+       }
+      ]
+     },
+     "indexedStructured": {
+      "date": [
+       "1880s",
+       "1890s"
+      ],
+      "place": [
+       "Japan"
+      ],
+      "geoLocation": [
+       {
+        "L2": {
+         "type": "Country",
+         "content": "Japan"
+        }
+       }
+      ],
+      "object_type": [
+       "Fill papers",
+       "Wall coverings"
+      ],
+      "online_media_type": [
+       "Images"
+      ]
+     }
+    },
+    "hash": "dfd0aae519e413fc308823b4bb20a3dd41657a05",
+    "docSignature": "7ff8370f01680d416a307d08174bf43c",
+    "timestamp": "1663784559",
+    "lastTimeUpdated": "1793443075",
+    "version": "1793439012"
+   },
+   {
+    "id": "restricted",
+    "title": "Sidewall",
+    "unitCode": "CHNDM",
+    "type": "edanmdm",
+    "url": "edanmdm:chndm_1981-65-53",
+    "content": {
+     "descriptiveNonRepeating": {
+      "guid": "http://n2t.net/ark:/65665/kq4d409f5f4-1b96-46f9-9f63-edb2f77ab888",
+      "title": {
+       "label": "Title",
+       "content": "Sidewall"
+      },
+      "record_ID": "chndm_1981-65-53",
+      "unit_code": "CHNDM",
+      "title_sort": "SIDEWALL",
+      "data_source": "Cooper Hewitt, Smithsonian Design Museum",
+      "record_link": "https://collection.cooperhewitt.org/view/objects/asitem/id/178188",
+      "online_media": {
+       "media": [
+        {
+         "id": "media:CHSDM-638FD9FAE8322-000001",
+         "guid": "http://n2t.net/ark:/65665/vc9ce39ec24-af22-46b1-953c-75ce7cec886d",
+         "type": "Images",
+         "idsId": "CHSDM-638FD9FAE8322-000001",
+         "usage": {
+          "access": "Usage conditions apply"
+         },
+         "width": 7680,
+         "height": 6796,
+         "content": "https://ids.si.edu/ids/deliveryService?id=CHSDM-638FD9FAE8322-000001",
+         "maxsize": 0,
+         "thumbnail": "https://ids.si.edu/ids/deliveryService?id=CHSDM-638FD9FAE8322-000001",
+         "altTextAccessibility": "",
+         "extDescrAccessibility": "Imitation leather. Embossed symmetricaly arranged floral (sunflowers), fruit (grapes), and foliate (acanthus) design; printed in slate gray, beige. Similar to Morris Sunflower pattern."
+        }
+       ],
+       "mediaCount": 2
+      },
+      "metadata_usage": {
+       "access": "CC0"
+      }
+     },
+     "freetext": {
+      "date": [
+       {
+        "label": "Date",
+        "content": "1875–99"
+       }
+      ],
+      "notes": [
+       {
+        "label": "Catalogue Status",
+        "content": "Research in Progress"
+       },
+       {
+        "label": "Description",
+        "content": "Imitation leather. Embossed symmetricaly arranged floral (sunflowers), fruit (grapes), and foliate (acanthus) design; printed in slate gray, beige. Similar to Morris Sunflower pattern."
+       }
+      ],
+      "place": [
+       {
+        "label": "Place",
+        "content": "Japan"
+       }
+      ],
+      "setName": [
+       {
+        "label": "See more items in",
+        "content": "Cooper Hewitt, Smithsonian Design Museum Collection"
+       },
+       {
+        "label": "See more items in",
+        "content": "Wallcoverings Department"
+       }
+      ],
+      "creditLine": [
+       {
+        "label": "Credit Line",
+        "content": "Gift of Arlene M. and Thomas C. Ellis"
+       }
+      ],
+      "dataSource": [
+       {
+        "label": "Data Source",
+        "content": "Cooper Hewitt, Smithsonian Design Museum"
+       }
+      ],
+      "identifier": [
+       {
+        "label": "Accession Number",
+        "content": "1981-65-53"
+       }
+      ],
+      "objectType": [
+       {
+        "label": "Type",
+        "content": "Wallcoverings"
+       },
+       {
+        "label": "Type",
+        "content": "Sidewall"
+       }
+      ],
+      "objectRights": [
+       {
+        "label": "Restrictions & Rights",
+        "content": "CC0"
+       }
+      ],
+      "physicalDescription": [
+       {
+        "label": "Medium",
+        "content": "Block-printed paper, embossed"
+       },
+       {
+        "label": "Dimensions",
+        "content": "94 x 80 cm (37 x 31 1/2 in.)"
+       }
+      ]
+     },
+     "indexedStructured": {
+      "date": [
+       "1890s",
+       "1870s"
+      ],
+      "place": [
+       "Japan"
+      ],
+      "geoLocation": [
+       {
+        "L2": {
+         "type": "Country",
+         "content": "Japan"
+        }
+       }
+      ],
+      "object_type": [
+       "Fill papers",
+       "Wall coverings"
+      ],
+      "online_media_type": [
+       "Images"
+      ]
+     }
+    },
+    "hash": "90a19819f400342d4d925cb62da6ba1e8bf0d8e6",
+    "docSignature": "f9b243a53fdb1a7d1945c54eeccbc5cf",
+    "timestamp": "1663784559",
+    "lastTimeUpdated": "1793443075",
+    "version": "1793439012"
+   }
+  ],
+  "rowCount": 41
+ }
+}

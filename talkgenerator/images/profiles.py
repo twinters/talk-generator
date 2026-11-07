@@ -140,7 +140,17 @@ FLAVOURS: Final[dict[str, Flavour]] = {
         Flavour(
             "memes",
             "memes and comics",
-            ("meme", "memes", "MemeEconomy", "wholesomememes", "dankmemes", "AdviceAnimals", "comics"),
+            (
+                "meme",
+                "memes",
+                "MemeEconomy",
+                "wholesomememes",
+                "dankmemes",
+                "AdviceAnimals",
+                "comics",
+                "HistoryMemes",
+                "ProgrammerHumor",
+            ),
         ),
         Flavour(
             "weird",
@@ -159,6 +169,8 @@ FLAVOURS: Final[dict[str, Flavour]] = {
                 "EyeBleach",
                 "natureismetal",
                 "195",
+                "Weird",
+                "notinteresting",
             ),
         ),
         Flavour(
@@ -167,7 +179,7 @@ FLAVOURS: Final[dict[str, Flavour]] = {
             ("Cinemagraphs", "itookapicture", "Art", "artstore", "pics", "analog", "ExposurePorn", "Illustration"),
             fallback="photo",
         ),
-        Flavour("old-photos", "old photos of everyday life", ("TheWayWeWere", "100yearsago")),
+        Flavour("old-photos", "old photos of everyday life", ("TheWayWeWere", "100yearsago", "OldPhotosInRealLife")),
         Flavour("old-people", "old photos of people", ("OldSchoolCool",)),
         Flavour(
             "book-covers", "book covers, real and fake", ("BookCovers", "fakebookcovers", "coverdesign", "bookdesign")
@@ -182,25 +194,27 @@ FLAVOURS: Final[dict[str, Flavour]] = {
         Flavour(
             "cursed",
             "cursed and blursed images: pictures that are wrong somehow",
-            ("cursedimages", "blursedimages", "hmmm"),
+            ("cursedimages", "blursedimages", "hmmm", "TIHI", "Cursed_Images"),
         ),
         Flavour(
             "wholesome",
             "wholesome memes and animals being friends",
-            ("wholesomememes", "MadeMeSmile", "AnimalsBeingBros", "aww"),
+            ("wholesomememes", "MadeMeSmile", "AnimalsBeingBros", "aww", "rarepuppers", "Eyebleach"),
         ),
         Flavour(
-            "bad-charts", "badly made and funny charts", ("funnycharts", "dataisugly", "dataisbeautiful", "charts")
+            "bad-charts",
+            "badly made and funny charts and maps",
+            ("funnycharts", "dataisugly", "dataisbeautiful", "charts", "Infographics", "MapsWithoutNZ"),
         ),
         Flavour("medieval", "weird medieval art", ("MedievalMemes", "medievalart")),
         Flavour("liminal", "empty, eerie spaces", ("LiminalSpace", "liminalspaces")),
         Flavour("retro-futurism", "the future as the past saw it", ("RetroFuturism",)),
         Flavour(
             "accidental-art",
-            "accidental Renaissance paintings and Wes Anderson scenes",
-            ("AccidentalRenaissance", "AccidentalWesAnderson"),
+            "accidental Renaissance paintings, Wes Anderson scenes and perfect timing",
+            ("AccidentalRenaissance", "AccidentalWesAnderson", "accidentalart", "PerfectTiming"),
         ),
-        Flavour("pareidolia", "faces in things", ("Pareidolia",)),
+        Flavour("pareidolia", "faces in things", ("Pareidolia", "facesinthings")),
         Flavour(
             "corporate-cringe",
             "LinkedIn posts and how-do-you-do-fellow-kids marketing",
@@ -228,6 +242,10 @@ _WEIRD_WORDS: Final = ("weird", "humor", "funny")
 _MUSEUMS: Final = "met,clevelandmuseum,rijksmuseum,smk,brooklynmuseum,smithsonian_american_art_museum"
 _ARCHIVES: Final = "nypl,finnish_heritage_agency,digitaltmuseum,smithsonian_institution_archives"
 _PEOPLE: Final = ("historic person", "person", "man", "woman")
+# The museums' filters (see talkgenerator.images.catalog): old photographs, and paintings
+_OLD_PHOTOGRAPHS: Final = {"type": "photograph", "before": "1950"}
+_PAINTINGS: Final = {"type": "painting"}
+_PLAIN: Final[tuple[str, ...]] = ()  # (no words of the look's before a classic search there: a museum's isn't stock)
 
 PROFILES: Final[dict[str, Profile]] = {
     profile.name: profile
@@ -241,8 +259,12 @@ PROFILES: Final[dict[str, Profile]] = {
         ),
         Profile(
             "weird-stock",
-            "stock photos of weird and funny things",
-            _STOCK,
+            "stock photos of weird and funny things, and now and then NASA's take on them, or an odd old print",
+            (
+                *_STOCK,
+                SourceUse("nasa", 0.3, modifiers=_PLAIN),
+                SourceUse("wellcome", 0.3, modifiers=_PLAIN),
+            ),
             modifiers=_WEIRD_WORDS,
             last_resort=_RANDOM_PHOTO,
         ),
@@ -281,6 +303,10 @@ PROFILES: Final[dict[str, Profile]] = {
             (
                 SourceUse(reddit("old-photos"), 3),
                 SourceUse("wikimedia", 2, query='{} deepcat:"Black and white photographs"'),
+                SourceUse("met", 1, params=_OLD_PHOTOGRAPHS),
+                SourceUse("art-institute", 0.7, params=_OLD_PHOTOGRAPHS),
+                SourceUse("cleveland", 0.5, params=_OLD_PHOTOGRAPHS),
+                SourceUse("smithsonian", 0.5, params={"type": "photograph"}),
                 SourceUse("openverse", 0.5, params={"category": "photograph", "sources": _ARCHIVES}),
                 SourceUse("unsplash", 0.5, query="{} vintage", params={"color": "black_and_white"}),
                 SourceUse("pixabay", 0.5, query="{} vintage", params={"colors": "grayscale"}),
@@ -295,6 +321,7 @@ PROFILES: Final[dict[str, Profile]] = {
             "old photographs about anything near the query, in black and white or sepia",
             (
                 SourceUse("wikimedia", query="{} historical photograph"),
+                SourceUse("met", 0.7, params={"type": "photograph"}),
                 SourceUse("unsplash", query="{} old photo", params={"color": "black_and_white"}),
                 SourceUse("pixabay", query="{} old photo", params={"colors": "grayscale"}),
             ),
@@ -305,13 +332,23 @@ PROFILES: Final[dict[str, Profile]] = {
         Profile(
             "old-people",
             "old photos of people, and portraits from museums",
-            (SourceUse(reddit("old-people"), 3), SourceUse("art-institute", query="portrait {}")),
+            (
+                SourceUse(reddit("old-people"), 3),
+                SourceUse("art-institute", query="portrait {}"),
+                SourceUse("met", 0.7, query="portrait {}", params=_PAINTINGS),
+                SourceUse("cleveland", 0.5, query="portrait {}", params=_PAINTINGS),
+            ),
             fallback="portrait",
         ),
         Profile(
             "portrait",
             "portraits: in museums' paintings, and stock photos of people",
-            (SourceUse("art-institute", query="portrait {}"), *(use for use in _STOCK[:3])),
+            (
+                SourceUse("art-institute", query="portrait {}"),
+                SourceUse("met", 0.7, query="portrait {}", params=_PAINTINGS, modifiers=_PLAIN),
+                SourceUse("cleveland", 0.5, query="portrait {}", params=_PAINTINGS, modifiers=_PLAIN),
+                *(use for use in _STOCK[:3]),
+            ),
             modifiers=_PEOPLE,
         ),
         Profile(
@@ -319,15 +356,21 @@ PROFILES: Final[dict[str, Profile]] = {
             "public domain art from museums",
             (
                 SourceUse("art-institute", 3),
-                SourceUse("openverse", 1.5, params={"sources": _MUSEUMS}),
-                SourceUse("wikimedia", query='{} deepcat:"Paintings"'),
+                SourceUse("met", 3),
+                SourceUse("cleveland", 2),
+                SourceUse("smithsonian", 1.5),
+                SourceUse("openverse", 1, params={"sources": _MUSEUMS}),
+                SourceUse("wellcome", 0.5),
+                SourceUse("wikimedia", 0.7, query='{} deepcat:"Paintings"'),
             ),
         ),
         Profile(
             "space-science",
             "space and science, as NASA and the like photograph it",
             (
-                SourceUse("wikimedia", 2, query='{} deepcat:"Images from NASA"'),
+                SourceUse("nasa", 4),
+                SourceUse("smithsonian", 1),  # (the National Air and Space Museum's objects, among others)
+                SourceUse("wikimedia", 1, query='{} deepcat:"Images from NASA"'),
                 SourceUse("openverse", 2, params={"sources": "nasa,spacex,smithsonian_air_and_space_museum"}),
                 SourceUse("unsplash", query="{} space"),
                 SourceUse("pixabay", query="{} space"),
@@ -342,6 +385,7 @@ PROFILES: Final[dict[str, Profile]] = {
                 SourceUse("pixabay", params={"image_type": "vector"}),
                 SourceUse("openverse", params={"category": "illustration"}),
                 SourceUse("openverse", 0.5, params={"sources": "bio_diversity"}),  # (old natural history drawings)
+                SourceUse("wellcome", 0.5),  # (old prints and drawings of medicine and science)
             ),
             fallback="photo",
         ),
@@ -377,6 +421,14 @@ PROFILES: Final[dict[str, Profile]] = {
         ),
         Profile(
             "inspirobot", "InspiroBot's inspirational posters", (SourceUse("inspirobot"),), breadth=1, needs_query=False
+        ),
+        # (a meme's template, found by its ID or name: see talkgenerator.sources.memes)
+        Profile("meme-templates", "Imgflip's meme templates, captioned live", (SourceUse("imgflip"),), breadth=1),
+        Profile(
+            "country",
+            "where someone comes from: its flag now and then (for a country), else photos of it",
+            (SourceUse("flags"), *_STOCK[:3]),
+            fallback="neutral",
         ),
     )
 }

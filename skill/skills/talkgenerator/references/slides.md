@@ -70,7 +70,7 @@ Images: `image_1`, `image_2`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `about-me-location-job` | About the presenter: where they come from and their job | `title`: a title such as 'About me' or 'Who am I?'; `caption_1`: where the presenter comes from: a country, a city or a place; `caption_2`: the presenter's (possibly made-up) job; images: `image_1` neutral, `image_2` neutral; tags: about_me |
+| `about-me-location-job` | About the presenter: where they come from and their job | `title`: a title such as 'About me' or 'Who am I?'; `caption_1`: where the presenter comes from: a country, a city or a place; `caption_2`: the presenter's (possibly made-up) job; images: `image_1` country, `image_2` neutral; tags: about_me |
 | `two-history-pictures` | Two old photos from the history of the slide's concept | `title`: a title about the concept's history; `caption_1`: a moment from long ago; `caption_2`: a later moment; images: `image_1` vintage (or generated, from its prompt, with an image generator set up), `image_2` vintage (or generated, from its prompt, with an image generator set up); tags: history, two_images |
 | `two-captions-gifs` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | images: `image_2` gifs, else weird; tags: gif, multi_caption, two_captions |
 | `two-captions-weird-reddit` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | images: `image_1` weird, `image_2` meme-chaos; tags: multi_caption, reddit, two_captions |
@@ -93,8 +93,8 @@ Images: `image_1`, `image_2`, `image_3`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `about-me-location-job-weirdhobby` | About the presenter: where they come from, their job and their weird hobby | `title`: a title such as 'About me' or 'Who am I?'; `caption_1`: where the presenter comes from: a country, a city or a place; `caption_2`: the presenter's (possibly made-up) job; `caption_3`: the presenter's weird hobby; images: `image_1` neutral, `image_2` neutral, `image_3` meme-chaos (or generated, from its prompt, with an image generator set up); tags: about_me |
-| `about-me-location-book-weirdhobby` | About the presenter: where they come from, the book they wrote, and their weird hobby | `title`: a title such as 'About me' or 'Who am I?'; `caption_1`: where the presenter comes from: a country, a city or a place; `caption_2`: the title of a book the presenter wrote; `caption_3`: the presenter's weird hobby; images: `image_1` neutral, `image_2` book-covers (or generated, from its prompt, with an image generator set up), `image_3` meme-chaos (or generated, from its prompt, with an image generator set up); tags: about_me |
+| `about-me-location-job-weirdhobby` | About the presenter: where they come from, their job and their weird hobby | `title`: a title such as 'About me' or 'Who am I?'; `caption_1`: where the presenter comes from: a country, a city or a place; `caption_2`: the presenter's (possibly made-up) job; `caption_3`: the presenter's weird hobby; images: `image_1` country, `image_2` neutral, `image_3` meme-chaos (or generated, from its prompt, with an image generator set up); tags: about_me |
+| `about-me-location-book-weirdhobby` | About the presenter: where they come from, the book they wrote, and their weird hobby | `title`: a title such as 'About me' or 'Who am I?'; `caption_1`: where the presenter comes from: a country, a city or a place; `caption_2`: the title of a book the presenter wrote; `caption_3`: the presenter's weird hobby; images: `image_1` country, `image_2` book-covers (or generated, from its prompt, with an image generator set up), `image_3` meme-chaos (or generated, from its prompt, with an image generator set up); tags: about_me |
 | `three-captions-weird` | Three captioned images that build up, like 'Good, Better, Best' or three steps of a plan | images: `image_2` meme-chaos, `image_3` meme-chaos-still; tags: multi_caption, reddit, three_captions |
 | `3-conclusions` | The talk's conclusions | `title`: a title for the conclusions, in a few words of your own; `caption_1`: a lesson from the talk, calling back to an earlier slide; `caption_2`: a lesson from the talk, calling back to an earlier slide; `caption_3`: a lesson from the talk, calling back to an earlier slide; images: `image_1` neutral, `image_2` weird, `image_3` gifs, else weird; tags: conclusion |
 | `three-captions-weird-crf` | Three captioned images that build up, like 'Good, Better, Best' or three steps of a plan | the default; images: `image_1` photo, `image_3` weird-stock; tags: multi_caption, three_captions |
@@ -496,3 +496,20 @@ Images: none
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
 | `iceberg` | What lies beneath the concept: an iceberg whose tip everyone knows, and what's under the water | the default; tags: diagram, iceberg |
+
+## `meme`
+
+A meme: a well-known template's picture, with its captions in the template's boxes. Its template_query names the template, one of those `talkgenerator formats --memes` lists (with what each caption says), such as 'Drake Hotline Bling'.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `text_1` | 70 | the meme's first caption |
+| `text_2` | 70 | its second caption (or empty, for none) |
+| `text_3` | 70 | its third caption (or empty, for none) |
+| `text_4` | 70 | its fourth caption (or empty, for none) |
+
+Images: `template`
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `meme` | A meme about the concept | the default; images: `template` meme-templates; tags: caption_meme, meme |

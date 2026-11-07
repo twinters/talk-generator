@@ -732,8 +732,31 @@ plans and the language model, a classic generator (templates and ConceptNet's re
 layouts. A talk has at most one of each (sections one per ten slides, diagrams two per ten), from its third slide
 to the one before the conclusions: about 1.7 of a 10-slide talk's slides (2.2 in the `ted` format). The quiz's
 answer comes on a click rather than on the next slide, as a slide generator makes one slide. Still candidates:
-memes with live captions (with Imgflip's templates, section 10.4), a process with a "???" step, a fake contact
-slide, a comparison table, the other media and audience slides, and the academic ones.
+a process with a "???" step, a fake contact slide, a comparison table, the other media and audience slides, and
+the academic ones.
+
+**Memes with live captions** came in on 2026-11-07 (D40): a `meme` slide is one of Imgflip's templates (10.4) with
+its captions as texts on the picture. Imgflip's API lists its templates' pictures but not where their captions go,
+so `data/memes.json` has 25 of its best-known, family-friendly ones (Drake Hotline Bling, Two Buttons, Distracted
+Boyfriend, Gru's Plan, Expanding Brain, Change My Mind, Bell Curve...), with every caption's box measured on
+Imgflip's own picture, as fractions of it, its style and what it says: white Impact in capitals with a black outline
+(a twelfth of the text's size), or plain black text where the template has an even white or pale area (Drake's
+panels, Gru's boards), whose colour a label under the text keeps, so the design checks know what's behind it (the
+script that sampled those colours also checked that each area is even). Python picks the structure, as everywhere:
+the talk's dice pick the template, as one of the recipe's variants (one per template), which tells the language
+model the template and what each caption is for (`text_1`: what Drake waves away), about how long each may be (by
+its box), and fixes the slot's query to the template's ID (`Recipe.queries`, new), so the model writes no query for
+it. A classic talk takes each template's own sentences about the slide's topic (`{seed}`) and a word related to it.
+Gru's fourth board repeats his third (`same_as`). The layout (`v5/meme`) puts the picture as large as fits above the
+credits, untouched by the theme's treatments (a polaroid frame or sepia would move or hide the captions), and every
+caption in its box; a caption whose words don't fit a narrow box (a sign's) at the smallest size gets its box grown
+around its middle, within the picture. In the deck it's a picture, texts and shapes, which every renderer draws
+already: talk-generator-web unchanged (it draws outlines as `-webkit-text-stroke`). The design check of an outlined
+text now asks, per colour that may be behind it, whether its fill or its outline reads there. A talk has at most
+one meme, from its third slide on, and only where fair use is allowed (its slot's only source is Imgflip): not in
+`ted`. Plans written elsewhere name the template in their `template_query` (`talkgenerator formats --memes` lists
+them with what each caption says); a picture whose boxes talkgenerator doesn't know gets its captions at its top and
+its bottom.
 
 Variety per slide type comes from four axes, each sampled per slide with the talk's random generator:
 
@@ -935,8 +958,9 @@ As built (2026-11-07, `profiles.py`, `catalog.py`, `analysis.py`):
   warnings; the report counts per look how many pictures have it (`looks`) and the images per license class.
 - **Treatment**: a vintage picture that isn't monochrome gets its look's sepia in a theme without a filter of its
   own (`treatments.for_look`); the classic template keeps its pictures as they are.
-- Not yet: the museums' date and classification filters (the Art Institute's search takes them), icon sets for
-  `illustration`, and the vision pick (4.) and generated images (10.5), for which slots have room (`generate`).
+- Not yet: icon sets for `illustration` (10.4: Iconify serves SVG only), and the vision pick (4.) and generated
+  images (10.5), for which slots have room (`generate`). The museums' date and classification filters came with
+  the new sources (10.4).
 - **Live** (2026-11-07, `talkgenerator check`, every key, themed talks; the free OpenRouter router for the talks it
   writes; reports in the session's scratchpad, sample decks in the comparison folder's `15-v5-9997e28-image-looks`):
   - Classic talks on the 10 default topics (seed 1) and on 5 topics with seeds 2 and 3: 20 talks, 18 the same made
@@ -990,6 +1014,75 @@ candidates, each with its terms still to check:
 They join the existing Unsplash, Pexels, Pixabay, Openverse, Wikimedia Commons, Art Institute of Chicago,
 Reddit, GIPHY, InspiroBot and ShitpostBot. Each source declares its license class, its display policy in the
 browser ([section 13.1](#131-streaming-slides-into-the-browser)) and the filters it supports.
+
+As built (2026-11-07), each after reading its terms and trying its API; every one loads in a browser's `<img>` from
+its own server, with a referrer and without (display `direct`), and its search answers are cached:
+
+| Source | Key, limits | License class | Filters | What its terms and API turned out to be |
+| --- | --- | --- | --- | --- |
+| The Met (`met`) | none; "80 requests a second" | `public-domain` (CC0) | type (its `medium`), years (`dateBegin`, `dateEnd`) | v1's search was retired on 2026-10-01; v1.1's pages, and gives IDs only, so every object is a request of its own (12 per search, 4 at a time, cached 30 days); it ignores `isPublicDomain`, so objects are kept by their flag (copyrighted ones carry no image), and some IDs it lists answer 404; originals are 2 to 6 MB |
+| Cleveland Museum of Art (`cleveland`) | none, no documented limit | `public-domain` (CC0) | type, `created_after`, `created_before` | its search carries the images; its web copies (about 900 px) are what slides take, as its print copies (3,400 px, 4 to 7 MB) take seconds to come; no CORS header (a browser may show them, not read their pixels) |
+| Wellcome Collection (`wellcome`) | none, no documented limit | per image: `public-domain` (PDM, CC0) or `open` (CC BY) | years (`source.production.dates`), license; also colour | asked for PDM, CC0 and CC BY only (it has NC, ND and in-copyright images too, 21% of them); IIIF images in any size |
+| Smithsonian Open Access (`smithsonian`) | a free api.data.gov key (`DATA_GOV_API_KEY`), 1,000 requests an hour | `public-domain` (CC0) | type (`object_type`) | `media_usage:CC0` keeps to CC0 images; IIIF images (1,600 px), about a second a search; its names come with their lives ("Thomas Eakins, American, b. Philadelphia..."), so credits keep what's before the first comma; its search for space finds the National Air and Space Museum's objects |
+| NASA Image and Video Library (`nasa`) | none, no documented limit | `public-domain` | years (`year_start`, `year_end`) | NASA's own pictures aren't under copyright in the US; NASA asks to be credited, forbids implying its endorsement, and (since 2026-10-27) its insignia next to AI-made images, which talkgenerator doesn't add; pictures it notes as someone else's copyright are left out; titles that are only numbers give way to the description; originals over 15 MB are skipped |
+| Flagpedia's flags (`flags`) | none | `public-domain` | | "in the public domain and can be used freely"; a link back appreciated (the credits give it); flagcdn.com's list of 306 names maps a country to its flag |
+| Imgflip's templates (`imgflip`) | none to list them | `fair-use` | | `get_memes` lists the 100 most captioned of the last 30 days, without where captions go; search is premium; pictures shown from its server must link back to Imgflip (the credits link the template's page) |
+
+Left out for now, and why:
+
+- **Library of Congress**: its JSON API (www.loc.gov `fo=json`) answers programs with a Cloudflare challenge since
+  September 2026 (its data-exploration issue 88), which talkgenerator doesn't work around; the Library grants
+  exceptions for a User-Agent on request (ask.loc.gov), and its limits are tight (20 requests a minute, else an
+  hour's block). Its pictures still come through Openverse's and Commons' collections.
+- **Rijksmuseum**: its old API is gone (410), and its new one (data.rijksmuseum.nl) has no free-text search, only
+  fields (mostly Dutch titles), gives IDs only, and lists works still in copyright: its collection stays in
+  Openverse's `rijksmuseum` source, which the `museum` look searches.
+- **Flickr** (Commons, the British Library's and the Internet Archive's book illustrations): API keys are for Pro
+  subscribers only since 2025, and its rules ask for a notice that the app isn't endorsed by SmugMug, at most 30
+  photos a page and no caching beyond 24 hours. Openverse has Flickr's openly licensed photos.
+- **Iconify**: SVG only (no PNG), so icons need an SVG rasteriser (resvg-py, say), a new dependency; and an icon
+  is less a slide's picture than a part of an icon grid, a slide type of its own.
+- **Europeana**: needs a key; Openverse and Commons have much of it.
+
+More subreddits joined the flavour packs (each checked for pictures among its hot posts, safe for work, and with a
+name that reads fine in a slide's credits): `cursed` r/TIHI and r/Cursed_Images, `wholesome` r/rarepuppers and
+r/Eyebleach, `bad-charts` r/Infographics and r/MapsWithoutNZ, `accidental-art` r/accidentalart and r/PerfectTiming,
+`pareidolia` r/facesinthings, `old-photos` r/OldPhotosInRealLife, `memes` r/HistoryMemes and r/ProgrammerHumor,
+`weird` r/Weird and r/notinteresting. Left out: the "...Porn" photography subreddits (their names), r/WTF and
+r/AnimalsBeingDerps (mostly videos), r/ABoringDystopia (politics).
+
+The museums share one filter vocabulary in a look's source parameters (`SourceUse.params`): `type` (painting,
+photograph, print, drawing, sculpture) and the years `after` and `before`, which each source asks its search for in
+its own words, the Art Institute's too (Elasticsearch terms). The new sources joined the looks they fit: `museum`
+(the Art Institute 3, the Met 3, Cleveland 2, the Smithsonian 1.5, Openverse's museums, Wellcome, Commons'
+paintings), `vintage` (the Met's, the Art Institute's and Cleveland's photographs before 1950, and the
+Smithsonian's photographs, next to Reddit's and Commons'), `old-photo`,
+`portrait` and `old-people` (the Met's and Cleveland's painted portraits), `space-science` (NASA 4, the
+Smithsonian 1),
+`illustration` (Wellcome's prints and drawings) and `weird-stock` (NASA's and Wellcome's odd pictures at 0.3 each,
+without the look's "weird" words: the `ted` format's copyright-free punchlines). New looks: `meme-templates`
+(Imgflip) and `country` (Flagpedia's flags and stock photos), which about-me slides take for where the presenter
+comes from.
+
+Live (2026-11-07, `talkgenerator check`, GIPHY and Unsplash switched off, themed talks): every new source found
+pictures through the finder on its own (the Met's cat, Cleveland's street photograph, Wellcome's tooth-drawer,
+NASA's pizza aboard the space station, Belgium's flag, Drake's template, and once the user's api.data.gov key was in,
+the Smithsonian's teapot), and every new source's canary test passed. In whole talks:
+
+- 6 talks by OpenRouter's free models (coffee, lighthouses and penguins; seeds 90 and 114, which the dice give a
+  meme, a history slide and an about-me slide): 0 errors, 0 warnings, 6 of 6 the same made one by one, 59 of 60
+  slides by the model, 6 requests, $0, a median of 28 s a talk. Every talk had its meme, with captions that fit
+  their template ("The ice is cracking, the storm is here, the world is ending" / "This is fine"). On Trade Offer
+  the model wrote "I receive:" again, which the picture says already: its boxes now say so, and the talk made
+  again wrote "a warm egg" / "your dignity". The history slides' pictures came from Reddit's old photos but one,
+  an Art Institute photograph found with the new filters; the models wrote scenes for where the presenter comes
+  from ("ethiopian highlands village"), not a country's name, so no flag came up there.
+- 8 classic `ted` talks (seeds 1 and 2) and 6 classic default talks (seeds 3 and 4): 0 errors, 1 warning, all the
+  same made one by one; by the looks' weights, their pictures all came from the stock sites, Reddit and ShitpostBot.
+- 3 classic talks allowing only public domain pictures (`--license_policy public-domain`, seed 5): 0 errors, 0
+  warnings, 3 of 3 the same, a median of 45 s; their 33 pictures came from the Wellcome Collection (14), NASA (8),
+  Openverse (8), the Art Institute (2) and the Met (1).
+- About 21% of talks by a language model get a meme (300 seeds, simulated with the schema's own picks).
 
 ### 10.5 Generated images
 
@@ -1298,8 +1391,8 @@ before the new formats. A milestone is a checkpoint on `v5`, not a release; only
 | 2 (under way: the TalkPlan schema, the planner, the `openrouter`, `anthropic`, `openai` and `chatgpt` adapters, `render`, `schema`, `formats`, the Skill, languages with their check, `login openrouter` and `login chatgpt`, and trend and ranking charts are in; on 2026-11-06, 30 benchmark talks by the free models had 0 errors, one request each, at $0, and 290 of 300 slides by the model) | LLM TED talks and the Claude Skill | TalkPlan schema; the LLM planner (one streamed call, dice, per-slide fallback, safety); `openrouter`, `anthropic` and `openai` adapters; languages, Dutch first; `render plan.json`, `schema`, `formats`; `skill/` with SKILL.md; `login openrouter`; the `chatgpt` adapter (may slip to milestone 3); checks for requests, cost, speed and language | on the benchmark with OpenRouter's free models: no holes, no leftovers, $0 and one request per talk; Dutch talks pass the language check; Claude Code makes a deck end to end with the Skill |
 | 3 (done, 2026-11-07: theme families and extremes, procedural palettes with contrast repair, layouts and their variants (never twice in a row), image treatments, WordArt-style heading effects, text fitting with bundled metric twins, the shapes renderer with the classic animations (columns click by click), previews and contact sheets, the design checks and the local MCP server; 0 design findings on 792 benchmark decks in 12 seeds; thumbnails in CI left out, D29) | Themes and layouts | theme tokens and families, extremes on by default; procedural palettes and font pairs; layout variants; text fitting; image treatments; the `classic` theme; thumbnails and contact sheet in CI; the local MCP server | contrast and overflow checks pass on every theme |
 | 4 (under way: `stream_talk()`, probe validation, display policies, presenter names in styles (5.10, for the site's settings) and what's typed read as a topic or a title (5.11, `topic_or_title=`, for the site's Automatic choice) are in; since 2026-11-07, talkgenerator.com runs v5 from GitHub (D31): talks stream into the browser, the .pptx is made on download, Pixabay's images are copied, and classic and LLM talks meet the speed and memory bars on the VPS (section 14), but for the first talk after a restart; left: deploying the streamed-titles fix (`be09a7e`: on the site, a free model that writes its answer's fields in alphabetical order put `slide_10` before `slide_2`, so slides 2 to 9 fell back to classic ones, or were left out of a Dutch copyright-free talk), the new settings with 5.10's and 5.11's options, and loading the library before the first talk) | Streaming and the web view | `stream_talk()`, display policies, probe validation; in talk-generator-web: the SSE endpoint, the Angular renderer, LLM talks by default with the classic switch, a language choice, Connect OpenRouter and pasted keys, .pptx on download, an Automatic topic-or-title choice (5.11), the site running `v5` from git (D31) | first slide on screen within the calibrated target on the VPS; a 20-slide talk under the memory bar; the downloaded .pptx matches the web view |
-| 5 (under way: image slots and the finder, license classes and policies, aesthetic profiles with local analysis, and the first flavour packs are in, 2026-11-07; generated images too, on the user's own key or server, credited "AI-generated with <model>" in the `generated` class (10.5, D38, D39); left: new sources, the vision pick, and generated pictures on talkgenerator.com, on a visitor's key) | Images | slots, aesthetic profiles and flavour packs, local analysis, license classes; new open and weird sources; AI image generation with the user's own keys; the optional vision pick | license policies enforced; profile checks pass (such as the grayscale share for `vintage`); generated images credited |
-| 6 (under way: fourteen slide types are in, drawn as texts on shapes (D37, section 8); on 2026-11-07, benchmark talks over seeds that bring each of them up had no design, completeness, leftover or language findings: 63 classic talks, and 63 by OpenRouter's free models (620 of 630 slides by the model, at $0), plus 20 classic `ted` talks and 8 Dutch ones, where a long Dutch compound overflowed a narrow box (since, every new layout takes a 20-letter word in every theme, a Venn diagram's labels beside its circles when they don't fit in them); the only other findings were InspiroBot's and Reddit's live answers differing between a talk's two runs. talk-generator-web draws them all unchanged, and needs a small change to hold back what appears on a click in its presentations (a branch of its own, not merged). Left: memes with live captions (with Imgflip, 10.4), the TED content pack, and section 8's other candidates) | More slide types for TED-like talks | native diagrams, big numbers, quiz, memes with live captions, social posts and more; a much larger, curated TED content pack | every new slide type passes the checks in classic and LLM mode |
+| 5 (under way: image slots and the finder, license classes and policies, aesthetic profiles with local analysis, and the first flavour packs are in, 2026-11-07; generated images too, on the user's own key or server, credited "AI-generated with <model>" in the `generated` class (10.5, D38, D39); and new sources (10.4): the Met, Cleveland, the Wellcome Collection, NASA, Flagpedia's flags, Imgflip's templates and the Smithsonian (with the user's api.data.gov key), with the museums' type and date filters and more subreddits; left: the vision pick, generated pictures on talkgenerator.com on a visitor's key, and the Library of Congress, Flickr and Iconify, which need an exception, a paid key or a new dependency) | Images | slots, aesthetic profiles and flavour packs, local analysis, license classes; new open and weird sources; AI image generation with the user's own keys; the optional vision pick | license policies enforced; profile checks pass (such as the grayscale share for `vintage`); generated images credited |
+| 6 (under way: fourteen slide types are in, drawn as texts on shapes (D37, section 8); on 2026-11-07, benchmark talks over seeds that bring each of them up had no design, completeness, leftover or language findings: 63 classic talks, and 63 by OpenRouter's free models (620 of 630 slides by the model, at $0), plus 20 classic `ted` talks and 8 Dutch ones, where a long Dutch compound overflowed a narrow box (since, every new layout takes a 20-letter word in every theme, a Venn diagram's labels beside its circles when they don't fit in them); the only other findings were InspiroBot's and Reddit's live answers differing between a talk's two runs. talk-generator-web draws them all unchanged, and needs a small change to hold back what appears on a click in its presentations (a branch of its own, not merged). Memes with live captions came in later that day (D40). Left: the TED content pack, and section 8's other candidates) | More slide types for TED-like talks | native diagrams, big numbers, quiz, memes with live captions, social posts and more; a much larger, curated TED content pack | every new slide type passes the checks in classic and LLM mode |
 | 7 | New talk formats | pitch, academic, corporate, keynote and Pecha Kucha timing, with their content packs (or in 5.1 if the TED work takes longer) | every format works in classic and LLM mode and passes the checks |
 | 8 | Integration | the site runs `v5` on the preview, then in production behind a switch; Sign in with ChatGPT on the site, if OpenAI has admitted it; docs and deprecation warnings | the site runs `v5` for a week without quota or memory incidents |
 | 5.0.0 | The release | freeze and fix; merge `v5` into `master`; release 5.0.0 with the release script; the site pins `talkgenerator==5.0.0`; 4.x ends | |
@@ -1352,6 +1445,7 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D37 | Milestone 6's slide types are built from the deck's texts, shapes and pictures, which the layout engine places, so every renderer draws them as it draws the other slides (talk-generator-web without changes); a classic deck draws them on the 2019 template's blank slide, laid out in the template's look. What appears on a click is a property of an element (`appears_on_click`), which a renderer that plays no clicks ignores. |
 | D38 | A talk generates pictures only when it's given an image generator (`image_generator=`, `--image_generator`, `TALKGENERATOR_IMAGE_GENERATOR`), never because a key is set, and only on planned slides, whose texts say what a picture is to show: for the slots that prefer one, in place of a stock photo that stands in until it's in (or for good, when it's refused or fails), and for a planned slide whose images can't be found at all, on its last try. A few per talk (3 by default), granted in the order of the slides, the cache's included, so the same seed generates for the same slides; for a paid generator, a cost estimate by list price first, and an optional dollar limit. talkgenerator.com never sets a generator of its own: it passes a visitor's, with their key (D7). |
 | D39 | A generated picture is credited "AI-generated with <model>", in the `generated` class, under its provider's terms (in the deck, not in the credit), kept on disk by model, prompt, shape and seed, and named in the deck by that file, which a browser can't load: its display is `copy`, as for Pixabay's pictures (D30), so an app shows it from a copy of its own. A prompt that names a real person, a brand or a trademarked character, or asks for gore or sexual content, is never sent, and every prompt asks for none of that. |
+| D40 | Memes are captioned live by talkgenerator, never drawn into the picture: the template's picture from Imgflip (fair use, so not in talks without fair use), its captions as texts in boxes measured once per template (`data/memes.json`, 25 templates), and the template picked by the talk's dice before the language model writes its captions (a recipe can fix a slot's query). New image sources join only where their terms allow a talk to show them, without working around a bot check, and without the user's paying for a key. |
 | D41 | Swedish (`sv`) is a talk language too, on the terms of D19 and D25: a language model writes the talk in Swedish, with talkgenerator's own words in Swedish; without one, the talk is classic and English. |
 | D42 | Themes use open fonts from Google Fonts besides the installed ones: two pairings per family (not the extremes), which a member has two times in three. They're bundled, so they're measured everywhere, and embedded in every .pptx that uses them, whole, as uncompressed EOT (python-pptx can't embed fonts; PowerPoint for Windows showed one, regular and bold, on a computer without it). Each has an installed stand-in that its texts fit too, for where embedded fonts are ignored (PowerPoint for the web, Keynote). |
 
@@ -1375,3 +1469,21 @@ Checked on 2026-11-05:
 - Image generation prices: [invideo's price list (August 2026)](https://invideo.io/blog/ai-image-model-pricing/)
   and [pricepertoken.com](https://pricepertoken.com/image). These are third-party trackers, so check the
   providers' own pages too.
+
+Checked on 2026-11-07, for the image sources of 10.4:
+
+- The Met: [Collection API](https://metmuseum.github.io/), [open access](https://github.com/metmuseum/openaccess).
+- Cleveland Museum of Art: [Open Access API](https://openaccess-api.clevelandart.org/),
+  [open access](https://www.clevelandart.org/open-access).
+- Wellcome Collection: [catalogue API](https://developers.wellcomecollection.org/docs/catalogue),
+  [IIIF](https://developers.wellcomecollection.org/docs/iiif).
+- Smithsonian: [Open Access API](https://edan.si.edu/openaccess/apidocs/),
+  [api.data.gov](https://api.data.gov/docs/developer-manual/).
+- NASA: [Image and Video Library API](https://images.nasa.gov/docs/images.nasa.gov_api_docs.pdf),
+  [media usage guidelines](https://www.nasa.gov/nasa-brand-center/images-and-media/).
+- Flags: [Flagpedia's API](https://flagpedia.net/download/api), [terms](https://flagpedia.net/terms).
+- Imgflip: [API](https://imgflip.com/api), [terms](https://imgflip.com/terms).
+- Left out: [Library of Congress JSON API](https://www.loc.gov/apis/json-and-yaml/) and
+  [its challenge](https://github.com/LibraryOfCongress/data-exploration/issues/88),
+  [Rijksmuseum data services](https://data.rijksmuseum.nl/docs/search),
+  [Flickr API terms](https://www.flickr.com/services/api/tos/), [Iconify API](https://iconify.design/docs/api/).

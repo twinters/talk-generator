@@ -18,7 +18,7 @@ from collections.abc import Callable
 from functools import cache
 from typing import Any, Final, TypeVar
 
-from talkgenerator.sources import conceptnet, text_generator
+from talkgenerator.sources import conceptnet, memes, text_generator
 from talkgenerator.util import os_util, random_util
 
 _TEMPLATES: Final = "data/text-templates/slide_texts.json"
@@ -255,6 +255,33 @@ def news_headline(image: ImageSource) -> Callable[[dict[str, Any]], tuple[Any, .
         if photo is None:
             return None
         return outlet, headline, _maybe(0.7, _template("news_subheadline")(variables)), photo
+
+    return generate
+
+
+def meme(image: ImageSource) -> Callable[[dict[str, Any]], tuple[Any, ...] | None]:
+    """A generator of memes about the seed: one of the templates talkgenerator knows the boxes of (talkgenerator.sources
+    .memes), picked by the talk's dice, its picture from the image source (searched for the template), and captions
+    from the template's own sentences about the seed and the words related to it, one per box."""
+
+    @_unless_sensitive
+    def generate(presentation_context: dict[str, Any]) -> tuple[Any, ...] | None:
+        template = random_util.choice(list(memes.templates().values()))
+        needing = [any("{related" in caption for caption in captions) for captions in template.classic]
+        related = related_words(str(presentation_context["seed"])) if any(needing) else []
+        options = [captions for captions, needs in zip(template.classic, needing, strict=True) if related or not needs]
+        if not options:
+            return None
+        variables = _context(presentation_context, related)
+        captions = [
+            text_generator.apply_variables_to_template(caption, variables) for caption in random_util.choice(options)
+        ]
+        if not all(captions):
+            return None
+        picture = image({**presentation_context, "seed": template.id})
+        if picture is None:
+            return None
+        return (picture, *template.texts(captions))
 
     return generate
 

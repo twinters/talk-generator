@@ -133,6 +133,9 @@ that give the presenter something to work with, rather than finished jokes:
   the image shows, not for its look: "a baker in 1900" for a vintage slot, not "old black and white photo". Some
   recipes find their texts themselves (real quotes, say): the reference says so, and then you don't write that text.
   Those texts are English, so a talk in another language gets the kind's default recipe instead.
+- **Memes** (default format only): a `meme` slide's `template_query` is the template's name, and its texts are its
+  captions in order; `talkgenerator formats --memes` lists the templates and what each caption says ("Drake Hotline
+  Bling": `text_1` what Drake waves away, `text_2` what he points at instead). Keep captions to a few words.
 - **Your own pictures**: an image "query" may be the path of an image file, relative to the plan's folder. That
   puts the user's own photo on the slide, for an about-me slide, say.
 - **Generated pictures**, only when the user has set up an image generator (`TALKGENERATOR_IMAGE_GENERATOR`, or

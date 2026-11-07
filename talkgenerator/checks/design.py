@@ -98,14 +98,21 @@ def _text_findings(
 
 def _legibility(style: TextStyle, behind: list[str], needed: float) -> float:
     """How well a text reads on what's behind it: its colour's contrast (each of its gradient's colours, if it has
-    one) with the worst of what's behind it, or, if it has an outline (as WordArt does), the outline's contrast with
-    that and the colours' with the outline, if that's better (an outlined text reads by its outline)."""
+    one) with the worst of what's behind it. An outlined text (WordArt's, a meme's) reads by its colour or by its
+    outline, whichever reads better on each colour behind it: white with a black outline reads on black by its
+    white, and on white by its black (when the outline reads on the text's colours too)."""
     effect = style.effect
     fills = effect.fill if effect is not None and effect.fill else (style.color,)
     worst = min(color.worst_contrast(fill, behind) for fill in fills)
     if worst < needed and effect is not None and effect.outline and effect.outline_width > 0:
+        outline = effect.outline
+        against_fills = min(color.contrast(fill, outline) for fill in fills)
         outlined = min(
-            color.worst_contrast(effect.outline, behind), min(color.contrast(fill, effect.outline) for fill in fills)
+            max(
+                min(color.contrast(fill, background) for fill in fills),
+                min(color.contrast(outline, background), against_fills),
+            )
+            for background in behind
         )
         worst = max(worst, outlined)
     return worst

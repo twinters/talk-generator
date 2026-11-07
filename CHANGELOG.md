@@ -259,6 +259,36 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   slides), from its third slide to the one before the conclusions, so the slide after the title still introduces
   the presenter: about 1.7 of a 10-slide talk's slides (2.2 in the `ted` format). Posts and news headlines say
   likes, shares and breaking news in the talk's language.
+- **Memes with live captions** (a `meme` slide, docs/v5-plan.md sections 8 and 10.4): one of 25 well-known
+  templates of Imgflip's (Drake Hotline Bling, Two Buttons, Distracted Boyfriend, Gru's Plan, Expanding Brain...),
+  with its captions as texts on the picture, each in the box the template has for it (`data/memes.json`, measured
+  on Imgflip's pictures): white Impact in capitals with a black outline, or plain black text on the template's own
+  white or pale area (Drake's panels, Gru's boards). The talk's dice pick the template, and the language model
+  writes what each box says, knowing what it's for (Drake waves the first away and points at the second); a
+  classic talk takes each template's own sentences about the slide's topic and the words related to it. Gru's
+  fourth board repeats his third. A deck holds a meme as a picture, texts and shapes, which every renderer draws
+  already (talk-generator-web without changes); its picture keeps its look in every theme (no treatment moves
+  its captions). A talk has at most one, from its third slide on, and only where its license policy allows fair
+  use (not in `ted`). `talkgenerator formats --memes` lists the templates and what each caption says, for plans
+  written elsewhere, whose `template_query` names one; a picture whose boxes talkgenerator doesn't know gets its
+  captions at its top and its bottom. A caption too long for a narrow box (a sign's) gets a box grown around it,
+  within the picture.
+- **New image sources** (milestone 5, docs/v5-plan.md 10.4), each with its license classes, its display policy and
+  its filters: **The Met** (public domain artworks, CC0; its search since October 2026, v1.1, and an object per
+  request), the **Cleveland Museum of Art** (CC0), the **Wellcome Collection** (medicine, science and odd history:
+  public domain and CC BY, asked for by license), the **Smithsonian** (CC0; needs a free api.data.gov key,
+  `DATA_GOV_API_KEY`), **NASA's Image and Video Library** (public domain, leaving out pictures it notes as
+  someone else's; NASA's take on almost anything: pizza aboard the space station), **Flagpedia's flags** (public
+  domain, by a country's name) and **Imgflip's meme templates** (fair use, for the memes above). None but the
+  Smithsonian needs a key, and every one loads in a browser from its own server (display `direct`). The museums
+  take one filter vocabulary in a look's source parameters: a type (painting, photograph, print, drawing,
+  sculpture) and the years after and before which it was made, which the Art Institute of Chicago's search now
+  takes too. They joined the looks they fit: `museum` (all the museums), `vintage` (old photographs from the Met,
+  the Art Institute, Cleveland and the Smithsonian), `old-photo`, `portrait` and `old-people` (the museums'
+  portraits), `space-science` (NASA first, and the Smithsonian's Air and Space Museum), `illustration` (Wellcome's prints and drawings) and `weird-stock` (now and then
+  NASA's or Wellcome's odd pictures, for the `ted` format's punchlines); and two new looks, `meme-templates` and
+  `country` (where the presenter comes from: its flag now and then, else photos of it). Their search answers are
+  cached for 7 to 30 days.
 - A deck's texts, pictures and shapes can appear on a click of their slide (`appears_on_click`), as a quiz's
   answer and a KPI slide's last figure do: PowerPoint fades them in on that click, and a renderer that plays no
   clicks shows them from the start (talk-generator-web needs a change to hold them back in its presentations).
@@ -373,6 +403,15 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   mcp (for `talkgenerator mcp`).
 - With milestone 6's slide types in the mix, a seed's talk has other slides than it had before: about one in six
   of a talk's slides is one of them, and the other kinds come up a little less often.
+- With the new image sources, a seed's talk finds other pictures than before: history slides take old photographs
+  from the Met, the Art Institute and Cleveland too, an about-me slide's "where I come from" picture is now and
+  then the country's flag, and the flavour packs search more subreddits (each checked for pictures among its hot
+  posts on 2026-11-07): `cursed` r/TIHI and r/Cursed_Images, `wholesome` r/rarepuppers and r/Eyebleach,
+  `bad-charts` r/Infographics and r/MapsWithoutNZ, `accidental-art` r/accidentalart and r/PerfectTiming,
+  `pareidolia` r/facesinthings, `old-photos` r/OldPhotosInRealLife, `memes` r/HistoryMemes and r/ProgrammerHumor,
+  `weird` r/Weird and r/notinteresting.
+- The design check of an outlined text (WordArt's, a meme's) judges it per colour that may be behind it: white with
+  a black outline reads on black by its white and on white by its black.
 - A talk without a seed gets a random one, which the logs and the deck JSON mention, so any talk can be made
   again.
 - A classic talk on a topic that talkgenerator's pack of presenter names knows (642 of the 736 topics of

@@ -673,3 +673,15 @@ class IcebergSlide(DrawnSlide):
 
     def clicks(self) -> dict[str, int]:
         return {f"hidden_{index}": 1 for index in range(1, 4)}
+
+
+class MemeSlide(DrawnSlide):
+    """A meme: a template's picture (one of Imgflip's, see talkgenerator.sources.memes), with its captions as texts on
+    it, each in the box the template has for it (a box that repeats another's caption gets it too)."""
+
+    required_arguments = ("template", "text_1")
+
+    def __init__(self, template: ImageData | None, *texts: str | None):
+        # (in the template's order: a caption belongs to its box, even next to an empty one)
+        captions = {f"text_{index}": texts[index - 1] if index <= len(texts) else None for index in range(1, 5)}
+        super().__init__("meme", None, {"template": template, **captions})

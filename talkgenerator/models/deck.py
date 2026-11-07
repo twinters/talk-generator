@@ -43,7 +43,7 @@ DiagramReveal = Literal["all", "punchline"]
 DisplayPolicy = Literal["direct", "proxy", "copy", "local"]
 # The license class of an image (see talkgenerator.images.licenses): public domain and CC0; Creative Commons BY and
 # BY-SA; the stock licenses of Unsplash, Pexels and Pixabay; AI images, under their provider's terms; and fair use
-# (Reddit's posts, GIPHY's gifs, InspiroBot's posters, ShitpostBot's images)
+# (Reddit's posts, GIPHY's gifs, Imgflip's meme templates, InspiroBot's posters, ShitpostBot's images)
 LicenseClass = Literal["public-domain", "open", "stock", "generated", "fair-use"]
 TextAlign = Literal["left", "center", "right"]
 TextAnchor = Literal["top", "middle", "bottom"]
