@@ -864,8 +864,9 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D25 | Dutch talks on talkgenerator.com may use the site's free OpenRouter quota; once it runs out, they get a classic English talk with a notice. |
 | D26 | The new talk formats come in milestone 7, or move to 5.1 if the TED work takes longer. |
 | D27 | Without `TALKGENERATOR_LLM`, OpenRouter's free models write talks when there's an OpenRouter key, and talks are classic otherwise: a paid model only writes talks when it's asked for, since a key alone (an `ANTHROPIC_API_KEY` set for other tools, say) shouldn't make talks cost money. |
+| D28 | `random` is the default theme: a talk that doesn't ask for one gets a theme its seed picks. `TALKGENERATOR_THEME` sets another default (`classic` keeps the 2019 template), and `generate_presentation(theme=...)` takes one per talk, which talk-generator-web can offer in its settings (`themes.catalog()`). |
 
-D7 to D9, D13 and D15 to D26 were settled on 2026-11-05; the others follow from the design.
+D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, and D28 on 2026-11-07; the others follow from the design.
 
 ### Open questions
 
