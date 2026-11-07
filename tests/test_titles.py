@@ -158,21 +158,33 @@ def test_a_title_the_model_keeps_is_a_title_with_its_slips_fixed():
     assert (title, reading.read_as) == ("Cheese Is the Future of Money", "title")
 
 
-def test_a_title_the_model_puts_in_a_longer_one_keeps_its_own_words():
+def test_a_clear_title_is_a_title_whatever_the_model_says():
+    # (Four words or more, or a question: the free models took some for topics, and gave them a classic title)
     title, reading = _settled(
-        {"input_is": "topic", "title": "Cats Are Liquid: A Medieval Breakthrough"}, "cats are liquid"
+        {"input_is": "topic", "title": "Never, Ever Clean A Toaster"}, "10 reasons your toaster hates you"
     )
-    assert (title, reading.read_as) == ("Cats Are Liquid", "title")
-    # (But a topic of a word or two often is in the model's title: "The Medieval Cheese Breakthrough")
+    assert (title, reading.read_as, reading.by) == ("10 reasons your toaster hates you", "title", "guess")
+    title, reading = _settled({"input_is": "topic", "title": "Why I Joined a Penguin Cult: A Love Story"})
+    assert (title, reading.read_as, reading.by) == ("Why I Joined a Penguin Cult", "title", "language model")
+
+
+def test_a_short_input_in_a_longer_title_of_the_model_s_is_a_topic():
+    # (A free model's own title for "The French Revolution")
+    written = "The French Revolution Was a Medieval Dance-Off"
+    title, reading = _settled({"input_is": "topic", "title": written}, "The French Revolution")
+    assert (title, reading.read_as) == (written, "topic")
     title, reading = _settled({"input_is": "topic", "title": "The Medieval Cheese Breakthrough"}, "medieval cheese")
     assert (title, reading.read_as) == ("The Medieval Cheese Breakthrough", "topic")
 
 
 def test_a_title_the_model_strays_from_stays_as_typed_when_it_and_the_guess_say_it_s_a_title():
+    # (As typed, with the slips fixed that talkgenerator can fix itself: misspellings, and an all lower-case start)
     title, reading = _settled({"input_is": "title", "title": "My Life Among the Penguins: A Cult Story"})
-    assert (title, reading.read_as, reading.by) == ("why i joind a pengiun cult", "title", "language model")
+    assert (title, reading.read_as, reading.by) == ("Why I joined a penguin cult", "title", "language model")
     title, reading = _settled({"input_is": "title"})  # (no title at all)
-    assert (title, reading.read_as) == ("why i joind a pengiun cult", "title")
+    assert (title, reading.read_as) == ("Why I joined a penguin cult", "title")
+    title, reading = _settled({"input_is": "title", "title": "A Day at the Zoo"}, "Breakfast is overrated")
+    assert (title, reading.read_as) == ("Breakfast is overrated", "title")
 
 
 def test_a_title_of_the_model_s_own_makes_it_a_topic():
@@ -193,20 +205,20 @@ def test_a_label_the_model_copied_from_the_request_is_left_out():
 @pytest.mark.parametrize("said", [None, "", "a title", "both", 1, True])
 def test_when_the_model_writes_no_title_nor_says_talkgenerator_guesses(said):
     title, reading = _settled({"input_is": said})
-    assert (title, reading.read_as, reading.by) == ("why i joind a pengiun cult", "title", "guess")
+    assert (title, reading.read_as, reading.by) == ("Why I joined a penguin cult", "title", "guess")
     title, reading = _settled({"input_is": said, "title": ""}, typed="penguin cults")
     assert (title, reading.read_as, reading.by) == ("A classic title", "topic", "guess")
 
 
 def test_the_model_s_reading_counts_however_it_s_written():
     title, reading = _settled({"input_is": " Title "}, typed="penguin cults")
-    assert (title, reading.read_as, reading.by) == ("penguin cults", "title", "language model")
+    assert (title, reading.read_as, reading.by) == ("Penguin cults", "title", "language model")
 
 
 def test_without_a_language_model_the_guess_decides_and_a_title_stays_as_typed():
     # (Whatever a spine says: there's no model, so nothing it wrote counts)
     title, reading = _settled({"input_is": "topic", "title": "The Penguin Gospel"}, written=False)
-    assert (title, reading.read_as, reading.by) == ("why i joind a pengiun cult", "title", "guess")
+    assert (title, reading.read_as, reading.by) == ("Why I joined a penguin cult", "title", "guess")
     title, reading = _settled({}, typed="penguins", written=False)
     assert (title, reading.read_as, reading.by) == ("A classic title", "topic", "guess")
 
@@ -372,6 +384,7 @@ def test_the_command_line_takes_a_topic_or_title():
 
 TYPED_TITLE = "why i joind a pengiun cult"
 FIXED_TITLE = "Why I Joined a Penguin Cult"
+POLISHED_TITLE = "Why I joined a penguin cult"  # (what talkgenerator fixes itself, when the model doesn't)
 
 
 def _reads(input_is, title=None):
@@ -409,17 +422,26 @@ def _spine_schema(request):
 
 def test_the_model_is_asked_whether_what_was_typed_is_a_topic_or_a_title(schema):
     model = FakeModel()
-    _talk(model, topic_or_title=TYPED_TITLE)
+    _talk(model, topic_or_title="penguin cults")
     (request,) = model.requests
     lines = _lines(request)
-    assert lines[0] == f'What the user typed: "{TYPED_TITLE}" (the talk\'s topic or its title: say which in input_is)'
-    assert lines[1].startswith('Classic titles from talkgenerator, for a topic: "A classic title about penguin"')
+    assert lines[0] == 'What the user typed: "penguin cults" (the talk\'s topic or its title: say which in input_is)'
+    assert lines[1].startswith('Classic titles from talkgenerator, for a topic: "A classic title about penguin cults"')
     assert not any(line.startswith(("Topic:", "Title:")) for line in lines)
     spine = _spine_schema(request)
     assert list(spine)[:5] == ["unsafe_topic", "input_is", "thesis", "own_title", "title"]
     assert spine["input_is"]["enum"] == ["topic", "title"]
     assert min(spine) == "input_is"  # (first, also for a model that writes the fields in alphabetical order)
     assert "Ann Example" not in request.system + json.dumps(request.model_dump())
+
+
+def test_a_clear_title_gets_no_classic_titles_to_weigh(schema):
+    model = FakeModel()
+    _talk(model, topic_or_title=TYPED_TITLE)
+    lines = _lines(model.requests[0])
+    assert lines[0].startswith(f'What the user typed: "{TYPED_TITLE}"')
+    assert not any(line.startswith("Classic titles") for line in lines)
+    assert "own_title" not in _spine_schema(model.requests[0])
 
 
 def test_a_topic_or_title_given_as_such_is_asked_for_as_before(schema):
@@ -443,7 +465,7 @@ def test_a_title_the_model_reads_keeps_its_words_with_its_slips_fixed(schema):
 
 def test_a_talk_whose_model_rewrites_the_typed_title_keeps_it_as_typed(schema):
     deck = _talk(FakeModel(change=_reads("title", "Penguins: My Cult Years")), topic_or_title=TYPED_TITLE)
-    assert deck.title == TYPED_TITLE
+    assert deck.title == POLISHED_TITLE
 
 
 def test_a_topic_the_model_reads_gets_the_model_s_title(schema):
@@ -472,12 +494,12 @@ def test_a_model_that_doesnt_say_is_read_by_the_title_it_writes(schema):
 
 def test_a_model_that_writes_no_title_nor_says_leaves_it_to_the_guess(schema):
     deck = _talk(FakeModel(change=_reads("The input is", "")), topic_or_title=TYPED_TITLE)
-    assert (deck.title, deck.topic_or_title.read_as, deck.topic_or_title.by) == (TYPED_TITLE, "title", "guess")
+    assert (deck.title, deck.topic_or_title.read_as, deck.topic_or_title.by) == (POLISHED_TITLE, "title", "guess")
 
 
 def test_a_model_that_fails_leaves_a_classic_talk_to_the_guess(schema):
     deck = _talk(FakeModel(fail=llm.RateLimited("free quota used up")), topic_or_title=TYPED_TITLE)
-    assert (deck.title, deck.topic_or_title.read_as, deck.topic_or_title.by) == (TYPED_TITLE, "title", "guess")
+    assert (deck.title, deck.topic_or_title.read_as, deck.topic_or_title.by) == (POLISHED_TITLE, "title", "guess")
     deck = _talk(FakeModel(fail=llm.RateLimited("free quota used up")), topic_or_title="penguins")
     assert deck.title == "A classic title about penguins"
 
