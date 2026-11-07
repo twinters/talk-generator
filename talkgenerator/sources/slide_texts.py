@@ -18,6 +18,7 @@ from collections.abc import Callable
 from functools import cache
 from typing import Any, Final, TypeVar
 
+from talkgenerator.plan.languages import ENGLISH
 from talkgenerator.sources import conceptnet, memes, text_generator
 from talkgenerator.util import os_util, random_util
 
@@ -414,6 +415,40 @@ def generate_iceberg(presentation_context: dict[str, Any]) -> tuple[str | None, 
     if not title or len(hidden) < 2:
         return None
     return title, _capitalised(presentation_context["seed"]), *hidden
+
+
+# SLIDE TYPES FROM POWERPOINT KARAOKE DECKS (their templates say "{seed.generic}": "penguins", but "coffee"; and no
+# verb agrees with the seed, which may be either)
+
+_YEARS: Final = ("1347", "1666", "1752", "1823", "1911", "1978", "2003")
+
+
+def _numbers() -> dict[str, str]:
+    """Made-up numbers for a template: a count, a percentage and a year."""
+    return {
+        "number": str(random_util.randint(3, 99)),
+        "percent": f"{random_util.randint(3, 97)}%",
+        "year": random_util.choice(_YEARS),
+    }
+
+
+def fun_fact(image: ImageSource) -> Callable[[dict[str, Any]], tuple[Any, ...] | None]:
+    """A generator of fun facts about the seed: a heading ("Did you know?"), the fact (from templates about the seed
+    and a word related to it, with made-up numbers), a made-up source (if any) and a photo from the image source (three
+    times in five, when it finds one)."""
+
+    @_unless_sensitive
+    def generate(presentation_context: dict[str, Any]) -> tuple[Any, ...] | None:
+        related = related_words(presentation_context["seed"])
+        variables = {**_context(presentation_context, related), **_numbers()}
+        fact = _template("fun_fact")(variables)
+        if not fact:
+            return None
+        source = _maybe(0.7, _template("big_number_source")(variables))
+        photo = image(dict(presentation_context)) if random_util.random() < 0.6 else None
+        return random_util.choice(ENGLISH.fun_facts), fact, source, photo
+
+    return generate
 
 
 def _capitalised(text: str) -> str:

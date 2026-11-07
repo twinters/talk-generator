@@ -300,5 +300,29 @@
     "{related.title}",
     "A very tired {related}",
     "Mild panic"
+  ],
+  "fun_fact": [
+    "The average person thinks about {seed.generic} {number} times a day.",
+    "{seed.generic.cap} can't be seen from space.",
+    "There are more {seed.generic} in Belgium than people.",
+    "Ancient Romans were terrified of {seed.generic}.",
+    "Scientists still can't explain {seed.generic}.",
+    "You are never more than two metres away from {seed.generic}.",
+    "Ohio has banned {seed.generic} twice.",
+    "Cats are secretly afraid of {seed.generic}.",
+    "The word '{seed}' was first written down in {year}, on a napkin.",
+    "{seed.generic.cap} and {related.generic} share a common ancestor.",
+    "In {year}, {seed.generic} cost more than gold.",
+    "Astronauts are not allowed to talk about {seed.generic}.",
+    "Someone discovered {seed.generic} by accident, in a shoe, in {year}.",
+    "Dolphins have a word for {seed.generic}.",
+    "{percent} of people dreamt about {seed.generic} this week.",
+    "A town in Norway celebrates {seed.generic} every Tuesday.",
+    "Until {year}, it was illegal to whistle about {seed.generic}.",
+    "The human body is {percent} {seed.generic}.",
+    "Experts recommend at least {number} minutes of {seed.generic} a day.",
+    "Owls can't see {seed.generic}.",
+    "Nobody has ever finished a sentence about {seed.generic}.",
+    "The very first phone call was about {seed.generic}."
   ]
 }

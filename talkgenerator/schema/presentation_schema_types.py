@@ -26,6 +26,7 @@ DEFAULT_GROUPS = (
     "quiz",
     "mockups",
     "memes",
+    "karaoke",
     "structure",
     "conclusion",
 )
@@ -40,6 +41,7 @@ COPYRIGHT_FREE_GROUPS = (
     "numbers",
     "quiz",
     "mockups_copyright_free",
+    "karaoke_copyright_free",
     "structure",
     "conclusion_copyright_free",
 )
@@ -127,6 +129,7 @@ ted_schema = schemas.register(
             "quiz": 1,
             "social_post": 1,
             "news": 1,
+            "fun_fact": 1,
             "agenda": 1,
             "questions": 1,
             "timeline": 1,

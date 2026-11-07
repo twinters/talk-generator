@@ -861,6 +861,39 @@ meme_slide_generators = _register(
     ],
 )
 
+# SLIDE TYPES FROM POWERPOINT KARAOKE DECKS (docs/v5-plan.md, section 8): what real karaoke and battle decks have that
+# makes audiences laugh, drawn as texts on shapes (and a photo), in the middle of a talk
+_FUN_FACT_BRIEF = "A fun fact about the concept: something absurd, stated as certain, that the presenter has to back up"
+
+
+def _karaoke(photo, suffix: str = "") -> list[SlideGeneratorData]:
+    return [
+        _drawn(
+            slide_texts.fun_fact(photo),
+            slides.FunFactSlide,
+            _middle(1),
+            ["fun_fact"],
+            f"Fun Fact{suffix}",
+            Recipe(
+                "fun_fact",
+                (photo,),
+                brief=_FUN_FACT_BRIEF,
+                variants=(
+                    Variant(2, note="with a photo of what it's about"),
+                    Variant(1, frozenset({"photo"}), "without a photo"),
+                    Variant(1, frozenset({"source"}), "with a photo, without a source: the presenter names one"),
+                ),
+            ),
+            repeats=1,
+        ),
+    ]
+
+
+karaoke_slide_generators = _register("karaoke", _karaoke(cg.neutral_or_weird_image_generator))
+karaoke_slide_generators_copyright_free = _register(
+    "karaoke_copyright_free", _karaoke(cg.copyright_free_generator, " (CRF)")
+)
+
 # THE TALK'S STRUCTURE: an agenda after the title, a section's divider in the middle, "Questions?" at the end
 structure_slide_generators = _register(
     "structure",
@@ -1070,6 +1103,7 @@ all_slide_generators = (
     + quiz_slide_generators
     + mockup_slide_generators
     + meme_slide_generators
+    + karaoke_slide_generators
     + structure_slide_generators
     + native_diagram_slide_generators
     + conclusion_slide_generators
@@ -1092,6 +1126,7 @@ default_max_allowed_tags = {
     "social_post": 1,
     "news": 1,
     "caption_meme": 2,  # (memes with live captions; and every meme, from Reddit too, two in ten slides: "meme")
+    "fun_fact": 1,
     "agenda": 1,
     "questions": 1,
     "timeline": 1,

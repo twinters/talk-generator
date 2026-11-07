@@ -1,8 +1,8 @@
 """The languages talks can be in (docs/v5-plan.md, section 5.9).
 
 A language model (or an agent's plan) writes a talk in its language, and talkgenerator adds a few words of its own:
-the title slide's "By ...", a chart's "Yes" and "No", a social media post's likes and shares, and a news story's
-breaking news, which this module has in every language. The classic
+the title slide's "By ...", a chart's "Yes" and "No", a social media post's likes and shares, a news story's
+breaking news, and the "Did you know?" over a fun fact, which this module has in every language. The classic
 generator only speaks English, so in a talk in another language, a slide that doesn't come out as planned becomes a
 picture without text instead of a classic slide. The language check reads texts with NLTK's stopword lists (and a
 language's words that look like English ones, which they leave out), and the spelling fixes of what's typed for a
@@ -26,6 +26,7 @@ class Language:
     likes: str = "likes"  # under a social media post, as in "12K likes"
     shares: str = "shares"
     breaking: str = "BREAKING NEWS"  # over a news story on television
+    fun_facts: tuple[str, ...] = ("Did you know?", "Fun fact")  # over a fun fact (one of them)
     # Whether it writes compounds as one word ("pinguïnsekte", "Pinguinsekte", "pingvinsekt"), which the spelling
     # fixes of what's typed for a talk then leave alone (see talkgenerator.sources.word_frequency)
     compounds: bool = False
@@ -50,6 +51,7 @@ LANGUAGES: Final[dict[str, Language]] = {
             likes="likes",
             shares="keer gedeeld",
             breaking="NIEUWSFLITS",
+            fun_facts=("Wist je dat?", "Weetje"),
             compounds=True,
         ),
         Language(
@@ -62,6 +64,7 @@ LANGUAGES: Final[dict[str, Language]] = {
             likes="j'aime",
             shares="partages",
             breaking="DERNIÈRE MINUTE",
+            fun_facts=("Le saviez-vous ?", "Anecdote"),
         ),
         Language(
             "de",
@@ -73,6 +76,7 @@ LANGUAGES: Final[dict[str, Language]] = {
             likes="Likes",
             shares="Mal geteilt",
             breaking="EILMELDUNG",
+            fun_facts=("Schon gewusst?", "Fun Fact"),
             compounds=True,
         ),
         Language(
@@ -85,6 +89,7 @@ LANGUAGES: Final[dict[str, Language]] = {
             likes="me gusta",
             shares="veces compartido",
             breaking="ÚLTIMA HORA",
+            fun_facts=("¿Sabías que...?", "Dato curioso"),
         ),
         Language(
             "it",
@@ -96,6 +101,7 @@ LANGUAGES: Final[dict[str, Language]] = {
             likes="mi piace",
             shares="condivisioni",
             breaking="ULTIM'ORA",
+            fun_facts=("Lo sapevi?", "Curiosità"),
         ),
         Language(
             "pt",
@@ -107,6 +113,7 @@ LANGUAGES: Final[dict[str, Language]] = {
             likes="curtidas",
             shares="compartilhamentos",
             breaking="ÚLTIMA HORA",
+            fun_facts=("Você sabia?", "Curiosidade"),
         ),
         Language(
             "sv",
@@ -118,6 +125,7 @@ LANGUAGES: Final[dict[str, Language]] = {
             likes="gilla-markeringar",  # (as Facebook and Instagram say it in Swedish)
             shares="delningar",
             breaking="JUST NU",  # (as Swedish news sites and SVT flag breaking news)
+            fun_facts=("Visste du?", "Kul fakta"),
             compounds=True,
             # (into, all, just, to ask, a village and ice)
             english_lookalikes=frozenset({"in", "all", "just", "be", "by", "is"}),

@@ -513,3 +513,18 @@ Images: `template`
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
 | `meme` | A meme about the concept | the default; images: `template` meme-templates; tags: caption_meme, meme |
+
+## `fun_fact`
+
+A fun fact: one absurd fact, stated as certain, under a heading such as 'Did you know?' (talkgenerator adds it), with a made-up source, and a photo if it has one.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `fact` | 120 | the fact: one sentence, stated as certain, that the presenter has to back up |
+| `source` | 60 | a made-up, unreliable source for the fact (or empty, for none) |
+
+Images: `photo`
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `fun-fact` | A fun fact about the concept: something absurd, stated as certain, that the presenter has to back up | the default; tags: fun_fact |

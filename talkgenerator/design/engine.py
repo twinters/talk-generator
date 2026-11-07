@@ -146,6 +146,12 @@ SPECS: Final[dict[str, TextSpec]] = {
         "body", 96, 28, color="light", align="center", font_name="Impact", uppercase=True, outline="#000000"
     ),
     "plain meme": TextSpec("body", 80, 26, align="center", on_fill=True, font_name="Arial"),
+    # (slide types from PowerPoint karaoke decks: a fun fact's heading on a sticker, and the fact)
+    "sticker": TextSpec("heading", 64, 28, align="center", heading=True, on_fill=True, effect=False),
+    "fact": TextSpec("body", 96, 36, align="center", bold=True),
+    "side fact": TextSpec("body", 88, 36, align="left", bold=True),
+    "card fact": TextSpec("body", 88, 34, align="left", bold=True, on_fill=True),
+    "card source": TextSpec("body", 36, 24, align="left", italic=True, on_fill=True),
     # (native diagrams)
     "date": TextSpec("body", 72, 28, align="center", anchor="bottom", bold=True),  # (not in capitals: too wide)
     "row date": TextSpec("body", 64, 28, align="right", bold=True),
@@ -1626,6 +1632,88 @@ def _room_for(text: str, box: Box, spec_name: str, padding: float, bounds: Box) 
     return Box(x=x, y=y, w=width, h=height) if (width, height) != (box.w, box.h) else box
 
 
+# SLIDE TYPES FROM POWERPOINT KARAOKE DECKS (docs/v5-plan.md, section 8): texts on shapes, and a photo
+_FACT_PHOTO_WIDTH: Final = 760  # a fun fact's photo beside it
+
+
+def _sticker(placement: _Placement, theme: Theme, box: Box, role: str = "kicker") -> None:
+    """A short heading (a fun fact's "Did you know?") on a sticker in the theme's accent, drawn over a picture it may
+    overlap."""
+    accent = theme.palette.accent
+    placement.overlays.append(ShapeElement(role=f"{role} sticker", box=box, color=accent))
+    placement.boxes[role] = (_inset(box, 16), "sticker")
+    placement.colors[role] = _on([accent], theme, color.LARGE_TEXT_CONTRAST)
+
+
+def _fun_fact(roles: dict[str, Content], theme: Theme) -> _Placement:
+    """The fact big in the middle, under its heading on a sticker in the theme's accent, its source under it; with a
+    photo, the photo on the right and the rest beside it, aligned left."""
+    placement = _Placement("v5/fun-fact")
+    photo = "photo" in roles
+    right = WIDTH - MARGIN - (_FACT_PHOTO_WIDTH + _GAP if photo else 0)
+    width = right - MARGIN
+    if photo:
+        photo_box = Box(x=WIDTH - MARGIN - _FACT_PHOTO_WIDTH, y=MARGIN, w=_FACT_PHOTO_WIDTH, h=_CONTENT_BOTTOM - MARGIN)
+        placement.boxes["photo"] = (photo_box, "quote")
+    sticker_width = min(640.0, width)
+    sticker_x = MARGIN if photo else (WIDTH - sticker_width) / 2
+    _sticker(placement, theme, Box(x=sticker_x, y=150, w=sticker_width, h=116))
+    top = 150 + 116 + 40
+    bottom = _CONTENT_BOTTOM - (96 if "source" in roles else 0)
+    placement.boxes["fact"] = (Box(x=MARGIN, y=top, w=width, h=bottom - top), "side fact" if photo else "fact")
+    if "source" in roles:
+        placement.boxes["source"] = (Box(x=MARGIN, y=bottom + 24, w=width, h=64), "side source" if photo else "source")
+    return placement
+
+
+def _fun_fact_card(roles: dict[str, Content], theme: Theme) -> _Placement:
+    """The fact on a card in the theme's second accent, as on a sticky note, with a shadow: its heading on a sticker
+    over the card's top edge, its source at the card's foot."""
+    palette = theme.palette
+    card = Box(x=400, y=200, w=1120, h=720)
+    shadow = Box(x=card.x + 20, y=card.y + 20, w=card.w, h=card.h)
+    fill = palette.accent_2
+    placement = _Placement(
+        "v5/fun-fact-card",
+        shapes=[
+            ShapeElement(role="card shadow", box=shadow, color=color.mix(palette.background, palette.text, 0.25)),
+            ShapeElement(role="card", box=card, color=fill),
+        ],
+    )
+    _sticker(placement, theme, Box(x=card.x - 40, y=card.y - 58, w=600, h=116))
+    inner = _inset(card, 64)
+    bottom = inner.y + inner.h - (72 if "source" in roles else 0)
+    placement.boxes["fact"] = (Box(x=inner.x, y=card.y + 96, w=inner.w, h=bottom - card.y - 96), "card fact")
+    ink = _on([fill], theme)
+    placement.colors["fact"] = ink
+    if "source" in roles:
+        placement.boxes["source"] = (Box(x=inner.x, y=bottom + 16, w=inner.w, h=56), "card source")
+        placement.colors["source"] = ink
+    return placement
+
+
+def _fun_fact_banner(roles: dict[str, Content], theme: Theme) -> _Placement:
+    """The photo across the top, its heading on a sticker over its lower edge, and the fact under it, with its
+    source below."""
+    placement = _Placement("v5/fun-fact-banner")
+    banner = Box(x=MARGIN, y=56, w=WIDTH - 2 * MARGIN, h=470)
+    placement.boxes["photo"] = (banner, "quote")
+    _sticker(placement, theme, Box(x=MARGIN + 48, y=banner.y + banner.h - 64, w=600, h=116))
+    top = banner.y + banner.h + 52 + 24
+    bottom = _CONTENT_BOTTOM - (80 if "source" in roles else 0)
+    placement.boxes["fact"] = (Box(x=MARGIN, y=top, w=WIDTH - 2 * MARGIN, h=bottom - top), "side fact")
+    if "source" in roles:
+        placement.boxes["source"] = (Box(x=MARGIN, y=bottom + 16, w=WIDTH - 2 * MARGIN, h=56), "side source")
+    return placement
+
+
+def _without(role: str) -> Callable[[dict[str, Content]], bool]:
+    def without(roles: dict[str, Content]) -> bool:
+        return role not in roles
+
+    return without
+
+
 @dataclass(frozen=True)
 class _Layout:
     """One of a slide type's layouts: its name, what places its elements, how likely it's picked (against the type's
@@ -1731,4 +1819,10 @@ _LAYOUTS: Final[dict[str, tuple[_Layout, ...]]] = {
         _Layout("v5/iceberg-side", _iceberg(side=True), 0.7, _beside_title),
     ),
     "meme": (_Layout("v5/meme", _meme),),
+    # (slide types from PowerPoint karaoke decks)
+    "fun_fact": (
+        _Layout("v5/fun-fact", _fun_fact),
+        _Layout("v5/fun-fact-card", _fun_fact_card, 0.9, _without("photo")),
+        _Layout("v5/fun-fact-banner", _fun_fact_banner, 0.8, _has("photo")),
+    ),
 }

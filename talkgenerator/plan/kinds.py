@@ -379,6 +379,12 @@ def _meme(texts: Mapping[str, str | None], images: Mapping[str, Any], language: 
     return slides.MemeSlide(picture, *template.texts(captions))
 
 
+def _fun_fact(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    # (its heading is talkgenerator's, in the talk's language: "Did you know?" or "Fun fact")
+    kicker = random_util.choice(language.fun_facts)
+    return slides.FunFactSlide(kicker, texts["fact"], texts.get("source"), images.get("photo"))
+
+
 def _shortened(text: str, length: int) -> str:
     """The text, cut between words to at most this many characters (or within its first word, if that's longer)."""
     if len(text) <= length:
@@ -836,6 +842,18 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             ("template",),
             _meme,
+        ),
+        # Slide types from real PowerPoint karaoke decks (docs/v5-plan.md, section 8)
+        Kind(
+            "fun_fact",
+            "A fun fact: one absurd fact, stated as certain, under a heading such as 'Did you know?' (talkgenerator "
+            "adds it), with a made-up source, and a photo if it has one.",
+            (
+                TextField("fact", "the fact: one sentence, stated as certain, that the presenter has to back up", 120),
+                TextField("source", "a made-up, unreliable source for the fact", 60, optional=True),
+            ),
+            ("photo",),
+            _fun_fact,
         ),
     )
 }

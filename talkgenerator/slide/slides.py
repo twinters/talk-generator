@@ -675,6 +675,16 @@ class IcebergSlide(DrawnSlide):
         return {f"hidden_{index}": 1 for index in range(1, 4)}
 
 
+class FunFactSlide(DrawnSlide):
+    """A fun fact: one absurd fact, stated as certain, under a heading in the talk's language ("Did you know?"), with
+    its (made-up) source and a photo, if it has them."""
+
+    required_arguments = ("kicker", "fact")
+
+    def __init__(self, kicker: str | None, fact: str | None, source: str | None = None, photo: ImageData | None = None):
+        super().__init__("fun_fact", None, {"kicker": kicker, "fact": fact, "source": source, "photo": photo})
+
+
 class MemeSlide(DrawnSlide):
     """A meme: a template's picture (one of Imgflip's, see talkgenerator.sources.memes), with its captions as texts on
     it, each in the box the template has for it (a box that repeats another's caption gets it too)."""

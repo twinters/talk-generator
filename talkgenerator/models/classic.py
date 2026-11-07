@@ -83,13 +83,19 @@ CLASSIC_ROLES: Final[dict[str, dict[str, str]]] = {
     "iceberg": {"title": "title", "tip": "tip", **{f"hidden_{number}": f"hidden_{number}" for number in range(1, 4)}},
     # (a meme: a template's picture, with its captions as texts on it, where the template has them)
     "meme": {"template": "template", **{f"text_{number}": f"text_{number}" for number in range(1, 5)}},
+    # (slide types from PowerPoint karaoke decks: docs/v5-plan.md, section 8)
+    "fun_fact": {"photo": "photo", "kicker": "kicker", "fact": "fact", "source": "source"},
 }
+
+# The slide types that came from real PowerPoint karaoke decks (docs/v5-plan.md, section 8)
+KARAOKE_TYPES: Final = frozenset({"fun_fact"})
 
 # The slide types that the 2019 template has no layout for (all of milestone 6's): a classic deck draws them as a
 # themed deck does, laid out in the template's look (talkgenerator.design.themes.CLASSIC_LOOK), on its blank slide
 DRAWN_TYPES: Final = frozenset(
     {"big_number", "kpi", "quiz", "social_post", "news_headline", "agenda", "section", "questions"}
     | {"timeline", "pyramid", "funnel", "cycle", "org_chart", "iceberg", "meme"}
+    | KARAOKE_TYPES
 )
 
 # The roles a slide of each type can't do without: its Slide class's required_arguments, as roles
@@ -117,6 +123,7 @@ REQUIRED_ROLES: Final[dict[str, tuple[str, ...]]] = {
     "org_chart": ("boss", "report_1", "report_2"),
     "iceberg": ("tip", "hidden_1", "hidden_2"),
     "meme": ("template", "text_1"),
+    "fun_fact": ("kicker", "fact"),
 }
 
 # The roles of drawn slides that hold pictures: a post's or a story's photo, a meme's template

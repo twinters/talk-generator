@@ -572,8 +572,11 @@ def test_every_recipe_of_the_schemas_fits_its_kind():
         kind = KINDS[recipe.kind]
         assert len(recipe.images) == len(kind.images), generator_.name
         assert set(recipe.hints) <= {text.name for text in kind.texts}, generator_.name
-        for variant in recipe.variants:  # they leave out fields the kind has, which may stay empty
-            assert variant.omit <= {text.name for text in kind.texts if text.optional}, generator_.name
+        # (their variants leave out fields the kind has, which may stay empty, or an image slot: a fun fact's photo)
+        for variant in recipe.variants:
+            assert variant.omit <= {text.name for text in kind.texts if text.optional} | set(kind.images), (
+                generator_.name
+            )
 
 
 # READING THE ANSWER
