@@ -1,7 +1,9 @@
 """Offline tests of the automated checks: findings on hand-made decks, and benchmark runs with fake sources."""
 
+import itertools
 import json
 import sys
+from datetime import timedelta
 
 import pytest
 
@@ -29,6 +31,7 @@ from talkgenerator.models.deck import (
     TextElement,
 )
 from talkgenerator.slide import slides
+from talkgenerator.util import http_util
 from tests import test_seeds
 
 
@@ -275,6 +278,39 @@ def test_a_difference_says_what_differs(monkeypatch):
     monkeypatch.setattr(benchmark, "generate_deck", lambda *args, **kwargs: next(decks))
     (error,) = benchmark.check_talk("cat", 1, slides=2).errors
     assert error.message.endswith("other slides came out: slide 2 (notes)")
+
+
+def test_the_second_run_gets_the_answers_the_first_run_got(monkeypatch):
+    """An answer of the on-disk cache can expire between a talk's two runs (Pixabay's do, after a day) and come back
+    different (Pixabay's image links change from one day to the next): the talk came out differently, but no slide
+    had."""
+    monkeypatch.setitem(http_util.CACHE_EXPIRY, "words.example/api", timedelta(days=1))
+    words = (f"word {number}" for number in itertools.count())
+
+    class Answer:
+        ok = True
+        status_code = 200
+
+        def __init__(self):
+            self.word = next(words)
+
+        def json(self):
+            return {"word": self.word}
+
+    class Source:
+        def request(self, method, url, timeout, **kwargs):
+            return Answer()
+
+    def search():
+        return http_util.get_json("https://words.example/api", params={"q": "cat"})["word"]
+
+    monkeypatch.setattr(http_util, "get_session", Source)
+    monkeypatch.setattr(
+        benchmark, "generate_deck", lambda *args, **kwargs: _deck(_slide("title", _text("title", search())))
+    )
+
+    assert benchmark.check_talk("cat", 1, slides=1).deterministic
+    assert search() == "word 1"  # (the check asked once; now, outside it, it's asked again)
 
 
 def test_a_crash_is_what_the_check_finds(monkeypatch):
