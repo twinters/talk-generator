@@ -219,6 +219,27 @@ def test_the_dice_pick_a_template_and_the_model_writes_its_captions():
     assert "meme" in text and "template_query" not in text
 
 
+def test_the_dice_avoid_a_template_the_talk_has_already():
+    others = frozenset(template.id for template in TEMPLATES if template is not DRAKE)
+    for seed in range(20):
+        assert RECIPE.varied(random_util.Rng(seed), avoid=others).queries["template"] == DRAKE.id
+    every = frozenset(template.id for template in TEMPLATES)  # (with nothing else left, any)
+    assert RECIPE.varied(random_util.Rng(1), avoid=every).queries["template"] in every
+
+
+def test_a_talk_never_has_the_same_template_twice(monkeypatch):
+    # (two memes are allowed now: the second would repeat the first one's picture, and come out classic)
+    default = get_schema("default")
+    monkeypatch.setattr(type(default), "_ask", staticmethod(lambda llm, request, talk: None))
+    twice = 0
+    for seed in range(1, 301):
+        talk = default._plan_talk(["cats"], ["cat"] * 10, random_util.Rng(seed), object(), "en", None, False)
+        templates = [slide.recipe.queries["template"] for slide in talk.planned.values() if slide.recipe.kind == "meme"]
+        assert len(templates) == len(set(templates)), seed
+        twice += len(templates) == 2
+    assert twice >= 10  # (talks with two memes, whose templates had to differ)
+
+
 def _realized(recipe, texts, images=None, problems=None):
     plan = SlidePlan(kind="meme", concept="cats", texts=texts, images=images or {})
     return realize(plan, recipe, {"seed": "cats", "topic": "cats"}, random_util.Rng(1), 0, problems=problems)

@@ -116,12 +116,14 @@ class Recipe:
             if name not in self.omit
         ]
 
-    def varied(self, rng: random_util.Rng) -> Recipe:
-        """The recipe as one of its variants, picked by weight with the random stream (itself, without variants)."""
+    def varied(self, rng: random_util.Rng, avoid: frozenset[str] = frozenset()) -> Recipe:
+        """The recipe as one of its variants, picked by weight with the random stream (itself, without variants): not
+        one whose queries are in avoid, while there are others (a meme's template that the talk has already)."""
         if not self.variants:
             return self
+        fresh = [variant for variant in self.variants if not set(variant.queries.values()) & avoid] or self.variants
         with random_util.use(rng):
-            variant = random_util.weighted_random([(variant.weight, variant) for variant in self.variants])
+            variant = random_util.weighted_random([(variant.weight, variant) for variant in fresh])
         if variant is None:
             return self
         brief = (self.brief or KINDS[self.kind].description).rstrip(".")
