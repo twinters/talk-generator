@@ -1,13 +1,18 @@
 """The fonts themes use, and how wide a text is in them (to pick font sizes at which texts fit their boxes).
 
-A .pptx names its fonts, and the computer showing it needs to have them, so themes stick to fonts that nearly every
-computer has. Texts are measured with the font's own file where this computer has it, or with an open font that
-shares its metrics (Liberation Sans for Arial, Carlito for Calibri, Gelasio for Georgia...: docs/v5-plan.md,
-section 9), in talkgenerator's `data/fonts` folder or the system's. The fonts without such a twin (Arial Black,
-Verdana, Trebuchet MS, Impact, Comic Sans MS) come with a table of every character's width, measured from their own
-files (`data/fonts/widths.json`, made by scripts/font_widths.py), so texts in them measure the same where they're
-missing. Otherwise (a character that isn't in a table, a font without a file or a table) the width is estimated from
-the font's average character width, generously, so that an estimate errs towards smaller text.
+A .pptx names its fonts, and the computer showing it needs to have them. Themes use two kinds (docs/v5-plan.md,
+section 9). Fonts that nearly every computer has (Arial, Calibri, Georgia...) are measured with the font's own file
+where this computer has it, or with an open font that shares its metrics (Liberation Sans for Arial, Carlito for
+Calibri, Gelasio for Georgia...), in talkgenerator's `data/fonts` folder or the system's. The ones without such a twin
+(Arial Black, Verdana, Trebuchet MS, Impact, Comic Sans MS) come with a table of every character's width, measured
+from their own files (`data/fonts/widths.json`, made by scripts/font_widths.py), so texts in them measure the same
+where they're missing. Otherwise (a character that isn't in a table, a font without a file or a table) the width is
+estimated from the font's average character width, generously, so that an estimate errs towards smaller text.
+
+And open fonts with more personality (`OPEN_FONTS`: Poppins, Space Mono, Crimson Text...), from Google Fonts: bundled
+in `data/fonts`, so they're measured everywhere, and carried inside every .pptx that uses them
+(talkgenerator.render.embedding), so PowerPoint shows them. Where a deck's own fonts aren't used (PowerPoint for the
+web, most likely Keynote), a stand-in shows instead: so a text in an open font is fitted to its stand-in too.
 """
 
 from __future__ import annotations
@@ -52,6 +57,46 @@ FONTS: Final[dict[str, FontFiles]] = {
     "Trebuchet MS": FontFiles(("trebuc.ttf",), ("trebucbd.ttf",), 0.52),
     "Impact": FontFiles(("impact.ttf",), ("impact.ttf",), 0.5),
     "Comic Sans MS": FontFiles(("comic.ttf",), ("comicbd.ttf",), 0.56),
+    # The open fonts (see OPEN_FONTS), in talkgenerator's data/fonts. (A display face with only a regular is only ever
+    # a heading that isn't made bolder, as Impact is: see talkgenerator.design.themes)
+    "Abril Fatface": FontFiles(("AbrilFatface-Regular.ttf",), ("AbrilFatface-Regular.ttf",), 0.53),
+    "Archivo Black": FontFiles(("ArchivoBlack-Regular.ttf",), ("ArchivoBlack-Regular.ttf",), 0.62),
+    "Atkinson Hyperlegible": FontFiles(("AtkinsonHyperlegible-Regular.ttf",), ("AtkinsonHyperlegible-Bold.ttf",), 0.55),
+    "Audiowide": FontFiles(("Audiowide-Regular.ttf",), ("Audiowide-Regular.ttf",), 0.64),
+    "Barlow": FontFiles(("Barlow-Regular.ttf",), ("Barlow-Bold.ttf",), 0.51),
+    "Chakra Petch": FontFiles(("ChakraPetch-Regular.ttf",), ("ChakraPetch-Bold.ttf",), 0.55),
+    "Courier Prime": FontFiles(("CourierPrime-Regular.ttf",), ("CourierPrime-Bold.ttf",), 0.6),
+    "Crimson Text": FontFiles(("CrimsonText-Regular.ttf",), ("CrimsonText-Bold.ttf",), 0.5),
+    "IBM Plex Mono": FontFiles(("IBMPlexMono-Regular.ttf",), ("IBMPlexMono-Bold.ttf",), 0.6),
+    "Lato": FontFiles(("Lato-Regular.ttf",), ("Lato-Bold.ttf",), 0.52),
+    "Mali": FontFiles(("Mali-Regular.ttf",), ("Mali-Bold.ttf",), 0.58),
+    "Poppins": FontFiles(("Poppins-Regular.ttf",), ("Poppins-Bold.ttf",), 0.58),
+    "Sniglet": FontFiles(("Sniglet-Regular.ttf",), ("Sniglet-Regular.ttf",), 0.51),
+    "Space Mono": FontFiles(("SpaceMono-Regular.ttf",), ("SpaceMono-Bold.ttf",), 0.61),
+    "Spectral": FontFiles(("Spectral-Regular.ttf",), ("Spectral-Bold.ttf",), 0.54),
+    "Titillium Web": FontFiles(("TitilliumWeb-Regular.ttf",), ("TitilliumWeb-Bold.ttf",), 0.5),
+}
+# The open fonts (from Google Fonts, under the SIL Open Font License), each with its stand-in: of the fonts nearly every
+# computer has, the one most like it, which shows where the deck's own fonts aren't used (PowerPoint for the web,
+# most likely Keynote). A text in an open font is taken to be as wide as in its stand-in where that's wider, so it
+# fits in both. (Lato and Poppins are Office cloud fonts too: PowerPoint for the web shows them)
+OPEN_FONTS: Final[dict[str, str]] = {
+    "Abril Fatface": "Georgia",
+    "Archivo Black": "Arial Black",
+    "Atkinson Hyperlegible": "Arial",
+    "Audiowide": "Arial Black",
+    "Barlow": "Arial",
+    "Chakra Petch": "Arial",
+    "Courier Prime": "Courier New",
+    "Crimson Text": "Times New Roman",
+    "IBM Plex Mono": "Courier New",
+    "Lato": "Arial",
+    "Mali": "Comic Sans MS",
+    "Poppins": "Arial",
+    "Sniglet": "Arial",
+    "Space Mono": "Courier New",
+    "Spectral": "Times New Roman",
+    "Titillium Web": "Arial",
 }
 # How much wider than average an estimated text is taken to be: estimates err towards smaller text
 ESTIMATE_MARGIN: Final = 1.15
@@ -61,7 +106,16 @@ WIDTHS_FILE: Final = "data/fonts/widths.json"
 
 
 def text_width(text: str, font: str, size: float, bold: bool = False) -> float:
-    """How wide the text is in the font, at a font size: both in canvas pixels."""
+    """How wide the text is in the font, at a font size: both in canvas pixels. In an open font, as wide as in its
+    stand-in where that's wider (see OPEN_FONTS)."""
+    width = _width(text, font, size, bold)
+    stand_in = OPEN_FONTS.get(font)
+    if stand_in is not None:
+        width = max(width, _width(text, stand_in, size, bold))
+    return width
+
+
+def _width(text: str, font: str, size: float, bold: bool) -> float:
     path = font_file(font, bold)
     if path is not None:
         return float(_truetype(str(path)).getlength(text)) * size / MEASURING_SIZE

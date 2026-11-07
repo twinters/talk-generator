@@ -18,7 +18,7 @@ from talkgenerator.design import color, engine, fit, fonts, themes, treatments
 from talkgenerator.models.deck import Deck, ImageElement, ShapeElement, TextElement, VennDiagram
 from talkgenerator.plan import languages
 from talkgenerator.plan.kinds import KINDS
-from talkgenerator.render import preview
+from talkgenerator.render import embedding, preview
 from talkgenerator.render.powerpoint import render_pptx
 from talkgenerator.slide import slides
 from talkgenerator.slide.slide_deck import SlideDeck
@@ -109,12 +109,54 @@ def test_the_bundled_twins_measure_where_the_fonts_themselves_are_missing(monkey
         fonts._font_index.cache_clear()
 
 
+def _open_font_files():
+    """The files of the open fonts themes use, by font."""
+    return {font: sorted({*fonts.FONTS[font].regular, *fonts.FONTS[font].bold}) for font in fonts.OPEN_FONTS}
+
+
 def test_every_bundled_font_is_credited_with_its_license():
     readme = (_BUNDLED / "README.md").read_text(encoding="utf-8")
-    assert sorted(path.name for path in _BUNDLED.glob("*.ttf")) == sorted(_TWINS.values())
-    assert all(twin in readme for twin in _TWINS.values()) and "widths.json" in readme
-    for license_file in ("LICENSE-Liberation.txt", "OFL-Carlito.txt", "LICENSE-Caladea.txt", "OFL-Gelasio.txt"):
+    open_files = [name for names in _open_font_files().values() for name in names]
+    assert sorted(path.name for path in _BUNDLED.glob("*.ttf")) == sorted([*_TWINS.values(), *open_files])
+    assert all(name in readme for name in [*_TWINS.values(), *open_files]) and "widths.json" in readme
+    licenses = ["LICENSE-Liberation.txt", "OFL-Carlito.txt", "LICENSE-Caladea.txt", "OFL-Gelasio.txt"]
+    # (each open font's own: OFL-<its files' name>.txt)
+    licenses += [f"OFL-{names[0].split('-')[0]}.txt" for names in _open_font_files().values()]
+    for license_file in licenses:
         assert (_BUNDLED / license_file).is_file() and license_file in readme
+    for license_file in licenses[4:]:
+        assert "sil open font license version 1.1" in (_BUNDLED / license_file).read_text(encoding="utf-8").lower()
+
+
+def test_the_open_fonts_are_static_truetype_fonts_that_allow_embedding():
+    """(An EOT holds TrueType outlines; PowerPoint makes up a missing bold, wider than a real one: so a font with
+    only a regular is a heading font that isn't made bolder, never a body, which some roles make bold)"""
+    bodies = {body for family in themes.FAMILIES.values() for _, body in family.open_fonts}
+    for font, stand_in in fonts.OPEN_FONTS.items():
+        assert stand_in in fonts.FONTS and stand_in not in fonts.OPEN_FONTS
+        regular, bold = fonts.font_file(font), fonts.font_file(font, bold=True)
+        assert regular is not None and regular.parent == _BUNDLED and bold is not None and bold.parent == _BUNDLED
+        facts = embedding.font_facts(regular.read_bytes())
+        assert facts.truetype and not facts.variable and facts.fs_type == 0 and facts.weight == 400, font
+        assert facts.names[1] == font and facts.names[2] == "Regular"  # (the name a run and PowerPoint look for)
+        if bold == regular:
+            assert font in themes._HEAVY_FONTS and font not in bodies, font
+        else:
+            bold_facts = embedding.font_facts(bold.read_bytes())
+            assert bold_facts.truetype and not bold_facts.variable and bold_facts.fs_type == 0
+            assert (bold_facts.names[1], bold_facts.names[2], bold_facts.weight) == (font, "Bold", 700), font
+
+
+def test_a_text_in_an_open_font_fits_its_stand_in_too():
+    for (font, stand_in), bold in itertools.product(fonts.OPEN_FONTS.items(), (False, True)):
+        path = fonts.font_file(font, bold)
+        own = ImageFont.truetype(str(path), 100, layout_engine=ImageFont.Layout.BASIC)
+        for text in ("The quiet power of spreadsheets", _ACROSS_EUROPE, _ACROSS_EUROPE.upper()):
+            width = fonts.text_width(text, font, 50, bold)
+            assert width == pytest.approx(max(own.getlength(text), fonts.text_width(text, stand_in, 100, bold)) / 2)
+    # (Barlow is narrower than Arial: its texts are as wide as Arial's; Poppins is wider: as wide as its own)
+    assert fonts.text_width("Spreadsheets", "Barlow", 100) == fonts.text_width("Spreadsheets", "Arial", 100)
+    assert fonts.text_width("Spreadsheets", "Poppins", 100) > fonts.text_width("Spreadsheets", "Arial", 100)
 
 
 def test_the_twins_are_as_wide_as_the_fonts_they_stand_in_for():
@@ -234,6 +276,27 @@ def test_the_random_mix_leaves_extremes_out_when_asked():
     assert not any(theme.extreme for theme in picked)
     assert any(themes.pick("random", random_util.Rng(seed)).extreme for seed in range(60))
     assert "1997 WordArt" not in themes.names(extremes=False) and "1997 WordArt" in themes.names()
+
+
+def test_most_members_have_open_fonts_and_keep_everything_else_they_had(monkeypatch):
+    members = {(name, seed): _theme(name, seed) for name in FAMILIES for seed in range(60)}
+    monkeypatch.setattr(themes, "OPEN_FONT_CHANCE", 0.0)  # (as members were before there were open fonts)
+    before = {(name, seed): _theme(name, seed) for name in FAMILIES for seed in range(60)}
+    for name, family in themes.FAMILIES.items():
+        open_members = [members[name, seed] for seed in range(60) if members[name, seed].fonts.body in fonts.OPEN_FONTS]
+        if family.extreme:  # (their installed fonts are the joke)
+            assert not family.open_fonts and not open_members
+            continue
+        assert 0.5 <= len(open_members) / 60 <= 0.8, name  # (two in three, OPEN_FONT_CHANCE)
+        assert {(theme.fonts.heading, theme.fonts.body) for theme in open_members} == set(family.open_fonts)
+        assert all(theme.fonts.heading in fonts.OPEN_FONTS for theme in open_members)
+        for seed in range(60):
+            member, old = members[name, seed], before[name, seed]
+            assert member.model_copy(update={"fonts": old.fonts}) == old, (name, seed)  # only the fonts changed
+            # (in capitals as before, unless the font is too wide for them)
+            capitals = old.fonts.heading_uppercase and member.fonts.heading not in themes._NO_CAPITALS
+            assert member.fonts.heading_uppercase == capitals
+            assert member.fonts.heading_bold == (member.fonts.heading not in themes._HEAVY_FONTS)
 
 
 # THE LAYOUT ENGINE
@@ -369,6 +432,31 @@ def test_long_words_fit_the_older_layouts_in_every_theme(images, family):
         overflowing = [finding for finding in check_design(deck) if finding.check == "overflow"]
         assert [finding for finding in overflowing if not _in_circles(deck, finding)] == [], (family, seed)
     assert {layout for layouts in fitting.values() for layout in layouts} <= seen
+
+
+def _with_fonts(theme, heading, body, uppercase=False):
+    """The theme in other fonts (bold headings unless the heading font is heavy already, as members get them)."""
+    update = {"heading": heading, "body": body, "heading_bold": heading not in themes._HEAVY_FONTS}
+    return theme.model_copy(update={"fonts": theme.fonts.model_copy(update={**update, "heading_uppercase": uppercase})})
+
+
+_OPEN_PAIRINGS = [(name, pair) for name, family in themes.FAMILIES.items() for pair in family.open_fonts]
+
+
+@pytest.mark.parametrize(("family", "pair"), _OPEN_PAIRINGS, ids=[f"{n}: {h} over {b}" for n, (h, b) in _OPEN_PAIRINGS])
+def test_the_longest_texts_and_long_words_fit_in_every_open_pairing(images, family, pair):
+    """(every pairing, not only the ones a few seeds give their members; headings as written, and in capitals where
+    a member can have them)"""
+    longest = [_built(kind, _longest_texts(kind), {"photo": _image("wide")}) for kind in EVERY_KIND]
+    long_words = [_built(kind, _longest_texts(kind, _LONG_WORD), {"photo": _image("wide")}) for kind in EVERY_KIND]
+    older = [_with_long_words(kind) for kind in _OLDER_KINDS]
+    capitals = themes.FAMILIES[family].uppercase > 0 and pair[0] not in themes._NO_CAPITALS
+    for uppercase in (False, True) if capitals else (False,):
+        theme = _with_fonts(_theme(family), *pair, uppercase=uppercase)
+        assert check_design(_deck_of(longest, theme, 1)) == [], (family, pair, uppercase)
+        deck = _deck_of(long_words + older, theme, 1)
+        overflowing = [finding for finding in check_design(deck) if finding.check == "overflow"]
+        assert [finding for finding in overflowing if not _in_circles(deck, finding)] == [], (family, pair, uppercase)
 
 
 def test_a_title_over_a_picture_is_drawn_over_it(images):

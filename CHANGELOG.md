@@ -184,6 +184,20 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   Comic Sans' light outline on a solid shadow; clip-art corporate's gradient with a soft shadow. PowerPoint draws
   them as text effects, so the text stays text (and editable), and previews with Pillow. A heading over a photo
   keeps its theme's text colour, and the design checks accept a text that reads by its outline.
+- Open fonts in themes: every family but the three for laughs has two pairings of open fonts with more personality,
+  from Google Fonts (SIL Open Font License 1.1), which a member has two times in three (`themes.OPEN_FONT_CHANCE`):
+  clean keynote Barlow, and Atkinson Hyperlegible; dark minimal IBM Plex Mono over Barlow, and Titillium Web;
+  corporate Poppins over Lato, and Lato; academic Crimson Text, and Spectral; startup Poppins, and Archivo Black over
+  Poppins; vintage paper Abril Fatface over Crimson Text, and Courier Prime; kids Mali, and Sniglet over Mali;
+  brutalist Archivo Black or Space Mono over IBM Plex Mono; neon Audiowide (never in capitals: too wide for the
+  longest titles) over Chakra Petch, and Chakra Petch. A member draws them after everything else, so a seed's member
+  keeps its colours and the rest. They're bundled in `data/fonts` (3.9 MB, credited in its README), so they measure
+  the same everywhere, and a themed .pptx carries the ones it uses inside it, regular and bold, as uncompressed
+  Embedded OpenType (`talkgenerator.render.embedding`), which PowerPoint shows where they aren't installed (a deck
+  grows by about 55 to 800 KB). Where a deck's own fonts aren't used (PowerPoint for the web, most likely Keynote), a
+  stand-in shows: each open font has an installed one (`talkgenerator.design.fonts.OPEN_FONTS`), its texts are fitted
+  to both, and its runs carry the font's PANOSE and pitch family, so the stand-in is of the same kind. Lato and
+  Poppins are Office cloud fonts, which PowerPoint for the web shows anyway.
 - Design checks for themed decks (`talkgenerator.checks.design`): every text reads on what's behind it (a photo
   counts as black or white, as shaded), fits its box, isn't too small, stays on the slide and isn't covered by what's
   drawn after it, and no slide has the layout of the slide before it where another fits. On 2,376 themed decks made
