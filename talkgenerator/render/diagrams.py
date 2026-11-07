@@ -9,6 +9,8 @@ circles' and quadrants' colours get their transparency in the fill's XML.
 A classic diagram has the template's colours; a themed one has its theme's, in a `DiagramStyle` that the layout
 engine picked (with colours that read on what's behind them), and its labels are measured in the theme's font. Where
 a diagram's labels go, and at what size, is `labels()`, which the renderer, the previews and the design checks share.
+A Venn diagram's labels go in its circles; when one doesn't fit there even at the smallest size (a long compound, as
+Dutch and German have them), they all go beside the circles instead (see `venn_layout_for`).
 
 A diagram whose `reveal` is "punchline" shows its punchline (a Venn diagram's overlap, a matrix's dot and its name) on
 a click (see `talkgenerator.render.animation`).
@@ -28,7 +30,7 @@ from pptx.oxml import parse_xml
 from pptx.oxml.ns import nsdecls, qn
 from pptx.util import Emu, Pt
 
-from talkgenerator.design import fit
+from talkgenerator.design import fit, fonts
 from talkgenerator.models.deck import Box as CanvasBox
 from talkgenerator.models.deck import DiagramStyle, MatrixDiagram, VennDiagram
 from talkgenerator.render import animation
@@ -54,6 +56,16 @@ QUADRANT_OPACITY: Final = 0.2
 _PAIR_OFFSET: Final = 0.58
 _TRIANGLE_OFFSET: Final = 0.5
 _TRIANGLE_DIRECTIONS: Final = ((-math.sqrt(3) / 2, -0.5), (math.sqrt(3) / 2, -0.5), (0.0, 1.0))
+# With its labels beside the circles, a Venn diagram's circles take at most half the frame's width (its labels the
+# rest, at either side), a label is this far from its circle, and the bottom one of three circles has its label
+# below it, in a band as tall as a share of the radius (a little below the circle)
+_BESIDE_WIDTH: Final = 0.5
+_BESIDE_GAP: Final = int(0.2 * _INCH)
+_BOTTOM_BAND: Final = 0.32
+_BOTTOM_GAP: Final = 0.06
+# How wide the overlap's label is then, as a share of the radius: it may spread over the circles, as their own
+# labels are beside them
+_BESIDE_OVERLAP: Final = 2.2
 
 # A matrix leaves room around it for the titles at the ends of its axes
 _SIDE_TITLE_WIDTH: Final = int(2.1 * _INCH)
@@ -70,6 +82,8 @@ _QUADRANT_NAMES: Final = ("Top left", "Top right", "Bottom left", "Bottom right"
 # The margins of a label's text box, inside it: at either side, and above and below its text
 _MARGIN_ACROSS: Final = int(0.05 * _INCH)
 _MARGIN_DOWN: Final = int(0.03 * _INCH)
+SMALLEST: Final = 12  # a label's smallest size, in points
+TEMPLATE_FONT: Final = "Calibri"  # the template's (talkgenerator bundles a twin of it, so it's measured everywhere)
 
 Align = Literal["left", "center", "right"]
 Anchor = Literal["top", "middle", "bottom"]
@@ -187,7 +201,7 @@ def labels(frame: Box, diagram: VennDiagram | MatrixDiagram, font: str | None = 
     """The diagram's texts in the frame, in the order they're drawn, each at the largest size at which it fits: in
     the font, if given (measured), else in the template's (estimated). Labels of one kind share one size."""
     if isinstance(diagram, VennDiagram):
-        return _venn_labels(frame, diagram, font)
+        return _venn_labels(venn_layout_for(frame, diagram, font), diagram, font)
     return _matrix_labels(frame, diagram, font)
 
 
@@ -196,21 +210,28 @@ def labels(frame: Box, diagram: VennDiagram | MatrixDiagram, font: str | None = 
 
 @dataclass(frozen=True)
 class VennLayout:
-    """Where a Venn diagram's circles and labels go: a circle's centre and radius, and the label boxes."""
+    """Where a Venn diagram's circles and labels go: a circle's centre and radius, the label boxes, and how a circle's
+    label lines up in its box (beside its circle, towards it)."""
 
     centres: tuple[tuple[float, float], ...]
     radius: float
     labels: tuple[Box, ...]  # one per circle
     overlap: Box
+    places: tuple[tuple[Align, Anchor], ...]  # one per circle
+    beside: bool = False  # the circles' labels are beside them, on the slide's background (not in them)
 
 
-def venn_layout(frame: Box, circles: int) -> VennLayout:
+def venn_layout(frame: Box, circles: int, beside: bool = False) -> VennLayout:
     """The circles as large as fit the frame, around its centre; every circle's label in the part of it that no other
-    circle covers, and the overlap's label in the middle, where they all overlap."""
+    circle covers, and the overlap's label in the middle, where they all overlap. Or, with the labels beside the
+    circles, the circles smaller (see _venn_beside)."""
     if circles not in (2, 3):
         raise ValueError(f"A Venn diagram has two or three circles, not {circles}")
+    if beside:
+        return _venn_beside(frame, circles)
     x, y = frame.centre
     centres: tuple[tuple[float, float], ...]
+    middle: tuple[Align, Anchor] = ("center", "middle")
     if circles == 2:
         offset = _PAIR_OFFSET
         radius = 0.92 * min(frame.height / 2, frame.width / (2 + 2 * offset))
@@ -218,7 +239,7 @@ def venn_layout(frame: Box, circles: int) -> VennLayout:
         # A label goes halfway between its circle's outer edge and the other circle's edge
         labels = tuple(Box.around(x + side * radius, y, 0.8 * radius, 1.1 * radius) for side in (-1, 1))
         overlap = Box.around(x, y, 0.72 * radius, 0.9 * radius)
-        return VennLayout(centres, radius, labels, overlap)
+        return VennLayout(centres, radius, labels, overlap, (middle, middle))
 
     offset = _TRIANGLE_OFFSET
     radius = 0.94 * min(frame.height / (2 + 1.5 * offset), frame.width / (2 + math.sqrt(3) * offset))
@@ -229,15 +250,77 @@ def venn_layout(frame: Box, circles: int) -> VennLayout:
         Box.around(x + dx * reach, y + dy * reach, 0.85 * radius, 0.6 * radius) for dx, dy in _TRIANGLE_DIRECTIONS
     )
     overlap = Box.around(x, y, 0.9 * radius, 0.6 * radius)
-    return VennLayout(centres, radius, labels, overlap)
+    return VennLayout(centres, radius, labels, overlap, (middle, middle, middle))
 
 
-def _venn_labels(frame: Box, venn: VennDiagram, font: str | None) -> list[Label]:
-    layout = venn_layout(frame, len(venn.circles))
+def _venn_beside(frame: Box, circles: int) -> VennLayout:
+    """The circles smaller, at most half the frame's width, around its centre: every circle's label beside its
+    circle, on its outer side (the first circle's on its left, the second's on its right, and the third's, of the
+    bottom circle, below it), aligned towards it; and the overlap's label in the middle, wider than in the circles (it
+    may spread over them, as their own labels are beside them)."""
+    x, y = frame.centre
+    centres: tuple[tuple[float, float], ...]
+    labels: tuple[Box, ...]
+    if circles == 2:
+        offset = _PAIR_OFFSET
+        radius = min(0.92 * frame.height / 2, _BESIDE_WIDTH * frame.width / (2 + 2 * offset))
+        centres = ((x - offset * radius, y), (x + offset * radius, y))
+        (left_x, _), (right_x, _) = centres
+        left = left_x - radius - _BESIDE_GAP  # (where the labels end, or start, beside the circles)
+        right = right_x + radius + _BESIDE_GAP
+        labels = (
+            Box(frame.left, round(y - 0.45 * radius), round(left - frame.left), round(0.9 * radius)),
+            Box(round(right), round(y - 0.45 * radius), round(frame.right - right), round(0.9 * radius)),
+        )
+        overlap = Box.around(x, y, _BESIDE_OVERLAP * radius, 0.9 * radius)
+        return VennLayout(centres, radius, labels, overlap, (("right", "middle"), ("left", "middle")), beside=True)
+
+    offset = _TRIANGLE_OFFSET
+    below = _BOTTOM_GAP + _BOTTOM_BAND  # (the bottom circle's label, under it)
+    radius = min(
+        0.94 * frame.height / (2 + 1.5 * offset + below), _BESIDE_WIDTH * frame.width / (2 + math.sqrt(3) * offset)
+    )
+    y -= (0.5 * offset + below) / 2 * radius  # (centred as a whole, with the bottom circle's label)
+    centres = tuple((x + dx * offset * radius, y + dy * offset * radius) for dx, dy in _TRIANGLE_DIRECTIONS)
+    (left_x, left_y), (right_x, right_y), (bottom_x, bottom_y) = centres
+    left = left_x - radius - _BESIDE_GAP
+    right = right_x + radius + _BESIDE_GAP
+    labels = (
+        Box(frame.left, round(left_y - 0.4 * radius), round(left - frame.left), round(0.8 * radius)),
+        Box(round(right), round(right_y - 0.4 * radius), round(frame.right - right), round(0.8 * radius)),
+        Box.around(
+            bottom_x, bottom_y + (1 + _BOTTOM_GAP + _BOTTOM_BAND / 2) * radius, 3 * radius, _BOTTOM_BAND * radius
+        ),
+    )
+    overlap = Box.around(x, y, _BESIDE_OVERLAP * radius, 0.6 * radius)
+    places: tuple[tuple[Align, Anchor], ...] = (("right", "middle"), ("left", "middle"), ("center", "top"))
+    return VennLayout(centres, radius, labels, overlap, places, beside=True)
+
+
+def venn_layout_for(frame: Box, venn: VennDiagram, font: str | None = None) -> VennLayout:
+    """Where the diagram's circles and labels go in the frame: its labels in its circles, if every one of them fits
+    its place there at the smallest size (in the font, if given, else in the template's); else beside them."""
+    inside = venn_layout(frame, len(venn.circles))
+    circles_fit = all(
+        fits(text, box, SMALLEST, font=font) for text, box in zip(venn.circles, inside.labels, strict=True)
+    )
+    if circles_fit and fits(venn.overlap, inside.overlap, SMALLEST, bold=True, font=font):
+        return inside
+    return venn_layout(frame, len(venn.circles), beside=True)
+
+
+def labels_beside(frame: Box, diagram: VennDiagram | MatrixDiagram, font: str | None = None) -> bool:
+    """Whether the diagram is a Venn diagram with its labels beside its circles (on the slide's background, then)."""
+    return isinstance(diagram, VennDiagram) and venn_layout_for(frame, diagram, font).beside
+
+
+def _venn_labels(layout: VennLayout, venn: VennDiagram, font: str | None) -> list[Label]:
     size = shared_size(venn.circles, layout.labels, 28, font=font)
     found = [
-        Label(f"Circle {number}: {text}", text, box, size)
-        for number, (text, box) in enumerate(zip(venn.circles, layout.labels, strict=True), 1)
+        Label(f"Circle {number}: {text}", text, box, size, align=align, anchor=anchor)
+        for number, (text, box, (align, anchor)) in enumerate(
+            zip(venn.circles, layout.labels, layout.places, strict=True), 1
+        )
     ]
     overlap_size = fitting_size(venn.overlap, layout.overlap, 32, bold=True, font=font)
     found.append(Label(f"Overlap: {venn.overlap}", venn.overlap, layout.overlap, overlap_size, bold=True, reveal=True))
@@ -245,15 +328,15 @@ def _venn_labels(frame: Box, venn: VennDiagram, font: str | None) -> list[Label]
 
 
 def draw_venn(slide: Any, frame: Box, venn: VennDiagram, look: Look = TEMPLATE) -> list[Any]:
-    """Two or three see-through circles with a label each, and the overlap's label (the punchline, which this returns)
-    where they all overlap."""
-    layout = venn_layout(frame, len(venn.circles))
+    """Two or three see-through circles with a label each (in it, or beside it), and the overlap's label (the
+    punchline, which this returns) where they all overlap."""
+    layout = venn_layout_for(frame, venn, look.font)
     for number, ((x, y), colour) in enumerate(zip(layout.centres, look.fills, strict=False), 1):
         circle = slide.shapes.add_shape(MSO_SHAPE.OVAL, *_emu(Box.around(x, y, 2 * layout.radius, 2 * layout.radius)))
         circle.name = f"Circle {number}"
         _style(circle, fill=colour, opacity=look.circle_opacity, line=colour)
     punchline = []
-    for label in _venn_labels(frame, venn, look.font):
+    for label in _venn_labels(layout, venn, look.font):
         shape = _add(slide, label, look)
         if label.reveal:
             punchline.append(shape)
@@ -463,31 +546,44 @@ def shared_size(
 
 
 def fitting_size(
-    text: str, box: Box, largest: int, *, bold: bool = False, smallest: int = 12, font: str | None = None
+    text: str, box: Box, largest: int, *, bold: bool = False, smallest: int = SMALLEST, font: str | None = None
 ) -> int:
     """The largest font size, in points, at which the text fits the box when wrapped between its words. In a font
     (a theme's), it's measured, as the layout engine measures texts (talkgenerator.design.fit). Else, it's estimated
-    for the template's font (Calibri) by the width of an average letter, about half the font size (a little more in
-    bold). PowerPoint doesn't shrink text to fit until it's edited, so the size has to be right from the start."""
+    for the template's font (see fits). PowerPoint doesn't shrink text to fit until it's edited, so the size has to
+    be right from the start."""
     if font is not None:
         area = text_area(box)
         fitted = fit.fit(
             text, area.w, area.h, font, 2 * largest, 2 * smallest, bold
         )  # (a canvas pixel is half a point)
         return max(smallest, round(fitted.size / 2))
-    width = box.width / _INCH - 0.1  # (the text box's margins)
-    height = box.height / _INCH - 0.06
-    words = text.split()
     for size in range(largest, smallest, -1):
-        letters = max(1, int(width / (size / 72 * (0.55 if bold else 0.5))))
-        if _lines(words, letters) * size / 72 * 1.2 <= height:
+        if fits(text, box, size, bold=bold):
             return size
     return smallest
 
 
+def fits(text: str, box: Box, size: int, *, bold: bool = False, font: str | None = None) -> bool:
+    """Whether the text fits the box at the size (in points), wrapped between its words. In a font, it's measured.
+    Else, the template's font (Calibri): its lines are estimated by the width of an average letter, about half the
+    font size (a little more in bold), and every word is measured, as PowerPoint breaks a word that's wider than the
+    line in the middle of it."""
+    area = text_area(box)
+    if font is not None:
+        return fit.fit(text, area.w, area.h, font, 2 * size, 2 * size, bold).fits
+    width = box.width / _INCH - 0.1  # (the text box's margins)
+    height = box.height / _INCH - 0.06
+    words = text.split()
+    letters = max(1, int(width / (size / 72 * (0.55 if bold else 0.5))))
+    if _lines(words, letters) * size / 72 * 1.2 > height:
+        return False
+    return all(fonts.text_width(word, TEMPLATE_FONT, 2 * size, bold) <= area.w for word in words)
+
+
 def _lines(words: list[str], letters: int) -> int:
     """How many lines the words take, wrapped between them, with at most this many letters on a line (a longer word
-    is broken over lines)."""
+    is counted as broken over lines, though it doesn't fit: see fits)."""
     lines, used = 0, letters  # (so the first word starts a line)
     for word in words:
         if len(word) > letters:

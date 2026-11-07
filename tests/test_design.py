@@ -15,7 +15,7 @@ from talkgenerator import generator, settings
 from talkgenerator.checks.deck import deck_metrics
 from talkgenerator.checks.design import check_design, check_variety
 from talkgenerator.design import color, engine, fit, fonts, themes, treatments
-from talkgenerator.models.deck import Deck, ImageElement, ShapeElement, TextElement, VennDiagram
+from talkgenerator.models.deck import Deck, ImageElement, ShapeElement, TextElement
 from talkgenerator.plan import languages
 from talkgenerator.plan.kinds import KINDS
 from talkgenerator.render import embedding, preview
@@ -411,14 +411,6 @@ def _with_long_words(kind):
     return _built(kind, texts, {slot: _image("wide") for slot in KINDS[kind].images})
 
 
-def _in_circles(deck, finding):
-    """Whether the finding is about a Venn diagram's labels, which go inside its circles: with three circles, a
-    20-letter word doesn't fit there even at 12 points, in any of the themes' fonts."""
-    slide = deck.slides[finding.slide - 1]
-    venn = slide.type == "diagram" and isinstance(slide.element("diagram").diagram, VennDiagram)
-    return venn and finding.message.startswith("the diagram's")
-
-
 @pytest.mark.parametrize("family", FAMILIES)
 def test_long_words_fit_the_older_layouts_in_every_theme(images, family):
     fitting = {kind: engine.layouts_for(_with_long_words(kind).to_deck_slide()) for kind in _OLDER_KINDS}
@@ -429,8 +421,8 @@ def test_long_words_fit_the_older_layouts_in_every_theme(images, family):
         deck = _deck_of(made, _theme(family, seed), seed)
         # (a title slide's layout is named for its theme's alignment, as v5/title-left)
         seen |= {"v5/title" if slide.type == "title" else slide.layout for slide in deck.slides}
-        overflowing = [finding for finding in check_design(deck) if finding.check == "overflow"]
-        assert [finding for finding in overflowing if not _in_circles(deck, finding)] == [], (family, seed)
+        # (a Venn diagram's labels too: they go beside its circles, as they don't fit in them)
+        assert [finding for finding in check_design(deck) if finding.check == "overflow"] == [], (family, seed)
     assert {layout for layouts in fitting.values() for layout in layouts} <= seen
 
 
