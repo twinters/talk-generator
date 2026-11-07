@@ -180,8 +180,9 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   and `famous_pun` ("Albert Einstone" for geology; never a real name as it is, nor a living person's or a
   dictator's) by default, and `classic`, the random first and last name of 2019. The language model that writes
   the talk writes the name in the same request, in the talk's language and before the presenter's job, which
-  agrees with it; a name that won't do (too long, template code, a placeholder, a name on a short blocklist) is
-  made up by talkgenerator instead. Talks without a language model get a name from talkgenerator's own pack
+  agrees with it, after first writing what the name will play on (which isn't shown), and is shown two names of the
+  style for other topics, with what they play on; a name that won't do (too long, template code, a placeholder, a
+  name on a short blocklist, a famous name as it is, a copy of an example) is made up by talkgenerator instead. Talks without a language model get a name from talkgenerator's own pack
   (`data/text-templates/presenter_names.json`: 279 names by style and topic, drafted with a language model) when
   their topic is one it has names for, and a classic one otherwise, the same as before for the same seed. A given
   name still goes first and never reaches the model; `talk.started` and the deck carry the name the talk got.

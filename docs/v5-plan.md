@@ -428,13 +428,14 @@ its seed picks among the switched-on ones (`name_styles=` on `generate_presentat
 - **One request.** The model writes the name in the spine, after the title and before the presenter's job, which
   agrees with it (a "Prof." is a professor of something). `talk.started` doesn't wait longer: the spine is in
   before the first slide. The prompt shows two names of the style for other topics than the talk's, drawn by the
-  talk's dice from the pack below, and a name that copies one of them is turned down, as free models copy
+  talk's dice from the pack below, with what they play on ("'Anna Tomy' (anatomy) for medicine", "'Albert
+  Einstone' (Albert Einstein) for geology"), and a name that copies one of them is turned down, as free models copy
   examples.
 - **Checked like the other fields.** A name is turned down when it's longer than 45 characters (a name isn't cut:
   half a name is no name), holds template code or what no name has (digits, brackets, commas), is a placeholder
-  ("Presenter Name", in the talks' languages), or names a dictator or one of the living people models reach for
-  most (a short blocklist, which word beginnings match too: "Donald Trumpet"). Then the talk gets the name a talk
-  without a model gets.
+  ("Presenter Name", in the talks' languages), names a dictator or one of the living people models reach for
+  most (a short blocklist, which word beginnings match too: "Donald Trumpet"), or is the real name of a famous person
+  whose name the pack bends ("Marie Curie"). Then the talk gets the name a talk without a model gets.
 - **The talk's language.** The model writes the name in it, with wordplay that works in that language.
 - **Without a model** (none configured, the quota used up, a refusal, or a name that won't do), the name comes
   from talkgenerator's own pack (`data/text-templates/presenter_names.json`, D32): 279 names by style and topic,
@@ -448,6 +449,25 @@ its seed picks among the switched-on ones (`name_styles=` on `generate_presentat
 - **Determinism.** The style, the examples and the pack's name all come from the talk's seed (streams under
   `presenter`), and the styles' order doesn't matter, so the same seed with the same answers gives the same name,
   streamed or made at once.
+- **What it plays on, first.** For a written name, the model first writes what the name will play on
+  (`name_plays_on`, not shown: a word about the topic, or a famous person and a word), then the name. The field
+  sorts before the slides, also for the free models that write the answer's fields in alphabetical order.
+
+Live on 2026-11-07, with OpenRouter's free router (3-slide talks, seed 1, one request each, $0):
+
+- First round, 11 talks (10 streamed): every name was the model's, and `talk.started` had the deck's name in every
+  streamed talk (2 to 11 s after the start). Fun surnames came out well ("Dr. Agnes Hiveborne" for bees, "Dr.
+  Alistair Magma" for volcanoes, "Dr. Barnaby Brewster" for coffee), and the Dutch ones best ("Dr. Miauwke Poezema"
+  for katten, "Dr. Eva Tandwiel" for fietsen). Puns hit and missed ("Dr. Penny Guine" for penguins, but "Dr.
+  Numeralis" for maths and "Dr. Alistair Plague" for medicine), and the famous-name puns bent no one's name ("Dr.
+  Bede Stonecrop" for geology, "Prof. Octavius Sockwell" for socks).
+- With the examples' meanings in the prompt ("'Anna Tomy' (anatomy) for medicine"): "Prof. Curd N. Whey" for
+  cheese, but still no famous name ("Dr. Bede of Stratford" for geology, "Prof. Peter Pillage" for pirates).
+- With `name_plays_on` too: famous-name puns that show whose name they bend ("Dr. Leonardo da Stone" for geology,
+  on Leonardo da Vinci; "Dr. Joan of Sock" for socks, on Joan of Arc; "Dr. Thom Owlina" for owls, on Thomas
+  Aquinas; "Dr. Marco Pillarate" for pirates, on Marco Polo). Puns stay hit and miss with the free models ("Dr.
+  Rail Thane" for trains, "Dr. Chayze" for cheese).
+- The seed's dice gave every talk the same persona (a medieval historian), which shows in the names ("Bede").
 
 ## 6. Agent mode: talkgenerator as a Claude Skill
 

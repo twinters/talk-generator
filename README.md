@@ -69,9 +69,9 @@ Set `TALKGENERATOR_CACHE_DIR` to put the cache elsewhere, or `DISABLE_CACHE=1` t
 
 ### Language models
 
-A language model can write the talk: the generator still picks the slides (with the talk's seed), and the model writes what goes on them, as one talk with a thesis, callbacks to earlier slides and a made-up job for the presenter.
+A language model can write the talk: the generator still picks the slides (with the talk's seed), and the model writes what goes on them, as one talk with a thesis, callbacks to earlier slides, and a made-up name and job for the presenter.
 A slide the model gets wrong comes from the classic generator instead, and so does the whole talk when the model isn't available.
-The presenter's name is never sent to the model.
+A name you give with `--presenter` is never sent to the model.
 
 | Provider | `--llm` | Key | Install | Cost |
 | --- | --- | --- | --- | --- |
@@ -111,7 +111,8 @@ For a settings menu, `talkgenerator.design.themes.catalog()` lists every theme w
 | `--schema` | The presentation schema to use: `default`, `ted` (only copyright-free images), `interview` (no "about me" slides) or `test` |
 | `--list` | List the schemas and the slide generators each one uses, then exit |
 | `--title` | Title of the presentation. Either `topic` or this one should be set (just setting `topic` is usually more fun though). With only a title, its rarest word becomes the topic |
-| `--presenter` | The name that will be present on the first slide. Leave blank for an automatically generated name |
+| `--presenter` | The name that will be present on the first slide. Leave blank for a made-up one (see `--name_styles`) |
+| `--name_styles` | Without `--presenter`, the kinds of made-up names the talk's seed picks from, separated by commas: `pun` ("Prof. Anna Tomy" for a talk on medicine), `fun_surname` ("Linda Hivesworth" for bees), `famous_pun` ("Albert Einstone" for geology) and `classic` (a random first and last name, as in 2019). The language model writes the name; without one, talkgenerator has names of its own for many topics, and makes up a classic one otherwise (*default: `pun,fun_surname,famous_pun`*) |
 | `--output_folder` | The folder to output the generated presentations (*default: `./output/`*) |
 | `--save_ppt` | If this flag is true (*default*), the generated powerpoint will be saved in the `output_folder` |
 | `--open_ppt` | If this flag is true (*default*), the generated powerpoint will automatically open after generating |
