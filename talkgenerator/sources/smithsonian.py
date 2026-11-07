@@ -1,4 +1,4 @@
-"""CC0 images of the Smithsonian's museums and archives (https://www.si.edu/openaccess). Needs SMITHSONIAN_API_KEY.
+"""CC0 images of the Smithsonian's museums and archives (https://www.si.edu/openaccess). Needs DATA_GOV_API_KEY.
 
 Its Open Access API takes a free key from api.data.gov (https://api.data.gov/signup/), which allows 1,000 requests an
 hour; searches are cached for 30 days (see http_util.CACHE_EXPIRY). Only CC0 images are asked for, from its IIIF
@@ -40,7 +40,7 @@ _cooldown = http_util.Cooldown("Smithsonian Open Access")
 def _api_key() -> str | None:
     if settings.is_source_disabled("SMITHSONIAN"):
         return None
-    return settings.smithsonian_auth()["smithsonian_api_key"] or None
+    return settings.data_gov_auth()["data_gov_api_key"] or None
 
 
 def available() -> bool:
@@ -70,7 +70,8 @@ def _map_row(row: dict[str, Any]) -> ImageData | None:
     shown = media[0]
     ids_id = quote(str(shown["idsId"]), safe="")
     freetext = content.get("freetext") or {}
-    artist = _text(freetext.get("name")) or "Unknown artist"
+    # (its names come with their lives: "Thomas Eakins, American, b. Philadelphia, Pennsylvania, 1844–1916")
+    artist = _text(freetext.get("name")).split(",")[0].strip() or "Unknown artist"
     museum = str(record.get("data_source") or "Smithsonian Institution")
     page = record.get("record_link") or (RECORD_URL.format(row["url"]) if row.get("url") else None)
     name, license_url = licenses.CC0

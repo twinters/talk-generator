@@ -306,6 +306,7 @@ PROFILES: Final[dict[str, Profile]] = {
                 SourceUse("met", 1, params=_OLD_PHOTOGRAPHS),
                 SourceUse("art-institute", 0.7, params=_OLD_PHOTOGRAPHS),
                 SourceUse("cleveland", 0.5, params=_OLD_PHOTOGRAPHS),
+                SourceUse("smithsonian", 0.5, params={"type": "photograph"}),
                 SourceUse("openverse", 0.5, params={"category": "photograph", "sources": _ARCHIVES}),
                 SourceUse("unsplash", 0.5, query="{} vintage", params={"color": "black_and_white"}),
                 SourceUse("pixabay", 0.5, query="{} vintage", params={"colors": "grayscale"}),
@@ -357,6 +358,7 @@ PROFILES: Final[dict[str, Profile]] = {
                 SourceUse("art-institute", 3),
                 SourceUse("met", 3),
                 SourceUse("cleveland", 2),
+                SourceUse("smithsonian", 1.5),
                 SourceUse("openverse", 1, params={"sources": _MUSEUMS}),
                 SourceUse("wellcome", 0.5),
                 SourceUse("wikimedia", 0.7, query='{} deepcat:"Paintings"'),
@@ -367,6 +369,7 @@ PROFILES: Final[dict[str, Profile]] = {
             "space and science, as NASA and the like photograph it",
             (
                 SourceUse("nasa", 4),
+                SourceUse("smithsonian", 1),  # (the National Air and Space Museum's objects, among others)
                 SourceUse("wikimedia", 1, query='{} deepcat:"Images from NASA"'),
                 SourceUse("openverse", 2, params={"sources": "nasa,spacex,smithsonian_air_and_space_museum"}),
                 SourceUse("unsplash", query="{} space"),

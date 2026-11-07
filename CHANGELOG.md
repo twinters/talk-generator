@@ -228,15 +228,15 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   its filters: **The Met** (public domain artworks, CC0; its search since October 2026, v1.1, and an object per
   request), the **Cleveland Museum of Art** (CC0), the **Wellcome Collection** (medicine, science and odd history:
   public domain and CC BY, asked for by license), the **Smithsonian** (CC0; needs a free api.data.gov key,
-  `SMITHSONIAN_API_KEY`), **NASA's Image and Video Library** (public domain, leaving out pictures it notes as
+  `DATA_GOV_API_KEY`), **NASA's Image and Video Library** (public domain, leaving out pictures it notes as
   someone else's; NASA's take on almost anything: pizza aboard the space station), **Flagpedia's flags** (public
   domain, by a country's name) and **Imgflip's meme templates** (fair use, for the memes above). None but the
   Smithsonian needs a key, and every one loads in a browser from its own server (display `direct`). The museums
   take one filter vocabulary in a look's source parameters: a type (painting, photograph, print, drawing,
   sculpture) and the years after and before which it was made, which the Art Institute of Chicago's search now
   takes too. They joined the looks they fit: `museum` (all the museums), `vintage` (old photographs from the Met,
-  the Art Institute and Cleveland), `old-photo`, `portrait` and `old-people` (the museums' portraits),
-  `space-science` (NASA first), `illustration` (Wellcome's prints and drawings) and `weird-stock` (now and then
+  the Art Institute, Cleveland and the Smithsonian), `old-photo`, `portrait` and `old-people` (the museums'
+  portraits), `space-science` (NASA first, and the Smithsonian's Air and Space Museum), `illustration` (Wellcome's prints and drawings) and `weird-stock` (now and then
   NASA's or Wellcome's odd pictures, for the `ted` format's punchlines); and two new looks, `meme-templates` and
   `country` (where the presenter comes from: its flag now and then, else photos of it). Their search answers are
   cached for 7 to 30 days.

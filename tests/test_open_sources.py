@@ -67,7 +67,7 @@ def test_wellcome_collection():
     assert {image.license_class for image in found} <= {"public-domain", "open"}
 
 
-@requires_keys("SMITHSONIAN_API_KEY")
+@requires_keys("DATA_GOV_API_KEY")
 def test_smithsonian():
     _assert_credited_images(smithsonian.search_images("sunflowers", "painting"))
 

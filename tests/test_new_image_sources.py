@@ -158,7 +158,7 @@ def test_the_smithsonian_needs_a_key(answers, monkeypatch):
 
 
 def test_the_smithsonian_keeps_its_cc0_images(answers, monkeypatch):
-    monkeypatch.setattr(settings, "smithsonian_auth", lambda: {"smithsonian_api_key": "test"})
+    monkeypatch.setattr(settings, "data_gov_auth", lambda: {"data_gov_api_key": "test"})
     answers[smithsonian.API_URL] = fixture("smithsonian.json")
     found = smithsonian.search_images("sunflowers", "painting")
     assert len(found) == 2  # (not the one whose image has usage conditions)
@@ -169,6 +169,23 @@ def test_the_smithsonian_keeps_its_cc0_images(answers, monkeypatch):
     assert first.declared_size == (1600, 1416)  # (scaled to what its image server serves)
     _, params = _requests(answers)[0]
     assert params["q"] == 'sunflowers AND online_media_type:Images AND media_usage:CC0 AND object_type:"Paintings"'
+
+
+def test_the_smithsonian_credits_a_name_without_its_life():
+    row = fixture("smithsonian.json")["response"]["rows"][0]
+    named = {
+        **row,
+        "content": {
+            **row["content"],
+            "freetext": {
+                "name": [
+                    {"label": "Artist", "content": "Thomas Eakins, American, b. Philadelphia, Pennsylvania, 1844–1916"}
+                ]
+            },
+        },
+    }
+    image = smithsonian._map_row(named)
+    assert image is not None and image.get_source() == "Thomas Eakins (Cooper Hewitt, Smithsonian Design Museum)"
 
 
 # NASA
@@ -318,8 +335,8 @@ def test_the_new_sources_join_the_looks_they_fit():
         return {use.source for use in profiles.profile(look).sources}
 
     assert {"met", "cleveland", "art-institute", "wellcome"} <= sources("museum")
-    assert "nasa" in sources("space-science")
-    assert {"met", "art-institute", "cleveland"} <= sources("vintage")
+    assert {"nasa", "smithsonian"} <= sources("space-science") and "smithsonian" in sources("museum")
+    assert {"met", "art-institute", "cleveland", "smithsonian"} <= sources("vintage")
     assert {"met", "cleveland"} <= sources("portrait") and {"met", "cleveland"} <= sources("old-people")
     assert {"nasa", "wellcome"} <= sources("weird-stock")
     assert "flags" in sources("country") and sources("meme-templates") == {"imgflip"}
