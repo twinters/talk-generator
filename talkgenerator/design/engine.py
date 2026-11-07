@@ -8,6 +8,7 @@ the theme's background and decoration. With style_chaos, slides get themes of th
 
 from __future__ import annotations
 
+import itertools
 import math
 from collections import Counter
 from collections.abc import Callable, Mapping, Sequence
@@ -33,6 +34,7 @@ from talkgenerator.models.deck import (
     VennDiagram,
 )
 from talkgenerator.models.theme import Theme
+from talkgenerator.render import diagrams  # (where a diagram's labels go: in its shapes, or beside them)
 from talkgenerator.util import random_util
 
 WIDTH: Final = 1920
@@ -254,7 +256,7 @@ def lay_out_slide(
         elif isinstance(element, ChartElement):
             content.append(element.model_copy(update={"box": box}))
         elif isinstance(element, DiagramElement):
-            content.append(element.model_copy(update={"box": box, "style": diagram_style(element.diagram, theme)}))
+            content.append(element.model_copy(update={"box": box, "style": diagram_style(element.diagram, theme, box)}))
     elements = [*backdrop, *content, *placement.overlays, *texts]
     # The credits read on what's behind them: the background (and the shapes on it, such as a panel), or a photo
     # (which could be anything) under a shade
@@ -337,11 +339,12 @@ def _backgrounds(theme: Theme) -> list[str]:
     return [palette.background, *([theme.gradient_to] if theme.background == "gradient" and theme.gradient_to else [])]
 
 
-def diagram_style(diagram: VennDiagram | MatrixDiagram, theme: Theme) -> DiagramStyle:
-    """A diagram's look in the theme: its labels in the theme's body font and text colour, its circles or quadrants
-    in the theme's accents (and two hues a third of the way round from them), and its punchline in the colour that
-    stands out. Circles and quadrants get lighter or darker (keeping their hue) until the text reads on them, and
-    where they overlap: the theme's text reads on its background, so on a lighter or darker shade of it too."""
+def diagram_style(diagram: VennDiagram | MatrixDiagram, theme: Theme, box: Box) -> DiagramStyle:
+    """A diagram's look in the theme, in its box: its labels in the theme's body font and text colour, its circles or
+    quadrants in the theme's accents (and two hues a third of the way round from them), and its punchline in the
+    colour that stands out. Circles and quadrants get lighter or darker (keeping their hue) until the text reads on
+    them, and where they overlap: the theme's text reads on its background, so on a lighter or darker shade of it
+    too. (A Venn diagram's labels beside its circles read on the background, and the text colour is picked so.)"""
     palette = theme.palette
     backgrounds = _backgrounds(theme)
     opacity = DIAGRAM_OPACITY[diagram.diagram_type]
@@ -352,8 +355,9 @@ def diagram_style(diagram: VennDiagram | MatrixDiagram, theme: Theme) -> Diagram
         *(color.hsl(hue + 120, saturation, lightness) for hue, saturation, lightness in turned),
     )
     overlapping = len(diagram.circles) if isinstance(diagram, VennDiagram) else 0
-    fills = _readable_fills(accents, palette.text, backgrounds, opacity, overlapping)
-    labels, punchline, lines = diagram_behind(diagram, fills, opacity, backgrounds)
+    beside = diagrams.labels_beside(diagrams.Box.on_canvas(box), diagram, theme.fonts.body)
+    fills = _readable_fills(accents, palette.text, backgrounds, opacity, overlapping, pairs=beside)
+    labels, punchline, lines = diagram_behind(diagram, fills, opacity, backgrounds, beside)
     return DiagramStyle(
         font=theme.fonts.body,
         fills=fills,
@@ -366,11 +370,17 @@ def diagram_style(diagram: VennDiagram | MatrixDiagram, theme: Theme) -> Diagram
 
 
 def _readable_fills(
-    fills: Sequence[str], text: str, backgrounds: Sequence[str], opacity: float, overlapping: int
+    fills: Sequence[str],
+    text: str,
+    backgrounds: Sequence[str],
+    opacity: float,
+    overlapping: int,
+    pairs: bool = False,
 ) -> tuple[str, ...]:
     """The fills, each the nearest shade of it (by its lightness: lighter under dark text, darker under light text)
     on which the text reads, over every background; and with the first ones (as many as overlap) shaded further, if
-    the text doesn't read where they all overlap yet."""
+    the text doesn't read where they all overlap yet (or, with pairs, where any two of them overlap: a Venn diagram's
+    overlap with its labels beside the circles may spread over those parts)."""
     lighter = color.luminance(text) < color.luminance(backgrounds[0])
 
     def shade(fill: str, steps: int) -> str:
@@ -380,10 +390,14 @@ def _readable_fills(
     def reads(*layers: str) -> bool:
         return color.worst_contrast(text, _under(backgrounds, layers, opacity)) >= color.BODY_CONTRAST
 
+    def reads_where_they_overlap(circles: Sequence[str]) -> bool:
+        together = [tuple(circles), *(itertools.combinations(circles, 2) if pairs else ())]
+        return all(reads(*layers) for layers in together)
+
     steps = [next((step for step in range(21) if reads(shade(fill, step))), 20) for fill in fills]
     shaded = [shade(fill, step) for fill, step in zip(fills, steps, strict=True)]
     for more in range(1, 21):
-        if overlapping < 2 or reads(*shaded[:overlapping]):
+        if overlapping < 2 or reads_where_they_overlap(shaded[:overlapping]):
             break
         shaded = [shade(fill, step + more) for fill, step in zip(fills, steps, strict=True)]
     return tuple(shaded)
@@ -401,17 +415,26 @@ def _under(backgrounds: Sequence[str], layers: Sequence[str], opacity: float) ->
 
 
 def diagram_behind(
-    diagram: VennDiagram | MatrixDiagram, fills: Sequence[str], opacity: float, backgrounds: Sequence[str]
+    diagram: VennDiagram | MatrixDiagram,
+    fills: Sequence[str],
+    opacity: float,
+    backgrounds: Sequence[str],
+    beside: bool = False,
 ) -> tuple[list[str], list[str], list[str]]:
     """What may be behind a diagram's labels, its punchline's name and its lines: the backgrounds, under the circles
-    or quadrants they're on (where a Venn diagram's circles overlap, under all of them)."""
+    or quadrants they're on (where a Venn diagram's circles overlap, under all of them). A Venn diagram's labels
+    beside its circles are on the backgrounds themselves, and its overlap's label may then spread over every part of
+    the middle (where two circles overlap, too)."""
 
     def under(*layers: str) -> list[str]:
         return _under(backgrounds, layers, opacity)
 
     if isinstance(diagram, VennDiagram):
         circles = fills[: len(diagram.circles)]
-        return [*(mixed for circle in circles for mixed in under(circle)), *under(*circles)], [], []
+        labels = [*(mixed for circle in circles for mixed in under(circle)), *under(*circles)]
+        if beside:
+            labels += [*backgrounds, *(mixed for pair in itertools.combinations(circles, 2) for mixed in under(*pair))]
+        return labels, [], []
     tints = [mixed for quadrant in fills[:4] for mixed in under(quadrant)]
     # The axes' titles are outside the matrix, on the background; the axes cross it, and reach beyond it
     return [*tints, *backgrounds], tints, [*tints, *backgrounds]

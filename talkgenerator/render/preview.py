@@ -434,7 +434,7 @@ def _diagram(canvas: Image.Image, element: DiagramElement, scale: float) -> None
     see_through = round(255 * style.opacity)
     line = max(1, round(4 * scale))  # (2 points)
     if isinstance(diagram, VennDiagram):
-        layout = diagrams.venn_layout(frame, len(diagram.circles))
+        layout = diagrams.venn_layout_for(frame, diagram, style.font)  # (its labels in its circles, or beside them)
         radius = layout.radius
         for (x, y), fill in zip(layout.centres, style.fills, strict=False):
             layer = Image.new("RGBA", canvas.size, (0, 0, 0, 0))  # (a layer each, so that where they overlap, they mix)

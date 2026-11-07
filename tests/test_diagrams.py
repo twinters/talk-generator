@@ -7,14 +7,16 @@ import math
 
 import pytest
 from pptx.enum.shapes import MSO_SHAPE_TYPE
+from pptx.enum.text import PP_ALIGN
 from pptx.oxml.ns import qn
 from pydantic import ValidationError
 
 from talkgenerator.checks.deck import check_completeness, check_language, check_leftovers
 from talkgenerator.checks.design import check_design
 from talkgenerator.datastructures.slide_generator_data import SlideGeneratorData
-from talkgenerator.design import color, engine, themes
+from talkgenerator.design import color, engine, fonts, themes
 from talkgenerator.models import classic
+from talkgenerator.models.deck import Box as CanvasBox
 from talkgenerator.models.deck import Deck, DeckSlide, DiagramElement, MatrixDiagram, TextElement, VennDiagram
 from talkgenerator.models.plan import SlidePlan
 from talkgenerator.plan import external, languages, prompt
@@ -157,6 +159,85 @@ def test_a_venn_diagram_takes_two_or_three_circles():
     )
     with pytest.raises(ValueError):
         render_slide(powerpoint_slide_creator.create_new_powerpoint(), deck_slide)
+
+
+# Dutch compounds of 19 and 20 letters: wider than a label's place in three circles under a title even at 12 points,
+# in every one of the themes' fonts; and of 28 letters, wider than a circle of the template's
+_COMPOUNDS = ("Vulkaanuitbarstingen", "Brandweerkazernedeur", "Verjaardagsfeestjes")
+_LONGEST = "Brandweerkazernedeurgrendels"
+
+
+def _distance(centre, box):
+    """How far a point is from the nearest point of a box."""
+    (x, y) = centre
+    return math.hypot(max(box.left - x, 0, x - box.right), max(box.top - y, 0, y - box.bottom))
+
+
+@pytest.mark.parametrize("circles", [2, 3])
+def test_labels_that_dont_fit_in_the_circles_go_beside_them(circles):
+    frame = diagrams.Box.on_canvas(CanvasBox(x=96, y=236, w=1728, h=744))  # (v5/diagram's box, under a title)
+    venn = VennDiagram(circles=_COMPOUNDS[:circles], overlap="Kattenliefhebbers")
+
+    layout = diagrams.venn_layout_for(frame, venn, "Verdana")
+
+    assert layout.beside and layout.radius < diagrams.venn_layout(frame, circles).radius  # (smaller circles)
+    for index, box in enumerate(layout.labels):  # outside every circle, nearest its own
+        assert all(_distance(centre, box) >= layout.radius for centre in layout.centres)
+        own = math.dist(box.centre, layout.centres[index])
+        assert all(own < math.dist(box.centre, centre) for centre in layout.centres if centre != layout.centres[index])
+        assert (
+            frame.left <= box.left and box.right <= frame.right and frame.top <= box.top and box.bottom <= frame.bottom
+        )
+    # The first circle's label on its left, the second's on its right, the bottom one's below it: towards its circle
+    assert layout.places == (("right", "middle"), ("left", "middle"), ("center", "top"))[:circles]
+    assert all(math.dist(layout.overlap.centre, centre) < layout.radius for centre in layout.centres)
+    for label in diagrams.labels(frame, venn, "Verdana"):  # (every label fits, at a size that reads)
+        assert label.size >= 16 and diagrams.fits(label.text, label.box, label.size, bold=label.bold, font="Verdana")
+
+
+def test_labels_that_fit_in_the_circles_stay_there():
+    frame = diagrams.Box.on_canvas(CanvasBox(x=96, y=236, w=1728, h=744))
+    ordinary = [
+        VennDiagram(circles=("Things I love", "Things that love me back"), overlap="Cheese"),
+        VennDiagram(circles=("Alchemists", "Astronomers", "Cartographers"), overlap="The Purrluminous Epiphany"),
+        VennDiagram(circles=("Katten", "Honden", "Kinderen"), overlap="Kattenvoer"),
+    ]
+    bodies = {body for family in themes.FAMILIES.values() for _, body in family.fonts}  # (the themes' label fonts)
+    for venn in ordinary:
+        for font in bodies:
+            assert diagrams.venn_layout_for(frame, venn, font) == diagrams.venn_layout(frame, len(venn.circles))
+
+
+@pytest.mark.parametrize("circles", [2, 3])
+def test_a_classic_venn_diagram_puts_labels_that_dont_fit_beside_its_circles(circles):
+    texts = {"circle_1": _LONGEST, **({"circle_3": "Katten"} if circles == 3 else {})}
+    ppt_slide, shapes, presentation = _drawn(_venn(**texts))
+    rings = [shapes[f"Circle {number}"] for number in range(1, circles + 1)]
+    labels = [shapes[name] for name in shapes if name.startswith("Circle ") and ":" in name]
+
+    for index, label in enumerate(labels):  # beside its circle: outside every circle, nearest its own
+        assert not any(_inside(_centre(label), ring) for ring in rings)
+        own = math.dist(_centre(label), _centre(rings[index]))
+        assert all(own < math.dist(_centre(label), _centre(ring)) for ring in rings if ring is not rings[index])
+    assert [label.text_frame.paragraphs[0].alignment for label in labels] == [
+        PP_ALIGN.RIGHT,
+        PP_ALIGN.LEFT,
+        PP_ALIGN.CENTER,
+    ][:circles]
+    assert all(_inside(_centre(shapes["Overlap: Cheese"]), ring) for ring in rings)  # the punchline: in the middle
+    for shape in [*labels, shapes["Overlap: Cheese"]]:  # whole words, in their boxes
+        run = shape.text_frame.paragraphs[0].runs[0]
+        box = diagrams.Box(shape.left, shape.top, shape.width, shape.height)
+        assert diagrams.fits(run.text, box, round(run.font.size.pt), bold=bool(run.font.bold))
+    assert _on_the_slide(ppt_slide, presentation)
+
+
+def test_a_classic_label_keeps_its_words_whole():
+    box = diagrams.Box(0, 0, int(1.87 * 914400), int(2.34 * 914400))  # (where two circles of the template overlap)
+    size = diagrams.fitting_size("Volcanoes", box, 32, bold=True)
+    assert size < 32  # (at 32 points, PowerPoint broke the word in two: "Volcanoe" and "s")
+    assert fonts.text_width("Volcanoes", diagrams.TEMPLATE_FONT, 2 * size, True) <= diagrams.text_area(box).w
+    assert diagrams.fitting_size("Cheese", box, 32, bold=True) == 32  # (a word that fits is as large as ever)
 
 
 # 2×2 MATRICES
@@ -687,3 +768,64 @@ def test_a_themed_diagrams_preview_shows_its_circles():
     point = (round(x / diagrams.EMU_PER_PIXEL), round((y - 0.6 * radius) / diagrams.EMU_PER_PIXEL))  # its own part
     expected = color.rgb(color.mix(slide.background.color, element.style.fills[0], element.style.opacity))
     assert all(abs(a - b) <= 2 for a, b in zip(picture.getpixel(point), expected, strict=True))
+
+
+def _venn_of(circles, overlap, title="Wat katten willen"):
+    return slides.DiagramSlide(title, VennDiagram(circles=circles, overlap=overlap, reveal="punchline"))
+
+
+@pytest.mark.parametrize("family", list(themes.FAMILIES))
+def test_venn_diagrams_with_long_words_fit_and_read_in_every_theme(family):
+    made = [
+        _venn_of(circles, overlap, title)
+        for title in ("Wat katten willen", None)
+        for circles, overlap in (
+            (_COMPOUNDS[:2], "Kattenliefhebbers"),
+            (_COMPOUNDS, "Kattenliefhebbers"),
+            (("Katten", "Honden", "Kinderen"), "Vulkaanuitbarstingen"),  # (only the punchline is long)
+        )
+    ]
+    for seed in range(3):
+        deck, _ = _themed(*made, family=family, seed=seed)
+        # (labels beside the circles are on the background: they read on it, and so does the overlap's label where
+        # it spreads over two circles)
+        assert check_design(deck) == [], (family, seed)
+        three = deck.slides[1].element("diagram")  # (three circles under a title: never in the circles)
+        assert diagrams.labels_beside(diagrams.Box.on_canvas(three.box), three.diagram, three.style.font)
+
+
+def test_labels_beside_the_circles_read_on_the_background():
+    venn = VennDiagram(circles=("Katten", "Honden", "Kinderen"), overlap="Vulkaanuitbarstingen")
+    fills, backgrounds = ("#cc3333", "#33cc33", "#3333cc"), ["#fafafa"]
+    inside, _, _ = engine.diagram_behind(venn, fills, 0.45, backgrounds)
+    beside, _, _ = engine.diagram_behind(venn, fills, 0.45, backgrounds, beside=True)
+    pair = color.mix(color.mix("#fafafa", "#cc3333", 0.45), "#3333cc", 0.45)  # (where the first and third overlap)
+    assert set(inside) < set(beside) and "#fafafa" in beside and pair in beside
+    assert "#fafafa" not in inside and pair not in inside
+
+
+def test_a_themed_diagrams_preview_draws_its_circles_beside_its_labels():
+    # (in Verdana, where neither "Brandweerkazernedeur" nor the overlap fits two circles under a title)
+    deck, theme = _themed(_venn_of(_COMPOUNDS[:2], "Kattenliefhebbers"), family="dark minimal", seed=1)
+    slide = deck.slides[0]
+    element = slide.element("diagram")
+    frame = diagrams.Box.on_canvas(element.box)
+    layout, inside = (
+        diagrams.venn_layout_for(frame, element.diagram, element.style.font),
+        diagrams.venn_layout(frame, 2),
+    )
+    assert layout.beside and slide.background is not None and slide.background.color_2 is None
+
+    picture = preview.slide_image(slide, theme, width=1920)  # (a pixel of the canvas each)
+
+    def pixel(x, y):
+        return picture.getpixel((round(x / diagrams.EMU_PER_PIXEL), round(y / diagrams.EMU_PER_PIXEL)))
+
+    def close(found, expected):
+        return all(abs(a - b) <= 2 for a, b in zip(found, color.rgb(expected), strict=True))
+
+    (x, y), radius = layout.centres[0], layout.radius
+    tinted = color.mix(slide.background.color, element.style.fills[0], element.style.opacity)
+    assert close(pixel(x, y - 0.6 * radius), tinted)  # the smaller circle's own part
+    (x, y), radius = inside.centres[0], inside.radius
+    assert close(pixel(x, y - 0.95 * radius), slide.background.color)  # where the larger circle would have been

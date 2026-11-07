@@ -349,6 +349,12 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   design checks, which estimated the same way. talkgenerator now comes with every character's width in those fonts
   (`data/fonts/widths.json`, made by `scripts/font_widths.py`), and measures texts without kerning on every
   computer: Pillow kerns where it finds raqm, as on some Linux computers, so a text could get another size there.
+- A Venn diagram's labels take long compounds too. When one of them doesn't fit its place in the circles even at 12
+  points, as a 20-letter word didn't in three circles in any theme's font, all of them go beside the circles
+  instead: left and right of them, and below the bottom one of three. The circles get smaller to make room, and
+  the punchline keeps the middle, where it may spread over them. A diagram whose labels fit is drawn as before. In
+  the classic template, a diagram's labels keep their words whole: PowerPoint broke a word wider than its line in
+  two, as it did punchlines such as "Volcanoes" and "Lighthouses" at 32 points.
 - Texts that a language model or a plan writes a little longer than their limit (by up to an eighth) stay whole,
   and a text that has to be cut no longer ends on a little word, as in "Cats were the true scholars of the" (in
   every language, with NLTK's stopword lists). The presenter's job may be 50 characters (was 40), and the prompt

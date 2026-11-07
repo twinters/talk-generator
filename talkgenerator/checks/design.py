@@ -134,10 +134,13 @@ def _overlap(box: Box, other: Box) -> bool:
 
 def _diagram_findings(slide: DeckSlide, index: int, element: DiagramElement, number: int) -> list[Finding]:
     """A diagram's labels, punchline and axes read on what's behind them (its circles or quadrants over the slide's
-    background), and its labels fit their boxes, in its font."""
+    background, or the background beside them), and its labels fit their boxes, in its font."""
     assert element.box is not None and element.style is not None
     style, findings = element.style, []
-    behind = engine.diagram_behind(element.diagram, style.fills, style.opacity, _behind(slide, index, element.box))
+    frame = diagrams.Box.on_canvas(element.box)
+    beside = diagrams.labels_beside(frame, element.diagram, style.font)
+    backgrounds = _behind(slide, index, element.box)
+    behind = engine.diagram_behind(element.diagram, style.fills, style.opacity, backgrounds, beside)
     parts = (
         ("the diagram's labels read badly", style.text, color.BODY_CONTRAST),
         ("the diagram's punchline reads badly", style.punchline, color.BODY_CONTRAST),
@@ -147,7 +150,7 @@ def _diagram_findings(slide: DeckSlide, index: int, element: DiagramElement, num
         worst = color.worst_contrast(colour, backgrounds) if backgrounds else needed
         if worst < needed:
             findings.append(Finding("contrast", "error", f"{problem} (contrast {worst:.1f}, needs {needed:g})", number))
-    for label in diagrams.labels(diagrams.Box.on_canvas(element.box), element.diagram, style.font):
+    for label in diagrams.labels(frame, element.diagram, style.font):
         area = diagrams.text_area(label.box)
         if not fit.fit(label.text, area.w, area.h, style.font, 2 * label.size, 2 * label.size, label.bold).fits:
             part = label.name.split(":")[0].lower()
