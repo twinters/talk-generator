@@ -241,11 +241,104 @@ def _matrix(texts: Mapping[str, str | None], images: Mapping[str, Any], language
     )
 
 
+def _big_number(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    return slides.BigNumberSlide(texts.get("title"), texts["number"], texts["label"], texts.get("source"))
+
+
+def _kpi(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    figures = [texts.get(f"{part}_{index}") for index in range(1, 5) for part in ("number", "label")]
+    return slides.KpiSlide(texts["title"], *figures)
+
+
+def _quiz(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    # (without a letter of their own in front: some models write "A) Yes", and the slide adds the letters)
+    options = [_LETTERED.sub("", texts.get(f"option_{letter.lower()}") or "") or None for letter in slides.LETTERS]
+    answer = texts["answer"] or ""
+    if answer not in slides.LETTERS or not options[slides.LETTERS.index(answer)]:
+        raise ValueError(f"the quiz's answer, {answer!r}, isn't one of its options")
+    first, second, third, fourth = options
+    return slides.QuizSlide(texts["question"], first, second, third, fourth, answer, texts.get("explanation"))
+
+
+def _social_post(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    likes = round(10 ** random_util.uniform(1.5, 6.3))  # (from a few dozen to a few million)
+    shares = round(likes * random_util.uniform(0.02, 0.4))
+    return slides.SocialPostSlide(
+        texts.get("title"),
+        texts["author"],
+        texts["handle"],
+        texts["text"],
+        images.get("photo"),
+        likes,
+        shares,
+        language,
+    )
+
+
+def _news_headline(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    return slides.NewsHeadlineSlide(
+        texts["outlet"], texts["headline"], texts.get("subheadline"), images.get("photo"), language
+    )
+
+
+def _agenda(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    items = [_shortened(part.strip(), AGENDA_ITEM) for part in (texts["items"] or "").split("|") if part.strip()]
+    if len(items) < 3:
+        raise ValueError("an agenda needs three items or more")
+    return slides.AgendaSlide(texts["title"], *items[:5])
+
+
+def _section(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    return slides.SectionSlide(texts["title"], texts.get("subtitle"))
+
+
+def _questions(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    return slides.QuestionsSlide(texts["title"], texts.get("subtitle"))
+
+
+def _numbered(texts: Mapping[str, str | None], prefix: str, most: int) -> list[str | None]:
+    return [texts.get(f"{prefix}_{index}") for index in range(1, most + 1)]
+
+
+def _timeline(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    moments = [texts.get(f"{part}_{index}") for index in range(1, 6) for part in ("date", "event")]
+    return slides.TimelineSlide(texts["title"], *moments)
+
+
+def _pyramid(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    return slides.PyramidSlide(texts["title"], *_numbered(texts, "level", 4))
+
+
+def _funnel(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    return slides.FunnelSlide(texts["title"], *_numbered(texts, "stage", 5))
+
+
+def _cycle(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    return slides.CycleSlide(texts["title"], *_numbered(texts, "step", 5))
+
+
+def _org_chart(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    return slides.OrgChartSlide(texts["title"], texts["boss"], *_numbered(texts, "report", 4))
+
+
+def _iceberg(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    return slides.IcebergSlide(texts["title"], texts["tip"], *_numbered(texts, "hidden", 3))
+
+
+def _shortened(text: str, length: int) -> str:
+    """The text, cut between words to at most this many characters (or within its first word, if that's longer)."""
+    if len(text) <= length:
+        return text
+    cut = text[: length + 1].rsplit(" ", 1)[0].rstrip(",;:-–— ")
+    return cut if 0 < len(cut) <= length else text[:length]
+
+
 def _quadrant(corner: str, ends: str) -> TextField:
     return TextField(corner.replace(" ", "_"), f"the label of the {corner} quadrant: what is {ends}", 30)
 
 
 _NUMBER: Final = re.compile(r"[-+]?\d+(?:[.,]\d+)?\s*%?")
+_LETTERED: Final = re.compile(r"^\(?[A-Da-d]\s*[).:]\s*")  # a quiz option's own letter, as in "A) Yes"
 _OPTIONAL_TITLE = TextField("title", "the slide's title", 60, optional=True)
 
 # The talk's own texts, on its title slide: "By <presenter>, <job>" under the title. The name is a made-up one, when
@@ -255,6 +348,30 @@ PRESENTER_JOB: Final = TextField(
     "presenter_job", "the presenter's grand, made-up job, such as 'Professor of Applied Sock Theory'", 50
 )
 PRESENTER_NAME: Final = TextField("presenter_name", "a made-up name for the presenter", 40)
+AGENDA_ITEM: Final = 45  # how long an item of an agenda may be (they're written as one text)
+
+
+def _figure(index: int, which: str, optional: bool = False) -> tuple[TextField, TextField]:
+    return (
+        TextField(f"number_{index}", f"the {which} figure's number, with its unit if it has one", 10, optional),
+        TextField(f"label_{index}", f"what the {which} figure measures", 40, optional),
+    )
+
+
+def _moment(index: int, which: str, optional: bool = False) -> tuple[TextField, TextField]:
+    return (
+        TextField(f"date_{index}", f"the {which} moment's date (a year, say, or a day)", 12, optional),
+        TextField(f"event_{index}", f"what happened at the {which} moment", 40, optional),
+    )
+
+
+def _items(prefix: str, length: int, *descriptions: str, required: int = 3) -> tuple[TextField, ...]:
+    """Numbered text fields (prefix_1, prefix_2...), the ones after the required ones optional."""
+    return tuple(
+        TextField(f"{prefix}_{index}", description, length, optional=index > required)
+        for index, description in enumerate(descriptions, 1)
+    )
+
 
 KINDS: Final[dict[str, Kind]] = {
     kind.name: kind
@@ -447,6 +564,209 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             (),
             _matrix,
+        ),
+        # Milestone 6's slide types (docs/v5-plan.md, section 8), drawn as texts on shapes
+        Kind(
+            "big_number",
+            "A big, made-up number, with what it counts under it: a figure the presenter has to explain.",
+            (
+                _OPTIONAL_TITLE,
+                TextField(
+                    "number", "the big number, with its unit if it has one: a percentage, an amount or a count", 12
+                ),
+                TextField("label", "what the number counts or measures, in a few words", 90),
+                TextField("source", "a made-up, unreliable source for the number", 60, optional=True),
+            ),
+            (),
+            _big_number,
+        ),
+        Kind(
+            "kpi",
+            "Three or four made-up figures on tiles, as on a dashboard, each a number and what it measures; the last "
+            "one, the punchline, appears on a click.",
+            (
+                TextField("title", "the dashboard's title", 60),
+                *_figure(1, "first"),
+                *_figure(2, "second"),
+                *_figure(3, "third"),
+                *_figure(4, "fourth", optional=True),
+            ),
+            (),
+            _kpi,
+        ),
+        Kind(
+            "quiz",
+            "A quiz question for the audience, with three or four options (A to D); the answer, and why, appear on a "
+            "click.",
+            (
+                TextField("question", "the quiz question", 90),
+                TextField("option_a", "option A (without its letter)", 50),
+                TextField("option_b", "option B", 50),
+                TextField("option_c", "option C", 50),
+                TextField("option_d", "option D", 50, optional=True),
+                TextField("answer", "the letter of the right option", 1, options=tuple(slides.LETTERS)),
+                TextField("explanation", "why that's the answer, shown with it", 90, optional=True),
+            ),
+            (),
+            _quiz,
+        ),
+        Kind(
+            "social_post",
+            "A made-up social media post with a photo: who posted it, and what they wrote (talkgenerator adds its "
+            "likes and shares).",
+            (
+                _OPTIONAL_TITLE,
+                TextField("author", "the made-up name of who posted it (never a real person)", 30),
+                TextField("handle", "their made-up username, without the @", 24),
+                TextField("text", "the post: what they wrote, without hashtags or emoji", 160),
+            ),
+            ("photo",),
+            _social_post,
+        ),
+        Kind(
+            "news_headline",
+            "A made-up news story with a photo, as breaking news on television or on a newspaper's front page.",
+            (
+                TextField("outlet", "the made-up name of the newspaper or the channel", 30),
+                TextField("headline", "the headline", 90),
+                TextField("subheadline", "a line under the headline, with more of the story", 100, optional=True),
+            ),
+            ("photo",),
+            _news_headline,
+        ),
+        Kind(
+            "agenda",
+            "The talk's agenda: three to five items it will cover, numbered.",
+            (
+                TextField("title", "the agenda's title", 40),
+                TextField("items", f"three to five items, separated by |, each at most {AGENDA_ITEM} characters", 200),
+            ),
+            (),
+            _agenda,
+        ),
+        Kind(
+            "section",
+            "A section's divider, opening a new part of the talk: its title, under its number (talkgenerator adds it).",
+            (
+                TextField("title", "the new section's title", 50),
+                TextField("subtitle", "a line under it", 90, optional=True),
+            ),
+            (),
+            _section,
+        ),
+        Kind(
+            "questions",
+            "The closing slide, inviting the audience's questions.",
+            (
+                TextField("title", "a question that invites the audience's questions", 30),
+                TextField("subtitle", "a line under it", 80, optional=True),
+            ),
+            (),
+            _questions,
+        ),
+        # Native diagrams, drawn as texts on shapes
+        Kind(
+            "timeline",
+            "A timeline of three to five moments, oldest first, each a date and what happened; the last one, the "
+            "punchline, appears on a click.",
+            (
+                TextField("title", "the timeline's title", 60),
+                *_moment(1, "first"),
+                *_moment(2, "second"),
+                *_moment(3, "third"),
+                *_moment(4, "fourth", optional=True),
+                *_moment(5, "fifth", optional=True),
+            ),
+            (),
+            _timeline,
+        ),
+        Kind(
+            "pyramid",
+            "A pyramid of three or four levels, from its top (the rarest, the punchline, which appears on a click) "
+            "down to its base.",
+            (
+                TextField("title", "the pyramid's title", 60),
+                *_items(
+                    "level",
+                    30,
+                    "the top of the pyramid: the punchline",
+                    "the level under the top",
+                    "the level under that (the base, if there's no fourth)",
+                    "the base, under that",
+                ),
+            ),
+            (),
+            _pyramid,
+        ),
+        Kind(
+            "funnel",
+            "A funnel of three to five stages, from its widest at the top to its narrowest at the bottom, the "
+            "punchline, which appears on a click.",
+            (
+                TextField("title", "the funnel's title", 60),
+                *_items(
+                    "stage",
+                    30,
+                    "the widest stage, at the top",
+                    "the next stage, narrower",
+                    "the next stage (the narrowest, if there are no more)",
+                    "the next stage",
+                    "the narrowest stage, at the bottom",
+                ),
+            ),
+            (),
+            _funnel,
+        ),
+        Kind(
+            "cycle",
+            "A cycle of three to five steps around a circle, each leading to the next, and the last back to the first.",
+            (
+                TextField("title", "the cycle's title", 60),
+                *_items(
+                    "step", 24, "the first step", "the second step", "the third step", "a fourth step", "a fifth step"
+                ),
+            ),
+            (),
+            _cycle,
+        ),
+        Kind(
+            "org_chart",
+            "A small org chart: who's in charge (the punchline, which appears on a click), over two to four people "
+            "or things.",
+            (
+                TextField("title", "the org chart's title", 60),
+                TextField("boss", "who's in charge: the punchline", 30),
+                *_items(
+                    "report",
+                    30,
+                    "the first one under them",
+                    "the second one under them",
+                    "a third one under them",
+                    "a fourth one under them",
+                    required=2,
+                ),
+            ),
+            (),
+            _org_chart,
+        ),
+        Kind(
+            "iceberg",
+            "An iceberg: what everyone sees, on its tip above the water, and two or three things under the water that "
+            "nobody sees, which appear on a click.",
+            (
+                TextField("title", "the iceberg's title", 60),
+                TextField("tip", "what everyone sees, on the tip", 30),
+                *_items(
+                    "hidden",
+                    40,
+                    "something under the water that nobody sees",
+                    "something else under the water",
+                    "something deeper under the water",
+                    required=2,
+                ),
+            ),
+            (),
+            _iceberg,
         ),
     )
 }

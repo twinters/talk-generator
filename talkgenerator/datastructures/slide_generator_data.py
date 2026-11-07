@@ -33,6 +33,19 @@ class ConstantWeightFunction:
         return self._weight
 
 
+class BetweenWeight:
+    """A weight for the slides after the first few and before the last few (a section's divider, which opens a part
+    in the middle of a talk), and none for the others."""
+
+    def __init__(self, weight: float, after: int, before: int):
+        self._weight = weight
+        self._after = after  # how many slides it never is at the start (the title slide included)
+        self._before = before  # and at the end
+
+    def __call__(self, slide_nr: int, num_slides: int) -> float:
+        return self._weight if self._after <= slide_nr < num_slides - self._before else 0
+
+
 # Classes that are abstractly responsible for generating powerpoints
 
 

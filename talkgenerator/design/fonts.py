@@ -34,6 +34,8 @@ FONTS: Final[dict[str, FontFiles]] = {
     "Arial": FontFiles(("arial.ttf", "LiberationSans-Regular.ttf"), ("arialbd.ttf", "LiberationSans-Bold.ttf"), 0.52),
     "Arial Black": FontFiles(("ariblk.ttf",), ("ariblk.ttf",), 0.66),
     "Calibri": FontFiles(("calibri.ttf", "Carlito-Regular.ttf"), ("calibrib.ttf", "Carlito-Bold.ttf"), 0.47),
+    # (The 2019 template's headings: a little narrower than Calibri, so measured as Calibri where it's missing)
+    "Calibri Light": FontFiles(("calibril.ttf", "Carlito-Regular.ttf"), ("calibrib.ttf", "Carlito-Bold.ttf"), 0.46),
     "Cambria": FontFiles(("cambria.ttc", "Caladea-Regular.ttf"), ("cambriab.ttf", "Caladea-Bold.ttf"), 0.5),
     "Georgia": FontFiles(("georgia.ttf", "Gelasio-Regular.ttf"), ("georgiab.ttf", "Gelasio-Bold.ttf"), 0.55),
     "Times New Roman": FontFiles(

@@ -26,6 +26,7 @@ from talkgenerator.util import os_util, random_util
 from tests import test_seeds
 from tests.test_deck import _every_kind_of_slide, _image, _pie_chart_data
 from tests.test_deck import images as images  # the fake image downloads (a fixture)
+from tests.test_slide_types import runs_of_new_types as _runs_of_new_types
 
 FAMILIES = list(themes.FAMILIES)
 
@@ -223,6 +224,8 @@ def _runs(seed=1, theme=None):
         *(slides.ImageSlide("Cats", wide) for _ in range(4)),
         *(slides.LarqeQuoteSlide(None, "Be brave, little cat", background_image=wide) for _ in range(4)),
         *(slides.ThreeColumnImageSlide(None, "One", wide, "Two", tall, "Three", wide) for _ in range(3)),
+        # (milestone 6's types, with what every one of their layouts takes: short numbers, four options, a title...)
+        *_runs_of_new_types(wide),
     ]
     slide_deck = SlideDeck(len(runs), title="Cats", topics=["cats"], seed=seed)
     for index, slide in enumerate(runs):

@@ -675,6 +675,21 @@ Candidates for new ones:
   neighbour and..."). These play well in karaoke.
 - **Academic:** equation, code snippet, results table.
 
+In milestone 6 (2026-11-07), fourteen came in, drawn as texts on shapes (D37): a **big number** (with what it
+counts and a made-up source) and **KPI tiles** (three or four figures, the last the punchline); a **quiz** (three or
+four options, A to D, and on a click the answer: a band behind the right option, its letter on a stamp, and an
+explanation); a **social media post** (a made-up poster, their handle, likes and shares in the talk's language, and
+a photo) and a **news headline** (breaking news on television over its photo, or a newspaper's front page); an
+**agenda** after the title, a **section** divider in the middle (numbered by the deck: 02, 03...) and **Questions?**
+as the last slide now and then; and native diagrams: a **timeline**, a **pyramid**, a **funnel**, a **cycle**, a
+small **org chart** and an **iceberg**, with their punchlines on a click. Each has a kind with field limits for
+plans and the language model, a classic generator (templates and ConceptNet's related words), and two or three
+layouts. A talk has at most one of each (sections one per ten slides, diagrams two per ten), from its third slide
+to the one before the conclusions: about 1.7 of a 10-slide talk's slides (2.2 in the `ted` format). The quiz's
+answer comes on a click rather than on the next slide, as a slide generator makes one slide. Still candidates:
+memes with live captions (with Imgflip's templates, section 10.4), a process with a "???" step, a fake contact
+slide, a comparison table, the other media and audience slides, and the academic ones.
+
 Variety per slide type comes from four axes, each sampled per slide with the talk's random generator:
 
 1. layout: image left or right, full-bleed, framed, split, grid;
@@ -1030,7 +1045,7 @@ before the new formats. A milestone is a checkpoint on `v5`, not a release; only
 | 3 (done, 2026-11-07: theme families and extremes, procedural palettes with contrast repair, layouts and their variants (never twice in a row), image treatments, WordArt-style heading effects, text fitting with bundled metric twins, the shapes renderer with the classic animations (columns click by click), previews and contact sheets, the design checks and the local MCP server; 0 design findings on 792 benchmark decks in 12 seeds; thumbnails in CI left out, D29) | Themes and layouts | theme tokens and families, extremes on by default; procedural palettes and font pairs; layout variants; text fitting; image treatments; the `classic` theme; thumbnails and contact sheet in CI; the local MCP server | contrast and overflow checks pass on every theme |
 | 4 (under way: `stream_talk()`, probe validation, display policies, presenter names in styles (5.10, for the site's settings) and what's typed read as a topic or a title (5.11, `topic_or_title=`, for the site's Automatic choice) are in; since 2026-11-07, talkgenerator.com runs v5 from GitHub (D31): talks stream into the browser, the .pptx is made on download, Pixabay's images are copied, and classic and LLM talks meet the speed and memory bars on the VPS (section 14), but for the first talk after a restart; left: deploying the streamed-titles fix (`be09a7e`: on the site, a free model that writes its answer's fields in alphabetical order put `slide_10` before `slide_2`, so slides 2 to 9 fell back to classic ones, or were left out of a Dutch copyright-free talk), the new settings with 5.10's and 5.11's options, and loading the library before the first talk) | Streaming and the web view | `stream_talk()`, display policies, probe validation; in talk-generator-web: the SSE endpoint, the Angular renderer, LLM talks by default with the classic switch, a language choice, Connect OpenRouter and pasted keys, .pptx on download, an Automatic topic-or-title choice (5.11), the site running `v5` from git (D31) | first slide on screen within the calibrated target on the VPS; a 20-slide talk under the memory bar; the downloaded .pptx matches the web view |
 | 5 | Images | slots, aesthetic profiles and flavour packs, local analysis, license classes; new open and weird sources; AI image generation with the user's own keys; the optional vision pick | license policies enforced; profile checks pass (such as the grayscale share for `vintage`); generated images credited |
-| 6 | More slide types for TED-like talks | native diagrams, big numbers, quiz, memes with live captions, social posts and more; a much larger, curated TED content pack | every new slide type passes the checks in classic and LLM mode |
+| 6 (under way: fourteen slide types are in, drawn as texts on shapes (D37, section 8); on 2026-11-07, benchmark talks over seeds that bring each of them up had no design, completeness, leftover or language findings: 63 classic talks, and 63 by OpenRouter's free models (620 of 630 slides by the model, at $0), plus 20 classic `ted` talks and 8 Dutch ones, where a long Dutch compound overflowed a narrow box (since, every new layout takes a 20-letter word in every theme); the only other findings were InspiroBot's and Reddit's live answers differing between a talk's two runs. talk-generator-web draws them all unchanged, and needs a small change to hold back what appears on a click in its presentations (a branch of its own, not merged). Left: memes with live captions (with Imgflip, 10.4), the TED content pack, and section 8's other candidates) | More slide types for TED-like talks | native diagrams, big numbers, quiz, memes with live captions, social posts and more; a much larger, curated TED content pack | every new slide type passes the checks in classic and LLM mode |
 | 7 | New talk formats | pitch, academic, corporate, keynote and Pecha Kucha timing, with their content packs (or in 5.1 if the TED work takes longer) | every format works in classic and LLM mode and passes the checks |
 | 8 | Integration | the site runs `v5` on the preview, then in production behind a switch; Sign in with ChatGPT on the site, if OpenAI has admitted it; docs and deprecation warnings | the site runs `v5` for a week without quota or memory incidents |
 | 5.0.0 | The release | freeze and fix; merge `v5` into `master`; release 5.0.0 with the release script; the site pins `talkgenerator==5.0.0`; 4.x ends | |
@@ -1080,8 +1095,9 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D34 | Talks without a language model get a name from a small pack curated by hand (pun names by topic, and a few fun surnames and famous-name puns) when their topic matches one of its entries, and tracery's random names otherwise. |
 | D35 | What's typed for a talk (Automatic, topic_or_title) stays its title only when it's clearly one: four words or more, or a question or exclamation, with its slips fixed. Anything shorter is the topic, or a premise, on which the language model builds a funnier, more specific title ("The French Revolution" deserves better than itself); a title in quote marks stays word for word. The talk's dice pick whether the classic titles go with a short input as options, as inspiration only, or not at all. |
 | D36 | GIPHY's searches aren't cached: its API rules forbid caching its responses and media URLs. The other search APIs stay cached. |
+| D37 | Milestone 6's slide types are built from the deck's texts, shapes and pictures, which the layout engine places, so every renderer draws them as it draws the other slides (talk-generator-web without changes); a classic deck draws them on the 2019 template's blank slide, laid out in the template's look. What appears on a click is a property of an element (`appears_on_click`), which a renderer that plays no clicks ignores. |
 
-D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, and D28 to D36 on 2026-11-07; the others follow from the design.
+D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, and D28 to D37 on 2026-11-07; the others follow from the design.
 
 ### Open questions
 

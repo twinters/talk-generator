@@ -147,6 +147,33 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   checks read for gaps and template leftovers. In a themed deck, a diagram goes under its title in the theme's
   colours and body font (`DiagramStyle`), with its circles or quadrants made lighter or darker until its labels
   read on them, and the design checks check that its labels read and fit.
+- Fourteen more kinds of slide (milestone 6, docs/v5-plan.md section 8), drawn as texts on shapes, so they need no
+  image source (but for a post's and a news story's photo) and every renderer draws them as it draws the others:
+  - figures: a **big number** with what it counts and a made-up source ("97%" of lighthouses that have never seen
+    a ship), and **KPI tiles**, three or four figures as on a dashboard, the last one the punchline;
+  - a **quiz**: a question and three or four options, A to D; on a click, a band behind the right one, its letter
+    on a stamp and an explanation;
+  - mockups: a **social media post** (a made-up poster with their initials, handle, likes and shares, and a
+    photo) and a **news headline**, as breaking news on television over its photo or on a newspaper's front page;
+  - the talk's structure: an **agenda** after the title, a **section** divider in the middle, numbered by the deck
+    (02, 03...), and **Questions?** as the last slide now and then;
+  - native diagrams: a **timeline**, a **pyramid**, a **funnel**, a **cycle**, a small **org chart** and an
+    **iceberg**, each with its punchline on a click where it has one (the last moment, the top, the bottom, the
+    boss, what's under the water).
+
+  Each is a kind for plans and the language model, with its field limits (`talkgenerator formats --details`),
+  and comes out the classic way too, from templates (`data/text-templates/slide_texts.json`) and the words
+  ConceptNet relates to the slide's seed, leaving out words on faiths, violence and hate, or not for a family
+  audience. Each has two or three layouts in every theme, never the same twice in a row where another fits, and
+  texts on tiles, badges and cards get colours that read on them. A classic deck draws them on the 2019
+  template's blank slide, in the template's look (white Calibri on black, its orange and blue). A talk has at most
+  one of each (sections: one per ten slides; diagrams, the Venn diagrams and matrices included: two in ten
+  slides), from its third slide to the one before the conclusions, so the slide after the title still introduces
+  the presenter: about 1.7 of a 10-slide talk's slides (2.2 in the `ted` format). Posts and news headlines say
+  likes, shares and breaking news in the talk's language.
+- A deck's texts, pictures and shapes can appear on a click of their slide (`appears_on_click`), as a quiz's
+  answer and a KPI slide's last figure do: PowerPoint fades them in on that click, and a renderer that plays no
+  clicks shows them from the start (talk-generator-web needs a change to hold them back in its presentations).
 - `talkgenerator login openrouter`: sign in to OpenRouter in the browser (OAuth with PKCE), and talkgenerator gets
   a key of its own, which it keeps in the user's config folder (readable only by the user), so OpenRouter's free
   models write talks without an `OPENROUTER_API_KEY`. `--headless` signs in on a computer without a browser,
@@ -244,6 +271,8 @@ The start of talkgenerator 5 (see [docs/v5-plan.md](docs/v5-plan.md)).
   colour. A trend's named moment ("I got a cat") is on one line, beside its dot on the side the line leaves free.
 - New dependency: pydantic. New optional dependencies: anthropic and openai (see the language model providers), and
   mcp (for `talkgenerator mcp`).
+- With milestone 6's slide types in the mix, a seed's talk has other slides than it had before: about one in six
+  of a talk's slides is one of them, and the other kinds come up a little less often.
 - A talk without a seed gets a random one, which the logs and the deck JSON mention, so any talk can be made
   again.
 - A classic talk on a topic that talkgenerator's pack of presenter names knows (642 of the 736 topics of
