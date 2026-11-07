@@ -35,6 +35,7 @@ from typing import Any, Protocol
 
 from pptx.presentation import Presentation
 
+from talkgenerator import names
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.datastructures.slide_generator_data import SlideGeneratorData, _filter_generated_elements
 from talkgenerator.llm.base import ProviderError, TextProvider
@@ -166,6 +167,11 @@ class _PlannedTalk:
     def title(self) -> str | None:
         return clean_text(self.spine.get("title"), TALK_TITLE, self.language)
 
+    @property
+    def presenter_name(self) -> Any:
+        """The presenter's name the model wrote, if it was asked for one (as written: see talkgenerator.names)."""
+        return self.spine.get("presenter_name")
+
     def take(self, key: str, value: Any) -> None:
         """A part of the model's answer: the spine, or a slide (whose first attempt then starts, in parallel)."""
         with self._changed:
@@ -183,8 +189,8 @@ class _PlannedTalk:
             self._changed.notify_all()
 
     def wait_for_spine(self) -> None:
-        """Wait for the spine of the answer (its title, the presenter's job, its thesis), which is in once the first
-        slide's part comes in, or the answer ends."""
+        """Wait for the spine of the answer (its title, the presenter's job and name, its thesis), which is in once
+        the first slide's part comes in, or the answer ends."""
         self._wait(lambda: self._reached >= 0 or self._finished)
 
     def wait_for_a_plan(self) -> bool:
@@ -236,6 +242,7 @@ class _PlannedTalk:
             self.plans.clear()
             self.first_attempts.clear()
             self.spine.pop("title", None)
+            self.spine.pop("presenter_name", None)
             self._changed.notify_all()
 
     def restart(self) -> None:
@@ -304,6 +311,7 @@ class PresentationSchema:
         style_chaos: float = 0.0,
         extreme_themes: bool = True,
         progress: Progress | None = None,
+        name_styles: Sequence[str] = names.DEFAULT_STYLES,
     ) -> tuple[Presentation | None, SlideDeck]:
         """Generate a presentation about a certain topic with a certain number of slides.
 
@@ -312,6 +320,9 @@ class PresentationSchema:
 
         With a language model (llm), the model writes what goes on the slides, in the given language (see
         _plan_talk); the slides it doesn't write, or that come out missing something, are classic.
+
+        Without a presenter, the presenter's name is made up in one of the name styles (see talkgenerator.names): by
+        the language model, in the same request, or else by talkgenerator.
 
         With a progress, the talk streams (see Progress): its slides are settled as soon as they can be, a planned
         talk's while the model writes the rest. The one difference with a talk that doesn't stream: when the model
@@ -329,13 +340,22 @@ class PresentationSchema:
             with random_util.use(rng.child("slide", slide_nr, "topic")):
                 seeds.append(seed_generator.get_seed(slide_nr))
 
+        # The presenter's name, unless it's given: made up in a style the talk's dice pick, by the language model
+        # that writes the talk (in the same request), or else by talkgenerator (see talkgenerator.names)
+        writes = llm is not None and self.writes_with(llm)
+        naming = names.Naming.of(name_styles, topics, rng, written=writes) if not presenter else None
+
         talk = None
-        if llm is not None and self.writes_with(llm):
+        if llm is not None and writes:
             cancelled = progress.cancelled if progress is not None else None
-            talk = self._plan_talk(topics, seeds, rng, llm, language, title, parallel, cancelled)
+            name = naming.request if naming is not None else None
+            talk = self._plan_talk(topics, seeds, rng, llm, language, title, parallel, cancelled, name)
         try:
             if talk is not None:
                 talk.wait_for_spine()
+            if naming is not None:
+                presenter = naming.name(talk.presenter_name if talk is not None else None)
+                logger.info("Presenter: {}".format(presenter))
             # Generate random talk title
             if not title and talk is not None:
                 title = talk.title
@@ -422,12 +442,13 @@ class PresentationSchema:
         title: str | None,
         parallel: bool,
         cancelled: threading.Event | None = None,
+        name: names.NameRequest | None = None,
     ) -> "_PlannedTalk":
         """Pick every slide's generator, and ask the language model, in one request, what goes on the slides whose
-        generators have recipes. The model's answer is read while it's written, and in parallel, every slide's first
-        attempt starts as soon as its part of the answer is in. For a talk that streams (that can be cancelled), the
-        answer comes in on a thread of its own, and this returns at once, for the slides to be settled while it
-        does."""
+        generators have recipes (and the presenter's name, with a name request). The model's answer is read while
+        it's written, and in parallel, every slide's first attempt starts as soon as its part of the answer is in.
+        For a talk that streams (that can be cancelled), the answer comes in on a thread of its own, and this returns
+        at once, for the slides to be settled while it does."""
         num_slides = len(seeds)
         picks = self._pick_generators(num_slides, rng, language)
         planned = {
@@ -459,7 +480,7 @@ class PresentationSchema:
         def answer() -> None:
             try:
                 for asked_again in (False, True):
-                    request = talk_request(topics, list(planned.values()), rng, language, title, asked_again)
+                    request = talk_request(topics, list(planned.values()), rng, language, title, asked_again, name)
                     self._ask(llm, request, talk)
                     if talk.cancelled.is_set() or talk.spine.get("unsafe_topic") is not True:
                         break

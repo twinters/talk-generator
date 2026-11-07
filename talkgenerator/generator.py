@@ -6,12 +6,12 @@ import queue
 import subprocess
 import sys
 import threading
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from typing import Any
 
 from pptx.presentation import Presentation
 
-from talkgenerator import runtime_checker, settings
+from talkgenerator import names, runtime_checker, settings
 from talkgenerator.design import engine, themes
 from talkgenerator.llm.base import TextProvider
 from talkgenerator.llm.ledger import Budget, Ledger, MeteredProvider
@@ -19,7 +19,6 @@ from talkgenerator.llm.providers import NoneProvider, from_settings, provider_fr
 from talkgenerator.models.deck import Deck
 from talkgenerator.models.events import SlideReady, TalkEvent, TalkFinished, TalkStarted
 from talkgenerator.plan import languages
-from talkgenerator.schema.content_generators import full_name_generator
 from talkgenerator.schema.presentation_schema import Progress, TalkCancelled
 from talkgenerator.schema.presentation_schema_types import get_schema, schemas
 from talkgenerator.slide.slide_deck import SlideDeck
@@ -63,6 +62,7 @@ def generate_presentation_using_cli_arguments(args) -> tuple[Presentation | None
         theme=getattr(args, "theme", None),
         style_chaos=getattr(args, "style_chaos", 0.0) or 0.0,
         extreme_themes=getattr(args, "extreme_themes", True),
+        name_styles=getattr(args, "name_styles", None),
     )
 
 
@@ -87,6 +87,7 @@ def generate_presentation(
     style_chaos: float = 0.0,
     extreme_themes: bool = True,
     progress: Progress | None = None,
+    name_styles: str | Iterable[str] | None = None,
 ) -> tuple[Presentation | None, SlideDeck, str | None]:
     """Generate a talk. With debug_notes, every slide's speaker notes explain how it was generated.
 
@@ -103,10 +104,19 @@ def generate_presentation(
     theme of its own): one of talkgenerator.design.themes.choices(), which catalog() describes. None is the one
     TALKGENERATOR_THEME names, or else random. style_chaos is how many slides get a theme of their own (0 to 1).
 
+    presenter is the presenter's name, which never goes to a language model. Without one, a name is made up in one of
+    name_styles, which the talk's seed picks: "pun" (such as Prof. Anna Tomy, for a talk on medicine),
+    "fun_surname" (Linda Hivesworth, for bees), "famous_pun" (Albert Einstone, for geology) and "classic" (a random
+    first and last name, as in 2019), as a list or one string separated by commas (see talkgenerator.names.catalog).
+    The language model that writes the talk writes the name too, in the same request; without one (or when its name
+    won't do), talkgenerator has names of its own for some topics, and makes up a classic name otherwise. None: the
+    first three; none at all: classic names only.
+
     progress follows the talk while it's made (see stream_talk, which hands it over in events)."""
     theme = theme or settings.theme()
     if theme not in themes.choices():
         raise ValueError(f"There's no theme {theme!r}; there are {', '.join(themes.choices())}")
+    chosen_styles = names.styles(name_styles)  # (a ValueError for a style there isn't)
     if print_logs:
         os_util.show_logs(logger)
     logger.info("**************************")
@@ -129,11 +139,6 @@ def generate_presentation(
     presentation_schema = get_schema(schema)
     logger.info("Presentation schema: {}".format(presentation_schema))
 
-    # Generate random presenter name if no presenter name given
-    if not presenter:
-        with random_util.use(rng.child("presenter")):
-            presenter = full_name_generator()
-
     if not topic:
         topic = (word_frequency.get_rarest_word(title) if title else None) or DEFAULT_PRESENTATION_TOPIC
 
@@ -145,7 +150,9 @@ def generate_presentation(
 
     logger.info("Presentation topics: {}".format(topics))
     logger.info("Presentation num_slides: {}".format(slides))
-    logger.info("Presentation presenter: {}".format(presenter))
+    logger.info(
+        "Presentation presenter: {}".format(presenter or "made up ({})".format(", ".join(chosen_styles) or "classic"))
+    )
     logger.info("Presentation title: {}".format(title))
     logger.info("Presentation parallel: {}".format(parallel))
     logger.info("Presentation int_seed: {}".format(int_seed))
@@ -177,6 +184,7 @@ def generate_presentation(
         style_chaos=style_chaos,
         extreme_themes=extreme_themes,
         progress=progress,
+        name_styles=chosen_styles,
     )
     slide_deck.usage = ledger.total()
     answered = [entry.model for entry in ledger.entries if entry.error is None]
@@ -224,6 +232,7 @@ def stream_talk(
     theme: str | None = None,
     style_chaos: float = 0.0,
     extreme_themes: bool = True,
+    name_styles: str | Iterable[str] | None = None,
 ) -> Iterator[TalkEvent]:
     """Make a talk as generate_presentation does (the same deck, for the same options, seed and answers), handing
     over what's ready while it's made (see talkgenerator.models.events): talk.started once its title is known, a
@@ -258,6 +267,7 @@ def stream_talk(
                     style_chaos=style_chaos,
                     extreme_themes=extreme_themes,
                     progress=following,
+                    name_styles=name_styles,
                 )
                 events.put(TalkFinished(deck=slide_deck.to_deck(schema_name=schema)))
         except TalkCancelled:
@@ -395,6 +405,14 @@ def describe_schemas() -> str:
     return "\n".join(lines)
 
 
+def _name_styles(value: str) -> tuple[str, ...]:
+    """--name_styles's value, once it's known to name only name styles there are."""
+    try:
+        return names.styles(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError(str(error)) from error
+
+
 def _llm_spec(spec: str) -> str:
     """--llm's value, once it's known to name a language model provider."""
     try:
@@ -450,7 +468,17 @@ def get_argument_parser():
         "--presenter",
         default=None,
         type=str,
-        help="The full name of the presenter, leave blank to randomise",
+        help="The full name of the presenter, leave blank to make one up (see --name_styles)",
+    )
+    parser.add_argument(
+        "--name_styles",
+        default=None,
+        type=_name_styles,
+        help="Without --presenter, the styles of made-up names the talk's seed picks from, separated by commas: "
+        "pun (such as Prof. Anna Tomy, for a talk on medicine), fun_surname (Linda Hivesworth, for bees), famous_pun "
+        "(Albert Einstone, for geology) and classic (a random first and last name, as in 2019). The language model "
+        "that writes the talk writes the name; without one, talkgenerator has names of its own for some topics, and "
+        "makes up a classic one otherwise (default: pun,fun_surname,famous_pun)",
     )
     parser.add_argument(
         "--title",

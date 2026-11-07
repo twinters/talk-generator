@@ -1,0 +1,355 @@
+{
+  "_about": "Presenter names by style and topic (see talkgenerator/names.py): what a talk without a language model gets when its topic is one of an entry's words, and the examples a language model is shown. Drafted with a language model and curated by hand; names without titles (Dr., Prof.), as a talk's job may say Professor or Doctor; words in the singular and in lower case (a phrase matches a topic that has its words in that order).",
+  "pun": [
+    {
+      "topic": "medicine",
+      "words": ["medicine", "doctor", "hospital", "anatomy", "health", "nurse", "surgery", "surgeon", "medical", "vitamin", "patient", "pharmacy", "body", "bone", "skeleton", "muscle", "elbow", "knee", "freckle", "dimple", "goosebump", "fingerprint", "belly button", "posture", "hiccup", "sneezing", "sunburn", "brain freeze"],
+      "names": ["Anna Tomy", "Penny Cillin", "Ray Diology", "Ivy Drip", "Elle Bow"]
+    },
+    {
+      "topic": "dentists",
+      "words": ["dentist", "tooth", "dental", "toothbrush", "toothpaste", "wisdom tooth"],
+      "names": ["Ruth Canal", "Mo Lars", "Flo Ride", "Phil Lings"]
+    },
+    {
+      "topic": "maths",
+      "words": ["math", "maths", "mathematics", "algebra", "geometry", "number", "calculator", "statistics", "equation", "arithmetic", "calculus", "sudoku"],
+      "names": ["Matthew Mathics", "Al Gebra", "Cal Culus"]
+    },
+    {
+      "topic": "physics",
+      "words": ["physics", "quantum", "quantum physics", "gravity", "magnet", "electricity", "speed of light", "entropy", "black hole", "gravitational wave", "big bang", "atom", "particle", "energy", "power cut"],
+      "names": ["Newt Ron", "Ann Tropy", "Quentin Tumm", "Vera Locity"]
+    },
+    {
+      "topic": "chemistry",
+      "words": ["chemistry", "chemical", "periodic table", "alchemy", "laboratory", "lab", "molecule", "element", "rust", "experiment"],
+      "names": ["Molly Cule", "Cat Alyst", "Ty Tration"]
+    },
+    {
+      "topic": "biology",
+      "words": ["biology", "evolution", "dna", "bacteria", "bacterium", "cell", "gene", "photosynthesis", "microbe", "virus", "germ"],
+      "names": ["Gene Pool", "Mike Robe", "Cy Toplasm", "Clara Phyll"]
+    },
+    {
+      "topic": "space",
+      "words": ["space", "astronaut", "rocket", "satellite", "moon", "mars", "sun", "eclipse", "comet", "asteroid", "planet", "milky way", "galaxy", "telescope", "universe", "alien", "ufo"],
+      "names": ["Stella Nova", "Cosmo Naught", "Sol Arflare", "Luna Sea"]
+    },
+    {
+      "topic": "geology",
+      "words": ["geology", "volcano", "earthquake", "glacier", "fossil", "mineral", "crystal", "lava", "mountain", "cave", "quicksand", "canyon", "desert", "sahara", "dune"],
+      "names": ["Rick Terscale", "Cora Sample", "Sandy Stone", "Magma Carter"]
+    },
+    {
+      "topic": "the weather",
+      "words": ["weather", "rain", "rainy day", "thunderstorm", "storm", "fog", "drizzle", "heatwave", "snow", "wind", "cloud", "rainbow", "weather forecaster", "hurricane", "tornado", "climate", "petrichor", "umbrella"],
+      "names": ["Gail Force", "Sonny Spells", "Drew Zell", "Cy Clone"]
+    },
+    {
+      "topic": "the cold",
+      "words": ["north pole", "south pole", "antarctica", "arctic", "iceberg", "ice", "polar bear", "winter", "frost"],
+      "names": ["Ann Tarctica", "Jack Frost", "Bryce Cube"]
+    },
+    {
+      "topic": "the sea",
+      "words": ["ocean", "sea", "deep sea", "ocean floor", "shark", "fish", "goldfish", "jellyfish", "coral reef", "coral", "whale", "octopus", "lobster", "tide", "submarine", "sailor", "fishing", "aquarium", "seaweed"],
+      "names": ["Annie Money", "Barry Cuda", "Marina Trench", "Finn Tastic"]
+    },
+    {
+      "topic": "cats",
+      "words": ["cat", "kitten"],
+      "names": ["Kitty Litter", "Tom Catt", "Clawdia Purr"]
+    },
+    {
+      "topic": "dogs",
+      "words": ["dog", "puppy", "dog walker", "pooch"],
+      "names": ["Kay Nine", "Bo Wow", "Lassie Faire"]
+    },
+    {
+      "topic": "birds",
+      "words": ["bird", "pigeon", "owl", "crow", "seagull", "parrot", "flamingo", "penguin", "duck", "goose", "woodpecker", "birdwatching", "migration", "nest", "feather"],
+      "names": ["Robin Banks", "Jay Walker", "Polly Glot"]
+    },
+    {
+      "topic": "bees",
+      "words": ["bee", "beekeeping", "honey", "ant", "moth", "insect", "bug", "butterfly", "beetle", "spider", "wasp", "caterpillar"],
+      "names": ["Bea Hive", "Polly Nation", "Honey Combs", "Anne Thill"]
+    },
+    {
+      "topic": "the farm",
+      "words": ["farm", "farmer", "cow", "goat", "sheep", "pig", "tractor", "llama", "alpaca", "barn", "horse", "donkey", "chicken"],
+      "names": ["Barney Yard", "Herb Ivore", "Udder Lee"]
+    },
+    {
+      "topic": "the zoo",
+      "words": ["zoo", "zookeeper", "animal", "wildlife", "safari", "sloth", "capybara", "raccoon", "hedgehog", "squirrel", "giraffe", "kangaroo", "snail", "otter", "badger", "frog", "beaver", "bat", "koala", "panda", "mole", "tortoise", "camel", "zebra", "walrus", "narwhal", "axolotl", "hamster", "elephant", "lion", "monkey"],
+      "names": ["Zoe Ology", "Annie Mal", "Ella Fant", "Terry Tory"]
+    },
+    {
+      "topic": "coffee",
+      "words": ["coffee", "tea", "coffee break", "coffee machine", "espresso", "cafe", "café", "cappuccino", "latte", "barista", "teapot", "kettle"],
+      "names": ["Joe Mugg", "Barry Stah", "Perky Lator", "Ty Bagg"]
+    },
+    {
+      "topic": "baking",
+      "words": ["bread", "sourdough", "toast", "croissant", "baking", "cake", "birthday cake", "cupcake", "doughnut", "donut", "pancake", "waffle", "flour", "oven", "baker", "bakery", "pastry", "pie", "cookie"],
+      "names": ["Sue Flay", "Bree Oche", "Patty Cake", "Rollin Pinn"]
+    },
+    {
+      "topic": "cheese",
+      "words": ["cheese", "fondue", "butter", "milk", "oat milk", "yoghurt", "yogurt", "dairy"],
+      "names": ["Chad Darr", "Moe Zarella", "Fawn Dew"]
+    },
+    {
+      "topic": "pasta and pizza",
+      "words": ["pasta", "spaghetti", "pizza", "lasagne", "lasagna", "ravioli", "macaroni", "noodle", "instant noodle"],
+      "names": ["Al Dente", "Pete Za", "Ravi Oli", "Penne Lane"]
+    },
+    {
+      "topic": "vegetables",
+      "words": ["vegetable", "broccoli", "brussels sprout", "potato", "onion", "garlic", "kale", "cucumber", "avocado", "carrot", "salad", "tofu", "pickle", "beetroot", "lettuce", "tomato", "pea"],
+      "names": ["Brock Lee", "Russell Sprout", "Bea Troot", "Cole Slaw"]
+    },
+    {
+      "topic": "fruit",
+      "words": ["fruit", "banana", "lemon", "apple", "orange", "pineapple", "strawberry", "smoothie", "grape", "cherry", "peach", "melon"],
+      "names": ["Anna Nas", "Lee Monade", "Cherry Pye"]
+    },
+    {
+      "topic": "sweets",
+      "words": ["chocolate", "ice cream", "candy", "sweet", "dessert", "sugar", "lollipop", "marshmallow", "caramel"],
+      "names": ["Candy Barr", "Sundae Best", "Carmen Elle", "Chuck O'Late"]
+    },
+    {
+      "topic": "snacks",
+      "words": ["snack", "popcorn", "crisp", "chip", "fries", "peanut", "nut", "pretzel"],
+      "names": ["Hazel Nutt", "Chip Munk", "Saul Tee"]
+    },
+    {
+      "topic": "breakfast",
+      "words": ["breakfast", "egg", "porridge", "breakfast cereal", "cereal", "bacon", "brunch", "oatmeal"],
+      "names": ["Chris P. Bacon", "Sonny Side", "Hammond Eggs", "Eggbert Benedict"]
+    },
+    {
+      "topic": "cooking",
+      "words": ["cooking", "chef", "kitchen", "recipe", "restaurant", "waiter", "soup", "dinner", "lunch", "food", "leftover", "spicy food", "barbecue", "grill", "sandwich", "ketchup", "mustard", "mayonnaise", "salt", "spice", "sauce"],
+      "names": ["Sue Chef", "Stu Pott", "Barbie Q", "Mae O'Naise", "Hal Apeño"]
+    },
+    {
+      "topic": "music",
+      "words": ["music", "jazz", "opera", "bagpipe", "recorder", "triangle", "kazoo", "accordion", "drum", "violin", "heavy metal", "lullaby", "elevator music", "national anthem", "ringtone", "musical", "karaoke", "song", "band", "boy band", "air guitar", "encore", "choir", "orchestra", "piano", "guitar", "whistling", "singing", "concert", "earworm"],
+      "names": ["Phil Harmonic", "Mel Ody", "Tim Pani", "Hugh Kulele"]
+    },
+    {
+      "topic": "dance",
+      "words": ["dance", "dancing", "ballet", "ballroom dancing", "interpretive dance", "cheerleading", "disco", "tango", "waltz"],
+      "names": ["Cora Ography", "Pierre Wette", "Fox Trott"]
+    },
+    {
+      "topic": "art",
+      "words": ["art", "abstract art", "painting", "painter", "sculpture", "graffiti", "museum", "gallery", "drawing", "artist", "photography", "photo", "selfie", "camera", "origami", "portrait", "canvas"],
+      "names": ["Art Deco", "Al Fresco", "Bruce Strokes", "Cam Era"]
+    },
+    {
+      "topic": "books",
+      "words": ["book", "library", "librarian", "poetry", "poem", "haiku", "comic book", "novel", "writing", "writer", "journaling", "reading", "story", "author"],
+      "names": ["Paige Turner", "Libby Rary", "Stan Za", "Dewey Decimal"]
+    },
+    {
+      "topic": "robots",
+      "words": ["robot", "artificial intelligence", "chatbot", "voice assistant", "android", "automation", "self-driving car", "drone"],
+      "names": ["Otto Mation", "Ann Droid", "Cy Borg", "Al Gorithm"]
+    },
+    {
+      "topic": "computers",
+      "words": ["computer", "internet", "wi-fi", "wifi", "smartphone", "phone", "algorithm", "the cloud", "software update", "software", "loading bar", "dark mode", "spam", "password", "email", "captcha", "floppy disk", "qr code", "virtual reality", "app", "data", "autocorrect", "emoji", "video call", "smartwatch", "3d printing", "screen time", "group chat", "podcast", "keyboard", "printer", "technology", "programming", "hacker", "website"],
+      "names": ["Meg A. Byte", "Terry Byte", "Dot Com", "Mal Ware"]
+    },
+    {
+      "topic": "the office",
+      "words": ["office", "meeting", "spreadsheet", "remote work", "deadline", "slide deck", "job interview", "team building", "monday", "friday", "performance review", "water cooler", "conference call", "to-do list", "overtime", "productivity", "middle management", "reply-all button", "business card", "filing cabinet", "lunch break", "brainstorming", "paperwork", "bureaucracy", "four-day week", "job title", "stapler", "paperclip", "sticky note", "colleague", "boss", "work", "job", "career", "intern", "name tag", "name badge", "group project"],
+      "names": ["Mike Romanage", "Tim Sheet", "Dee Dline", "Aggie Enda"]
+    },
+    {
+      "topic": "money",
+      "words": ["money", "economics", "economy", "accountant", "bank", "tax", "wallet", "receipt", "budget", "finance", "coin", "price", "shopping", "online shopping", "window shopping", "haggling", "salary", "investment"],
+      "names": ["Penny Wise", "Bill Fold", "Grace Period", "Max Out"]
+    },
+    {
+      "topic": "the law",
+      "words": ["law", "lawyer", "court", "judge", "rule", "crime", "police", "justice", "small print", "contract", "trial", "jury", "parking ticket"],
+      "names": ["Laura Norder", "Justin Case", "Constance Tution"]
+    },
+    {
+      "topic": "detectives",
+      "words": ["detective", "spy", "secret", "mystery", "clue", "investigation", "undercover", "rumour", "rumor", "gossip"],
+      "names": ["Allie Bye", "Whit Ness", "Cody Breaker", "Sue Spect"]
+    },
+    {
+      "topic": "history",
+      "words": ["history", "middle ages", "medieval", "knight", "castle", "king", "queen", "crown", "viking", "roman empire", "roman", "ancient egypt", "pyramid", "renaissance", "stone age", "bronze age", "archaeologist", "archaeology", "caveman", "printing press", "monk", "ancient", "empire", "pharaoh", "mummy", "trojan horse"],
+      "names": ["Archie Ology", "Anne Tiquity", "Rennie Sance", "Neil Lithic", "Lance Alot", "Sir Cumference"]
+    },
+    {
+      "topic": "magic",
+      "words": ["myth", "mythology", "dragon", "unicorn", "mermaid", "ghost", "vampire", "werewolf", "wizard", "witch", "fairy tale", "superhero", "magic", "magician", "magic trick", "haunted house", "loch ness monster", "atlantis", "monster", "spell", "potion", "fairy", "troll", "goblin"],
+      "names": ["Abby Cadabra", "Sue Pernatural", "Fay Tale", "Sorcha Ree"]
+    },
+    {
+      "topic": "dinosaurs",
+      "words": ["dinosaur", "prehistoric", "jurassic", "t rex"],
+      "names": ["Terry Dactyl", "Trixie Ratops", "Rex Tinction"]
+    },
+    {
+      "topic": "pirates",
+      "words": ["pirate", "treasure", "treasure map", "buccaneer"],
+      "names": ["Jolly Roger", "Duke Bloon", "Walker Plank"]
+    },
+    {
+      "topic": "sports",
+      "words": ["sport", "football", "rugby", "golf", "cricket", "tennis", "table tennis", "badminton", "marathon", "jogging", "running", "swimming", "synchronized swimming", "figure skating", "sumo wrestling", "fencing", "archery", "rock climbing", "skydiving", "surfing", "skateboarding", "curling", "minigolf", "bowling", "tug of war", "darts", "olympics", "penalty shootout", "sack race", "arm wrestling", "referee", "frisbee", "hula hoop", "trampoline", "gym", "exercise", "cycling", "yoga", "stretching", "lifeguard"],
+      "names": ["Victor E. Lap", "Jim Nastics", "Bo Anarrow", "Miles Long", "Hugo First"]
+    },
+    {
+      "topic": "games",
+      "words": ["game", "chess", "board game", "video game", "crossword", "crossword puzzle", "jigsaw puzzle", "puzzle", "bingo", "hide and seek", "rock paper scissors", "musical chairs", "pinball", "escape room", "card game", "dice", "poker", "lottery"],
+      "names": ["Chuck Mate", "Joy Stick", "Ruby Cube", "Dom Ino"]
+    },
+    {
+      "topic": "getting around",
+      "words": ["car", "traffic", "traffic jam", "traffic cone", "parallel parking", "car park", "car wash", "petrol station", "motorway", "roundabout", "road trip", "taxi", "taxi driver", "bus", "bus stop", "night bus", "tram", "train", "train station", "trainspotting", "railway", "airplane", "aeroplane", "plane", "airport", "flight", "jet lag", "helicopter", "hot air balloon", "ferry", "sailboat", "boat", "ship", "cargo ship", "bicycle", "unicycle", "tandem bicycle", "electric scooter", "tractor", "fire engine", "cable car", "gondola", "escalator", "elevator", "lift", "parachute", "zip line", "roller skate", "moving walkway", "window seat", "commute", "driving"],
+      "names": ["Otto Mobile", "Rhoda Rage", "Al Titude", "Terry Bulance", "Lou Comotive", "Ella Vator"]
+    },
+    {
+      "topic": "home",
+      "words": ["home", "house", "cleaning", "spring cleaning", "tidying up", "laundry", "laundromat", "ironing", "vacuum cleaner", "washing machine", "dishwasher", "diy", "assembling furniture", "furniture", "furniture store", "moving house", "moving out", "junk drawer", "attic", "basement", "garden shed", "curtain", "wallpaper", "doormat", "doorknob", "sofa", "ladder", "toolbox", "hammer", "roommate", "neighbour", "neighbor", "roof", "doorbell", "mirror", "candle", "light bulb", "fridge", "toaster", "microwave", "coat hanger", "cardboard box", "bubble wrap", "thermostat", "remote control"],
+      "names": ["Lauren Dry", "Dee Clutter", "Allen Key", "Ira Ning"]
+    },
+    {
+      "topic": "gardening",
+      "words": ["garden", "gardening", "plant", "houseplant", "office plant", "tree", "forest", "weed", "compost", "moss", "mushroom", "flower", "lawn mower", "lawn", "garden gnome", "leaf", "leaves", "seed", "jungle", "cactus", "rose", "wheelbarrow", "greenhouse"],
+      "names": ["Herb Garden", "Holly Hock", "Phil O'Dendron", "Rose Bush"]
+    },
+    {
+      "topic": "sleep",
+      "words": ["sleep", "napping", "nap", "dream", "nightmare", "insomnia", "snoring", "sleepwalking", "daydreaming", "alarm", "alarm clock", "snooze button", "oversleeping", "pillow", "bed", "yawning", "lullaby", "bedtime"],
+      "names": ["Sandy Mann", "Matt Tress", "Doza Lott"]
+    },
+    {
+      "topic": "time",
+      "words": ["time", "clock", "wristwatch", "calendar", "time zone", "leap year", "time travel", "running late", "waiting", "queue", "queueing", "future", "yesterday", "tomorrow", "weekend", "procrastination", "patience", "punctuality", "late"],
+      "names": ["Justin Time", "Will Waite", "Clark Kwork"]
+    },
+    {
+      "topic": "the mind",
+      "words": ["philosophy", "psychology", "happiness", "friendship", "loneliness", "ambition", "confidence", "awkwardness", "embarrassment", "nostalgia", "regret", "boredom", "curiosity", "kindness", "honesty", "mindfulness", "intuition", "free will", "meaning of life", "therapy", "habit", "creativity", "motivation", "success", "failure", "luck", "common sense", "deja vu", "déjà vu", "emotion", "mind", "thinking", "logic", "knowledge", "memory"],
+      "names": ["Phil Osophy", "Sy Kology", "Mindy Fullness", "Noel Edge"]
+    },
+    {
+      "topic": "hair",
+      "words": ["hair", "beard", "moustache", "mustache", "haircut", "bad hair day", "eyebrow", "barber", "hairdresser", "shaving", "wig"],
+      "names": ["Moe Stash", "Harry Chin", "Perry Wigg"]
+    },
+    {
+      "topic": "fashion",
+      "words": ["fashion", "clothes", "clothing", "sock", "hat", "scarf", "glove", "shoelace", "zipper", "sunglasses", "flip-flop", "shoe", "dress", "jacket", "tie", "suit", "knitting", "wardrobe"],
+      "names": ["Polly Ester", "Cora Duroy", "Taylor Made", "Cass Mere"]
+    },
+    {
+      "topic": "travel",
+      "words": ["travel", "holiday", "vacation", "tourist", "souvenir", "lost luggage", "luggage", "suitcase", "hotel", "hotel lobby", "campsite", "camping", "beach", "island", "map", "compass", "explorer", "tour guide", "passport", "theme park", "hiking", "backpack"],
+      "names": ["Holly Day", "Carrie Onn", "Cam Ping", "Lou Gage"]
+    },
+    {
+      "topic": "comedy",
+      "words": ["comedy", "stand-up comedy", "joke", "circus", "clown", "juggling", "mime", "puppet", "ventriloquism", "improv", "theatre", "theater", "laughter"],
+      "names": ["Jo King", "Stan Dupp", "Chuck Kles", "Jess Ter"]
+    },
+    {
+      "topic": "films",
+      "words": ["film", "movie", "cinema", "tv", "television", "soap opera", "reality tv", "documentary", "horror movie", "romantic comedy", "cartoon", "movie trailer", "sitcom", "series", "actor", "hollywood"],
+      "names": ["Holly Wood", "Bea Movie", "Cliff Hanger", "Sid Com"]
+    },
+    {
+      "topic": "school",
+      "words": ["school", "teacher", "student", "homework", "exam", "classroom", "education", "university", "lesson", "alphabet", "grammar", "spelling", "pencil", "eraser", "ruler", "scissors", "sticky tape", "lunch box"],
+      "names": ["Rita Book", "Ed Ucation", "Homer Work", "Lexi Con"]
+    },
+    {
+      "topic": "parties",
+      "words": ["party", "birthday", "birthday party", "surprise party", "wedding", "reunion", "family reunion", "school reunion", "office party", "new year", "resolution", "celebration", "gift", "anniversary", "christmas", "surprise"],
+      "names": ["Celia Bration", "Sir Prize", "Rhea Union", "Bea Lated", "Annie Versary"]
+    },
+    {
+      "topic": "recycling",
+      "words": ["recycling", "sustainability", "plastic bag", "environment", "pollution", "waste", "rubbish", "garbage", "minimalism"],
+      "names": ["Rhea Cycle", "Reuben Use", "Sue Stainable"]
+    },
+    {
+      "topic": "Belgium",
+      "words": ["belgium", "belgian", "brussels", "antwerp", "ghent", "bruges", "flanders", "wallonia"],
+      "names": ["Belle Gium", "Manny Kenpis", "Adam Ium"]
+    }
+  ],
+  "fun_surname": [
+    {"topic": "bees", "words": ["bee", "beekeeping", "honey"], "names": ["Linda Hivesworth"]},
+    {"topic": "volcanoes", "words": ["volcano", "lava", "eruption"], "names": ["Martin Lavalle"]},
+    {"topic": "cats", "words": ["cat", "kitten"], "names": ["Martha Whiskerton"]},
+    {"topic": "dogs", "words": ["dog", "puppy"], "names": ["Rufus Barkley"]},
+    {"topic": "gardening", "words": ["garden", "gardening", "weed", "lawn"], "names": ["Gordon Weedon"]},
+    {"topic": "the office", "words": ["office", "stapler", "paperwork", "meeting"], "names": ["Susan Stapleton"]},
+    {"topic": "cheese", "words": ["cheese", "fondue"], "names": ["Margaret Cheddington"]},
+    {"topic": "penguins", "words": ["penguin"], "names": ["Nigel Waddle"]},
+    {"topic": "the weather", "words": ["weather", "rain", "drizzle", "rainy day"], "names": ["Brian Drizzleford"]},
+    {"topic": "socks", "words": ["sock", "knitting"], "names": ["Derek Darnley"]},
+    {"topic": "coffee", "words": ["coffee", "espresso", "barista"], "names": ["Jasper Beanbridge"]},
+    {"topic": "chess", "words": ["chess"], "names": ["Bernard Bishop"]},
+    {"topic": "sleep", "words": ["sleep", "napping", "nap", "snoring", "insomnia"], "names": ["Nora Snoozewell"]},
+    {"topic": "dentists", "words": ["dentist", "tooth"], "names": ["Gregory Plaque"]},
+    {"topic": "maths", "words": ["math", "maths", "mathematics", "number"], "names": ["Norman Numberley"]},
+    {"topic": "pirates", "words": ["pirate", "treasure"], "names": ["Barnaby Cutlass"]},
+    {"topic": "trains", "words": ["train", "railway", "train station", "trainspotting"], "names": ["Gerald Railton"]},
+    {"topic": "cooking", "words": ["cooking", "chef", "sauce", "soup"], "names": ["Deborah Saucier"]},
+    {"topic": "fish", "words": ["fish", "goldfish", "fishing"], "names": ["Graham Gill"]},
+    {"topic": "music", "words": ["music", "drum", "band"], "names": ["Duncan Drummond"]},
+    {"topic": "ghosts", "words": ["ghost", "haunted house"], "names": ["Gloria Spookley"]},
+    {"topic": "baking", "words": ["bread", "baking", "sourdough", "bakery"], "names": ["Barbara Doughty"]},
+    {"topic": "space", "words": ["space", "planet", "satellite", "astronaut"], "names": ["Harriet Orbison"]},
+    {"topic": "dinosaurs", "words": ["dinosaur", "fossil"], "names": ["Fred Fossilwood"]},
+    {"topic": "money", "words": ["money", "bank", "wallet", "budget"], "names": ["Penelope Pennyworth"]},
+    {"topic": "frogs", "words": ["frog", "toad"], "names": ["Tom Croakley"]},
+    {"topic": "ducks", "words": ["duck"], "names": ["Edwin Quackenbush"]},
+    {"topic": "clocks", "words": ["clock", "time", "wristwatch", "alarm clock"], "names": ["Timothy Tickell"]},
+    {"topic": "the law", "words": ["law", "lawyer", "court"], "names": ["Lionel Lawless"]},
+    {"topic": "medicine", "words": ["medicine", "pill", "pharmacy", "vitamin"], "names": ["Doris Dosage"]}
+  ],
+  "famous_pun": [
+    {"topic": "geology", "words": ["geology", "stone", "pebble", "mineral", "crystal"], "names": ["Albert Einstone"]},
+    {"topic": "goats", "words": ["goat"], "names": ["Vincent van Goat"]},
+    {"topic": "dogs", "words": ["dog", "puppy"], "names": ["Bark Twain", "Joan of Bark"]},
+    {"topic": "cats", "words": ["cat", "kitten"], "names": ["Isaac Mewton", "Cleocatra"]},
+    {"topic": "socks", "words": ["sock"], "names": ["Sockrates"]},
+    {"topic": "tortoises", "words": ["tortoise", "turtle"], "names": ["Aristurtle"]},
+    {"topic": "cheese", "words": ["cheese", "fondue"], "names": ["Wolfgang Amadeus Mozzarella"]},
+    {"topic": "tea", "words": ["tea"], "names": ["Charles Darjeeling"]},
+    {"topic": "coffee", "words": ["coffee", "espresso", "latte"], "names": ["Isaac Brewton"]},
+    {"topic": "spicy food", "words": ["spicy food", "curry", "spice"], "names": ["Marie Curry"]},
+    {"topic": "ice cream", "words": ["ice cream", "gelato"], "names": ["Galileo Gelato"]},
+    {"topic": "money", "words": ["money", "bank", "wallet", "economics", "finance", "budget"], "names": ["Claude Money"]},
+    {"topic": "pies", "words": ["pie"], "names": ["Pie-thagoras"]},
+    {"topic": "ghosts", "words": ["ghost", "haunted house", "halloween"], "names": ["Edgar Allan Boo"]},
+    {"topic": "potatoes", "words": ["potato"], "names": ["Edgar Allan Potato"]},
+    {"topic": "vegetables", "words": ["vegetable", "beetroot"], "names": ["Ludwig van Beetroot"]},
+    {"topic": "music", "words": ["music", "beatbox", "drum", "rhythm"], "names": ["Ludwig van Beatbox"]},
+    {"topic": "owls", "words": ["owl", "night owl"], "names": ["Florence Nightingowl"]},
+    {"topic": "ducks", "words": ["duck"], "names": ["William Quackspeare"]},
+    {"topic": "chickens", "words": ["chicken"], "names": ["Marco Pollo"]},
+    {"topic": "sheep", "words": ["sheep", "lamb"], "names": ["Salvador Dolly"]},
+    {"topic": "pigeons", "words": ["pigeon"], "names": ["Pablo Pigeasso"]},
+    {"topic": "airports", "words": ["airport", "airplane", "plane", "flight"], "names": ["Amelia Airfare"]},
+    {"topic": "travel", "words": ["travel", "holiday", "tourist", "road trip"], "names": ["Alan Touring"]},
+    {"topic": "curiosity", "words": ["curiosity", "science"], "names": ["Marie Curious"]},
+    {"topic": "fish", "words": ["fish", "fishing"], "names": ["Captain Cod"]}
+  ]
+}

@@ -1,10 +1,10 @@
 """Asking a language model for a talk's plan (docs/v5-plan.md, sections 5.2 and 5.3).
 
 Python picks the slides (see PresentationSchema); the model writes what goes on them, in one request. The response is
-one JSON object, whose schema is built for this talk's slides: its spine (title, the presenter's job, the thesis)
-first, then one property per slide, in order, so the slides can be read while the model writes them. Seeded
-"dice" (a persona for the presenter and an angle on the topic) make every seed give its own talk, where current
-models take no sampling temperature.
+one JSON object, whose schema is built for this talk's slides: its spine (title, the presenter's job, the thesis, and
+a made-up name for the presenter when nobody gave theirs: see talkgenerator.names) first, then one property per
+slide, in order, so the slides can be read while the model writes them. Seeded "dice" (a persona for the presenter
+and an angle on the topic) make every seed give its own talk, where current models take no sampling temperature.
 """
 
 from __future__ import annotations
@@ -14,6 +14,7 @@ from typing import Any, Final
 
 from talkgenerator.llm.base import Message, TextRequest
 from talkgenerator.models.plan import SlidePlan
+from talkgenerator.names import NameRequest
 from talkgenerator.plan import languages
 from talkgenerator.plan.kinds import KINDS, PRESENTER_JOB, TALK_TITLE, Recipe, TextField
 from talkgenerator.util import random_util
@@ -39,7 +40,7 @@ sites: concrete things rather than ideas ("a cat wearing sunglasses", not "cooln
 
 Never write:
 - quotes attributed to real people (quotes on the slides belong to made-up people, or to no one),
-- anything about real private persons, or the presenter's name (talkgenerator adds it),
+- anything about real private persons, or the presenter's name on the slides (the title slide has it),
 - slurs, sexual content, or anything that mocks people for who they are,
 - markup, emoji, hashtags, or placeholders in curly braces.
 
@@ -88,18 +89,26 @@ class PlannedSlide:
         return f"slide_{self.number}"
 
 
-def spine(language: str = "en") -> dict[str, str]:
-    """The talk's spine, which the answer starts with: what to write in each of its fields."""
-    name = languages.language(language).name
-    return {
+def spine(language: str = "en", name: NameRequest | None = None) -> dict[str, str]:
+    """The talk's spine, which the answer starts with: what to write in each of its fields. With a name request, the
+    presenter's name too, before their job (which then agrees with it)."""
+    language_name = languages.language(language).name
+    fields = {
         # (Asked the other way around, as "safe_topic", the free models sometimes turned down harmless topics)
         "unsafe_topic": "true only if the topic asks for something hateful or harmful; false for every other topic, "
         "however odd",
         "thesis": "the talk's thesis, its absurd claim in one sentence (not shown)",
-        "title": f"{TALK_TITLE.description}, in {name} (at most {TALK_TITLE.max_length} characters)",
-        "presenter_job": f"{PRESENTER_JOB.description}, for the title slide, in {name} (at most "
-        f"{PRESENTER_JOB.max_length} characters)",
+        "title": f"{TALK_TITLE.description}, in {language_name} (at most {TALK_TITLE.max_length} characters)",
     }
+    agreeing = ""
+    if name is not None:
+        fields["presenter_name"] = name.description(language)
+        agreeing = ", agreeing with presenter_name (a Prof. is a professor of something, a Dr. a doctor)"
+    fields["presenter_job"] = (
+        f"{PRESENTER_JOB.description}, for the title slide{agreeing}, in {language_name} (at most "
+        f"{PRESENTER_JOB.max_length} characters)"
+    )
+    return fields
 
 
 # What a slide is about: when its images can't be found, it's searched for instead
@@ -115,17 +124,19 @@ def talk_request(
     language: str = "en",
     title: str | None = None,
     asked_again: bool = False,
+    name: NameRequest | None = None,
 ) -> TextRequest:
-    """The request for a talk. Asked again, it says that a model found the topic unsafe: some of the free models get
-    the flag wrong whichever way it's asked (one turned down "penguins")."""
+    """The request for a talk (with the presenter's name, when there's a name request). Asked again, it says that a
+    model found the topic unsafe: some of the free models get the flag wrong whichever way it's asked (one turned
+    down "penguins")."""
     with random_util.use(rng.child("dice")):
         persona, angle = random_util.choice(_PERSONAS), random_util.choice(_ANGLES)
     topic = topics[0] + (f" (and {', '.join(topics[1:])})" if len(topics) > 1 else "")
     lines = [
         f"Topic: {topic}",
         f"Title: {title}" if title else "Title: come up with one",
-        f"Language: write the title, the presenter's job and every slide in {languages.language(language).name}, and "
-        "the image search queries in English",
+        f"Language: write the title, the presenter's {'name and ' if name is not None else ''}job and every slide in "
+        f"{languages.language(language).name}, and the image search queries in English",
         f"The presenter: {persona}",
         f"The angle: {angle}",
         "",
@@ -139,7 +150,7 @@ def talk_request(
             else []
         ),
         "Write the talk as one JSON object. First its spine:",
-        *(f"- {name}: {description}" for name, description in spine(language).items()),
+        *(f"- {field}: {description}" for field, description in spine(language, name).items()),
         "",
         "Then every slide, in order (slide 1, the title slide, is made from the spine), each with its texts, a search "
         f"query for each of its images, and its concept: {CONCEPT}.",
@@ -154,17 +165,19 @@ def talk_request(
         purpose="talk plan",
         system=SYSTEM_PROMPT,
         messages=(Message(role="user", content="\n".join(lines)),),
-        json_schema=response_schema(planned, language),
+        json_schema=response_schema(planned, language, name),
         max_output_tokens=1000 + 300 * len(planned),
     )
 
 
-def response_schema(planned: list[PlannedSlide], language: str = "en") -> dict[str, Any]:
+def response_schema(
+    planned: list[PlannedSlide], language: str = "en", name: NameRequest | None = None
+) -> dict[str, Any]:
     """The JSON Schema of the answer: every property required, nothing else allowed (as strict structured outputs
     want), the spine first and the slides in order."""
     properties: dict[str, Any] = {
-        name: {"type": "boolean" if name == "unsafe_topic" else "string", "description": description}
-        for name, description in spine(language).items()
+        field: {"type": "boolean" if field == "unsafe_topic" else "string", "description": description}
+        for field, description in spine(language, name).items()
     }
     for slide in planned:
         properties[slide.key] = slide_schema(slide.recipe)
