@@ -694,7 +694,7 @@ def slot_schema(sources, look, monkeypatch):
 
 
 def _talk(seed, parallel, theme="classic", license_policy=None):
-    _, slide_deck, _ = generator.generate_presentation(
+    _, slide_deck, _ = generator._generate_presentation(
         schema="fake",
         slides=7,
         topic="owls, cats",

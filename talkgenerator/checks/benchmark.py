@@ -104,7 +104,7 @@ def generate_deck(
     theme: str | None = None,
     license_policy: str | None = None,
 ) -> Deck:
-    _, slide_deck, _ = generator.generate_presentation(
+    _, slide_deck, _ = generator._generate_presentation(
         schema=schema,
         slides=slides,
         topic=topic,

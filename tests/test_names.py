@@ -35,7 +35,7 @@ def schema(monkeypatch):
 
 
 def _deck(model, int_seed=1, topic="cats", **options):
-    _, slide_deck, _ = generator.generate_presentation(
+    _, slide_deck, _ = generator._generate_presentation(
         schema="fake", slides=NUM_SLIDES, topic=topic, int_seed=int_seed, save_ppt=False, llm=model, **options
     )
     return slide_deck.to_deck(schema_name="fake")
@@ -357,6 +357,6 @@ def test_the_command_line_takes_name_styles(monkeypatch):
 
     given = {}
     monkeypatch.setattr(runtime_checker, "check_runtime_environment", lambda: True)
-    monkeypatch.setattr(generator, "generate_presentation", lambda **options: given.update(options))
+    monkeypatch.setattr(generator, "_generate_presentation", lambda **options: given.update(options))
     generator.generate_presentation_using_cli_arguments(args)
     assert given["name_styles"] == ("pun", "classic")

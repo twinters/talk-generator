@@ -13,7 +13,7 @@ SLIDES = 6
 
 @requires_keys("OPENROUTER_API_KEY")
 def test_openrouters_free_models_write_a_talk():
-    _, slide_deck, _ = generator.generate_presentation(
+    _, slide_deck, _ = generator._generate_presentation(
         schema="default",
         slides=SLIDES,
         topic="volcanoes",

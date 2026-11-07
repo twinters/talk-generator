@@ -1,5 +1,7 @@
 import logging
+import warnings
 from collections.abc import Callable, Sequence
+from typing import Final
 
 from talkgenerator import __version__
 from talkgenerator.datastructures.image_data import ImageData
@@ -11,6 +13,13 @@ from talkgenerator.render.powerpoint import render_slide
 from talkgenerator.slide.slides import SectionSlide, Slide
 
 logger = logging.getLogger("talkgenerator")
+
+TO_SLIDE_DECK_DICTIONARY_DEPRECATION: Final = (
+    "SlideDeck.to_slide_deck_dictionary() is deprecated (it keeps working throughout talkgenerator 5). Use "
+    "slide_deck.to_deck() instead: the whole talk as a deck (talkgenerator.models.deck), whose to_json() is the deck "
+    "JSON, and whose slides are these dictionaries, as data. See "
+    "https://github.com/twinters/talk-generator/blob/master/docs/migrating-from-4.md"
+)
 
 
 class SlideDeck:
@@ -124,7 +133,9 @@ class SlideDeck:
         return images
 
     def to_slide_deck_dictionary(self) -> list[dict]:
-        """The slides as JSON-ready dictionaries: the slides of the deck format (see to_deck)."""
+        """Deprecated: the slides as JSON-ready dictionaries, the slides of the deck format. It keeps working
+        throughout talkgenerator 5, with a DeprecationWarning: to_deck gives the whole deck, with these slides."""
+        warnings.warn(TO_SLIDE_DECK_DICTIONARY_DEPRECATION, DeprecationWarning, stacklevel=2)
         return [slide.model_dump(mode="json", exclude_none=True) for slide in self.to_deck().slides]
 
     def get_structured_data(self):

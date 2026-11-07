@@ -600,18 +600,18 @@ def test_previews_show_the_slides(images, tmp_path):
 def test_the_generator_makes_themed_talks(monkeypatch, images):
     schema = test_seeds.fake_schema()
     monkeypatch.setattr(generator, "get_schema", lambda name: schema)
-    _, slide_deck, _ = generator.generate_presentation(
+    _, slide_deck, _ = generator._generate_presentation(
         schema="fake", slides=test_seeds.NUM_SLIDES, topic="cats", int_seed=2, save_ppt=False, theme="neon"
     )
     deck = slide_deck.to_deck()
     assert deck.theme.startswith("neon") and all(slide.layout.startswith("v5/") for slide in deck.slides)
-    _, classic, _ = generator.generate_presentation(
+    _, classic, _ = generator._generate_presentation(
         schema="fake", slides=test_seeds.NUM_SLIDES, topic="cats", int_seed=2, save_ppt=False
     )
     # The theme doesn't change what's on the slides
     texts = [[e.text for e in s.elements if isinstance(e, TextElement)] for s in classic.to_deck().slides]
     assert texts == [[e.text for e in s.elements if isinstance(e, TextElement)] for s in deck.slides]
-    _, chaos, _ = generator.generate_presentation(
+    _, chaos, _ = generator._generate_presentation(
         schema="fake", slides=test_seeds.NUM_SLIDES, topic="cats", int_seed=2, save_ppt=False, theme="chaos"
     )
     assert all(slide.style is not None for slide in chaos.to_deck().slides)
@@ -628,7 +628,7 @@ def test_the_default_theme_is_random_unless_the_settings_name_one(monkeypatch, i
     monkeypatch.setattr(generator, "get_schema", lambda name: schema)
 
     def talk():
-        _, slide_deck, _ = generator.generate_presentation(
+        _, slide_deck, _ = generator._generate_presentation(
             schema="fake", slides=test_seeds.NUM_SLIDES, topic="cats", int_seed=2, save_ppt=False
         )
         return slide_deck.to_deck()
@@ -641,7 +641,7 @@ def test_the_default_theme_is_random_unless_the_settings_name_one(monkeypatch, i
     monkeypatch.setenv("TALKGENERATOR_THEME", "classic")
     assert talk().theme == "classic"
     with pytest.raises(ValueError, match="There's no theme 'glitter'"):
-        generator.generate_presentation(schema="fake", slides=3, topic="cats", save_ppt=False, theme="glitter")
+        generator._generate_presentation(schema="fake", slides=3, topic="cats", save_ppt=False, theme="glitter")
 
 
 def test_a_settings_menu_gets_every_theme_with_a_label_and_a_description():

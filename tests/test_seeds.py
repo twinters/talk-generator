@@ -104,7 +104,7 @@ def talk_json(int_seed, parallel):
     generator.get_schema = lambda name: schema
     random.seed()  # whatever state Python's own random generator is in, the seed decides
     try:
-        _, slide_deck, _ = generator.generate_presentation(
+        _, slide_deck, _ = generator._generate_presentation(
             schema="fake",
             slides=NUM_SLIDES,
             topic="cat, dog, bread, house",

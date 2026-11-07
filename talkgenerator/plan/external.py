@@ -236,9 +236,11 @@ def render_plan(
     is saved over plan_path, the plan's own file. theme (or else the plan's own) is its look, as --theme takes it.
 
     The presenter is the one given, or else the plan's presenter_name (when it will do: see
-    talkgenerator.names.clean), or else a name talkgenerator makes up, in one of name_styles (see generate_presentation).
+    talkgenerator.names.clean), or else a name talkgenerator makes up, in one of name_styles (see
+    talkgenerator.names.catalog).
 
-    license_policy is the license classes its images may have (see generate_presentation): the format's, without one."""
+    license_policy is the license classes its images may have (see talkgenerator.images.licenses): the format's,
+    without one."""
     from talkgenerator import generator  # (here: the generator module imports the schemas)
 
     schema = generator.get_schema(schema_name)

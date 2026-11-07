@@ -6,8 +6,9 @@ import queue
 import subprocess
 import sys
 import threading
+import warnings
 from collections.abc import Callable, Iterable, Iterator
-from typing import Any
+from typing import Any, Final
 
 from pptx.presentation import Presentation
 
@@ -32,6 +33,15 @@ DEFAULT_PRESENTATION_TOPIC = "cat"
 DEFAULT_OUTPUT_FOLDER = "output"
 MAX_PRESENTATION_SAVE_TRIES = 100
 
+MIGRATING: Final = "https://github.com/twinters/talk-generator/blob/master/docs/migrating-from-4.md"
+# What generate_presentation's DeprecationWarning says (talkgenerator.com's older /api/generate still calls it)
+GENERATE_PRESENTATION_DEPRECATION: Final = (
+    "generator.generate_presentation() is deprecated (it keeps working throughout talkgenerator 5). Use "
+    "generator.stream_talk() instead: it takes the same talk options, and its talk.finished event has the deck, which "
+    "talkgenerator.render.powerpoint.render_pptx(deck) turns into a PowerPoint. Or render a talk plan, written by "
+    f"Claude or by you, with talkgenerator.plan.external.render_plan(). See {MIGRATING}"
+)
+
 logger = logging.getLogger("talkgenerator")
 
 
@@ -46,7 +56,7 @@ def generate_presentation_using_cli_arguments(args) -> tuple[Presentation | None
     logger.info("******************************************")
     logger.info("Making {} slide talk on: {}".format(args.num_slides, args.topic))
 
-    return generate_presentation(
+    return _generate_presentation(
         schema=args.schema,
         slides=args.num_slides,
         topic=args.topic,
@@ -96,7 +106,71 @@ def generate_presentation(
     topic_or_title: str | None = None,
     license_policy: str | Iterable[str] | None = None,
 ) -> tuple[Presentation | None, SlideDeck, str | None]:
-    """Generate a talk. With debug_notes, every slide's speaker notes explain how it was generated.
+    """Deprecated, for talkgenerator 4's callers: generate a talk, save it as a PowerPoint in output_folder (unless
+    save_ppt is off), and return the PowerPoint, the talk and the file it went to (see _generate_presentation for the
+    options).
+
+    It keeps working throughout talkgenerator 5, with a DeprecationWarning that says what to use instead: stream_talk,
+    which takes the same talk options, and whose talk.finished event has the deck, which
+    talkgenerator.render.powerpoint.render_pptx turns into a PowerPoint; or a talk plan, rendered with
+    talkgenerator.plan.external.render_plan (docs/migrating-from-4.md). talkgenerator's own commands (the command
+    line, the MCP server, the checks) and stream_talk make their talks with _generate_presentation, so they don't
+    warn."""
+    warnings.warn(GENERATE_PRESENTATION_DEPRECATION, DeprecationWarning, stacklevel=2)
+    return _generate_presentation(
+        schema,
+        slides,
+        topic=topic,
+        title=title,
+        presenter=presenter,
+        parallel=parallel,
+        int_seed=int_seed,
+        save_ppt=save_ppt,
+        output_folder=output_folder,
+        open_ppt=open_ppt,
+        print_logs=print_logs,
+        debug_notes=debug_notes,
+        save_json=save_json,
+        llm=llm,
+        language=language,
+        budget=budget,
+        theme=theme,
+        style_chaos=style_chaos,
+        extreme_themes=extreme_themes,
+        progress=progress,
+        name_styles=name_styles,
+        topic_or_title=topic_or_title,
+        license_policy=license_policy,
+    )
+
+
+def _generate_presentation(
+    schema: str,
+    slides: int,
+    topic: str | list[str] | None = None,
+    title: str | None = None,
+    presenter: str | None = None,
+    parallel: bool = True,
+    int_seed: int | None = None,
+    save_ppt: bool = True,
+    output_folder: str = DEFAULT_OUTPUT_FOLDER,
+    open_ppt: bool = False,
+    print_logs=False,
+    debug_notes: bool = False,
+    save_json: bool = False,
+    llm: TextProvider | str | None = None,
+    language: str = "en",
+    budget: Budget | None = None,
+    theme: str | None = None,
+    style_chaos: float = 0.0,
+    extreme_themes: bool = True,
+    progress: Progress | None = None,
+    name_styles: str | Iterable[str] | None = None,
+    topic_or_title: str | None = None,
+    license_policy: str | Iterable[str] | None = None,
+) -> tuple[Presentation | None, SlideDeck, str | None]:
+    """Generate a talk, as talkgenerator's own commands and stream_talk do: what generate_presentation does, without
+    its DeprecationWarning. With debug_notes, every slide's speaker notes explain how it was generated.
 
     topic is what the talk is about (or topics, separated by commas), and title its title; without a title, it gets
     one. topic_or_title stands for both, when what's given could be either, as what someone types can be: "penguins",
@@ -288,7 +362,7 @@ def stream_talk(
     def make() -> None:
         try:
             with image_util.probing():
-                _, slide_deck, _ = generate_presentation(
+                _, slide_deck, _ = _generate_presentation(
                     schema,
                     slides,
                     topic=topic,

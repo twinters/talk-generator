@@ -12,6 +12,7 @@ import logging
 import sys
 import threading
 import time
+import warnings
 from pathlib import Path
 
 import anyio
@@ -268,6 +269,21 @@ def test_without_a_language_model_the_talk_is_classic_and_english(schema, server
         "talks in other languages than English need slides a language model wrote, and this one has none, so it's in "
         "English (the settings name no language model)"
     ]
+
+
+@needs_mcp
+def test_the_tools_make_talks_without_deprecation_warnings(schema, server):
+    """The server makes its talks as the command line does, not with the deprecated generate_presentation (see
+    test_deprecations), so a client sees no DeprecationWarning of talkgenerator's on the server's stderr."""
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        _answer(_call(server, "generate_talk", {"topic": "cats", "slides": 4}))
+        _answer(_call(server, "render_plan", {"plan": _plan(CHART).model_dump(mode="json")}))
+    assert [
+        str(caught_warning.message)
+        for caught_warning in caught
+        if "throughout talkgenerator 5" in str(caught_warning.message)
+    ] == []
 
 
 @needs_mcp

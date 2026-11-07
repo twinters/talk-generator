@@ -323,7 +323,7 @@ def _generate(
     contact sheet, and the report on it."""
     from talkgenerator import generator  # (here: the generator module imports the schemas)
 
-    _, slide_deck, saved = generator.generate_presentation(
+    _, slide_deck, saved = generator._generate_presentation(
         schema=schema_name,
         slides=slides,
         topic=topic or None,
