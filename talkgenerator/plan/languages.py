@@ -2,11 +2,11 @@
 
 A language model (or an agent's plan) writes a talk in its language, and talkgenerator adds a few words of its own:
 the title slide's "By ...", a chart's "Yes" and "No", a social media post's likes and shares, a news story's
-breaking news, and the "Did you know?" over a fun fact, which this module has in every language. The classic
-generator only speaks English, so in a talk in another language, a slide that doesn't come out as planned becomes a
-picture without text instead of a classic slide. The language check reads texts with NLTK's stopword lists (and a
-language's words that look like English ones, which they leave out), and the spelling fixes of what's typed for a
-talk leave the compounds alone of a language that writes them as one word.
+breaking news, the "Did you know?" over a fun fact and the "Challenge" over a dare, which this module has in every
+language. The classic generator only speaks English, so in a talk in another language, a slide that doesn't come out
+as planned becomes a picture without text instead of a classic slide. The language check reads texts with NLTK's
+stopword lists (and a language's words that look like English ones, which they leave out), and the spelling fixes of
+what's typed for a talk leave the compounds alone of a language that writes them as one word.
 """
 
 from __future__ import annotations
@@ -27,6 +27,7 @@ class Language:
     shares: str = "shares"
     breaking: str = "BREAKING NEWS"  # over a news story on television
     fun_facts: tuple[str, ...] = ("Did you know?", "Fun fact")  # over a fun fact (one of them)
+    dare: str = "Challenge"  # over a dare for the presenter
     # Whether it writes compounds as one word ("pinguïnsekte", "Pinguinsekte", "pingvinsekt"), which the spelling
     # fixes of what's typed for a talk then leave alone (see talkgenerator.sources.word_frequency)
     compounds: bool = False
@@ -52,6 +53,7 @@ LANGUAGES: Final[dict[str, Language]] = {
             shares="keer gedeeld",
             breaking="NIEUWSFLITS",
             fun_facts=("Wist je dat?", "Weetje"),
+            dare="Uitdaging",
             compounds=True,
         ),
         Language(
@@ -65,6 +67,7 @@ LANGUAGES: Final[dict[str, Language]] = {
             shares="partages",
             breaking="DERNIÈRE MINUTE",
             fun_facts=("Le saviez-vous ?", "Anecdote"),
+            dare="Défi",
         ),
         Language(
             "de",
@@ -77,6 +80,7 @@ LANGUAGES: Final[dict[str, Language]] = {
             shares="Mal geteilt",
             breaking="EILMELDUNG",
             fun_facts=("Schon gewusst?", "Fun Fact"),
+            dare="Aufgabe",
             compounds=True,
         ),
         Language(
@@ -90,6 +94,7 @@ LANGUAGES: Final[dict[str, Language]] = {
             shares="veces compartido",
             breaking="ÚLTIMA HORA",
             fun_facts=("¿Sabías que...?", "Dato curioso"),
+            dare="Reto",
         ),
         Language(
             "it",
@@ -102,6 +107,7 @@ LANGUAGES: Final[dict[str, Language]] = {
             shares="condivisioni",
             breaking="ULTIM'ORA",
             fun_facts=("Lo sapevi?", "Curiosità"),
+            dare="Sfida",
         ),
         Language(
             "pt",
@@ -114,6 +120,7 @@ LANGUAGES: Final[dict[str, Language]] = {
             shares="compartilhamentos",
             breaking="ÚLTIMA HORA",
             fun_facts=("Você sabia?", "Curiosidade"),
+            dare="Desafio",
         ),
         Language(
             "sv",
@@ -126,6 +133,7 @@ LANGUAGES: Final[dict[str, Language]] = {
             shares="delningar",
             breaking="JUST NU",  # (as Swedish news sites and SVT flag breaking news)
             fun_facts=("Visste du?", "Kul fakta"),
+            dare="Utmaning",
             compounds=True,
             # (into, all, just, to ask, a village and ice)
             english_lookalikes=frozenset({"in", "all", "just", "be", "by", "is"}),

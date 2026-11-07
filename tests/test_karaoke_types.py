@@ -1,8 +1,12 @@
 """Offline tests of the slide types that came from real PowerPoint karaoke decks (docs/v5-plan.md, section 8): a fun
-fact. They're texts (and a photo) on shapes that the layouts draw, in every theme and in the classic template's look,
-as milestone 6's types are (see test_slide_types.py)."""
+fact, an acronym for a made-up method, a dare for the presenter, a flowchart whose every path leads to the same end,
+and a tier list. They're texts (and a photo) on shapes that the layouts draw, in every theme and in the classic
+template's look, as milestone 6's types are (see test_slide_types.py); and a recipe variant of a real chart from the
+internet, under a confident conclusion."""
 
 import pytest
+from lxml import etree
+from pptx.oxml.ns import qn
 
 from talkgenerator.checks.deck import check_completeness, check_deck, check_leftovers
 from talkgenerator.checks.design import check_design
@@ -13,7 +17,7 @@ from talkgenerator.models.deck import ShapeElement, TextElement
 from talkgenerator.models.plan import SlidePlan
 from talkgenerator.plan import external, languages
 from talkgenerator.plan.kinds import KINDS, Recipe
-from talkgenerator.plan.realize import realize
+from talkgenerator.plan.realize import length_limit, realize
 from talkgenerator.render import preview
 from talkgenerator.render.powerpoint import render_pptx
 from talkgenerator.schema import content_generators as cg
@@ -32,10 +36,20 @@ ENGLISH = languages.ENGLISH
 
 
 def every_karaoke_type(image):
-    """Slides of every karaoke type, with what every one of their layouts takes (a photo, and none), each credited."""
+    """Slides of every karaoke type, with what every one of their layouts takes (a photo and none, a title and none,
+    few words and many), each credited."""
     made = [
         slides.FunFactSlide("Did you know?", "Cats invented the internet in 1347.", "Source: my uncle", image),
         slides.FunFactSlide("Fun fact", "Owls can't see penguins.", "Source: trust me"),
+        slides.AcronymSlide("The CAT method", "Curiosity", "Agility", "Tuna"),
+        slides.AcronymSlide(
+            "The SPARKLE way", "Synergy", "Passion", "Accountability", "Resilience", "Kindness", "Lasagna"
+        ),
+        slides.DareSlide("Challenge", "Present the next slide as a haiku."),
+        slides.FlowchartSlide("Should you get a cat?", "Do you like cats?", "Get a cat", "Get a cat anyway", "A cat"),
+        slides.FlowchartSlide(None, "Is it Tuesday?", "Feed the cat", "Ask the cat", "The cat decides"),
+        slides.TierListSlide("Cat toys, ranked", "A box", "Yarn | Laser", "Mouse", None, "The expensive bed"),
+        slides.TierListSlide(None, "Naps", "Tuna | Sun", "Yarn", "Water | Baths | Vets", "Dogs"),
     ]
     for slide in made:
         slide.add_source("Ann (via Pexels)", "https://www.pexels.com/photo/cat-123/")
@@ -43,7 +57,28 @@ def every_karaoke_type(image):
 
 
 def shortest_karaoke_types(image):
-    return [slides.FunFactSlide("?", "A"), slides.FunFactSlide("?", "A", None, image)]
+    return [
+        slides.FunFactSlide("?", "A"),
+        slides.FunFactSlide("?", "A", None, image),
+        slides.AcronymSlide(None, "A", "B", "C"),
+        slides.DareSlide("!", "Go"),
+        slides.FlowchartSlide(None, "?", "A", "B", "C"),
+        slides.TierListSlide(None, "A", "B"),
+    ]
+
+
+def _longest(kind, word="Expectation"):
+    """Every text of the kind as long as a slide takes it, as in test_slide_types; an acronym's acronym the initials
+    of its words, and a tier list's tiers three things each."""
+    texts = _longest_texts(kind, word)
+    if kind == "acronym":
+        texts["acronym"] = word[0] * slides.ACRONYM_LETTERS
+    if kind == "tier_list":
+        for name in ("a_tier", "b_tier", "c_tier", "f_tier"):
+            limit = length_limit(next(text for text in KINDS[kind].texts if text.name == name))
+            item = " ".join([word] * 3)[: limit // 3 - 3].strip()
+            texts[name] = " | ".join([item] * 3)
+    return texts
 
 
 # EVERY TYPE, IN EVERY THEME
@@ -51,9 +86,11 @@ def shortest_karaoke_types(image):
 
 @pytest.mark.parametrize("family", FAMILIES)
 def test_the_longest_texts_fit_and_read_in_every_theme(images, family):
-    with_photo = [_built(kind, _longest_texts(kind), {"photo": _image("wide")}) for kind in KARAOKE]
-    without = [_built(kind, _longest_texts(kind), {"photo": None}) for kind in KARAOKE]
-    made = with_photo + without + shortest_karaoke_types(_image("tall"))
+    with_photo = [_built(kind, _longest(kind), {"photo": _image("wide")}) for kind in KARAOKE]
+    without = [_built(kind, _longest(kind), {"photo": None}) for kind in KARAOKE]
+    one_long_thing = _longest("tier_list")
+    one_long_thing.update({name: _longest_texts("tier_list")[name] for name in ("a_tier", "f_tier")})
+    made = [*with_photo, *without, _built("tier_list", one_long_thing), *shortest_karaoke_types(_image("tall"))]
     for seed in range(3):
         deck = _deck(made, _theme(family, seed), seed)
         assert check_design(deck) == [], (family, seed)
@@ -64,10 +101,11 @@ def test_the_longest_texts_fit_and_read_in_every_theme(images, family):
 def test_long_words_fit_in_every_theme(images, family):
     # (compounds, as Dutch and German have them)
     made = [
-        _built(kind, _longest_texts(kind, "Brandweerkazernedeur"), {"photo": photo})
+        _built(kind, _longest(kind, "Brandweerkazernedeur"), {"photo": photo})
         for kind in KARAOKE
         for photo in (_image("wide"), None)
     ]
+    made += every_karaoke_type(_image("wide"))  # (and the layouts for few short words, or a title beside)
     for seed in range(3):
         deck = _deck(made, _theme(family, seed), seed)
         assert [finding for finding in check_design(deck) if finding.check == "overflow"] == [], (family, seed)
@@ -88,17 +126,75 @@ def test_every_layout_comes_up_and_needs_what_it_says(images):
         "v5/fun-fact",
         "v5/fun-fact-banner",
     ]
+    assert fitting(slides.AcronymSlide("C", "Cat", "Apple", "Toast")) == ["v5/acronym", "v5/acronym-across"]
+    assert fitting(slides.AcronymSlide("C", "Cat", "Apple", "Teamworkingness")) == ["v5/acronym"]  # (a long word)
+    assert fitting(slides.AcronymSlide("C", *"ABCDEF")) == ["v5/acronym"]  # (six letters)
+    assert fitting(slides.FlowchartSlide(None, "?", "A", "B", "C")) == ["v5/flowchart"]
+    assert fitting(slides.TierListSlide("Ranked", "A", "B")) == ["v5/tier-list", "v5/tier-list-side"]
 
 
-def test_texts_on_stickers_and_cards_read_on_them(images):
+def test_texts_on_shapes_read_on_them(images):
     for seed in range(6):
         deck = _deck(every_karaoke_type(_image("wide")), _theme("neon", seed), seed)
         for slide in deck.slides:
-            sticker = next(element for element in slide.elements if element.role == "kicker sticker")
-            kicker = slide.element("kicker")
-            assert isinstance(sticker, ShapeElement) and isinstance(kicker, TextElement)
-            assert kicker.style.color != sticker.color
+            if slide.type == "fun_fact":
+                sticker = next(element for element in slide.elements if element.role == "kicker sticker")
+                kicker = slide.element("kicker")
+                assert isinstance(sticker, ShapeElement) and isinstance(kicker, TextElement)
+                assert kicker.style.color != sticker.color
         assert check_design(deck) == []
+
+
+# WHAT AN ACRONYM, A DARE, A FLOWCHART AND A TIER LIST SHOW
+
+
+def test_an_acronym_is_its_words_initials_and_its_last_word_comes_on_a_click():
+    deck_slide = slides.AcronymSlide("The SPARK method", "synergy", "Passion", "agility", "Resilience", "kazoos")
+    deck_slide = deck_slide.to_deck_slide()
+    assert [deck_slide.element(f"letter_{index}").text for index in range(1, 6)] == list("SPARK")
+    assert [element.role for element in deck_slide.elements if element.appears_on_click] == ["word_5"]
+    assert deck_slide.element("letter_6") is None and deck_slide.element("word_6") is None
+
+
+def test_a_dares_heading_and_a_flowcharts_answers_speak_the_talks_language():
+    dutch = languages.language("nl")
+    dare = KINDS["dare"].build({"dare": "Doe de volgende dia als haiku."}, {}, dutch).to_deck_slide()
+    assert dare.element("kicker").text == "Uitdaging"
+    texts = {"title": None, "question": "Is het dinsdag?", "yes_step": "Ja", "no_step": "Nee", "end": "Koffie"}
+    flowchart = KINDS["flowchart"].build(texts, {}, dutch).to_deck_slide()
+    assert (flowchart.element("yes").text, flowchart.element("no").text) == ("Ja", "Nee")
+    assert [element.role for element in flowchart.elements if element.appears_on_click] == ["end"]
+
+
+def test_a_flowcharts_end_appears_with_its_box_on_a_click(images):
+    deck = _deck([slides.FlowchartSlide("F", "Q?", "A", "B", "The end")], _theme())
+    end_box = next(element for element in deck.slides[0].elements if element.role == "end box")
+    assert end_box.appears_on_click == 1 == deck.slides[0].element("end").appears_on_click
+    (shown,) = _clicks(render_pptx(deck).slides[0])
+    assert set(shown) == {"end", "end box"}
+
+
+def test_a_tier_list_leaves_out_empty_tiers_and_shows_its_s_tier_on_a_click(images):
+    deck_slide = slides.TierListSlide("Ranked", "Naps", "Tuna | Sun", " | ", "Baths", None).to_deck_slide()
+    roles = [element.role for element in deck_slide.elements]
+    assert "tier_b" not in roles and "tier_f" not in roles and {"tier_s", "tier_a", "tier_c"} <= set(roles)
+    assert [element.role for element in deck_slide.elements if element.appears_on_click] == ["item_s_1"]
+    placed = _deck([slides.TierListSlide("Ranked", "Naps", "Tuna | Sun", None, "Baths")], _theme()).slides[0]
+    tiles = [element for element in placed.elements if element.role.endswith(" tile")]
+    assert [tile.role for tile in tiles] == ["tier s tile", "tier a tile", "tier c tile"]
+    assert tiles[0].color == engine._TIER_COLOURS["s"] and tiles[0].box.y < tiles[1].box.y < tiles[2].box.y
+
+
+def _clicks(ppt_slide):
+    """The shapes (by name) that each click of the slide shows, in order."""
+    names = {str(shape.shape_id): shape.name for shape in ppt_slide.shapes}
+    timing = ppt_slide.element.find(qn("p:timing"))
+    if timing is None:
+        return []
+    namespaces = {"p": "http://schemas.openxmlformats.org/presentationml/2006/main"}
+    steps = etree.XPath(".//p:cTn[@nodeType='mainSeq']/p:childTnLst/p:par", namespaces=namespaces)(timing)
+    targets = etree.XPath(".//p:spTgt/@spid", namespaces=namespaces)
+    return [sorted({names[spid] for spid in targets(step)}) for step in steps]
 
 
 # THE CLASSIC TEMPLATE AND PREVIEWS
@@ -148,13 +244,30 @@ def test_planned_slides_come_out_as_planned(images):
     problems = []
     assert _realized("fun_fact", {"source": "Source: my uncle"}, problems=problems) is None
     assert problems == ["fact: not written"]
+    words = {"word_1": "S - Synergy", "word_2": "Passion", "word_3": "Élan", "word_4": "Kazoos"}
+    slide, _ = _realized("acronym", {"title": "The SPEK method", "acronym": "S.P.E.K.", **words})
+    assert [slide.to_deck_slide().element(f"letter_{index}").text for index in range(1, 5)] == ["S", "P", "É", "K"]
+    assert slide.to_deck_slide().element("word_1").text == "Synergy"  # (without the letter the model put in front)
+    problems = []
+    assert _realized("acronym", {"title": "The SPARK method", "acronym": "SPARK", **words}, problems=problems) is None
+    assert problems == ["the acronym 'SPARK' isn't the initials of its words ('SPEK')"]
+    tiers = {"title": "Ranked", "s_tier": "Naps", "a_tier": "Tuna | Sun | Yarn | Laser", "f_tier": ""}
+    slide, _ = _realized("tier_list", tiers)
+    assert [element.text for element in slide.to_deck_slide().elements if element.role.startswith("item_a")] == [
+        "Tuna",
+        "Sun",
+        "Yarn",
+    ]
+    problems = []
+    assert _realized("tier_list", {**tiers, "a_tier": " | "}, problems=problems) is None
+    assert problems == ["a tier list needs things in its S and A tiers"]
 
 
 @pytest.mark.parametrize("code", sorted(languages.LANGUAGES))
-def test_a_fun_facts_heading_speaks_the_talks_language(code):
+def test_their_headings_speak_the_talks_language(code):
     language = languages.language(code)
     assert len(language.fun_facts) == 2 and all(heading.strip() for heading in language.fun_facts)
-    assert code == "en" or set(language.fun_facts).isdisjoint(ENGLISH.fun_facts)
+    assert code == "en" or (set(language.fun_facts).isdisjoint(ENGLISH.fun_facts) and language.dare != ENGLISH.dare)
     with random_util.use(random_util.Rng(3)):
         slide = KINDS["fun_fact"].build({"fact": "Ugler kan ikke se katter", "source": None}, {"photo": None}, language)
     assert slide.to_deck_slide().element("kicker").text in language.fun_facts
@@ -167,7 +280,13 @@ def _photo(context):
     return _image("wide")
 
 
-CLASSIC = {"fun_fact": (slide_texts.fun_fact(_photo), slides.FunFactSlide)}
+CLASSIC = {
+    "fun_fact": (slide_texts.fun_fact(_photo), slides.FunFactSlide),
+    "acronym": (slide_texts.generate_acronym, slides.AcronymSlide),
+    "dare": (slide_texts.generate_dare, slides.DareSlide),
+    "flowchart": (slide_texts.generate_flowchart, slides.FlowchartSlide),
+    "tier_list": (slide_texts.generate_tier_list, slides.TierListSlide),
+}
 
 
 @pytest.mark.parametrize("kind", KARAOKE)
@@ -187,6 +306,23 @@ def test_the_classic_generators_make_complete_slides(images, related, kind):
         assert check_leftovers(deck) == []
 
 
+def test_a_classic_acronym_spells_the_seed_and_ends_on_something_absurd(related):
+    with random_util.use(random_util.Rng(4)):
+        title, *words = slide_texts.generate_acronym({"seed": "cat", "topic": "cats"})
+    assert "".join(word[0].upper() for word in words) == "CAT" and "CAT" in title
+    assert words[-1] in slide_texts._ABSURD["T"]
+    with random_util.use(random_util.Rng(4)):  # (a seed that's no word to spell: a related word, or a known one)
+        _, *words = slide_texts.generate_acronym({"seed": "the French Revolution", "topic": "history"})
+    assert 3 <= len(words) <= 6 and all(word[:1].isupper() or word[:1] == "e" for word in words)
+
+
+def test_a_classic_tier_list_ranks_the_seed_first_and_something_loved_last(related):
+    with random_util.use(random_util.Rng(2)):
+        title, best, *tiers, worst = slide_texts.generate_tier_list({"seed": "cat", "topic": "cats"})
+    assert best == "Cats" and worst in slide_texts._grammar()["tier_list_worst"]
+    assert tiers[0] and all(len(slides.tier_items(tier)) <= 3 for tier in tiers) and title
+
+
 @pytest.mark.parametrize(
     ("seed", "said", "never"),
     [
@@ -195,13 +331,19 @@ def test_the_classic_generators_make_complete_slides(images, related, kind):
         ("the french revolution", "the french revolution", ("the the", "a the", "revolutions")),
     ],
 )
-def test_classic_fun_facts_speak_of_the_seed_as_english_does(seed, said, never):
-    facts = slide_texts._grammar()["fun_fact"]
-    variables = {"seed": seed, "related": "bean", "number": "12", "percent": "40%", "year": "1823"}
-    filled = [slide_texts.text_generator.apply_variables_to_template(fact, variables) for fact in facts]
-    assert all(filled) and len(filled) >= 20
-    assert any(said in fact.lower() for fact in filled)
-    assert not [fact for fact in filled if any(wrong in fact.lower() for wrong in never) or "{" in fact]
+def test_classic_templates_speak_of_the_seed_as_english_does(seed, said, never):
+    grammar = slide_texts._grammar()
+    names = ("fun_fact", "acronym_title", "dare", "flowchart_title", "flowchart_question", "flowchart_end")
+    names += ("flowchart_yes", "flowchart_no", "tier_list_title")
+    variables = {"seed": seed, "related": "bean", "number": "12", "percent": "40%", "year": "1823", "acronym": "PEN"}
+    filled = [
+        slide_texts.text_generator.apply_variables_to_template(template, variables)
+        for name in names
+        for template in grammar[name]
+    ]
+    assert all(filled) and len(grammar["fun_fact"]) >= 20 and len(grammar["dare"]) >= 12
+    assert any(said in text.lower() for text in filled)
+    assert not [text for text in filled if any(wrong in text.lower() for wrong in never) or "{" in text]
 
 
 def test_the_classic_generators_leave_sensitive_seeds_alone(related):
@@ -221,6 +363,8 @@ def test_every_format_has_them_once_at_most(format_name):
     for kind in KARAOKE:  # (in the middle of a talk: not the title, the presenter's introduction, or the end)
         weight = kinds[kind].get_weight_for
         assert weight(5, 10) > 0 == weight(1, 10) == weight(9, 10)
+    assert kinds["dare"].get_weight_for(5, 10) < kinds["acronym"].get_weight_for(5, 10)  # (one in a deck, at most)
+    assert "diagram" in kinds["flowchart"].get_tags()  # (two diagrams in ten slides, at most)
     choices = external.recipes_of(schema)
     assert {external.default_recipe(choices, kind).recipe.kind for kind in KARAOKE} == set(KARAOKE)
 
@@ -237,3 +381,48 @@ def test_they_are_drawn_types():
     for kind in KARAOKE:
         assert set(classic.REQUIRED_ROLES[kind]) <= set(classic.CLASSIC_ROLES[kind].values())
         assert kind in engine._LAYOUTS and kind in KINDS
+
+
+# RECIPE VARIANTS: A REAL CHART FROM THE INTERNET, OUT OF CONTEXT, UNDER A CONFIDENT CONCLUSION
+
+
+def _reddit_chart():
+    return {generator.name: generator for generator in get_schema("default").slide_generators}["Reddit Chart"]
+
+
+def test_a_real_chart_comes_under_a_confident_conclusion_or_bare():
+    recipe = _reddit_chart().llm
+    concluded, bare = recipe.variants
+    assert concluded.weight == 2 * bare.weight and bare.omit == frozenset({"title"})
+    assert "conclusion" in recipe.hints["title"] and "title" not in recipe.omit
+    varied = [recipe.varied(random_util.Rng(seed)) for seed in range(30)]
+    assert {"title" in recipe.omit for recipe in varied} == {True, False}
+    titled = next(recipe for recipe in varied if "title" not in recipe.omit)
+    assert [text.name for text in titled.written_fields()] == ["title"] and "conclusion" in titled.brief
+
+
+def test_a_classic_chart_comes_under_a_conclusion_two_times_in_three(images):
+    titles = slide_texts.text_generator.read_lines("data/text-templates/chart_conclusion.txt")
+    generator = SlideGeneratorData(
+        slide_generator_types.FullImageSlideGenerator.of(
+            _reddit_chart()._generator._slide_content_generator._generators[0], lambda context: _image("wide")
+        ),
+        retries=1,
+        name="Reddit Chart",
+    )
+    found = []
+    for seed in range(60):
+        with random_util.use(random_util.Rng(seed)):
+            slide, _ = generator.generate({"seed": "penguin", "topic": "penguins"}, set())
+        found.append(slide.to_deck_slide().element("title"))
+    concluded = [title.text for title in found if title is not None]
+    assert 0.5 <= len(concluded) / len(found) <= 0.8
+    filled = {slide_texts.text_generator.apply_variables_to_template(title, {"seed": "penguin"}) for title in titles}
+    assert set(concluded) <= filled
+
+
+@pytest.mark.parametrize("seed", ["coffee", "penguin", "the french revolution"])
+def test_classic_chart_conclusions_speak_of_the_seed_as_english_does(seed):
+    for template in slide_texts.text_generator.read_lines("data/text-templates/chart_conclusion.txt"):
+        text = slide_texts.text_generator.apply_variables_to_template(template, {"seed": seed})
+        assert text and "{" not in text and "coffees" not in text and "the the" not in text, text

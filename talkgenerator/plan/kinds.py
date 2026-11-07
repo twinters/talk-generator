@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import dataclasses
 import re
+import unicodedata
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Final
@@ -385,6 +386,49 @@ def _fun_fact(texts: Mapping[str, str | None], images: Mapping[str, Any], langua
     return slides.FunFactSlide(kicker, texts["fact"], texts.get("source"), images.get("photo"))
 
 
+def _plain_letters(text: str) -> str:
+    """The text's letters, without their accents ("Élan": "Elan"), in capitals."""
+    return "".join(
+        character for character in unicodedata.normalize("NFKD", text) if character.isascii() and character.isalpha()
+    ).upper()
+
+
+def _acronym(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    # (without a letter of their own in front: some models write "S - Synergy", and the slide adds the letters)
+    words = [_SPELLED.sub("", word or "").strip() for word in _numbered(texts, "word", slides.ACRONYM_LETTERS)]
+    written = [word for word in words if word]
+    if len(written) < 3:
+        raise ValueError("an acronym needs three words or more")
+    initials = "".join(_plain_letters(word)[:1] for word in written)
+    acronym = _plain_letters(texts.get("acronym") or "")
+    if acronym and acronym != initials:
+        raise ValueError(f"the acronym {acronym!r} isn't the initials of its words ({initials!r})")
+    return slides.AcronymSlide(texts["title"], *written)
+
+
+def _dare(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    return slides.DareSlide(language.dare, texts["dare"])  # (its heading is talkgenerator's: "Challenge")
+
+
+def _flowchart(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    return slides.FlowchartSlide(
+        texts.get("title"),
+        texts["question"],
+        texts["yes_step"],
+        texts["no_step"],
+        texts["end"],
+        yes=language.yes,
+        no=language.no,
+    )
+
+
+def _tier_list(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    tiers = [texts.get(f"{tier.lower()}_tier") for tier in slides.TIERS]
+    if not slides.tier_items(tiers[0]) or not slides.tier_items(tiers[1]):
+        raise ValueError("a tier list needs things in its S and A tiers")
+    return slides.TierListSlide(texts["title"], *tiers)
+
+
 def _shortened(text: str, length: int) -> str:
     """The text, cut between words to at most this many characters (or within its first word, if that's longer)."""
     if len(text) <= length:
@@ -399,6 +443,7 @@ def _quadrant(corner: str, ends: str) -> TextField:
 
 _NUMBER: Final = re.compile(r"[-+]?\d+(?:[.,]\d+)?\s*%?")
 _LETTERED: Final = re.compile(r"^\(?[A-Da-d]\s*[).:]\s*")  # a quiz option's own letter, as in "A) Yes"
+_SPELLED: Final = re.compile(r"^[A-Za-z]\s*[-–—:.)=]\s+")  # an acronym's word's own letter, as in "S - Synergy"
 _OPTIONAL_TITLE = TextField("title", "the slide's title", 60, optional=True)
 
 # The talk's own texts, on its title slide: "By <presenter>, <job>" under the title. The name is a made-up one, when
@@ -854,6 +899,71 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             ("photo",),
             _fun_fact,
+        ),
+        Kind(
+            "acronym",
+            "A made-up method, as an acronym: its letters down the slide, each with the word it stands for; the last "
+            "word, the punchline, appears on a click.",
+            (
+                TextField("title", "the method's title, which names the acronym", 60),
+                TextField("acronym", "the acronym: the words' first letters, three to six, in capitals", 6),
+                *_items(
+                    "word",
+                    24,
+                    "the word the first letter stands for",
+                    "the second letter's word",
+                    "the third letter's word (the punchline, if it's the last)",
+                    "the fourth letter's word",
+                    "the fifth letter's word",
+                    "the sixth letter's word",
+                ),
+            ),
+            (),
+            _acronym,
+        ),
+        Kind(
+            "dare",
+            "A dare for the presenter, on a card: a playful task for the next slide or the rest of the talk, which the "
+            "audience then watches them do (talkgenerator adds its heading).",
+            (
+                TextField(
+                    "dare",
+                    "the task, said to the presenter: a way of speaking, a word to work in, a voice; for the presenter "
+                    "alone, and nothing physical",
+                    100,
+                ),
+            ),
+            (),
+            _dare,
+        ),
+        Kind(
+            "flowchart",
+            "A flowchart that pretends to help decide: a yes-or-no question at the top, where each answer leads, and "
+            "the end both lead to, the punchline, which appears on a click (talkgenerator adds the Yes and the No).",
+            (
+                _OPTIONAL_TITLE,
+                TextField("question", "the yes-or-no question at the top", 50),
+                TextField("yes_step", "where Yes leads: a short step", 34),
+                TextField("no_step", "where No leads: another short step", 34),
+                TextField("end", "where both steps lead: the same end, the punchline", 34),
+            ),
+            (),
+            _flowchart,
+        ),
+        Kind(
+            "tier_list",
+            "A tier list: things ranked in tiers from S (the best) to F (the worst), one to three in a tier; the S "
+            "tier, the punchline, appears on a click.",
+            (
+                TextField("title", "the tier list's title", 60),
+                TextField("s_tier", "the S tier, the very best: one surprising thing, the punchline", 30),
+                TextField("a_tier", "the A tier: one to three things, separated by |", 70),
+                TextField("b_tier", "the B tier: one to three things, separated by |", 70, optional=True),
+                TextField("c_tier", "the C tier: one to three things, separated by |", 70, optional=True),
+                TextField("f_tier", "the F tier, the worst: one to three things, separated by |", 70, optional=True),
+            ),
+            (),
+            _tier_list,
         ),
     )
 }

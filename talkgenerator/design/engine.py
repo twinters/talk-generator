@@ -152,6 +152,18 @@ SPECS: Final[dict[str, TextSpec]] = {
     "side fact": TextSpec("body", 88, 36, align="left", bold=True),
     "card fact": TextSpec("body", 88, 34, align="left", bold=True, on_fill=True),
     "card source": TextSpec("body", 36, 24, align="left", italic=True, on_fill=True),
+    # (an acronym's letters on tiles and its words; a dare; a flowchart's labels and its end; a tier list's rows)
+    "tile letter": TextSpec("heading", 120, 40, align="center", heading=True, on_fill=True, effect=False),
+    "acronym word": TextSpec("heading", 96, 32, align="left", heading=True),
+    "column word": TextSpec("heading", 64, 26, align="center", anchor="top", heading=True),
+    "dare": TextSpec("heading", 104, 40, align="center", heading=True, on_fill=True),
+    "dare kicker": TextSpec("heading", 120, 48, color="accent", align="center", heading=True),
+    "open dare": TextSpec("heading", 104, 40, align="center", heading=True),
+    "flow question": TextSpec("body", 64, 28, align="center", on_fill=True, bold=True),
+    "flow step": TextSpec("body", 56, 26, align="center", on_fill=True),
+    "flow label": TextSpec("body", 40, 24, align="left", bold=True),
+    "flow label right": TextSpec("body", 40, 24, align="right", bold=True),
+    "tier item": TextSpec("body", 52, 26, align="center", on_fill=True),
     # (native diagrams)
     "date": TextSpec("body", 72, 28, align="center", anchor="bottom", bold=True),  # (not in capitals: too wide)
     "row date": TextSpec("body", 64, 28, align="right", bold=True),
@@ -1714,6 +1726,183 @@ def _without(role: str) -> Callable[[dict[str, Content]], bool]:
     return without
 
 
+def _acronym_rows(roles: dict[str, Content], theme: Theme) -> _Placement:
+    """The acronym down the slide: every letter on a tile in the theme's accent, the word it stands for beside it."""
+    accent = theme.palette.accent
+    placement = _Placement("v5/acronym")
+    top = (_with_title(placement, roles, theme) if "title" in roles else MARGIN) + 8
+    words = _numbered(roles, "word", 6)
+    y, height = _spread(top, _CONTENT_BOTTOM, len(words), 16, 150)
+    ink = _on([accent], theme, color.LARGE_TEXT_CONTRAST)
+    for index in words:
+        tile = Box(x=MARGIN + 40, y=y, w=height, h=height)
+        placement.shapes.append(ShapeElement(role=f"letter {index} tile", box=tile, color=accent))
+        placement.boxes[f"letter_{index}"] = (_inset(tile, height * 0.12), "tile letter")
+        placement.colors[f"letter_{index}"] = ink
+        word_x = tile.x + tile.w + 48
+        placement.boxes[f"word_{index}"] = (Box(x=word_x, y=y, w=WIDTH - MARGIN - word_x, h=height), "acronym word")
+        y += height + 16
+    return placement
+
+
+def _acronym_across(roles: dict[str, Content], theme: Theme) -> _Placement:
+    """The acronym across the slide, its letters big on tiles in the theme's accent, every word under its letter."""
+    accent = theme.palette.accent
+    placement = _Placement("v5/acronym-across")
+    start = _with_title(placement, roles, theme) if "title" in roles else MARGIN
+    words = _numbered(roles, "word", 6)
+    gap = 32
+    width = (WIDTH - 2 * MARGIN - gap * (len(words) - 1)) / len(words)
+    size = min(260.0, width)
+    word_height = 220.0
+    top = start + (_CONTENT_BOTTOM - start - (size + 32 + word_height)) / 2
+    ink = _on([accent], theme, color.LARGE_TEXT_CONTRAST)
+    for position, index in enumerate(words):
+        x = MARGIN + position * (width + gap)
+        tile = Box(x=x + (width - size) / 2, y=top, w=size, h=size)
+        placement.shapes.append(ShapeElement(role=f"letter {index} tile", box=tile, color=accent))
+        placement.boxes[f"letter_{index}"] = (_inset(tile, size * 0.12), "tile letter")
+        placement.colors[f"letter_{index}"] = ink
+        placement.boxes[f"word_{index}"] = (Box(x=x, y=top + size + 32, w=width, h=word_height), "column word")
+    return placement
+
+
+def _few_short_words(roles: dict[str, Content]) -> bool:
+    """Whether an acronym has at most five words, none longer than twelve letters (to fit under its letter)."""
+    words = [roles[f"word_{index}"] for index in _numbered(roles, "word", 6)]
+    return len(words) <= 5 and all(
+        isinstance(word, TextElement) and all(len(part) <= 12 for part in word.text.split()) for word in words
+    )
+
+
+def _dare_card(roles: dict[str, Content], theme: Theme) -> _Placement:
+    """The dare big on a card in the theme's surface colour, edged in its accent, under its heading on a sticker."""
+    palette = theme.palette
+    card = Box(x=260, y=250, w=1400, h=640)
+    placement = _Placement(
+        "v5/dare",
+        shapes=[
+            ShapeElement(role="card edge", box=_inset(card, -10), color=palette.accent),
+            ShapeElement(role="card", box=card, color=palette.surface),
+        ],
+    )
+    _sticker(placement, theme, Box(x=(WIDTH - 640) / 2, y=card.y - 70, w=640, h=120))
+    placement.boxes["dare"] = (Box(x=card.x + 80, y=card.y + 90, w=card.w - 160, h=card.h - 150), "dare")
+    placement.colors["dare"] = _on([palette.surface], theme)
+    return placement
+
+
+def _dare_tape(roles: dict[str, Content], theme: Theme) -> _Placement:
+    """The dare between two bands of warning tape (blocks in the theme's accent and text colour), its heading big in
+    the accent above it."""
+    palette = theme.palette
+    placement = _Placement("v5/dare-tape")
+    block = 160.0
+    for band_y in (72.0, 868.0):
+        for number in range(math.ceil(WIDTH / block)):
+            fill = palette.accent if number % 2 == 0 else palette.text
+            box = Box(x=number * block, y=band_y, w=min(block, WIDTH - number * block), h=56)
+            placement.shapes.append(ShapeElement(role="tape", box=box, color=fill))
+    placement.boxes["kicker"] = (Box(x=MARGIN, y=176, w=WIDTH - 2 * MARGIN, h=170), "dare kicker")
+    placement.boxes["dare"] = (Box(x=200, y=370, w=WIDTH - 400, h=450), "open dare")
+    return placement
+
+
+def _flowchart(side: bool) -> Callable[[dict[str, Content], Theme], _Placement]:
+    """A yes-or-no question on an oval in the theme's accent at the top; lines down to where each answer leads (Yes
+    on the left, No on the right), on boxes in its surface colour; and lines from both down to the same end, on a box
+    in its second accent, which appears on a click."""
+
+    def flowchart(roles: dict[str, Content], theme: Theme) -> _Placement:
+        palette = theme.palette
+        placement = _Placement("v5/flowchart-side" if side else "v5/flowchart")
+        left, right, top = _area(placement, roles, theme, side)
+        width, centre = right - left, (left + right) / 2
+        ink = color.readable_on(palette.muted, _backgrounds(theme), LINE_CONTRAST)
+        oval_height, step_height, end_height = 160.0, 150.0, 150.0
+        total = oval_height + 40 + 80 + step_height + 40 + 50 + end_height
+        y = top + 16 + max(0.0, (_CONTENT_BOTTOM - top - 16 - total) / 2)
+        oval_width = min(900.0, width - 40)
+        oval = Box(x=centre - oval_width / 2, y=y, w=oval_width, h=oval_height)
+        placement.shapes.append(ShapeElement(role="question oval", shape="ellipse", box=oval, color=palette.accent))
+        placement.boxes["question"] = (
+            Box(x=oval.x + 0.1 * oval.w, y=oval.y + 0.17 * oval.h, w=0.8 * oval.w, h=0.66 * oval.h),
+            "flow question",
+        )
+        placement.colors["question"] = _on([palette.accent], theme)
+        step_width = min(620.0, width / 2 - 40)
+        branch = width / 4 + 10
+        split = oval.y + oval.h + 40
+        steps = split + 80
+        joint = steps + step_height + 40
+        end_top = joint + 50
+
+        def line(x: float, y: float, w: float, h: float) -> None:
+            placement.shapes.append(ShapeElement(role="line", box=Box(x=x, y=y, w=w, h=h), color=ink))
+
+        line(centre - 3, oval.y + oval.h, 6, split - oval.y - oval.h + 3)
+        line(centre - branch - 3, split - 3, 2 * branch + 6, 6)
+        line(centre - branch - 3, joint - 3, 2 * branch + 6, 6)
+        line(centre - 3, joint, 6, end_top - joint)
+        for role, x, label, spec in (
+            ("yes_step", centre - branch, "yes", "flow label"),
+            ("no_step", centre + branch, "no", "flow label right"),
+        ):
+            line(x - 3, split, 6, steps - split)
+            line(x - 3, steps + step_height, 6, joint - steps - step_height)
+            box = Box(x=x - step_width / 2, y=steps, w=step_width, h=step_height)
+            placement.shapes.append(ShapeElement(role=f"{role} box", box=box, color=palette.surface))
+            placement.boxes[role] = (_inset(box, 16), "flow step")
+            placement.colors[role] = _on([palette.surface], theme)
+            label_x = x + 20 if spec == "flow label" else x - 20 - 200
+            placement.boxes[label] = (Box(x=label_x, y=split + 12, w=200, h=steps - split - 18), spec)
+        end_width = min(760.0, width - 80)
+        end = Box(x=centre - end_width / 2, y=end_top, w=end_width, h=end_height)
+        click = _click(roles, "end")
+        placement.shapes.append(ShapeElement(role="end box", box=end, color=palette.accent_2, appears_on_click=click))
+        placement.boxes["end"] = (_inset(end, 18), "boss")
+        placement.colors["end"] = _on([palette.accent_2], theme, color.LARGE_TEXT_CONTRAST)
+        return placement
+
+    return flowchart
+
+
+# A tier list's tiers' colours, as tier lists have them (red for the best, to blue for the worst)
+_TIER_COLOURS: Final = {"s": "#ff7f7f", "a": "#ffbf7f", "b": "#ffdf7f", "c": "#ffff7f", "f": "#7fbfff"}
+
+
+def _tier_list(side: bool) -> Callable[[dict[str, Content], Theme], _Placement]:
+    """The tiers one under the other, best first: each tier's letter on a tile in its colour, and its things side by
+    side on a band in the theme's surface colour (the S tier's appear on a click)."""
+
+    def tier_list(roles: dict[str, Content], theme: Theme) -> _Placement:
+        palette = theme.palette
+        placement = _Placement("v5/tier-list-side" if side else "v5/tier-list")
+        left, right, top = _area(placement, roles, theme, side)
+        tiers = [tier for tier in "sabcf" if f"tier_{tier}" in roles]
+        y, height = _spread(top + 16, _CONTENT_BOTTOM, len(tiers), 12, 150)
+        on_band = _on([palette.surface], theme)
+        for tier in tiers:
+            fill = _TIER_COLOURS[tier]
+            tile = Box(x=left, y=y, w=height, h=height)
+            placement.shapes.append(ShapeElement(role=f"tier {tier} tile", box=tile, color=fill))
+            placement.boxes[f"tier_{tier}"] = (_inset(tile, height * 0.14), "tile letter")
+            placement.colors[f"tier_{tier}"] = _on([fill], theme, color.LARGE_TEXT_CONTRAST)
+            band = Box(x=tile.x + tile.w + 12, y=y, w=right - tile.x - tile.w - 12, h=height)
+            placement.shapes.append(ShapeElement(role=f"tier {tier} band", box=band, color=palette.surface))
+            items = [index for index in range(1, 4) if f"item_{tier}_{index}" in roles]
+            gap = 16
+            item_width = (band.w - gap * (len(items) + 1)) / max(1, len(items))
+            for position, index in enumerate(items):
+                item = Box(x=band.x + gap + position * (item_width + gap), y=y + 8, w=item_width, h=height - 16)
+                placement.boxes[f"item_{tier}_{index}"] = (item, "tier item")
+                placement.colors[f"item_{tier}_{index}"] = on_band
+            y += height + 12
+        return placement
+
+    return tier_list
+
+
 @dataclass(frozen=True)
 class _Layout:
     """One of a slide type's layouts: its name, what places its elements, how likely it's picked (against the type's
@@ -1824,5 +2013,21 @@ _LAYOUTS: Final[dict[str, tuple[_Layout, ...]]] = {
         _Layout("v5/fun-fact", _fun_fact),
         _Layout("v5/fun-fact-card", _fun_fact_card, 0.9, _without("photo")),
         _Layout("v5/fun-fact-banner", _fun_fact_banner, 0.8, _has("photo")),
+    ),
+    "acronym": (
+        _Layout("v5/acronym", _acronym_rows),
+        _Layout("v5/acronym-across", _acronym_across, 0.9, _few_short_words),
+    ),
+    "dare": (
+        _Layout("v5/dare", _dare_card),
+        _Layout("v5/dare-tape", _dare_tape, 0.9),
+    ),
+    "flowchart": (
+        _Layout("v5/flowchart", _flowchart(side=False)),
+        _Layout("v5/flowchart-side", _flowchart(side=True), 0.7, _beside_title),
+    ),
+    "tier_list": (
+        _Layout("v5/tier-list", _tier_list(side=False)),
+        _Layout("v5/tier-list-side", _tier_list(side=True), 0.7, _beside_title),
     ),
 }

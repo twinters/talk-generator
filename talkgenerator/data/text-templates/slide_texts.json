@@ -324,5 +324,89 @@
     "Owls can't see {seed.generic}.",
     "Nobody has ever finished a sentence about {seed.generic}.",
     "The very first phone call was about {seed.generic}."
+  ],
+  "acronym_title": [
+    "The {acronym} method",
+    "Introducing the {acronym} framework",
+    "{acronym}: a model for {seed.generic}",
+    "Remember: {acronym}",
+    "The {acronym} principle",
+    "{seed.generic.cap}, the {acronym} way"
+  ],
+  "dare": [
+    "Present the next slide as a haiku.",
+    "Present the next slide in a nature-documentary voice.",
+    "From now on, end every sentence with 'allegedly'.",
+    "Work the word '{related}' into the next slide three times.",
+    "Present the next slide as the biggest news of the century.",
+    "Present the next slide in a whisper.",
+    "Present the next slide as a sports commentator.",
+    "Explain the next slide to an imaginary five-year-old.",
+    "Get the audience to applaud, for no reason at all.",
+    "Present the next slide in rhyme.",
+    "From now on, call {seed.generic} 'the thing'.",
+    "Present the next slide in slow motion.",
+    "Thank an imaginary sponsor for the next slide.",
+    "Start every sentence on the next slide with 'Spoiler alert'.",
+    "Present the next slide as a heartfelt apology.",
+    "Describe the next slide using only questions."
+  ],
+  "flowchart_title": [
+    "Should you?",
+    "How to decide about {seed.generic}",
+    "A simple guide",
+    "Science, simplified",
+    "A decision tree for {seed.generic}"
+  ],
+  "flowchart_question": [
+    "Do you like {seed.generic}?",
+    "Have you heard of {seed.generic}?",
+    "Is it about {seed.generic}?",
+    "Are you sure about {seed.generic}?",
+    "Do you understand {seed.generic}?",
+    "Is it Tuesday?",
+    "Did you read the manual?"
+  ],
+  "flowchart_yes": [
+    "Great!",
+    "Tell everyone",
+    "Think about {related.generic}",
+    "Ask an expert",
+    "Celebrate",
+    "Write it down"
+  ],
+  "flowchart_no": [
+    "Are you sure?",
+    "Think again",
+    "Ask your neighbour",
+    "Read about {related.generic}",
+    "Take a nap",
+    "Pretend you do"
+  ],
+  "flowchart_end": [
+    "Talk about {seed.generic} anyway",
+    "Buy more {seed.generic}",
+    "Give a talk about it",
+    "Get {seed.one}",
+    "Ask again tomorrow",
+    "Become {seed.one}",
+    "Blame {related.generic}"
+  ],
+  "tier_list_title": [
+    "{seed.generic.cap}, ranked",
+    "The definitive tier list of {seed.generic}",
+    "Everything, ranked by {seed.generic}",
+    "My honest tier list",
+    "Ranking {seed.generic}"
+  ],
+  "tier_list_worst": [
+    "Sleep",
+    "Weekends",
+    "Puppies",
+    "Pizza",
+    "Common sense",
+    "Holidays",
+    "Sunshine",
+    "Chocolate"
   ]
 }

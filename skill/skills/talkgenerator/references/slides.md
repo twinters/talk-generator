@@ -38,7 +38,7 @@ Images: `image`
 | `full-screen-gif` | A gif, filling the slide | `title`: two to four words of your own that build up to the gif, or empty for none; images: `image` gifs; tags: full_image, gif |
 | `full-screen-meme` | A meme, filling the slide | images: `image` memes; shows no `title`; tags: full_image, meme |
 | `full-screen-neutral-images` | A photo, filling the slide | the default; images: `image` neutral; tags: full_image, neutral |
-| `reddit-chart` | A chart, filling the slide | images: `image` bad-charts; shows no `title`; tags: chart |
+| `reddit-chart` | A real chart from the internet, filling the slide | `title`: a confident conclusion about the concept that the chart supposedly proves, as if it were obvious (the chart is a real one, about something else entirely); images: `image` bad-charts; tags: chart |
 
 ## `statement`
 
@@ -528,3 +528,75 @@ Images: `photo`
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
 | `fun-fact` | A fun fact about the concept: something absurd, stated as certain, that the presenter has to back up | the default; tags: fun_fact |
+
+## `acronym`
+
+A made-up method, as an acronym: its letters down the slide, each with the word it stands for; the last word, the punchline, appears on a click.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `title` | 60 | the method's title, which names the acronym |
+| `acronym` | 6 | the acronym: the words' first letters, three to six, in capitals |
+| `word_1` | 24 | the word the first letter stands for |
+| `word_2` | 24 | the second letter's word |
+| `word_3` | 24 | the third letter's word (the punchline, if it's the last) |
+| `word_4` | 24 | the fourth letter's word (or empty, for none) |
+| `word_5` | 24 | the fifth letter's word (or empty, for none) |
+| `word_6` | 24 | the sixth letter's word (or empty, for none) |
+
+Images: none
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `acronym` | A made-up method for the concept, as an acronym sold as the key to it all: its words get less plausible letter by letter, and the last one is the punchline | the default; tags: acronym |
+
+## `dare`
+
+A dare for the presenter, on a card: a playful task for the next slide or the rest of the talk, which the audience then watches them do (talkgenerator adds its heading).
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `dare` | 100 | the task, said to the presenter: a way of speaking, a word to work in, a voice; for the presenter alone, and nothing physical |
+
+Images: none
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `dare` | A dare for the presenter, halfway through the talk: something playful they now have to do on the next slide or for the rest of the talk | the default; tags: dare |
+
+## `flowchart`
+
+A flowchart that pretends to help decide: a yes-or-no question at the top, where each answer leads, and the end both lead to, the punchline, which appears on a click (talkgenerator adds the Yes and the No).
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `title` | 60 | the slide's title (or empty, for none) |
+| `question` | 50 | the yes-or-no question at the top |
+| `yes_step` | 34 | where Yes leads: a short step |
+| `no_step` | 34 | where No leads: another short step |
+| `end` | 34 | where both steps lead: the same end, the punchline |
+
+Images: none
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `flowchart` | A flowchart that pretends to help decide something about the concept, but whatever the answer, it leads to the same absurd end | the default; tags: diagram, flowchart |
+
+## `tier_list`
+
+A tier list: things ranked in tiers from S (the best) to F (the worst), one to three in a tier; the S tier, the punchline, appears on a click.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `title` | 60 | the tier list's title |
+| `s_tier` | 30 | the S tier, the very best: one surprising thing, the punchline |
+| `a_tier` | 70 | the A tier: one to three things, separated by \| |
+| `b_tier` | 70 | the B tier: one to three things, separated by \| (or empty, for none) |
+| `c_tier` | 70 | the C tier: one to three things, separated by \| (or empty, for none) |
+| `f_tier` | 70 | the F tier, the worst: one to three things, separated by \| (or empty, for none) |
+
+Images: none
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `tier-list` | A tier list that ranks things to do with the concept as if it were science: arguable placements, and a surprising S tier as the punchline | the default; tags: tier_list |
