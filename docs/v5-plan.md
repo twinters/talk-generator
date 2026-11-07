@@ -765,8 +765,8 @@ browser ([section 13.1](#131-streaming-slides-into-the-browser)) and the filters
   should mention.
 - **Concurrency:** LLM calls mostly wait, so the single slot can become several streams that share a few image
   workers (gunicorn threads), once memory use has been measured.
-- **A preview deployment** (on a subdomain) runs `v5`, installed from git by commit, while production stays on
-  4.0.x: no release is needed for that.
+- **No preview deployment** (D31): since 2026-11-07 the site itself runs `v5`, installed from git by commit, so no
+  release is needed for it.
 
 ### 13.2 Running at $0
 
@@ -807,9 +807,9 @@ the formats × 3 seeds, in classic mode with replay and, at every milestone, liv
 | Determinism | the same seed with replay gives an identical deck JSON; serial equals parallel | 100% |
 | Safety | blocklist hits in the output; edgy topics screened or falling back | no hits |
 | Language | the text is in the requested language (stopword ratio) | every slide |
-| Speed | time to first slide and total time, on the site's configuration | targets to calibrate in milestones 1 and 4 |
+| Speed | time to first slide and total time, on the site's configuration | on the site, from the request: the title slide within 10 s and the first content slide within 15 s, also for the first talk after a restart (calibrated on 2026-11-07 with classic talks: 0.8 to 9.1 s, and 1.2 to 12 s; LLM talks to measure there once it has its key) |
 | Requests and cost | LLM requests and estimated cost per talk | on the site's configuration: $0, at most one request per talk |
-| Memory | peak memory for a 20-slide talk on the site's configuration | under 450 MB |
+| Memory | peak memory for a 20-slide talk on the site's configuration | under 450 MB (`MemoryHigh`): met on 2026-11-07 with slides one after the other, a process peak of 328 MB for the talk and at most 413 MB with its .pptx download, then back to about 300 MB; not in parallel (444 MB of memory that isn't cache, and throttled) |
 
 Each run writes a JSON report, compared with the previous milestone's, and an HTML contact sheet of thumbnails
 for a quick look. These checks catch broken, cramped, unreadable and repetitive decks; they can't tell whether a
@@ -828,7 +828,7 @@ deck is funny. Human or LLM-judged ratings are out of scope for now, and could l
   workflow already handle (an X.Y.Z version, released from `master`). Pull requests into `v5` already run CI;
   adding `v5` to CI's push branches would check direct pushes too.
 - **Trying v5 out before 5.0.0:** install it from the branch (`pip install git+https://github.com/twinters/talk-generator@v5`,
-  or a commit), which is also how a preview deployment of talkgenerator.com runs it (section 13.1).
+  or a commit), which is also how talkgenerator.com runs it (D31).
 - **Compatibility:** `generator.generate_presentation()` stays as a shim, with a deprecation warning, throughout
   5.x (the site calls it). `--schema default|ted|interview|test` maps to formats and license policies.
   `SlideDeck.to_slide_deck_dictionary()` gives way to deck JSON, a breaking change for the changelog. Python 3.11
@@ -845,7 +845,7 @@ before the new formats. A milestone is a checkpoint on `v5`, not a release; only
 | 1 (done, 2026-11-05) | Groundwork | deck JSON and the models; pptx renderer from deck JSON (classic look); seeded random streams (`random_util`), with parallel generation giving the one-by-one talk; the classic engine on the new model; `--save_json`; usage ledger and budgets; `replay` and `none` providers; `talkgenerator check` for completeness, template leftovers and determinism | classic talks look like v4's; the same seed gives the same deck, serial or parallel; v4's offline tests pass |
 | 2 (under way: the TalkPlan schema, the planner, the `openrouter`, `anthropic`, `openai` and `chatgpt` adapters, `render`, `schema`, `formats`, the Skill, languages with their check, `login openrouter` and `login chatgpt`, and trend and ranking charts are in; on 2026-11-06, 30 benchmark talks by the free models had 0 errors, one request each, at $0, and 290 of 300 slides by the model) | LLM TED talks and the Claude Skill | TalkPlan schema; the LLM planner (one streamed call, dice, per-slide fallback, safety); `openrouter`, `anthropic` and `openai` adapters; languages, Dutch first; `render plan.json`, `schema`, `formats`; `skill/` with SKILL.md; `login openrouter`; the `chatgpt` adapter (may slip to milestone 3); checks for requests, cost, speed and language | on the benchmark with OpenRouter's free models: no holes, no leftovers, $0 and one request per talk; Dutch talks pass the language check; Claude Code makes a deck end to end with the Skill |
 | 3 (done, 2026-11-07: theme families and extremes, procedural palettes with contrast repair, layouts and their variants (never twice in a row), image treatments, WordArt-style heading effects, text fitting with bundled metric twins, the shapes renderer with the classic animations (columns click by click), previews and contact sheets, the design checks and the local MCP server; 0 design findings on 792 benchmark decks in 12 seeds; thumbnails in CI left out, D29) | Themes and layouts | theme tokens and families, extremes on by default; procedural palettes and font pairs; layout variants; text fitting; image treatments; the `classic` theme; thumbnails and contact sheet in CI; the local MCP server | contrast and overflow checks pass on every theme |
-| 4 (under way: `stream_talk()`, probe validation and display policies are in; talk-generator-web's branch `claude/v5-streaming-5a95ef` streams talks into the browser, makes the .pptx on download and copies Pixabay's images; left: the settings, the preview deployment and the measurements on the VPS) | Streaming and the web view | `stream_talk()`, display policies, probe validation; in talk-generator-web: the SSE endpoint, the Angular renderer, LLM talks by default with the classic switch, a language choice, Connect OpenRouter and pasted keys, .pptx on download, a preview deployment that installs `v5` from git | first slide on screen within the calibrated target on the VPS; a 20-slide talk under the memory bar; the downloaded .pptx matches the web view |
+| 4 (under way: `stream_talk()`, probe validation and display policies are in; since 2026-11-07, talkgenerator.com runs v5 from GitHub (D31): talks stream into the browser, the .pptx is made on download, Pixabay's images are copied, and classic talks meet the speed and memory bars on the VPS (section 14); left: the settings (being built), the site's OpenRouter key on the server, and LLM talks measured there) | Streaming and the web view | `stream_talk()`, display policies, probe validation; in talk-generator-web: the SSE endpoint, the Angular renderer, LLM talks by default with the classic switch, a language choice, Connect OpenRouter and pasted keys, .pptx on download, a preview deployment that installs `v5` from git | first slide on screen within the calibrated target on the VPS; a 20-slide talk under the memory bar; the downloaded .pptx matches the web view |
 | 5 | Images | slots, aesthetic profiles and flavour packs, local analysis, license classes; new open and weird sources; AI image generation with the user's own keys; the optional vision pick | license policies enforced; profile checks pass (such as the grayscale share for `vintage`); generated images credited |
 | 6 | More slide types for TED-like talks | native diagrams, big numbers, quiz, memes with live captions, social posts and more; a much larger, curated TED content pack | every new slide type passes the checks in classic and LLM mode |
 | 7 | New talk formats | pitch, academic, corporate, keynote and Pecha Kucha timing, with their content packs (or in 5.1 if the TED work takes longer) | every format works in classic and LLM mode and passes the checks |
@@ -891,8 +891,9 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D28 | `random` is the default theme: a talk that doesn't ask for one gets a theme its seed picks. `TALKGENERATOR_THEME` sets another default (`classic` keeps the 2019 template), and `generate_presentation(theme=...)` takes one per talk, which talk-generator-web can offer in its settings (`themes.catalog()`). |
 | D29 | Milestone 3 closes without slide thumbnails in CI: the user reviews decks in PowerPoint and in the comparison folders of sample decks, and the design checks catch what can be measured (contrast, overflow, overlap). |
 | D30 | talkgenerator.com keeps a copy of a Pixabay image for as long as its talk (7 days), the one exception to D22: Pixabay's terms don't allow permanent hotlinking, and its links stop working after 24 hours. |
+| D31 | talkgenerator.com runs `v5` before 5.0.0, installed from GitHub by commit, instead of a preview deployment on a subdomain: the site's `master` deploys it. There, a talk's slides come one after the other (`TALK_PARALLEL=0`), and the site gives memory back after every talk and download, to stay under the box's 450 MB. |
 
-D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, and D28 to D30 on 2026-11-07; the others follow from the design.
+D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, and D28 to D31 on 2026-11-07; the others follow from the design.
 
 ### Open questions
 
