@@ -450,8 +450,12 @@ def test_the_longest_texts_and_long_words_fit_in_every_open_pairing(images, fami
         theme = _with_fonts(_theme(family), *pair, uppercase=uppercase)
         assert check_design(_deck_of(longest, theme, 1)) == [], (family, pair, uppercase)
         deck = _deck_of(long_words + older, theme, 1)
-        overflowing = [finding for finding in check_design(deck) if finding.check == "overflow"]
-        assert [finding for finding in overflowing if not _in_circles(deck, finding)] == [], (family, pair, uppercase)
+        # (no exception for a Venn diagram's labels: they go beside its circles when they don't fit in them)
+        assert [finding for finding in check_design(deck) if finding.check == "overflow"] == [], (
+            family,
+            pair,
+            uppercase,
+        )
 
 
 def test_a_title_over_a_picture_is_drawn_over_it(images):
