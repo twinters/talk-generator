@@ -311,6 +311,13 @@ that run locally, and selected private apps": an OAuth flow with PKCE through th
 `127.0.0.1` callback, with no client ID to request in advance and no API key, calling the Responses API. Users
 need a Plus or Pro plan. Paid or remotely hosted apps, talkgenerator.com included, have to join a waitlist first.
 So the CLI can support it in 5.0, and the site has to wait for OpenAI.
+`talkgenerator login chatgpt` does it (`talkgenerator.llm.chatgpt_login`, with the `chatgpt` provider), built to
+[OpenAI's docs for open-source apps](https://developers.openai.com/siwc/token-sharing-open-source). Tried for real
+on 2026-11-07: OpenAI took talkgenerator's registration and showed its consent page ("Connect talkgenerator to
+ChatGPT"), but the account had no subscription, so "A required permission is unavailable" kept it from going
+on. The first try's code was turned down (`invalid_grant`), which OpenAI's docs answer with a fresh sign-in, as
+talkgenerator now does by itself. Still to try before 5.0.0: a sign-in with Plus or Pro, its models' list, and a
+talk (the default model, the first the account lists, and the default effort, `low`, are guesses until then).
 
 **Claude.** First-party prices per million tokens (from the Claude API reference, as cached on 2026-10-06):
 

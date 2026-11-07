@@ -62,6 +62,13 @@ PLAN_SCOPE: Final = "chatgpt.tokens.use.direct"
 SCOPES: Final = f"openid profile email offline_access resource.invoke {PLAN_SCOPE}"
 CALLBACK_PATH: Final = "/auth/callback"
 WAIT_SECONDS: Final = 300
+# Why a sign-in may have been turned down: OpenAI's page then says "A required permission is unavailable", with
+# Continue greyed out (as it did for a ChatGPT account without a subscription, the first time this was tried)
+NO_PLAN: Final = (
+    "If it said that a required permission is unavailable, your ChatGPT plan (or workspace) can't be used in other "
+    "apps, such as talkgenerator: that takes a plan like Plus or Pro (and talkgenerator login chatgpt --new-account "
+    "signs in with another account)"
+)
 # An access token with less than this left is refreshed before it's used, so that it can't run out during a request
 REFRESH_MARGIN_SECONDS: Final = 300
 _TIMEOUT_SECONDS: Final = 30
@@ -199,8 +206,22 @@ def login(
     if new_account and record.get("client_id"):
         if signed_in(record):
             _revoke(record)  # (the other account's sign-in ends here)
-        record = {"host_id": host}
-        _keep(record)
+        _keep({"host_id": host})
+    browser = open_browser or webbrowser.open
+    try:
+        return _sign_in(host, browser, wait_seconds, out)
+    except TokenError as error:
+        if error.code != "invalid_grant":
+            raise
+        # OpenAI's advice: drop the code, and sign in afresh with the client ID it issued (a first sign-in's code
+        # can be turned down so: it happened in the first sign-in tried for real)
+        print("OpenAI turned that sign-in's code down: signing in once more (your browser opens again)...", file=out)
+        return _sign_in(host, browser, wait_seconds, out)
+
+
+def _sign_in(host: str, open_browser: Callable[[str], bool], wait_seconds: float, out: TextIO) -> dict[str, Any]:
+    """One sign-in: to register talkgenerator, or with the registration it has."""
+    record = stored()
     known = record.get("client_id")
     client_id = known if isinstance(known, str) and known else REGISTRATION
     registering = client_id == REGISTRATION
@@ -212,13 +233,16 @@ def login(
         id_token_hint=hint if isinstance(hint, str) and hint else None,
         login_hint=email if isinstance(email, str) and email else None,
         consent=not registering and record.get("plan_usage") is False,
-        open_browser=open_browser or webbrowser.open,
+        open_browser=open_browser,
         wait_seconds=wait_seconds,
         out=out,
     )
     if not answer.get("code"):
         why = answer.get("error_description") or answer.get("error")
-        raise LoginError("ChatGPT didn't sign you in" + (f" ({why})" if why else ""))
+        message = "ChatGPT didn't sign you in" + (f" ({why})" if why else "")
+        if answer.get("error") == "access_denied":
+            message += f". {NO_PLAN}"
+        raise LoginError(message)
     issued = answer.get("client_id") or ""
     if registering:
         if not issued:

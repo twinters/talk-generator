@@ -123,6 +123,7 @@ class FakeOpenAI:
         self.made = 0
         self.delay = 0.0  # (how long the token endpoint takes)
         self.revocation_status = 200
+        self.codes_turned_down = 0  # (how many of the next codes the token endpoint turns down)
         self.models = [
             {"slug": "gpt-test-sol", "display_name": "GPT Test", "visibility": "list"},
             {"slug": "gpt-test-hidden", "display_name": "GPT Hidden", "visibility": "hide"},
@@ -153,6 +154,9 @@ class FakeOpenAI:
             self.refresh_tokens.discard(data["refresh_token"])
             return _Answer(200, self._tokens())
         page = self.pages[-1]
+        if self.codes_turned_down:
+            self.codes_turned_down -= 1
+            return _Answer(400, {"error": "invalid_grant"})
         if (data["code"], login.code_challenge(data["code_verifier"]), data["redirect_uri"]) != (
             "the-code",
             page["code_challenge"],
@@ -311,12 +315,35 @@ def test_an_answer_of_another_sign_in_is_turned_away(openai_accounts):
 
 def test_saying_no_keeps_no_sign_in(openai_accounts):
     browser = _browser(openai_accounts, {"code": None, "client_id": None, "error": "access_denied"})
-    with pytest.raises(login.LoginError, match="access_denied"):
+    with pytest.raises(login.LoginError, match="access_denied") as said_no:
         chatgpt_login.login(open_browser=browser, out=io.StringIO(), wait_seconds=10)
+    assert "a required permission is unavailable" in str(said_no.value) and "Plus or Pro" in str(said_no.value)
     assert "Not signed in" in browser.pages()[0][1]
     assert openai_accounts.forms == []
     assert not chatgpt_login.signed_in(chatgpt_login.stored())
     assert settings.llm_spec() == "none"
+
+
+def test_a_code_turned_down_is_followed_by_a_sign_in_with_the_registration(openai_accounts):
+    # As in the first sign-in tried for real: OpenAI turned the first code down (invalid_grant), and its docs say to
+    # sign in afresh with the client ID it issued
+    openai_accounts.codes_turned_down = 1
+    out = io.StringIO()
+
+    record = chatgpt_login.login(open_browser=_browser(openai_accounts), out=out, wait_seconds=10)
+
+    registering, again = openai_accounts.pages
+    assert (registering["client_id"], again["client_id"]) == ("dynamic_agent_client", ISSUED)
+    assert "signing in once more" in out.getvalue()
+    assert record["plan_usage"] is True and settings.llm_spec() == "chatgpt"
+
+
+def test_a_code_turned_down_twice_ends_the_sign_in(openai_accounts):
+    openai_accounts.codes_turned_down = 2
+    with pytest.raises(login.LoginError, match="invalid_grant"):
+        _sign_in(openai_accounts)
+    assert len(openai_accounts.pages) == 2  # (once more, and no more than that)
+    assert not chatgpt_login.signed_in(chatgpt_login.stored())
 
 
 @pytest.mark.parametrize(
