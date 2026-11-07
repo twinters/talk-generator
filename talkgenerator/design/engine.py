@@ -14,7 +14,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Final, Literal
 
-from talkgenerator.design import color, fit, themes, treatments
+from talkgenerator.design import color, fit, fonts, themes, treatments
 from talkgenerator.models.deck import (
     Box,
     ChartElement,
@@ -32,7 +32,8 @@ from talkgenerator.models.deck import (
     TextStyle,
     VennDiagram,
 )
-from talkgenerator.models.theme import Theme
+from talkgenerator.models.theme import TextEffect, Theme
+from talkgenerator.sources import memes
 from talkgenerator.util import random_util
 
 WIDTH: Final = 1920
@@ -70,6 +71,10 @@ class TextSpec:
     on_fill: bool = False
     bold: bool = False  # bold, whatever the theme's headings are (a name on a post)
     effect: bool = True  # with the theme's heading effect, for a heading (not a letter on a badge, say)
+    # A look of its own, whatever the theme's (a meme's captions): a font, capitals, and an outline in this colour
+    font_name: str | None = None
+    uppercase: bool = False
+    outline: str | None = None
 
 
 SPECS: Final[dict[str, TextSpec]] = {
@@ -133,6 +138,12 @@ SPECS: Final[dict[str, TextSpec]] = {
     "left title": TextSpec("heading", 140, 60, align="left", anchor="bottom", heading=True),
     "left subtitle": TextSpec("body", 52, 30, color="muted", align="left", anchor="top"),
     "mark": TextSpec("heading", 900, 320, color="accent", align="center", heading=True),
+    # (a meme's captions: white Impact in capitals with a black outline, over anything; or plain black text, on the
+    # template's own even area)
+    "meme": TextSpec(
+        "body", 96, 28, color="light", align="center", font_name="Impact", uppercase=True, outline="#000000"
+    ),
+    "plain meme": TextSpec("body", 80, 26, align="center", on_fill=True, font_name="Arial"),
     # (native diagrams)
     "date": TextSpec("body", 72, 28, align="center", anchor="bottom", bold=True),  # (not in capitals: too wide)
     "row date": TextSpec("body", 64, 28, align="right", bold=True),
@@ -151,6 +162,8 @@ class _Placement:
     overlays: list[ShapeElement] = field(default_factory=list)  # drawn over the content, under the texts
     photo: bool = False  # a photo fills the slide: credits go on a band
     colors: dict[str, str] = field(default_factory=dict)  # role: the colour of a text on a shape (that reads on it)
+    # The roles of pictures shown as they are, without the theme's treatment (a meme's template, captioned in place)
+    untreated: set[str] = field(default_factory=set)
 
 
 def lay_out(deck: Deck, theme: Theme, style_chaos: float = 0.0, extremes: bool = True) -> Deck:
@@ -248,6 +261,8 @@ def lay_out_slide(
             framed = box != FULL and not placement.photo  # (a picture over the whole slide gets no frame)
             with random_util.use(rng.child("treatment", element.role)):
                 look = treatments.for_look(treatments.treatment(theme, framed), element.image, theme)
+            if element.role in placement.untreated:
+                look = None
             polaroid = look is not None and look.frame == "polaroid"  # (its own white frame instead of a border)
             border = palette.text if theme.image_border and framed and not polaroid else None
             content.append(element.model_copy(update={"box": box, "border": border, "treatment": look}))
@@ -297,9 +312,9 @@ def lay_out_slide(
 def _style(text: str, box: Box, spec: TextSpec, theme: Theme, colour: str | None = None) -> TextStyle:
     """A text's style in the theme, at the largest size at which it fits its box: in the spec's colour, or in the
     colour its layout picked (one that reads on the shape it's on)."""
-    font = theme.fonts.heading if spec.font == "heading" else theme.fonts.body
+    font = spec.font_name or (theme.fonts.heading if spec.font == "heading" else theme.fonts.body)
     bold = (theme.fonts.heading_bold if spec.heading else False) or spec.bold
-    uppercase = theme.fonts.heading_uppercase if spec.heading else False
+    uppercase = spec.uppercase or (theme.fonts.heading_uppercase if spec.heading else False)
     largest = max(spec.smallest, round(spec.largest * theme.text_scale / fit.STEP) * fit.STEP)
     fitted = fit.fit(text.upper() if uppercase else text, box.w, box.h, font, largest, spec.smallest, bold)
     colors = {
@@ -311,6 +326,8 @@ def _style(text: str, box: Box, spec: TextSpec, theme: Theme, colour: str | None
     effect = theme.heading_effect if spec.heading and spec.effect else None
     if effect is not None and (spec.on_photo or spec.on_fill):  # (the text's colour reads there; a gradient may not)
         effect = effect.model_copy(update={"fill": ()})
+    if spec.outline:  # (an outline a twelfth of the text's size, as memes have it)
+        effect = TextEffect(outline=spec.outline, outline_width=max(2.0, round(fitted.size / 12, 1)))
     return TextStyle(
         font=font,
         size=fitted.size,
@@ -1507,6 +1524,71 @@ def _iceberg(side: bool) -> Callable[[dict[str, Content], Theme], _Placement]:
     return iceberg
 
 
+# A MEME: a template's picture as large as fits, with its captions in its boxes (see talkgenerator.sources.memes)
+
+_MEME_AREA: Final = Box(x=MARGIN, y=_CONTENT_BOTTOM - memes.AREA[1], w=memes.AREA[0], h=memes.AREA[1])
+# The boxes of a picture whose boxes talkgenerator doesn't know (one a plan brought): at its top, and at its bottom
+_TOP_AND_BOTTOM: Final = (
+    memes.CaptionBox(0.03, 0.02, 0.94, 0.2, "impact", ""),
+    memes.CaptionBox(0.03, 0.78, 0.94, 0.2, "impact", ""),
+)
+
+
+def _meme(roles: dict[str, Content], theme: Theme) -> _Placement:
+    """The template's picture as large as fits the slide, shown as it is (no theme treats it: its captions go in
+    place on it), each caption in its box: white Impact with a black outline, or plain black text on the template's
+    own even area, which a label in its colour keeps even under the text."""
+    placement = _Placement("v5/meme", untreated={"template"})
+    picture = roles.get("template")
+    template = (
+        memes.of_picture(picture.image.url, picture.image.source_url) if isinstance(picture, ImageElement) else None
+    )
+    if template is not None:
+        width, height, boxes = float(template.width), float(template.height), template.boxes
+    else:
+        size = (picture.image.width, picture.image.height) if isinstance(picture, ImageElement) else (None, None)
+        width, height, boxes = float(size[0] or 4), float(size[1] or 3), _TOP_AND_BOTTOM
+    area = _MEME_AREA
+    scale = min(area.w / width, area.h / height)
+    shown = Box(
+        x=area.x + (area.w - width * scale) / 2,
+        y=area.y + (area.h - height * scale) / 2,
+        w=width * scale,
+        h=height * scale,
+    )
+    placement.boxes["template"] = (shown, "quote")
+    for number, box in enumerate(boxes, 1):
+        role, caption = f"text_{number}", roles.get(f"text_{number}")
+        if not isinstance(caption, TextElement):
+            continue
+        spec, padding = ("plain meme", 6.0) if box.style == "plain" else ("meme", 4.0)
+        place = Box(x=shown.x + box.x * shown.w, y=shown.y + box.y * shown.h, w=box.w * shown.w, h=box.h * shown.h)
+        place = _room_for(caption.text, place, spec, padding, shown)
+        if box.style == "plain":
+            fill = box.fill or "#ffffff"
+            placement.overlays.append(ShapeElement(role=f"{role} label", box=place, color=fill))
+            placement.colors[role] = color.readable_on("#000000", [fill])
+        placement.boxes[role] = (_inset(place, padding), spec)
+    return placement
+
+
+def _room_for(text: str, box: Box, spec_name: str, padding: float, bounds: Box) -> Box:
+    """A caption's box, grown around its middle (within the picture) where the caption doesn't fit it at its smallest
+    size: as wide as its widest word, and then as tall as its lines (a narrow box, such as a sign's, and a long word)."""
+    spec = SPECS[spec_name]
+    font = spec.font_name or "Arial"
+    shown = text.upper() if spec.uppercase else text
+    widest = max((fonts.text_width(word, font, spec.smallest, spec.bold) for word in shown.split()), default=0.0)
+    width = min(bounds.w, max(box.w, widest + 2 * padding + 4))
+    fitted = fit.fit(shown, width - 2 * padding, box.h - 2 * padding, font, spec.smallest, spec.smallest, spec.bold)
+    height = (
+        box.h if fitted.fits else min(bounds.h, fit.text_height(len(fitted.lines), spec.smallest) + 2 * padding + 8)
+    )
+    x = min(max(box.x + (box.w - width) / 2, bounds.x), bounds.x + bounds.w - width)
+    y = min(max(box.y + (box.h - height) / 2, bounds.y), bounds.y + bounds.h - height)
+    return Box(x=x, y=y, w=width, h=height) if (width, height) != (box.w, box.h) else box
+
+
 @dataclass(frozen=True)
 class _Layout:
     """One of a slide type's layouts: its name, what places its elements, how likely it's picked (against the type's
@@ -1611,4 +1693,5 @@ _LAYOUTS: Final[dict[str, tuple[_Layout, ...]]] = {
         _Layout("v5/iceberg", _iceberg(side=False)),
         _Layout("v5/iceberg-side", _iceberg(side=True), 0.7, _beside_title),
     ),
+    "meme": (_Layout("v5/meme", _meme),),
 }

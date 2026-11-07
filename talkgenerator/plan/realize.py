@@ -102,7 +102,7 @@ def realize(
     language = presentation_context.get("language", "en")
     with random_util.use(rng.child("attempt", attempt)):
         texts: dict[str, str | None] = {}
-        for text_field in kind.texts:
+        for text_field in map(recipe.text_field, kind.texts):  # (as long as each may be on this slide)
             name = text_field.name
             if name in recipe.omit:
                 texts[name] = None
@@ -123,7 +123,8 @@ def realize(
         images: dict[str, Any] = dict.fromkeys(slot for slot in kind.images if slot in recipe.omit)
         queries: dict[str, str] = {}
         for slot, source in recipe.slots():
-            query = plan.images.get(slot, "").strip()
+            # (what the recipe has it search for, such as a meme's template, or the plan's query)
+            query = recipe.queries.get(slot) or plan.images.get(slot, "").strip()
             local = _local_image(query, local_images)
             if local is not None:
                 queries[slot], images[slot] = query, ImageData(local).found_with(query)
@@ -135,7 +136,8 @@ def realize(
                 found = _find(source, queries[slot], presentation_context, others)
             if found is None:
                 _note(problems, f"{slot}: no image found for {queries[slot]!r}")
-                if attempt >= ATTEMPTS - 1 and queries[slot] != concept:
+                # (a query of the recipe's own stays: a meme's captions are for its template, and no other)
+                if attempt >= ATTEMPTS - 1 and queries[slot] != concept and slot not in recipe.queries:
                     queries[slot] = concept
                     with generator_util.as_planned():
                         found = _find(source, concept, presentation_context, others)

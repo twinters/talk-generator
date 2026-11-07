@@ -8,7 +8,7 @@ from talkgenerator.plan.kinds import Recipe, Variant
 from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema.registry import Registry
 from talkgenerator.slide import slide_generator_types, slides
-from talkgenerator.sources import chart, diagram, slide_texts
+from talkgenerator.sources import chart, diagram, memes, slide_texts
 from talkgenerator.util.generator_util import CombinedGenerator, NoneGenerator
 
 # ==============================
@@ -80,7 +80,7 @@ about_me_slide_generators = _register(
             name="About Me: Location-Job-WeirdHobby",
             llm=Recipe(
                 "three_columns",
-                (cg.neutral_image_generator, cg.neutral_image_generator, cg.weird_punchline_image_generator),
+                (cg.country_image_generator, cg.neutral_image_generator, cg.weird_punchline_image_generator),
                 brief="About the presenter: where they come from, their job and their weird hobby",
                 hints={"title": _ABOUT_ME_TITLE, "caption_1": _FROM, "caption_2": _JOB, "caption_3": _HOBBY},
             ),
@@ -98,7 +98,7 @@ about_me_slide_generators = _register(
             name="About Me: Location-Job",
             llm=Recipe(
                 "two_columns",
-                (cg.neutral_image_generator, cg.neutral_image_generator),
+                (cg.country_image_generator, cg.neutral_image_generator),
                 brief="About the presenter: where they come from and their job",
                 hints={"title": _ABOUT_ME_TITLE, "caption_1": _FROM, "caption_2": _JOB},
             ),
@@ -117,7 +117,7 @@ about_me_slide_generators = _register(
             name="About Me: Location-Book-WeirdHobby",
             llm=Recipe(
                 "three_columns",
-                (cg.neutral_image_generator, cg.reddit_book_cover_generator, cg.weird_punchline_image_generator),
+                (cg.country_image_generator, cg.reddit_book_cover_generator, cg.weird_punchline_image_generator),
                 brief="About the presenter: where they come from, the book they wrote, and their weird hobby",
                 hints={
                     "title": _ABOUT_ME_TITLE,
@@ -820,6 +820,46 @@ mockup_slide_generators_copyright_free = _register(
     _mockups(cg.copyright_free_generator, cg.copyright_free_generator, " (CRF)"),
 )
 
+# MEMES WITH LIVE CAPTIONS: one of Imgflip's templates, with captions of the talk's own in its boxes (see
+# talkgenerator.sources.memes): the dice pick the template, and the language model writes what each box says (or, in
+# a classic talk, the template's own sentences about the slide's topic)
+_MEME_BRIEF = "A meme about the concept"
+
+
+def _meme_variants() -> tuple[Variant, ...]:
+    """A variant per template: its boxes' captions, what each says and about how long it can be, and its picture."""
+    variants = []
+    for template in memes.templates().values():
+        written = template.written()
+        fields = [f"text_{index}" for index in range(1, len(written) + 1)]
+        variants.append(
+            Variant(
+                1,
+                omit=frozenset(f"text_{index}" for index in range(len(written) + 1, memes.MOST_CAPTIONS + 1)),
+                note=f"as the '{template.name}' meme ({template.about})",
+                hints={field: f"{box.says}, in a few words" for field, box in zip(fields, written, strict=True)},
+                limits={field: max(12, template.room(box)) for field, box in zip(fields, written, strict=True)},
+                queries={"template": template.id},
+            )
+        )
+    return tuple(variants)
+
+
+meme_slide_generators = _register(
+    "memes",
+    [
+        _drawn(
+            slide_texts.meme(cg.meme_template_generator),
+            slides.MemeSlide,
+            _middle(1),
+            ["meme", "caption_meme"],
+            "Meme",
+            Recipe("meme", (cg.meme_template_generator,), brief=_MEME_BRIEF, variants=_meme_variants()),
+            repeats=1,
+        )
+    ],
+)
+
 # THE TALK'S STRUCTURE: an agenda after the title, a section's divider in the middle, "Questions?" at the end
 structure_slide_generators = _register(
     "structure",
@@ -1028,6 +1068,7 @@ all_slide_generators = (
     + number_slide_generators
     + quiz_slide_generators
     + mockup_slide_generators
+    + meme_slide_generators
     + structure_slide_generators
     + native_diagram_slide_generators
     + conclusion_slide_generators
@@ -1049,6 +1090,7 @@ default_max_allowed_tags = {
     "quiz": 1,
     "social_post": 1,
     "news": 1,
+    "caption_meme": 1,
     "agenda": 1,
     "questions": 1,
     "timeline": 1,

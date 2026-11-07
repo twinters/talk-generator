@@ -25,6 +25,7 @@ DEFAULT_GROUPS = (
     "numbers",
     "quiz",
     "mockups",
+    "memes",
     "structure",
     "conclusion",
 )

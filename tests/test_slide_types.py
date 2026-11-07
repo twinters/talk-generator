@@ -462,7 +462,7 @@ def test_the_ted_formats_mockups_get_copyright_free_photos():
 
 
 def test_the_new_types_are_drawn_types():
-    assert classic.DRAWN_TYPES == set(EVERY_KIND)
+    assert classic.DRAWN_TYPES == {*EVERY_KIND, "meme"}  # (memes: see test_memes.py)
     for kind in EVERY_KIND:
         slide = _built(kind, _longest_texts(kind), {"photo": ImageData("https://example.com/wide.jpg")})
         assert slide.type_name in classic.DRAWN_TYPES

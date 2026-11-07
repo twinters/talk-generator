@@ -25,6 +25,14 @@ DISPLAY: Final[DisplayPolicy] = "proxy"
 # The license classes of its images (see talkgenerator.images.licenses): only public domain works are asked for, whose
 # images AIC releases under CC0
 LICENSES: Final[frozenset[LicenseClass]] = frozenset({"public-domain"})
+# The types of artwork the looks ask for (see talkgenerator.images.catalog), as AIC names them
+TYPES: Final = {
+    "painting": "Painting",
+    "photograph": "Photograph",
+    "print": "Print",
+    "drawing": "Drawing and Watercolor",
+    "sculpture": "Sculpture",
+}
 _IIIF_URL = "https://www.artic.edu/iiif/2"
 _IMAGE_WIDTH = 1686  # twice AIC's recommended 843 pixels; available for public domain works
 _THUMBNAIL_WIDTH = 200
@@ -58,19 +66,26 @@ def _map_artwork(item: dict[str, Any], iiif_url: str) -> ImageData | None:
     )
 
 
-def search_artworks(query: str, limit: int = 20) -> list[ImageData]:
+def search_artworks(
+    query: str, kind: str | None = None, after: int | None = None, before: int | None = None, limit: int = 20
+) -> list[ImageData]:
+    """Public domain artworks for the query: of a type (one of TYPES), made after and before some years, if given
+    (its search's Elasticsearch terms)."""
     if not query or settings.is_source_disabled("ART_INSTITUTE"):
         return []
-    data = http_util.get_json(
-        API_URL,
-        params={
-            "q": query,
-            "limit": limit,
-            "fields": "id,title,artist_title,image_id,thumbnail",
-            "query[term][is_public_domain]": "true",
-        },
-        timeout=15,
-    )
+    params: dict[str, Any] = {"q": query, "limit": limit, "fields": "id,title,artist_title,image_id,thumbnail"}
+    terms: list[tuple[str, str]] = [("[term][is_public_domain]", "true")]
+    if kind in TYPES:
+        terms.append(("[term][artwork_type_title.keyword]", TYPES[kind]))
+    if after is not None:
+        terms.append(("[range][date_start][gte]", str(after)))
+    if before is not None:
+        terms.append(("[range][date_end][lte]", str(before)))
+    if len(terms) == 1:
+        params["query[term][is_public_domain]"] = "true"
+    else:  # (several terms that must all hold, each its own item of a list)
+        params.update({f"query[bool][must][{index}]{term}": value for index, (term, value) in enumerate(terms)})
+    data = http_util.get_json(API_URL, params=params, timeout=15)
     if not isinstance(data, dict):
         return []
     iiif_url = (data.get("config") or {}).get("iiif_url") or _IIIF_URL

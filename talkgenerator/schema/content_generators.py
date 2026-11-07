@@ -124,6 +124,9 @@ reddit_gif_generator = ImageSlot("a gif from Reddit", aesthetic="gifs", sources=
 giphy_gif_generator = ImageSlot("a gif from GIPHY", aesthetic="gifs", sources=("giphy",))
 combined_gif_generator = ImageSlot("a gif", aesthetic="gifs")
 
+# MEMES WITH LIVE CAPTIONS: Imgflip's templates, whose captions talkgenerator writes on them (talkgenerator.sources.memes)
+meme_template_generator = ImageSlot("a meme template, captioned live", aesthetic="meme-templates", sources=("imgflip",))
+
 # REDDIT, AND SHITPOSTBOT
 meme_reddit_image_generator = ImageSlot("a meme", aesthetic="memes")
 weird_reddit_image_generator = ImageSlot("a weird picture from Reddit", aesthetic="weird", sources=("reddit:weird",))
@@ -206,6 +209,10 @@ reddit_book_cover_generator = ImageSlot("a book cover", aesthetic="book-covers")
 
 reddit_location_image_generator = ImageSlot("a place", aesthetic="places")
 
+# Where the presenter comes from: now and then its flag (for a country), else photos of it
+country_image_generator = ImageSlot("where the presenter comes from: its flag, or a photo of it", aesthetic="country")
+country_image_generator_from_word = country_image_generator.from_word
+
 # TUPLED ABOUT ME
 
 about_me_hobby_tuple_generator = TupledGenerator(hobby_description_generator, weird_punchline_image_generator)
@@ -218,7 +225,7 @@ about_me_job_tuple_generator = MappedGenerator(
 )
 
 about_me_country_tuple_generator = MappedGenerator(
-    InspiredTupleGenerator(country_generator, neutral_image_generator_from_word),
+    InspiredTupleGenerator(country_generator, country_image_generator_from_word),
     CountryPrefixApplier(),
 )
 

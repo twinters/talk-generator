@@ -744,11 +744,24 @@ def _formats_command(argv: Sequence[str]) -> int:
     parser.add_argument(
         "--licenses", action="store_true", help="the license policies, and the license classes they pick from"
     )
+    parser.add_argument(
+        "--memes", action="store_true", help="the meme templates a meme slide can have, and what each caption says"
+    )
     parser.add_argument("--format", dest="schema", default="default", choices=schemas.names(), help="the format")
     parser.add_argument("--json", action="store_true", help="as JSON instead of Markdown")
     args = parser.parse_args(argv)
 
-    if args.looks or args.licenses:
+    if args.memes:
+        entries = meme_catalog()
+        if args.json:
+            text = json.dumps(entries, indent=2)
+        else:
+            text = "\n".join(
+                f"{entry['name']}: {entry['about']}\n"
+                + "\n".join(f"  text_{number}: {says}" for number, says in enumerate(entry["captions"], 1))
+                for entry in entries
+            )
+    elif args.looks or args.licenses:
         from talkgenerator.images import licenses as license_policies
         from talkgenerator.images import profiles
 
@@ -782,6 +795,17 @@ def _formats_command(argv: Sequence[str]) -> int:
         )
     _print(text)
     return 0
+
+
+def meme_catalog() -> list[dict[str, Any]]:
+    """The meme templates a meme slide can have (talkgenerator.sources.memes), for agents writing plans: the name its
+    template_query gives, what it shows, and what each of its captions says (text_1, text_2...)."""
+    from talkgenerator.sources import memes
+
+    return [
+        {"name": template.name, "about": template.about, "captions": [box.says for box in template.written()]}
+        for template in memes.templates().values()
+    ]
 
 
 def _print(text: str) -> None:

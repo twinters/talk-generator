@@ -228,6 +228,9 @@ def _runs(seed=1, theme=None):
         *(slides.ThreeColumnImageSlide(None, "One", wide, "Two", tall, "Three", wide) for _ in range(3)),
         # (milestone 6's types, with what every one of their layouts takes: short numbers, four options, a title...)
         *_runs_of_new_types(wide),
+        # (and a meme, of a picture whose boxes talkgenerator doesn't know: its captions at its top and its bottom;
+        # one, as memes have a layout of their own, and a talk at most one meme)
+        slides.MemeSlide(wide, "When the cat", "Sits on the keyboard"),
     ]
     slide_deck = SlideDeck(len(runs), title="Cats", topics=["cats"], seed=seed)
     for index, slide in enumerate(runs):

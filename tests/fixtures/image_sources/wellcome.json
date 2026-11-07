@@ -1,0 +1,355 @@
+{
+ "type": "ResultList",
+ "pageSize": 4,
+ "totalResults": 537,
+ "results": [
+  {
+   "locations": [
+    {
+     "url": "https://iiif.wellcomecollection.org/image/V0012108/info.json",
+     "credit": "Wellcome Collection",
+     "license": {
+      "id": "pdm",
+      "type": "License",
+      "label": "Public Domain Mark",
+      "url": "https://creativecommons.org/share-your-work/public-domain/pdm/"
+     },
+     "accessConditions": [
+      {
+       "method": {
+        "id": "view-online",
+        "type": "AccessMethod",
+        "label": "View online"
+       },
+       "status": {
+        "id": "open",
+        "type": "AccessStatus",
+        "label": "Open"
+       },
+       "type": "AccessCondition"
+      }
+     ],
+     "locationType": {
+      "id": "iiif-image",
+      "type": "LocationType",
+      "label": "IIIF Image API"
+     },
+     "type": "DigitalLocation"
+    }
+   ],
+   "source": {
+    "id": "ub9npjuy",
+    "title": "A tooth-drawer extracting a man's tooth and another tooth-drawer extracting a tooth in a carriage. Drypoint.",
+    "type": "Work",
+    "contributors": []
+   },
+   "aspectRatio": 1.3888888888888888,
+   "thumbnail": {
+    "url": "https://iiif.wellcomecollection.org/image/V0012108/info.json",
+    "credit": "Wellcome Collection",
+    "license": {
+     "id": "pdm",
+     "type": "License",
+     "label": "Public Domain Mark",
+     "url": "https://creativecommons.org/share-your-work/public-domain/pdm/"
+    },
+    "accessConditions": [
+     {
+      "method": {
+       "id": "view-online",
+       "type": "AccessMethod",
+       "label": "View online"
+      },
+      "status": {
+       "id": "open",
+       "type": "AccessStatus",
+       "label": "Open"
+      },
+      "type": "AccessCondition"
+     }
+    ],
+    "locationType": {
+     "id": "iiif-image",
+     "type": "LocationType",
+     "label": "IIIF Image API"
+    },
+    "type": "DigitalLocation"
+   },
+   "averageColor": "#a79484",
+   "id": "y69d857k",
+   "type": "Image"
+  },
+  {
+   "locations": [
+    {
+     "url": "https://iiif.wellcomecollection.org/image/B0008389/info.json",
+     "credit": "Kevin Mackenzie, University of Aberdeen",
+     "license": {
+      "id": "cc-by",
+      "type": "License",
+      "label": "Attribution 4.0 International (CC BY 4.0)",
+      "url": "http://creativecommons.org/licenses/by/4.0/"
+     },
+     "accessConditions": [
+      {
+       "method": {
+        "id": "view-online",
+        "type": "AccessMethod",
+        "label": "View online"
+       },
+       "status": {
+        "id": "open",
+        "type": "AccessStatus",
+        "label": "Open"
+       },
+       "type": "AccessCondition"
+      }
+     ],
+     "locationType": {
+      "id": "iiif-image",
+      "type": "LocationType",
+      "label": "IIIF Image API"
+     },
+     "type": "DigitalLocation"
+    }
+   ],
+   "source": {
+    "id": "qeu2pyxk",
+    "title": "Pig tooth",
+    "type": "Work",
+    "contributors": [
+     {
+      "agent": {
+       "id": "hmvnkm2b",
+       "label": "Kevin Mackenzie, University of Aberdeen",
+       "identifiers": [
+        {
+         "value": "kevin mackenzie, university of aberdeen",
+         "type": "Identifier",
+         "identifierType": {
+          "id": "label-derived",
+          "type": "IdentifierType",
+          "label": "Identifier derived from the label of the referent"
+         }
+        }
+       ],
+       "type": "Agent"
+      },
+      "roles": [],
+      "primary": true,
+      "type": "Contributor"
+     }
+    ]
+   },
+   "aspectRatio": 1.2084592145015105,
+   "thumbnail": {
+    "url": "https://iiif.wellcomecollection.org/image/B0008389/info.json",
+    "credit": "Kevin Mackenzie, University of Aberdeen",
+    "license": {
+     "id": "cc-by",
+     "type": "License",
+     "label": "Attribution 4.0 International (CC BY 4.0)",
+     "url": "http://creativecommons.org/licenses/by/4.0/"
+    },
+    "accessConditions": [
+     {
+      "method": {
+       "id": "view-online",
+       "type": "AccessMethod",
+       "label": "View online"
+      },
+      "status": {
+       "id": "open",
+       "type": "AccessStatus",
+       "label": "Open"
+      },
+      "type": "AccessCondition"
+     }
+    ],
+    "locationType": {
+     "id": "iiif-image",
+     "type": "LocationType",
+     "label": "IIIF Image API"
+    },
+    "type": "DigitalLocation"
+   },
+   "averageColor": "#231e28",
+   "id": "aamcquex",
+   "type": "Image"
+  },
+  {
+   "locations": [
+    {
+     "url": "https://iiif.wellcomecollection.org/image/L0017342/info.json",
+     "credit": "Wellcome Collection",
+     "license": {
+      "id": "cc-by",
+      "type": "License",
+      "label": "Attribution 4.0 International (CC BY 4.0)",
+      "url": "http://creativecommons.org/licenses/by/4.0/"
+     },
+     "accessConditions": [
+      {
+       "method": {
+        "id": "view-online",
+        "type": "AccessMethod",
+        "label": "View online"
+       },
+       "status": {
+        "id": "open",
+        "type": "AccessStatus",
+        "label": "Open"
+       },
+       "type": "AccessCondition"
+      }
+     ],
+     "locationType": {
+      "id": "iiif-image",
+      "type": "LocationType",
+      "label": "IIIF Image API"
+     },
+     "type": "DigitalLocation"
+    }
+   ],
+   "source": {
+    "id": "jxswes8p",
+    "title": "A tooth-drawer extracting tooth from the mouth of a man",
+    "type": "Work",
+    "contributors": []
+   },
+   "aspectRatio": 0.8075,
+   "thumbnail": {
+    "url": "https://iiif.wellcomecollection.org/image/L0017342/info.json",
+    "credit": "Wellcome Collection",
+    "license": {
+     "id": "cc-by",
+     "type": "License",
+     "label": "Attribution 4.0 International (CC BY 4.0)",
+     "url": "http://creativecommons.org/licenses/by/4.0/"
+    },
+    "accessConditions": [
+     {
+      "method": {
+       "id": "view-online",
+       "type": "AccessMethod",
+       "label": "View online"
+      },
+      "status": {
+       "id": "open",
+       "type": "AccessStatus",
+       "label": "Open"
+      },
+      "type": "AccessCondition"
+     }
+    ],
+    "locationType": {
+     "id": "iiif-image",
+     "type": "LocationType",
+     "label": "IIIF Image API"
+    },
+    "type": "DigitalLocation"
+   },
+   "averageColor": "#454545",
+   "id": "nc62bfhq",
+   "type": "Image"
+  },
+  {
+   "locations": [
+    {
+     "url": "https://iiif.wellcomecollection.org/image/B0008389/info.json",
+     "credit": "Kevin Mackenzie, University of Aberdeen",
+     "license": {
+      "id": "cc-by-nc",
+      "type": "License",
+      "label": "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)",
+      "url": "https://creativecommons.org/licenses/by-nc/4.0/"
+     },
+     "accessConditions": [
+      {
+       "method": {
+        "id": "view-online",
+        "type": "AccessMethod",
+        "label": "View online"
+       },
+       "status": {
+        "id": "open",
+        "type": "AccessStatus",
+        "label": "Open"
+       },
+       "type": "AccessCondition"
+      }
+     ],
+     "locationType": {
+      "id": "iiif-image",
+      "type": "LocationType",
+      "label": "IIIF Image API"
+     },
+     "type": "DigitalLocation"
+    }
+   ],
+   "source": {
+    "id": "qeu2pyxk",
+    "title": "Pig tooth",
+    "type": "Work",
+    "contributors": [
+     {
+      "agent": {
+       "id": "hmvnkm2b",
+       "label": "Kevin Mackenzie, University of Aberdeen",
+       "identifiers": [
+        {
+         "value": "kevin mackenzie, university of aberdeen",
+         "type": "Identifier",
+         "identifierType": {
+          "id": "label-derived",
+          "type": "IdentifierType",
+          "label": "Identifier derived from the label of the referent"
+         }
+        }
+       ],
+       "type": "Agent"
+      },
+      "roles": [],
+      "primary": true,
+      "type": "Contributor"
+     }
+    ]
+   },
+   "aspectRatio": 1.2084592145015105,
+   "thumbnail": {
+    "url": "https://iiif.wellcomecollection.org/image/B0008389/info.json",
+    "credit": "Kevin Mackenzie, University of Aberdeen",
+    "license": {
+     "id": "cc-by-nc",
+     "type": "License",
+     "label": "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)",
+     "url": "https://creativecommons.org/licenses/by-nc/4.0/"
+    },
+    "accessConditions": [
+     {
+      "method": {
+       "id": "view-online",
+       "type": "AccessMethod",
+       "label": "View online"
+      },
+      "status": {
+       "id": "open",
+       "type": "AccessStatus",
+       "label": "Open"
+      },
+      "type": "AccessCondition"
+     }
+    ],
+    "locationType": {
+     "id": "iiif-image",
+     "type": "LocationType",
+     "label": "IIIF Image API"
+    },
+    "type": "DigitalLocation"
+   },
+   "averageColor": "#231e28",
+   "id": "noncommercial",
+   "type": "Image"
+  }
+ ]
+}

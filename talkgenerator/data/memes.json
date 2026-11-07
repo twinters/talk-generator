@@ -1,0 +1,1087 @@
+{
+  "source": "Imgflip's templates (https://imgflip.com/api), with caption boxes measured on its pictures on 2026-11-07",
+  "templates": [
+    {
+      "id": "181913649",
+      "name": "Drake Hotline Bling",
+      "url": "https://i.imgflip.com/30b1gx.jpg",
+      "width": 1200,
+      "height": 1200,
+      "about": "Drake waves one thing away, then points at another with approval",
+      "boxes": [
+        {
+          "x": 0.53,
+          "y": 0.04,
+          "w": 0.43,
+          "h": 0.42,
+          "style": "plain",
+          "says": "what Drake waves away: the usual, sensible thing",
+          "fill": "#ffffff"
+        },
+        {
+          "x": 0.53,
+          "y": 0.54,
+          "w": 0.43,
+          "h": 0.42,
+          "style": "plain",
+          "says": "what he points at with approval instead: the absurd thing",
+          "fill": "#ffffff"
+        }
+      ],
+      "classic": [
+        [
+          "{related.title}",
+          "{seed.title}"
+        ],
+        [
+          "Doing it the normal way",
+          "Doing it with {seed.plural}"
+        ],
+        [
+          "Sleeping eight hours",
+          "Reading about {seed.plural} all night"
+        ],
+        [
+          "Small talk",
+          "Small talk about {seed.plural}"
+        ],
+        [
+          "Following the instructions",
+          "Winging it with {seed.plural}"
+        ]
+      ]
+    },
+    {
+      "id": "87743020",
+      "name": "Two Buttons",
+      "url": "https://i.imgflip.com/1g8my4.jpg",
+      "width": 600,
+      "height": 908,
+      "about": "a sweating man who can't choose which of two buttons to press",
+      "boxes": [
+        {
+          "x": 0.04,
+          "y": 0.08,
+          "w": 0.4,
+          "h": 0.12,
+          "style": "impact",
+          "says": "the first button: one option"
+        },
+        {
+          "x": 0.45,
+          "y": 0.03,
+          "w": 0.4,
+          "h": 0.12,
+          "style": "impact",
+          "says": "the second button: the other option, as hard to resist"
+        },
+        {
+          "x": 0.03,
+          "y": 0.82,
+          "w": 0.94,
+          "h": 0.15,
+          "style": "impact",
+          "says": "who can't choose"
+        }
+      ],
+      "classic": [
+        [
+          "{seed.title}",
+          "{related.title}",
+          "Me"
+        ],
+        [
+          "Talk about {seed.plural}",
+          "Talk about {related.plural}",
+          "The presenter"
+        ],
+        [
+          "Love {seed.plural}",
+          "Fear {seed.plural}",
+          "Everyone in this room"
+        ]
+      ]
+    },
+    {
+      "id": "112126428",
+      "name": "Distracted Boyfriend",
+      "url": "https://i.imgflip.com/1ur9b0.jpg",
+      "width": 1200,
+      "height": 800,
+      "about": "a man turns to look at another woman, while his girlfriend glares at him",
+      "boxes": [
+        {
+          "x": 0.1,
+          "y": 0.64,
+          "w": 0.34,
+          "h": 0.2,
+          "style": "impact",
+          "says": "the woman in red he looks at: the new temptation"
+        },
+        {
+          "x": 0.47,
+          "y": 0.66,
+          "w": 0.25,
+          "h": 0.18,
+          "style": "impact",
+          "says": "the man who's distracted"
+        },
+        {
+          "x": 0.75,
+          "y": 0.62,
+          "w": 0.24,
+          "h": 0.2,
+          "style": "impact",
+          "says": "his girlfriend: what he should stick to"
+        }
+      ],
+      "classic": [
+        [
+          "{seed.title}",
+          "Me",
+          "My actual job"
+        ],
+        [
+          "{related.title}",
+          "{seed.title} fans",
+          "{seed.title}"
+        ],
+        [
+          "Talking about {seed.plural}",
+          "Me",
+          "Finishing this talk"
+        ]
+      ]
+    },
+    {
+      "id": "217743513",
+      "name": "UNO Draw 25 Cards",
+      "url": "https://i.imgflip.com/3lmzyx.jpg",
+      "width": 500,
+      "height": 494,
+      "about": "a card that says to do something or draw 25, and a man holding 25 cards",
+      "boxes": [
+        {
+          "x": 0.08,
+          "y": 0.3,
+          "w": 0.33,
+          "h": 0.22,
+          "style": "impact",
+          "says": "what the card asks: something you'd rather not do (it already says 'or draw 25')"
+        },
+        {
+          "x": 0.52,
+          "y": 0.8,
+          "w": 0.45,
+          "h": 0.16,
+          "style": "impact",
+          "says": "who would rather draw 25 cards"
+        }
+      ],
+      "classic": [
+        [
+          "Stop talking about {seed.plural}",
+          "Me"
+        ],
+        [
+          "Admit {seed.plural} are overrated",
+          "{seed.title} fans"
+        ],
+        [
+          "Explain {seed.plural}",
+          "Experts"
+        ]
+      ]
+    },
+    {
+      "id": "124822590",
+      "name": "Left Exit 12 Off Ramp",
+      "url": "https://i.imgflip.com/22bdq6.jpg",
+      "width": 804,
+      "height": 767,
+      "about": "a car swerves to a highway's exit instead of going straight on",
+      "boxes": [
+        {
+          "x": 0.235,
+          "y": 0.125,
+          "w": 0.16,
+          "h": 0.2,
+          "style": "impact",
+          "says": "straight on: the sensible way"
+        },
+        {
+          "x": 0.51,
+          "y": 0.125,
+          "w": 0.21,
+          "h": 0.2,
+          "style": "impact",
+          "says": "the exit: the absurd way"
+        },
+        {
+          "x": 0.32,
+          "y": 0.8,
+          "w": 0.45,
+          "h": 0.14,
+          "style": "impact",
+          "says": "who takes the exit"
+        }
+      ],
+      "classic": [
+        [
+          "Being normal",
+          "{seed.title}",
+          "Me"
+        ],
+        [
+          "Sleep",
+          "{seed.plural.title}",
+          "Me at 3 AM"
+        ],
+        [
+          "The plan",
+          "{related.title}",
+          "This talk"
+        ]
+      ]
+    },
+    {
+      "id": "131940431",
+      "name": "Gru's Plan",
+      "url": "https://i.imgflip.com/26jxvz.jpg",
+      "width": 700,
+      "height": 449,
+      "about": "Gru presents a plan on four boards, and its third step backfires (the fourth board repeats it)",
+      "boxes": [
+        {
+          "x": 0.29,
+          "y": 0.11,
+          "w": 0.18,
+          "h": 0.34,
+          "style": "plain",
+          "says": "the plan's first step",
+          "fill": "#b1e5e3"
+        },
+        {
+          "x": 0.79,
+          "y": 0.11,
+          "w": 0.18,
+          "h": 0.34,
+          "style": "plain",
+          "says": "its second step",
+          "fill": "#b1e5e3"
+        },
+        {
+          "x": 0.29,
+          "y": 0.62,
+          "w": 0.18,
+          "h": 0.34,
+          "style": "plain",
+          "says": "its third step, where the plan backfires",
+          "fill": "#b1e5e3"
+        },
+        {
+          "x": 0.79,
+          "y": 0.62,
+          "w": 0.18,
+          "h": 0.34,
+          "style": "plain",
+          "says": "(the third step again)",
+          "same_as": 3,
+          "fill": "#b1e5e3"
+        }
+      ],
+      "classic": [
+        [
+          "Give a talk on {seed.plural}",
+          "Pretend to be an expert",
+          "Get asked a question about {seed.plural}"
+        ],
+        [
+          "Buy {seed.a}",
+          "Read the manual",
+          "The manual is about {related.plural}"
+        ],
+        [
+          "Learn about {seed.plural}",
+          "Explain {seed.plural}",
+          "Realise you know nothing about {seed.plural}"
+        ]
+      ]
+    },
+    {
+      "id": "135256802",
+      "name": "Epic Handshake",
+      "url": "https://i.imgflip.com/28j0te.jpg",
+      "width": 900,
+      "height": 645,
+      "about": "two arms meet in an epic handshake: two very different sides agree on something",
+      "boxes": [
+        {
+          "x": 0.01,
+          "y": 0.36,
+          "w": 0.27,
+          "h": 0.22,
+          "style": "impact",
+          "says": "the first side"
+        },
+        {
+          "x": 0.69,
+          "y": 0.46,
+          "w": 0.3,
+          "h": 0.22,
+          "style": "impact",
+          "says": "the second side, as different as can be"
+        },
+        {
+          "x": 0.2,
+          "y": 0.02,
+          "w": 0.4,
+          "h": 0.16,
+          "style": "impact",
+          "says": "what they agree on, on the handshake"
+        }
+      ],
+      "classic": [
+        [
+          "{seed.title} fans",
+          "{related.title} fans",
+          "Hating Mondays"
+        ],
+        [
+          "{seed.title}",
+          "{related.title}",
+          "Confusing everyone"
+        ],
+        [
+          "Scientists",
+          "{seed.title} lovers",
+          "Not knowing what {seed.plural} are"
+        ]
+      ]
+    },
+    {
+      "id": "4087833",
+      "name": "Waiting Skeleton",
+      "url": "https://i.imgflip.com/2fm6x.jpg",
+      "width": 298,
+      "height": 403,
+      "about": "a skeleton on a bench that has waited forever",
+      "boxes": [
+        {
+          "x": 0.03,
+          "y": 0.02,
+          "w": 0.94,
+          "h": 0.2,
+          "style": "impact",
+          "says": "what someone is waiting for"
+        },
+        {
+          "x": 0.03,
+          "y": 0.78,
+          "w": 0.94,
+          "h": 0.2,
+          "style": "impact",
+          "says": "the end of it, after forever"
+        }
+      ],
+      "classic": [
+        [
+          "Me waiting for someone",
+          "To ask me about {seed.plural}"
+        ],
+        [
+          "Waiting for",
+          "{seed.plural} to make sense"
+        ],
+        [
+          "Still waiting",
+          "For the end of {seed.plural}"
+        ]
+      ]
+    },
+    {
+      "id": "252600902",
+      "name": "Always Has Been",
+      "url": "https://i.imgflip.com/46e43q.png",
+      "width": 960,
+      "height": 540,
+      "about": "an astronaut finds out the earth is all one thing, and another astronaut behind him says it always has been",
+      "boxes": [
+        {
+          "x": 0.02,
+          "y": 0.03,
+          "w": 0.56,
+          "h": 0.14,
+          "style": "impact",
+          "says": "what the first astronaut finds out: 'Wait, it's all ...?'"
+        },
+        {
+          "x": 0.6,
+          "y": 0.03,
+          "w": 0.38,
+          "h": 0.12,
+          "style": "impact",
+          "says": "what the second answers: 'Always has been'"
+        }
+      ],
+      "classic": [
+        [
+          "Wait, it's all {seed.plural}?",
+          "Always has been"
+        ],
+        [
+          "Wait, it was {seed.plural} all along?",
+          "Always has been"
+        ]
+      ]
+    },
+    {
+      "id": "188390779",
+      "name": "Woman Yelling At Cat",
+      "url": "https://i.imgflip.com/345v97.jpg",
+      "width": 680,
+      "height": 438,
+      "about": "a woman yells at a cat at a dinner table, and the cat looks unimpressed",
+      "boxes": [
+        {
+          "x": 0.02,
+          "y": 0.02,
+          "w": 0.46,
+          "h": 0.17,
+          "style": "plain",
+          "says": "what the woman yells",
+          "fill": "#ffffff"
+        },
+        {
+          "x": 0.52,
+          "y": 0.02,
+          "w": 0.46,
+          "h": 0.17,
+          "style": "plain",
+          "says": "what the unimpressed cat says, or is",
+          "fill": "#ffffff"
+        }
+      ],
+      "classic": [
+        [
+          "You said {seed.plural} were simple!",
+          "Me, who explained {seed.plural}"
+        ],
+        [
+          "{seed.title} is the future!",
+          "{related.title}"
+        ],
+        [
+          "Who ate all the {seed.plural}?",
+          "Not me"
+        ]
+      ]
+    },
+    {
+      "id": "129242436",
+      "name": "Change My Mind",
+      "url": "https://i.imgflip.com/24y43o.jpg",
+      "width": 482,
+      "height": 361,
+      "about": "a man at a table with a sign saying 'Change my mind' under a bold claim",
+      "boxes": [
+        {
+          "x": 0.43,
+          "y": 0.59,
+          "w": 0.43,
+          "h": 0.22,
+          "style": "plain",
+          "says": "the bold claim on the sign (it already says 'Change my mind' under it)",
+          "fill": "#d6d4e1"
+        }
+      ],
+      "classic": [
+        [
+          "{seed.title} is underrated"
+        ],
+        [
+          "{seed.plural.title} are just {related.plural}"
+        ],
+        [
+          "Everything is better with {seed.plural}"
+        ]
+      ]
+    },
+    {
+      "id": "438680",
+      "name": "Batman Slapping Robin",
+      "url": "https://i.imgflip.com/9ehk.jpg",
+      "width": 400,
+      "height": 387,
+      "about": "Batman slaps Robin mid-sentence",
+      "boxes": [
+        {
+          "x": 0.07,
+          "y": 0.04,
+          "w": 0.37,
+          "h": 0.12,
+          "style": "plain",
+          "says": "what Robin starts to say",
+          "fill": "#ddb287"
+        },
+        {
+          "x": 0.55,
+          "y": 0.03,
+          "w": 0.4,
+          "h": 0.12,
+          "style": "plain",
+          "says": "what Batman says as he slaps him",
+          "fill": "#dcae80"
+        }
+      ],
+      "classic": [
+        [
+          "What about {related.plural}?",
+          "We're talking about {seed.plural}!"
+        ],
+        [
+          "{seed.plural.title} are boring",
+          "Take that back!"
+        ]
+      ]
+    },
+    {
+      "id": "100777631",
+      "name": "Is This A Pigeon",
+      "url": "https://i.imgflip.com/1o00in.jpg",
+      "width": 1587,
+      "height": 1425,
+      "about": "a man mistakes a butterfly for a pigeon",
+      "boxes": [
+        {
+          "x": 0.04,
+          "y": 0.72,
+          "w": 0.45,
+          "h": 0.13,
+          "style": "impact",
+          "says": "the man: who gets it wrong"
+        },
+        {
+          "x": 0.62,
+          "y": 0.36,
+          "w": 0.36,
+          "h": 0.12,
+          "style": "impact",
+          "says": "the butterfly: what he looks at"
+        },
+        {
+          "x": 0.03,
+          "y": 0.86,
+          "w": 0.94,
+          "h": 0.12,
+          "style": "impact",
+          "says": "his wrong question: 'Is this ...?'"
+        }
+      ],
+      "classic": [
+        [
+          "Me",
+          "{related.title}",
+          "Is this {seed.a}?"
+        ],
+        [
+          "The audience",
+          "Any slide",
+          "Is this about {seed.plural}?"
+        ]
+      ]
+    },
+    {
+      "id": "61579",
+      "name": "One Does Not Simply",
+      "url": "https://i.imgflip.com/1bij.jpg",
+      "width": 568,
+      "height": 335,
+      "about": "Boromir explains that one does not simply do something",
+      "boxes": [
+        {
+          "x": 0.03,
+          "y": 0.02,
+          "w": 0.94,
+          "h": 0.2,
+          "style": "impact",
+          "says": "'One does not simply'"
+        },
+        {
+          "x": 0.03,
+          "y": 0.78,
+          "w": 0.94,
+          "h": 0.2,
+          "style": "impact",
+          "says": "what one does not simply do"
+        }
+      ],
+      "classic": [
+        [
+          "One does not simply",
+          "Explain {seed.plural} in one slide"
+        ],
+        [
+          "One does not simply",
+          "Stop thinking about {seed.plural}"
+        ]
+      ]
+    },
+    {
+      "id": "101470",
+      "name": "Ancient Aliens",
+      "url": "https://i.imgflip.com/26am.jpg",
+      "width": 500,
+      "height": 437,
+      "about": "the Ancient Aliens guy, who blames everything on one thing",
+      "boxes": [
+        {
+          "x": 0.03,
+          "y": 0.02,
+          "w": 0.94,
+          "h": 0.2,
+          "style": "impact",
+          "says": "the mystery"
+        },
+        {
+          "x": 0.03,
+          "y": 0.78,
+          "w": 0.94,
+          "h": 0.2,
+          "style": "impact",
+          "says": "what he blames for it"
+        }
+      ],
+      "classic": [
+        [
+          "I'm not saying it was {seed.plural}",
+          "But it was {seed.plural}"
+        ],
+        [
+          "{related.title}?",
+          "{seed.plural.title}"
+        ]
+      ]
+    },
+    {
+      "id": "93895088",
+      "name": "Expanding Brain",
+      "url": "https://i.imgflip.com/1jwhww.jpg",
+      "width": 857,
+      "height": 1202,
+      "about": "a brain that grows more enlightened at every step, the last the most absurd",
+      "boxes": [
+        {
+          "x": 0.03,
+          "y": 0.03,
+          "w": 0.43,
+          "h": 0.19,
+          "style": "plain",
+          "says": "the plain idea",
+          "fill": "#ffffff"
+        },
+        {
+          "x": 0.03,
+          "y": 0.28,
+          "w": 0.43,
+          "h": 0.19,
+          "style": "plain",
+          "says": "a cleverer one",
+          "fill": "#ffffff"
+        },
+        {
+          "x": 0.03,
+          "y": 0.53,
+          "w": 0.43,
+          "h": 0.18,
+          "style": "plain",
+          "says": "a galaxy-brain one",
+          "fill": "#ffffff"
+        },
+        {
+          "x": 0.03,
+          "y": 0.77,
+          "w": 0.43,
+          "h": 0.2,
+          "style": "plain",
+          "says": "the most absurd one, as the most enlightened",
+          "fill": "#ffffff"
+        }
+      ],
+      "classic": [
+        [
+          "{seed.title}",
+          "{seed.plural.title}",
+          "{related.title}",
+          "A whole talk about {seed.plural}"
+        ],
+        [
+          "Ignoring {seed.plural}",
+          "Liking {seed.plural}",
+          "Loving {seed.plural}",
+          "Becoming {seed.a}"
+        ]
+      ]
+    },
+    {
+      "id": "55311130",
+      "name": "This Is Fine",
+      "url": "https://i.imgflip.com/wxica.jpg",
+      "width": 580,
+      "height": 282,
+      "about": "a dog sits calmly in a room on fire, saying 'This is fine'",
+      "boxes": [
+        {
+          "x": 0.02,
+          "y": 0.03,
+          "w": 0.46,
+          "h": 0.22,
+          "style": "impact",
+          "says": "the disaster all around"
+        },
+        {
+          "x": 0.02,
+          "y": 0.76,
+          "w": 0.46,
+          "h": 0.21,
+          "style": "impact",
+          "says": "who sits there calmly (the dog already says 'This is fine')"
+        }
+      ],
+      "classic": [
+        [
+          "{seed.plural.title} everywhere",
+          "Me"
+        ],
+        [
+          "Everything about {seed.plural}",
+          "The presenter"
+        ]
+      ]
+    },
+    {
+      "id": "61520",
+      "name": "Futurama Fry",
+      "url": "https://i.imgflip.com/1bgw.jpg",
+      "width": 552,
+      "height": 414,
+      "about": "Fry squints, not sure which of two things it is",
+      "boxes": [
+        {
+          "x": 0.03,
+          "y": 0.02,
+          "w": 0.94,
+          "h": 0.2,
+          "style": "impact",
+          "says": "'Not sure if ...'"
+        },
+        {
+          "x": 0.03,
+          "y": 0.78,
+          "w": 0.94,
+          "h": 0.2,
+          "style": "impact",
+          "says": "'Or just ...'"
+        }
+      ],
+      "classic": [
+        [
+          "Not sure if {seed.plural}",
+          "Or just {related.plural}"
+        ],
+        [
+          "Not sure if this talk is about {seed.plural}",
+          "Or about me"
+        ]
+      ]
+    },
+    {
+      "id": "226297822",
+      "name": "Panik Kalm Panik",
+      "url": "https://i.imgflip.com/3qqcim.png",
+      "width": 640,
+      "height": 881,
+      "about": "a man panics, calms down, then panics again",
+      "boxes": [
+        {
+          "x": 0.03,
+          "y": 0.04,
+          "w": 0.42,
+          "h": 0.26,
+          "style": "plain",
+          "says": "what makes him panic",
+          "fill": "#f3f3f3"
+        },
+        {
+          "x": 0.03,
+          "y": 0.38,
+          "w": 0.42,
+          "h": 0.25,
+          "style": "plain",
+          "says": "what calms him down",
+          "fill": "#f3f3f3"
+        },
+        {
+          "x": 0.03,
+          "y": 0.71,
+          "w": 0.42,
+          "h": 0.26,
+          "style": "plain",
+          "says": "what makes him panic again",
+          "fill": "#f3f3f3"
+        }
+      ],
+      "classic": [
+        [
+          "I have to give a talk about {seed.plural}",
+          "I know everything about {seed.plural}",
+          "The talk is about {related.plural}"
+        ],
+        [
+          "{seed.plural.title} are coming",
+          "They're cute",
+          "There are thousands of them"
+        ]
+      ]
+    },
+    {
+      "id": "247375501",
+      "name": "Buff Doge vs. Cheems",
+      "url": "https://i.imgflip.com/43a45p.png",
+      "width": 937,
+      "height": 720,
+      "about": "a strong dog then, against a weak one now",
+      "boxes": [
+        {
+          "x": 0.03,
+          "y": 0.005,
+          "w": 0.44,
+          "h": 0.09,
+          "style": "plain",
+          "says": "the strong one: how it was then",
+          "fill": "#ffffff"
+        },
+        {
+          "x": 0.55,
+          "y": 0.07,
+          "w": 0.43,
+          "h": 0.14,
+          "style": "plain",
+          "says": "the weak one: how it is now",
+          "fill": "#ffffff"
+        },
+        {
+          "x": 0.03,
+          "y": 0.75,
+          "w": 0.45,
+          "h": 0.23,
+          "style": "plain",
+          "says": "what the strong one says",
+          "fill": "#ffffff"
+        },
+        {
+          "x": 0.53,
+          "y": 0.75,
+          "w": 0.45,
+          "h": 0.23,
+          "style": "plain",
+          "says": "what the weak one says",
+          "fill": "#ffffff"
+        }
+      ],
+      "classic": [
+        [
+          "{seed.plural.title} in 1990",
+          "{seed.plural.title} now",
+          "I can do anything",
+          "I need a nap"
+        ],
+        [
+          "Old {seed.plural}",
+          "New {seed.plural}",
+          "Built to last",
+          "Needs an update"
+        ]
+      ]
+    },
+    {
+      "id": "533936279",
+      "name": "Bell Curve",
+      "url": "https://i.imgflip.com/8tw3vb.png",
+      "width": 675,
+      "height": 499,
+      "about": "a bell curve: the simple and the wise say the same thing, while the expert in the middle overthinks it",
+      "boxes": [
+        {
+          "x": 0.01,
+          "y": 0.43,
+          "w": 0.33,
+          "h": 0.14,
+          "style": "plain",
+          "says": "what the simple one says",
+          "fill": "#ffffff"
+        },
+        {
+          "x": 0.2,
+          "y": 0.005,
+          "w": 0.6,
+          "h": 0.1,
+          "style": "plain",
+          "says": "what the overthinking expert in the middle says",
+          "fill": "#ffffff"
+        },
+        {
+          "x": 0.67,
+          "y": 0.36,
+          "w": 0.32,
+          "h": 0.13,
+          "style": "plain",
+          "says": "what the wise one says: the same as the simple one",
+          "fill": "#ffffff"
+        }
+      ],
+      "classic": [
+        [
+          "{seed.plural.title} are nice",
+          "Actually, {seed.plural} are a complex system of {related.plural}",
+          "{seed.plural.title} are nice"
+        ]
+      ]
+    },
+    {
+      "id": "123999232",
+      "name": "The Scroll Of Truth",
+      "url": "https://i.imgflip.com/21tqf4.jpg",
+      "width": 1280,
+      "height": 1236,
+      "about": "someone finds the scroll of truth, reads it, and throws it away",
+      "boxes": [
+        {
+          "x": 0.19,
+          "y": 0.58,
+          "w": 0.16,
+          "h": 0.18,
+          "style": "plain",
+          "says": "the truth on the scroll, which nobody wants to hear",
+          "fill": "#ffffff"
+        }
+      ],
+      "classic": [
+        [
+          "{seed.plural.title} are just {related.plural}"
+        ],
+        [
+          "Nobody understands {seed.plural}"
+        ]
+      ]
+    },
+    {
+      "id": "309868304",
+      "name": "Trade Offer",
+      "url": "https://i.imgflip.com/54hjww.jpg",
+      "width": 607,
+      "height": 794,
+      "about": "a trade offer: what I receive, and what you receive",
+      "boxes": [
+        {
+          "x": 0.04,
+          "y": 0.22,
+          "w": 0.42,
+          "h": 0.14,
+          "style": "impact",
+          "says": "what I receive (the picture already says 'i receive:')"
+        },
+        {
+          "x": 0.54,
+          "y": 0.22,
+          "w": 0.43,
+          "h": 0.14,
+          "style": "impact",
+          "says": "what you receive, a bad deal (the picture already says 'you receive:')"
+        }
+      ],
+      "classic": [
+        [
+          "Your attention",
+          "Facts about {seed.plural}"
+        ],
+        [
+          "Your {seed.plural}",
+          "My {related.plural}"
+        ]
+      ]
+    },
+    {
+      "id": "97984",
+      "name": "Disaster Girl",
+      "url": "https://i.imgflip.com/23ls.jpg",
+      "width": 500,
+      "height": 375,
+      "about": "a girl smiles in front of a house on fire",
+      "boxes": [
+        {
+          "x": 0.03,
+          "y": 0.02,
+          "w": 0.94,
+          "h": 0.2,
+          "style": "impact",
+          "says": "what happened"
+        },
+        {
+          "x": 0.03,
+          "y": 0.78,
+          "w": 0.94,
+          "h": 0.2,
+          "style": "impact",
+          "says": "her proud claim"
+        }
+      ],
+      "classic": [
+        [
+          "{seed.plural.title}?",
+          "I did that"
+        ],
+        [
+          "The talk about {seed.plural}",
+          "Went exactly as planned"
+        ]
+      ]
+    },
+    {
+      "id": "89370399",
+      "name": "Roll Safe Think About It",
+      "url": "https://i.imgflip.com/1h7in3.jpg",
+      "width": 702,
+      "height": 395,
+      "about": "a man taps his head: a clever but useless idea",
+      "boxes": [
+        {
+          "x": 0.03,
+          "y": 0.02,
+          "w": 0.94,
+          "h": 0.2,
+          "style": "impact",
+          "says": "the problem"
+        },
+        {
+          "x": 0.03,
+          "y": 0.78,
+          "w": 0.94,
+          "h": 0.2,
+          "style": "impact",
+          "says": "the clever but useless solution"
+        }
+      ],
+      "classic": [
+        [
+          "You can't be wrong about {seed.plural}",
+          "If you never talk about {seed.plural}"
+        ],
+        [
+          "Can't fail at {seed.plural}",
+          "If you call it {related.plural}"
+        ]
+      ]
+    }
+  ]
+}

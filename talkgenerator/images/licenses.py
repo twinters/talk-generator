@@ -33,7 +33,7 @@ DESCRIPTIONS: Final[dict[LicenseClass, str]] = {
     "open": "Creative Commons BY and BY-SA",
     "stock": "the Unsplash, Pexels and Pixabay licenses",
     "generated": "AI images, under the provider's terms",
-    "fair-use": "Reddit's posts, GIPHY's gifs, InspiroBot's posters and ShitpostBot's images",
+    "fair-use": "Reddit's posts, GIPHY's gifs, Imgflip's meme templates, InspiroBot's posters and ShitpostBot's images",
 }
 # The classes whose credits name the license: Creative Commons licenses ask for it (and a public domain mark tells
 # what may be done with the image). Stock photos are credited to their photographer and platform, as the platforms'

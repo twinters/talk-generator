@@ -58,6 +58,11 @@ def giphy_auth() -> dict[str, str]:
     return {"giphy_api_key": env.str("GIPHY_API_KEY", "")}
 
 
+def smithsonian_auth() -> dict[str, str]:
+    """An api.data.gov key, for the Smithsonian's Open Access images. Optional: without it, the other museums fill in."""
+    return {"smithsonian_api_key": env.str("SMITHSONIAN_API_KEY", "").strip()}
+
+
 def openverse_auth() -> dict[str, str]:
     """A registered Openverse app's credentials. Optional: without them, Openverse is searched anonymously."""
     return {

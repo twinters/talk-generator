@@ -46,6 +46,14 @@ CACHE_EXPIRY: ExpirationPatterns = {
     "commons.wikimedia.org/w/api.php": timedelta(days=7),
     "api.artic.edu/api/v1": timedelta(days=30),
     "en.wikiquote.org/w/api.php": timedelta(days=30),
+    # (the museums' and archives' collections change slowly; NASA's library gets new pictures every week)
+    "collectionapi.metmuseum.org/public/collection": timedelta(days=30),
+    "openaccess-api.clevelandart.org/api": timedelta(days=30),
+    "api.wellcomecollection.org/catalogue": timedelta(days=30),
+    "api.si.edu/openaccess": timedelta(days=30),
+    "images-api.nasa.gov/search": timedelta(days=7),
+    "flagcdn.com/en/codes.json": timedelta(days=30),
+    "api.imgflip.com/get_memes": timedelta(days=7),
 }
 
 # Extra headers some hosts ask for. The Art Institute of Chicago wants API clients to identify
@@ -219,6 +227,50 @@ def get_json(
     except ValueError:
         logger.warning("%s did not return valid JSON", describe_url(url))
         return None
+
+
+def search_json(
+    url: str,
+    cooldown: Cooldown,
+    *,
+    params: dict[str, Any] | None = None,
+    headers: dict[str, str] | None = None,
+    timeout: float = DEFAULT_TIMEOUT,
+    missing_ok: bool = False,
+) -> Any | None:
+    """GET a search API's JSON answer, keeping a service that can't answer now out for a while (its cooldown): no
+    answer or a server error (5 minutes), a rate limit (15 minutes, or as long as it asks), a refusal (an hour: a
+    rejected key, or a network it won't serve). None on any failure, and while the cooldown lasts. With missing_ok,
+    a 404 is an answer too (nothing there), not worth a warning."""
+    if cooldown.active:
+        return None
+    response = get(url, params=params, headers=headers, timeout=timeout)
+    if response is None or response.status_code >= 500:
+        cooldown.trigger_outage(response)
+        return None
+    if response.status_code == 429:
+        cooldown.trigger(max(15 * 60, _retry_after(response)), "rate limit reached")
+        return None
+    if response.status_code in (401, 403):
+        cooldown.trigger(60 * 60, f"HTTP {response.status_code}: it refuses these requests")
+        return None
+    if not response.ok:
+        if not (missing_ok and response.status_code == 404):
+            logger.warning("%s returned HTTP %s", describe_url(url), response.status_code)
+        return None
+    try:
+        return response.json()
+    except ValueError:  # (a challenge page, say, instead of an answer)
+        cooldown.trigger(60 * 60, "its answer isn't JSON")
+        return None
+
+
+def _retry_after(response: requests.Response) -> float:
+    """The seconds a rate limited answer asks to wait (Retry-After), if it says."""
+    try:
+        return float(response.headers.get("Retry-After", 0))
+    except (TypeError, ValueError):
+        return 0.0
 
 
 class Cooldown:

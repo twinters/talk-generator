@@ -52,8 +52,9 @@ Every key is optional: sources without a key are skipped, and the other sources 
 | Pexels | photos | `PEXELS_KEY` | [Pexels API](https://www.pexels.com/api/) |
 | GIPHY | gifs, next to Reddit's | `GIPHY_API_KEY` | [GIPHY developers](https://developers.giphy.com/dashboard/) |
 | [Openverse](https://openverse.org/) | openly licensed photos | `OPENVERSE_CLIENT_ID`, `OPENVERSE_CLIENT_SECRET` (optional: without them, Openverse is searched anonymously, at lower rate limits) | [register an app](https://api.openverse.org/v1/#tag/auth/operation/register), then verify its email address |
+| [Smithsonian Open Access](https://www.si.edu/openaccess) | CC0 art, history and science | `SMITHSONIAN_API_KEY` (optional: the other museums need no key) | [an api.data.gov key](https://api.data.gov/signup/) |
 
-These sources need no key: [Datamuse](https://www.datamuse.com/api/) and WordNet (related words), Goodreads and [Wikiquote](https://en.wikiquote.org/) (quotes), WikiHow (actions), [Wikimedia Commons](https://commons.wikimedia.org/) (old photos), the [Art Institute of Chicago](https://api.artic.edu/docs/) (public domain artworks), InspiroBot and ShitpostBot 5000 (images).
+These sources need no key: [Datamuse](https://www.datamuse.com/api/) and WordNet (related words), Goodreads and [Wikiquote](https://en.wikiquote.org/) (quotes), WikiHow (actions), [Wikimedia Commons](https://commons.wikimedia.org/) (old photos), the [Art Institute of Chicago](https://api.artic.edu/docs/), [The Met](https://metmuseum.github.io/) and the [Cleveland Museum of Art](https://openaccess-api.clevelandart.org/) (public domain artworks and old photographs), the [Wellcome Collection](https://developers.wellcomecollection.org/) (medicine, science and odd history), [NASA's Image and Video Library](https://images.nasa.gov/) (space, and NASA's take on anything), [Flagpedia](https://flagpedia.net/) (flags), [Imgflip](https://imgflip.com/api) (meme templates, which talkgenerator captions itself), InspiroBot and ShitpostBot 5000 (images).
 Most kinds of content come from more than one source, so a source that is down or rate limited leaves no holes: the others fill in.
 A slide that still can't get all its images (say, a gif slide without Reddit or GIPHY) is replaced by another kind of slide, and the generator logs which sources it skips for lack of keys.
 Image credits on the slides link to the photographer's or the image's page, and name the license of openly licensed and public domain images (such as "CC BY 2.0", linking to it).
@@ -63,7 +64,7 @@ The generator still tries it (or a self-hosted copy set with `CONCEPTNET_API_URL
 
 Any source can be switched off with `DISABLE_<SOURCE>=1`, e.g. `DISABLE_WIKIHOW=1` (see `.env.example`).
 
-Search API responses (Datamuse, ConceptNet, Pixabay, Pexels, Unsplash) are cached on disk for one to thirty days, in your user cache folder.
+Search API responses (Datamuse, ConceptNet, Pixabay, Pexels, Unsplash, the museums, NASA, Imgflip...) are cached on disk for one to thirty days, in your user cache folder.
 That keeps you within rate limits and is what Pixabay's API terms ask for.
 GIPHY's searches aren't cached, as its API rules forbid it.
 API keys are never stored in the cache.

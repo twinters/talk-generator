@@ -21,7 +21,7 @@ from pptx.enum.chart import XL_CHART_TYPE
 from talkgenerator.models.deck import MatrixDiagram, VennDiagram
 from talkgenerator.plan.languages import Language
 from talkgenerator.slide import slides
-from talkgenerator.sources import chart, diagram
+from talkgenerator.sources import chart, diagram, memes
 from talkgenerator.util import random_util
 
 if TYPE_CHECKING:
@@ -54,12 +54,16 @@ class Kind:
 @dataclass(frozen=True)
 class Variant:
     """A way a recipe's slide can come out, which the talk's dice pick by weight: the text fields and image slots it
-    does without (a slot left out isn't searched, and its builder gets None for it), and a note for the language model
-    (added to the slide's brief)."""
+    does without (a slot left out isn't searched, and its builder gets None for it), a note for the language model
+    (added to the slide's brief), what to write in some of its fields (hints, over the recipe's) and how long that may
+    be (limits), and what some of its slots search for, instead of the model's query (a meme's template)."""
 
     weight: float
     omit: frozenset[str] = frozenset()
     note: str = ""
+    hints: Mapping[str, str] = field(default_factory=dict)
+    limits: Mapping[str, int] = field(default_factory=dict)
+    queries: Mapping[str, str] = field(default_factory=dict)
 
 
 # A v4 content generator: a presentation context (with the "seed" to search for) in, an image (or None) out
@@ -78,16 +82,31 @@ class Recipe:
     omit: frozenset[str] = frozenset()
     texts_from: Mapping[str, ContentSource] = field(default_factory=dict)  # texts found by classic sources instead
     variants: tuple[Variant, ...] = ()  # ways a slide can come out, such as a chart with or without labels
+    # Per text field: how long it may be on this slide, when that's less than its kind's length (a meme's small box)
+    limits: Mapping[str, int] = field(default_factory=dict)
+    # Per image slot: what it searches for, instead of a query the model writes (a meme's template, the dice's pick)
+    queries: Mapping[str, str] = field(default_factory=dict)
+
+    def text_field(self, text: TextField) -> TextField:
+        """A text field of the kind as this slide has it: as long as its limit here allows."""
+        limit = self.limits.get(text.name)
+        return dataclasses.replace(text, max_length=limit) if limit and limit < text.max_length else text
 
     def written_fields(self) -> list[TextField]:
         """The text fields the language model writes for this slide."""
         return [
-            text for text in KINDS[self.kind].texts if text.name not in self.omit and text.name not in self.texts_from
+            self.text_field(text)
+            for text in KINDS[self.kind].texts
+            if text.name not in self.omit and text.name not in self.texts_from
         ]
 
     def image_queries(self) -> list[str]:
         """The image slots the language model writes a search query for."""
-        return [slot for slot in KINDS[self.kind].images if f"{slot}_query" not in self.omit and slot not in self.omit]
+        return [
+            slot
+            for slot in KINDS[self.kind].images
+            if f"{slot}_query" not in self.omit and slot not in self.omit and slot not in self.queries
+        ]
 
     def slots(self) -> list[tuple[str, ImageSlot | ContentSource]]:
         """The image slots this slide has, by name, with what they ask for (not the ones it leaves out)."""
@@ -110,6 +129,9 @@ class Recipe:
             self,
             omit=self.omit | variant.omit,
             brief=f"{brief}, {variant.note}" if variant.note else brief,
+            hints={**self.hints, **variant.hints},
+            limits={**self.limits, **variant.limits},
+            queries={**self.queries, **variant.queries},
             variants=(),
         )
 
@@ -339,6 +361,20 @@ def _org_chart(texts: Mapping[str, str | None], images: Mapping[str, Any], langu
 
 def _iceberg(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
     return slides.IcebergSlide(texts["title"], texts["tip"], *_numbered(texts, "hidden", 3))
+
+
+def _meme(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    picture = images.get("template")
+    if picture is None:
+        raise ValueError("the meme has no template")
+    captions = [texts.get(f"text_{index}") for index in range(1, memes.MOST_CAPTIONS + 1)]
+    template = memes.of_picture(picture.get_image_url(), picture.get_source_url())
+    if template is None:  # (a picture whose boxes talkgenerator doesn't know: captioned at its top and its bottom)
+        shown = [caption for caption in captions if caption][:2]
+        if not shown:
+            raise ValueError("the meme has no captions")
+        return slides.MemeSlide(picture, *shown)
+    return slides.MemeSlide(picture, *template.texts(captions))
 
 
 def _shortened(text: str, length: int) -> str:
@@ -783,6 +819,21 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             (),
             _iceberg,
+        ),
+        # Media
+        Kind(
+            "meme",
+            "A meme: a well-known template's picture, with its captions in the template's boxes. Its template_query "
+            "names the template, one of those `talkgenerator formats --memes` lists (with what each caption says), "
+            "such as 'Drake Hotline Bling'.",
+            (
+                TextField("text_1", "the meme's first caption", 70),
+                TextField("text_2", "its second caption", 70, optional=True),
+                TextField("text_3", "its third caption", 70, optional=True),
+                TextField("text_4", "its fourth caption", 70, optional=True),
+            ),
+            ("template",),
+            _meme,
         ),
     )
 }

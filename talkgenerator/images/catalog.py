@@ -19,14 +19,21 @@ from talkgenerator.images import profiles
 from talkgenerator.models.deck import LicenseClass
 from talkgenerator.sources import (
     art_institute,
+    cleveland,
+    flags,
     giphy,
+    imgflip,
     inspirobot,
+    met,
+    nasa,
     openverse,
     pexels,
     pixabay,
     reddit,
     shitpostbot,
+    smithsonian,
     unsplash,
+    wellcome,
     wikimedia_commons,
 )
 from talkgenerator.util.generator_util import planned
@@ -104,7 +111,57 @@ def _wikimedia(search: Search) -> Found:
 
 
 def _art_institute(search: Search) -> Found:
-    return _plain(art_institute.search_artworks(search.query))
+    return _plain(art_institute.search_artworks(search.query, *_dated(search)))
+
+
+# The museums' and archives' filters, as a look asks for them (SourceUse.params): a type of object ("painting",
+# "photograph", "print", "drawing", "sculpture"), and the years it was made after and before ("1850", "1950"), which
+# each source asks of its search in its own words
+
+
+def _year(search: Search, name: str) -> int | None:
+    try:
+        return int(search.params[name]) if search.params.get(name) else None
+    except ValueError:
+        logger.warning("Ignoring the image filter %s=%r: not a year", name, search.params[name])
+        return None
+
+
+def _dated(search: Search) -> tuple[str | None, int | None, int | None]:
+    """A search's type, and the years after and before which what it finds was made."""
+    return search.params.get("type"), _year(search, "after"), _year(search, "before")
+
+
+def _met(search: Search) -> Found:
+    return _plain(met.search_artworks(search.query, *_dated(search)))
+
+
+def _cleveland(search: Search) -> Found:
+    return _plain(cleveland.search_artworks(search.query, *_dated(search)))
+
+
+def _nasa(search: Search) -> Found:
+    return _plain(nasa.search_images(search.query, _year(search, "after"), _year(search, "before")))
+
+
+def _smithsonian(search: Search) -> Found:
+    return _plain(smithsonian.search_images(search.query, search.params.get("type")))
+
+
+def _flags(search: Search) -> Found:
+    return _plain(flags.search_flags(search.query))
+
+
+def _imgflip(search: Search) -> Found:
+    # (the template a query names, as Imgflip lists it, or as the memes module knows it when Imgflip can't be reached)
+    from talkgenerator.sources import memes
+
+    return _plain(imgflip.find(search.query, memes.known()))
+
+
+def _wellcome(search: Search) -> Found:
+    classes = search.classes & wellcome.LICENSES or None
+    return _plain(wellcome.search_images(search.query, classes, _year(search, "after"), _year(search, "before")))
 
 
 def _giphy(search: Search) -> Found:
@@ -174,6 +231,37 @@ SOURCES: Final[dict[str, Source]] = {
             _art_institute,
             art_institute.available,
         ),
+        Source("met", "The Metropolitan Museum of Art's public domain artworks", met.LICENSES, _met, met.available),
+        Source(
+            "cleveland",
+            "the Cleveland Museum of Art's public domain artworks",
+            cleveland.LICENSES,
+            _cleveland,
+            cleveland.available,
+        ),
+        Source(
+            "wellcome",
+            "the Wellcome Collection's images of medicine, science and odd history",
+            wellcome.LICENSES,
+            _wellcome,
+            wellcome.available,
+        ),
+        Source(
+            "smithsonian",
+            "the Smithsonian's CC0 images of art, history and science",
+            smithsonian.LICENSES,
+            _smithsonian,
+            smithsonian.available,
+        ),
+        Source(
+            "nasa",
+            "NASA's pictures of space, science and NASA's take on anything",
+            nasa.LICENSES,
+            _nasa,
+            nasa.available,
+        ),
+        Source("flags", "flags of countries, from Flagpedia", flags.LICENSES, _flags, flags.available),
+        Source("imgflip", "Imgflip's meme templates, captioned live", imgflip.LICENSES, _imgflip, imgflip.available),
         Source("giphy", "GIPHY's gifs", giphy.LICENSES, _giphy, giphy.available, animated=True),
         Source(
             "inspirobot",
