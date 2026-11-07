@@ -93,8 +93,14 @@ def _spelled(word: str, language: str) -> str:
         for candidate in sorted(_edits(lowered) & known)
         if _frequency(candidate, language) >= frequency + _MORE_FREQUENT
     ]
-    if edited:
-        return max(edited, key=lambda candidate: _frequency(candidate, language))
+    if edited:  # (the likest first, "joined" before "join" for "joind"; then the most frequent, "what" for "waht")
+        return max(
+            edited,
+            key=lambda candidate: (
+                round(difflib.SequenceMatcher(None, lowered, candidate).ratio(), 2),
+                _frequency(candidate, language),
+            ),
+        )
     if frequency > 0:
         return word  # (a rare word, but a word)
     pool = [
