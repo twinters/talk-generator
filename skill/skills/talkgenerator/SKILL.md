@@ -168,8 +168,8 @@ that give the presenter something to work with, rather than finished jokes:
 
 - No quotes put in the mouths of real people: quotes on slides belong to made-up people (the history slides are
   for made-up historical figures), or come from talkgenerator's real quotes.
-- The presenter's name is made up too: never a real person's name as it is, and a pun on a famous name only on
-  someone famous who is no longer alive (long ago or lately), never on a living person or a dictator.
+- The presenter's name is made up too: never a real person's name as it is. A pun on a famous name may bend anyone
+  famous, from history or today, but never a dictator's or a criminal's.
 - Nothing about real private persons, and nothing that mocks people for who they are. No slurs or sexual content.
 - Images and texts are read together. A photo of a person under a caption that labels or judges ("Camouflage",
   "Patience", "Reality") can read as a joke about that person: for such captions, search for animals, objects or

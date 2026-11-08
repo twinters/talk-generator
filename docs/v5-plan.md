@@ -579,7 +579,7 @@ its seed picks among the switched-on ones (`name_styles=` on `generate_presentat
 | --- | --- | --- |
 | `pun` | yes | "Prof. Anna Tomy" for a talk on medicine, "Dr. Matthew Mathics" for maths |
 | `fun_surname` | yes | an ordinary first name with a surname that fits too well: "Linda Hivesworth" for bees |
-| `famous_pun` | yes (D33) | a famous name (of someone no longer alive, long ago or lately) bent to fit: "Albert Einstone" for geology, "Vincent van Goat" for goats |
+| `famous_pun` | yes (D33) | a famous name (from history or today, never a dictator's) bent to fit: "Albert Einstone" for geology, "Vincent van Goat" for goats, "Bread Pitt" for baking |
 | `classic` | no | tracery's random first and last name, as in 2019 |
 
 - **A given name goes first** (`presenter=`, the site's "custom name"), and never reaches the model: the request
@@ -593,20 +593,23 @@ its seed picks among the switched-on ones (`name_styles=` on `generate_presentat
 - **Checked like the other fields.** A name is turned down when it's longer than 45 characters (a name isn't cut:
   half a name is no name), holds template code or what no name has (digits, brackets, commas), is a placeholder
   ("Presenter Name", in the talks' languages), names a dictator (a short blocklist, which word beginnings match
-  too: "Pol Potter") or a famous living person, or is the real name of a famous person whose name the pack bends
-  ("Marie Curie"). Then the talk gets the name a talk without a model gets.
+  too: "Pol Potter"), is a famous living person's real name as it is ("Dr. Bill Gates", "Prof. Chomsky": a pun on it
+  goes), or is the real name of a famous person whose name the pack bends ("Marie Curie"). Then the talk gets the name a talk without a model gets.
 - **Famous living people** (`names._LIVING_PEOPLE`, since 2026-11-08, when a free model named a keynote's presenter
-  "Umbrella Chomsky"): 175 that models reach for, from presidents to chefs. A name that's theirs alone counts on its
-  own ("Chomsky", "Oprah", "Zuckerberg"); their ordinary names only together, the first name before the surname, as
-  they are or with one of them bent into what no classic name is (`names._bent`: starting with the name's first five
-  letters, or a letter off it, two off a long one): "Taylor Swiftly", "Gordon Hamsay", "Ryan Goosling", "Tailor
-  Swift" and "Bread Pitt" go, "Dr. Emma Swift", "Tim Cookson" (a classic surname) and "Greta Gosling" (a young
-  goose) stay. A test holds every classic surname (18,839) and first name (2,297) to that: only Trump, which the
-  blocklist had, and Mao go. What it misses, a name of theirs alone bent ("Gnome Chompsky", "Beeyoncé") and
-  both of an ordinary name bent ("Justin Beaver"), the request asks the model not to write: a famous-name pun is on
-  "one famous person who is no longer alive (long ago or lately)", never "anyone alive today (however old or
-  famous)": people who died lately are fine too, as the user said on 2026-11-08 ("they're still beloved people"). The same
-  list keeps generated pictures from naming them (`names.real_person`).
+  "Umbrella Chomsky"): 175 that models reach for, from presidents to chefs. A presenter's name may pun on them, as
+  the user said later that day ("I'm fine with that": till then such a name was turned down, and the request asked
+  for a pun on someone no longer alive): "Umbrella Chomsky", "Taylor Swiftly", "Bread Pitt" and "Bill Grates" go.
+  Their real name as it is doesn't (`names._real_living_name`): their first name and surname in a row ("Dr. Bill
+  Gates", "Mary Berry"), or, titles and initials aside, all of their name ("Yuval Noah Harari", "Beyoncé") or what
+  of it is theirs alone ("Prof. Chomsky"); an ordinary name stays ("Dr. Emma Swift", "Dr. Gates"). A test holds
+  every classic surname (18,839) and first name (2,297) to that: only Mao goes. The request asks for a pun on "one
+  famous person that everyone knows, from history or today", "never the real name as it is, and never a dictator's
+  or a criminal's". The same list keeps generated pictures from showing them, puns and all (`names.real_person`): a
+  name that's theirs alone counts on its own ("Chomsky", "Oprah", "Zuckerberg"); their ordinary names only together,
+  the first name before the surname, as they are or with one of them bent into what no classic name is
+  (`names._bent`: starting with the name's first five letters, or a letter off it, two off a long one): "Taylor
+  Swiftly", "Gordon Hamsay" and "Tailor Swift" are them, "Dr. Emma Swift", "Tim Cookson" (a classic surname) and
+  "Greta Gosling" (a young goose) aren't.
 - **The talk's language.** The model writes the name in it, with wordplay that works in that language.
 - **Without a model** (none configured, the quota used up, a refusal, or a name that won't do), the name comes
   from talkgenerator's own pack (`data/text-templates/presenter_names.json`, D34): 279 names by style and topic,
@@ -2023,7 +2026,7 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D30 | talkgenerator.com keeps a copy of a Pixabay image for as long as its talk (7 days), the one exception to D22: Pixabay's terms don't allow permanent hotlinking, and its links stop working after 24 hours. |
 | D31 | talkgenerator.com runs `v5` before 5.0.0, installed from GitHub by commit, instead of a preview deployment on a subdomain: the site's `master` deploys it. There, a talk's slides come one after the other (`TALK_PARALLEL=0`), and the site gives memory back after every talk and download, to stay under the box's 450 MB. |
 | D32 | What's typed can be a topic or a title: by default the language model tells which, in the talk's one request, and picks the title among its own proposal and a few classic candidates, fixing what's off; the visitor can still say which it is (section 5.11). |
-| D33 | Presenter names may be famous-name puns ("Albert Einstone" for geology), on by default: a historical figure's name bent to fit the topic, never the real name as it is, a living person's or a dictator's. Real historical figures' names as they are aren't a style. |
+| D33 | Presenter names may be famous-name puns ("Albert Einstone" for geology), on by default: a famous person's name bent to fit the topic, never the real name as it is or a dictator's. Since the user's word of 2026-11-08 ("I'm fine with that"), puns on famous living people go too (till then only on someone no longer alive); their real names as they are don't (section 5.10). Real people's names as they are aren't a style. |
 | D34 | Talks without a language model get a name from a small pack curated by hand (pun names by topic, and a few fun surnames and famous-name puns) when their topic matches one of its entries, and tracery's random names otherwise. |
 | D35 | What's typed for a talk (Automatic, topic_or_title) stays its title only when it's clearly one: four words or more, or a question or exclamation, with its slips fixed. Anything shorter is the topic, or a premise, on which the language model builds a funnier, more specific title ("The French Revolution" deserves better than itself); a title in quote marks stays word for word. The talk's dice pick whether the classic titles go with a short input as options, as inspiration only, or not at all. |
 | D36 | GIPHY's searches aren't cached: its API rules forbid caching its responses and media URLs. The other search APIs stay cached. |

@@ -164,11 +164,8 @@ def test_a_name_goes_on_the_title_slide(name):
         "[Your name]",
         "Dr. Anna Tomy, PhD",
         "R2-D2",
-        "Elon Muskrat",
         "Adolf Hitchhiker",
         "Ivan Stalinski",
-        "Taylor Swiftly",
-        "Donald Trumpet",
         "Pol Potter",
         "Dr. Marie Curie",  # (a famous name as it is: the pack bends hers)
         "A. B.",
@@ -182,6 +179,10 @@ def test_a_name_that_wont_do_is_turned_down(written):
     "written",
     [
         "Umbrella Chomsky",  # (a free model's, for a keynote on umbrellas: Noam Chomsky's surname is his alone)
+        "Elon Muskrat",
+        "Taylor Swiftly",
+        "Donald Trumpet",
+        "Bill Grates",
         "Dr. Gnome Chomsky",
         "Oprah Windfrey",
         "Dalai Llama",
@@ -197,14 +198,29 @@ def test_a_name_that_wont_do_is_turned_down(written):
         "Tailor Swift",  # (a first name bent, before the surname)
         "Bread Pitt",
         "Hairy Styles",
-        "Dr. Bill Gates",  # (a real name as it is)
-        "Mary Berry",
     ],
 )
-def test_a_pun_on_a_famous_living_person_is_turned_down(written):
-    # (a famous-name pun is on someone famous who is no longer alive: docs/v5-plan.md, section 5.10)
+def test_a_pun_on_a_famous_living_person_goes_but_is_never_drawn(written):
+    # (the user, 2026-11-08, "I'm fine with that": docs/v5-plan.md, section 5.10)
+    assert names.clean(written) == written
+    assert names.real_person(f"a portrait of {written} in the rain") is not None  # (not in a generated picture)
+
+
+@pytest.mark.parametrize(
+    "written",
+    [
+        "Dr. Bill Gates",
+        "Mary Berry",
+        "Taylor Swift",
+        "Sir David Attenborough",
+        "Yuval Noah Harari",  # (all of a name, though the first name and surname aren't in a row)
+        "Beyoncé",
+        "Prof. Chomsky",  # (what of a name is theirs alone, with a title)
+        "Trump",
+    ],
+)
+def test_a_famous_living_person_s_real_name_is_turned_down(written):
     assert names.clean(written) is None
-    assert names.real_person(f"a portrait of {written} in the rain") is not None  # (nor drawn in a picture)
 
 
 @pytest.mark.parametrize(
@@ -231,21 +247,21 @@ def test_a_name_that_shares_a_word_with_a_famous_living_person_s_goes(name):
 
 
 def test_every_ordinary_name_goes_on_a_title_slide():
-    # (the classic names' 18,839 surnames and 2,297 first names: but a dictator's, and Trump, a surname of its own too)
+    # (the classic names' 18,839 surnames and 2,297 first names: but a dictator's)
     with open(os_util.to_actual_file(names.CLASSIC_NAMES_FILE), encoding="utf-8") as file:
         grammar = json.load(file)
     turned_down = [surname for surname in grammar["last_name"] if names.clean(f"Linda {surname}") is None]
-    assert turned_down == ["Mao", "Trump"]
+    assert turned_down == ["Mao"]
     first_names = grammar["male_name"] + grammar["female_name"]
     assert [first for first in first_names if names.clean(f"{first} Hivesworth") is None] == []
 
 
-def test_a_famous_name_pun_is_asked_for_on_someone_who_is_no_longer_alive():
-    # (lately or long ago: the user, 2026-11-08, "they're still beloved people")
+def test_a_famous_name_pun_is_asked_for_on_anyone_famous_but_a_dictator_or_a_criminal():
+    # (from history or today: the user, 2026-11-08, "I'm fine with that")
     asked = names.STYLES["famous_pun"].asked
-    assert "one famous person who is no longer alive (long ago or lately)" in asked
-    assert "never the name of anyone alive today (however old or famous)" in asked
-    assert "no longer alive" in names.STYLES["famous_pun"].plays_on
+    assert "one famous person that everyone knows, from history or today" in asked
+    assert "never the real name as it is, and never a dictator's or a criminal's" in asked
+    assert "alive" not in asked + names.STYLES["famous_pun"].plays_on
 
 
 def test_a_copy_of_an_example_is_turned_down():
@@ -327,7 +343,7 @@ def test_a_talk_whose_dice_pick_classic_names_gets_one(schema):
 
 
 @pytest.mark.parametrize(
-    "written", ["The presenter name", "{presenter}", "Elon Muskrat", "Umbrella Chomsky", "Dr. Kitty Litter" * 3, 42]
+    "written", ["The presenter name", "{presenter}", "Adolf Hitchhiker", "Taylor Swift", "Dr. Kitty Litter" * 3, 42]
 )
 def test_a_name_that_wont_do_is_made_up_instead(schema, written):
     deck = _deck(FakeModel(change=_naming(written)), name_styles="pun")

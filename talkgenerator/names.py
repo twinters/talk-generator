@@ -88,12 +88,11 @@ STYLES: Final[dict[str, Style]] = {
             FAMOUS_PUN,
             "Famous-name puns",
             "a historical figure's name bent to fit the topic, such as Albert Einstone for geology",
-            "a made-up name for the presenter: the name of one famous person who is no longer alive (long ago or lately), that "
-            "everyone knows, with a part of it changed into a word about the talk's topic, so that both still show; "
-            "never the real name as it is, and never the name of anyone alive today (however old or famous), a "
-            "dictator or a criminal",
-            "the famous person, no longer alive, whose name the presenter's name will bend, and the word "
-            "about the talk's topic that goes into it",
+            "a made-up name for the presenter: the name of one famous person that everyone knows, from history or "
+            "today, with a part of it changed into a word about the talk's topic, so that both still show; never "
+            "the real name as it is, and never a dictator's or a criminal's",
+            "the famous person whose name the presenter's name will bend, and the word about the talk's topic "
+            "that goes into it",
         ),
         Style(CLASSIC, "Random names", "a first and a last name at random, as in 2019", "", default=False),
     )
@@ -345,11 +344,11 @@ _BLOCKED_PHRASES: Final = (
     ("xi", "jinping"),
     ("vladimir", "putin"),
 )
-# Famous living people, whose names models reach for in puns: a free model named a keynote's presenter "Umbrella
-# Chomsky" (2026-11-08), where a famous-name pun bends the name of someone famous who is no longer alive (section 5.10
-# of docs/v5-plan.md). A name with an asterisk is theirs alone, and a presenter's name with it goes, whatever its other
-# words ("Umbrella Chomsky", "Oprah Windfrey"): no classic name has it (but Trump, as the blocklist had it), nor is it a
-# word that a fun surname could be (a gosling is a young goose, "streep" a Dutch stripe, "stallone" an Italian
+# Famous living people, whose names models reach for in puns. A presenter's name may pun on them ("Umbrella Chomsky",
+# "Taylor Swiftly": the user, 2026-11-08, "I'm fine with that"), but never be their real name as it is (see
+# _real_living_name), and a generated picture never shows them (see real_person). A name with an asterisk is theirs
+# alone, and a text with it names them, whatever its other words ("Umbrella Chomsky", "Oprah Windfrey"): no classic
+# name has it (but Trump, as the blocklist had it), nor is it a word that a fun surname could be (a gosling is a young goose, "streep" a Dutch stripe, "stallone" an Italian
 # stallion). Their other names are ordinary ones ("Swift", "Gates"), which only count together, the first name before
 # the surname, as they are or with one of them bent ("Taylor Swiftly", "Gordon Hamsay", "Tailor Swift": see
 # _living_person), so "Dr. Emma Swift" stays
@@ -383,6 +382,11 @@ _LIVING_PEOPLE: Final = """
     Coelho, Haruki Murakami, *Banksy, Yoko Ono, Ai Weiwei, Damien Hirst, David *Hockney, Jeff Koons, *MrBeast,
     *PewDiePie
 """
+# Titles and the like, before or after a name, in the talks' languages: "Prof. Chomsky" is Noam Chomsky's real name
+_TITLES: Final = frozenset(
+    {"dr", "drs", "prof", "professor", "doctor", "sir", "dame", "lord", "lady", "mr", "mrs", "ms", "miss", "mx", "ir"}
+    | {"jr", "sr", "phd", "herr", "frau", "fru", "meneer", "mevrouw", "dhr", "mevr", "monsieur", "madame", "mme"}
+)
 # The classic names (tracery's full_name), whose first names and surnames are ordinary ones: none of them bends a living
 # person's name ("Cookson" isn't Cook bent)
 CLASSIC_NAMES_FILE: Final = "data/text-templates/name.json"
@@ -393,8 +397,9 @@ def clean(value: Any, request: NameRequest | None = None) -> str | None:
     """The name as it goes on the title slide (on one line, without quote marks around it), or None when it won't
     do: when it isn't a text, is longer than a name gets (it isn't cut: half a name is no name), holds template code
     or what no name has (digits, brackets, commas, ...), is a placeholder ("Presenter Name"), names someone a talk
-    doesn't go out under (a dictator, a famous living person), is the real name of a famous person whose name the
-    pack bends (Marie Curie), or copies an example of the request (for another topic than the talk's)."""
+    doesn't go out under (a dictator), is a famous living person's real name as it is ("Dr. Bill Gates": a pun on it,
+    "Bill Grates", goes), is the real name of a famous person whose name the pack bends (Marie Curie), or copies an
+    example of the request (for another topic than the talk's)."""
     if not isinstance(value, str):
         return None
     name = " ".join(value.split()).strip(_QUOTE_MARKS + " ")
@@ -403,7 +408,7 @@ def clean(value: Any, request: NameRequest | None = None) -> str | None:
     words = _plain_words(name)
     if not 1 <= len(words) <= _MOST_WORDS or max(len(word) for word in words) < 3:
         return None
-    if _PLACEHOLDERS & set(words) or _blocked(words):
+    if _PLACEHOLDERS & set(words) or _blocked(words) or _real_living_name(words):
         return None
     if any(_has_words(words, famous) for famous in _famous_names()):
         return None
@@ -460,7 +465,7 @@ def real_person(text: str) -> str | None:
     words = _plain_words(text)
     for start in range(len(words)):
         for end in range(start + 1, min(start + 3, len(words)) + 1):  # (one word, or a name of two or three)
-            if _blocked(words[start:end]):
+            if _blocked(words[start:end]) or _living_person(words[start:end]):
                 return " ".join(words[start:end])
     for famous in _famous_names():
         if _has_words(words, famous):
@@ -472,8 +477,7 @@ def real_person(text: str) -> str | None:
 
 
 def _blocked(words: Sequence[str]) -> bool:
-    """Whether a name's words (see _plain_words) name someone a talk doesn't go out under: a dictator or their like,
-    or a famous living person (see _living_person)."""
+    """Whether a name's words (see _plain_words) name someone a talk doesn't go out under: a dictator or their like."""
     if _BLOCKED_WORDS & set(words) or any(word.startswith(_BLOCKED_STARTS) for word in words):
         return True
     if any(
@@ -482,7 +486,7 @@ def _blocked(words: Sequence[str]) -> bool:
         for start in range(len(words) - len(phrase) + 1)
     ):
         return True
-    return _living_person(words)
+    return False
 
 
 @dataclass(frozen=True)
@@ -493,6 +497,7 @@ class _Living:
     alone: frozenset[str]
     surnames: Mapping[str, frozenset[str]]
     first_names: Mapping[str, frozenset[str]]
+    people: tuple[frozenset[str], ...]  # (each one's name, as words, without initials and titles)
 
 
 @cache
@@ -501,6 +506,7 @@ def _living() -> _Living:
     alone: set[str] = set()
     surnames: dict[str, set[str]] = {}
     first_names: dict[str, set[str]] = {}
+    people: list[frozenset[str]] = []
     for person in _LIVING_PEOPLE.split(","):
         parts = person.split()
         alone.update(word for part in parts if part.startswith("*") for word in _plain_words(part))
@@ -509,10 +515,12 @@ def _living() -> _Living:
         if len(names) > 1 and surname is not None and surname != names[0]:  # (a first name and a surname)
             surnames.setdefault(names[0], set()).add(surname)
             first_names.setdefault(surname, set()).add(names[0])
+        people.append(frozenset(word for word in names if word not in _TITLES))
     return _Living(
         frozenset(alone),
         {first: frozenset(names) for first, names in surnames.items()},
         {surname: frozenset(names) for surname, names in first_names.items()},
+        tuple(person for person in people if person),
     )
 
 
@@ -526,6 +534,19 @@ def _ordinary_names() -> tuple[frozenset[str], frozenset[str]]:
         return frozenset(word for rule in rules for name in grammar[rule] for word in _plain_words(str(name)))
 
     return words("male_name", "female_name"), words("last_name")
+
+
+def _real_living_name(words: Sequence[str]) -> bool:
+    """Whether a name's words (see _plain_words) are a famous living person's real name as it is, which a presenter's
+    name never is, where a pun on it goes ("Bill Grates", "Umbrella Chomsky": see _LIVING_PEOPLE): their first name
+    and surname in a row ("Dr. Bill Gates", "Mary Berry"), or, titles and initials aside, all of their name ("Yuval
+    Noah Harari", "Beyoncé") or what of it is theirs alone ("Prof. Chomsky")."""
+    living = _living()
+    names = [word for word in words if len(word) > 1]  # (no initials)
+    if any(surname in living.surnames.get(first, frozenset()) for first, surname in itertools.pairwise(names)):
+        return True
+    plain = frozenset(word for word in names if word not in _TITLES)
+    return any(plain <= person and (plain == person or plain & living.alone) for person in living.people)
 
 
 def _living_person(words: Sequence[str]) -> bool:
