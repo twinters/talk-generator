@@ -57,7 +57,7 @@
     "Give a talk on {seed.generic}|Pretend to be an expert|Get asked a question about {seed.generic}",
     "Buy {seed.one}|Read the manual|The manual is about {related.generic}",
     "Learn about {seed.generic}|Explain {seed.generic}|Realise you know nothing about {seed.generic}",
-    "Start a {seed.bare} blog|Write one post|Get one reader: my mum",
+    "Start a blog about {seed.generic}|Write one post|Get one reader: my mum",
     "Find {seed.generic}|Study {seed.generic}|Get studied by {seed.generic}",
     "Plan a talk on {seed.generic}|Make 200 slides|Get five minutes",
     "Ignore {seed.generic}|Feel relieved|Dream about {seed.generic}"
@@ -208,7 +208,7 @@
     "Your weekend|Everything I know about {seed.generic}",
     "Your applause|More slides about {seed.generic}",
     "Your snacks|One fact about {seed.generic}",
-    "Your seat|A {seed.bare} sticker",
+    "Your seat|A sticker of {seed.generic}",
     "All your time|My opinion on {seed.generic}",
     "Your attention span|A slide about {seed.generic}"
   ],
