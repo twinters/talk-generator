@@ -100,7 +100,7 @@ def generate_presentation(
     topic: str | list[str] | None = None,
     title: str | None = None,
     presenter: str | None = None,
-    parallel: bool = True,
+    parallel: bool | int = True,
     int_seed: int | None = None,
     save_ppt: bool = True,
     output_folder: str = DEFAULT_OUTPUT_FOLDER,
@@ -169,7 +169,7 @@ def _generate_presentation(
     topic: str | list[str] | None = None,
     title: str | None = None,
     presenter: str | None = None,
-    parallel: bool = True,
+    parallel: bool | int = True,
     int_seed: int | None = None,
     save_ppt: bool = True,
     output_folder: str = DEFAULT_OUTPUT_FOLDER,
@@ -246,6 +246,10 @@ def _generate_presentation(
     show; their pictures are generated while the talk is made, a few at most (image_budget: by default 3, and no
     dollar limit), at the cost of the generator's owner, which the deck's usage says. See
     talkgenerator.images.generation.
+
+    parallel makes the slides at the same time (searching their images takes most of the time): True, all of them (a
+    language model's eight at a time); a number, at most that many at once (a small server's few: each slide being
+    made holds what it found until it's settled); False, one by one. The talk comes out the same either way.
 
     progress follows the talk while it's made (see stream_talk, which hands it over in events)."""
     theme = theme or settings.theme()
@@ -398,7 +402,7 @@ def stream_talk(
     topic: str | list[str] | None = None,
     title: str | None = None,
     presenter: str | None = None,
-    parallel: bool = True,
+    parallel: bool | int = True,
     int_seed: int | None = None,
     llm: TextProvider | str | None = None,
     language: str = "en",

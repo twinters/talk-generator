@@ -93,6 +93,17 @@ class _NeedsWork:
 _NEEDS_WORK = _NeedsWork()
 
 
+def slides_at_once(parallel: bool | int, slides: int, most: int | None = None) -> int:
+    """How many of the slides are made at the same time: one by one without parallel (False, or a number below 2), all
+    of them with True (or at most `most` of them), and else at most the number parallel is. (A small server makes a
+    few at once: each slide being made holds what it found until it's settled.)"""
+    if parallel is True:
+        at_once = slides if most is None else min(slides, most)
+    else:
+        at_once = min(slides, int(parallel))
+    return max(1, at_once)
+
+
 @dataclass
 class PlanOutcome:
     """How a slide of a plan that was written outside talkgenerator came out (see PresentationSchema.realize_plan)."""
@@ -355,7 +366,7 @@ class PresentationSchema:
         num_slides: int,
         presenter=None,
         title: str | None = None,
-        parallel: bool = False,
+        parallel: bool | int = False,
         int_seed: int | None = None,
         save_ppt: bool = True,
         debug_notes: bool = False,
@@ -377,7 +388,9 @@ class PresentationSchema:
         in the same request, or else talkgenerator guesses (see talkgenerator.titles). The deck tells how it was read.
 
         The same seed (int_seed, or the talk's random generator rng) gives the same talk, in parallel or not, as long
-        as the sources give the same answers. Without a seed, a random one is picked: the deck tells which.
+        as the sources give the same answers. Without a seed, a random one is picked: the deck tells which. parallel
+        is True (the slides all at once, a planned talk's eight at a time), False (one by one), or how many slides are
+        made at the same time at most (see slides_at_once).
 
         With a language model (llm), the model writes what goes on the slides, in the given language (see
         _plan_talk); the slides it doesn't write, or that come out missing something, are classic.
@@ -549,7 +562,7 @@ class PresentationSchema:
         llm: TextProvider,
         language: str,
         title: str | None,
-        parallel: bool,
+        parallel: bool | int,
         cancelled: threading.Event | None = None,
         name: names.NameRequest | None = None,
         typed: titles.TitleRequest | None = None,
@@ -587,8 +600,9 @@ class PresentationSchema:
         if not planned:
             talk.finish()
             return talk
-        if parallel:
-            talk.pool = ThreadPool(processes=min(8, len(planned)))
+        at_once = slides_at_once(parallel, len(planned), most=8)
+        if at_once > 1:
+            talk.pool = ThreadPool(processes=at_once)
 
         def answer() -> None:
             try:
@@ -782,7 +796,7 @@ class PresentationSchema:
         presenter: str | None,
         rng: random_util.Rng,
         local_images: Path | None = None,
-        parallel: bool = True,
+        parallel: bool | int = True,
     ) -> tuple[SlideDeck, list["PlanOutcome"]]:
         """A plan written outside talkgenerator (see talkgenerator.plan.external) as a deck: the title slide from the
         plan's title, then every planned slide as planned (in up to ATTEMPTS tries, each of which must not repeat what
@@ -847,8 +861,9 @@ class PresentationSchema:
         # Every slide's first try at once: searching images takes most of the time
         makeable = [index for index, entry in enumerate(recipes) if entry is not None]
         first_tries: dict[int, tuple[_Result, list[str]]] = {}
-        if parallel and len(makeable) > 1:
-            with ThreadPool(processes=min(8, len(makeable))) as pool:
+        at_once = slides_at_once(parallel, len(makeable), most=8)
+        if at_once > 1:
+            with ThreadPool(processes=at_once) as pool:
                 first_try = image_util.carry(lambda index: attempt(index, 0))
                 first_tries = dict(zip(makeable, pool.map(first_try, makeable), strict=True))
 
@@ -903,11 +918,12 @@ class PresentationSchema:
         slide_deck: SlideDeck,
         contexts: list[dict],
         rng: random_util.Rng,
-        parallel: bool,
+        parallel: bool | int,
         persona: Persona | None = None,
     ) -> None:
         """Work out every slide and add it to the deck, picking their generators as the persona weighs them (see the
-        module's docstring for how parallel works)."""
+        module's docstring for how parallel works: a round works out the remaining slides, as many at once as
+        slides_at_once says)."""
         num_slides = len(contexts)
         slide_rngs = [rng.child("slide", slide_nr) for slide_nr in range(num_slides)]
         results: list[_Results] = [{} for _ in range(num_slides)]
@@ -927,13 +943,14 @@ class PresentationSchema:
 
         slide_nr = 0
         while slide_nr < num_slides:
-            in_parallel = parallel and num_slides - slide_nr > 1
+            at_once = slides_at_once(parallel, num_slides - slide_nr)
+            in_parallel = at_once > 1
             pool: ThreadPool | None = None
             worked: Iterator[Any] | None = None
             if in_parallel:
                 remaining = list(range(slide_nr, num_slides))
-                logger.info("Generating slides %s in parallel", [nr + 1 for nr in remaining])
-                pool = ThreadPool(processes=len(remaining))
+                logger.info("Generating slides %s in parallel, %s at once", [nr + 1 for nr in remaining], at_once)
+                pool = ThreadPool(processes=at_once)
                 work = image_util.carry(functools.partial(work_out, at_state=state.copy(), generate=True))
                 worked = pool.imap(work, remaining)
             try:
@@ -954,11 +971,15 @@ class PresentationSchema:
                     slide_nr += 1
             except BaseException:
                 if pool is not None:
-                    pool.close()  # (its threads finish by themselves: nothing waits for what they find)
+                    # (the slides it hasn't started on are dropped, and its threads finish the others by themselves:
+                    # nothing waits for what they find)
+                    pool.terminate()
                 raise
             if pool is not None:
-                pool.close()
-                pool.join()  # (the next round reuses what this round's slides found)
+                # The slides this round hasn't started on are dropped (the next round works them out, knowing more), and
+                # the ones it's working out are waited for (the next round reuses what they found)
+                pool.terminate()
+                pool.join()
 
     def _work_out_slide(
         self,

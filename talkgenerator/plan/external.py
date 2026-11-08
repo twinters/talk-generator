@@ -226,7 +226,7 @@ def render_plan(
     contact_sheet: bool = True,
     plan_path: Path | None = None,
     local_images: Path | None = None,
-    parallel: bool = True,
+    parallel: bool | int = True,
     debug_notes: bool = False,
     theme: str | None = None,
     name_styles: Sequence[str] | str | None = None,
