@@ -44,7 +44,7 @@ from talkgenerator.datastructures.slide_generator_data import SlideGeneratorData
 from talkgenerator.images import context as image_context
 from talkgenerator.images import finder, licenses, profiles
 from talkgenerator.images.slots import ImageSlot
-from talkgenerator.llm.base import ProviderError, TextProvider
+from talkgenerator.llm.base import AnswerStopped, ProviderError, TextProvider
 from talkgenerator.llm.providers import NoneProvider
 from talkgenerator.models.deck import Fact
 from talkgenerator.models.plan import SlidePlan, TalkPlan
@@ -199,6 +199,10 @@ class TalkCancelled(Exception):
     """Whoever followed the talk stopped wanting it (see Progress): it's left unfinished."""
 
 
+class _InEnglish(AnswerStopped):
+    """The answer's spine reads as English, in a talk in another language: the rest of it isn't read."""
+
+
 class Progress(Protocol):
     """Who follows a talk while it's made: told once its title and language are known (with the deck, still without
     slides), of every slide once it's settled, in order, and of a slide settled before that got a generated picture
@@ -249,11 +253,15 @@ class _PlannedTalk:
     facts: tuple[Fact, ...] = ()  # the real facts its request gave its slides (see talkgenerator.facts)
     answering: threading.Thread | None = None  # (the answer coming in, while the talk streams)
     cancelled: threading.Event = field(default_factory=threading.Event)  # (then the answer isn't read any further)
+    # Whether the answer's spine is to be in the talk's language: a first answer's is (the model is asked again when
+    # it's English, see languages.reads_as_english), the second one is kept whatever it's in
+    check_language: bool = False
 
     def __post_init__(self) -> None:
         self._slide_numbers = {slide.key: slide_nr for slide_nr, slide in self.planned.items()}
         self._changed = threading.Condition()
         self._spine_in = False  # whether all of the spine came in
+        self._in_english = False  # whether the spine reads as English, in a talk in another language
         self._reached = -1  # the last slide whose part of the answer came in
         self._finished = False
         self._shapes: list[str] = []  # what came in, by its keys and kinds (see answer_shape)
@@ -267,6 +275,13 @@ class _PlannedTalk:
     @property
     def title(self) -> str | None:
         return clean_text(self.spine.get("title"), TALK_TITLE, self.language)
+
+    @property
+    def in_english(self) -> bool:
+        """Whether the answer's spine reads as English, in a talk in another language (when it's checked): then its
+        slides aren't looked for, and the model is asked again."""
+        with self._changed:
+            return self._in_english
 
     @property
     def presenter_name(self) -> tuple[Any, Any]:
@@ -295,13 +310,21 @@ class _PlannedTalk:
                 self._spine_in = self._spine_in or self.spine_fields <= self.spine.keys()
             else:
                 self._take_slide(slide_nr, value)
+            if self._spine_in and self.check_language and not self._in_english:
+                # (its texts, but the presenter's name, which may pun in any language, and what it plays on)
+                texts = [
+                    text
+                    for name, text in self.spine.items()
+                    if isinstance(text, str) and name not in ("presenter_name", "name_plays_on")
+                ]
+                self._in_english = languages.reads_as_english(texts, self.language)
             for name, part in inside.items():
                 self._take_slide(self._slide_numbers[name], part)
             self._changed.notify_all()
 
     def _take_slide(self, slide_nr: int, value: Any) -> None:
         """A slide's part of the answer (with the lock held): its plan, and its first attempt, started in parallel."""
-        if self.spine.get("unsafe_topic") is True:  # (it comes first: then no slide is looked for)
+        if self.spine.get("unsafe_topic") is True or self._in_english:  # (they come first: then no slide is looked for)
             return
         self._reached = max(self._reached, slide_nr)
         plan = slide_plan(self.planned[slide_nr], value)
@@ -314,9 +337,14 @@ class _PlannedTalk:
     def wait_for_spine(self) -> None:
         """Wait for the spine of the answer (its title, the presenter's job and name, its thesis), all of it, or the
         end of the answer: then a talk that streams gets the spine a talk made at once gets. It comes before the
-        slides, also from models that write the answer in alphabetical order. A spine that finds the topic unsafe
-        doesn't count, as the model is then asked again."""
-        self._wait(lambda: (self._spine_in and self.spine.get("unsafe_topic") is not True) or self._finished)
+        slides, also from models that write the answer in alphabetical order. A spine that finds the topic unsafe, or
+        reads as English in a talk in another language, doesn't count, as the model is then asked again."""
+        self._wait(
+            lambda: (
+                (self._spine_in and self.spine.get("unsafe_topic") is not True and not self._in_english)
+                or self._finished
+            )
+        )
 
     def wait_for_a_plan(self) -> bool:
         """Wait for the first slide the model wrote, or the end of the answer: whether it wrote any slide."""
@@ -377,6 +405,7 @@ class _PlannedTalk:
             self.first_attempts.clear()
             self.spine.clear()
             self._spine_in = False
+            self._in_english = False
             self._reached = -1
             self._shapes.clear()
             self._changed.notify_all()
@@ -724,31 +753,45 @@ class PresentationSchema:
             try:
                 generation = image_context.current().generation  # (its images' prompts, if it generates pictures)
                 given = self._facts_for(talk, gathering, rng)
+                # The model is asked once more for a topic it found unsafe, or for a talk it started in English
+                why_again: str | None = None
                 for asked_again in (False, True):
                     if talk.cancelled.is_set():  # (while its facts came in, say)
                         break
+                    talk.check_language = not asked_again
                     request = talk_request(
                         topics,
                         list(planned.values()),
                         rng,
                         language,
                         title,
-                        asked_again,
+                        why_again == "unsafe",
                         name,
                         typed,
                         generation,
                         persona=persona,
                         talk_format=self.format,
                         facts=given,
+                        answered_in_english=why_again == "english",
                     )
                     self._ask(llm, request, talk)
-                    if talk.cancelled.is_set() or talk.spine.get("unsafe_topic") is not True:
+                    if talk.cancelled.is_set():
+                        break
+                    if talk.spine.get("unsafe_topic") is True:  # (first: such a spine may well be in English too)
+                        why_again = "unsafe"
+                        if asked_again:
+                            logger.warning("The language model wouldn't write about this topic: the talk is classic")
+                        else:  # (some of the free models get the flag wrong: one turned down "penguins")
+                            logger.info("The language model found the topic unsafe: asking once more")
+                    elif talk.in_english:  # (a free model wrote a Swedish talk in English, 2026-11-08)
+                        why_again = "english"
+                        logger.info(
+                            "The language model started the talk in English, not %s: asking once more",
+                            languages.language(language).name,
+                        )
+                    else:
                         break
                     talk.restart()
-                    if asked_again:
-                        logger.warning("The language model wouldn't write about this topic: the talk is classic")
-                    else:  # (some of the free models get the flag wrong: one turned down "penguins")
-                        logger.info("The language model found the topic unsafe: asking once more")
                 logger.info("The language model wrote %s of the %s slides", len(talk.plans), num_slides)
             finally:
                 talk.finish()
@@ -801,6 +844,8 @@ class PresentationSchema:
             read_anything = True
             for key, value in reader.feed(text):
                 talk.take(key, value)
+                if talk.in_english:
+                    raise _InEnglish()  # (out of the provider's stream, which then stops: the model is asked again)
 
         try:
             response = llm.stream(request, read)
@@ -823,7 +868,7 @@ class PresentationSchema:
                     response.model or llm.id,
                     talk.answer_shape(),
                 )
-        except TalkCancelled:
+        except (TalkCancelled, _InEnglish):
             return
         except ProviderError as error:
             logger.warning("The language model didn't write the talk (%s): its slides are classic", error)

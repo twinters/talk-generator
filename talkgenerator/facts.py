@@ -25,7 +25,9 @@ Flavour texts too (talkgenerator.sources.flavour), from three small free APIs th
 fun fact may build on a random useless fact instead ("25% of a human's bones are in its feet"), a dare dares the
 presenter to tell a real dad joke (about the topic, if there's one: a groan they have to deliver), and the closing
 slide's line under its title can be a real piece of advice. They pass the facts' checks and some of their own (no
-insults, drink or faiths), and name no living person (the articles their capitalised words would be).
+insults, drink or faiths), and name no living person (the articles their capitalised words would be). A talk in another
+language than English gets no dad jokes or advice, which its slides would say word for word, in English: a free model
+put "Sing in the shower." on a German talk's closing slide (2026-11-09), also when asked for it translated.
 
 Classic talks (English) have them where they fit: half of their fun facts are a real one, a sentence about the slide's
 seed from Wikipedia or a useless fact, with an absurd twist of the content pack's, half of their quizzes a real one
@@ -51,6 +53,7 @@ from urllib.parse import unquote
 from talkgenerator import settings
 from talkgenerator.datastructures.image_data import CreditPart
 from talkgenerator.models.deck import Fact
+from talkgenerator.plan import languages
 from talkgenerator.sources import flavour, opentdb, wikipedia
 from talkgenerator.util import http_util, language_util, random_util
 
@@ -332,6 +335,8 @@ def look_up(
     dare, advice for the closing slide), none about a living person."""
     if not on():
         return EMPTY
+    if language != languages.ENGLISH.code:
+        uses = uses - _FLAVOUR_USES  # (no dad jokes or advice, which a slide says word for word, in English)
     started = time.monotonic()
     asking = _asking()
     wiki = wikipedia.available() and bool(uses & _WIKIPEDIA_USES)

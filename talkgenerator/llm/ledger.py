@@ -16,7 +16,14 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from talkgenerator.llm import prices
-from talkgenerator.llm.base import BudgetExceeded, ProviderError, TextProvider, TextRequest, TextResponse
+from talkgenerator.llm.base import (
+    AnswerStopped,
+    BudgetExceeded,
+    ProviderError,
+    TextProvider,
+    TextRequest,
+    TextResponse,
+)
 from talkgenerator.models.usage import Usage
 
 IMAGES = "image"  # the purpose of a generated picture's entry (talkgenerator.images.generation.PURPOSE)
@@ -149,6 +156,12 @@ class MeteredProvider(TextProvider):
         except ProviderError as error:
             usage = Usage(requests=1, vision_requests=vision, failed_requests=1)
             self.ledger.add(LedgerEntry(self.id, request.purpose, usage, time.monotonic() - start, error=str(error)))
+            raise
+        except AnswerStopped:
+            # (a request whose answer was stopped while it came in counts too, at a price that isn't known: a free
+            # tier counts it as it counts the others)
+            usage = Usage(requests=1, vision_requests=vision, unpriced_requests=1)
+            self.ledger.add(LedgerEntry(self.id, request.purpose, usage, time.monotonic() - start, error="stopped"))
             raise
         usage = usage_of(response, self.id)
         if vision:

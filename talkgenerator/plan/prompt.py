@@ -107,7 +107,9 @@ def spine(
         # (Asked the other way around, as "safe_topic", the free models sometimes turned down harmless topics)
         "unsafe_topic": "true only if the topic asks for something hateful or harmful; false for every other topic, "
         "however odd",
-        "thesis": "the talk's thesis, its absurd claim in one sentence (not shown)",
+        "thesis": "the talk's thesis, its absurd claim in one sentence"
+        + (f", in {language_name}" if language != languages.ENGLISH.code else "")
+        + " (not shown)",
     }
     if typed is not None:
         fields.update(typed.fields(language, title_hint or ""))
@@ -146,10 +148,14 @@ def talk_request(
     persona: Persona | None = None,
     talk_format: Format | None = None,
     facts: Mapping[int, Given] | None = None,
+    answered_in_english: bool = False,
 ) -> TextRequest:
     """The request for a talk (with the presenter's name, when there's a name request). Asked again, it says that a
     model found the topic unsafe: some of the free models get the flag wrong whichever way it's asked (one turned
-    down "penguins"). For what was typed, which could be the topic or the title (see talkgenerator.titles), it says
+    down "penguins"). Asked again for a talk in another language whose first answer started in English
+    (answered_in_english: a free model wrote a Swedish talk in English), it says so, and what's to be in the language.
+    In a talk in another language than English, every text field's description says the language too, so that an
+    example of a hint's ("such as 'Outline'") is said in it: a free model copied the English ones into a German talk. For what was typed, which could be the topic or the title (see talkgenerator.titles), it says
     what the title is to be: what was typed, with its slips fixed, or a title of the model's own on it. In a talk
     that generates pictures (with a generation), the model writes a prompt for every image that prefers one.
 
@@ -170,10 +176,12 @@ def talk_request(
     kept = " (the typed title keeps its words)" if typed is not None and typed.keep else ""
     titled = bool(title)
     fields = spine(language, name, typed, hint, job, titled)
+    language_name = languages.language(language).name
+    thesis = "the thesis, " if language != languages.ENGLISH.code else ""
     lines = [
         *(typed.lines(topic) if typed is not None else [f"Topic: {topic}", *([f"Title: {title}"] if title else [])]),
-        f"Language: write the title{kept}, the presenter's {'name and ' if name is not None else ''}job and every "
-        f"slide in {languages.language(language).name}, and the image search queries in English",
+        f"Language: write the title{kept}, {thesis}the presenter's {'name and ' if name is not None else ''}job and "
+        f"every slide in {language_name}, and the image search queries in English",
         *([f"The format: {talk_format.brief}"] if talk_format is not None else []),
         *([f"The presenter: {persona.voice}", f"The angle: {persona.angle(rng)}"] if persona is not None else []),
         *([request_line(language)] if facts else []),
@@ -185,6 +193,15 @@ def talk_request(
                 "",
             ]
             if asked_again
+            else []
+        ),
+        *(
+            [
+                f"Asked again: the last answer was in English. Write the title, the thesis, the presenter's job and every "
+                f"slide in {language_name}; only the image search queries are in English.",
+                "",
+            ]
+            if answered_in_english
             else []
         ),
         f"Write the talk as one JSON object. First its spine, as an object called {SPINE}:",
@@ -199,7 +216,10 @@ def talk_request(
         given = (facts or {}).get(slide.number)
         fact = f". {given.line()}" if given is not None else ""
         lines += ["", f"{slide.key}: {brief}. A word to riff on: {slide.seed}{fact}"]
-        lines += [f"- {text.name}: {field_description(slide.recipe, text)}" for text in slide.recipe.written_fields()]
+        lines += [
+            f"- {text.name}: {field_description(slide.recipe, text, language)}"
+            for text in slide.recipe.written_fields()
+        ]
         lines += [f"- {slot}_query: {_query_description(slot)}" for slot in slide.recipe.image_queries()]
         lines += [f"- {prompt_field(slot)}: {about}" for slot, about in generated(slide.recipe, generation)]
     prompts = sum(len(generated(slide.recipe, generation)) for slide in planned)
@@ -258,14 +278,16 @@ def response_schema(
     }
     properties: dict[str, Any] = {SPINE: _object(fields)}
     for slide in planned:
-        properties[slide.key] = slide_schema(slide.recipe, generation)
+        properties[slide.key] = slide_schema(slide.recipe, generation, language)
     return _object(properties)
 
 
-def slide_schema(recipe: Recipe, generation: ImageGeneration | None = None) -> dict[str, Any]:
+def slide_schema(
+    recipe: Recipe, generation: ImageGeneration | None = None, language: str = languages.ENGLISH.code
+) -> dict[str, Any]:
     properties: dict[str, Any] = {"concept": {"type": "string", "description": CONCEPT}}
     for text in recipe.written_fields():
-        properties[text.name] = {"type": "string", "description": field_description(recipe, text)}
+        properties[text.name] = {"type": "string", "description": field_description(recipe, text, language)}
         if text.options:  # one of these words (or empty, when the field may stay empty)
             properties[text.name]["enum"] = [*text.options, *([""] if text.optional else [])]
     for slot in recipe.image_queries():
@@ -296,14 +318,18 @@ def _prompt_description(source: Any) -> str:
     )
 
 
-def field_description(recipe: Recipe, text: TextField) -> str:
-    """What to write in a slide's text field: the recipe's hint, or else the field's own description, and its length
-    (or the words it can be)."""
+def field_description(recipe: Recipe, text: TextField, language: str = languages.ENGLISH.code) -> str:
+    """What to write in a slide's text field: the recipe's hint, or else the field's own description, in the talk's
+    language when that's another one than English (an example of the hint's, "such as 'Outline'", is then to be said
+    in it), and its length (or the words it can be)."""
     if text.options:
         limit = "one of " + ", ".join(text.options) + (", or empty for any" if text.optional else "")
     else:
         limit = f"at most {text.max_length} characters" + (", or empty for none" if text.optional else "")
-    return f"{recipe.hints.get(text.name, text.description)} ({limit})"
+    written_in = ""
+    if language != languages.ENGLISH.code and not text.options:
+        written_in = f", in {languages.language(language).name}"
+    return f"{recipe.hints.get(text.name, text.description)}{written_in} ({limit})"
 
 
 def _query_description(slot: str) -> str:

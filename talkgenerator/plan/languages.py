@@ -6,13 +6,18 @@ breaking news, the "Did you know?" over a fun fact and the "Challenge" over a da
 to chaotic, good to evil) and the "Continued on next slide" under a wall of text, which this module has in every
 language. The classic generator only speaks English, so in a talk in another language, a slide that doesn't come out
 as planned becomes a picture without text instead of a classic slide. The language check reads texts with NLTK's
-stopword lists (and a language's words that look like English ones, which they leave out), and the spelling fixes of
-what's typed for a talk leave the compounds alone of a language that writes them as one word.
+stopword lists (and a language's words that look like English ones, which they leave out): a language model whose
+answer starts in English, for a talk in another language, is asked again (see reads_as_english), and the check of a
+deck finds a talk that reads as English. The spelling fixes of what's typed for a talk leave the compounds alone of a
+language that writes them as one word.
 """
 
 from __future__ import annotations
 
+import re
+from collections.abc import Iterable
 from dataclasses import dataclass
+from functools import cache
 from typing import Final
 
 
@@ -175,3 +180,32 @@ def language(code: str) -> Language:
     if found is None:
         raise ValueError(f"talkgenerator doesn't know the language {code!r}; it knows {', '.join(LANGUAGES)}")
     return found
+
+
+_WORD: Final = re.compile(r"[^\W\d_]+")
+
+
+@cache
+def telling_words(code: str) -> tuple[frozenset[str], frozenset[str]]:
+    """The little words that tell a text in the language from one in English, by NLTK's stopword lists: the
+    language's own that English doesn't have ("de", "het"), and English ones that it doesn't have ("the", "of"), but
+    its words that look like English ones (english_lookalikes: Swedish "is", ice)."""
+    from talkgenerator.util import language_util  # (here: the languages themselves need no NLTK)
+
+    spoken = language(code)
+    own = language_util.stopwords(spoken.stopwords)
+    english = language_util.stopwords(ENGLISH.stopwords)
+    return own - english, english - own - spoken.english_lookalikes
+
+
+def reads_as_english(texts: Iterable[str], code: str) -> bool:
+    """Whether texts that are to be in the language read as English instead (never for English): at least three of
+    English's telling little words (see telling_words), and more than twice as many as of the language's own. A free
+    model wrote a Swedish talk in English (2026-11-08): the talk's spine, its title, thesis and presenter's job, tells
+    before its slides come in, and the model is asked again (see talkgenerator.schema.presentation_schema)."""
+    if code == ENGLISH.code:
+        return False
+    own, english = telling_words(code)
+    words = [word for text in texts for word in _WORD.findall(text.lower())]
+    in_english = sum(word in english for word in words)
+    return in_english >= 3 and in_english > 2 * sum(word in own for word in words)

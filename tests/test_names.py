@@ -425,7 +425,10 @@ def test_a_dutch_talk_asks_for_a_dutch_name(schema):
     deck = _deck(model, language="nl")
     request = model.requests[0]
     assert "with wordplay that works in Dutch" in _spine(request)["presenter_name"]["description"]
-    assert "write the title, the presenter's name and job and every slide in Dutch" in request.messages[0].content
+    assert (
+        "write the title, the thesis, the presenter's name and job and every slide in Dutch"
+        in request.messages[0].content
+    )
     assert deck.presenter == "Prof. Kat Apult"
     assert deck.slides[0].elements[1].text.split(" Prof. Kat Apult")[0] in (
         "Door",

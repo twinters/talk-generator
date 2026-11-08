@@ -972,8 +972,19 @@ def test_a_dare_gets_a_dad_joke_and_the_closing_slide_a_piece_of_advice(web):
     assert list(given) == [2, 3, 4, 6, 9]  # (three facts at most, and a joke and a piece of advice besides)
     assert (given[6].fact.source, given[6].fact.text) == ("icanhazdadjoke", JOKES["penguin"][0][1])
     assert given[9].fact.source == "Advice Slip" and "bleach" not in given[9].fact.text
-    assert given[6].line().startswith("Dare the presenter to tell this real dad joke")
+    assert given[6].line().startswith("Dare the presenter to tell this real dad joke, word for word")
     assert given[9].fact.license is None  # (their sites state none)
+
+
+def test_a_talk_in_another_language_gets_no_dad_joke_or_advice(web):
+    # (which its slides would say word for word, in English: a free model put "Sing in the shower." on a German talk's
+    # closing slide, also when asked for it translated)
+    slides = [(3, "fun_fact"), (6, "dare"), (9, "questions")]
+    english = facts.look_up("penguins", "en", DAY, frozenset(use for _, use in slides))
+    german = facts.look_up("penguins", "de", DAY, frozenset(use for _, use in slides))
+    assert {candidate.flavour for candidate in english.candidates} >= {"joke", "advice"}
+    assert {candidate.flavour for candidate in german.candidates} <= {"", "useless"}
+    assert set(facts.assign(german, slides, random_util.Rng(1))) <= {3}
 
 
 def test_a_fun_fact_builds_on_the_topics_facts_or_a_useless_fact(web):

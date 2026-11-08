@@ -359,6 +359,15 @@ def test_a_model_that_wrongly_finds_a_topic_unsafe_is_asked_once_more(schema):
     assert "Asked again" not in first and "Asked again: a model said this topic" in second
 
 
+def test_a_topic_wrongly_found_unsafe_in_english_is_asked_again_as_unsafe(schema):
+    # (a talk in another language whose first answer finds the topic unsafe, in English: the flag is what's wrong)
+    model = FakeModel(change=lambda answer: answer[prompt.SPINE].update(unsafe_topic=len(model.requests) == 1))
+    deck = _talk(model, language="sv")
+    second = model.requests[1].messages[0].content
+    assert "Asked again: a model said this topic" in second and "the last answer was in English" not in second
+    assert len(model.requests) == 2 and all(_planned(deck))  # (the second answer is kept, whatever its language)
+
+
 def test_without_a_language_model_the_talk_is_classic(schema):
     deck = _talk(None)
     assert not any(_planned(deck))
@@ -404,6 +413,69 @@ def test_a_swedish_talk_has_swedish_words_of_its_own(schema):
     chart = KINDS["chart_yes_no"].build({"question": "Någonsin?", "funny_answer": "Ibland"}, {}, swedish)
     (element,) = [element for element in chart.to_deck_slide().elements if element.kind == "chart"]
     assert element.chart.categories == ("Ja", "Nej", "Ibland")
+
+
+def test_texts_for_another_language_that_read_as_english_are_told():
+    english = ["FikaFlow: The Fika-Based Productivity Engine", "Fika breaks are a problem that only an app can solve"]
+    swedish = [
+        "FikaFlow: Produktivitetsmotorn för fika",
+        "Fika är den hemliga motorn som alla arbetsplatser har missat",
+    ]
+    assert languages.reads_as_english(english, "sv")
+    assert not languages.reads_as_english(swedish, "sv")
+    assert not languages.reads_as_english(english, "en")  # (never for English)
+    assert not languages.reads_as_english(["Bitcoin", "CEO of the year"], "nl")  # (too few words to tell)
+
+
+def test_a_talk_whose_answer_starts_in_english_is_asked_again(schema):
+    # (a free model wrote a Swedish talk in English, 2026-11-08: the spine tells, before any slide is looked for)
+    def in_swedish_the_second_time(answer):
+        if len(model.requests) > 1:
+            spine = answer[prompt.SPINE]
+            spine.update(
+                title="Katternas tid", thesis="Katter är motorn som alla har missat", presenter_job="Kattens röst"
+            )
+
+    model = FakeModel(change=in_swedish_the_second_time)
+    deck = _talk(model, language="sv")
+    first, second = (request.messages[0].content for request in model.requests)
+    asked_again = "Asked again: the last answer was in English. Write the title, the thesis, the presenter's job and"
+    assert asked_again not in first and asked_again in second
+    assert "every slide in Swedish; only the image search queries are in English." in second
+    assert deck.title == "Katternas tid"
+    assert all(_planned(deck))
+    assert deck.usage.requests == 2  # (the first answer, stopped once its spine was in, counts too)
+    assert deck.usage.input_tokens == 1000  # (of the second: the first one's aren't known)
+
+
+def test_a_second_answer_in_english_is_kept(schema):
+    # (better the model's slides than slides that come out as pictures without text)
+    model = FakeModel()
+    deck = _talk(model, language="sv")
+    assert len(model.requests) == 2
+    assert deck.title == "The title"
+    assert all(_planned(deck))
+
+
+def test_every_text_of_a_talk_in_another_language_is_asked_for_in_it():
+    # (a free model copied a hint's English examples into a German talk: "Outline", "Related work", "Method")
+    planned = [
+        prompt.PlannedSlide(
+            2, "Fake", Recipe("agenda", hints={"title": "the slide's title, such as 'Outline'"}), "cat"
+        ),
+        prompt.PlannedSlide(3, "Fake", Recipe("quiz"), "cat"),
+    ]
+    request = prompt.talk_request(["cat"], planned, random_util.Rng(1), "de").messages[0].content
+    assert "- title: the slide's title, such as 'Outline', in German (at most" in request
+    assert "- answer: the letter of the right option (one of" in request  # (a choice of words isn't translated)
+    schema = prompt.response_schema(planned, "de")["properties"]
+    assert schema["slide_2"]["properties"]["title"]["description"].startswith(
+        "the slide's title, such as 'Outline', in German ("
+    )
+    assert "in German" in schema[prompt.SPINE]["properties"]["thesis"]["description"]
+    english = prompt.talk_request(["cat"], planned, random_util.Rng(1)).messages[0].content
+    assert "- title: the slide's title, such as 'Outline' (at most" in english
+    assert "the thesis" not in english.splitlines()[1]  # (an English talk's request is as it was)
 
 
 @pytest.mark.parametrize("language", ["nl", "sv"])

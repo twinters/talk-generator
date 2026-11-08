@@ -202,13 +202,10 @@ def check_language(deck: Deck) -> list[Finding]:
     if deck.language == "en":
         return []
     from talkgenerator.plan import languages  # (here: the checks don't need them otherwise)
-    from talkgenerator.util import language_util
 
     language = languages.language(deck.language)
-    expected = language_util.stopwords(language.stopwords)
-    english = language_util.stopwords("english")
     # The words that tell the two apart (but the language's words that look like English ones: Swedish "is", ice)
-    own, foreign = expected - english, english - expected - language.english_lookalikes
+    own, foreign = languages.telling_words(deck.language)
     findings = []
     own_in_talk = english_in_talk = 0
     for number, slide in enumerate(deck.slides, 1):

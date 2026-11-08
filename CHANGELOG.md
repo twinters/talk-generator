@@ -39,7 +39,11 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   (`--status`, `--new-account`, `logout chatgpt`).
 - Talks in Dutch, French, German, Spanish, Italian, Portuguese and Swedish (`--language`), with talkgenerator's own words on
   the slides in the talk's language too. A slide that doesn't come out becomes a picture without text instead of an
-  English one, and recipes that find English texts, such as real quotes, are left out.
+  English one, and recipes that find English texts, such as real quotes, are left out. A language model whose answer
+  starts in English (its title, thesis and presenter's job, which come before the slides) is asked once more, with the
+  language stressed: a free model wrote a Swedish talk in English. Every text a slide asks for says the language, so
+  that a hint's English example ("such as 'Outline'") isn't copied, and such a talk gets no dad jokes or advice slips,
+  which a slide would say word for word, in English.
 - After every talk, the logs say how many requests it made and what they cost, and so does the deck (`usage`).
   `budget=` holds a talk to a limit (a $0 budget lets only free models write it). Keys never show up in logs, error
   messages or decks.

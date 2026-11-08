@@ -105,6 +105,12 @@ class ProviderError(Exception):
     """A language model couldn't answer. Callers fall back to another provider, or to the classic generator."""
 
 
+class AnswerStopped(Exception):
+    """Whoever read an answer while it came in stopped it (raised from on_text, out of the provider's stream): a talk
+    whose answer starts in the wrong language, which asks again. The request still counts (see
+    talkgenerator.llm.ledger)."""
+
+
 class ProviderUnavailable(ProviderError):
     """No usable provider: none is configured, a key is missing, or the service is down."""
 
