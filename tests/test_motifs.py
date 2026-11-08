@@ -125,6 +125,22 @@ def test_some_families_have_title_and_section_slides_of_their_own(images):
         assert deck.slides[0].layout == layout, family
 
 
+def test_some_families_have_section_slides_of_their_own(images):
+    owners = {"kids": "v5/kids-section", "neon": "v5/neon-section", "Swiss poster": "v5/swiss-section"}
+    made = [slides.TitleSlide("Cats", "By An O. Nymous"), slides.SectionSlide("The dark years", "In which the cat")]
+    for family, layout in owners.items():
+        seen = set()
+        for seed in range(8):
+            slide_deck = SlideDeck(len(made), title="Cats", topics=["cats"], seed=seed)
+            for index, slide in enumerate(made):
+                slide_deck.add_slide(index, slide)
+            slide_deck.theme = _theme(family, seed)
+            deck = slide_deck.to_deck()
+            assert check_design(deck) == [], (family, seed)
+            seen.add(deck.slides[1].layout)
+        assert layout in seen, family
+
+
 def test_a_kindergartens_title_has_scenery_and_its_slides_bunting(images):
     deck = _runs(1, _theme("kids")).to_deck()
     first = engine.lay_out(_deck(theme=_theme("kids")).to_deck(), _theme("kids")).slides[0]
@@ -132,7 +148,10 @@ def test_a_kindergartens_title_has_scenery_and_its_slides_bunting(images):
     assert len(polygons) > 10  # (pennants, a sun's rays, flowers...)
     assert any(element.rotation for element in polygons)  # (the pennants hang along a sagging string)
     for slide in deck.slides:
-        if slide.type not in ("full_image", "large_quote"):  # (but over a photo)
+        over_a_photo = any(
+            isinstance(element, ImageElement) and element.box == engine.FULL for element in slide.elements
+        )
+        if not over_a_photo:  # (no bunting over a photo across the slide)
             assert any(
                 element.points == geometry.pennant() for element in slide.elements if isinstance(element, ShapeElement)
             )

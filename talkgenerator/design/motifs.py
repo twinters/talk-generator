@@ -513,15 +513,18 @@ def _blobs(scene: Scene) -> None:
             scene.under(_ellipse(x + size / 2, y + size / 2, width, width, colour, opacity))
 
 
-def _faint(scene: Scene, colour: str, most: float) -> float:
+def _faint(scene: Scene, colour: str, most: float, stacked: int = 1) -> float:
     """How opaque a see-through shape of the colour can be (at most most), so that the theme's texts and accents,
-    which may be over it, still read there (as they read on its background)."""
+    which may be over it, still read there (as they read on its background): over that many of them on top of each
+    other, as the design checks take several such shapes under one text to be."""
     palette = scene.palette
-    needs = ((palette.text, color.BODY_CONTRAST), (palette.muted, color.BODY_CONTRAST))
-    needs += ((palette.accent, color.LARGE_TEXT_CONTRAST), (palette.accent_2, color.LARGE_TEXT_CONTRAST))
+    needs = [(palette.text, color.BODY_CONTRAST), (palette.muted, color.BODY_CONTRAST)]
+    needs += [(palette.accent, color.LARGE_TEXT_CONTRAST), (palette.accent_2, color.LARGE_TEXT_CONTRAST)]
     opacity = most
     while opacity > 0:
-        tinted = [color.mix(background, colour, opacity) for background in scene.backgrounds()]
+        tinted = scene.backgrounds()
+        for _ in range(stacked):
+            tinted = [color.mix(background, colour, opacity) for background in tinted]
         if all(color.worst_contrast(text, tinted) >= needed for text, needed in needs):
             return opacity
         opacity = round(opacity - 0.01, 2)
@@ -994,13 +997,18 @@ def _chalkboard(scene: Scene) -> None:
                 scene.under(_polygon(geometry.arrow(), spot.x, spot.y + 30, 120, 60, colour, 0.85, -20))
             else:
                 scene.under(_ring(spot.x + 60, spot.y + 60, 110, 90, colour, 6, 0.85))
-    texts = [_grown(scene.box(role), 6) for role in scene.texts()]
+    letters = [_grown(line, 8) for role in scene.texts() for line in scene.lines(role)]
     for role in scene.pictures() if scene.slide_type in _FRAMED_TYPES else []:
         shown = scene.shown(role, _grown(scene.box(role), -10))
-        for corner, turn in ((shown.x, -35.0), (shown.x + shown.w, 35.0)):  # (tape, where it's clear of the texts)
-            tape = _rect(corner - 55, shown.y - 17, 110, 34, "#e8dcc0", 0.75, rotation=turn)
-            if not any(_overlaps(geometry.bounds(tape), text) for text in texts):
-                scene.over(tape)
+        # (tape across its top corners, or else its bottom ones: where it's clear of the texts' letters)
+        for y, turns in ((shown.y, (-35.0, 35.0)), (shown.y + shown.h, (35.0, -35.0))):
+            tapes = [
+                _rect(corner - 55, y - 17, 110, 34, "#e8dcc0", 0.75, rotation=turn)
+                for corner, turn in zip((shown.x, shown.x + shown.w), turns, strict=True)
+            ]
+            if not any(_overlaps(geometry.bounds(tape), area) for tape in tapes for area in letters):
+                scene.over(*tapes)
+                break
 
 
 def _newsprint(scene: Scene) -> None:
@@ -1039,11 +1047,11 @@ def _swiss(scene: Scene) -> None:
     slides, a big circle where there's room)."""
     palette = scene.palette
     ink, red = palette.text, palette.accent_2
-    grid = color.mix(palette.background, ink, 0.12)
+    grid = _faint(scene, ink, 0.12, stacked=2)  # (as strong as the texts over its lines allow: on red, none)
     if not scene.placement.photo:
-        for column in range(1, 3):
+        for column in range(1, 3) if grid >= 0.04 else ():
             x = MARGIN + column * (WIDTH - 2 * MARGIN) / 3
-            scene.under(_rect(x, 48, 1.5, HEIGHT - 96, grid))
+            scene.under(_rect(x, 48, 1.5, HEIGHT - 96, ink, grid))
         scene.add(_rect(MARGIN, 48, WIDTH - 2 * MARGIN, 4, ink))
         _slide_number(scene, Box(x=WIDTH - MARGIN - 160, y=16, w=160, h=30), "decoration right", ink)
         if not scene.big:

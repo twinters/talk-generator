@@ -282,6 +282,7 @@ def test_the_random_mix_leaves_extremes_out_when_asked():
 def test_most_members_have_open_fonts_and_keep_everything_else_they_had(monkeypatch):
     members = {(name, seed): _theme(name, seed) for name in FAMILIES for seed in range(60)}
     members_chance = {name: family.open_font_chance for name, family in themes.FAMILIES.items()}
+    default_chance = themes.OPEN_FONT_CHANCE
     monkeypatch.setattr(themes, "OPEN_FONT_CHANCE", 0.0)  # (as members were before there were open fonts)
     for name, family in themes.FAMILIES.items():  # (the families with a chance of their own, too)
         monkeypatch.setitem(themes.FAMILIES, name, dataclasses.replace(family, open_font_chance=None))
@@ -292,7 +293,7 @@ def test_most_members_have_open_fonts_and_keep_everything_else_they_had(monkeypa
         if family.extreme:  # (their installed fonts are the joke)
             assert not family.open_fonts and not open_members
             continue
-        chance = themes.OPEN_FONT_CHANCE if family.open_font_chance is None else family.open_font_chance
+        chance = default_chance if family.open_font_chance is None else family.open_font_chance
         assert abs(len(open_members) / 60 - chance) <= 0.17, name  # (two in three, OPEN_FONT_CHANCE, or its own)
         assert {(theme.fonts.heading, theme.fonts.body) for theme in open_members} == set(family.open_fonts)
         assert all(theme.fonts.heading in fonts.OPEN_FONTS for theme in open_members)

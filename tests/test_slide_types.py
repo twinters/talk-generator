@@ -146,7 +146,8 @@ def test_every_new_layout_comes_up_and_needs_what_it_says(images):
     seen = set()
     for seed in range(12):
         seen |= {slide.layout for slide in _deck(runs_of_new_types(_image("wide")), _theme(seed=seed), seed).slides}
-    new_layouts = {layout.name for kind in EVERY_KIND for layout in engine._LAYOUTS[kind]}
+    # (the layouts every family has: a family's own come up in its themes)
+    new_layouts = {layout.name for kind in EVERY_KIND for layout in engine._LAYOUTS[kind] if not layout.families}
     assert new_layouts <= seen
 
     def fitting(slide):

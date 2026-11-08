@@ -858,14 +858,16 @@ fixed place for its texts; and the sources treat pictures as a family's property
 - **Image treatments** (D45): the strong filters are for the families made for them, and only where they fit (a
   family's filter can be for backdrops only; black and white never goes behind a slide's texts), and a theme can lay a
   gentle tint over its pictures instead (a warm or cool cast at 7%, its paper at 10%, its accent at 8%): of 3,000
-  random themes' pictures, 21% got a strong filter (34% before), and 30% of themes tint theirs.
+  random themes' pictures, 21% got a strong filter (34% before; black and white 0.5%, 3.9% before), and 30% of themes
+  tint theirs.
 - **Checks** (D46): a text has to read on what's behind its letters, its lines as the engine breaks them, as tall as
   their letters (not its whole box: a cursor after its last word doesn't count), where a shape over part of them
   counts, and a background's pattern too; diagrams are coloured for the decoration that reaches under them; and the
   band behind credits that need one hugs the credit line, clear of a status line under it.
 - **Measured:** 17 saved talks (the site's live ones, the free models' cat, peanuts and time travel in English and
   Swedish, the lighthouse talks with every slide type, the memes) laid out again in all 17 families over 4 seeds:
-  BENCHMARK_RESULT. In the browser, talk-generator-web's dev server drew a deck of the new families as the previewer
+  15,708 slides, no design finding (the first run found 5, a Swiss poster's diagram labels over its grid lines on red:
+  fixed). In the browser, talk-generator-web's dev server drew a deck of the new families as the previewer
   does (kids' title, terminal, blueprint, chalkboard, newspaper, Swiss). Not checked in PowerPoint itself yet.
 
 ## 10. Images: sources, aesthetics and generation
