@@ -69,7 +69,9 @@ def render_pptx(
             raise ValueError(f"A deck with theme {deck.theme!r} needs the theme's tokens (its style)")
         if not all(slide.layout.startswith("v5/") for slide in deck.slides):
             deck = engine.lay_out(deck, deck.style)
+        _fetch_pictures(deck, images)  # (once laid out: each picture as large as its box needs)
         return render_themed(deck, presentation, debug_notes=debug_notes, images=images)
+    _fetch_pictures(deck, images)
     if presentation is None:
         presentation = creator.create_new_powerpoint()
     for slide in deck.slides:
@@ -170,6 +172,46 @@ def _create_drawn_slide(presentation: Presentation, slide: DeckSlide, images: Im
     placed = engine.lay_out_slide(slide, look, random_util.Rng(0).child("classic", slide.type))
     shapes.draw_elements(ppt_slide, placed, look, images=images)
     return ppt_slide
+
+
+def _fetch_pictures(deck: Deck, images: ImageStore | None) -> None:
+    """Download the deck's pictures and videos, a few at a time, before its slides are drawn, which then finds them
+    downloaded (see image_util.fetch_all): all but those the store has, each as large as its largest place needs."""
+    pictures: dict[str, int | None] = {}
+    videos: list[str] = []
+    for slide in deck.slides:
+        for element in slide.elements:
+            if not isinstance(element, ImageElement) or (images is not None and element.image.url in images):
+                continue
+            url, needed = element.image.url, picture_size(element)
+            if url not in pictures:
+                pictures[url] = needed
+            elif pictures[url] is not None:
+                pictures[url] = None if needed is None else max(needed, pictures[url] or 0)
+            if element.image.video_url:
+                videos.append(element.image.video_url)
+    image_util.fetch_all(pictures, videos)
+
+
+# How many pixels a picture keeps for every pixel its place on the slide has (on the 1920 by 1080 canvas): enough for
+# a screen twice as wide (4K), or for zooming in
+PIXELS_PER_PIXEL = 2
+
+
+def picture_size(element: ImageElement) -> int | None:
+    """The longest side, in pixels, that the element's picture needs for its place on the slide (see
+    PIXELS_PER_PIXEL), or None when that isn't known: a picture without a box (the classic template's places), or one
+    that's cropped to fill its box (cover) whose size the deck doesn't tell."""
+    box = element.box
+    if box is None:
+        return None
+    if element.fit != "cover":  # (whole, within its box: its longest side at most the box's)
+        return round(PIXELS_PER_PIXEL * max(box.w, box.h))
+    width, height = element.image.width, element.image.height
+    if not width or not height:
+        return None
+    scale = max(box.w / width, box.h / height)  # (as large as it must be to fill the box)
+    return round(PIXELS_PER_PIXEL * max(width, height) * scale)
 
 
 def image_data(image: ImageAsset, images: ImageStore | None) -> ImageData:
