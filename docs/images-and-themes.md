@@ -114,10 +114,10 @@ the finder's pictures' places once they pass the same checks; a row it turns dow
 | --- | --- | --- |
 | alone, or `on` | the talk's own model when it reads pictures (Claude, OpenAI's models), else OpenRouter's free models that do | as below |
 | `openrouter` | OpenRouter's free models that read pictures: NVIDIA's Nemotron 3.5 Super VL, then dots-3 (`talkgenerator.images.vision.FREE_MODELS`) | nothing, but one request a talk of the free tier's 20 a minute and 1,000 a day (50 without $10 of credits), which the talks themselves use too: a talk takes two |
-| `anthropic:claude-haiku-5-5`, `openai:<model>`, ... | that model, on your own key | Claude Haiku 5.5: about $0.001 a talk, by list price (a sheet of twelve rows is about 1,500 tokens) |
+| `anthropic:claude-haiku-5-5`, `openai:<model>`, ... | that model, on your own key | Claude Haiku 5.5: about $0.001 a talk, by list price (a sheet of ten rows is about 1,500 tokens) |
 | `none` | off (the default) | |
 
-It's one request a talk, however many pictures it has (the first twelve), never with the presenter's name, in the
+It's one request a talk, however many pictures it has (the first ten), never with the presenter's name, in the
 talk's budget and its ledger (`usage.vision_requests` in the deck). In a talk that streams, the slides come with the
 finder's pictures as they would without it, and a slide whose picture the model changed comes again (`slide.updated`)
 once it has answered, before `talk.finished`. The deck says what the model made of every picture it saw (an image's
