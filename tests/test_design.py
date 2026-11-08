@@ -369,6 +369,7 @@ def _runs(seed=1, theme=None):
 
 
 @pytest.mark.parametrize("family", FAMILIES)
+@pytest.mark.slow
 def test_no_layout_comes_twice_in_a_row_and_every_one_passes_the_design_checks(images, family):
     for seed in range(3):
         deck = _runs(seed, _theme(family, seed)).to_deck()
@@ -377,12 +378,14 @@ def test_no_layout_comes_twice_in_a_row_and_every_one_passes_the_design_checks(i
         assert check_design(deck) == [], (family, seed)
 
 
+@pytest.mark.slow
 def test_the_layouts_pass_the_design_checks_in_random_themes(images):
     for seed in range(20):
         theme = themes.pick(themes.RANDOM, random_util.Rng(seed))  # (extremes included)
         assert check_design(_runs(seed, theme).to_deck()) == [], (seed, theme.name)
 
 
+@pytest.mark.slow
 def test_every_layout_comes_up(images):
     seen = set()
     for seed in range(12):
@@ -432,6 +435,7 @@ def _with_long_words(kind):
 
 
 @pytest.mark.parametrize("family", FAMILIES)
+@pytest.mark.slow
 def test_long_words_fit_the_older_layouts_in_every_theme(images, family):
     fitting = {kind: engine.layouts_for(_with_long_words(kind).to_deck_slide()) for kind in _OLDER_KINDS}
     # (each in a run as long as the layouts that fit it, so that every one of them comes up)
@@ -456,6 +460,7 @@ _OPEN_PAIRINGS = [(name, pair) for name, family in themes.FAMILIES.items() for p
 
 
 @pytest.mark.parametrize(("family", "pair"), _OPEN_PAIRINGS, ids=[f"{n}: {h} over {b}" for n, (h, b) in _OPEN_PAIRINGS])
+@pytest.mark.slow
 def test_the_longest_texts_and_long_words_fit_in_every_open_pairing(images, family, pair):
     """(every pairing, not only the ones a few seeds give their members; headings as written, and in capitals where
     a member can have them)"""
@@ -868,6 +873,7 @@ def test_a_text_on_a_photo_needs_its_shade(images):
 
 
 @pytest.mark.parametrize("family", FAMILIES)
+@pytest.mark.slow
 def test_credits_are_small_quiet_and_right_aligned_without_a_band(images, family):
     deck = _runs(theme=_theme(family)).to_deck()
     credited = [slide for slide in deck.slides if slide.credits]
@@ -1001,6 +1007,7 @@ def test_neon_headings_glow(images):
     assert properties.find(qn("a:effectLst")).find(qn("a:glow")) is not None
 
 
+@pytest.mark.slow
 def test_an_outlined_heading_reads_by_its_outline(images):
     theme = _wordart()
     deck = _runs(theme=theme).to_deck()

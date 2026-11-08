@@ -107,6 +107,7 @@ def _longest_texts(kind, word="Expectation"):
 
 
 @pytest.mark.parametrize("family", FAMILIES)
+@pytest.mark.slow
 def test_the_longest_texts_fit_and_read_in_every_theme(images, family):
     longest = [_built(kind, _longest_texts(kind), {"photo": _image("wide")}) for kind in EVERY_KIND]
     shortest = [
@@ -132,6 +133,7 @@ def test_the_longest_texts_fit_and_read_in_every_theme(images, family):
 
 
 @pytest.mark.parametrize("family", FAMILIES)
+@pytest.mark.slow
 def test_long_words_fit_in_every_theme(images, family):
     # (compounds, as Dutch and German have them: a free model's "Mantelstromingen" didn't fit a narrow box)
     made = [

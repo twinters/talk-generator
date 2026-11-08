@@ -322,6 +322,7 @@ def test_every_template_uses_its_slots_variables_through_known_functions(format_
 
 
 @pytest.mark.parametrize("format_name", FORMATS)
+@pytest.mark.slow
 def test_every_template_fills_in_for_every_kind_of_topic(format_name):
     pack = packs.pack(format_name)
     empty, leftovers = [], []
@@ -428,6 +429,7 @@ def _spoken_wrongly(template: str) -> list[str]:
 
 
 @pytest.mark.parametrize("format_name", FORMATS)
+@pytest.mark.slow
 def test_every_template_speaks_of_its_topic_as_english_does(format_name):
     pack = packs.pack(format_name)
     wrong, slips = [], []

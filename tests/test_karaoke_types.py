@@ -122,6 +122,7 @@ def _longest(kind, word="Expectation"):
 
 
 @pytest.mark.parametrize("family", FAMILIES)
+@pytest.mark.slow
 def test_the_longest_texts_fit_and_read_in_every_theme(images, family):
     with_photo = [_built(kind, _longest(kind), {"photo": _image("wide")}) for kind in KARAOKE]
     without = [_built(kind, _longest(kind), {"photo": None}) for kind in KARAOKE]
@@ -135,6 +136,7 @@ def test_the_longest_texts_fit_and_read_in_every_theme(images, family):
 
 
 @pytest.mark.parametrize("family", FAMILIES)
+@pytest.mark.slow
 def test_long_words_fit_in_every_theme(images, family):
     # (compounds, as Dutch and German have them)
     made = [
@@ -148,6 +150,7 @@ def test_long_words_fit_in_every_theme(images, family):
         assert [finding for finding in check_design(deck) if finding.check == "overflow"] == [], (family, seed)
 
 
+@pytest.mark.slow
 def test_every_layout_comes_up_and_needs_what_it_says(images):
     seen = set()
     runs = [slide for slide in every_karaoke_type(_image("wide")) for _ in range(3)]
@@ -294,6 +297,7 @@ def _column(element, lefts):
     return max(left for left in lefts if left <= element.box.x)
 
 
+@pytest.mark.slow
 def test_a_walls_fine_print_has_a_floor_of_its_own(images):
     long_points = [" ".join(["Expectation"] * 12)[:140]] * slides.WALL_POINTS
     for family in FAMILIES:

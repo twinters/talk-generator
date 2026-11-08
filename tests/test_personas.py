@@ -360,6 +360,7 @@ def test_the_persona_says_how_the_presenter_goes_by(schema):
     assert "with a title such as Dr. or Prof. if it suits" not in description
 
 
+@pytest.mark.slow
 def test_the_persona_s_name_styles_come_up_more_often():
     historian = personas.persona("medieval_historian")
     asked = collections.Counter(

@@ -82,6 +82,7 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 markers = [
     "network: talks to external APIs or websites (deselect with -m 'not network')",
+    "slow: draws whole decks in every theme family, or sweeps every template: the quick set leaves them out (-m 'not network and not slow')",
 ]
 log_level = "INFO"
 log_format = "[%(levelname)s %(asctime)s %(filename)s:%(lineno)s] %(message)s"

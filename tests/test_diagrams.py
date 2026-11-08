@@ -720,6 +720,7 @@ def test_a_classic_diagram_keeps_the_templates_font_and_colours():
     assert [shapes[f"Circle {number}"].fill.fore_color.rgb for number in (1, 2)] == list(diagrams.COLOURS[:2])
 
 
+@pytest.mark.slow
 def test_themed_diagrams_read_and_fit_in_every_theme():
     three = _venn(circle_3="Things my doctor approves of")
     for family in [*themes.FAMILIES, themes.RANDOM]:

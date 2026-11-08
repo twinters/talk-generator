@@ -84,6 +84,7 @@ def test_the_committed_families_keep_to_their_palettes():
 
 
 @pytest.mark.parametrize("family", FAMILIES)
+@pytest.mark.slow
 def test_every_family_decorates_its_slides_and_passes_the_design_checks(images, family):
     for seed in range(2):
         deck = _runs(seed, _theme(family, seed)).to_deck()
@@ -141,6 +142,7 @@ def test_some_families_have_section_slides_of_their_own(images):
         assert layout in seen, family
 
 
+@pytest.mark.slow
 def test_a_kindergartens_title_has_scenery_and_its_slides_bunting(images):
     deck = _runs(1, _theme("kids")).to_deck()
     first = engine.lay_out(_deck(theme=_theme("kids")).to_deck(), _theme("kids")).slides[0]
@@ -382,6 +384,7 @@ def test_a_tint_is_laid_over_a_picture_everywhere(images):
     assert tinted.getpixel((5, 5)) != (0, 0, 255) and tinted.getpixel((5, 5))[2] > 200  # (a slight cast)
 
 
+@pytest.mark.slow
 def test_families_keep_their_treatments_apart_from_their_decoration(images):
     # (a family's pictures in boxes get its own frame: a terminal's window, a sticker's border; not its border too)
     for family in ("hacker terminal", "kids", "blueprint"):

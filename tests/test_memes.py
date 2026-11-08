@@ -163,6 +163,7 @@ def _longest(template, number, word="Expectation"):
 
 
 @pytest.mark.parametrize("family", FAMILIES)
+@pytest.mark.slow
 def test_every_template_fits_and_reads_in_every_theme(pictures, family):
     longest = [
         _meme(template, [_longest(template, n) for n in range(1, template.captions + 1)]) for template in TEMPLATES
@@ -173,6 +174,7 @@ def test_every_template_fits_and_reads_in_every_theme(pictures, family):
         assert check_design(deck) == [], (family, seed)
 
 
+@pytest.mark.slow
 def test_long_words_fit_in_every_template(pictures):
     made = [
         _meme(template, [_longest(template, n, "Brandweerkazernedeur") for n in range(1, template.captions + 1)])
