@@ -27,6 +27,7 @@ says which styles it may have goes by those alone.
 from __future__ import annotations
 
 import dataclasses
+import itertools
 import json
 import logging
 import re
@@ -87,11 +88,12 @@ STYLES: Final[dict[str, Style]] = {
             FAMOUS_PUN,
             "Famous-name puns",
             "a historical figure's name bent to fit the topic, such as Albert Einstone for geology",
-            "a made-up name for the presenter: the name of one famous historical figure that everyone knows, with a "
-            "part of it changed into a word about the talk's topic, so that both still show; never the real name as "
-            "it is, and never the name of a living person, a dictator or a criminal",
-            "the famous historical figure whose name the presenter's name will bend, and the word about the talk's "
-            "topic that goes into it",
+            "a made-up name for the presenter: the name of one famous historical figure who died long ago, that "
+            "everyone knows, with a part of it changed into a word about the talk's topic, so that both still show; "
+            "never the real name as it is, and never the name of anyone alive today (however old or famous), a "
+            "dictator or a criminal",
+            "the famous historical figure who died long ago whose name the presenter's name will bend, and the word "
+            "about the talk's topic that goes into it",
         ),
         Style(CLASSIC, "Random names", "a first and a last name at random, as in 2019", "", default=False),
     )
@@ -318,27 +320,9 @@ _PLACEHOLDERS: Final = frozenset(
         "nome",
     }
 )
-# Names that never go on a title slide, even bent into a pun: dictators and their like, and the living people models
-# reach for most (a famous-name pun is about a historical figure who died long ago)
-_BLOCKED_WORDS: Final = frozenset(
-    {
-        "adolf",
-        "mao",
-        "saddam",
-        "osama",
-        "trump",
-        "putin",
-        "biden",
-        "obama",
-        "elon",
-        "musk",
-        "zuckerberg",
-        "bezos",
-        "kardashian",
-        "beyonce",
-        "jinping",
-    }
-)
+# Names that never go on a title slide, even bent into a pun: dictators and their like (and famous living people: see
+# _LIVING_PEOPLE)
+_BLOCKED_WORDS: Final = frozenset({"adolf", "mao", "saddam", "osama", "putin", "jinping"})
 _BLOCKED_STARTS: Final = (
     "hitler",
     "stalin",
@@ -352,22 +336,56 @@ _BLOCKED_STARTS: Final = (
     "qaddaf",
     "nazi",
 )
-# (Word for word, each word as the start of one: "Taylor Swiftly" and "Donald Trumpet" too)
+# (Word for word, each word as the start of one: "Pol Potter" too)
 _BLOCKED_PHRASES: Final = (
     ("pol", "pot"),
     ("idi", "amin"),
     ("bin", "laden"),
     ("kim", "jong"),
     ("xi", "jinping"),
-    ("donald", "trump"),
     ("vladimir", "putin"),
-    ("joe", "biden"),
-    ("barack", "obama"),
-    ("mark", "zuckerberg"),
-    ("jeff", "bezos"),
-    ("kim", "kardashian"),
-    ("taylor", "swift"),
 )
+# Famous living people, whose names models reach for in puns: a free model named a keynote's presenter "Umbrella
+# Chomsky" (2026-11-08), where a famous-name pun bends the name of a historical figure who died long ago (section 5.10
+# of docs/v5-plan.md). A name with an asterisk is theirs alone, and a presenter's name with it goes, whatever its other
+# words ("Umbrella Chomsky", "Oprah Windfrey"): no classic name has it (but Trump, as the blocklist had it), nor is it a
+# word that a fun surname could be (a gosling is a young goose, "streep" a Dutch stripe, "stallone" an Italian
+# stallion). Their other names are ordinary ones ("Swift", "Gates"), which only count together, the first name before
+# the surname, as they are or with one of them bent ("Taylor Swiftly", "Gordon Hamsay", "Tailor Swift": see
+# _living_person), so "Dr. Emma Swift" stays
+_LIVING_PEOPLE: Final = """
+    Donald *Trump, Joe *Biden, *Barack *Obama, Michelle *Obama, Hillary Clinton, Bill Clinton, Kamala Harris, Emmanuel
+    *Macron, Angela Merkel, Boris Johnson, Keir *Starmer, Justin Trudeau, Volodymyr *Zelensky, Narendra Modi, Benjamin
+    *Netanyahu, Recep Tayyip *Erdoğan, Bernie Sanders, Al Gore, Greta *Thunberg, *Malala *Yousafzai, *Dalai Lama,
+    Meghan Markle, Mark Rutte,
+    *Elon *Musk, Bill Gates, Jeff *Bezos, Mark *Zuckerberg, Tim Cook, Steve Wozniak, Sam Altman, Jensen Huang, Sundar
+    *Pichai, Satya *Nadella, Larry Page, Sergey Brin, Linus *Torvalds, Tim Berners-Lee, Warren *Buffett, Richard
+    Branson, Martha Stewart,
+    Noam *Chomsky, David *Attenborough, Neil *deGrasse Tyson, Bill Nye, Richard Dawkins, Brian Cox, Michio *Kaku, Roger
+    Penrose, Steven Pinker, Yuval Noah Harari, Jordan Peterson, Buzz *Aldrin, Chris Hadfield, Malcolm *Gladwell, Marie
+    Kondo, Bear *Grylls,
+    Gordon Ramsay, Jamie Oliver, Nigella Lawson, Mary Berry, Paul Hollywood, Guy Fieri, Heston Blumenthal, Wolfgang
+    Puck,
+    *Usain Bolt, Serena Williams, Roger *Federer, Rafael Nadal, Novak *Djoković, Lionel *Messi, Cristiano Ronaldo,
+    LeBron James, Michael Jordan, Tiger Woods, Michael Phelps, Simone Biles, Tom Brady, Wayne *Gretzky, Mike Tyson,
+    Tony Hawk, Max *Verstappen, Lewis Hamilton, Eddy *Merckx, *Zlatan Ibrahimović, David Beckham, Kylian *Mbappé,
+    *Shaquille O'Neal, Tadej *Pogačar, Remco *Evenepoel,
+    Taylor Swift, *Beyoncé, *Rihanna, Lady Gaga, Ed Sheeran, Justin Bieber, Billie *Eilish, Dolly Parton, Elton John,
+    Paul McCartney, Ringo Starr, Mick Jagger, Bob Dylan, Bruce *Springsteen, Snoop Dogg, *Eminem, *Shakira, Céline
+    Dion, *Kanye West, Britney Spears, Katy Perry, Harry Styles, Bruno Mars, Ariana Grande, Miley Cyrus, *Stromae,
+    Tom Hanks, Tom Cruise, Brad Pitt, Leonardo *DiCaprio, Meryl Streep, Morgan Freeman, Johnny Depp, *Keanu Reeves,
+    Harrison Ford, Steven *Spielberg, George Lucas, Quentin Tarantino, Christopher Nolan, Tim Burton, Danny DeVito, Ryan
+    Gosling, Ryan Reynolds, Benedict Cumberbatch, Nicolas Cage, Kevin Bacon, Samuel L. Jackson, Dwayne Johnson,
+    Sylvester Stallone, Jackie Chan, Jim Carrey, Bill Murray, *Oprah Winfrey, Ellen *DeGeneres, Simon Cowell, Kim
+    *Kardashian, Paris Hilton, Rowan Atkinson, John *Cleese, Ricky Gervais, Jerry *Seinfeld, Emma Watson, Daniel
+    Radcliffe, Hugh Jackman, Arnold *Schwarzenegger, Jennifer Aniston, *Zendaya, Timothée *Chalamet, Chris *Hemsworth,
+    J. K. *Rowling, Stephen King, George R. R. Martin, Margaret Atwood, Salman *Rushdie, Dan Brown, Neil *Gaiman, Paulo
+    Coelho, Haruki Murakami, *Banksy, Yoko Ono, Ai Weiwei, Damien Hirst, David *Hockney, Jeff Koons, *MrBeast,
+    *PewDiePie
+"""
+# The classic names (tracery's full_name), whose first names and surnames are ordinary ones: none of them bends a living
+# person's name ("Cookson" isn't Cook bent)
+CLASSIC_NAMES_FILE: Final = "data/text-templates/name.json"
 _QUOTE_MARKS: Final = "\"'“”‘’«»"
 
 
@@ -441,8 +459,9 @@ def real_person(text: str) -> str | None:
     talkgenerator.images.safety); the name as the text has it, or None."""
     words = _plain_words(text)
     for start in range(len(words)):
-        if _blocked(words[start : start + 3]):
-            return " ".join(words[start : start + 2])
+        for end in range(start + 1, min(start + 3, len(words)) + 1):  # (one word, or a name of two or three)
+            if _blocked(words[start:end]):
+                return " ".join(words[start:end])
     for famous in _famous_names():
         if _has_words(words, famous):
             return " ".join(famous)
@@ -453,14 +472,117 @@ def real_person(text: str) -> str | None:
 
 
 def _blocked(words: Sequence[str]) -> bool:
-    """Whether a name's words (see _plain_words) name someone a talk doesn't go out under."""
+    """Whether a name's words (see _plain_words) name someone a talk doesn't go out under: a dictator or their like,
+    or a famous living person (see _living_person)."""
     if _BLOCKED_WORDS & set(words) or any(word.startswith(_BLOCKED_STARTS) for word in words):
         return True
-    return any(
+    if any(
         all(words[start + offset].startswith(part) for offset, part in enumerate(phrase))
         for phrase in _BLOCKED_PHRASES
         for start in range(len(words) - len(phrase) + 1)
+    ):
+        return True
+    return _living_person(words)
+
+
+@dataclass(frozen=True)
+class _Living:
+    """The famous living people's names (_LIVING_PEOPLE), as words: those that are theirs alone, and their surnames by
+    first name and first names by surname."""
+
+    alone: frozenset[str]
+    surnames: Mapping[str, frozenset[str]]
+    first_names: Mapping[str, frozenset[str]]
+
+
+@cache
+def _living() -> _Living:
+    """The names of _LIVING_PEOPLE, as words (see _Living)."""
+    alone: set[str] = set()
+    surnames: dict[str, set[str]] = {}
+    first_names: dict[str, set[str]] = {}
+    for person in _LIVING_PEOPLE.split(","):
+        parts = person.split()
+        alone.update(word for part in parts if part.startswith("*") for word in _plain_words(part))
+        names = [word for word in _plain_words(person) if len(word) > 1]  # (no initials)
+        surname = next((word for word in _plain_words(parts[-1]) if len(word) > 1), None) if parts else None
+        if len(names) > 1 and surname is not None and surname != names[0]:  # (a first name and a surname)
+            surnames.setdefault(names[0], set()).add(surname)
+            first_names.setdefault(surname, set()).add(names[0])
+    return _Living(
+        frozenset(alone),
+        {first: frozenset(names) for first, names in surnames.items()},
+        {surname: frozenset(names) for surname, names in first_names.items()},
     )
+
+
+@cache
+def _ordinary_names() -> tuple[frozenset[str], frozenset[str]]:
+    """The first names and the surnames of the classic names (CLASSIC_NAMES_FILE), as words: ordinary names."""
+    with open(os_util.to_actual_file(CLASSIC_NAMES_FILE), encoding="utf-8") as file:
+        grammar = json.load(file)
+
+    def words(*rules: str) -> frozenset[str]:
+        return frozenset(word for rule in rules for name in grammar[rule] for word in _plain_words(str(name)))
+
+    return words("male_name", "female_name"), words("last_name")
+
+
+def _living_person(words: Sequence[str]) -> bool:
+    """Whether a name's words (see _plain_words) name a famous living person (see _LIVING_PEOPLE): a name that's theirs
+    alone ("Umbrella Chomsky"), or their first name and their surname in a row (an initial between them aside), as
+    they are, or with one of the two bent ("Taylor Q. Swiftly", "Gordon Hamsay", "Tailor Swift": see _bent) into what
+    no classic name is: "Tim Cookson" and "Jill Gates" stay, as the classic names have Cookson and Jill."""
+    living = _living()
+    if living.alone & set(words):
+        return True
+    first_names, surnames = _ordinary_names()
+    names = [word for word in words if len(word) > 1]
+    for first, surname in itertools.pairwise(names):
+        theirs = living.surnames.get(first, frozenset())
+        if surname in theirs or (
+            surname not in surnames and any(_bent(surname, their_surname) for their_surname in theirs)
+        ):
+            return True
+        if first not in first_names and first not in surnames:
+            if any(_bent(first, their_first) for their_first in living.first_names.get(surname, ())):
+                return True
+    return False
+
+
+# How a word bends a name (see _bent): it starts with the name's first letters (all of a shorter name's), or it's a
+# letter off the name (one added, left out or changed: "Hamsay" for Ramsay, "Goosling" for Gosling), or two off a
+# long one
+_BENT_START: Final = 5  # (the name's first letters)
+_LEAST_TO_BEND: Final = 4  # (a shorter name is only bent by what starts with it)
+_LONG_NAME: Final = 9  # (two letters off)
+
+
+def _bent(word: str, name: str) -> bool:
+    """Whether a word bends a name (see _BENT_START), as a pun does: "Swiftly" bends Swift, "Hamsay" Ramsay,
+    "Cucumberbatch" Cumberbatch."""
+    if word == name or len(word) < 3:
+        return False
+    if word.startswith(name[:_BENT_START]):
+        return True
+    return len(name) >= _LEAST_TO_BEND and _edits_within(word, name, 2 if len(name) >= _LONG_NAME else 1)
+
+
+def _edits_within(word: str, other: str, most: int) -> bool:
+    """Whether a word is at most so many edits (a letter added, left out or changed) from another one."""
+    if abs(len(word) - len(other)) > most:
+        return False
+    previous = list(range(len(other) + 1))
+    for index, letter in enumerate(word, 1):
+        current = [index]
+        for other_index, other_letter in enumerate(other, 1):
+            current.append(
+                min(previous[other_index] + 1, current[-1] + 1, previous[other_index - 1] + (letter != other_letter))
+            )
+        if min(current) > most:
+            return False
+        previous = current
+    return previous[-1] <= most
 
 
 # A TALK'S NAME

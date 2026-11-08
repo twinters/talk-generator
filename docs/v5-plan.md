@@ -569,7 +569,7 @@ its seed picks among the switched-on ones (`name_styles=` on `generate_presentat
 | --- | --- | --- |
 | `pun` | yes | "Prof. Anna Tomy" for a talk on medicine, "Dr. Matthew Mathics" for maths |
 | `fun_surname` | yes | an ordinary first name with a surname that fits too well: "Linda Hivesworth" for bees |
-| `famous_pun` | yes (D33) | a historical figure's name bent to fit: "Albert Einstone" for geology, "Vincent van Goat" for goats |
+| `famous_pun` | yes (D33) | a historical figure's name (of someone who died long ago) bent to fit: "Albert Einstone" for geology, "Vincent van Goat" for goats |
 | `classic` | no | tracery's random first and last name, as in 2019 |
 
 - **A given name goes first** (`presenter=`, the site's "custom name"), and never reaches the model: the request
@@ -582,9 +582,20 @@ its seed picks among the switched-on ones (`name_styles=` on `generate_presentat
   examples.
 - **Checked like the other fields.** A name is turned down when it's longer than 45 characters (a name isn't cut:
   half a name is no name), holds template code or what no name has (digits, brackets, commas), is a placeholder
-  ("Presenter Name", in the talks' languages), names a dictator or one of the living people models reach for
-  most (a short blocklist, which word beginnings match too: "Donald Trumpet"), or is the real name of a famous person
-  whose name the pack bends ("Marie Curie"). Then the talk gets the name a talk without a model gets.
+  ("Presenter Name", in the talks' languages), names a dictator (a short blocklist, which word beginnings match
+  too: "Pol Potter") or a famous living person, or is the real name of a famous person whose name the pack bends
+  ("Marie Curie"). Then the talk gets the name a talk without a model gets.
+- **Famous living people** (`names._LIVING_PEOPLE`, since 2026-11-08, when a free model named a keynote's presenter
+  "Umbrella Chomsky"): 175 that models reach for, from presidents to chefs. A name that's theirs alone counts on its
+  own ("Chomsky", "Oprah", "Zuckerberg"); their ordinary names only together, the first name before the surname, as
+  they are or with one of them bent into what no classic name is (`names._bent`: starting with the name's first five
+  letters, or a letter off it, two off a long one): "Taylor Swiftly", "Gordon Hamsay", "Ryan Goosling", "Tailor
+  Swift" and "Bread Pitt" go, "Dr. Emma Swift", "Tim Cookson" (a classic surname) and "Greta Gosling" (a young
+  goose) stay. A test holds every classic surname (18,839) and first name (2,297) to that: only Trump, which the
+  blocklist had, and Mao go. What it misses, a name of theirs alone bent ("Gnome Chompsky", "Beeyoncé") and
+  both of an ordinary name bent ("Justin Beaver"), the request asks the model not to write: a famous-name pun is on
+  "one famous historical figure who died long ago", never "anyone alive today (however old or famous)". The same
+  list keeps generated pictures from naming them (`names.real_person`).
 - **The talk's language.** The model writes the name in it, with wordplay that works in that language.
 - **Without a model** (none configured, the quota used up, a refusal, or a name that won't do), the name comes
   from talkgenerator's own pack (`data/text-templates/presenter_names.json`, D34): 279 names by style and topic,
@@ -617,6 +628,12 @@ Live on 2026-11-07, with OpenRouter's free router (3-slide talks, seed 1, one re
   Aquinas; "Dr. Marco Pillarate" for pirates, on Marco Polo). Puns stay hit and miss with the free models ("Dr.
   Rail Thane" for trains, "Dr. Chayze" for cheese).
 - The seed's dice gave every talk the same persona (a medieval historian), which shows in the names ("Bede").
+
+Live on 2026-11-08, after "Umbrella Chomsky" and with the famous living people turned down: ten famous-name puns
+(eight by the free models, two by Claude Haiku 5.5, on topics that tempt puns on the living: linguistics, geese,
+cooking, rockets, tennis, pop music, umbrellas, tidying up): nine bent someone who died long ago ("Dr. Leonardo da
+Goose", "Nikola TeslARocket", "Dr. Beethovpop", "Prof. Sinta-crates", on Socrates) or no one ("Dr. Umbra the
+Scholastic"), and tennis got "Serena Serve", an ordinary first name and a word, which stays. None had to go.
 
 ### 5.11 Topic or title
 
