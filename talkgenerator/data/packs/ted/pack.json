@@ -1,11 +1,12 @@
 {
   "format": "ted",
   "about": "The classic texts of TED-like talks (the default, ted, interview and test schemas): a grammar per kind of slide, whose rules are lists of templates (see talkgenerator.sources.packs)",
-  "version": 3,
+  "version": 4,
   "versions": {
     "1": "2026-11-08: v4's templates and milestone 6's, from data/text-templates and data/memes.json, unchanged (D54)",
     "2": "2026-11-08: grown in a TED talk's voice, several times the options per slot (titles, about me, history, statements, captions, charts, diagrams, numbers, quizzes, mockups, structure, karaoke types, memes and conclusions), speaking of the topic as English does (generic, one, bare), linted by tests/test_content_pack.py",
-    "3": "2026-11-08: the next karaoke types' texts: a wall of text (its titles, points of jargon and highlighted punchlines), an alignment chart's titles and cells, red flags, reviews and their reviewers, and fake error messages with their codes and buttons"
+    "3": "2026-11-08: the next karaoke types' texts: a wall of text (its titles, points of jargon and highlighted punchlines), an alignment chart's titles and cells, red flags, reviews and their reviewers, and fake error messages with their codes and buttons",
+    "4": "2026-11-08: twists for real fun facts (D60): what a classic fun fact says after a true sentence of Wikipedia's about the slide's seed (\"Coincidence? I think not.\")"
   },
   "slots": {
     "title.talk_title": {"variables": ["seed"], "field": "title.title"},
@@ -81,6 +82,7 @@
     "structure.questions_subtitle": {"variables": ["seed"], "field": "questions.subtitle"},
     "karaoke.fun_fact": {"variables": ["seed", "related", "number", "percent", "year"], "field": "fun_fact.fact"},
     "karaoke.fun_fact_years": {"variables": [], "limit": 4},
+    "karaoke.fun_fact_twist": {"variables": [], "limit": 40},
     "karaoke.acronym_title": {"variables": ["seed", "acronym"], "field": "acronym.title"},
     "karaoke.acronyms": {"variables": [], "field": "acronym.acronym"},
     "karaoke.buzzword_*": {"variables": [], "field": "acronym.word_1"},

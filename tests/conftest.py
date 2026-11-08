@@ -58,3 +58,6 @@ def _offline_tests_use_no_real_credentials(request, monkeypatch, tmp_path):
     monkeypatch.setenv("TALKGENERATOR_CACHE_DIR", str(tmp_path / "cache"))
     # Talks are classic unless a test asks for a theme (the default is random: see test_the_default_theme_is_random)
     monkeypatch.setenv("TALKGENERATOR_THEME", "classic")
+    # And without real facts (Wikipedia's, Open Trivia DB's), unless a test brings fakes of their sources: see
+    # tests/test_facts.py
+    monkeypatch.setenv("DISABLE_FACTS", "1")

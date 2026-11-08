@@ -1,0 +1,482 @@
+"""Real facts in talks (docs/v5-plan.md, section 11, D60): a few true things for the nonsense to build on.
+
+In a talk a language model writes, up to three of its slides that can build on a fact get one each, in the talk's one
+request: a slide of history (a made-up historical figure's quote, two old photos of moments in history, a timeline), a
+fun fact ("Did you know?"), a quiz or a big number. The facts are sentences of the lead of the topic's English
+Wikipedia article, and events of the day the talk is made on, from Wikipedia's main page ("On this day"), which the
+slides of history get first. The model keeps what a fact says true where its slide states it, and twists it: "Only one
+species, the Galapagos penguin, lives at the equator" becomes a fun fact about why. A slide that builds on its fact
+credits its article (CC BY-SA 4.0).
+
+No fact about a living person goes on a slide: none for a topic that is one (English Wikipedia's "Category:Living
+people"), and none that names one (an article its sentence names, of the articles the lead links to, or that an event
+links to); nor one with a word a slide shouldn't make light of (see slide_texts.sensitive) or of death, war, disasters,
+crime and accusations, politics or race (_GRIM_WORDS), nor one about real-world politics (see
+talkgenerator.checks.deck.real_politics). When Wikipedia can't tell who's living, the facts that name someone stay out.
+
+The facts are looked up once a talk, while its slides' seeds are (before the request, which waits for them), from the
+cache of API responses (a week) or within a few seconds (DEADLINE, from the talk's start): a talk whose sources are
+down goes without them, and so does one whose facts don't come in time (the next talk asks again, and gets the answers
+that came too late from the cache). The deck records every fact it was given (Deck.facts): its text, its page and its
+license, and its slide. With the same answers, the same seed gives the same
+deck, also when facts came too late: in a block of http_util.same_answers (`talkgenerator check`), a talk made again
+gets the facts the first one got.
+
+Classic talks (English) have them where they fit: half of their fun facts are a real sentence about the slide's seed,
+from Wikipedia, with an absurd twist of the content pack's, and half of their quizzes a real one from Open Trivia DB
+(talkgenerator.sources.opentdb), of the topic's kind (animals for penguins), credited on the slide. DISABLE_FACTS=1
+turns all of it off, DISABLE_WIKIPEDIA=1 and DISABLE_OPENTDB=1 a source.
+"""
+
+from __future__ import annotations
+
+import datetime
+import logging
+import re
+import threading
+import time
+from collections.abc import Callable, Iterable, Sequence
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
+from typing import Final
+from urllib.parse import unquote
+
+from talkgenerator import settings
+from talkgenerator.datastructures.image_data import CreditPart
+from talkgenerator.models.deck import Fact
+from talkgenerator.sources import opentdb, wikipedia
+from talkgenerator.util import http_util, random_util
+
+logger = logging.getLogger("talkgenerator")
+
+MOST: Final = 3  # facts in a talk's request, at most: one a slide
+LONGEST: Final = 240  # characters in a fact for the request, at most
+DEADLINE: Final = 8.0  # seconds from the start of a talk for its facts to come in (its seeds take 3 to 5)
+REAL_SHARE: Final = 0.5  # of the classic fun facts and quizzes that are real ones, when they can be
+
+# What a slide of each kind does with its fact, as the request says it on the slide's line
+_ASKS: Final = {
+    "fun_fact": "Build it on this real fact: keep what it says true, and give it an absurd twist",
+    "quiz": "Ask about this real fact: what it says is the right option's, and the other options are made up",
+    "big_number": "Start from this real fact: its number can be the big one, with an absurd twist in what it counts",
+    "timeline": "Put this real moment among the made-up ones, with its real date",
+    "history_quote": "The made-up figure lived through this real moment, or speaks of it",
+    "history": "One of the moments is this real one",
+}
+# The uses that would rather have an event of the day than a sentence of the topic's article
+_HISTORY: Final = frozenset({"timeline", "history_quote", "history"})
+# Words of facts a talk shouldn't make light of, besides the slides' (slide_texts.sensitive), which history is full
+# of: death, war, disasters, crime and accusations, politics and race (a word ending in "*" stands for every word it
+# starts). A word of the talk's topic is no reason (a talk on the Dead Sea may say "dead").
+_GRIM_WORDS: Final = (
+    "die dies died dead dying death* deadl* fatal* casualt* victim* kill* murder* massacr* slaughter* assassin* "
+    "executed execution* suicid* drown* war wars warfare wartime warship* battle* army armies soldier* troop* "
+    "militar* attack* bomb bombs bombed bombing* bomber* shooting* gunfire gunman gunmen weapon* missile* nuclear "
+    "invad* invasion* genocid* terror* hostage* kidnap* hijack* riot riots coup coups rebel* uprising* earthquake* "
+    "tsunami* disaster* catastroph* crash* explosion* exploded famine* epidemic* pandemic* plague* cancer* disease* "
+    "injur* wounded wounds slave* slavery enslav* prison* imprison* arrest* convict* sentenced crime* criminal* "
+    "alleged allegedly accus* scandal* abus* elected election* electoral vote voted votes voting voter* senat* "
+    "parliament* congress* president* minister* politic* government* referendum* treaty treaties protest* regime* "
+    "dictator* communis* fascis* sanction* annex* racial* racism* racist* segregat* apartheid ethnic* indigenous "
+    "tribe tribes tribal"
+)
+_GRIM: Final = re.compile(
+    r"\b(?:"
+    + "|".join(re.escape(word[:-1]) + r"\w*" if word.endswith("*") else re.escape(word) for word in _GRIM_WORDS.split())
+    + r"|african[- ]americans?|civil rights)\b",
+    re.IGNORECASE,
+)
+# What makes a sentence a fun fact rather than what the topic is: a number, or a word that says how special it is
+_SURPRISING: Final = re.compile(
+    r"\d|\b(?:only|first|most|least|largest|smallest|biggest|oldest|youngest|longest|shortest|fastest|slowest|"
+    r"highest|lowest|never|every|unique|rare|rarely|record|unlike|despite|surprisingly)\b",
+    re.IGNORECASE,
+)
+_YEAR: Final = re.compile(r"\b(?:1[0-9]{3}|20[0-9]{2})\b|\b\d{1,2}(?:st|nd|rd|th) century\b|\bBC\b|\bBCE\b")
+_FIGURE: Final = re.compile(r"\d")
+# Where a sentence ends: before a space and a capital, quote or digit, unless what ends there is an initial ("H. G.
+# Wells") or an abbreviation
+_SENTENCE_END: Final = re.compile(r"(?<=[.!?])\s+(?=[\"“'‘(\[A-Z0-9])")
+_ABBREVIATIONS: Final = frozenset(
+    "mr mrs ms dr prof st jr sr mt ft no nos vs etc al approx ca c e.g i.e u.s u.k inc ltd co corp gen lt col sgt rev "
+    "fig jan feb mar apr jun jul aug sep sept oct nov dec".split()
+)
+_BRACKETS: Final = re.compile(r"\s*\([^()]*\)|\s*\[[^\[\]]*\]")
+
+
+def on() -> bool:
+    """Whether talks get real facts: unless DISABLE_FACTS says they don't."""
+    return not settings.is_source_disabled("FACTS")
+
+
+def use_of(kind: str, tags: Iterable[str] = ()) -> str | None:
+    """What a planned slide of a kind (with its generator's tags) does with a real fact, or None if it has no use for
+    one: a fun fact's, a quiz's, a big number's, a timeline's and a historical figure's quote's, and a slide of
+    history's (two old photos of moments in history)."""
+    if kind in _ASKS and kind != "history":
+        return kind
+    return "history" if "history" in tags else None
+
+
+@dataclass(frozen=True)
+class Candidate:
+    """A fact that a slide could get: its text, its page, where it's from (an article's lead, or the day's events),
+    whether it's the article's first sentence (what the topic is), and the articles it names (by title)."""
+
+    text: str
+    url: str
+    day: bool = False  # an event of the day's (with its date), not a sentence of the topic's article
+    first: bool = False
+    names: tuple[str, ...] = ()
+
+    @property
+    def dated(self) -> bool:
+        return self.day or bool(_YEAR.search(self.text))
+
+    @property
+    def figure(self) -> bool:
+        return bool(_FIGURE.search(self.text))
+
+    @property
+    def surprising(self) -> bool:
+        """Whether it says how special something is (a sentence of the article's lead, but its first)."""
+        return not self.first and not self.day and bool(_SURPRISING.search(self.text))
+
+    def fact(self, slide: int | None = None, use: str = "prompt") -> Fact:
+        return Fact(
+            text=self.text,
+            source="Wikipedia",
+            url=self.url,
+            license=wikipedia.LICENSE,
+            license_url=wikipedia.LICENSE_URL,
+            slide=slide,
+            use="slide" if use == "slide" else "prompt",
+        )
+
+
+@dataclass(frozen=True)
+class Sheet:
+    """The facts found for a talk: its topic's article's (if any), and the day's events', none about living people,
+    in the order they came."""
+
+    candidates: tuple[Candidate, ...] = ()
+
+
+EMPTY: Final = Sheet()
+
+
+@dataclass(frozen=True)
+class Given:
+    """A fact a planned slide gets, with what the slide does with it (see use_of)."""
+
+    use: str
+    fact: Fact
+
+    def line(self) -> str:
+        """What the request says about it, after the slide's brief."""
+        text = self.fact.text.replace('"', "'")
+        return f'{_ASKS[self.use]}: "{text}"'
+
+
+# THE FACTS OF A TALK A LANGUAGE MODEL WRITES
+
+
+def request_line(language: str = "en") -> str:
+    """What the request says about the facts, once, when some of its slides get one."""
+    english = (
+        " The facts are in English; write the slides in the talk's language, as asked." if language != "en" else ""
+    )
+    return (
+        "Real facts: some slides come with one (from Wikipedia), to mix with the nonsense. Keep what a fact says true "
+        "where the slide states it, put the absurd around it, and pin nothing made up on a real person." + english
+    )
+
+
+class Gathering:
+    """The facts of a talk being looked up in the background, from the start of the talk: result() waits for them
+    until DEADLINE seconds after that start, and gives none if they're not in by then (they're kept in the cache for
+    the next talk). In a block of http_util.same_answers, a talk made again gets what the first one got."""
+
+    def __init__(self, key: tuple[object, ...], work: Callable[[], Sheet], deadline: float | None = None) -> None:
+        self._key = key
+        self._until = time.monotonic() + (DEADLINE if deadline is None else deadline)
+        self._done = threading.Event()
+        self._sheet = EMPTY
+        threading.Thread(target=self._run, args=(work,), name="facts", daemon=True).start()
+
+    def _run(self, work: Callable[[], Sheet]) -> None:
+        try:
+            self._sheet = work()
+        except Exception:  # a source that misbehaves shouldn't sink the talk: it goes without facts
+            logger.exception("Looking up real facts for the talk crashed: it goes without them")
+        finally:
+            self._done.set()
+
+    def result(self) -> Sheet:
+        return http_util.keep(self._key, self._wait)
+
+    def _wait(self) -> Sheet:
+        # (a talk that's late may be a busy computer's rather than Wikipedia's: so the next talk asks as always, and
+        # gets the answers that came too late for this one from the cache. Wikipedia's own outages and slow answers
+        # keep it out for a while, as every source's do: see http_util.search_json)
+        if not self._done.wait(max(0.0, self._until - time.monotonic())):
+            logger.warning("Real facts didn't come in %.0f seconds: the talk goes without them", DEADLINE)
+            return EMPTY
+        return self._sheet
+
+
+def gather(topic: str, language: str = "en", today: datetime.date | None = None) -> Gathering:
+    """Start looking up a talk's facts (see Gathering): its topic's English Wikipedia article's, and the day's events
+    (of today, unless another day is given)."""
+    day = today or datetime.date.today()
+    return Gathering(("facts", topic, language, day.isoformat()), lambda: look_up(topic, language, day))
+
+
+def look_up(topic: str, language: str, day: datetime.date) -> Sheet:
+    """A talk's facts (see the module's documentation): the article's sentences, and the day's events, that pass
+    the checks, none about a living person."""
+    if not on() or not wikipedia.available():
+        return EMPTY
+    started = time.monotonic()
+    with ThreadPoolExecutor(max_workers=2, thread_name_prefix="facts") as pool:
+        found = pool.submit(wikipedia.article, topic, language)
+        happened = pool.submit(wikipedia.on_this_day, day.month, day.day)
+        article, events = found.result(), happened.result()
+    looked_up = time.monotonic()
+    candidates = [*article_candidates(article, topic), *day_candidates(events, day, topic)]
+    checked = time.monotonic()
+    kept = without_living(candidates)
+    logger.info(
+        "Real facts: %s of %s (%s), %s of the day's %s events, in %.1f s (%.1f s to look up, %.1f s to check, %.1f s "
+        "for who's living)",
+        sum(not candidate.day for candidate in kept),
+        "the article" if article is not None else "no article",
+        article.title if article is not None else topic,
+        sum(candidate.day for candidate in kept),
+        len(events),
+        time.monotonic() - started,
+        looked_up - started,
+        checked - looked_up,
+        time.monotonic() - checked,
+    )
+    return Sheet(tuple(kept))
+
+
+def article_candidates(article: wikipedia.Article | None, topic: str = "", longest: int = LONGEST) -> list[Candidate]:
+    """The sentences of an article's lead that could be facts: as long as a fact may be, and passing the checks (none
+    of the lead of an article about a living person), each with the articles it names."""
+    if article is None or article.living:
+        return []
+    candidates = []
+    for index, sentence in enumerate(sentences(article.extract)):
+        if len(sentence) <= longest and fit(sentence, topic or article.title):
+            names = tuple(title for title in article.links if names_article(sentence, title))
+            candidates.append(Candidate(sentence, article.url, first=index == 0, names=names))
+    return candidates
+
+
+def day_candidates(events: Sequence[wikipedia.Event], day: datetime.date, topic: str = "") -> list[Candidate]:
+    """The events of the day that could be facts, with their dates: "8 November 1895: Wilhelm Röntgen discovers
+    X-rays...", passing the checks."""
+    url = wikipedia.anniversaries_url(day.month, day.day)
+    candidates = []
+    for event in events:
+        text = f"{day.day} {wikipedia.MONTHS[day.month - 1]} {event.year}: {_without_brackets(event.text)}"
+        if len(text) <= LONGEST and fit(event.text, topic):
+            candidates.append(Candidate(text, url, day=True, names=event.pages))
+    return candidates
+
+
+def without_living(candidates: Sequence[Candidate]) -> list[Candidate]:
+    """The candidates that name no living person, as English Wikipedia's articles tell (all those that name nobody,
+    when it can't tell)."""
+    named = {title for candidate in candidates for title in candidate.names}
+    people = wikipedia.living(named) if named else frozenset()
+    if people is None:
+        logger.info("Wikipedia couldn't tell who's living: the facts that name someone stay out")
+        return [candidate for candidate in candidates if not candidate.names]
+    return [candidate for candidate in candidates if not people & set(candidate.names)]
+
+
+def assign(sheet: Sheet, slides: Sequence[tuple[int, str]], rng: random_util.Rng) -> dict[int, Given]:
+    """The facts that the slides get, by slide number (as given): up to MOST slides, in order, one each, never one
+    fact twice. A slide of history gets an event of the day first, then a sentence with a date; a big number one with
+    a number; a fun fact one that says how special something is (not what the topic is: the first sentence); a quiz
+    any. Among the ones a slide likes as much, its pick is the random stream's."""
+    taken: set[Candidate] = set()
+    given: dict[int, Given] = {}
+    shuffled = list(sheet.candidates)
+    rng.shuffle(shuffled)
+    for number, use in slides:
+        if len(given) == MOST:
+            break
+        fresh = [candidate for candidate in shuffled if candidate not in taken]
+        if not fresh:
+            break
+        best = min(fresh, key=lambda candidate: _rank(candidate, use))
+        taken.add(best)
+        given[number] = Given(use, best.fact(number))
+    return given
+
+
+def _rank(candidate: Candidate, use: str) -> int:
+    """How well a fact suits a slide's use: the lower, the better."""
+    if use in _HISTORY:
+        return 0 if candidate.day else 1 if candidate.dated else 2 if not candidate.first else 3
+    if use == "big_number":  # (an event's date is no figure to count)
+        return 2 if candidate.day else 0 if candidate.figure else 1
+    if use == "fun_fact":
+        return 0 if candidate.surprising else 1 if not candidate.first and not candidate.day else 2
+    return 0 if not candidate.day else 1  # (a quiz)
+
+
+def used_in(fact: Fact, texts: Iterable[str | None]) -> bool:
+    """Whether a slide's texts build on a fact: two of its telling words (of four letters or more, and its years, but
+    not an event's day and month) are in them, or its only one ("A bean untaxed is a vassal unchecked, as the emperor
+    knew in 1278", of the emperor who retired on 8 November 1278)."""
+    found = _DAY.match(fact.text)
+    words = set(_telling(fact.text[found.end() :] if found else fact.text)) | set(_YEARS.findall(fact.text))
+    written = " ".join(text for text in texts if text)
+    return bool(words) and len(words & (set(_telling(written)) | set(_YEARS.findall(written)))) >= min(2, len(words))
+
+
+_DAY: Final = re.compile(r"\d{1,2} [A-Z][a-z]+ (?=\d{1,4}: )")  # (an event's day and month, before its year)
+_YEARS: Final = re.compile(r"\b(?:1[0-9]{3}|20[0-9]{2})\b")
+
+
+_STOPWORDS: Final = frozenset(
+    "that this with from were have been they their there which when what where while also into than then them these "
+    "those such some most many more only over under about after before because being other very much each".split()
+)
+
+
+def _telling(text: str) -> list[str]:
+    return [word for word in re.findall(r"[^\W\d_]{4,}", text.lower()) if word not in _STOPWORDS]
+
+
+def credit(fact: Fact) -> tuple[CreditPart, ...]:
+    """A fact's credit, as a slide's credit line has it: "Wikipedia: Penguin (CC BY-SA 4.0)"."""
+    page = fact.url or ""
+    title = page.rsplit("/wiki/", 1)[-1].replace("_", " ") if "/wiki/" in page else ""
+    title = title.replace("Wikipedia:Selected anniversaries/", "On this day, ")
+    named = f"{fact.source}: {unquote(title)}" if title else fact.source
+    if not fact.license:
+        return ((named, fact.url),)
+    return ((named, fact.url), (" (", None), (fact.license, fact.license_url), (")", None))
+
+
+# THE CHECKS
+
+
+def fit(text: str, topic: str = "") -> bool:
+    """Whether a real fact may go on a slide: no word that a slide shouldn't make light of, nor of death, war,
+    disasters, crime, politics or race (but those of the topic: see _GRIM_WORDS), and nothing about real-world
+    politics (unless the topic is about it)."""
+    from talkgenerator.checks.deck import real_politics  # (it reads the deck's models)
+    from talkgenerator.sources import slide_texts  # (which has the classic generators that use this module)
+
+    about = set(re.findall(r"[a-z]+", topic.lower()))
+    grim = [found.group(0) for found in _GRIM.finditer(text) if found.group(0).lower() not in about]
+    return not grim and not slide_texts.sensitive(text) and real_politics(text, topic) is None
+
+
+def sentences(extract: str) -> list[str]:
+    """An article's lead as sentences, without what's in brackets (pronunciations, dates of birth, notes)."""
+    found: list[str] = []
+    for paragraph in extract.splitlines():
+        text = " ".join(_without_brackets(paragraph).split())
+        start = 0
+        for end in _SENTENCE_END.finditer(text):
+            before = text[start : end.start()]
+            last = before.rsplit(" ", 1)[-1].rstrip(".!?").lower()
+            if (len(last) == 1 and last.isalpha()) or last in _ABBREVIATIONS:
+                continue  # (an initial, or an abbreviation)
+            found.append(before.strip())
+            start = end.end()
+        if text[start:].strip():
+            found.append(text[start:].strip())
+    return [sentence for sentence in found if len(sentence) > 20 and sentence[-1:] in ".!?"]
+
+
+def _without_brackets(text: str) -> str:
+    for _ in range(2):  # (brackets in brackets)
+        text = _BRACKETS.sub("", text)
+    return " ".join(text.split()).replace(" ,", ",").replace(" .", ".")
+
+
+def names_article(sentence: str, title: str) -> bool:
+    """Whether a sentence names an article: its title (without its qualifier in brackets), or, for a name of several
+    capitalised words ("Isabel Joy Bear"), the last of them, as a name."""
+    plain = re.sub(r"\s*\([^)]*\)", "", title).strip()
+    if not plain:
+        return False
+    if re.search(r"(?<!\w)" + re.escape(plain) + r"(?!\w)", sentence, re.IGNORECASE):
+        return True
+    words = plain.split()
+    if len(words) > 1 and all(word[:1].isupper() for word in words) and len(words[-1]) > 3:
+        return re.search(r"(?<!\w)" + re.escape(words[-1]) + r"(?!\w)", sentence) is not None
+    return False
+
+
+# CLASSIC SLIDES
+
+
+class CreditedText(str):
+    """A text from a source that asks for credit (a real fact, a real quiz question): it reads as the text, and
+    carries the fact it shows, for the slide's credit line and the deck (see SlideGeneratorData.generate)."""
+
+    fact: Fact
+
+    def __new__(cls, text: str, fact: Fact) -> CreditedText:
+        made = super().__new__(cls, text)
+        made.fact = fact
+        return made
+
+
+def classic_on() -> bool:
+    return on() and wikipedia.available()
+
+
+def real_sentence(seed: str, longest: int) -> Candidate | None:
+    """A real sentence about a classic slide's seed, for a fun fact: of its English Wikipedia article's lead, as long
+    as it may be, one that says how special something is (else another, else what the seed is), naming no living
+    person; the slide's random stream picks among those it likes as much."""
+    article = wikipedia.article(seed)
+    candidates = without_living(article_candidates(article, seed, longest))
+    if not candidates:
+        return None
+    best = min(_rank(candidate, "fun_fact") for candidate in candidates)
+    return random_util.choice([candidate for candidate in candidates if _rank(candidate, "fun_fact") == best])
+
+
+def trivia_on() -> bool:
+    return on() and opentdb.available()
+
+
+def real_question(topic: str, seed: str, longest: int, longest_option: int) -> tuple[opentdb.Question, Fact] | None:
+    """A real quiz question for a classic slide: one of Open Trivia DB's of the topic's kind (by its English Wikipedia
+    article's description: animals for penguins), that fits the slide and passes the checks, about the seed or the
+    topic if there's one, else any (the slide's random stream picks)."""
+    article = wikipedia.article(topic) if wikipedia.available() else None
+    category = opentdb.category_for(article.description if article is not None else "")
+    usable = [
+        question
+        for question in opentdb.questions(category)
+        if len(question.question) <= longest
+        and all(len(option) <= longest_option for option in (question.answer, *question.wrong))
+        and fit(" ".join((question.question, question.answer, *question.wrong)), topic)
+    ]
+    if not usable:
+        return None
+    about = set(_telling(f"{seed} {topic}"))
+    matching = [question for question in usable if about & set(_telling(question.question))]
+    question = random_util.choice(matching or usable)
+    fact = Fact(
+        text=f"{question.question} (Answer: {question.answer})",
+        source="Open Trivia DB",
+        url=opentdb.SITE,
+        license=opentdb.LICENSE,
+        license_url=opentdb.LICENSE_URL,
+        use="slide",
+    )
+    return question, fact

@@ -38,13 +38,14 @@ from typing import TYPE_CHECKING, Any, Protocol
 
 from pptx.presentation import Presentation
 
-from talkgenerator import names, titles
+from talkgenerator import facts, names, titles
 from talkgenerator.datastructures.slide_generator_data import SlideGeneratorData, _filter_generated_elements
 from talkgenerator.images import context as image_context
 from talkgenerator.images import finder, licenses, profiles
 from talkgenerator.images.slots import ImageSlot
 from talkgenerator.llm.base import ProviderError, TextProvider
 from talkgenerator.llm.providers import NoneProvider
+from talkgenerator.models.deck import Fact
 from talkgenerator.models.plan import SlidePlan, TalkPlan
 from talkgenerator.models.theme import Theme
 from talkgenerator.personas import Persona
@@ -140,6 +141,14 @@ def _title_slide(
     return slide, [text for text in (title, subtitle) if text]
 
 
+def _fact_use(pick: SlideGeneratorData | None) -> str | None:
+    """What a slide that the language model writes does with a real fact, if it builds on one (see
+    talkgenerator.facts.use_of)."""
+    if pick is None or pick.llm is None or pick.llm.kind == "title":
+        return None
+    return facts.use_of(pick.llm.kind, pick.get_tags())
+
+
 def _add_used(state: _DeckState, generated_elements: list) -> None:
     elements = set(generated_elements)
     _filter_generated_elements(elements)
@@ -214,6 +223,7 @@ class _PlannedTalk:
     first_attempts: dict[int, Any] = field(default_factory=dict)
     pool: ThreadPool | None = None
     language: str = "en"
+    facts: tuple[Fact, ...] = ()  # the real facts its request gave its slides (see talkgenerator.facts)
     answering: threading.Thread | None = None  # (the answer coming in, while the talk streams)
     cancelled: threading.Event = field(default_factory=threading.Event)  # (then the answer isn't read any further)
 
@@ -437,6 +447,14 @@ class PresentationSchema:
             rng = random_util.Rng(int_seed)
 
         logger.info("Made it to presentation_schema...")
+        # A talk the language model writes picks its slides' generators first (they don't depend on the slides'
+        # seeds), so that the real facts for those that build on one can be looked up while the seeds are (see
+        # talkgenerator.facts)
+        writes = llm is not None and self.writes_with(llm)
+        picks = self._pick_generators(num_slides, rng, language, persona) if writes else None
+        gathering = None
+        if picks is not None and facts.on() and any(_fact_use(pick) for pick in picks):
+            gathering = facts.gather(topics[0], language)
         # Create the topic-for-each-slide generator, and every slide's topic
         with random_util.use(rng.child("topics")):
             seed_generator = self._seed_generator(topics, num_slides)
@@ -449,7 +467,6 @@ class PresentationSchema:
         # The presenter's name, unless it's given: made up in a style the talk's dice pick, by the language model
         # that writes the talk (in the same request), or else by talkgenerator (see talkgenerator.names); in one of
         # the default styles, nudged by the persona, unless the talk says which styles it may have
-        writes = llm is not None and self.writes_with(llm)
         nudge = persona.nudge if persona is not None and name_styles is None else None
         styles = names.DEFAULT_STYLES if name_styles is None else name_styles
         naming = names.Naming.of(styles, topics, rng, written=writes, nudge=nudge) if not presenter else None
@@ -471,7 +488,19 @@ class PresentationSchema:
             name = naming.request if naming is not None else None
             typed = titling.request if titling is not None else None
             talk = self._plan_talk(
-                topics, seeds, rng, llm, language, title, parallel, cancelled, name, typed, persona=persona
+                topics,
+                seeds,
+                rng,
+                llm,
+                language,
+                title,
+                parallel,
+                cancelled,
+                name,
+                typed,
+                persona=persona,
+                picks=picks,
+                gathering=gathering,
             )
         try:
             if talk is not None:
@@ -508,6 +537,7 @@ class PresentationSchema:
             )
             slide_deck.theme, slide_deck.style_chaos, slide_deck.extreme_themes = theme, style_chaos, extreme_themes
             slide_deck.language_model = llm.id if planned and llm is not None else None
+            slide_deck.facts = talk.facts if planned and talk is not None else ()
             slide_deck.topic_or_title = reading
             if persona is not None:  # (with the angle the language model was given, for a talk it writes)
                 slide_deck.persona = persona.record(persona.angle(rng) if planned else None)
@@ -597,15 +627,20 @@ class PresentationSchema:
         name: names.NameRequest | None = None,
         typed: titles.TitleRequest | None = None,
         persona: Persona | None = None,
+        picks: list[SlideGeneratorData | None] | None = None,
+        gathering: facts.Gathering | None = None,
     ) -> "_PlannedTalk":
-        """Pick every slide's generator (as the persona weighs them), and ask the language model, in one request, what
-        goes on the slides whose generators have recipes (and the presenter's name, with a name request, and for what
-        was typed, whether it's the topic or the title, with a title request: see talkgenerator.titles), in the
-        persona's voice. The model's answer is read while it's written, and in parallel, every slide's first attempt
-        starts as soon as its part of the answer is in. For a talk that streams (that can be cancelled), the answer
-        comes in on a thread of its own, and this returns at once, for the slides to be settled while it does."""
+        """Pick every slide's generator (as the persona weighs them, unless they're picked already), and ask the
+        language model, in one request, what goes on the slides whose generators have recipes (and the presenter's
+        name, with a name request, and for what was typed, whether it's the topic or the title, with a title request:
+        see talkgenerator.titles), in the persona's voice; with the real facts being gathered (see talkgenerator.facts),
+        the slides that build on one get one, once they're in. The model's answer is read while it's written, and in
+        parallel, every slide's first attempt starts as soon as its part of the answer is in. For a talk that streams
+        (that can be cancelled), the answer comes in on a thread of its own, and this returns at once, for the slides to
+        be settled while it does."""
         num_slides = len(seeds)
-        picks = self._pick_generators(num_slides, rng, language, persona)
+        if picks is None:
+            picks = self._pick_generators(num_slides, rng, language, persona)
         planned: dict[int, PlannedSlide] = {}
         queried: frozenset[str] = frozenset()  # (what the variants so far search for: a meme's template comes once)
         for slide_nr, pick in enumerate(picks):
@@ -637,7 +672,10 @@ class PresentationSchema:
         def answer() -> None:
             try:
                 generation = image_context.current().generation  # (its images' prompts, if it generates pictures)
+                given = self._facts_for(talk, gathering, rng)
                 for asked_again in (False, True):
+                    if talk.cancelled.is_set():  # (while its facts came in, say)
+                        break
                     request = talk_request(
                         topics,
                         list(planned.values()),
@@ -650,6 +688,7 @@ class PresentationSchema:
                         generation,
                         persona=persona,
                         talk_format=self.format,
+                        facts=given,
                     )
                     self._ask(llm, request, talk)
                     if talk.cancelled.is_set() or talk.spine.get("unsafe_topic") is not True:
@@ -669,6 +708,34 @@ class PresentationSchema:
         else:
             answer()
         return talk
+
+    @staticmethod
+    def _facts_for(
+        talk: "_PlannedTalk", gathering: facts.Gathering | None, rng: random_util.Rng
+    ) -> dict[int, facts.Given]:
+        """The real facts that the talk's planned slides get (see talkgenerator.facts), by slide number (from 1), once
+        they're in: for the slides that build on one, in order. Each goes in its slide's context too (for its credit),
+        and all of them in the talk (for the deck)."""
+        if gathering is None:
+            return {}
+        uses = [
+            (slide.number, use)
+            for slide_nr, slide in sorted(talk.planned.items())
+            if (use := _fact_use(talk.picks[slide_nr])) is not None
+        ]
+        if not uses:
+            return {}
+        try:
+            given = facts.assign(gathering.result(), uses, rng.child("facts"))
+        except Exception:  # (the talk goes without them)
+            logger.exception("Giving the talk's slides their real facts crashed: the talk goes without them")
+            return {}
+        for number, fact in given.items():
+            talk.contexts[number - 1]["fact"] = fact.fact
+        talk.facts = tuple(fact.fact for fact in given.values())
+        if given:
+            logger.info("Real facts for slides %s", ", ".join(str(number) for number in given))
+        return given
 
     @staticmethod
     def _ask(llm: TextProvider, request: Any, talk: "_PlannedTalk") -> None:

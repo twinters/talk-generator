@@ -19,12 +19,12 @@ import re
 import threading
 import time
 import weakref
-from collections.abc import Iterator
+from collections.abc import Callable, Hashable, Iterator
 from contextlib import contextmanager
 from datetime import timedelta
 from pathlib import Path
 from types import TracebackType
-from typing import Any, Self, cast
+from typing import Any, Self, TypeVar, cast
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import requests
@@ -39,6 +39,7 @@ from urllib3.util.retry import Retry
 from talkgenerator import __version__, settings
 
 logger = logging.getLogger("talkgenerator")
+T = TypeVar("T")
 
 USER_AGENT = f"talkgenerator/{__version__} (+https://github.com/twinters/talk-generator)"
 DEFAULT_TIMEOUT = 10  # seconds
@@ -67,6 +68,11 @@ CACHE_EXPIRY: ExpirationPatterns = {
     "images-api.nasa.gov/search": timedelta(days=7),
     "flagcdn.com/en/codes.json": timedelta(days=30),
     "api.imgflip.com/get_memes": timedelta(days=7),
+    # Real facts (see talkgenerator.facts): Wikipedia's articles change slowly, its day's events by the day (its address
+    # names the day), and Open Trivia DB answers a category's questions at random, so it's the same ones all week
+    "*.wikipedia.org/w/api.php": timedelta(days=7),
+    "en.wikipedia.org/api/rest_v1/feed/onthisday": timedelta(days=30),
+    "opentdb.com/api.php": timedelta(days=7),
 }
 
 # Extra headers some hosts ask for. The Art Institute of Chicago wants API clients to identify
@@ -286,27 +292,64 @@ class _Answer:
         self.response: requests.Response | None = None
 
 
+class _Kept:
+    """What a computation of several answers gave, kept while a block of same_answers runs (see keep)."""
+
+    def __init__(self) -> None:
+        self.given = threading.Event()
+        self.value: Any = None
+
+
 _answers: dict[tuple[str, str], _Answer] | None = None  # (see same_answers)
+_kept: dict[Hashable, _Kept] | None = None  # (see keep)
 _answers_lock = threading.Lock()
 
 
 @contextmanager
 def same_answers() -> Iterator[None]:
     """In this block, a search that the on-disk cache keeps (see CACHE_EXPIRY) and that was asked before in it gets
-    the answer it got then, in every thread of the process, even if that answer expired in the meantime.
+    the answer it got then, in every thread of the process, even if that answer expired in the meantime; and so does
+    what's made of several answers with keep.
 
     For `talkgenerator check`, which makes every talk twice and compares the two: an answer of the cache that expires
     in between is asked for anew, and the fresh answer can differ (Pixabay's image links change from one day to the
     next), and so would the talk. Other requests are asked as always: GIPHY's API rules forbid keeping its answers,
     and images and pages are kept in memory by image_util and the sources themselves."""
-    global _answers
+    global _answers, _kept
     with _answers_lock:
         outer, _answers = _answers, {}
+        outer_kept, _kept = _kept, {}
     try:
         yield
     finally:
         with _answers_lock:
-            _answers = outer
+            _answers, _kept = outer, outer_kept
+
+
+def keep(key: Hashable, compute: Callable[[], T]) -> T:
+    """What compute gives; in a block of same_answers, what it gave the first time it was asked for with this key in
+    the block (the others wait for that). For what's made of several answers and of the time they took, such as a
+    talk's real facts, which go without the answers that come too late (see talkgenerator.facts): the talk made again
+    gets what the first one got, though its answers would all come in time now."""
+    with _answers_lock:
+        kept = _kept
+        if kept is None:
+            entry, asking = None, True
+        else:
+            entry = kept.get(key)
+            asking = entry is None
+            if entry is None:
+                entry = kept[key] = _Kept()
+    if entry is None:
+        return compute()
+    if asking:
+        try:
+            entry.value = compute()
+        finally:
+            entry.given.set()
+    else:
+        entry.given.wait()
+    return cast(T, entry.value)
 
 
 def _request(

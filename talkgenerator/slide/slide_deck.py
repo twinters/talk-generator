@@ -6,7 +6,7 @@ from typing import Final
 from talkgenerator import __version__
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.design import engine
-from talkgenerator.models.deck import Deck, TalkPersona, TopicOrTitle
+from talkgenerator.models.deck import Deck, Fact, TalkPersona, TopicOrTitle
 from talkgenerator.models.theme import Theme
 from talkgenerator.models.usage import Usage
 from talkgenerator.render.powerpoint import render_slide
@@ -59,6 +59,9 @@ class SlideDeck:
         self.topic_or_title: TopicOrTitle | None = None
         # Who presents it, as its dice picked them (see talkgenerator.personas)
         self.persona: TalkPersona | None = None
+        # The real facts its language model's request gave its slides (see talkgenerator.facts); the deck adds the ones
+        # its classic slides show
+        self.facts: tuple[Fact, ...] = ()
         # Who wants to know about every slide once it's added (a talk that streams: see talkgenerator.generator), and
         # about a slide that changed after it was added (a generated picture in its stock photo's place)
         self.listener: Callable[[SlideDeck, int, Slide], None] | None = None
@@ -137,10 +140,22 @@ class SlideDeck:
             license_policy=self.license_policy,
             slides=tuple(slide.to_deck_slide() for slide in self._slides if slide is not None),
             usage=self.usage,
+            facts=self._facts() or None,
         )
         if self.theme is not None:  # every element in its box, in the theme's style
             return engine.lay_out(deck, self.theme, self.style_chaos, self.extreme_themes)
         return deck
+
+    def _facts(self) -> tuple[Fact, ...]:
+        """The real facts of the talk: the ones its request gave its slides, and the ones its slides show (each with
+        the number of its slide in the talk)."""
+        shown = [
+            fact.model_copy(update={"slide": number})
+            for number, slide in enumerate(self._slides, 1)
+            if slide is not None
+            for fact in slide.facts
+        ]
+        return (*self.facts, *shown)
 
     def image_store(self) -> dict[str, ImageData]:
         """The images on the slides by URL, with their downloaded bytes (see Slide.image_store)."""

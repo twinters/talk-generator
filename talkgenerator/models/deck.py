@@ -86,6 +86,22 @@ class CreditPart(_Data):
 
 
 Credit = tuple[CreditPart, ...]
+# Where a real fact went (see talkgenerator.facts): into the request of the language model that wrote its slide, to
+# build on ("prompt"), or onto a classic slide as it is ("slide"), whose credit line credits it
+FactUse = Literal["prompt", "slide"]
+
+
+class Fact(_Data):
+    """A real fact that a talk was given (see talkgenerator.facts, docs/v5-plan.md D60): its text, where it's from
+    (the page, as its source is credited, and the text's license), and the slide it went to (counted from 1)."""
+
+    text: str
+    source: str  # as it's credited: "Wikipedia", "Open Trivia DB"
+    url: str | None = None  # the page it's from
+    license: str | None = None  # such as "CC BY-SA 4.0"
+    license_url: str | None = None
+    slide: int | None = None
+    use: FactUse = "prompt"
 
 
 class ImageAnalysis(_Data):
@@ -399,6 +415,9 @@ class Deck(_Data):
     license_policy: str = "all"
     slides: tuple[DeckSlide, ...] = ()
     usage: Usage = Usage()  # what the talk asked of language models, and what that cost
+    # The real facts it was given (see talkgenerator.facts): in its language model's request, and on its classic
+    # slides; none for a talk without them
+    facts: tuple[Fact, ...] | None = None
 
     def to_json(self, indent: int | None = 2) -> str:
         """The deck as JSON. The same deck always gives the same text: no timestamps, fields in a fixed order, and

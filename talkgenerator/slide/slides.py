@@ -34,6 +34,8 @@ class Slide:
         # The pictures the slide wishes to have generated, each with the stock photo that stands in for it until it's
         # in (see talkgenerator.images.generation)
         self.wishes: list[tuple[ImageData, Wish]] = []
+        # The real facts it shows as they are (a classic slide's: see talkgenerator.facts), for the deck
+        self.facts: list[model.Fact] = []
 
     @property
     def type_name(self) -> str:
