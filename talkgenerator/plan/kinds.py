@@ -986,7 +986,7 @@ KINDS: Final[dict[str, Kind]] = {
             "tier, the punchline, appears on a click.",
             (
                 TextField("title", "the tier list's title", 60),
-                TextField("s_tier", "the S tier, the very best: one surprising thing, the punchline", 50),
+                TextField("s_tier", "the S tier, the very best: one surprising thing, the punchline", 70),
                 TextField("a_tier", "the A tier: one to three things, separated by |", 70),
                 TextField("b_tier", "the B tier: one to three things, separated by |", 70, optional=True),
                 TextField("c_tier", "the C tier: one to three things, separated by |", 70, optional=True),

@@ -589,7 +589,7 @@ A tier list: things ranked in tiers from S (the best) to F (the worst), one to t
 | Text | At most | What to write |
 | --- | --- | --- |
 | `title` | 60 | the tier list's title |
-| `s_tier` | 50 | the S tier, the very best: one surprising thing, the punchline |
+| `s_tier` | 70 | the S tier, the very best: one surprising thing, the punchline |
 | `a_tier` | 70 | the A tier: one to three things, separated by \| |
 | `b_tier` | 70 | the B tier: one to three things, separated by \| (or empty, for none) |
 | `c_tier` | 70 | the C tier: one to three things, separated by \| (or empty, for none) |
