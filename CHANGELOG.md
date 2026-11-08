@@ -558,6 +558,10 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   ("Professor of Serenity Studies, Department" is "Professor of Serenity Studies" now), and their roles their open
   brackets ("Kaito Tanaka (Head of Temporal" is "Kaito Tanaka"). A title slide names its presenter once, where a
   model wrote the name into the presenter's job too.
+- Claude writes talks of many kinds of slides too. Anthropic refuses to hold an answer to a JSON schema that compiles
+  to too large a grammar ("The compiled grammar is too large"), which a talk with the newest slide types can have,
+  and such a talk came out classic (two of four in a check with Claude Haiku 5.5). Now Claude gets the schema as
+  text then, at the end of the request, and writes the JSON by itself; the talk checks every slide's texts anyway.
 
 ## [4.0.1] - 2026-11-05
 

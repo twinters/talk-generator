@@ -13,6 +13,7 @@ the talk is classic.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable, Sequence
 from typing import Any, Final
 
@@ -43,6 +44,9 @@ _FINISH: Final[dict[str, Finish]] = {
 }
 # Writing to the prompt cache costs a quarter more than plain input
 _CACHE_WRITE_PRICE: Final = 1.25
+# What Anthropic says when a structured output's schema compiles to too large a grammar, and what Claude is told then
+_GRAMMAR_TOO_LARGE: Final = "grammar is too large"
+_SCHEMA_AS_TEXT: Final = "Answer with one JSON object that fits this JSON schema, and nothing else: "
 
 
 class ClaudeProvider(TextProvider):
@@ -64,23 +68,33 @@ class ClaudeProvider(TextProvider):
         sdk = import_sdk("anthropic", "anthropic")
         client = self._client or self._new_client(sdk)
         try:
-            with client.beta.messages.stream(**self.arguments(request)) as stream:
-                for text in stream.text_stream:
-                    on_text(text)
-                message = stream.get_final_message()
+            try:
+                message = _message(client, self.arguments(request), on_text)
+            except sdk.BadRequestError as error:
+                if request.json_schema is None or _GRAMMAR_TOO_LARGE not in str(error):
+                    raise
+                # Anthropic compiles a structured output's schema into a grammar, and refuses one that's too large
+                # (a talk with many kinds of slides can have one) before it writes anything. Then Claude gets the
+                # schema as text and writes the JSON by itself: the talk checks every slide's texts anyway
+                message = _message(client, self.arguments(request, schema_as_text=True), on_text)
         except sdk.AnthropicError as error:  # also an error in the middle of the stream
             raise provider_error(error, sdk, "Anthropic") from error
         return self._response(message, request)
 
-    def arguments(self, request: TextRequest) -> dict[str, Any]:
-        """The request, as the Messages API takes it."""
+    def arguments(self, request: TextRequest, *, schema_as_text: bool = False) -> dict[str, Any]:
+        """The request, as the Messages API takes it: the answer held to the request's JSON schema, or with
+        schema_as_text, that schema written at the end of the last message instead."""
         output_config: dict[str, Any] = {"effort": self.effort}
-        if request.json_schema is not None:
+        messages = [{"role": message.role, "content": _content(message)} for message in request.messages]
+        if request.json_schema is not None and schema_as_text:
+            schema = json.dumps(request.json_schema, ensure_ascii=False, separators=(",", ":"))
+            messages[-1]["content"] = _with_text(messages[-1]["content"], f"\n\n{_SCHEMA_AS_TEXT}{schema}")
+        elif request.json_schema is not None:
             output_config["format"] = {"type": "json_schema", "schema": request.json_schema}
         arguments: dict[str, Any] = {
             "model": self.model,
             "max_tokens": self.max_output_tokens(request),
-            "messages": [{"role": message.role, "content": _content(message)} for message in request.messages],
+            "messages": messages,
             "output_config": output_config,
         }
         if request.system:
@@ -116,6 +130,22 @@ class ClaudeProvider(TextProvider):
             raise ProviderUnavailable("Claude needs an Anthropic API key: set ANTHROPIC_API_KEY")
         self._client = sdk.Anthropic(api_key=key, timeout=TIMEOUT_SECONDS, max_retries=MAX_RETRIES)
         return self._client
+
+
+def _message(client: Any, arguments: dict[str, Any], on_text: Callable[[str], None]) -> Any:
+    """Claude's message for the request, its text handed to on_text as it's written."""
+    with client.beta.messages.stream(**arguments) as stream:
+        for text in stream.text_stream:
+            on_text(text)
+        return stream.get_final_message()
+
+
+def _with_text(content: str | list[dict[str, Any]], text: str) -> str | list[dict[str, Any]]:
+    """A message's content with text added at the end (of its text block, for one that shows pictures)."""
+    if isinstance(content, str):
+        return content + text
+    *pictures, last = content
+    return [*pictures, {**last, "text": last["text"] + text}]
 
 
 def _content(message: Message) -> str | list[dict[str, Any]]:

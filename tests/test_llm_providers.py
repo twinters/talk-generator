@@ -134,6 +134,31 @@ def test_claude_writes_with_structured_outputs_low_effort_and_fallbacks():
     assert response.cost_usd == pytest.approx((1000 * 4.00 + 300 * 20.00) / 1e6)
 
 
+def test_claude_gets_the_schema_as_text_when_anthropic_finds_its_grammar_too_large():
+    # (Anthropic's answer to a talk of many kinds of slides, Claude Haiku 5.5, 2026-11-08)
+    too_large = (
+        "The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or "
+        "reduce the number of strict tools."
+    )
+    api = Api(_error(400, too_large), _claude_answer(*ANSWER))
+    pieces = []
+    response = _claude(api).stream(REQUEST, pieces.append)
+
+    held, written = (json.loads(request.content) for request in api.requests)
+    assert held["output_config"]["format"] == {"type": "json_schema", "schema": SCHEMA}
+    assert written["output_config"] == {"effort": "low"}
+    content = written["messages"][-1]["content"]
+    assert content.startswith("Topic: cats\n\n") and content.endswith(json.dumps(SCHEMA, separators=(",", ":")))
+    assert pieces == list(ANSWER) and response.data == {"title": "Cats"}
+
+
+def test_claude_asks_once_and_never_again_for_other_bad_requests():
+    api = Api(_error(400, "messages: at least one message is required"))
+    with pytest.raises(ProviderError, match="at least one message"):
+        _claude(api).complete(REQUEST)
+    assert len(api.requests) == 1
+
+
 def test_claude_haiku_has_no_server_side_fallbacks():
     api = Api(_claude_answer("{}", model="claude-haiku-5-5"))
     _claude(api, "claude-haiku-5-5", effort="medium").complete(REQUEST)
