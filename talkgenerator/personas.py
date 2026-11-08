@@ -141,6 +141,7 @@ PERSONAS: Final[dict[str, Persona]] = {
                 "meme": 0.5,
                 "social_post": 0.5,
                 "inspiration": 0.5,
+                "dare": 0.5,
             },
             "like a lecture the university tried to cancel",
             (
@@ -177,6 +178,8 @@ PERSONAS: Final[dict[str, Persona]] = {
                 "timeline": 0.7,
                 "quote": 0.6,
                 "anecdote": 0.7,
+                "acronym": 2,
+                "fun_fact": 0.5,
             },
             "like a startup's pitch, promising to disrupt something",
             (
@@ -211,6 +214,7 @@ PERSONAS: Final[dict[str, Persona]] = {
                 "social_post": 0.4,
                 "funnel": 0.5,
                 "gif": 0.6,
+                "acronym": 0.5,
             },
             "one that drags the topic back into the Middle Ages",
             (
@@ -246,6 +250,7 @@ PERSONAS: Final[dict[str, Persona]] = {
                 "quiz": 0.6,
                 "inspiration": 0.6,
                 "agenda": 0.5,
+                "flowchart": 3,
             },
             "one that promises to reveal what they don't want you to know",
             (
@@ -284,6 +289,9 @@ PERSONAS: Final[dict[str, Persona]] = {
                 "matrix_diagram": 0.4,
                 "kpi": 0.3,
                 "funnel": 0.3,
+                "fun_fact": 2,
+                "acronym": 0.5,
+                "flowchart": 0.5,
             },
             "one as simple and cheerful as a children's book",
             (
@@ -322,6 +330,9 @@ PERSONAS: Final[dict[str, Persona]] = {
                 "gif": 0.5,
                 "meme": 0.5,
                 "anecdote": 0.5,
+                "acronym": 3,
+                "flowchart": 2,
+                "dare": 0.5,
             },
             "like a consultancy's report: a framework, a roadmap or a strategy",
             (
@@ -355,6 +366,7 @@ PERSONAS: Final[dict[str, Persona]] = {
                 "chart": 0.6,
                 "news": 0.6,
                 "org_chart": 0.5,
+                "acronym": 2,
             },
             "like a self-help bestseller's promise",
             (
@@ -389,6 +401,8 @@ PERSONAS: Final[dict[str, Persona]] = {
                 "diagram": 0.6,
                 "quote": 0.6,
                 "history": 0.4,
+                "dare": 3,
+                "tier_list": 2.5,
             },
             "like clickbait for a video",
             (
@@ -457,6 +471,7 @@ PERSONAS: Final[dict[str, Persona]] = {
                 "org_chart": 0.6,
                 "news": 0.5,
                 "kpi": 0.5,
+                "tier_list": 0.5,
             },
             "like a retreat's promise of inner peace",
             (
@@ -492,6 +507,8 @@ PERSONAS: Final[dict[str, Persona]] = {
                 "kpi": 0.3,
                 "funnel": 0.3,
                 "social_post": 0.3,
+                "flowchart": 0.5,
+                "tier_list": 0.5,
             },
             "like an old sailor's yarn",
             (
@@ -527,6 +544,8 @@ PERSONAS: Final[dict[str, Persona]] = {
                 "news": 0.8,
                 "diagram": 0.7,
                 "history": 0.7,
+                "dare": 2,
+                "tier_list": 2,
             },
             "like a locker-room speech that turns deep",
             (
@@ -560,6 +579,7 @@ PERSONAS: Final[dict[str, Persona]] = {
                 "quiz": 1.2,
                 "history": 1.2,
                 "inspiration": 0.8,
+                "fun_fact": 2,
             },
             "one that shows far too much passion for the topic",
             (
