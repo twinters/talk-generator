@@ -2,6 +2,7 @@ import logging
 from collections.abc import Callable, Collection
 from functools import lru_cache
 
+from talkgenerator import facts
 from talkgenerator.datastructures.image_data import ImageData
 
 logger = logging.getLogger("talkgenerator")
@@ -115,7 +116,7 @@ class SlideGeneratorData:
                         + describe_elements(generated_elements)
                     )
 
-                    # Add all sources of generated elements
+                    # Add all sources of generated elements: their images', and the real facts' it shows as they are
                     for generated_element in generated_elements:
                         if isinstance(generated_element, ImageData):
                             slide.add_source(
@@ -123,6 +124,10 @@ class SlideGeneratorData:
                                 generated_element.get_source_url(),
                                 generated_element.get_credit(),
                             )
+                        elif isinstance(generated_element, facts.CreditedText):
+                            fact = generated_element.fact
+                            slide.add_source(fact.source, fact.url, facts.credit(fact), text=True)
+                            slide.facts.append(fact)
 
                     return slide, generated_elements
 

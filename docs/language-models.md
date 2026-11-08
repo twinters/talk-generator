@@ -13,6 +13,21 @@ A request holds what the talk is about (the topic, or what you typed) and the sl
 It never holds the presenter's name you give (`--presenter`), and keys never show up in logs, error messages or
 decks.
 
+## Real facts
+
+Some slides get a real fact to build on, in the same request: up to three of a talk's slides of history (a made-up
+historical figure, old photos, a timeline), fun facts, quizzes and big numbers, from the first sentences of the
+topic's English Wikipedia article, or from the events of the day on Wikipedia's main page ("On this day"). The model
+keeps what a fact says and twists it: "Only one species, the Galapagos penguin, lives at the equator" becomes a fun
+fact about why. No fact names a living person, and none is about death, war, disasters, crime, politics, race or
+faiths. A slide that builds on its fact credits the article (CC BY-SA 4.0), in its credit line ("Sources: ..."), and
+the deck lists every fact a talk got (`facts`).
+
+The facts come from the cache, or else within eight seconds of the talk's start, while its slides are picked: a talk
+whose facts come later, or whose sources are down, goes without them. Classic talks get some too: half of their fun
+facts are a real one about the slide's word, with a twist, and half of their quizzes a real question from
+[Open Trivia DB](https://opentdb.com). `DISABLE_FACTS=1` switches them all off.
+
 ## Which model writes your talks
 
 Free models first: a paid model only writes talks when you ask for it, as a key alone (an `ANTHROPIC_API_KEY` you set

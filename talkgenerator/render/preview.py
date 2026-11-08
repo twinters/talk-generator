@@ -66,7 +66,8 @@ def slide_image(
             layer.putalpha(layer.getchannel("A").point([round(value * shown) for value in range(256)]))
             canvas.alpha_composite(layer)
     if slide.credits and slide.credits_box is not None and slide.credits_style is not None:
-        _text(canvas, engine.credit_line(slide.credits), slide.credits_box, slide.credits_style, scale)
+        line = engine.credit_line(slide.credits, engine.credits_prefix(slide))
+        _text(canvas, line, slide.credits_box, slide.credits_style, scale)
     return canvas.convert("RGB")
 
 

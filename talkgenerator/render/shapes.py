@@ -92,7 +92,7 @@ def draw_slide(
     _background(ppt_slide, slide, theme)
     draw_elements(ppt_slide, slide, theme, images=images)
     if slide.credits and slide.credits_box is not None and slide.credits_style is not None:
-        parts: list[tuple[str, str | None]] = [(engine.CREDITS_PREFIX, None)]
+        parts: list[tuple[str, str | None]] = [(engine.credits_prefix(slide), None)]
         for index, credit in enumerate(slide.credits):
             if index:
                 parts.append((", ", None))

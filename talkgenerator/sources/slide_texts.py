@@ -17,6 +17,7 @@ from collections.abc import Callable
 from functools import cache
 from typing import Any, Final, TypeVar
 
+from talkgenerator import facts
 from talkgenerator.models import classic
 from talkgenerator.plan.languages import ENGLISH
 from talkgenerator.sources import conceptnet, memes, packs, text_generator
@@ -201,7 +202,12 @@ def generate_kpi(presentation_context: dict[str, Any]) -> tuple[str | None, ...]
 @_unless_sensitive
 def generate_quiz(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
     """A quiz about the seed, its options things ConceptNet relates to it: the question, four options (the fourth
-    may be None), the right one's letter (any: the presenter explains why), and an explanation, if any."""
+    may be None), the right one's letter (any: the presenter explains why), and an explanation, if any. Half the time
+    (with the real facts on: see talkgenerator.facts), a real one of Open Trivia DB's instead, when there's one."""
+    if facts.trivia_on() and random_util.random() < facts.REAL_SHARE:
+        real = _real_quiz(presentation_context)
+        if real is not None:
+            return real
     related = related_words(presentation_context["seed"])
     count = 4 if len(related) >= 4 and random_util.random() < 0.6 else 3
     if len(related) < count:
@@ -214,6 +220,29 @@ def generate_quiz(presentation_context: dict[str, Any]) -> tuple[str | None, ...
     options += [None] * (4 - count)
     answer = "ABCD"[random_util.randrange(count)]
     return (question, *options, answer, _maybe(0.6, _template("quiz.quiz_explanation")(variables)))
+
+
+# What a quiz slide's question and options may be, at most (the quiz kind's lengths)
+_QUESTION: Final = 90
+_OPTION: Final = 50
+
+
+def _real_quiz(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
+    """A real quiz question of the topic's kind (see talkgenerator.facts.real_question), its options in an order of
+    the slide's random stream, and its right answer's letter (no explanation: the presenter gives one), credited."""
+    found = facts.real_question(
+        str(presentation_context.get("topic") or presentation_context["seed"]),
+        str(presentation_context["seed"]),
+        _QUESTION,
+        _OPTION,
+    )
+    if found is None:
+        return None
+    question, fact = found
+    options = [question.answer, *question.wrong]
+    random_util.shuffle(options)
+    answer = "ABCD"[options.index(question.answer)]
+    return (facts.CreditedText(question.question, fact), *options, answer, None)
 
 
 # MOCKUPS
@@ -439,20 +468,45 @@ def _numbers() -> dict[str, str]:
 def fun_fact(image: ImageSource) -> Callable[[dict[str, Any]], tuple[Any, ...] | None]:
     """A generator of fun facts about the seed: a heading ("Did you know?"), the fact (from templates about the seed
     and a word related to it, with made-up numbers), a made-up source (if any) and a photo from the image source (three
-    times in five, when it finds one)."""
+    times in five, when it finds one). Half the time (with the real facts on: see talkgenerator.facts), the fact is a
+    real one about the seed instead, when there's one: a sentence of its Wikipedia article's, with an absurd twist,
+    from Wikipedia."""
 
     @_unless_sensitive
     def generate(presentation_context: dict[str, Any]) -> tuple[Any, ...] | None:
-        related = related_words(presentation_context["seed"])
-        variables = {**_context(presentation_context, related), **_numbers()}
-        fact = _template("karaoke.fun_fact")(variables)
-        if not fact:
-            return None
-        source = _maybe(0.7, _template("numbers.big_number_source")(variables))
+        real = _real_fun_fact(presentation_context["seed"]) if facts.classic_on() else None
+        fact: str | None
+        source: str | None
+        if real is not None:
+            fact, source = real
+        else:
+            related = related_words(presentation_context["seed"])
+            variables = {**_context(presentation_context, related), **_numbers()}
+            fact = _template("karaoke.fun_fact")(variables)
+            if not fact:
+                return None
+            source = _maybe(0.7, _template("numbers.big_number_source")(variables))
         photo = image(dict(presentation_context)) if random_util.random() < 0.6 else None
         return random_util.choice(ENGLISH.fun_facts), fact, source, photo
 
     return generate
+
+
+_FACT: Final = 150  # how long a fun fact may be (the fun fact kind's length)
+_TWIST: Final = 40  # how long its twist may be (the pack's karaoke.fun_fact_twist)
+
+
+def _real_fun_fact(seed: str) -> tuple[str, str] | None:
+    """Half the time: a real fun fact about the seed, and its source (see talkgenerator.facts.real_sentence), with
+    one of the content pack's twists after it ("Coincidence? I think not."), credited; else None."""
+    if random_util.random() >= facts.REAL_SHARE:
+        return None
+    found = facts.real_sentence(seed, _FACT - _TWIST - 1)
+    if found is None:
+        return None
+    twist = _template("karaoke.fun_fact_twist")({}) or ""
+    text = f"{found.text} {twist}" if twist and len(found.text) + 1 + len(twist) <= _FACT else found.text
+    return facts.CreditedText(text, found.fact(use="slide")), "Wikipedia"
 
 
 # An acronym's words: corporate buzzwords for its letters (when no word related to the seed starts with one), and

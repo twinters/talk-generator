@@ -86,6 +86,22 @@ class CreditPart(_Data):
 
 
 Credit = tuple[CreditPart, ...]
+# Where a real fact went (see talkgenerator.facts): into the request of the language model that wrote its slide, to
+# build on ("prompt"), or onto a classic slide as it is ("slide"), whose credit line credits it
+FactUse = Literal["prompt", "slide"]
+
+
+class Fact(_Data):
+    """A real fact that a talk was given (see talkgenerator.facts, docs/v5-plan.md D60): its text, where it's from
+    (the page, as its source is credited, and the text's license), and the slide it went to (counted from 1)."""
+
+    text: str
+    source: str  # as it's credited: "Wikipedia", "Open Trivia DB"
+    url: str | None = None  # the page it's from
+    license: str | None = None  # such as "CC BY-SA 4.0"
+    license_url: str | None = None
+    slide: int | None = None
+    use: FactUse = "prompt"
 
 
 class ImageAnalysis(_Data):
@@ -335,7 +351,10 @@ class DeckSlide(_Data):
     type: str
     layout: str
     elements: tuple[Element, ...] = ()
-    credits: tuple[Credit, ...] = ()  # the credit line on the slide, one credit per image
+    credits: tuple[Credit, ...] = ()  # the credit line on the slide, one credit per image (and per real fact)
+    # Whether its credits credit a text too (a real fact: see talkgenerator.facts), and not only its pictures; none for a
+    # slide whose credits are its pictures' alone
+    text_credits: bool | None = None
     notes: str = ""  # how the slide was made; only rendered when asked for (presenters see the notes)
     background: SlideBackground | None = None  # (in a themed deck)
     credits_box: Box | None = None  # where the credit line goes, and how it looks (in a themed deck)
@@ -347,6 +366,11 @@ class DeckSlide(_Data):
 
     def images(self) -> tuple[ImageAsset, ...]:
         return tuple(element.image for element in self.elements if isinstance(element, ImageElement))
+
+    def credits_a_text(self) -> bool:
+        """Whether its credit line credits a text too, besides its pictures: a real fact that it shows or builds on
+        (see talkgenerator.facts). Its credit line then starts with "Sources", rather than "Image sources"."""
+        return bool(self.text_credits)
 
 
 # What was typed for a talk can be read as its topic ("penguins", or a premise such as "Cats are liquid"), which the
@@ -399,6 +423,9 @@ class Deck(_Data):
     license_policy: str = "all"
     slides: tuple[DeckSlide, ...] = ()
     usage: Usage = Usage()  # what the talk asked of language models, and what that cost
+    # The real facts it was given (see talkgenerator.facts): in its language model's request, and on its classic
+    # slides; none for a talk without them
+    facts: tuple[Fact, ...] | None = None
 
     def to_json(self, indent: int | None = 2) -> str:
         """The deck as JSON. The same deck always gives the same text: no timestamps, fields in a fixed order, and

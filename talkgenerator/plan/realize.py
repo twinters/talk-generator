@@ -12,11 +12,13 @@ import re
 from pathlib import Path
 from typing import Any, Final
 
+from talkgenerator import facts
 from talkgenerator.checks.deck import leftovers_in, real_politics, without_key_references
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.images import context as image_context
 from talkgenerator.images.generation import FALLBACK, FIRST, Wish
 from talkgenerator.images.slots import ImageSlot
+from talkgenerator.models.deck import Fact
 from talkgenerator.models.plan import SlidePlan
 from talkgenerator.plan import languages
 from talkgenerator.plan.kinds import KINDS, ContentSource, Recipe, TextField
@@ -275,14 +277,20 @@ def realize(
     if missing:
         _note(problems, f"an image couldn't be downloaded, or is on the slide twice ({', '.join(missing)})")
         return None
+    # A real fact the slide was given (see talkgenerator.facts), which it credits when its texts build on it
+    fact = presentation_context.get("fact")
+    built_on = isinstance(fact, Fact) and facts.used_in(fact, texts.values())
     slide.set_note(
         f"Seed: {presentation_context.get('seed')}\nPlanned: a {recipe.kind} slide for {plan.recipe}, about {concept!r}"
         f"\nTexts: {texts}\nImage queries: {queries}"
         + "".join(f"\nTo generate ({wish.reason}) for {wish.slot}: {wish.request.prompt!r}" for _, wish in slide.wishes)
+        + (f"\nReal fact ({'built on' if built_on else 'left out'}): {fact.text!r}" if isinstance(fact, Fact) else "")
     )
     for image in images.values():
         if isinstance(image, ImageData):
             slide.add_source(image.get_source(), image.get_source_url(), image.get_credit(), image=image)
+    if built_on and isinstance(fact, Fact):
+        slide.add_source(fact.source, fact.url, facts.credit(fact), text=True)
     generated = [value for value in (*texts.values(), *images.values()) if value is not None]
     return slide, generated
 

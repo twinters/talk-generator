@@ -16,9 +16,11 @@ that name one go, and a text with a key anywhere else is a leftover, as template
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final
 
+from talkgenerator.facts import Given, request_line
 from talkgenerator.images.generation import PROMPT_DESCRIPTION, prompt_field
 from talkgenerator.llm.base import Message, TextRequest
 from talkgenerator.models.plan import SlidePlan
@@ -143,12 +145,17 @@ def talk_request(
     generation: ImageGeneration | None = None,
     persona: Persona | None = None,
     talk_format: Format | None = None,
+    facts: Mapping[int, Given] | None = None,
 ) -> TextRequest:
     """The request for a talk (with the presenter's name, when there's a name request). Asked again, it says that a
     model found the topic unsafe: some of the free models get the flag wrong whichever way it's asked (one turned
     down "penguins"). For what was typed, which could be the topic or the title (see talkgenerator.titles), it says
     what the title is to be: what was typed, with its slips fixed, or a title of the model's own on it. In a talk
     that generates pictures (with a generation), the model writes a prompt for every image that prefers one.
+
+    With real facts for some of its slides (by slide number: see talkgenerator.facts), it says how to use them, and
+    each slide's line says what the slide does with its fact (a fun fact twists it, a timeline puts it among made-up
+    moments). Without them, it's as it was before talks had facts.
 
     The talk's persona (see talkgenerator.personas) is who presents it: the model writes in its voice, on the angle
     the talk's dice pick among its angles, a title it makes up is like the persona's titles, and the presenter's job
@@ -169,6 +176,7 @@ def talk_request(
         f"slide in {languages.language(language).name}, and the image search queries in English",
         *([f"The format: {talk_format.brief}"] if talk_format is not None else []),
         *([f"The presenter: {persona.voice}", f"The angle: {persona.angle(rng)}"] if persona is not None else []),
+        *([request_line(language)] if facts else []),
         "",
         *(
             [
@@ -188,7 +196,9 @@ def talk_request(
     # The guidance per field is in the schema too, but not every model gets to read the schema's descriptions
     for slide in planned:
         brief = (slide.recipe.brief or KINDS[slide.recipe.kind].description).rstrip(".")
-        lines += ["", f"{slide.key}: {brief}. A word to riff on: {slide.seed}"]
+        given = (facts or {}).get(slide.number)
+        fact = f". {given.line()}" if given is not None else ""
+        lines += ["", f"{slide.key}: {brief}. A word to riff on: {slide.seed}{fact}"]
         lines += [f"- {text.name}: {field_description(slide.recipe, text)}" for text in slide.recipe.written_fields()]
         lines += [f"- {slot}_query: {_query_description(slot)}" for slot in slide.recipe.image_queries()]
         lines += [f"- {prompt_field(slot)}: {about}" for slot, about in generated(slide.recipe, generation)]
