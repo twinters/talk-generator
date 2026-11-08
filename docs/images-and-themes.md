@@ -147,6 +147,9 @@ decoration and its layouts.
   and the talk's persona (`--persona`) favours some: a kindergarten teacher's talks are in `kids` or `chalkboard`
   about half the time, a conspiracy blogger's in `hacker terminal` or `newspaper`, a startup founder's in `startup`
   or `Swiss poster`.
+- `--theme_families "dark minimal,Swiss poster"` keeps a random theme to some families (and with `--theme chaos`,
+  every slide's): a talk whose seed picks one of them keeps its theme, and the others get one of them, the persona's
+  favourites still weighting them.
 - `--theme chaos` gives every slide a theme of its own, and `--style_chaos 0.3` does that for about a third of them.
 - `TALKGENERATOR_THEME` sets the look of talks that don't ask for one, such as `classic` to keep the 2019 template.
 - A plan can have a `theme` too, which `talkgenerator render --theme` overrides.

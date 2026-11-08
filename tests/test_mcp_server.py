@@ -111,6 +111,7 @@ def test_the_server_has_tools_to_look_things_up_and_to_make_talks(server):
         "format",
         "language",
         "theme",
+        "theme_families",
         "title",
         "presenter",
         "name_styles",
@@ -276,6 +277,19 @@ def test_a_talk_can_leave_its_format_to_its_seed_and_its_persona_to_some(schema,
         _call(server, "generate_talk", {"topic": "cats", "personas": ["consultant", "pirate"]})
     )
     assert "at least one persona" in _error(_call(server, "generate_talk", {"topic": "cats", "personas": []}))
+
+
+@needs_mcp
+def test_a_talk_s_random_theme_can_be_of_some_families_only(schema, server, model_in_the_settings):
+    # (decision D62: a talk whose seed picks another family gets a theme of one of these)
+    allowed = ["chalkboard", "Swiss poster"]
+    for seed in (1, 2, 3):
+        asked = {"topic": "cats", "slides": 4, "seed": seed, "theme": "random", "theme_families": allowed}
+        assert _deck(_answer(_call(server, "generate_talk", asked))).style.family in allowed
+    assert "There's no theme family 'plaid'" in _error(
+        _call(server, "generate_talk", {"topic": "cats", "theme_families": ["neon", "plaid"]})
+    )
+    assert "at least one family" in _error(_call(server, "generate_talk", {"topic": "cats", "theme_families": []}))
 
 
 @needs_mcp

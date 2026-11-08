@@ -49,6 +49,7 @@ The options, after the format (`"default"`, `"ted"`, `"interview"`, `"pitch"`, `
 | `llm` | The language model: a spec, such as `"openrouter"` or `"anthropic:claude-haiku-5-5"`, a provider object, or `None` for your settings' (see [Language models](language-models.md)) |
 | `budget` | What the talk may spend: `talkgenerator.llm.ledger.Budget(max_cost_usd=0)` lets only free models write it |
 | `theme`, `style_chaos`, `extreme_themes` | The look (see [Themes](images-and-themes.md#themes)) |
+| `theme_families` | The families a random theme can be of (a chaos deck's slides' too), as a list or separated by commas, such as `["dark minimal", "Swiss poster"]`; `None` for all of them. A family named as `theme` goes first |
 | `license_policy` | The license classes its images may have (see [Licenses](images-and-themes.md#licenses)) |
 | `image_generator`, `image_budget` | An image generator, as `--image_generator` names one or an object, and how many pictures it may make (see [Generated pictures](images-and-themes.md#generated-pictures)) |
 | `vision_pick` | A vision model that picks the pictures of the slides a language model writes, each among a few candidates (see [The vision pick](images-and-themes.md#the-vision-pick)): `True` (the talk's own model when it reads pictures, else OpenRouter's free models that do), a spec such as `"anthropic:claude-haiku-5-5"`, a provider object, or `None` (off, the default). In `stream_talk`, a slide whose picture it changed comes again, as `slide.updated`, before `talk.finished` |

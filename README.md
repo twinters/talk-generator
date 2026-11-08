@@ -63,6 +63,7 @@ talkgenerator login openrouter                               # from now on, Open
 talkgenerator --topic_or_title "Why I Joined a Penguin Cult"   # a topic or a title: talkgenerator tells which
 talkgenerator --topic penguins --language nl                 # in Dutch (with a language model)
 talkgenerator --topic penguins --theme "1997 WordArt"        # a look; by default, the talk's seed picks one
+talkgenerator --topic penguins --theme_families "neon,blueprint"   # a look the seed picks, of these families only
 talkgenerator --topic penguins --schema ted                  # copyright-free images only, for decks shown in public
 talkgenerator --topic penguins --schema pitch                # a startup pitch: the problem, the market, the ask...
 talkgenerator --topic penguins --schema academic             # a conference talk: the method, p-values, Reviewer 2

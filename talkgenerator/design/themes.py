@@ -3,7 +3,8 @@
 A family says what its members can be: how light their backgrounds are, which hues and colour harmony they use,
 their font pairs, decoration and casing. A member picks from that with the seed, and then repairs its colours until
 every text reads on its background (WCAG contrast: at least 4.5 for body text, 3 for titles). Some families are
-extremes, for laughs ("1997 WordArt", "Comic Sans everywhere"): they're in the random mix unless left out.
+extremes, for laughs ("1997 WordArt", "Comic Sans everywhere"): they're in the random mix unless left out. A talk can
+also say which families a random theme can be of (see allowed): one whose seed picks one of them keeps its theme.
 
 A family's fonts are pairs of fonts that nearly every computer has, and (most of the time, OPEN_FONT_CHANCE) a pair
 of open fonts with more personality, which decks carry inside them (talkgenerator.design.fonts.OPEN_FONTS). The
@@ -12,7 +13,7 @@ extremes keep to the installed ones: Comic Sans MS, Impact and Arial Black are t
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from typing import Any, Final, Literal, TypeVar
 
@@ -635,26 +636,81 @@ def catalog(extremes: bool = True) -> list[dict[str, Any]]:
     ]
 
 
+def allowed(chosen: str | Iterable[str] | None = None) -> tuple[str, ...]:
+    """The families a random theme can be of (generate_presentation's theme_families, decision D62), by their names
+    (in any order and case), or one string with their names separated by commas ("dark minimal,Swiss poster"): in
+    the order of FAMILIES, so the order they're given in doesn't change a talk. None gives them all. A ValueError for
+    a family there isn't, for classic, random or chaos among them (they go alone, as theme), and for none at all
+    (theme "classic" has the 2019 template)."""
+    if chosen is None:
+        return tuple(FAMILIES)
+    parts = chosen.split(",") if isinstance(chosen, str) else list(chosen)
+    wanted = {part.strip().lower() for part in parts if part.strip()}
+    known = {name.lower() for name in FAMILIES}
+    for name in sorted(wanted):  # (in a fixed order: the same names, the same error)
+        if name in (CLASSIC, RANDOM, CHAOS):
+            raise ValueError(
+                f"theme_families names the families a random theme can be of: {name!r} goes alone, as theme"
+            )
+        if name not in known:
+            raise ValueError(f"There's no theme family {name!r}; there are {', '.join(FAMILIES)}")
+    if not wanted:
+        raise ValueError(
+            "theme_families names at least one family to pick from (theme 'classic' has the 2019 template)"
+        )
+    return tuple(name for name in FAMILIES if name.lower() in wanted)
+
+
+def families(extremes: bool = True, among: str | Iterable[str] | None = None) -> tuple[str, ...]:
+    """The families a random theme can be of: those a talk allows (among: see allowed; None, all of them), less the
+    extremes when they're left out. A ValueError when that leaves none: a talk that allows only the families for
+    laughs, and leaves those out."""
+    picked = tuple(name for name in allowed(among) if extremes or not FAMILIES[name].extreme)
+    if not picked:
+        raise ValueError(
+            "theme_families allows only families for laughs, which extreme_themes off leaves out: allow another "
+            "family too, or the extremes"
+        )
+    return picked
+
+
 def pick(
-    spec: str, rng: random_util.Rng, extremes: bool = True, favoured: Mapping[str, float] | None = None
+    spec: str,
+    rng: random_util.Rng,
+    extremes: bool = True,
+    favoured: Mapping[str, float] | None = None,
+    among: str | Iterable[str] | None = None,
 ) -> Theme | None:
     """The theme a spec asks for: None for the classic one, a member of a family by its name, or (for "random") of
     a family the seed picks, extremes included unless they're left out, each as likely as its weight times what
     favoured says for it (by the family's name: a talk's persona favours some families, see talkgenerator.personas;
-    1 for the others)."""
+    1 for the others).
+
+    A random theme is of a family the talk allows (among: see allowed; None, all of them). The seed picks among all
+    the families first, and only when that one isn't allowed, again among those that are: so a talk whose family is
+    allowed keeps its theme, whichever others aren't, and each allowed family comes up as often as the weights say
+    among them. A family named goes first, as a persona named goes before the personas a talk allows."""
     if spec == CLASSIC:
         return None
     with random_util.use(rng):
         if spec == RANDOM:
-            pool = [family for family in FAMILIES.values() if extremes or not family.extreme]
+            picked = families(extremes, among)  # (a ValueError for a family there isn't)
             weights = favoured or {}
-            weighted = [(family.weight * weights.get(family.name, 1.0), family) for family in pool]
-            family = random_util.weighted_random(weighted) or pool[0]
+            family = _draw([family for family in FAMILIES.values() if extremes or not family.extreme], weights)
+            if family.name not in picked:
+                family = _draw([FAMILIES[name] for name in picked], weights)
         elif spec in FAMILIES:
             family = FAMILIES[spec]
         else:
             raise ValueError(f"There's no theme {spec!r}; there are {', '.join(names())}")
         return member(family)
+
+
+def _draw(pool: list[Family], weights: Mapping[str, float]) -> Family:
+    """One of the families, as the current random stream picks it: each as likely as its weight times its
+    multiplier."""
+    weighted = [(family.weight * weights.get(family.name, 1.0), family) for family in pool]
+    return random_util.weighted_random(weighted) or pool[0]
 
 
 def member(family: Family) -> Theme:

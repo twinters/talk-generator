@@ -81,6 +81,7 @@ def generate_presentation_using_cli_arguments(args) -> tuple[Presentation | None
         theme=getattr(args, "theme", None),
         style_chaos=getattr(args, "style_chaos", 0.0) or 0.0,
         extreme_themes=getattr(args, "extreme_themes", True),
+        theme_families=getattr(args, "theme_families", None),
         name_styles=getattr(args, "name_styles", None),
         license_policy=getattr(args, "license_policy", None),
         image_generator=getattr(args, "image_generator", None),
@@ -127,6 +128,7 @@ def generate_presentation(
     persona: str | None = None,
     personas: str | Iterable[str] | None = None,
     vision_pick: bool | str | TextProvider | None = None,
+    theme_families: str | Iterable[str] | None = None,
 ) -> tuple[Presentation | None, SlideDeck, str | None]:
     """Deprecated, for talkgenerator 4's callers: generate a talk, save it as a PowerPoint in output_folder (unless
     save_ppt is off), and return the PowerPoint, the talk and the file it went to (see _generate_presentation for the
@@ -168,6 +170,7 @@ def generate_presentation(
         persona=persona,
         personas=personas,
         vision_pick=vision_pick,
+        theme_families=theme_families,
     )
 
 
@@ -200,6 +203,7 @@ def _generate_presentation(
     persona: str | None = None,
     personas: str | Iterable[str] | None = None,
     vision_pick: bool | str | TextProvider | None = None,
+    theme_families: str | Iterable[str] | None = None,
 ) -> tuple[Presentation | None, SlideDeck, str | None]:
     """Generate a talk, as talkgenerator's own commands and stream_talk do: what generate_presentation does, without
     its DeprecationWarning. With debug_notes, every slide's speaker notes explain how it was generated.
@@ -232,6 +236,13 @@ def _generate_presentation(
     is off), "classic" (the 2019 template), a family's name such as "dark minimal", or "chaos" (every slide in a
     theme of its own): one of talkgenerator.design.themes.choices(), which catalog() describes. None is the one
     TALKGENERATOR_THEME names, or else random. style_chaos is how many slides get a theme of their own (0 to 1).
+
+    theme_families are the families a random theme can be of (the talk's, and a chaos deck's slides' own): their
+    names, as a list or one string separated by commas, such as "dark minimal,Swiss poster" (see
+    talkgenerator.design.themes.allowed). None: all of them (the extremes too, unless extreme_themes is off). A talk
+    whose seed picks a family among them keeps its theme, whichever others are left out; the others get a theme of
+    one of those, each as often as its weight and the persona's favourites say among them (decision D62). A family
+    named as the theme goes first, as a persona named goes before personas.
 
     presenter is the presenter's name, which never goes to a language model. Without one, a name is made up in one of
     name_styles, which the talk's seed picks: "pun" (such as Prof. Anna Tomy, for a talk on medicine),
@@ -285,6 +296,8 @@ def _generate_presentation(
     theme = theme or settings.theme()
     if theme not in themes.choices():
         raise ValueError(f"There's no theme {theme!r}; there are {', '.join(themes.choices())}")
+    # (a ValueError for a family there isn't, or for only extremes with the extremes left out)
+    families = themes.families(extreme_themes, theme_families) if theme_families is not None else None
     chosen_styles = names.styles(name_styles)  # (a ValueError for a style there isn't)
     languages.language(language)  # (a ValueError for a language talkgenerator doesn't know)
     if topic_or_title is not None and (topic or title):
@@ -329,17 +342,20 @@ def _generate_presentation(
     talk_format = presentation_schema.format
     policy = licenses.policy(license_policy if license_policy is not None else presentation_schema.license_policy)
 
-    # The talk's theme, from its seed too, of a family its persona and its format favour more often (see
-    # talkgenerator.design.themes)
+    # The talk's theme, from its seed too, of a family its persona and its format favour more often, among those it
+    # allows (see talkgenerator.design.themes)
     if theme == themes.CHAOS:
         theme, style_chaos = themes.RANDOM, 1.0
     favoured = formats.multiplied(
         chosen_persona.themes if chosen_persona is not None else None,
         talk_format.themes if talk_format is not None else None,
     )
-    chosen_theme = themes.pick(theme, rng.child("theme"), extreme_themes, favoured)
+    chosen_theme = themes.pick(theme, rng.child("theme"), extreme_themes, favoured, families)
     if chosen_theme is not None:
-        logger.info("Theme: {}".format(chosen_theme.name))
+        allows = ""
+        if theme == themes.RANDOM and families is not None and families != themes.families(extreme_themes):
+            allows = f", of one of the {len(families)} families it allows"
+        logger.info("Theme: {}{}".format(chosen_theme.name, allows))
 
     logger.info("Presentation schema: {}".format(presentation_schema))
     logger.info("License policy: {} ({})".format(policy.name, ", ".join(sorted(policy.classes))))
@@ -419,6 +435,7 @@ def _generate_presentation(
             theme=chosen_theme,
             style_chaos=style_chaos,
             extreme_themes=extreme_themes,
+            theme_families=families,
             progress=progress,
             # (None: the default styles, as the persona nudges them; styles given go alone)
             name_styles=chosen_styles if name_styles is not None else None,
@@ -483,6 +500,7 @@ def stream_talk(
     persona: str | None = None,
     personas: str | Iterable[str] | None = None,
     vision_pick: bool | str | TextProvider | None = None,
+    theme_families: str | Iterable[str] | None = None,
 ) -> Iterator[TalkEvent]:
     """Make a talk as generate_presentation does (the same deck, for the same options, seed and answers), handing
     over what's ready while it's made (see talkgenerator.models.events): talk.started once its title is known (the
@@ -533,6 +551,7 @@ def stream_talk(
                     persona=persona,
                     personas=personas,
                     vision_pick=vision_pick,
+                    theme_families=theme_families,
                 )
                 events.put(TalkFinished(deck=slide_deck.to_deck()))
         except TalkCancelled:
@@ -568,7 +587,9 @@ class _Following:
         self._go_on()
         theme = slide_deck.theme
         if theme is not None:  # (laid out one by one as they come, as to_deck lays them all out)
-            self._layout = engine.DeckLayout(slide_deck.seed, theme, slide_deck.style_chaos, slide_deck.extreme_themes)
+            self._layout = engine.DeckLayout(
+                slide_deck.seed, theme, slide_deck.style_chaos, slide_deck.extreme_themes, slide_deck.theme_families
+            )
         self.hand_over(
             TalkStarted(
                 title=slide_deck.title,
@@ -739,6 +760,14 @@ def _personas(value: str) -> tuple[str, ...]:
     """--personas's value, once it's known to name only personas there are."""
     try:
         return talk_personas.allowed(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError(str(error)) from error
+
+
+def _theme_families(value: str) -> tuple[str, ...]:
+    """--theme_families's value, once it's known to name only theme families there are."""
+    try:
+        return themes.allowed(value)
     except ValueError as error:
         raise argparse.ArgumentTypeError(str(error)) from error
 
@@ -950,6 +979,14 @@ def get_argument_parser():
         dest="extreme_themes",
         action="store_false",
         help="Leave the themes for laughs, such as 1997 WordArt and Comic Sans everywhere, out of the random mix",
+    )
+    parser.add_argument(
+        "--theme_families",
+        default=None,
+        type=_theme_families,
+        help="The theme families a random theme can be of (and with chaos, every slide's), separated by commas, such "
+        "as 'dark minimal,Swiss poster': a talk whose seed picks one of them keeps its theme, and the others get one "
+        "of them (default: all of them)",
     )
     parser.add_argument(
         "--language",
