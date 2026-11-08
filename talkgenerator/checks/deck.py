@@ -550,6 +550,9 @@ def deck_metrics(deck: Deck) -> dict[str, Any]:
         ),
         "images": sum(1 for slide in deck.slides for element in slide.elements if isinstance(element, ImageElement)),
         **_image_matches(deck),
+        # What a vision pick made of the pictures it looked at (see talkgenerator.images.vision), and which model
+        "vision_pick": _vision_pick(deck),
+        "vision_model": deck.vision_model,
         "license_classes": _license_classes(deck),
         "looks": _looks(deck),
         "repeated_titles": _repeated_titles(deck),
@@ -568,6 +571,17 @@ def _image_matches(deck: Deck) -> dict[str, int]:
                 described += 1
                 matching += bool(_content_words(element.image.query) & _content_words(element.image.description))
     return {"images_with_query_and_description": described, "images_matching_their_query": matching}
+
+
+def _vision_pick(deck: Deck) -> dict[str, int]:
+    """How many of the deck's pictures a vision model picked over the finder's, kept (the finder's own) and refused
+    (none of their candidates would do)."""
+    counts = {"picked": 0, "kept": 0, "refused": 0}
+    for slide in deck.slides:
+        for image in slide.images():
+            if image.vision is not None:
+                counts[image.vision] += 1
+    return counts
 
 
 def _license_classes(deck: Deck) -> dict[str, int]:

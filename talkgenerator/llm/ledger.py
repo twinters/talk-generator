@@ -20,6 +20,9 @@ from talkgenerator.llm.base import BudgetExceeded, ProviderError, TextProvider, 
 from talkgenerator.models.usage import Usage
 
 IMAGES = "image"  # the purpose of a generated picture's entry (talkgenerator.images.generation.PURPOSE)
+# The purpose of the vision pick's request (talkgenerator.images.vision.PURPOSE): a language model's request, by
+# a model that picks the talk's pictures, not the one that writes it
+VISION = "vision pick"
 
 
 @dataclass(frozen=True)
@@ -63,6 +66,8 @@ class Ledger:
             )
             if total.unpriced_requests:
                 line += f" plus {total.unpriced_requests} of unknown price"
+            if total.vision_requests:
+                line += f"; {total.vision_requests} of them to pick pictures"
             if total.failed_requests:
                 line += f"; {total.failed_requests} failed"
         if total.images or total.failed_images:
@@ -78,8 +83,13 @@ class Ledger:
         return line
 
     def language_models(self) -> list[str]:
-        """The language models that answered the talk's requests, in order (not its image generators)."""
-        return [entry.model for entry in self.entries if entry.error is None and entry.purpose != IMAGES]
+        """The language models that answered the talk's requests, in order (not its image generators, nor the vision
+        model that picked its pictures: see vision_models)."""
+        return [entry.model for entry in self.entries if entry.error is None and entry.purpose not in (IMAGES, VISION)]
+
+    def vision_models(self) -> list[str]:
+        """The models that answered the requests of the talk's vision pick, in order."""
+        return [entry.model for entry in self.entries if entry.error is None and entry.purpose == VISION]
 
 
 @dataclass(frozen=True)
@@ -133,17 +143,17 @@ class MeteredProvider(TextProvider):
         for model in self.possible_models():
             self.budget.check(self.ledger, model, request, self.max_output_tokens(request))
         start = time.monotonic()
+        vision = 1 if request.purpose == VISION else 0
         try:
             response = call()
         except ProviderError as error:
-            usage = Usage(requests=1, failed_requests=1)
+            usage = Usage(requests=1, vision_requests=vision, failed_requests=1)
             self.ledger.add(LedgerEntry(self.id, request.purpose, usage, time.monotonic() - start, error=str(error)))
             raise
-        self.ledger.add(
-            LedgerEntry(
-                response.model or self.id, request.purpose, usage_of(response, self.id), time.monotonic() - start
-            )
-        )
+        usage = usage_of(response, self.id)
+        if vision:
+            usage = usage.model_copy(update={"vision_requests": 1})
+        self.ledger.add(LedgerEntry(response.model or self.id, request.purpose, usage, time.monotonic() - start))
         return response
 
 

@@ -4,9 +4,13 @@ import copy
 import logging
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from talkgenerator.images.licenses import SHOWN as _LICENSE_SHOWN
-from talkgenerator.models.deck import DisplayPolicy, ImageAnalysis, LicenseClass
+from talkgenerator.models.deck import DisplayPolicy, ImageAnalysis, LicenseClass, VisionVerdict
+
+if TYPE_CHECKING:
+    from talkgenerator.images.finder import RunnersUp
 
 logger = logging.getLogger("talkgenerator")
 
@@ -82,6 +86,10 @@ class ImageData:
         # thumbnail found, once the image finder had one
         self.look: str | None = None
         self.analysis: ImageAnalysis | None = None
+        # In a talk with a vision pick (see talkgenerator.images.vision): the other candidates the finder had for its
+        # place, which the vision model sees beside it, and what the vision model made of them
+        self.runners_up: RunnersUp | None = None
+        self.vision: VisionVerdict | None = None
 
     def found_with(self, query: str) -> ImageData:
         """This image, noting the search that found it: a copy, as a source may hand out the same object again."""

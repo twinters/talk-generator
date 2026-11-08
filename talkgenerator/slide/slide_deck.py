@@ -50,6 +50,9 @@ class SlideDeck:
         self.extreme_themes = True
         # The language model that writes the talk ("provider:model"), or None: a classic talk
         self.language_model: str | None = None
+        # The vision model that picked its pictures among their candidates, if it had a vision pick that did (see
+        # talkgenerator.images.vision)
+        self.vision_model: str | None = None
         # The license classes its images may have (see talkgenerator.images.licenses)
         self.license_policy = "all"
         # What was typed, when it could be the talk's topic or its title, and how it was read (see talkgenerator.titles)
@@ -99,6 +102,10 @@ class SlideDeck:
         if slide is not None and self.update_listener is not None:
             self.update_listener(self, slide_index, slide)
 
+    def slides(self) -> list[Slide]:
+        """The slides added so far, in order."""
+        return [slide for slide in self._slides if slide is not None]
+
     def is_complete(self):
         return len(self._slides) >= self._size and (None not in self._slides)
 
@@ -126,6 +133,7 @@ class SlideDeck:
             schema_name=schema_name,
             seed=self._seed,
             language_model=self.language_model,
+            vision_model=self.vision_model,
             license_policy=self.license_policy,
             slides=tuple(slide.to_deck_slide() for slide in self._slides if slide is not None),
             usage=self.usage,

@@ -21,6 +21,7 @@ from talkgenerator.llm import prices
 from talkgenerator.llm.base import (
     Capabilities,
     Finish,
+    Message,
     ProviderUnavailable,
     TextProvider,
     TextRequest,
@@ -79,7 +80,7 @@ class ClaudeProvider(TextProvider):
         arguments: dict[str, Any] = {
             "model": self.model,
             "max_tokens": self.max_output_tokens(request),
-            "messages": [{"role": message.role, "content": message.content} for message in request.messages],
+            "messages": [{"role": message.role, "content": _content(message)} for message in request.messages],
             "output_config": output_config,
         }
         if request.system:
@@ -115,6 +116,18 @@ class ClaudeProvider(TextProvider):
             raise ProviderUnavailable("Claude needs an Anthropic API key: set ANTHROPIC_API_KEY")
         self._client = sdk.Anthropic(api_key=key, timeout=TIMEOUT_SECONDS, max_retries=MAX_RETRIES)
         return self._client
+
+
+def _content(message: Message) -> str | list[dict[str, Any]]:
+    """A message's content, as the Messages API takes it: its text, or for one that shows pictures, their blocks and
+    then its text."""
+    if not message.images:
+        return message.content
+    pictures: list[dict[str, Any]] = [
+        {"type": "image", "source": {"type": "base64", "media_type": image.media_type, "data": image.base64()}}
+        for image in message.images
+    ]
+    return [*pictures, {"type": "text", "text": message.content}]
 
 
 def _cost(attempts: Sequence[Any], answered_by: str) -> float | None:

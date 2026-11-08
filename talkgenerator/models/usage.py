@@ -7,6 +7,9 @@ from talkgenerator.models.base import Data
 
 class Usage(Data):
     requests: int = 0  # requests to language models (a generated picture isn't one)
+    # Of those, the requests of the talk's vision pick, for a vision model to pick its pictures (see
+    # talkgenerator.images.vision): a free tier counts them as it counts the others
+    vision_requests: int = 0
     input_tokens: int = 0  # uncached input
     cached_input_tokens: int = 0  # input read from the provider's prompt cache, which costs less
     output_tokens: int = 0
@@ -24,6 +27,7 @@ class Usage(Data):
     def __add__(self, other: Usage) -> Usage:
         return Usage(
             requests=self.requests + other.requests,
+            vision_requests=self.vision_requests + other.vision_requests,
             input_tokens=self.input_tokens + other.input_tokens,
             cached_input_tokens=self.cached_input_tokens + other.cached_input_tokens,
             output_tokens=self.output_tokens + other.output_tokens,

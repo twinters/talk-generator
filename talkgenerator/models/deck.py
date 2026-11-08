@@ -103,6 +103,12 @@ class ImageAnalysis(_Data):
     hash: str = ""
 
 
+# What a vision model made of the candidates for a picture's place, which it saw side by side: "picked" (it picked this
+# one over the finder's), "kept" (it picked the finder's own, this one), or "refused" (none of them shows what the slide
+# asked for, and the finder's stayed)
+VisionVerdict = Literal["picked", "kept", "refused"]
+
+
 class ImageAsset(_Data):
     """An image, and where it came from. The url is a web address or a local path."""
 
@@ -128,6 +134,9 @@ class ImageAsset(_Data):
     # The look it was found for (an aesthetic profile: see talkgenerator.images.profiles), and what a look at it found
     look: str | None = None
     analysis: ImageAnalysis | None = None
+    # What the talk's vision model made of it and the other candidates for its place (see
+    # talkgenerator.images.vision), in a talk with a vision pick: none when it didn't look
+    vision: VisionVerdict | None = None
 
 
 # The click of its slide on which an element appears (the first is 1), when it isn't there from the start: a quiz's
@@ -382,6 +391,9 @@ class Deck(_Data):
     style: Theme | None = None  # the theme's tokens (none for the classic theme)
     # The language model that wrote the talk, as "provider:model" (the one that answered), or none: a classic talk
     language_model: str | None = None
+    # The vision model that picked its pictures among their candidates (the one that answered), if it had a vision
+    # pick that did (see talkgenerator.images.vision)
+    vision_model: str | None = None
     # The license classes its images may have: "all", "open" (everything but fair use), or the classes, as
     # "public-domain,open" (see talkgenerator.images.licenses)
     license_policy: str = "all"

@@ -377,7 +377,10 @@ class TextProvider(Protocol):
 
 The SDKs are optional extras: `talkgenerator[anthropic]`, `talkgenerator[openai]` (for OpenRouter, OpenAI,
 ChatGPT sign-in and compatible servers) and `talkgenerator[llm]` for both. Without them, v5 works like v4.
-Image generators get a sibling interface ([section 10.5](#105-generated-images)).
+Image generators get a sibling interface ([section 10.5](#105-generated-images)). A request can show pictures
+(`Message.images`: an `ImagePart` has the bytes, which a cassette never keeps, and a name, which keys the recorded
+answer instead), for the vision pick ([10.3](#103-aesthetic-profiles-and-smart-filters)): the `openrouter`,
+`anthropic` and `openai` adapters send them as their APIs take them, and budgets count a picture as Claude does.
 
 ### 5.5 Provider facts
 
@@ -1290,9 +1293,9 @@ As built (2026-11-07, `profiles.py`, `catalog.py`, `analysis.py`):
   warnings; the report counts per look how many pictures have it (`looks`) and the images per license class.
 - **Treatment**: a vintage picture that isn't monochrome gets its look's sepia in a theme without a filter of its
   own (`treatments.for_look`); the classic template keeps its pictures as they are.
-- Not yet: icon sets for `illustration` (10.4: Iconify serves SVG only), and the vision pick (4.) and generated
-  images (10.5), for which slots have room (`generate`). The museums' date and classification filters came with
-  the new sources (10.4).
+- Not yet: icon sets for `illustration` (10.4: Iconify serves SVG only). The museums' date and classification
+  filters came with the new sources (10.4), generated images with 10.5, and the vision pick (4.) on 2026-11-08 (D58:
+  see "The vision pick, as built" below).
 - **Live** (2026-11-07, `talkgenerator check`, every key, themed talks; the free OpenRouter router for the talks it
   writes; reports in the session's scratchpad, sample decks in the comparison folder's `15-v5-9997e28-image-looks`):
   - Classic talks on the 10 default topics (seed 1) and on 5 topics with seeds 2 and 3: 20 talks, 18 the same made
@@ -1312,6 +1315,77 @@ As built (2026-11-07, `profiles.py`, `catalog.py`, `analysis.py`):
     against 97; cold, 37 against 39 seconds, and 421 calls against 163, most of them thumbnails (Reddit's previews,
     Pixabay's and Pexels' CDNs), which the second round had remembered. Search APIs: Pexels 8 against 5, the Art
     Institute 8 against 5, Openverse 7 against 0 (on the site: to watch, with Unsplash at 50 an hour).
+
+**The vision pick, as built** (2026-11-08, `talkgenerator.images.vision`, D58). Off by default; `vision_pick=` on
+`generate_presentation`, `stream_talk` and `render_plan`, `--vision_pick` on the command line, `talkgenerator render`
+and `talkgenerator check`. Only planned slides take part (a language model's, or a plan's), as their queries say what
+a picture is to show:
+
+1. **Candidates.** In a talk with a vision pick, the finder keeps the runners-up of every picture it finds for a
+   planned slide (`ImageData.runners_up`): the other candidates of the batch of sources that found it, with a
+   thumbnail, not passed over and not on the slide, its own source's first (the finder takes the first source that
+   found any; alternating between sources put a second source's memes and screenshots beside the first's stock
+   photos), six at most. Taken in order, without a draw of the talk's dice: the talk finds the same pictures with a
+   vision pick as without one, before the pick. Their thumbnails are fetched as the slides are settled.
+2. **One contact sheet a talk**, once the last slide is settled: a row a picture (the first ten of the talk), one under
+   another, each with its number and what it asks for (the slot's intent and the query) on its left, and up to four
+   candidates in cells of 200 by 150 pixels (the finder's and three runners-up that have the look's preferences and
+   aren't on another slide, nor nearly), in an order the talk's seed shuffles, labelled "3B". About 1,060 pixels wide;
+   1,500 tokens as Claude counts them for ten rows. Gifs, InspiroBot's posters, meme templates and flags take no
+   part, nor the stock photos that stand in for generated pictures.
+3. **One request**, with the sheet, what each slide says (never the presenter's name the talk was given) and a JSON
+   schema: for every row, what its candidates show, in a few words each, and then a letter, or "none". Saying what
+   they show is what made models that don't think first pick well: without it, both free models answered "none" for
+   nearly every row.
+4. **The picks** take the finder's pictures' places once they pass the finder's checks (downloaded, or probed while
+   the talk streams; not on another slide, nor nearly), and the slides that changed are handed over again
+   (`slide.updated`) before `talk.finished`. "None", a row it didn't answer, an error, a refusal, an answer later than
+   30 seconds and a budget that doesn't allow the request keep the finder's pictures. Every picture it saw says what
+   it made of it (`vision`: `picked`, `kept` or `refused`), the deck says which model it was (`vision_model`), and its
+   usage counts the request (`vision_requests`, among `requests`; a request the talk stopped waiting for counts as a
+   failed one).
+5. **Which model:** `on` (or `True`) asks the talk's own model when it reads pictures (Claude, OpenAI's, a replayed
+   talk's cassette), else OpenRouter's free models that do: `nvidia/nemotron-3.5-super-vl:free`, then
+   `dots-studio/dots-3-note-preview:free`, without thinking. Of the nine free models that took pictures on
+   2026-11-08, the free router sent a drawn test sheet to `nemotron-3-nano-omni`, which couldn't tell a red circle
+   from a blue square; Gemma 4's free endpoints turned the request's parameters down or were busy upstream;
+   `stealth/crouton-alpha` isn't served in this region. Any model takes its spec (`anthropic:claude-haiku-5-5`:
+   about $0.001 a talk by list price).
+6. **Replay:** the sheet is named by its candidates (`ImagePart.name`), which keys the recorded answer instead of the
+   picture's bytes, which a cassette never keeps; a request without pictures keeps the key it had before. The check
+   records the vision model's answers on the talk's cassette, and its second run replays them.
+
+**Measured** (2026-11-08, OpenRouter's free models at $0, GIPHY and Unsplash off, random themes, 10 slides; each talk
+written once by the free router and made from that same answer without the pick and with it, so only the pick
+differs; scripts and reports in the session's scratchpad `live/`, sample decks in the comparison folder's
+`27-v5-cff9bc4-vision-pick`):
+
+- **Pictures that show what they were searched for.** `talkgenerator check`'s `images_matching_their_query` (a
+  picture's description shares a word with its query): 24 of 54 without the pick and 28 with it (6 talks), 20 and 23 of
+  40 (5 more), 10 and 10 of 13 (one). That measure can't see a picture, so every row the model saw was judged by eye
+  too (by Claude, from the sheets, before looking at the picks): whether the picture that ends up on the slide shows
+  the subject of its query. With the final setup (12 talks, 74 rows): 27 rows with the finder's pictures (36%), 37 with
+  the pick (50%); 14 rows better, 4 worse (where the model's reading of a thumbnail was as defensible as the judge's),
+  and in 18 no candidate showed it. On the same 37 rows asked twice, 17 and 18: the free model varies from one answer
+  to the next about as much as the prompts tried last did (one that has it name each row's subject first: 18).
+- **Models and prompts**, on the first six talks' sheets (25 rows, the finder's pictures 13): Nemotron without
+  thinking, saying what each row shows before it picks, 16, in 2 to 7 seconds; dots-3 the same, 16, in 5 to 9;
+  Nemotron thinking at most 1,024 tokens, 17, in 8 to 44 seconds; Nemotron at `minimal` effort without saying what each
+  row shows, 14, in 10 to 43 seconds and once over a minute (8,145 tokens of thinking, no answer); both without
+  thinking or saying, "none" for nearly every row. With the sheet in two columns (7 rows or more), both paired rows
+  with the wrong queries (describing row 3's candidates for row 2): hence one column, with what each row asks for on
+  it. The runners-up alternating between sources put memes beside stock photos: hence the picked one's source first.
+- **Refusals.** Nemotron still answers "none" for rows where its own description shows the subject ("6D: person
+  sitting on a rock on a mountain", for a person meditating on a mountain), and once for every row of two talks in a
+  `talkgenerator check` (16 rows, the finder's pictures among them showing penguins for penguins): the finder's
+  pictures stay then, so a refusal costs a request and nothing else.
+- **Seconds a talk.** The request took 3 to 11 seconds (once 19, when Nemotron failed over to dots-3). The slides
+  come as fast as without the pick; `talk.finished` comes later: 9 and 24 seconds after the last slide in two talks
+  streamed live (their first slides after 16 and 18 seconds, as the free router wrote), 8 to 21 in six streamed from
+  recorded answers (the thumbnails fetched after the last slide there; in a live talk, while the model writes).
+- **Requests:** one a talk, so two for a talk by a language model: 12 for 6 talks, 10 for 5, $0. `talkgenerator
+  check --llm openrouter --vision_pick` (penguins, coffee): 0 errors, 2 of 2 talks the same when made again from the
+  recorded answers, 4 requests.
 
 ### 10.4 More image sources
 
@@ -1673,7 +1747,8 @@ As built (2026-11-07, `talkgenerator.images.generation` and `talkgenerator.image
   today), nginx `limit_req` on the API, quota counters in a small SQLite file, and Cloudflare Turnstile only if
   bots show up.
 - **Images:** stock and open sources, as now (Unsplash stays at 50 requests an hour until its production review
-  passes), and no AI images on the site's budget.
+  passes), and no AI images on the site's budget. The vision pick (10.3, D58), if the site turns it on, is one more
+  free request a talk: two a talk, so 500 talks a day and 10 a minute on the free tier instead of 1,000 and 20.
 - **Upgrades paid by the visitor** (decided: all of them): "Connect OpenRouter" (OAuth PKCE: the visitor's own
   free quota or credits, and their choice of model, image models included); an Anthropic or OpenAI key for one
   talk (sent over HTTPS with that request, used once, never stored or logged); and Sign in with ChatGPT once
@@ -1742,7 +1817,7 @@ before the new formats. A milestone is a checkpoint on `v5`, not a release; only
 | 2 (under way: the TalkPlan schema, the planner, the `openrouter`, `anthropic`, `openai` and `chatgpt` adapters, `render`, `schema`, `formats`, the Skill, languages with their check, `login openrouter` and `login chatgpt`, and trend and ranking charts are in; on 2026-11-06, 30 benchmark talks by the free models had 0 errors, one request each, at $0, and 290 of 300 slides by the model) | LLM TED talks and the Claude Skill | TalkPlan schema; the LLM planner (one streamed call, dice, per-slide fallback, safety); `openrouter`, `anthropic` and `openai` adapters; languages, Dutch first; `render plan.json`, `schema`, `formats`; `skill/` with SKILL.md; `login openrouter`; the `chatgpt` adapter (may slip to milestone 3); checks for requests, cost, speed and language | on the benchmark with OpenRouter's free models: no holes, no leftovers, $0 and one request per talk; Dutch talks pass the language check; Claude Code makes a deck end to end with the Skill |
 | 3 (done, 2026-11-07: theme families and extremes, procedural palettes with contrast repair, layouts and their variants (never twice in a row), image treatments, WordArt-style heading effects, text fitting with bundled metric twins, the shapes renderer with the classic animations (columns click by click), previews and contact sheets, the design checks and the local MCP server; 0 design findings on 792 benchmark decks in 12 seeds; thumbnails in CI left out, D29) | Themes and layouts | theme tokens and families, extremes on by default; procedural palettes and font pairs; layout variants; text fitting; image treatments; the `classic` theme; thumbnails and contact sheet in CI; the local MCP server | contrast and overflow checks pass on every theme |
 | 4 (under way: `stream_talk()`, probe validation, display policies, presenter names in styles (5.10, for the site's settings) and what's typed read as a topic or a title (5.11, `topic_or_title=`, for the site's Automatic choice) are in; since 2026-11-07, talkgenerator.com runs v5 from GitHub (D31): talks stream into the browser, the .pptx is made on download, Pixabay's images are copied, and classic and LLM talks meet the speed and memory bars on the VPS (section 14), but for the first talk after a restart; left: deploying the streamed-titles fix (`be09a7e`: on the site, a free model that writes its answer's fields in alphabetical order put `slide_10` before `slide_2`, so slides 2 to 9 fell back to classic ones, or were left out of a Dutch copyright-free talk), the new settings with 5.10's and 5.11's options, and loading the library before the first talk) | Streaming and the web view | `stream_talk()`, display policies, probe validation; in talk-generator-web: the SSE endpoint, the Angular renderer, LLM talks by default with the classic switch, a language choice, Connect OpenRouter and pasted keys, .pptx on download, an Automatic topic-or-title choice (5.11), the site running `v5` from git (D31) | first slide on screen within the calibrated target on the VPS; a 20-slide talk under the memory bar; the downloaded .pptx matches the web view |
-| 5 (under way: image slots and the finder, license classes and policies, aesthetic profiles with local analysis, and the first flavour packs are in, 2026-11-07; generated images too, on the user's own key or server, credited "AI-generated with <model>" in the `generated` class (10.5, D38, D39); and new sources (10.4): the Met, Cleveland, the Wellcome Collection, NASA, Flagpedia's flags, Imgflip's templates and the Smithsonian (with the user's api.data.gov key), with the museums' type and date filters and more subreddits; talkgenerator.com draws them on a visitor's own OpenRouter account or OpenAI key since 2026-11-08 (in the site's `master`, deployed with its next push); left: the vision pick, and the Library of Congress, Flickr and Iconify, which need an exception, a paid key or a new dependency) | Images | slots, aesthetic profiles and flavour packs, local analysis, license classes; new open and weird sources; AI image generation with the user's own keys; the optional vision pick | license policies enforced; profile checks pass (such as the grayscale share for `vintage`); generated images credited |
+| 5 (under way: image slots and the finder, license classes and policies, aesthetic profiles with local analysis, and the first flavour packs are in, 2026-11-07; generated images too, on the user's own key or server, credited "AI-generated with <model>" in the `generated` class (10.5, D38, D39); and new sources (10.4): the Met, Cleveland, the Wellcome Collection, NASA, Flagpedia's flags, Imgflip's templates and the Smithsonian (with the user's api.data.gov key), with the museums' type and date filters and more subreddits; talkgenerator.com draws them on a visitor's own OpenRouter account or OpenAI key since 2026-11-08 (in the site's `master`, deployed with its next push); and the vision pick, off by default (10.3, D58: a vision model picks each picture among the finder's and three runners-up, in one request a talk, by OpenRouter's free models or the talk's own; 2026-11-08); left: the Library of Congress, Flickr and Iconify, which need an exception, a paid key or a new dependency) | Images | slots, aesthetic profiles and flavour packs, local analysis, license classes; new open and weird sources; AI image generation with the user's own keys; the optional vision pick | license policies enforced; profile checks pass (such as the grayscale share for `vintage`); generated images credited |
 | 6 (under way: fourteen slide types are in, drawn as texts on shapes (D37, section 8); on 2026-11-07, benchmark talks over seeds that bring each of them up had no design, completeness, leftover or language findings: 63 classic talks, and 63 by OpenRouter's free models (620 of 630 slides by the model, at $0), plus 20 classic `ted` talks and 8 Dutch ones, where a long Dutch compound overflowed a narrow box (since, every new layout takes a 20-letter word in every theme, a Venn diagram's labels beside its circles when they don't fit in them); the only other findings were InspiroBot's and Reddit's live answers differing between a talk's two runs. talk-generator-web draws them all unchanged, and needs a small change to hold back what appears on a click in its presentations (merged into the site's master, not deployed yet). Memes with live captions came in later that day (D40); on 2026-11-08 they came to about half of all talks (D48, "I really love the generated memes"), and five slide types from real PowerPoint karaoke decks came in (D49: a fun fact, an acronym, a dare, a flowchart, a tier list), with no findings on them in 36 benchmark talks, 18 classic and 18 by OpenRouter's free models (179 of 180 slides by the model, $0, every talk the same made again), over six seeds and random themes; the same day, so did the user's other two ideas of 2026-11-07: personas that shape a talk (5.2, D47), and bolder themes with subtler, rarer image filters (section 9, D43 to D46). Then the TED content pack (section 11, D54): the classic texts of TED-like talks as data, per kind of slide, grown from 909 templates to 2,872 in a TED talk's voice and linted by tests, with no errors in 184 classic benchmark talks (130 `ted`, the last 30 made twice and the same, and 54 `default`), and a text seen again in a talk on the same topic half as often (9% before, 4% to 5% after). Then five more from the karaoke catalogue (section 8, D57: a wall of text with one point highlighted, an alignment chart, red flags, reviews with stars and a fake error message), with no errors in 62 benchmark talks over seeds that bring each of them up: 39 by OpenRouter's free models in four runs, as the prompt was sharpened between them (longer points for a wall, a one-star review last, buttons and cells of the talk's own, within their lengths, and playful errors, worded as computers word them), 389 of 390 slides by the model, $0, every talk the same made again; and 23 classic ones, 15 `default` and 8 `ted`, every one the same made again. Left: section 8's other candidates and the karaoke catalogue's) | More slide types for TED-like talks | native diagrams, big numbers, quiz, memes with live captions, social posts and more; a much larger, curated TED content pack; memes more often; what real PowerPoint karaoke decks do; personas that shape a talk; bolder themes | every new slide type passes the checks in classic and LLM mode |
 | 7 (under way: the startup pitch and the academic conference talk came in on 2026-11-08, each with its arc, its recipes, its content pack and its favourite personas and themes, and the process slide type (section 7, D56); 42 classic talks and 20 by OpenRouter's free models (199 of 200 slides by the model, $0) had no errors, every talk the same made again. Left: the corporate all-hands, the product keynote and Pecha Kucha's timing) | New talk formats | pitch, academic, corporate, keynote and Pecha Kucha timing, with their content packs (or in 5.1 if the TED work takes longer) | every format works in classic and LLM mode and passes the checks |
 | 8 | Integration | the site runs `v5` on the preview, then in production behind a switch; Sign in with ChatGPT on the site, if OpenAI has admitted it; docs and deprecation warnings | the site runs `v5` for a week without quota or memory incidents |
@@ -1814,8 +1889,9 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D55 | A seed gets only wikiHow's actions about it (`wikihow.about`): with one of its telling words in any form (its rarest word, and its others rarer than 5.5 on the Zipf scale), or with one of the telling words of its related words (rarer than 5.0); and none of the worst (`wikihow.unfit`): none with a word a slide shouldn't make light of, a faith, violence, hate, death or hard drugs, but crude ones stay ("Clean Your Penis" for cleaning), as much of classic talks' humour is crude. WikiHow pads a search it knows little about with its most popular how-tos and with loose matches. The user chose both on 2026-11-08: related actions over the seed's own words only and over leaving out just the padding (36 of 39 sample topics and 29 of 39 of the seeds that slides wander to keep some actions), and crude ones in. |
 | D56 | A talk format beyond the TED-like talks is a presentation schema with a `Format`: a brief for the language model, on a line of the request of its own, what its titles and its presenter's job are like (with the persona's), weights over the personas and multipliers on the theme families (with the persona's), and an arc: its parts in order, each with the fewest and the most slides it has and a rank, which lays out a talk of any length from its length alone (a short talk keeps the parts of the lowest ranks, a long one gives them more slides and has free slides between them). A part's slide generators weigh in on its slides only, so every persona keeps the arc; the format's other slides fill the free slides, and stand in for a part's slide that can't be made. A format reuses the slide types there are, with recipes and a content pack of its own, and gets a new type only where none draws what it needs (the process, for an academic talk's method). |
 | D57 | The next karaoke types (section 8) are picked from the catalogue's next ones for laughs first: a wall of text, an alignment chart, red flags, reviews and a fake error message. A wall of text is fine print on purpose, at the one size that fills its slide, which the design checks hold to a floor of its own (9 points, as the credits have theirs); its one click highlights its punchline. A review's stars are drawn and written ("4/5"), so they read in every renderer and font, and an error message comes up whole, as a fun fact or a dare does. Words talkgenerator adds (an alignment chart's axes, "Continued on next slide") are in the talk's language. |
+| D58 | A vision model can pick a talk's pictures (the vision pick, 10.3), off by default (`vision_pick=`, `--vision_pick`), for the pictures of planned slides only, in one request a talk once its last slide is settled: each picture among the finder's own and up to three runners-up, which the finder keeps in order, without a draw of the talk's dice (so a talk finds the same pictures with it or without it, before the pick), its own source's first; on one contact sheet, a row a picture, with what it asks for beside it, the candidates in an order the seed shuffles. The model says what each row's candidates show, then picks one or none; a pick takes the finder's picture's place once it passes the finder's checks, and "none", a failure, an answer later than 30 seconds or a budget that doesn't allow the request keep the finder's. `on` asks the talk's own model when it reads pictures, else OpenRouter's free vision models without thinking (not the free router). The request is the talk's (its ledger and budget), never names the presenter it was given, and replays from a cassette, which keys the sheet by its candidates and never keeps its bytes. talkgenerator.com may turn it on for the free models' talks once it hands over `slide.updated`: one more free request a talk. |
 
-D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, and D43 to D57 on 2026-11-08; the
+D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, and D43 to D58 on 2026-11-08; the
 others follow from the design.
 
 ### Open questions

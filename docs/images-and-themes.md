@@ -100,6 +100,37 @@ gore or sexual content, is never sent (the stock photo stays), every prompt asks
 moderation has its say too. Prices and default models are in `talkgenerator/data/image_generators.json`; an
 `image_generators.json` in your config folder adds models or changes them, as image models come and go.
 
+### The vision pick
+
+The finder picks a picture by what its source says about it, and for some looks by a look at its colours, never by
+what it shows. With `--vision_pick` (`vision_pick=` in Python), a vision model looks at the candidates instead, in a
+talk a language model writes (or a plan): every picture of its slides keeps a few runners-up, the other candidates its
+sources found, best first; once the last slide is made, one contact sheet shows every picture's candidates side by
+side, up to four in a row (the finder's among them, in an order the talk's seed shuffles), and one request asks the
+model what each row's candidates show and which one comes closest to what its slide asked for, or none. Its picks take
+the finder's pictures' places once they pass the same checks; a row it turns down, a request that fails or takes over
+30 seconds, and a budget that doesn't allow it keep the finder's pictures.
+
+| `--vision_pick` | The model | What it costs |
+| --- | --- | --- |
+| alone, or `on` | the talk's own model when it reads pictures (Claude, OpenAI's models), else OpenRouter's free models that do | as below |
+| `openrouter` | OpenRouter's free models that read pictures: NVIDIA's Nemotron 3.5 Super VL, then dots-3 (`talkgenerator.images.vision.FREE_MODELS`) | nothing, but one request a talk of the free tier's 20 a minute and 1,000 a day (50 without $10 of credits), which the talks themselves use too: a talk takes two |
+| `anthropic:claude-haiku-5-5`, `openai:<model>`, ... | that model, on your own key | Claude Haiku 5.5: about $0.001 a talk, by list price (a sheet of ten rows is about 1,500 tokens) |
+| `none` | off (the default) | |
+
+It's one request a talk, however many pictures it has (the first ten), never with the presenter's name, in the
+talk's budget and its ledger (`usage.vision_requests` in the deck). In a talk that streams, the slides come with the
+finder's pictures as they would without it, and a slide whose picture the model changed comes again (`slide.updated`)
+once it has answered, before `talk.finished`. The deck says what the model made of every picture it saw (an image's
+`vision`: `picked`, `kept` or `refused`) and which model it was (`vision_model`); `talkgenerator check --vision_pick`
+counts them, and replays the answers when it makes a talk again. Classic talks have no vision pick, and neither do gifs,
+InspiroBot's posters, meme templates and flags.
+
+Measured on 2026-11-08 with the free models, on 12 talks: the request took 3 to 11 seconds, `talk.finished` came 9 to
+24 seconds after the last slide in talks streamed live, and the pictures that show what they were searched for went
+from 36% to 50% of those the model saw (judged by eye). The free models still turn a row down now and then where a
+candidate would have done; the finder's picture stays then.
+
 ## Themes
 
 `--theme` picks a talk's look: by default `random`, a theme the talk's seed picks, and `classic` for the 2019

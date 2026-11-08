@@ -137,11 +137,23 @@ def _add_used(state: _DeckState, generated_elements: list) -> None:
 
 def _add_slide(slide_deck: SlideDeck, slide_nr: int, slide: Any) -> None:
     """Add a settled slide to the deck, and in a talk that generates pictures, start generating the ones it wishes for
-    (see talkgenerator.images.generation): each takes its stock photo's place once it's in, and updates the slide."""
+    (see talkgenerator.images.generation): each takes its stock photo's place once it's in, and updates the slide. In
+    a talk with a vision pick, its pictures' candidates are noted (see talkgenerator.images.vision)."""
     slide_deck.add_slide(slide_nr, slide)
-    generation = image_context.current().generation
-    if generation is not None and getattr(slide, "wishes", None):
-        generation.settled(slide, functools.partial(slide_deck.slide_updated, slide_nr))
+    talk = image_context.current()
+    if talk.generation is not None and getattr(slide, "wishes", None):
+        talk.generation.settled(slide, functools.partial(slide_deck.slide_updated, slide_nr))
+    if talk.vision is not None:
+        talk.vision.settled(slide_nr, slide)
+
+
+def _finish_picking(slide_deck: SlideDeck, cancelled: threading.Event | None = None) -> None:
+    """In a talk with a vision pick, once its slides are settled: have the vision model pick among their pictures'
+    candidates, which take their places (see talkgenerator.images.vision). TalkCancelled, if the talk is cancelled
+    meanwhile."""
+    vision = image_context.current().vision
+    if vision is not None and not vision.finish(slide_deck, cancelled):
+        raise TalkCancelled()
 
 
 def _finish_generating(slide_deck: SlideDeck, cancelled: threading.Event | None = None) -> None:
@@ -506,13 +518,16 @@ class PresentationSchema:
             else:
                 self._generate_slides(slide_deck, contexts, rng, parallel, persona)
             slide_deck.listener = None
+            _finish_picking(slide_deck, progress.cancelled if progress is not None else None)
             _finish_generating(slide_deck, progress.cancelled if progress is not None else None)
         except BaseException:
             if talk is not None:
                 talk.cancelled.set()  # (what's still coming in isn't wanted anymore)
-            generation = image_context.current().generation
-            if generation is not None:
-                generation.close()  # (and no generated picture either)
+            images = image_context.current()
+            if images.generation is not None:
+                images.generation.close()  # (and no generated picture either)
+            if images.vision is not None:
+                images.vision.close()  # (nor a vision pick)
             raise
         finally:
             if talk is not None:
@@ -909,6 +924,7 @@ class PresentationSchema:
                     continue
             _add_slide(slide_deck, index + 1, worked_out[0])
             _add_used(state, worked_out[1])
+        _finish_picking(slide_deck)
         _finish_generating(slide_deck)
         return slide_deck, outcomes
 

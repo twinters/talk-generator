@@ -14,6 +14,7 @@ from talkgenerator import settings
 from talkgenerator.llm.base import (
     Capabilities,
     Finish,
+    Message,
     ProviderError,
     ProviderUnavailable,
     TextProvider,
@@ -94,7 +95,7 @@ class OpenAIProvider(TextProvider):
         """The request, as the Responses API takes it."""
         arguments: dict[str, Any] = {
             "model": self.model,
-            "input": [{"role": message.role, "content": message.content} for message in request.messages],
+            "input": [{"role": message.role, "content": _content(message)} for message in request.messages],
             "max_output_tokens": self.max_output_tokens(request),
             "stream": True,
             "store": False,
@@ -125,3 +126,14 @@ class OpenAIProvider(TextProvider):
             raise ProviderUnavailable("OpenAI's models need a key: set OPENAI_API_KEY")
         self._client = sdk.OpenAI(api_key=key, timeout=TIMEOUT_SECONDS, max_retries=MAX_RETRIES)
         return self._client
+
+
+def _content(message: Message) -> str | list[dict[str, Any]]:
+    """A message's content, as the Responses API takes it: its text, or for one that shows pictures, their parts (in
+    full detail: a contact sheet's thumbnails are small) and then its text."""
+    if not message.images:
+        return message.content
+    pictures: list[dict[str, Any]] = [
+        {"type": "input_image", "image_url": image.data_url(), "detail": "high"} for image in message.images
+    ]
+    return [*pictures, {"type": "input_text", "text": message.content}]

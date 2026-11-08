@@ -35,9 +35,10 @@ from talkgenerator.datastructures.slide_generator_data import SlideGeneratorData
 from talkgenerator.design import themes
 from talkgenerator.images import context as image_context
 from talkgenerator.images import generation as image_generation
-from talkgenerator.images import licenses
+from talkgenerator.images import licenses, vision
 from talkgenerator.images.generation import ImageBudget
 from talkgenerator.images.generators import ImageGenerator, generator_from_spec
+from talkgenerator.llm.base import TextProvider
 from talkgenerator.llm.ledger import Ledger
 from talkgenerator.models.deck import Deck, ImageElement, TextElement
 from talkgenerator.models.plan import SlidePlan, TalkPlan
@@ -241,6 +242,7 @@ def render_plan(
     license_policy: str | Sequence[str] | None = None,
     image_generator: ImageGenerator | str | None = None,
     image_budget: ImageBudget | None = None,
+    vision_pick: bool | str | TextProvider | None = None,
 ) -> dict[str, Any]:
     """Realize a plan, save it as a PowerPoint (at output, or under an unused name in output_folder), with the deck's
     JSON (<name>.deck.json) and a contact sheet of its images (<name>.images.png) next to it, and return the report:
@@ -258,7 +260,11 @@ def render_plan(
 
     image_generator generates pictures for the images that prefer one (from the plan's prompts, or else their
     queries) and for images whose search finds nothing, a few at most (image_budget): see generate_presentation.
-    Without one, TALKGENERATOR_IMAGE_GENERATOR's, if it names one. The report says what they cost."""
+    Without one, TALKGENERATOR_IMAGE_GENERATOR's, if it names one. The report says what they cost.
+
+    vision_pick has a vision model pick every image among a few candidates (or none: the finder's stays), in one
+    request: a model's spec (such as "anthropic:claude-haiku-5-5"), a provider, or True for OpenRouter's free models
+    that read pictures (see talkgenerator.images.vision). Off without one. The report says what it made of them."""
     from talkgenerator import generator  # (here: the generator module imports the schemas)
 
     schema = generator.get_schema(schema_name)
@@ -269,6 +275,7 @@ def render_plan(
     chosen_theme = themes.pick(themes.RANDOM if look == themes.CHAOS else look, rng.child("theme"))
     chosen_styles = names.styles(name_styles)
     notes: list[str] = []
+    named = presenter or names.clean(plan.presenter_name)  # (a name given, which may be someone's: not made up)
     if not presenter:
         presenter = names.clean(plan.presenter_name)
         if plan.presenter_name.strip() and presenter is None:
@@ -281,7 +288,11 @@ def render_plan(
 
     ledger = Ledger()
     generation = image_generation.for_talk(image_generator, image_budget, policy, ledger, [plan.topic], presenter)
-    images = image_context.ImageContext(policy, generator.palette(chosen_theme), schema.looks, generation)
+    # (a plan's slides are planned: their image queries say what a picture is to show)
+    picking = vision.for_talk(vision_pick, None, ledger, None, rng.child("vision pick"), named, planned=True)
+    images = image_context.ImageContext(
+        policy, generator.palette(chosen_theme), schema.looks, generation, vision=picking
+    )
     with image_context.for_talk(images):
         choices = recipes_of(schema)
         unservable = schema.unservable()
@@ -299,7 +310,9 @@ def render_plan(
     slide_deck.style_chaos = 1.0 if look == themes.CHAOS else 0.0
     slide_deck.license_policy = policy.name
     slide_deck.usage = ledger.total()
-    if generation is not None:
+    picked_by = ledger.vision_models()
+    slide_deck.vision_model = picked_by[-1] if picked_by else None
+    if generation is not None or picking is not None:
         logger.info(ledger.summary())
     deck = slide_deck.to_deck(schema_name=schema_name)
 
@@ -357,6 +370,13 @@ def render_plan(
             "failed": usage.failed_images,
             "cost_usd": round(usage.image_cost_usd, 4),
             "estimate": str(generation.estimate()),
+        }
+    if picking is not None:
+        verdicts = [image.vision for slide in deck.slides for image in slide.images() if image.vision is not None]
+        report["vision_pick"] = {
+            "model": deck.vision_model or picking.id,
+            "requests": deck.usage.vision_requests,
+            **{verdict: verdicts.count(verdict) for verdict in ("picked", "kept", "refused")},
         }
     for text_field in (TALK_TITLE, PRESENTER_JOB):
         if len(" ".join(getattr(plan, text_field.name).split())) > length_limit(text_field):
@@ -724,6 +744,14 @@ def _render_command(argv: Sequence[str]) -> int:
         type=int,
         help="how many pictures a plan generates at most (default: TALKGENERATOR_GENERATED_IMAGES's, or else 3)",
     )
+    parser.add_argument(
+        "--vision_pick",
+        nargs="?",
+        const="on",
+        help="have a vision model pick every image among a few candidates, in one request: alone or 'on' for "
+        "OpenRouter's free models that read pictures, or a model, as provider:model, such as "
+        "anthropic:claude-haiku-5-5 (default: none)",
+    )
     parser.add_argument("--open", action="store_true", help="open the PowerPoint afterwards")
     parser.add_argument("--verbose", "-v", action="store_true", help="show the generator's logs (on stderr)")
     args = parser.parse_args(argv)
@@ -735,6 +763,11 @@ def _render_command(argv: Sequence[str]) -> int:
     if args.image_generator is not None:
         try:
             generator_from_spec(args.image_generator)
+        except ValueError as error:
+            parser.error(str(error))
+    if args.vision_pick is not None:
+        try:
+            vision.check_spec(args.vision_pick)
         except ValueError as error:
             parser.error(str(error))
     budget = None
@@ -783,6 +816,7 @@ def _render_command(argv: Sequence[str]) -> int:
             license_policy=args.license_policy,
             image_generator=args.image_generator,
             image_budget=budget,
+            vision_pick=args.vision_pick,
         )
         reports.append({"plan": path, **report})
         if args.open:

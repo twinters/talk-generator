@@ -6,6 +6,11 @@ recorded talk again exactly (with its seed). With a provider to record with, req
 are asked for real and added to it.
 
 The file keeps a fixed order (by key) and readable indentation, so that changes to a cassette show up well in diffs.
+Two providers can record on one cassette (a talk's language model and its vision pick's, say): each adds its answers
+to what the file has.
+
+A request that shows pictures (a vision pick's contact sheet) is keyed by what its pictures are named, not their
+bytes, which a cassette never holds (see talkgenerator.llm.base.ImagePart).
 """
 
 from __future__ import annotations
@@ -22,6 +27,14 @@ from typing import Any, Final
 from talkgenerator.llm.base import Capabilities, ProviderUnavailable, TextProvider, TextRequest, TextResponse
 
 CASSETTE_VERSION: Final = 1
+# One lock per cassette file, for the providers that record on it
+_files: dict[Path, threading.Lock] = {}
+_files_lock = threading.Lock()
+
+
+def _file_lock(path: Path) -> threading.Lock:
+    with _files_lock:
+        return _files.setdefault(path.resolve(), threading.Lock())
 
 
 class CassetteMiss(ProviderUnavailable):
@@ -30,8 +43,18 @@ class CassetteMiss(ProviderUnavailable):
 
 def request_key(request: TextRequest) -> str:
     """The key of a request on a cassette: the same request always gives the same key, in every process."""
-    canonical = json.dumps(request.model_dump(mode="json"), sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    canonical = json.dumps(_recorded(request), sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _recorded(request: TextRequest) -> dict[str, Any]:
+    """The request as a cassette keeps it: a message's pictures only when it shows some (so a request without them
+    has the key it had before requests could show pictures), and never their bytes."""
+    recorded = request.model_dump(mode="json")
+    for message in recorded["messages"]:
+        if not message.get("images"):
+            message.pop("images", None)
+    return recorded
 
 
 class ReplayProvider(TextProvider):
@@ -89,13 +112,15 @@ class ReplayProvider(TextProvider):
         return entries
 
     def _add(self, key: str, request: TextRequest, response: TextResponse) -> None:
-        with self._lock:
+        with self._lock, _file_lock(self.path):
             self._entries[key] = {
-                "request": request.model_dump(mode="json"),
+                "request": _recorded(request),
                 "response": response.model_dump(mode="json"),
             }
+            # (with what another provider recorded on the file meanwhile)
+            entries = {**self._load(), **self._entries}
             text = json.dumps(
-                {"cassette_version": CASSETTE_VERSION, "entries": self._entries},
+                {"cassette_version": CASSETTE_VERSION, "entries": entries},
                 sort_keys=True,
                 indent=2,
                 ensure_ascii=False,
