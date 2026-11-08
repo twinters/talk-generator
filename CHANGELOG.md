@@ -408,11 +408,6 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   also keeps its place among a look's sources, so the sources searched together stay the same. That holds for
   Pixabay, Pexels, Unsplash, Openverse, Reddit and ConceptNet; GIPHY's answers aren't kept, so it finds nothing
   meanwhile, as before.
-- A slide's key in the language model's answer never goes on a slide. A free model's conclusion called back to an
-  earlier slide by its key: "Huddling scales trust (from slide_03)". The request now asks for callbacks by what the
-  earlier slide said, never by its key or number; brackets that name a slide by its key are dropped from a text
-  ("Huddling scales trust"), a key anywhere else in it makes the slide the classic generator's, as template code
-  does, and `talkgenerator check` reports a key on a slide as an error.
 - A format's cap of none on a kind of slide holds from a talk's first slide: `interview` talks, which have no about-me
   slide, got one in two talks in five, as caps only counted once a talk had a slide of their kind. A cap that's a
   share of a talk's slides still allows one, so short talks keep their memes, diagrams and quotes, and a section
@@ -439,6 +434,11 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   have, or with a real country or people and politics' words, is left out (its slide comes out the classic way when
   it can't do without it), and `talkgenerator check` warns of one. Absurd humour about places stays ("There are
   more penguins in Belgium than people").
+- A slide's key in the language model's answer never goes on a slide. A free model's conclusion called back to an
+  earlier slide by its key: "Huddling scales trust (from slide_03)". The request now asks for callbacks by what the
+  earlier slide said, never by its key or number; brackets that name a slide by its key are dropped from a text
+  ("Huddling scales trust"), a key anywhere else in it makes the slide the classic generator's, as template code
+  does, and `talkgenerator check` reports a key on a slide as an error.
 
 ## [4.0.1] - 2026-11-05
 
