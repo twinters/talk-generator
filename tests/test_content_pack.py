@@ -1,4 +1,4 @@
-"""The content packs' lint (docs/v5-plan.md, section 11; decision D52).
+"""The content packs' lint (docs/v5-plan.md, section 11; decision D54).
 
 A format's pack (talkgenerator/data/packs/<format>: see talkgenerator.sources.packs) is data, which these tests check:
 its manifest names its version and its slots, every rule is a slot or used by one, and every template

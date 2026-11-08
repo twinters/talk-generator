@@ -3,7 +3,7 @@
   "about": "The classic texts of TED-like talks (the default, ted, interview and test schemas): a grammar per kind of slide, whose rules are lists of templates (see talkgenerator.sources.packs)",
   "version": 2,
   "versions": {
-    "1": "2026-11-08: v4's templates and milestone 6's, from data/text-templates and data/memes.json, unchanged (D52)",
+    "1": "2026-11-08: v4's templates and milestone 6's, from data/text-templates and data/memes.json, unchanged (D54)",
     "2": "2026-11-08: grown in a TED talk's voice, several times the options per slot (titles, about me, history, statements, captions, charts, diagrams, numbers, quizzes, mockups, structure, karaoke types, memes and conclusions), speaking of the topic as English does (generic, one, bare), linted by tests/test_content_pack.py"
   },
   "slots": {

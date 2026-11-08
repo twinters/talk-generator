@@ -1,4 +1,4 @@
-"""Content packs: the classic texts of a talk format, as versioned data (docs/v5-plan.md, section 11; decision D52).
+"""Content packs: the classic texts of a talk format, as versioned data (docs/v5-plan.md, section 11; decision D54).
 
 A format's pack is a folder of `data/packs`, named after the format: `ted` is the TED talk's, which the default, ted,
 interview and test schemas share. It has a grammar per kind of slide (`title.json`, `about_me.json`, `quiz.json`...),
