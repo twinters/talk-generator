@@ -308,11 +308,35 @@ def _has_clause(phrase: str) -> bool:
     return any(word.lower() in _CLAUSES for word in phrase.split()[1:])
 
 
+# Words that open a phrase about the noun before them ("a cup of tea", "a message in a bottle", "a day at the beach"):
+# its last word is no longer the noun, which English counts ("cups of tea", not "cup of teas"), so a phrase with an "a"
+# of its own and such words after its noun stays as it is ("Love a cup of tea", "Think about a message in a bottle")
+_PREPOSITIONS: Final = frozenset(
+    ("of", "in", "on", "at", "for", "with", "without", "from", "to", "into", "by", "under", "over", "about", "near")
+    + ("behind", "inside", "outside", "around", "through", "across", "against", "between", "among", "beyond", "out")
+    + ("after", "before", "during", "like")
+)
+
+
+def _has_preposition(phrase: str) -> bool:
+    """Whether words about the phrase's noun follow it ("cup of tea", "game of thrones")."""
+    return any(word.lower() in _PREPOSITIONS for word in phrase.split()[1:])
+
+
+def _stays(phrase: str) -> bool:
+    """Whether generic and one keep the phrase as it is: one with a clause about its noun ("a plant that won't die"),
+    or with an "a" of its own and words about its noun after it ("a cup of tea")."""
+    words = phrase.split()
+    article = len(words) > 2 and words[0].lower() in ("a", "an")
+    return _has_clause(phrase) or (article and _has_preposition(" ".join(words[1:])))
+
+
 def generic(phrase: str) -> str:
     """The phrase as English speaks of such things in general ("I love ..."): a countable noun in the plural
     ("penguins", "lighthouses"), and as it is a mass noun ("coffee", "happiness"), a plural, a name, or a phrase with
-    an article of its own ("the French Revolution") or a clause about its noun ("a plant that won't die")."""
-    if _has_clause(phrase):
+    an article of its own ("the French Revolution"), a clause about its noun ("a plant that won't die") or an "a" and
+    words about its noun after it ("a cup of tea")."""
+    if _stays(phrase):
         return phrase.strip()
     text = _without_a(phrase.strip())
     if not text or _has_article(text) or is_plural_noun(text) or not is_countable(text):
@@ -322,8 +346,9 @@ def generic(phrase: str) -> str:
 
 def one(phrase: str) -> str:
     """One of the phrase ("Is this ...?"): a countable noun with its article ("a lighthouse", "an owl", "an hour"),
-    and the others as generic has them ("coffee", "penguins", "the French Revolution", "a plant that won't die")."""
-    if _has_clause(phrase):
+    and the others as generic has them ("coffee", "penguins", "the French Revolution", "a plant that won't die", "a
+    cup of tea")."""
+    if _stays(phrase):
         return phrase.strip()
     text = _without_a(phrase.strip())
     if not text or _has_article(text) or is_plural_noun(text) or not is_countable(text):
@@ -335,12 +360,13 @@ def bare(phrase: str) -> str:
     """The thing the phrase names as it stands after a word of a template's (an article, a possessive or an
     adjective) and before another noun: without an article of its own, and one of it when it's a plural (as English
     says "a penguin expert"). "The {seed.bare} paradox" is "The moon paradox" for "the moon", "The penguin paradox"
-    for "penguins" and "The coffee paradox" for "coffee"."""
+    for "penguins" and "The coffee paradox" for "coffee". A phrase with a clause about its noun, or with words about
+    it after it, keeps its words ("sofa that eats remotes", "game of thrones")."""
     words = phrase.split()
     if len(words) > 1 and words[0].lower() in ("the", "a", "an"):
         words = words[1:]
     text = " ".join(words)
-    if text and not _has_clause(text) and is_plural_noun(text):
+    if text and not _has_clause(text) and not _has_preposition(text) and is_plural_noun(text):
         singular = inflect_engine.singular_noun(words[-1])
         if singular:
             return " ".join([*words[:-1], str(singular)])

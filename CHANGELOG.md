@@ -362,9 +362,11 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   regulator for a second?". The templates say `{seed.generic}`, `{seed.one}` and the new `{seed.bare}`, the thing
   after a word of the template's or before another noun ("The moon paradox" for "the moon", "a penguin expert" for
   "penguins"); title case leaves a word's other letters as they are ("Won't", "AI"); and `generic` speaks of time,
-  work, art, science and life as amounts ("Hours with time", not "times"), and keeps a premise whole ("a plant that
-  won't die"). A slide whose topic drifts to a word about the body (one went from "the Titanic" to "breasts") is
-  made another way, as one about a faith or violence is.
+  work, art, science and life as amounts ("Hours with time", not "times"), and keeps whole a premise ("a plant that
+  won't die") and a phrase with an "a" and words about its noun after it ("Think about a message in a bottle", not
+  "Think about message in a bottle"; `one` said "cup of tea" for "a cup of tea", by its last word). A slide whose
+  topic drifts to a word about the body (one went from "the Titanic" to "breasts") is made another way, as one about
+  a faith or violence is.
 - Classic memes read as English speaks of the topic: "Love coffee" and "Is this a lighthouse?", not "Love coffees",
   "happinesses" or "a the french revolution" (every caption pluralised the topic). The template functions
   `{seed.generic}`, `{seed.one}` and `.cap` tell a countable noun from a mass noun by wordfreq's frequencies of the

@@ -55,7 +55,8 @@ LONG: dict[str, tuple[str, ...]] = {
     "acronym": ("SPARKS",),
 }
 # Topics of every kind, to check that every template reads right with each: a countable noun, a mass noun, a plural, a
-# name, a phrase with an article, two words, and a premise with a clause of its own
+# name, a phrase with an article, two words, a premise with a clause of its own, and a phrase with words about its
+# noun after it
 SEEDS: tuple[dict[str, str], ...] = tuple(
     {"seed": seed, "topic": seed, "related": related, "x_label": related, "y_label": seed}
     for seed, related in (
@@ -66,6 +67,7 @@ SEEDS: tuple[dict[str, str], ...] = tuple(
         ("the moon", "cheese"),
         ("time travel", "clocks"),
         ("a plant that won't die", "soil"),
+        ("a message in a bottle", "beach"),
     )
 )
 COMMON = {
