@@ -56,6 +56,13 @@ def test_a_big_jpeg_is_decoded_at_a_fraction_of_its_size_yet_comes_out_as_large(
     assert image_util.get_image_size(converted) == (image_util.MAX_DIMENSION, 1600)
 
 
+def test_a_phone_photo_is_decoded_at_half_its_size_still_wider_than_a_slide():
+    phone = io.BytesIO()
+    Image.new("L", (4032, 3024), 128).save(phone, "JPEG")  # (12 megapixels)
+    converted = image_util.prepare_image_bytes(phone.getvalue())
+    assert image_util.get_image_size(converted) == (2016, 1512)  # (more than the slides' 1920 pixels)
+
+
 def test_a_photo_is_turned_as_its_camera_says_once_it_is_small(monkeypatch):
     turned = []
     exif_transpose = ImageOps.exif_transpose
@@ -70,8 +77,8 @@ def test_a_photo_is_turned_as_its_camera_says_once_it_is_small(monkeypatch):
     photo = io.BytesIO()
     Image.new("RGB", (4000, 1000), (20, 120, 200)).save(photo, "JPEG", exif=exif)
     converted = image_util.prepare_image_bytes(photo.getvalue())
-    assert turned == [(image_util.MAX_DIMENSION, image_util.MAX_DIMENSION // 4)]
-    assert image_util.get_image_size(converted) == (image_util.MAX_DIMENSION // 4, image_util.MAX_DIMENSION)
+    assert turned == [(2000, 500)]  # (decoded at half its size, still wider than a slide)
+    assert image_util.get_image_size(converted) == (500, 2000)
 
 
 def test_removed_image_placeholders_are_rejected():

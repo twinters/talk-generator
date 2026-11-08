@@ -54,6 +54,7 @@ _PROHIBITED_IMAGES_DIR = "data/prohibited_images/"
 _FINGERPRINT_SIZE = (16, 16)
 _MAX_FINGERPRINT_DIFFERENCE = 12
 _REDUCIBLE_MODES = frozenset({"L", "LA", "RGB", "RGBA"})  # (what a fingerprint can average before converting)
+_SLIDE_WIDTH = 1920  # pixels: the slides' canvas (talkgenerator.design), what a photo's long side needs at least
 
 _CACHE_MAX_BYTES = 96 * 1024 * 1024
 _cache: OrderedDict[str, bytes | None] = OrderedDict()
@@ -480,9 +481,9 @@ def prepare_image_bytes(data: bytes, description: str = "image") -> bytes | None
     """Check that the bytes are a real, allowed image and convert them into something PowerPoint can show.
 
     A photo to convert is scaled down before anything else is done with it, and a big JPEG is even decoded at a
-    half, a quarter or an eighth of its size, as long as that's still as large as it comes out: a 24-megapixel
-    original took about 240 MB when it was decoded, turned and checked whole, which pushed talkgenerator.com's small
-    server to its limit."""
+    half, a quarter or an eighth of its size, as long as its long side stays as large as a slide is wide (or as it
+    would come out, if that's smaller): a 24-megapixel original took about 240 MB when it was decoded, turned and
+    checked whole, which pushed talkgenerator.com's small server to its limit."""
     try:
         with Image.open(io.BytesIO(data), formats=accepted_formats()) as image:
             image_format = image.format
@@ -499,6 +500,7 @@ def prepare_image_bytes(data: bytes, description: str = "image") -> bytes | None
             )
             if converting:
                 scale = min(MAX_DIMENSION / width, MAX_DIMENSION / height, 1.0)
+                scale *= min(1.0, _SLIDE_WIDTH / (max(width, height) * scale))  # (a slide's width is enough)
                 image.draft(None, (max(1, round(width * scale)), max(1, round(height * scale))))
                 image.thumbnail((MAX_DIMENSION, MAX_DIMENSION), Image.Resampling.LANCZOS)
             if is_prohibited(image):

@@ -416,9 +416,10 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
 - Big photos take far less memory on their way into a .pptx. A 24-megapixel original from Reddit was decoded whole,
   copied whole to turn it as its camera said, and converted whole twice more to compare it with known placeholders:
   about 240 MB for one picture, which took talkgenerator.com's downloads to its server's memory limit. Now a photo
-  is scaled down first (a big JPEG even decoded at a half, a quarter or an eighth of its size, as long as that's
-  still as large as it comes out), then turned, and placeholders are compared on a reduced copy. The pictures come
-  out as large as before.
+  is scaled down first, then turned, and placeholders are compared on a reduced copy. A big JPEG is even decoded at
+  a half, a quarter or an eighth of its size, as long as its long side stays as wide as a slide (1920 pixels): a
+  phone's 12-megapixel photo comes out at 2016 by 1512 pixels instead of 2400 by 1800, and a deck's peak while
+  it's made is about half what it was.
 
 ## [4.0.1] - 2026-11-05
 
