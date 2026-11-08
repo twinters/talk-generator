@@ -202,7 +202,7 @@ def test_a_name_that_wont_do_is_turned_down(written):
     ],
 )
 def test_a_pun_on_a_famous_living_person_is_turned_down(written):
-    # (a famous-name pun is on a historical figure who died long ago: docs/v5-plan.md, section 5.10)
+    # (a famous-name pun is on someone famous who is no longer alive: docs/v5-plan.md, section 5.10)
     assert names.clean(written) is None
     assert names.real_person(f"a portrait of {written} in the rain") is not None  # (nor drawn in a picture)
 
@@ -219,7 +219,7 @@ def test_a_pun_on_a_famous_living_person_is_turned_down(written):
         "Stephen Kingsley",
         "Dr. Greta Gosling",  # (a word, for a talk on geese, that a famous living person's surname is too)
         "Prof. Anna Streep",  # (a Dutch stripe)
-        "Albert Einstone",  # (historical figures who died long ago)
+        "Albert Einstone",  # (famous people who are no longer alive)
         "Dr. Leonardo da Stone",
         "Hamilton Partnership",
         "Ada Lovefern",
@@ -240,11 +240,12 @@ def test_every_ordinary_name_goes_on_a_title_slide():
     assert [first for first in first_names if names.clean(f"{first} Hivesworth") is None] == []
 
 
-def test_a_famous_name_pun_is_asked_for_on_someone_who_died_long_ago():
+def test_a_famous_name_pun_is_asked_for_on_someone_who_is_no_longer_alive():
+    # (lately or long ago: the user, 2026-11-08, "they're still beloved people")
     asked = names.STYLES["famous_pun"].asked
-    assert "one famous historical figure who died long ago" in asked
+    assert "one famous person who is no longer alive (long ago or lately)" in asked
     assert "never the name of anyone alive today (however old or famous)" in asked
-    assert "died long ago" in names.STYLES["famous_pun"].plays_on
+    assert "no longer alive" in names.STYLES["famous_pun"].plays_on
 
 
 def test_a_copy_of_an_example_is_turned_down():

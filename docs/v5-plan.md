@@ -579,7 +579,7 @@ its seed picks among the switched-on ones (`name_styles=` on `generate_presentat
 | --- | --- | --- |
 | `pun` | yes | "Prof. Anna Tomy" for a talk on medicine, "Dr. Matthew Mathics" for maths |
 | `fun_surname` | yes | an ordinary first name with a surname that fits too well: "Linda Hivesworth" for bees |
-| `famous_pun` | yes (D33) | a historical figure's name (of someone who died long ago) bent to fit: "Albert Einstone" for geology, "Vincent van Goat" for goats |
+| `famous_pun` | yes (D33) | a famous name (of someone no longer alive, long ago or lately) bent to fit: "Albert Einstone" for geology, "Vincent van Goat" for goats |
 | `classic` | no | tracery's random first and last name, as in 2019 |
 
 - **A given name goes first** (`presenter=`, the site's "custom name"), and never reaches the model: the request
@@ -604,7 +604,8 @@ its seed picks among the switched-on ones (`name_styles=` on `generate_presentat
   goose) stay. A test holds every classic surname (18,839) and first name (2,297) to that: only Trump, which the
   blocklist had, and Mao go. What it misses, a name of theirs alone bent ("Gnome Chompsky", "Beeyoncé") and
   both of an ordinary name bent ("Justin Beaver"), the request asks the model not to write: a famous-name pun is on
-  "one famous historical figure who died long ago", never "anyone alive today (however old or famous)". The same
+  "one famous person who is no longer alive (long ago or lately)", never "anyone alive today (however old or
+  famous)": people who died lately are fine too, as the user said on 2026-11-08 ("they're still beloved people"). The same
   list keeps generated pictures from naming them (`names.real_person`).
 - **The talk's language.** The model writes the name in it, with wordplay that works in that language.
 - **Without a model** (none configured, the quota used up, a refusal, or a name that won't do), the name comes
@@ -957,23 +958,24 @@ slide to read says what the answer brought in a warning.
 first, as for a TED-like talk (uniformly, among the personas the talk allows), and then the format, from a stream of its
 own (`format`), so the persona, the theme and the slides draw what they drew before, and a talk of schema random with
 the persona it names is the very talk of the format its seed picked. The odds are `FORMAT_WEIGHTS` (in
-`presentation_schema_types`: the TED-like talk 6, the pitch, the academic talk, the corporate all-hands and the
-product keynote 1 each) times the persona's multipliers (`Persona.formats`, 5.2); without a persona, 60% of the
+`presentation_schema_types`: the TED-like talk 8, the pitch, the academic talk, the corporate all-hands and the
+product keynote 1 each) times the persona's multipliers (`Persona.formats`, 5.2); without a persona, 67% of the
 talks are TED-like:
 
 | Persona | TED-like | Pitch | Academic | All-hands | Keynote |
 | --- | --- | --- | --- | --- | --- |
-| startup founder | 27% | **55%** | 5% | 5% | 9% |
-| disgraced professor | 29% | 5% | **57%** | 5% | 5% |
-| management consultant | 27% | 9% | 5% | **55%** | 5% |
-| motivational speaker | 28% | 7% | 5% | 5% | **56%** |
-| over-passionate expert | **50%** | 8% | 25% | 8% | 8% |
-| influencer, time traveller, former athlete | **52% to 55%** | 9% to 17% | 4% to 13% | 9% to 14% | 17% to 18% |
-| the other five | **57% to 79%** | 4% to 10% | 5% to 19% | 4% to 11% | 7% to 20% |
-| over all thirteen | 51% | 11% | 13% | 11% | 15% |
+| startup founder | 33% | **50%** | 4% | 4% | 8% |
+| disgraced professor | 35% | 4% | **52%** | 4% | 4% |
+| management consultant | 33% | 8% | 4% | **50%** | 4% |
+| motivational speaker | 34% | 6% | 4% | 4% | **51%** |
+| over-passionate expert | **57%** | 7% | 21% | 7% | 7% |
+| influencer, time traveller, former athlete | **59% to 62%** | 7% to 15% | 4% to 11% | 7% to 12% | 15% |
+| the other five | **64% to 83%** | 3% to 8% | 4% to 16% | 3% to 9% | 5% to 17% |
+| over all thirteen | 57% | 10% | 11% | 9% | 13% |
 
-Every format keeps at least 4% with every persona, as the user asked, and over all the personas about half the talks
-stay TED-like (7 in 10 while there were three formats). Only the formats for talks take part. `ted` doesn't: it's the TED-like talk with copyright-free images
+Every format keeps at least 3% with every persona, as the user asked, and over all the personas almost 6 talks in 10
+stay TED-like: with five formats the TED-like talk's weight of 6 left only half, and the user wanted "a bit higher"
+(2026-11-08), so it's 8, which still leaves each specialist's favourite first, at about half of their talks. Only the formats for talks take part. `ted` doesn't: it's the TED-like talk with copyright-free images
 only, a choice of license rather than of format, which a talk makes with `license_policy="open"` whatever format its
 seed picks (the arcs need no image that's fair use, and the TED-like talk drops the slides whose images the policy has
 no source for, as `ted` does); nor do `interview` and `test`. A format named goes as before, its persona weighted by the
@@ -2038,7 +2040,7 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D58 | A vision model can pick a talk's pictures (the vision pick, 10.3), off by default (`vision_pick=`, `--vision_pick`), for the pictures of planned slides only, in one request a talk once its last slide is settled: each picture among the finder's own and up to three runners-up, which the finder keeps in order, without a draw of the talk's dice (so a talk finds the same pictures with it or without it, before the pick), its own source's first; on one contact sheet, a row a picture, with what it asks for beside it, the candidates in an order the seed shuffles. The model says what each row's candidates show, then picks one or none; a pick takes the finder's picture's place once it passes the finder's checks, and "none", a failure, an answer later than 30 seconds or a budget that doesn't allow the request keep the finder's. `on` asks the talk's own model when it reads pictures, else OpenRouter's free vision models without thinking (not the free router). The request is the talk's (its ledger and budget), never names the presenter it was given, and replays from a cassette, which keys the sheet by its candidates and never keeps its bytes. talkgenerator.com may turn it on for the free models' talks once it hands over `slide.updated`: one more free request a talk. |
 | D59 | The corporate all-hands, or quarterly business review (`corporate`), and the product keynote (`keynote`) are formats as D56 has them, with no new slide type: an all-hands goes from its agenda through the KPIs against their targets, the quarter's wins, the roadmap, an org change and the synergies to the ask of everyone and Q&A, a keynote from a big opening statement through the one idea, the reveal, the features, a live demo and the price to the "one more thing" and a closing line. A management consultant presents more of the all-hands, a startup founder or a motivational speaker more of the keynotes; their themes are the corporate families, and dark minimal and clean keynote, more often. A part's slide whose kind's cap the format's free slides or an earlier part would take first goes without that kind's tag (an all-hands' ask), so that a talk of any length keeps every part. Pecha Kucha's timing is out (the user's call), so these four are milestone 7's formats. |
 | D60 | Talks a language model writes get real facts (`talkgenerator.facts`): up to three of a talk's slides of history (a historical figure's quote, two old photos, a timeline), fun facts, quizzes and big numbers get one each, on their lines of the talk's request, with what to do with it (a fun fact keeps it true and twists it); slides of history get one of the day's events first (Wikipedia's "On this day", of the day the talk is made on), a big number a sentence with a figure, a fun fact one that says how special something is, rather than what the topic is. They're sentences of the lead of the topic's English Wikipedia article (a topic in another language followed there from its language's Wikipedia), and the day's events; none for a topic that's a living person (English Wikipedia's "Category:Living people"), none that names one (of the articles its lead or its event links to), none with a word a slide shouldn't make light of, or of death, war, disasters, crime and accusations, politics or race (but a word of the topic's), none about real-world politics; when Wikipedia can't tell who's living, none that names someone. They're looked up while the talk's seeds are, from the cache of API responses (a week; a day's events a month) or within 8 seconds of the talk's start, after which the talk goes without them (a talk that's late may be a busy computer's: the next one asks again); a talk made again in a block of `same_answers` (a check) gets the facts the first one got (`http_util.keep`). A slide that builds on its fact (two of its telling words are in the slide's texts) credits its article ("Wikipedia: Penguin (CC BY-SA 4.0)", in a credit line that then starts with "Sources:" rather than "Image sources:"); the deck records every fact with its page, license and slide (`Deck.facts`, none for a talk without). Classic talks get them where they fit: half of their fun facts are a real sentence of the lead of the slide's seed's article, with a twist of the TED pack's (its version 4), and half of their quizzes a real question of Open Trivia DB's, of the topic's category by its Wikipedia description (animals for penguins; never celebrities, politics, entertainment, sports or mythology), each credited on its slide. `DISABLE_FACTS`, `DISABLE_WIKIPEDIA` and `DISABLE_OPENTDB` switch them off. Wikidata, REST Countries and the flavour APIs aren't used (section 11). |
-| D61 | A talk can leave its format to its seed (`schema="random"`): the seed picks the persona first, then the format from a stream of its own, by `FORMAT_WEIGHTS` (the TED-like talk 6, the formats beyond it 1 each) times the persona's multipliers (`Persona.formats`: a startup founder ×12 for a pitch, a disgraced professor ×12 for an academic talk, a management consultant ×12 for an all-hands, a motivational speaker ×12 for a keynote), so each persona's favourite dominates and every format keeps a few talks in a hundred with every persona. Only the formats for talks take part: not `ted`, whose copyright-free images are a license policy (`open`) that goes with any format, nor `interview` and `test`. A format named weights the persona as before (D56). A talk can also say which personas its seed picks from (`personas=`): the seed picks among all of them first and again among those allowed only when that one isn't, so a talk keeps its persona whenever it's allowed. talkgenerator.com's talks leave their format to the seed, with the personas its visitor didn't switch off. |
+| D61 | A talk can leave its format to its seed (`schema="random"`): the seed picks the persona first, then the format from a stream of its own, by `FORMAT_WEIGHTS` (the TED-like talk 8, the formats beyond it 1 each) times the persona's multipliers (`Persona.formats`: a startup founder ×12 for a pitch, a disgraced professor ×12 for an academic talk, a management consultant ×12 for an all-hands, a motivational speaker ×12 for a keynote), so each persona's favourite dominates and every format keeps a few talks in a hundred with every persona. Only the formats for talks take part: not `ted`, whose copyright-free images are a license policy (`open`) that goes with any format, nor `interview` and `test`. A format named weights the persona as before (D56). A talk can also say which personas its seed picks from (`personas=`): the seed picks among all of them first and again among those allowed only when that one isn't, so a talk keeps its persona whenever it's allowed. talkgenerator.com's talks leave their format to the seed, with the personas its visitor didn't switch off. |
 
 D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, and D43 to D61 on 2026-11-08; the
 others follow from the design.

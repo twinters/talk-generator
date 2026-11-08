@@ -235,7 +235,7 @@ keynote_schema = schemas.register(
 # only, which is a choice of license rather than of format: a talk asks for those images with license_policy "open",
 # whatever format its seed picks (the formats' arcs need no image that's fair use). Nor interview and test.
 RANDOM: Final = "random"
-FORMAT_WEIGHTS: Final[dict[str, float]] = {"default": 6, "pitch": 1, "academic": 1, "corporate": 1, "keynote": 1}
+FORMAT_WEIGHTS: Final[dict[str, float]] = {"default": 8, "pitch": 1, "academic": 1, "corporate": 1, "keynote": 1}
 
 
 def choices() -> tuple[str, ...]:

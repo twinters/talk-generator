@@ -79,10 +79,10 @@ all-hands and a startup founder or a motivational speaker more of the keynotes; 
 slides of each part.
 
 `--schema random` leaves the format to the talk's seed, which picks the persona first and then a format that persona
-favours: in more than half of their talks, a startup founder pitches, a disgraced professor gives an academic talk, a
+favours: in about half of their talks, a startup founder pitches, a disgraced professor gives an academic talk, a
 management consultant an all-hands and a motivational speaker a keynote; most of the others give TED-like talks, in
-5 to 8 of 10. Every format keeps a few talks in a hundred with every persona, and over all the personas about half the
-talks are TED-like. Only the formats for talks take part: `default`, `pitch`, `academic`, `corporate` and `keynote`. Copyright-free images go with any of them:
+6 to 8 of 10. Every format keeps a few talks in a hundred with every persona, and over all the personas almost 6 in
+10 talks are TED-like. Only the formats for talks take part: `default`, `pitch`, `academic`, `corporate` and `keynote`. Copyright-free images go with any of them:
 `--schema random --license_policy open`. The deck's `schema_name` says which format the talk got.
 
 A format's license policy says which license classes its images may have. `--license_policy` sets another one:

@@ -88,11 +88,11 @@ STYLES: Final[dict[str, Style]] = {
             FAMOUS_PUN,
             "Famous-name puns",
             "a historical figure's name bent to fit the topic, such as Albert Einstone for geology",
-            "a made-up name for the presenter: the name of one famous historical figure who died long ago, that "
+            "a made-up name for the presenter: the name of one famous person who is no longer alive (long ago or lately), that "
             "everyone knows, with a part of it changed into a word about the talk's topic, so that both still show; "
             "never the real name as it is, and never the name of anyone alive today (however old or famous), a "
             "dictator or a criminal",
-            "the famous historical figure who died long ago whose name the presenter's name will bend, and the word "
+            "the famous person, no longer alive, whose name the presenter's name will bend, and the word "
             "about the talk's topic that goes into it",
         ),
         Style(CLASSIC, "Random names", "a first and a last name at random, as in 2019", "", default=False),
@@ -346,7 +346,7 @@ _BLOCKED_PHRASES: Final = (
     ("vladimir", "putin"),
 )
 # Famous living people, whose names models reach for in puns: a free model named a keynote's presenter "Umbrella
-# Chomsky" (2026-11-08), where a famous-name pun bends the name of a historical figure who died long ago (section 5.10
+# Chomsky" (2026-11-08), where a famous-name pun bends the name of someone famous who is no longer alive (section 5.10
 # of docs/v5-plan.md). A name with an asterisk is theirs alone, and a presenter's name with it goes, whatever its other
 # words ("Umbrella Chomsky", "Oprah Windfrey"): no classic name has it (but Trump, as the blocklist had it), nor is it a
 # word that a fun surname could be (a gosling is a young goose, "streep" a Dutch stripe, "stallone" an Italian

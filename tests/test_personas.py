@@ -580,7 +580,7 @@ def test_each_persona_s_favourite_format_comes_up_most_and_every_format_keeps_a_
         first, second = sorted(odds.values(), reverse=True)[:2]
         favourite = max(odds, key=odds.__getitem__)
         assert favourite == FAVOURITES.get(name, "default"), name
-        assert first >= 0.5 and first > 1.8 * second, (name, odds)  # (the favourite dominates: half or more)
+        assert first >= 0.45 and first > 1.4 * second, (name, odds)  # (the favourite comes first, about half or more)
         assert min(odds.values()) > 0.03, (name, odds)  # (and every format keeps some chance)
     # Without a persona, most talks are TED-like (60%, with five formats)
     assert schema_types.format_odds(None)["default"] > 0.55
