@@ -20,8 +20,8 @@ historical figure, old photos, a timeline), fun facts, quizzes and big numbers, 
 topic's English Wikipedia article, or from the events of the day on Wikipedia's main page ("On this day"). The model
 keeps what a fact says and twists it: "Only one species, the Galapagos penguin, lives at the equator" becomes a fun
 fact about why. No fact names a living person, and none is about death, war, disasters, crime, politics, race or
-faiths. A slide that builds on its fact credits the article (CC BY-SA 4.0), in its credit line ("Sources: ..."), and the
-deck lists every fact a talk got (`facts`).
+faiths. A slide that builds on its fact credits the article (CC BY-SA 4.0), in its credit line ("Sources: ..."), and
+the deck lists every fact a talk got (`facts`).
 
 The facts come from the cache, or else within eight seconds of the talk's start, while its slides are picked: a talk
 whose facts come later, or whose sources are down, goes without them. Classic talks get some too: half of their fun

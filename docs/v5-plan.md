@@ -1642,9 +1642,10 @@ As built (2026-11-07, `talkgenerator.images.generation` and `talkgenerator.image
   (every quiz, fun fact, big number and timeline, and 2 of 5 history slides) and Claude Haiku on all 4 of its last:
   "Only one species, the Galapagos penguin, lives at, and slightly north of, the equator, and it always wears a tiny
   scarf"; a quiz "Why have many lighthouses stopped operating?" with its real answer among "They became bird hotels";
-  a big number "383/km2: people per square kilometre who now follow my advice daily". Classic talks get real ones where they fit: half of the fun facts, a real
-  sentence about the slide's seed with an absurd twist (the TED pack's version 4: "Coincidence? I think not."), and
-  half of the quizzes, a real one of Open Trivia DB's, of the topic's kind.
+  a big number "383/km2: people per square kilometre who now follow my advice daily". Classic talks get real ones
+  where they fit: half of the fun facts, a real sentence about the slide's seed with an absurd twist (the TED pack's
+  version 4: "Coincidence? I think not."), and half of the quizzes, a real one of Open Trivia DB's, of the topic's
+  kind.
 - **Content packs** (D54): the classic grammars and templates are versioned data per format and kind of slide,
   `talkgenerator/data/packs/<format>/` (`talkgenerator.sources.packs`): a grammar per kind of slide (`title`,
   `about_me`, `history`, `images`, `statements`, `captions`, `charts`, `diagrams`, `numbers`, `quiz`, `mockups`,
@@ -1927,10 +1928,10 @@ others follow from the design.
 ### Open questions
 
 - **Flavour texts without a license** (section 11, D60): random useless facts (uselessfacts.jsph.pl, "created ... with
-  no other intention than fun"), icanhazdadjoke's dad jokes and the Advice Slip ("provided for free", "© Tom Kiss") state
-  no license or terms for their texts, and the useless facts are copied from other sites. They'd fit did-you-know
-  slides, a dare to tell a joke and conclusions; whether talkgenerator.com, which is public, may show them is the
-  user's call (until then, they're not used).
+  no other intention than fun"), icanhazdadjoke's dad jokes and the Advice Slip ("provided for free", "© Tom Kiss")
+  state no license or terms for their texts, and the useless facts are copied from other sites. They'd fit
+  did-you-know slides, a dare to tell a joke and conclusions; whether talkgenerator.com, which is public, may show them
+  is the user's call (until then, they're not used).
 
 ## 18. Sources
 
