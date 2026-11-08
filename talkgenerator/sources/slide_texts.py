@@ -532,7 +532,12 @@ def generate_acronym(presentation_context: dict[str, Any]) -> tuple[str | None, 
     words: list[str] = []
     for position, letter in enumerate(acronym):
         last = position == len(acronym) - 1
-        topical = [word for word in related if word[:1].upper() == letter and word not in words] if not last else []
+        topical = [
+            word
+            for word in related
+            if word[:1].upper() == letter and word not in words and word.upper() != acronym  # (not the word it spells)
+        ]
+        topical = topical if not last else []
         words.append(random_util.choice(topical or [word for word in (_ABSURD if last else _BUZZWORDS)[letter]]))
     title = _template("acronym_title")({**_context(presentation_context), "acronym": acronym})
     return (title, *words) if title else None

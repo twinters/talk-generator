@@ -406,3 +406,13 @@ def test_classic_captions_speak_of_the_seed_as_english_does(seed, related, said,
     assert all(filled) and any(said in caption.lower() for caption in filled)
     assert not [caption for caption in filled if any(wrong in caption.lower() for wrong in never)]
     assert not [caption for caption in filled if "{" in caption or "  " in caption]
+
+
+def test_a_caption_loses_the_backslash_a_model_put_before_a_quote_mark():
+    # (a free model wrote "stick to documenting what\'s already here" in a meme, 2026-11-08)
+    from talkgenerator.plan.realize import clean_text
+
+    field = KINDS["meme"].texts[0]
+    assert clean_text("what's already here", field) == "what's already here"
+    assert clean_text('a \\"quoted\\" word', field) == 'a "quoted" word'
+    assert clean_text("a\b", field) == "a\b"  # (a backslash before anything else stays)

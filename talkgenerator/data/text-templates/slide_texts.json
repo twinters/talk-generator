@@ -389,8 +389,8 @@
     "Give a talk about it",
     "Get {seed.one}",
     "Ask again tomorrow",
-    "Become {seed.one}",
-    "Blame {related.generic}"
+    "Blame {related.generic}",
+    "Write a song about it"
   ],
   "tier_list_title": [
     "{seed.generic.cap}, ranked",

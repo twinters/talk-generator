@@ -1861,7 +1861,7 @@ def _flowchart(side: bool) -> Callable[[dict[str, Content], Theme], _Placement]:
         click = _click(roles, "end")
         placement.shapes.append(ShapeElement(role="end box", box=end, color=palette.accent_2, appears_on_click=click))
         placement.boxes["end"] = (_inset(end, 18), "boss")
-        placement.colors["end"] = _on([palette.accent_2], theme, color.LARGE_TEXT_CONTRAST)
+        placement.colors["end"] = _on([palette.accent_2], theme)  # (a long end is no large text)
         return placement
 
     return flowchart

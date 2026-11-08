@@ -528,10 +528,10 @@ A flowchart that pretends to help decide: a yes-or-no question at the top, where
 | Text | At most | What to write |
 | --- | --- | --- |
 | `title` | 60 | the slide's title (or empty, for none) |
-| `question` | 50 | the yes-or-no question at the top |
-| `yes_step` | 34 | where Yes leads: a short step |
-| `no_step` | 34 | where No leads: another short step |
-| `end` | 34 | where both steps lead: the same end, the punchline |
+| `question` | 70 | the yes-or-no question at the top |
+| `yes_step` | 48 | where Yes leads: a short step |
+| `no_step` | 48 | where No leads: another short step |
+| `end` | 48 | where both steps lead: the same end, the punchline |
 
 Images: none
 

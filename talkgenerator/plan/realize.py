@@ -7,6 +7,7 @@ never on the other slides: so slides can be realized in parallel, in any order, 
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any, Final
 
@@ -28,6 +29,8 @@ ATTEMPTS: Final = 3
 _QUOTE_MARKS: Final = "\"'“”‘’«»"
 # What a cut may leave at the end of a text, besides little words: punctuation that leads on to more
 _DANGLING: Final = ",;:-–—([{/&+ "
+# A backslash before a quote mark, as some models escape one where their JSON needn't (what\'s)
+_STRAY_ESCAPE: Final = re.compile(r"\\(?=['\"’])")
 
 
 def length_limit(text_field: TextField) -> int:
@@ -46,7 +49,7 @@ def clean_text(value: Any, text_field: TextField, language: str = "en") -> str |
         return None
     if text_field.options:
         return option_of(value, text_field)
-    text = " ".join(value.split()).strip(_QUOTE_MARKS + " ")
+    text = " ".join(_STRAY_ESCAPE.sub("", value).split()).strip(_QUOTE_MARKS + " ")
     if not text or leftovers_in(text):
         return None
     if len(text) > length_limit(text_field):

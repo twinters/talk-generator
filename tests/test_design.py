@@ -26,6 +26,8 @@ from talkgenerator.util import os_util, random_util
 from tests import test_seeds
 from tests.test_deck import _every_kind_of_slide, _image, _pie_chart_data
 from tests.test_deck import images as images  # the fake image downloads (a fixture)
+from tests.test_karaoke_types import KARAOKE
+from tests.test_karaoke_types import _longest as _karaoke_longest
 from tests.test_slide_types import EVERY_KIND, _built, _longest_texts
 from tests.test_slide_types import _deck as _deck_of
 from tests.test_slide_types import runs_of_new_types as _runs_of_new_types
@@ -401,7 +403,8 @@ def test_a_slide_gets_the_layouts_that_fit_its_elements(images):
 # (A compound, as Dutch and German have them, can be wider than a narrow box even at the box's smallest size: a free
 # model's "Mantelstromingen" didn't fit one)
 _LONG_WORD = "Brandweerkazernedeur"
-_OLDER_KINDS = [kind for kind in KINDS if kind not in EVERY_KIND]  # (milestone 6's have a test of their own)
+# (milestone 6's and the ones from PowerPoint karaoke decks have tests of their own)
+_OLDER_KINDS = [kind for kind in KINDS if kind not in EVERY_KIND and kind not in KARAOKE]
 
 
 def _with_long_words(kind):
@@ -444,6 +447,9 @@ def test_the_longest_texts_and_long_words_fit_in_every_open_pairing(images, fami
     a member can have them)"""
     longest = [_built(kind, _longest_texts(kind), {"photo": _image("wide")}) for kind in EVERY_KIND]
     long_words = [_built(kind, _longest_texts(kind, _LONG_WORD), {"photo": _image("wide")}) for kind in EVERY_KIND]
+    for photo in (_image("wide"), None):  # (the karaoke kinds, with an acronym's words as initials, and so on)
+        longest += [_built(kind, _karaoke_longest(kind), {"photo": photo}) for kind in KARAOKE]
+        long_words += [_built(kind, _karaoke_longest(kind, _LONG_WORD), {"photo": photo}) for kind in KARAOKE]
     older = [_with_long_words(kind) for kind in _OLDER_KINDS]
     capitals = themes.FAMILIES[family].uppercase > 0 and pair[0] not in themes._NO_CAPITALS
     for uppercase in (False, True) if capitals else (False,):
