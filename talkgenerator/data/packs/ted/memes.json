@@ -6,132 +6,228 @@
     "Small talk|Small talk about {seed.generic}",
     "Following the instructions|Winging it with {seed.generic}",
     "A normal hobby|Collecting facts about {seed.generic}",
-    "Asking an expert|Becoming the expert on {seed.generic}"
+    "Asking an expert|Becoming the expert on {seed.generic}",
+    "Reading the manual|Asking {seed.generic} for advice",
+    "A quiet weekend|A weekend with {seed.generic}",
+    "Normal birthday presents|Giving everyone {seed.generic}",
+    "Using a map|Following {seed.generic}",
+    "Saving money|Spending it all on {seed.generic}"
   ],
   "two_buttons": [
     "{seed.generic.cap}|{related.generic.cap}|Me",
     "Talk about {seed.generic}|Talk about {related.generic}|The presenter",
     "Love {seed.generic}|Fear {seed.generic}|Everyone in this room",
-    "Finish the talk|Keep talking about {seed.generic}|Me, right now"
+    "Finish the talk|Keep talking about {seed.generic}|Me, right now",
+    "Love {seed.generic}|Leave {seed.generic}|Me",
+    "Sleep|{seed.generic.cap}|Me at 2 AM",
+    "Explain {seed.generic}|Pretend to explain|The presenter",
+    "Admit it|Deny it|Everyone who loves {seed.generic}"
   ],
   "distracted_boyfriend": [
     "{seed.generic.cap}|Me|My actual job",
     "{related.generic.cap}|Me|{seed.generic.cap}",
     "Talking about {seed.generic}|Me|Finishing this talk",
-    "One more fact about {seed.generic}|The presenter|The time limit"
+    "One more fact about {seed.generic}|The presenter|The time limit",
+    "{seed.generic.cap}|Scientists|Their actual research",
+    "{seed.generic.cap}|My weekend|My chores",
+    "A new fact about {seed.generic}|My brain|Everything I learned at school",
+    "{seed.generic.cap}|The audience|The other speakers"
   ],
   "uno_draw_25_cards": [
     "Stop talking about {seed.generic}|Me",
     "Say one bad thing about {seed.generic}|Fans of {seed.generic}",
     "Explain {seed.generic}|Experts",
-    "Admit you don't get {seed.generic}|Everyone in this room"
+    "Admit you don't get {seed.generic}|Everyone in this room",
+    "Talk for one minute without mentioning {seed.generic}|Me",
+    "Name one flaw of {seed.generic}|Fans of {seed.generic}",
+    "Stop buying {seed.generic}|Me, again",
+    "Read the whole manual about {seed.generic}|Everyone"
   ],
   "left_exit_12_off_ramp": [
     "Being normal|{seed.generic.cap}|Me",
     "Sleep|{seed.generic.cap}|Me at 3 AM",
     "The plan|{related.generic.cap}|This talk",
-    "The actual topic|More about {seed.generic}|The presenter"
+    "The actual topic|More about {seed.generic}|The presenter",
+    "Work|{seed.generic.cap}|My brain on Monday",
+    "Lunch|Talking about {seed.generic}|Me at lunch",
+    "Small talk|{seed.bare.cap} facts|Me at every party",
+    "The deadline|{seed.generic.cap}|My attention span"
   ],
   "grus_plan": [
     "Give a talk on {seed.generic}|Pretend to be an expert|Get asked a question about {seed.generic}",
     "Buy {seed.one}|Read the manual|The manual is about {related.generic}",
-    "Learn about {seed.generic}|Explain {seed.generic}|Realise you know nothing about {seed.generic}"
+    "Learn about {seed.generic}|Explain {seed.generic}|Realise you know nothing about {seed.generic}",
+    "Start a {seed.bare} blog|Write one post|Get one reader: my mum",
+    "Find {seed.generic}|Study {seed.generic}|Get studied by {seed.generic}",
+    "Plan a talk on {seed.generic}|Make 200 slides|Get five minutes",
+    "Ignore {seed.generic}|Feel relieved|Dream about {seed.generic}"
   ],
   "epic_handshake": [
     "Fans of {seed.generic}|Fans of {related.generic}|Hating Mondays",
     "{seed.generic.cap}|{related.generic.cap}|Confusing everyone",
     "Scientists|People who love {seed.generic}|Not understanding {seed.generic}",
-    "The audience|The presenter|Wondering why this talk is about {seed.generic}"
+    "The audience|The presenter|Wondering why this talk is about {seed.generic}",
+    "Scientists|Children|Loving {seed.generic}",
+    "Optimists|Pessimists|{seed.generic.cap}",
+    "My parents|My friends|Not understanding my talk on {seed.generic}",
+    "Experts|Beginners|Pretending to understand {seed.generic}"
   ],
   "waiting_skeleton": [
     "Me waiting for someone|To ask me about {seed.generic}",
     "Waiting for|{seed.generic.cap} to make sense",
-    "Still waiting|For the last slide about {seed.generic}"
+    "Still waiting|For the last slide about {seed.generic}",
+    "Waiting for {seed.generic}|Any day now",
+    "Waiting for someone to admit|That they love {seed.generic}",
+    "Still waiting|For the {seed.bare} revolution",
+    "Me, waiting for|My {seed.bare} delivery"
   ],
   "always_has_been": [
     "Wait, it's all {seed.generic}?|Always has been",
     "Wait, it was {seed.generic} all along?|Always has been",
-    "Wait, this whole talk is about {seed.generic}?|Always has been"
+    "Wait, this whole talk is about {seed.generic}?|Always has been",
+    "Wait, history is just {seed.generic}?|Always has been",
+    "Wait, my whole life was about {seed.generic}?|Always has been",
+    "Wait, the secret ingredient? {seed.generic.cap}?|Always has been"
   ],
   "woman_yelling_at_cat": [
     "You said {seed.generic} would be simple!|Me, who explained {seed.generic}",
     "The future is {seed.generic}!|{related.generic.cap}",
     "Who brought {seed.generic} to dinner?!|Not me",
-    "Stop talking about {seed.generic}!|One more slide"
+    "Stop talking about {seed.generic}!|One more slide",
+    "You can't just talk about {seed.generic} all day!|Watch me",
+    "You don't even like {seed.generic}!|I contain multitudes",
+    "Who told you about {seed.generic}?!|The internet",
+    "Put down the {seed.bare}!|No"
   ],
   "change_my_mind": [
     "Nobody appreciates {seed.generic} enough",
     "{seed.generic.cap}? Just {related.generic} with better marketing",
     "Everything is better with {seed.generic}",
-    "Every talk should be about {seed.generic}"
+    "Every talk should be about {seed.generic}",
+    "{seed.generic.cap} should be taught in every school",
+    "The world runs on {seed.generic}",
+    "Life was better before {seed.generic}",
+    "{seed.generic.cap}: humanity's greatest invention"
   ],
   "batman_slapping_robin": [
     "What about {related.generic}?|We're talking about {seed.generic}!",
     "I don't care about {seed.generic}|Take that back!",
-    "Can we skip the part about {seed.generic}?|No!"
+    "Can we skip the part about {seed.generic}?|No!",
+    "But what if {seed.generic}...|Not another word!",
+    "Let's change the topic to...|{seed.generic.cap}!",
+    "I read about {seed.generic}...|Read it again!",
+    "What's so great about...|{seed.generic.cap}!"
   ],
   "is_this_a_pigeon": [
     "Me|{related.generic.cap}|Is this {seed.one}?",
     "The audience|Any slide|Is this about {seed.generic}?",
-    "The presenter|A random picture|Is this proof of {seed.generic}?"
+    "The presenter|A random picture|Is this proof of {seed.generic}?",
+    "My grandmother|A smartphone|Is this {seed.one}?",
+    "Tourists|Any statue|Is this about {seed.generic}?",
+    "Me|{seed.generic.cap}|Is this the answer to everything?",
+    "My cat|A cardboard box|Is this {seed.one}?"
   ],
   "one_does_not_simply": [
     "One does not simply|Explain {seed.generic} in one slide",
     "One does not simply|Stop thinking about {seed.generic}",
-    "One does not simply|Give a talk about {seed.generic} unprepared"
+    "One does not simply|Give a talk about {seed.generic} unprepared",
+    "One does not simply|Mention {seed.generic} at dinner",
+    "One does not simply|Understand {seed.generic}",
+    "One does not simply|Walk past {seed.generic}",
+    "One does not simply|Leave a talk about {seed.generic} early"
   ],
   "ancient_aliens": [
     "I'm not saying it was {seed.generic}|But it was {seed.generic}",
     "{related.generic.cap}?|{seed.generic.cap}",
-    "Who built the pyramids?|{seed.generic.cap}"
+    "Who built the pyramids?|{seed.generic.cap}",
+    "My missing socks?|{seed.generic.cap}",
+    "Why is the sky blue?|{seed.generic.cap}",
+    "Who finished the biscuits?|{seed.generic.cap}",
+    "Mondays?|{seed.generic.cap}"
   ],
   "expanding_brain": [
     "Liking {seed.generic}|Talking about {seed.generic}|Giving a talk about {seed.generic}|Becoming {seed.one}",
     "Ignoring {seed.generic}|Liking {seed.generic}|Loving {seed.generic}|Becoming {seed.one}",
-    "{related.generic.cap}|{seed.generic.cap}|{related.generic.cap} and {seed.generic}|A whole talk about {seed.generic}"
+    "{related.generic.cap}|{seed.generic.cap}|{related.generic.cap} and {seed.generic}|A whole talk about {seed.generic}",
+    "Reading about {seed.generic}|Writing about {seed.generic}|Dreaming of {seed.generic}|Speaking fluent {seed.bare}",
+    "Using {seed.generic}|Collecting {seed.generic}|Inventing {seed.generic}|Asking {seed.generic} for advice",
+    "One slide|Ten slides|A whole talk|A talk made of {seed.generic}",
+    "Coffee|Tea|Water|{seed.generic.cap}"
   ],
   "this_is_fine": [
     "{seed.generic.cap} everywhere|Me",
     "Everything about {seed.generic}|The presenter",
-    "My slides about {seed.generic}|Me, presenting them"
+    "My slides about {seed.generic}|Me, presenting them",
+    "My inbox, full of {seed.generic}|Me",
+    "The deadline, tomorrow|Me, reading about {seed.generic}",
+    "The questions about {seed.generic}|Me, at the end of this talk"
   ],
   "futurama_fry": [
     "Not sure if {seed.generic}|Or just {related.generic}",
     "Not sure if this talk is about {seed.generic}|Or about me",
-    "Not sure if I'm an expert on {seed.generic}|Or just read one article"
+    "Not sure if I'm an expert on {seed.generic}|Or just read one article",
+    "Not sure if I love {seed.generic}|Or just need a hobby",
+    "Not sure if the future belongs to {seed.generic}|Or just to cats",
+    "Not sure if genius|Or just {seed.generic}",
+    "Not sure if the audience gets {seed.generic}|Or just nods politely"
   ],
   "panik_kalm_panik": [
     "I have to give a talk about {seed.generic}|I know everything about {seed.generic}|The talk is about {related.generic}",
     "{seed.generic.cap}. Everywhere.|It's fine, I love {seed.generic}|I'm allergic to {seed.generic}",
-    "Someone asks about {seed.generic}|I made a slide about that|The slide is a meme"
+    "Someone asks about {seed.generic}|I made a slide about that|The slide is a meme",
+    "Out of {seed.generic}|Found {seed.generic}|It's not {seed.generic}",
+    "The talk is today|It's about {seed.generic}|I know nothing about {seed.generic}",
+    "{seed.generic.cap} everywhere|It's a dream|I'm awake"
   ],
   "buff_doge_vs_cheems": [
     "{seed.generic.cap} in 1990|{seed.generic.cap} now|I can do anything|I need a nap",
     "{seed.generic.cap}, the original|{seed.generic.cap}, the remake|Built to last|Needs an update",
-    "Experts on {seed.generic} then|Experts on {seed.generic} now|I read books|I watched a video"
+    "Experts on {seed.generic} then|Experts on {seed.generic} now|I read books|I watched a video",
+    "Fans then|Fans now|I'd cross oceans for {seed.generic}|I'd cross the road. Maybe.",
+    "Old {seed.bare}|New {seed.bare}|Built to last a lifetime|Needs charging",
+    "Talks in 1990|Talks now|Three slides on {seed.generic}|Two hundred slides on {seed.generic}"
   ],
   "bell_curve": [
-    "I like {seed.generic}|Actually, {seed.generic}: a complex system of {related.generic} and feelings",
-    "{seed.generic.cap}? Nice.|Well, it depends on {related.generic}, the context and the moon"
+    "I like {seed.generic}|Well, actually, it's complicated",
+    "{seed.generic.cap}? Nice.|Well, it depends on {related.generic}",
+    "Love {seed.generic}|There are 47 schools of thought",
+    "{seed.generic.cap}? Yes.|Studies are inconclusive",
+    "I like {seed.generic}|It depends on your definition"
   ],
   "the_scroll_of_truth": [
-    "{seed.generic.cap}? Just {related.generic} with a better name",
+    "Just {seed.generic}",
     "Nobody understands {seed.generic}",
-    "This talk is not really about {seed.generic}"
+    "I made it up",
+    "{seed.generic.cap} can't fix it",
+    "You need more sleep",
+    "It's always {seed.generic}",
+    "We're out of snacks"
   ],
   "trade_offer": [
     "Your attention|Facts about {seed.generic}",
     "Your weekend|Everything I know about {seed.generic}",
-    "Your applause|More slides about {seed.generic}"
+    "Your applause|More slides about {seed.generic}",
+    "Your snacks|One fact about {seed.generic}",
+    "Your seat|A {seed.bare} sticker",
+    "All your time|My opinion on {seed.generic}",
+    "Your attention span|A slide about {seed.generic}"
   ],
   "disaster_girl": [
     "{seed.generic.cap}?|I did that",
     "The talk about {seed.generic}|Went exactly as planned",
-    "Everyone's confused about {seed.generic}|My work here is done"
+    "Everyone's confused about {seed.generic}|My work here is done",
+    "Everyone now loves {seed.generic}|You're welcome",
+    "The meeting ran two hours over|I mentioned {seed.generic}",
+    "The group chat exploded|I said '{seed}'",
+    "Nobody's sleeping tonight|I explained {seed.generic}"
   ],
   "roll_safe_think_about_it": [
     "You can't be wrong about {seed.generic}|If you never talk about {seed.generic}",
     "Can't fail at {seed.generic}|If you call it {related.generic}",
-    "Can't forget your slides about {seed.generic}|If every slide is a meme"
+    "Can't forget your slides about {seed.generic}|If every slide is a meme",
+    "Can't run out of {seed.generic}|If you never start",
+    "Can't lose your {seed.bare}|If you never had any",
+    "You can't be late for a talk on {seed.generic}|If you're the speaker",
+    "Can't be bored by {seed.generic}|If you fall asleep first"
   ]
 }

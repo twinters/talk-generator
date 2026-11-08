@@ -12,7 +12,7 @@ from talkgenerator.schema.content_generator_structures import (
     generate_wikihow_bold_statement,
 )
 from talkgenerator.sources import packs, wikihow
-from talkgenerator.util import random_util
+from talkgenerator.util import language_util, random_util
 from talkgenerator.util.generator_util import (
     CombinedGenerator,
     InspiredTupleGenerator,
@@ -240,7 +240,7 @@ about_me_book_tuple_generator = TupledGenerator(book_description_generator, redd
 about_me_location_tuple_generator = TupledGenerator(location_description_generator, reddit_location_image_generator)
 
 about_me_job_tuple_generator = MappedGenerator(
-    InspiredTupleGenerator(MappedGenerator(job_generator, str.title), neutral_image_generator_from_word),
+    InspiredTupleGenerator(MappedGenerator(job_generator, language_util.title_case), neutral_image_generator_from_word),
     JobPrefixApplier(),
 )
 

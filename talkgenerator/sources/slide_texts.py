@@ -31,6 +31,7 @@ _SENSITIVE: Final = frozenset(
     + ("buddhism", "sikh", "prophet", "religion", "religious", "kill", "killing", "killer", "murder", "rape")
     + ("suicide", "terror", "terrorist", "terrorism", "bomb", "nazi", "nazis", "hitler", "genocide", "holocaust")
     + ("slave", "slavery", "racist", "racism", "sex", "sexual", "sexy", "porn", "nude", "naked", "penis", "vagina")
+    + ("breast", "breasts", "boob", "boobs", "nipple", "nipples", "genitals")
     + ("drug", "drugs", "cocaine", "heroin", "abuse", "torture", "weapon", "gun", "guns", "corpse", "death")
 )
 
@@ -138,13 +139,21 @@ def _figure(kind: str) -> str:
     )
 
 
+# What a big number of each kind counts: the pack's labels
+_LABELS: Final = {
+    "percent": "numbers.percent_label",
+    "count": "numbers.count_label",
+    "ratio": "numbers.ratio_label",
+}
+
+
 @_unless_sensitive
 def generate_big_number(presentation_context: dict[str, Any]) -> tuple[str | None, str, str, str | None] | None:
     """A big number about the seed, with what it counts and a made-up source: a title, the number, its label, the
     source."""
     kind = random_util.choice(("percent", "percent", "count", "ratio"))
     variables = _context(presentation_context)
-    label = _template(f"numbers.{kind}_label")(variables)
+    label = _template(_LABELS[kind])(variables)
     if not label:
         return None
     title = _maybe(0.6, _template("numbers.big_number_title")(variables))
@@ -473,7 +482,7 @@ def generate_acronym(presentation_context: dict[str, Any]) -> tuple[str | None, 
         topical = (
             [word for word in related if word[:1].upper() == letter and word.upper() != acronym] if not last else []
         )
-        known = _rule(f"karaoke.{'absurd' if last else 'buzzword'}_{letter.lower()}")
+        known = _rule(f"karaoke.absurd_{letter.lower()}" if last else f"karaoke.buzzword_{letter.lower()}")
         pool = topical + [word for word in known if not topical]
         words.append(random_util.choice([word for word in pool if word not in words] or pool))
     title = _template("karaoke.acronym_title")({**_context(presentation_context), "acronym": acronym})

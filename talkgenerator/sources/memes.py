@@ -145,7 +145,9 @@ def rule_of(name: str) -> str:
 def _classic(name: str) -> tuple[tuple[str, ...], ...]:
     """A template's captions for classic talks, from the TED content pack: sentences of a caption per box, each
     "first|second|..." in the pack."""
-    sentences = packs.pack(packs.TED).grammar("memes").get(rule_of(name), [])
+    pack = packs.pack(packs.TED)
+    rule = f"memes.{rule_of(name)}"
+    sentences = pack.rule(rule) if pack.has(rule) else []
     return tuple(tuple(sentence.split("|")) for sentence in sentences)
 
 

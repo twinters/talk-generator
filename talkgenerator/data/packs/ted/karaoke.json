@@ -2,7 +2,7 @@
   "fun_fact": [
     "The average person thinks about {seed.generic} {number} times a day.",
     "{seed.generic.cap} can't be seen from space.",
-    "There are more {seed.generic} in Belgium than people.",
+    "Belgium officially has a surplus of {seed.generic}.",
     "Ancient Romans were terrified of {seed.generic}.",
     "Scientists still can't explain {seed.generic}.",
     "You are never more than two metres away from {seed.generic}.",
@@ -10,18 +10,75 @@
     "Cats are secretly afraid of {seed.generic}.",
     "The word '{seed}' was first written down in {year}, on a napkin.",
     "{seed.generic.cap} and {related.generic} share a common ancestor.",
-    "In {year}, {seed.generic} cost more than gold.",
+    "In {year}, people paid more for {seed.generic} than for gold.",
     "Astronauts are not allowed to talk about {seed.generic}.",
     "Someone discovered {seed.generic} by accident, in a shoe, in {year}.",
     "Dolphins have a word for {seed.generic}.",
     "{percent} of people dreamt about {seed.generic} this week.",
     "A town in Norway celebrates {seed.generic} every Tuesday.",
     "Until {year}, it was illegal to whistle about {seed.generic}.",
-    "The human body is {percent} {seed.generic}.",
+    "The human body is {percent} made of {seed.generic}.",
     "Experts recommend at least {number} minutes of {seed.generic} a day.",
     "Owls can't see {seed.generic}.",
     "Nobody has ever finished a sentence about {seed.generic}.",
-    "The very first phone call was about {seed.generic}."
+    "The very first phone call was about {seed.generic}.",
+    "The first mention of {seed.generic}: a Tuesday in {year}.",
+    "Ancient Egyptians kept {seed.generic} in their pockets for luck.",
+    "In {year}, a farmer traded a house for {seed.generic}.",
+    "Bees can recognise {seed.generic} from three miles away.",
+    "It's illegal to mention {seed.generic} in a library in Finland.",
+    "{seed.generic.cap} can't be photographed on a Monday.",
+    "The world record for staring at {seed.generic}: {number} hours.",
+    "Octopuses dream about {seed.generic}.",
+    "Every snowflake has a tiny bit of {seed.generic} in it.",
+    "Astronomers named a star after {seed.generic} in {year}.",
+    "{percent} of all emails sent today mention {seed.generic}.",
+    "Goldfish can remember {seed.generic} for up to {number} years.",
+    "In {year}, {seed.generic} briefly replaced money in a small Dutch town.",
+    "Penguins propose to each other with {seed.generic}.",
+    "Sloths think about {seed.generic} roughly {number} times a day.",
+    "The first person to say '{seed}' out loud was fined for it.",
+    "{seed.generic.cap} can be heard from {number} kilometres away on a quiet night.",
+    "A group of {seed.generic}? That's called a 'conference'.",
+    "Scientists once spent {number} years trying to define {seed.generic}.",
+    "Before {year}, nobody had a word for {seed.generic}.",
+    "{seed.generic.cap} would weigh {number} kilos on the moon.",
+    "Cows produce more milk when they hear about {seed.generic}.",
+    "The longest speech ever given was about {seed.generic}: {number} hours.",
+    "Most dreams last {number} seconds, except dreams about {seed.generic}.",
+    "Honey never spoils, and neither does a good story about {seed.generic}.",
+    "The average desk holds {number} things related to {seed.generic}.",
+    "In {year}, a whole village spent a week arguing about {seed.generic}.",
+    "On one small island, {seed.generic} once served as money.",
+    "Pigeons can tell {seed.generic} and {related.generic} apart.",
+    "There's a museum dedicated entirely to {seed.generic}.",
+    "The first {seed.bare} conference had {number} visitors. All of them pigeons.",
+    "Your phone knows more about {seed.generic} than you do.",
+    "Studies show people are {percent} happier near {seed.generic}.",
+    "The ancient Greeks had {number} words for {seed.generic}.",
+    "{percent} of all paintings hide {seed.generic}, if you look closely.",
+    "Nobody has ever been bored while talking about {seed.generic}.",
+    "In {year}, the word '{seed}' was added to the dictionary by mistake.",
+    "Your heart beats faster when you think about {seed.generic}.",
+    "There are exactly {number} kinds of {seed.generic}, and you've seen two."
+  ],
+  "fun_fact_years": [
+    "1503",
+    "1610",
+    "1666",
+    "1720",
+    "1752",
+    "1823",
+    "1851",
+    "1888",
+    "1904",
+    "1911",
+    "1923",
+    "1951",
+    "1978",
+    "1987",
+    "2003",
+    "2011"
   ],
   "acronym_title": [
     "The {acronym} method",
@@ -29,7 +86,507 @@
     "{acronym}: a model for {seed.generic}",
     "Remember: {acronym}",
     "The {acronym} principle",
-    "{seed.generic.cap}, the {acronym} way"
+    "{seed.generic.cap}, the {acronym} way",
+    "The {acronym} approach to {seed.generic}",
+    "Master {seed.generic} with {acronym}",
+    "Think {acronym}",
+    "{acronym}: my secret to success",
+    "The {acronym} model",
+    "The steps to {seed.generic}: {acronym}",
+    "Success with {seed.generic}? {acronym}.",
+    "The {acronym} system",
+    "Just remember {acronym}",
+    "{acronym}: the only framework you need",
+    "Be more {acronym}",
+    "The {acronym} mindset",
+    "Living the {acronym} life",
+    "The {acronym} strategy for {seed.generic}",
+    "The {acronym} code",
+    "{acronym}, explained",
+    "The {acronym} toolkit",
+    "My {acronym} formula for {seed.generic}"
+  ],
+  "acronyms": [
+    "SPARK",
+    "SHINE",
+    "BRAVE",
+    "TRUST",
+    "SMART",
+    "FOCUS",
+    "DREAM",
+    "GROW",
+    "HAPPY",
+    "BRIGHT",
+    "THRIVE",
+    "PEACE",
+    "LEARN",
+    "SUNNY",
+    "MAGIC",
+    "BOOST",
+    "SOLVE",
+    "CHARM",
+    "ZEST",
+    "BLOOM",
+    "QUEST",
+    "RISE",
+    "LEAP",
+    "GLOW",
+    "SMILE"
+  ],
+  "buzzword_a": [
+    "Agility",
+    "Alignment",
+    "Accountability",
+    "Authenticity",
+    "Action items",
+    "Ambition",
+    "Analytics",
+    "Autonomy"
+  ],
+  "buzzword_b": [
+    "Bandwidth",
+    "Best practices",
+    "Boldness",
+    "Branding",
+    "Balance",
+    "Benchmarks",
+    "Blue-sky thinking",
+    "Buy-in"
+  ],
+  "buzzword_c": [
+    "Collaboration",
+    "Courage",
+    "Clarity",
+    "Commitment",
+    "Creativity",
+    "Curiosity",
+    "Core values",
+    "Culture"
+  ],
+  "buzzword_d": [
+    "Disruption",
+    "Dedication",
+    "Data",
+    "Discipline",
+    "Deliverables",
+    "Drive",
+    "Deep dives",
+    "Design thinking"
+  ],
+  "buzzword_e": [
+    "Empowerment",
+    "Excellence",
+    "Engagement",
+    "Empathy",
+    "Energy",
+    "Efficiency",
+    "Ecosystems",
+    "Evolution"
+  ],
+  "buzzword_f": [
+    "Focus",
+    "Flexibility",
+    "Feedback",
+    "Frameworks",
+    "Fun",
+    "Flow",
+    "Follow-through",
+    "Future-proofing"
+  ],
+  "buzzword_g": [
+    "Growth",
+    "Grit",
+    "Gratitude",
+    "Governance",
+    "Goals",
+    "Game-changers",
+    "Global thinking",
+    "Guidance"
+  ],
+  "buzzword_h": [
+    "Hustle",
+    "Harmony",
+    "Honesty",
+    "Hyperfocus",
+    "Hard work",
+    "Humility",
+    "Holistic thinking",
+    "High fives"
+  ],
+  "buzzword_i": [
+    "Innovation",
+    "Integrity",
+    "Impact",
+    "Insight",
+    "Inspiration",
+    "Initiative",
+    "Iteration",
+    "Inclusion"
+  ],
+  "buzzword_j": [
+    "Journey",
+    "Joy",
+    "Judgement",
+    "Just-in-time",
+    "Jumpstarts",
+    "Job satisfaction",
+    "Joint ventures"
+  ],
+  "buzzword_k": [
+    "Knowledge",
+    "KPIs",
+    "Kindness",
+    "Key results",
+    "Know-how",
+    "Kaizen",
+    "Keynotes"
+  ],
+  "buzzword_l": [
+    "Leadership",
+    "Leverage",
+    "Learning",
+    "Loyalty",
+    "Lean thinking",
+    "Listening",
+    "Long-term vision",
+    "Low-hanging fruit"
+  ],
+  "buzzword_m": [
+    "Mindfulness",
+    "Momentum",
+    "Motivation",
+    "Metrics",
+    "Mission",
+    "Mentoring",
+    "Milestones",
+    "Moonshots"
+  ],
+  "buzzword_n": [
+    "Networking",
+    "Nimbleness",
+    "Next steps",
+    "North stars",
+    "New normal",
+    "Negotiation",
+    "Niche markets"
+  ],
+  "buzzword_o": [
+    "Ownership",
+    "Optimism",
+    "Outcomes",
+    "Openness",
+    "Onboarding",
+    "Optimisation",
+    "Opportunities",
+    "Outside the box"
+  ],
+  "buzzword_p": [
+    "Passion",
+    "Purpose",
+    "Productivity",
+    "Paradigms",
+    "Pivots",
+    "Priorities",
+    "Partnerships",
+    "Progress"
+  ],
+  "buzzword_q": [
+    "Quality",
+    "Questions",
+    "Quick wins",
+    "Quarterly goals",
+    "Quiet confidence",
+    "Quantum leaps"
+  ],
+  "buzzword_r": [
+    "Resilience",
+    "Results",
+    "Respect",
+    "Roadmaps",
+    "Responsibility",
+    "Reflection",
+    "Return on investment",
+    "Realignment"
+  ],
+  "buzzword_s": [
+    "Synergy",
+    "Strategy",
+    "Scalability",
+    "Stakeholders",
+    "Self-care",
+    "Storytelling",
+    "Sustainability",
+    "Stand-ups"
+  ],
+  "buzzword_t": [
+    "Teamwork",
+    "Transparency",
+    "Trust",
+    "Thought leadership",
+    "Talent",
+    "Takeaways",
+    "Touchpoints",
+    "Transformation"
+  ],
+  "buzzword_u": [
+    "Understanding",
+    "Upskilling",
+    "Unity",
+    "User focus",
+    "Urgency",
+    "Upside",
+    "Unlearning"
+  ],
+  "buzzword_v": [
+    "Vision",
+    "Value",
+    "Velocity",
+    "Values",
+    "Vibes",
+    "Visibility",
+    "Value-add"
+  ],
+  "buzzword_w": [
+    "Wellbeing",
+    "Wisdom",
+    "Workflow",
+    "Win-wins",
+    "Work-life balance",
+    "Wow factor",
+    "Wins"
+  ],
+  "buzzword_x": [
+    "X-factor",
+    "eXcellence",
+    "eXperience",
+    "eXecution",
+    "eXpertise",
+    "eXploration",
+    "eXtra miles"
+  ],
+  "buzzword_y": [
+    "Yield",
+    "Youthfulness",
+    "Yes-saying",
+    "Year-end goals",
+    "Your best self",
+    "Yearly reviews"
+  ],
+  "buzzword_z": [
+    "Zeal",
+    "Zen",
+    "Zero waste",
+    "Zero inbox",
+    "Zest",
+    "Zoning in",
+    "Zero defects"
+  ],
+  "absurd_a": [
+    "Avocados",
+    "Alpacas",
+    "Accordions",
+    "Anchovies",
+    "Armadillos",
+    "Apple pie"
+  ],
+  "absurd_b": [
+    "Biscuits",
+    "Bananas",
+    "Bubble wrap",
+    "Balloons",
+    "Beanbags",
+    "Bagpipes"
+  ],
+  "absurd_c": [
+    "Cheese",
+    "Capybaras",
+    "Crumpets",
+    "Confetti",
+    "Cupcakes",
+    "Cardigans"
+  ],
+  "absurd_d": [
+    "Ducks",
+    "Doughnuts",
+    "Dinosaurs",
+    "Disco balls",
+    "Dumplings",
+    "Dachshunds"
+  ],
+  "absurd_e": [
+    "Eels",
+    "Eyebrows",
+    "Elephants",
+    "Egg timers",
+    "Emus",
+    "Earmuffs"
+  ],
+  "absurd_f": [
+    "Flamingos",
+    "Fondue",
+    "Fireflies",
+    "Fridge magnets",
+    "Frogs",
+    "Fudge"
+  ],
+  "absurd_g": [
+    "Goats",
+    "Glitter",
+    "Gnomes",
+    "Giraffes",
+    "Gummy bears",
+    "Gravy"
+  ],
+  "absurd_h": [
+    "Hamsters",
+    "Hats",
+    "Hedgehogs",
+    "Hula hoops",
+    "Hot sauce",
+    "Hammocks"
+  ],
+  "absurd_i": [
+    "Ice cream",
+    "Iguanas",
+    "Igloos",
+    "Ice skates",
+    "Inflatable swans",
+    "Icing"
+  ],
+  "absurd_j": [
+    "Jelly",
+    "Jazz hands",
+    "Jellyfish",
+    "Jam",
+    "Jigsaw puzzles",
+    "Juggling"
+  ],
+  "absurd_k": [
+    "Kazoos",
+    "Kittens",
+    "Kangaroos",
+    "Ketchup",
+    "Kites",
+    "Koalas"
+  ],
+  "absurd_l": [
+    "Llamas",
+    "Lasagna",
+    "Lava lamps",
+    "Lemons",
+    "Lobsters",
+    "Lollipops"
+  ],
+  "absurd_m": [
+    "Moustaches",
+    "Muffins",
+    "Marshmallows",
+    "Meerkats",
+    "Mittens",
+    "Mangoes"
+  ],
+  "absurd_n": [
+    "Naps",
+    "Noodles",
+    "Narwhals",
+    "Nachos",
+    "Nutmeg",
+    "Night owls"
+  ],
+  "absurd_o": [
+    "Otters",
+    "Onions",
+    "Ostriches",
+    "Origami",
+    "Owls",
+    "Omelettes"
+  ],
+  "absurd_p": [
+    "Pancakes",
+    "Pyjamas",
+    "Penguins",
+    "Pickles",
+    "Puppies",
+    "Pom-poms"
+  ],
+  "absurd_q": [
+    "Quokkas",
+    "Quiche",
+    "Quilts",
+    "Quinoa",
+    "Quacking",
+    "Quizzes"
+  ],
+  "absurd_r": [
+    "Rubber ducks",
+    "Raccoons",
+    "Rainbows",
+    "Roller skates",
+    "Radishes",
+    "Rhubarb"
+  ],
+  "absurd_s": [
+    "Snacks",
+    "Sloths",
+    "Socks",
+    "Spaghetti",
+    "Sprinkles",
+    "Seagulls"
+  ],
+  "absurd_t": [
+    "Toast",
+    "Tuesdays",
+    "Tap dancing",
+    "Tacos",
+    "Tortoises",
+    "Trampolines"
+  ],
+  "absurd_u": [
+    "Unicorns",
+    "Ukuleles",
+    "Umbrellas",
+    "Unicycles",
+    "Udon",
+    "Upside-down cake"
+  ],
+  "absurd_v": [
+    "Velcro",
+    "Vegetables",
+    "Volcanoes",
+    "Vanilla",
+    "Violins",
+    "Vending machines"
+  ],
+  "absurd_w": [
+    "Waffles",
+    "Wombats",
+    "Walruses",
+    "Wellies",
+    "Whoopee cushions",
+    "Woolly hats"
+  ],
+  "absurd_x": [
+    "Xylophones",
+    "X-rays",
+    "X-ray goggles",
+    "Xylophone solos",
+    "X marks the spot"
+  ],
+  "absurd_y": [
+    "Yoghurt",
+    "Yodelling",
+    "Yaks",
+    "Yo-yos",
+    "Yawning",
+    "Yellow paint"
+  ],
+  "absurd_z": [
+    "Zebras",
+    "Zucchini",
+    "Zeppelins",
+    "Zip lines",
+    "Zigzags",
+    "Zoo animals"
   ],
   "dare": [
     "Present the next slide as a haiku.",
@@ -47,14 +604,63 @@
     "Thank an imaginary sponsor for the next slide.",
     "Start every sentence on the next slide with 'Spoiler alert'.",
     "Present the next slide as a heartfelt apology.",
-    "Describe the next slide using only questions."
+    "Describe the next slide using only questions.",
+    "Present the next slide as a pirate.",
+    "Present the next slide as if it were the most boring thing ever.",
+    "Pretend the next slide is a weather forecast.",
+    "Explain the next slide as if you're selling it on TV.",
+    "Present the next slide in the voice of a museum audio guide.",
+    "Present the next slide as a bedtime story.",
+    "Add a dramatic pause after every sentence on the next slide.",
+    "Present the next slide as if you've only just seen it.",
+    "From now on, call the audience 'fellow {seed.bare} enthusiasts'.",
+    "Use the word '{related}' in every sentence until the next slide.",
+    "Describe the next slide in exactly three words.",
+    "Present the next slide like a cooking show host.",
+    "Present the next slide as a motivational coach.",
+    "Give the next slide a dramatic movie trailer voice.",
+    "Thank {seed.generic} before you continue.",
+    "Present the next slide as a tour guide on a very slow bus.",
+    "Present the next slide while pretending it's top secret.",
+    "End the next slide with a mic drop. Without the mic.",
+    "Present the next slide as an over-excited game show host.",
+    "Translate the next slide into corporate speak.",
+    "Present the next slide as a fairy tale: 'Once upon a time...'",
+    "Count down from five before every point on the next slide.",
+    "Ask the audience for a round of applause for {seed.generic}.",
+    "Present the next slide as your grandparent would.",
+    "Present the next slide as a sincere apology to {seed.generic}.",
+    "From now on, end every sentence with 'and that's science'.",
+    "Present the next slide using as many big words as possible.",
+    "Present the next slide as if you're on a very bad phone line.",
+    "Present the next slide as a sports coach at half time.",
+    "Describe the next slide as if it were your favourite holiday photo.",
+    "Present the next slide as an award acceptance speech.",
+    "Say 'as I predicted' at least twice on the next slide.",
+    "Present the next slide as a radio host taking calls."
   ],
   "flowchart_title": [
     "Should you?",
     "How to decide about {seed.generic}",
     "A simple guide",
     "Science, simplified",
-    "A decision tree for {seed.generic}"
+    "A decision tree for {seed.generic}",
+    "Decisions, decisions",
+    "The {seed.bare} decision tree",
+    "Should you get involved?",
+    "When in doubt",
+    "The only flowchart you need",
+    "Help me decide",
+    "A guide for the undecided",
+    "Is it time?",
+    "The {seed.bare} test",
+    "Your future, mapped out",
+    "The big decision",
+    "Every choice, explained",
+    "The logic of {seed.generic}",
+    "Follow the arrows",
+    "Choose wisely",
+    "What should I do?"
   ],
   "flowchart_question": [
     "Do you like {seed.generic}?",
@@ -63,7 +669,26 @@
     "Are you sure about {seed.generic}?",
     "Do you understand {seed.generic}?",
     "Is it Tuesday?",
-    "Did you read the manual?"
+    "Did you read the manual?",
+    "Is it a good day?",
+    "Have you had lunch?",
+    "Are you thinking about {seed.generic}?",
+    "Do you own {seed.one}?",
+    "Is anyone watching?",
+    "Do you trust {seed.generic}?",
+    "Is it raining?",
+    "Would your grandmother approve?",
+    "Have you tried turning it off and on again?",
+    "Do you want {seed.generic}?",
+    "Is there a deadline?",
+    "Can you explain {seed.generic}?",
+    "Are you hungry?",
+    "Did someone mention {seed.generic}?",
+    "Is this a good idea?",
+    "Do you need {seed.generic} in your life?",
+    "Has it been a long week?",
+    "Are you an expert on {seed.generic}?",
+    "Is the coffee ready?"
   ],
   "flowchart_yes": [
     "Great!",
@@ -71,7 +696,22 @@
     "Think about {related.generic}",
     "Ask an expert",
     "Celebrate",
-    "Write it down"
+    "Write it down",
+    "Good for you",
+    "Keep going",
+    "Tell your friends",
+    "Make a plan",
+    "Have a snack",
+    "Do a little dance",
+    "Read about {seed.generic}",
+    "Take a picture",
+    "Sign up",
+    "Think again anyway",
+    "Call your mum",
+    "Start a blog",
+    "Learn about {related.generic}",
+    "High five",
+    "Proceed with confidence"
   ],
   "flowchart_no": [
     "Are you sure?",
@@ -79,23 +719,68 @@
     "Ask your neighbour",
     "Read about {related.generic}",
     "Take a nap",
-    "Pretend you do"
+    "Pretend you do",
+    "Try again tomorrow",
+    "Ask the internet",
+    "Have a cup of tea",
+    "Look it up",
+    "Ask a child",
+    "Watch a documentary",
+    "Go for a walk",
+    "Ask {seed.generic}",
+    "Lie down for a bit",
+    "Consult your cat",
+    "Read the manual",
+    "Search for it",
+    "Think about {related.generic}",
+    "Phone a friend",
+    "Count to ten"
   ],
   "flowchart_end": [
     "Talk about {seed.generic} anyway",
-    "Buy more {seed.generic}",
+    "Buy {seed.one}",
     "Give a talk about it",
     "Get {seed.one}",
     "Ask again tomorrow",
     "Blame {related.generic}",
-    "Write a song about it"
+    "Write a song about it",
+    "{seed.generic.cap}",
+    "Start over",
+    "Embrace {seed.generic}",
+    "Have a nap",
+    "Give up and get snacks",
+    "Accept {seed.generic}",
+    "Learn to love {seed.generic}",
+    "Ask your mum",
+    "Make a flowchart",
+    "Become {seed.one}",
+    "Congratulations, you're {seed.one}",
+    "Celebrate with {seed.generic}",
+    "{seed.generic.cap}, all along",
+    "The same place",
+    "Lunch"
   ],
   "tier_list_title": [
     "{seed.generic.cap}, ranked",
     "The definitive tier list of {seed.generic}",
     "Everything, ranked by {seed.generic}",
     "My honest tier list",
-    "Ranking {seed.generic}"
+    "Ranking {seed.generic}",
+    "The official {seed.bare} rankings",
+    "{seed.generic.cap}: the tier list",
+    "Ranked by an expert (me)",
+    "The ultimate ranking",
+    "Things I love, ranked",
+    "The tier list nobody asked for",
+    "Rankings: final and non-negotiable",
+    "My scientific ranking",
+    "Sorted, once and for all",
+    "The definitive list",
+    "Peer-reviewed rankings",
+    "Top to bottom",
+    "The great {seed.bare} ranking",
+    "How everything compares to {seed.generic}",
+    "Who's on top?"
   ],
   "tier_list_worst": [
     "Sleep",
@@ -105,278 +790,21 @@
     "Common sense",
     "Holidays",
     "Sunshine",
-    "Chocolate"
-  ],
-  "fun_fact_years": [
-    "1347",
-    "1666",
-    "1752",
-    "1823",
-    "1911",
-    "1978",
-    "2003"
-  ],
-  "acronyms": [
-    "SPARK",
-    "SHINE",
-    "BRAVE",
-    "TRUST",
-    "SMART",
-    "FOCUS",
-    "DREAM",
-    "GROW"
-  ],
-  "buzzword_a": [
-    "Agility",
-    "Alignment",
-    "Accountability",
-    "Authenticity"
-  ],
-  "buzzword_b": [
-    "Bandwidth",
-    "Best practices",
-    "Boldness",
-    "Branding"
-  ],
-  "buzzword_c": [
-    "Collaboration",
-    "Courage",
-    "Clarity",
-    "Commitment"
-  ],
-  "buzzword_d": [
-    "Disruption",
-    "Dedication",
-    "Data",
-    "Discipline"
-  ],
-  "buzzword_e": [
-    "Empowerment",
-    "Excellence",
-    "Engagement",
-    "Empathy"
-  ],
-  "buzzword_f": [
-    "Focus",
-    "Flexibility",
-    "Feedback",
-    "Frameworks"
-  ],
-  "buzzword_g": [
-    "Growth",
-    "Grit",
-    "Gratitude",
-    "Governance"
-  ],
-  "buzzword_h": [
-    "Hustle",
-    "Harmony",
-    "Honesty",
-    "Hyperfocus"
-  ],
-  "buzzword_i": [
-    "Innovation",
-    "Integrity",
-    "Impact",
-    "Insight"
-  ],
-  "buzzword_j": [
-    "Journey",
-    "Joy",
-    "Judgement"
-  ],
-  "buzzword_k": [
-    "Knowledge",
-    "KPIs",
-    "Kindness"
-  ],
-  "buzzword_l": [
-    "Leadership",
-    "Leverage",
-    "Learning",
-    "Loyalty"
-  ],
-  "buzzword_m": [
-    "Mindfulness",
-    "Momentum",
-    "Motivation",
-    "Metrics"
-  ],
-  "buzzword_n": [
-    "Networking",
-    "Nimbleness",
-    "Next steps"
-  ],
-  "buzzword_o": [
-    "Ownership",
-    "Optimism",
-    "Outcomes",
-    "Openness"
-  ],
-  "buzzword_p": [
-    "Passion",
-    "Purpose",
-    "Productivity",
-    "Paradigms"
-  ],
-  "buzzword_q": [
-    "Quality",
-    "Questions",
-    "Quick wins"
-  ],
-  "buzzword_r": [
-    "Resilience",
-    "Results",
-    "Respect",
-    "Roadmaps"
-  ],
-  "buzzword_s": [
-    "Synergy",
-    "Strategy",
-    "Scalability",
-    "Stakeholders"
-  ],
-  "buzzword_t": [
-    "Teamwork",
-    "Transparency",
-    "Trust",
-    "Thought leadership"
-  ],
-  "buzzword_u": [
-    "Understanding",
-    "Upskilling",
-    "Unity"
-  ],
-  "buzzword_v": [
-    "Vision",
-    "Value",
-    "Velocity"
-  ],
-  "buzzword_w": [
-    "Wellbeing",
-    "Wisdom",
-    "Workflow"
-  ],
-  "buzzword_x": [
-    "X-factor",
-    "eXcellence",
-    "eXperience"
-  ],
-  "buzzword_y": [
-    "Yield",
-    "Youthfulness",
-    "Yes-saying"
-  ],
-  "buzzword_z": [
-    "Zeal",
-    "Zen",
-    "Zero waste"
-  ],
-  "absurd_a": [
-    "Avocados",
-    "Alpacas"
-  ],
-  "absurd_b": [
-    "Biscuits",
-    "Bananas",
-    "Bubble wrap"
-  ],
-  "absurd_c": [
-    "Cheese",
-    "Capybaras"
-  ],
-  "absurd_d": [
-    "Ducks",
-    "Doughnuts"
-  ],
-  "absurd_e": [
-    "Eels",
-    "Eyebrows"
-  ],
-  "absurd_f": [
-    "Flamingos",
-    "Fondue"
-  ],
-  "absurd_g": [
-    "Goats",
-    "Glitter"
-  ],
-  "absurd_h": [
-    "Hamsters",
-    "Hats"
-  ],
-  "absurd_i": [
+    "Chocolate",
+    "Kittens",
+    "Birthdays",
     "Ice cream",
-    "Iguanas"
-  ],
-  "absurd_j": [
-    "Jelly",
-    "Jazz hands"
-  ],
-  "absurd_k": [
-    "Kazoos",
-    "Kittens"
-  ],
-  "absurd_l": [
-    "Llamas",
-    "Lasagna"
-  ],
-  "absurd_m": [
-    "Moustaches",
-    "Muffins"
-  ],
-  "absurd_n": [
-    "Naps",
-    "Noodles"
-  ],
-  "absurd_o": [
-    "Otters",
-    "Onions"
-  ],
-  "absurd_p": [
-    "Pancakes",
-    "Pyjamas"
-  ],
-  "absurd_q": [
-    "Quokkas",
-    "Quiche"
-  ],
-  "absurd_r": [
-    "Rubber ducks",
-    "Raccoons"
-  ],
-  "absurd_s": [
-    "Snacks",
-    "Sloths",
-    "Socks"
-  ],
-  "absurd_t": [
-    "Toast",
-    "Tuesdays",
-    "Tap dancing"
-  ],
-  "absurd_u": [
-    "Unicorns",
-    "Ukuleles"
-  ],
-  "absurd_v": [
-    "Velcro",
-    "Vegetables"
-  ],
-  "absurd_w": [
-    "Waffles",
-    "Wombats"
-  ],
-  "absurd_x": [
-    "Xylophones",
-    "X-rays"
-  ],
-  "absurd_y": [
-    "Yoghurt",
-    "Yodelling"
-  ],
-  "absurd_z": [
-    "Zebras",
-    "Zucchini"
+    "Free food",
+    "Fresh bread",
+    "Long naps",
+    "Good music",
+    "Friday afternoons",
+    "Hot showers",
+    "Clean sheets",
+    "Payday",
+    "Cake",
+    "Summer",
+    "Grandma's cooking",
+    "Snow days"
   ]
 }

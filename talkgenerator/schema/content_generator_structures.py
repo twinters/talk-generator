@@ -95,7 +95,7 @@ country_description_generator = packs.pack(packs.TED).tracery("about_me.country_
 def _apply_country_prefix(country_name):
     if random_util.uniform(0, 1) < 0.55:
         return country_name
-    return country_description_generator() + country_name
+    return f"{country_description_generator()} {country_name}"
 
 
 class CountryPrefixApplier:

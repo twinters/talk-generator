@@ -13,7 +13,14 @@ in, or tries another when it can't (a variable it lacks, a function that gives n
 does (and tries again, up to 100 times), and `templates` picks among the templates that are left (as v4 read its text
 files). Every rule's name is the pack's only one, and a slot names it with its grammar's: "karaoke.dare".
 
-The version goes up whenever the texts change, with a line on what changed.
+Templates speak of a slide's topic as English does, as it may be "penguins", "coffee", "the moon" or "Belgium":
+"{seed.generic}" after a verb or a preposition ("Love penguins", "Love coffee"), "{seed.one}" for one of it ("Get a
+penguin"), and "{seed.bare}" after a word of the template's own, such as an article or an adjective, or before another
+noun ("The moon paradox", "a penguin expert"); never with a verb after it that has to agree with it.
+
+The version goes up whenever the texts change, with a line on what changed. Tests lint every pack
+(tests/test_content_pack.py): every template fills in with its slot's variables, keeps to its field's length with long
+words, has no word of the blocklists and speaks of its topic as English does, and no rule has a template twice.
 """
 
 from __future__ import annotations
@@ -41,7 +48,7 @@ class Slot:
     """A rule that the code fills in, by its full name ("quiz.quiz_question") or a pattern of them
     ("karaoke.buzzword_*"): the variables its templates may use, and how long its texts may be, as a text field of a
     kind of slide ("quiz.question") or a limit of its own; and for the captions of a row of pictures, how many captions
-    a text has (separated by |), each as long as the field."""
+    a text has (separated by |), each as long as the field (0: as many as its rule's own, a meme template's boxes)."""
 
     name: str
     variables: tuple[str, ...] = ()
@@ -72,6 +79,11 @@ class Pack:
         """A rule's templates, by its full name ("karaoke.dare"). Shared: never change them."""
         grammar, rule = _split(name)
         return self.grammar(grammar)[rule]
+
+    def has(self, name: str) -> bool:
+        """Whether the pack has a rule, by its full name."""
+        grammar, rule = _split(name)
+        return grammar in self.grammars() and rule in self.grammar(grammar)
 
     def slot(self, name: str) -> Slot | None:
         """The slot of a rule, by its full name: the first that names it, if any does."""

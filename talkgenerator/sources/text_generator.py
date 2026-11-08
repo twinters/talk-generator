@@ -10,7 +10,7 @@ from talkgenerator.sources import conceptnet, wikihow, word_frequency
 from talkgenerator.util import language_util, os_util, random_util
 
 known_functions = {
-    "title": str.title,
+    "title": language_util.title_case,
     "lower": str.lower,
     "upper": str.upper,
     "dashes": lambda words: words.replace(" ", "-"),
@@ -21,10 +21,12 @@ known_functions = {
     "ing": language_util.to_present_participle,
     "plural": language_util.to_plural,
     "singular": language_util.to_singular,
-    # How English speaks of the thing in general ("penguins", but "coffee"), one of it ("a penguin", but "coffee"), and
-    # a first letter in capitals (see language_util.generic)
+    # How English speaks of the thing in general ("penguins", but "coffee"), one of it ("a penguin", but "coffee"), the
+    # thing after a word of the template's, such as an article ("the moon" in "The {seed.bare} paradox": "moon"), and a
+    # first letter in capitals (see language_util.generic)
     "generic": language_util.generic,
     "one": language_util.one,
+    "bare": language_util.bare,
     "cap": language_util.capitalised,
     # "synonym": generator_util.FromListGenerator(language_util.get_synonyms),
     "2_to_1_pronouns": language_util.second_to_first_pronouns,
