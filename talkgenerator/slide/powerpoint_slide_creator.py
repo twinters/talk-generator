@@ -7,6 +7,7 @@ from pathlib import Path
 import pptx
 from lxml.etree import XMLSyntaxError
 from pptx.enum.shapes import MSO_SHAPE_TYPE
+from pptx.oxml import parse_xml
 from pptx.oxml.ns import qn
 from pptx.presentation import Presentation
 
@@ -198,9 +199,28 @@ def add_sources_note(slide, credits: Sequence[Sequence[CreditPart]]):
             run = paragraph.add_run()
             run.text = text
             if url:
-                run.hyperlink.address = url
+                link(run, url)
     paragraph.add_run().text = "]"
     return True
+
+
+# A hyperlink's colour, as PowerPoint (2019 and Microsoft 365) keeps it: the text's own ("tx"), instead of the theme's
+# colour for links (which older versions show anyway)
+_LINK_COLOUR = (
+    '<a:extLst xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">'
+    '<a:ext uri="{A12FA001-AC4F-418D-AE19-62706E023703}">'
+    '<ahyp:hlinkClr xmlns:ahyp="http://schemas.microsoft.com/office/drawing/2018/hyperlinkcolor" val="tx"/>'
+    "</a:ext></a:extLst>"
+)
+
+
+def link(run, url: str) -> None:
+    """Make the run a link to the url, in the run's own colour (as the rest of its text), not the theme's for links:
+    a credit's links read as the credit does."""
+    run.hyperlink.address = url
+    click = run._r.find(f"{qn('a:rPr')}/{qn('a:hlinkClick')}")
+    if click is not None and click.find(qn("a:extLst")) is None:
+        click.append(parse_xml(_LINK_COLOUR))
 
 
 # FORMAT GENERATORS

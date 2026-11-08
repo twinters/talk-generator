@@ -21,6 +21,7 @@ from talkgenerator.models.deck import (
     Box,
     ChartElement,
     Content,
+    Credit,
     Deck,
     DeckSlide,
     DiagramElement,
@@ -42,11 +43,20 @@ from talkgenerator.util import random_util
 WIDTH: Final = 1920
 HEIGHT: Final = 1080
 MARGIN: Final = 96
+# The credit line: small, along the bottom (clear of what a theme's decoration puts under it, such as a status line),
+# aligned right, and quiet: in the colour nearest what's behind it that reads there at CREDITS_CONTRAST (the muted
+# colour, mixed into the background, as if see-through), with no band behind it. For people who want to know where
+# the pictures came from, and for their licenses, without drawing the eye from the slide (D51).
 CREDITS_BOX: Final = Box(x=MARGIN, y=996, w=WIDTH - 2 * MARGIN, h=36)
-CREDITS_SIZE: Final = 18
-# A band behind the credits, where they need one (over a photo, or across a panel): as wide as the slide, and just
-# taller than the credit line (clear of what a theme's decoration puts under it, such as a status line)
-CREDITS_BAND: Final = Box(x=0, y=CREDITS_BOX.y - 6, w=WIDTH, h=CREDITS_BOX.h + 8)
+CREDITS_SIZE: Final = 14  # (7 points)
+CREDITS_CONTRAST: Final = 2.5
+CREDITS_PREFIX: Final = "Image sources: "
+# Where a picture is under them (it could be any colour, mid-grey too, where no one colour reads), the credits are
+# light, with a dark halo around their letters (a glow, which renderers draw this opaque)
+CREDITS_ON_PICTURES: Final = "#e0e0e0"
+CREDITS_HALO: Final = TextEffect(glow="#000000", glow_radius=3)
+HALO_OPACITY: Final = 0.6
+ANY_PICTURE: Final = ("#000000", "#777777", "#ffffff")
 FULL: Final = Box(x=0, y=0, w=WIDTH, h=HEIGHT)
 # Over a photo, texts are light on a dark shade
 SHADE: Final = "#000000"
@@ -197,16 +207,17 @@ class Placement:
     boxes: dict[str, tuple[Box, str]] = field(default_factory=dict)  # role: (box, text spec)
     shapes: list[ShapeElement] = field(default_factory=list)  # drawn behind the content
     overlays: list[ShapeElement] = field(default_factory=list)  # drawn over the content, under the texts
-    photo: bool = False  # a photo fills the slide: credits go on a band
+    photo: bool = False  # a photo fills the slide (behind its texts' bands)
     colors: dict[str, str] = field(default_factory=dict)  # role: the colour of a text on a shape (that reads on it)
     # The roles of pictures shown as they are, without the theme's treatment (a meme's template, captioned in place)
     untreated: set[str] = field(default_factory=set)
     # The theme's own decoration (see talkgenerator.design.motifs): shapes behind everything (scenery, a frame around
     # the slide), shapes over the layout's own (a sticker, a title's underline), and texts (a terminal's prompt, a
-    # slide's number), each with its box, text spec and colour
+    # slide's number), each with its box, text spec and colour, and the role of the element it belongs to, if any (the
+    # name on a picture's window, which appears with the picture: an element's part_of)
     under: list[ShapeElement] = field(default_factory=list)
     decor: list[ShapeElement] = field(default_factory=list)
-    texts: list[tuple[str, Box, str | TextSpec, str]] = field(default_factory=list)
+    texts: list[tuple[str, Box, str | TextSpec, str, str | None]] = field(default_factory=list)
     # The roles of pictures that fill their box, cropped (where the decoration drew a frame around the box)
     cover: set[str] = field(default_factory=set)
     # The roles of texts the decoration put on a fill of its own (a title on a band): a heading effect's gradient
@@ -376,29 +387,11 @@ def lay_out_slide(
             under = layers.behind(slide_background, backdrop, box)  # (the background, and decoration reaching under it)
             diagram_look = diagram_style(element.diagram, theme, box, under)
             content.append(element.model_copy(update={"box": box, "style": diagram_look}))
-    for text, place, text_spec, colour in placement.texts:  # (the decoration's own: a prompt, a slide's number)
+    for text, place, text_spec, colour, part_of in placement.texts:  # (the decoration's own: a prompt, a number)
         own = SPECS[text_spec] if isinstance(text_spec, str) else text_spec
-        texts.append(
-            TextElement(role=DECORATION, text=text, box=place, style=_style(text, place, own, theme, colour, True))
-        )
-    elements = [*backdrop, *content, *placement.overlays, *texts]
-    # The credits read on what's behind them: the background (and the shapes on it, such as a panel or a band of the
-    # theme's decoration), or a photo (which could be anything) under a shade
-    behind = layers.behind(slide_background, elements, CREDITS_BOX)
-    if placement.photo and slide.credits:  # on a band over the picture, solid if no colour reads on it otherwise
-        opacity = BAND_OPACITY
-        over = [color.mix(colour, palette.surface, opacity) for colour in behind]
-        if color.worst_contrast(color.readable_on(palette.muted, over), over) < color.BODY_CONTRAST:
-            opacity, over = 1.0, [palette.surface]
-        band = CREDITS_BAND
-        elements.append(ShapeElement(role="credits band", box=band, color=palette.surface, opacity=opacity))
-        behind = over
-    credits_color = color.readable_on(palette.muted, behind, color.BODY_CONTRAST)
-    if slide.credits and color.worst_contrast(credits_color, behind) < color.BODY_CONTRAST:
-        # (across a panel that no colour reads on as well as on the background: on a band of their own)
-        band = CREDITS_BAND
-        elements.append(ShapeElement(role="credits band", box=band, color=palette.surface))
-        credits_color = color.readable_on(palette.muted, [palette.surface], color.BODY_CONTRAST)
+        style = _style(text, place, own, theme, colour, True)
+        texts.append(TextElement(role=DECORATION, text=text, box=place, style=style, part_of=part_of))
+    elements = _in_turn([*backdrop, *content, *placement.overlays, *texts])
     return slide.model_copy(
         update={
             "layout": placement.layout,
@@ -406,9 +399,76 @@ def lay_out_slide(
             "background": slide_background,
             "style": theme if own_style else None,
             "credits_box": CREDITS_BOX,
-            "credits_style": TextStyle(font=theme.fonts.body, size=CREDITS_SIZE, color=credits_color, anchor="middle"),
+            "credits_style": credits_style(credit_line(slide.credits), theme, slide_background, elements),
         }
     )
+
+
+def _in_turn(elements: list[Content]) -> list[Content]:
+    """The elements, with the clicks they appear on numbered 1, 2, 3... in turn: a click whose elements the layout
+    left out (a meme's caption without a box, say) shows nothing, so it goes, in every renderer alike."""
+    used = sorted({click for element in elements if (click := getattr(element, "appears_on_click", None))})
+    if used == list(range(1, len(used) + 1)):
+        return elements
+    turn = {click: number for number, click in enumerate(used, 1)}
+    return [
+        element.model_copy(update={"appears_on_click": turn[click]})
+        if (click := getattr(element, "appears_on_click", None))
+        else element
+        for element in elements
+    ]
+
+
+def credit_line(credits: Sequence[Credit]) -> str:
+    """The credit line of a slide's credits, as it reads on the slide."""
+    return CREDITS_PREFIX + ", ".join("".join(part.text for part in credit) for credit in credits)
+
+
+def credits_style(line: str, theme: Theme, background: SlideBackground, elements: Sequence[Content]) -> TextStyle:
+    """How the credit line looks on a slide (see CREDITS_BOX): small, aligned right, in the colour nearest what's
+    behind it (the slide's background, or a shape across the bottom of the slide: the muted colour, mixed into it)
+    that reads at CREDITS_CONTRAST on what's behind its letters, or else the nearest shade of the muted colour that
+    does; and where a picture is under its letters, or no colour reads (across a panel and the background, say), light
+    with a dark halo."""
+    palette = theme.palette
+    style = TextStyle(font=theme.fonts.body, size=CREDITS_SIZE, color=palette.muted, align="right", anchor="middle")
+    behind = credits_behind(line, style, background, elements)
+    under = behind[0] if behind else palette.background
+    candidates = [color.mix(under, palette.muted, step / 20) for step in range(1, 21)]
+    candidates.append(color.readable_on(palette.muted, behind, CREDITS_CONTRAST))
+    quiet = next((colour for colour in candidates if color.worst_contrast(colour, behind) >= CREDITS_CONTRAST), None)
+    if quiet is not None and not credits_over_picture(line, style, elements):
+        return style.model_copy(update={"color": quiet})
+    return style.model_copy(update={"color": CREDITS_ON_PICTURES, "effect": CREDITS_HALO})
+
+
+def credits_behind(
+    line: str, style: TextStyle, background: SlideBackground | None, elements: Sequence[Content]
+) -> list[str]:
+    """The colours that may be behind the credit line's letters (a picture under them could be any colour)."""
+    lines = line_boxes(line, CREDITS_BOX, style)
+    return layers.behind_letters(background, elements, lines, style.size, anything=ANY_PICTURE)
+
+
+def credits_over_picture(line: str, style: TextStyle, elements: Sequence[Content]) -> bool:
+    """Whether a picture is under any of the credit line's letters."""
+    places = layers.letters(line_boxes(line, CREDITS_BOX, style), style.size)
+    return any(
+        isinstance(element, ImageElement) and element.box is not None and _overlap(element.box, place)
+        for element in elements
+        for place in places
+    )
+
+
+def credits_legibility(style: TextStyle, behind: Sequence[str]) -> float:
+    """How well the credit line reads on what's behind its letters: by its colour, or with a halo, by its colour on
+    the halo over what's behind it."""
+    worst = color.worst_contrast(style.color, behind)
+    effect = style.effect
+    if effect is not None and effect.glow and effect.glow_radius > 0:
+        haloed = [color.mix(colour, effect.glow, HALO_OPACITY) for colour in behind]
+        worst = max(worst, color.worst_contrast(style.color, haloed))
+    return worst
 
 
 def _style(
@@ -782,16 +842,19 @@ def _rows(roles: dict[str, Content], theme: Theme) -> Placement:
 
 
 def _split(roles: dict[str, Content], theme: Theme) -> Placement:
-    """The slide split in two halves, the first in the theme's surface colour, each with its picture (or text) and
-    its caption, and the title across the top, centred (with the theme's decoration)."""
+    """The slide split in two halves, each with its picture (or text) and its caption, a thin rule between them that
+    comes in with the second, and the title across the top, centred (with the theme's decoration). (No panel behind
+    one half: on a slide whose second half comes on a click, it looked like a stray background.)"""
     half = WIDTH / 2
-    panel = ShapeElement(role="panel", box=Box(x=0, y=0, w=half, h=HEIGHT), color=theme.palette.surface)
-    placement = Placement("v5/columns-2-split", shapes=[panel])
+    placement = Placement("v5/columns-2-split")
     top = MARGIN
     if "title" in roles:
         placement.boxes["title"] = (_TITLE, "centred title")
         placement.shapes += _decoration(theme.model_copy(update={"title_align": "center"}), _TITLE, gap=16)
         top = _CONTENT_TOP
+    rule = color.readable_on(theme.palette.muted, _backgrounds(theme), LINE_CONTRAST)
+    divider = Box(x=half - 1, y=top, w=2, h=_CONTENT_BOTTOM - top)
+    placement.shapes.append(ShapeElement(role="divider", box=divider, color=rule, part_of="content_2"))
     caption_height = 128
     caption_top = _CONTENT_BOTTOM - caption_height
     for index in (1, 2):
@@ -1051,7 +1114,7 @@ def _tile(role: str, box: Box, theme: Theme, click: int | None, strip: Literal["
 
 def _kpi_rows(roles: dict[str, Content], theme: Theme) -> Placement:
     """The figures one under the other, each on a band with an accent strip: the number on the left, what it
-    measures beside it. (A figure that appears on a click comes with its band.)"""
+    measures beside it. (A figure comes with its band, on its click.)"""
     placement = Placement("v5/kpi-rows")
     top = (_with_title(placement, roles, theme) if "title" in roles else MARGIN) + 8
     figures = _numbered(roles, "number", 4)
@@ -1147,10 +1210,12 @@ def _highlight(theme: Theme) -> tuple[str, float]:
     return palette.surface, 1.0
 
 
-def _badge(placement: Placement, theme: Theme, role: str, badge: Box) -> None:
-    """A short text (an option's letter, an item's number) on a badge, a disc in the theme's accent."""
+def _badge(placement: Placement, theme: Theme, role: str, badge: Box, click: int | None = None) -> None:
+    """A short text (an option's letter, an item's number) on a badge, a disc in the theme's accent (appearing with
+    the text, on its click)."""
     accent = theme.palette.accent
-    placement.shapes.append(ShapeElement(role=f"{role} badge", shape="ellipse", box=badge, color=accent))
+    disc = ShapeElement(role=f"{role} badge", shape="ellipse", box=badge, color=accent, appears_on_click=click)
+    placement.shapes.append(disc)
     placement.boxes[role] = (_inset(badge, badge.w * 0.16), "badge")
     placement.colors[role] = _on([accent], theme, color.LARGE_TEXT_CONTRAST)
 
@@ -1190,7 +1255,8 @@ def _quiz_list(roles: dict[str, Content], theme: Theme) -> Placement:
                 )
             )
         diameter = height - 24
-        _badge(placement, theme, f"letter_{index}", Box(x=MARGIN, y=y + 12, w=diameter, h=diameter))
+        badge = Box(x=MARGIN, y=y + 12, w=diameter, h=diameter)
+        _badge(placement, theme, f"letter_{index}", badge, _click(roles, f"letter_{index}"))
         x = MARGIN + diameter + 36
         placement.boxes[f"option_{index}"] = (Box(x=x, y=y, w=end - x, h=height), "option")
         y += height + 20
@@ -1226,12 +1292,14 @@ def _quiz_tiles(roles: dict[str, Content], theme: Theme) -> Placement:
                 ShapeElement(role="right answer", box=frame, color=palette.accent_2, appears_on_click=click)
             )
             stamp = Box(x=x + width - 84, y=y - 44, w=120, h=120)  # (on its top right corner)
+        appears = _click(roles, f"option_{index}")  # (the option's tile comes with it)
+        tile = Box(x=x, y=y, w=width, h=height)
         placement.shapes.append(
-            ShapeElement(role=f"tile_{index}", box=Box(x=x, y=y, w=width, h=height), color=palette.surface)
+            ShapeElement(role=f"tile_{index}", box=tile, color=palette.surface, appears_on_click=appears)
         )
         diameter = min(112.0, height - 56)
         badge = Box(x=x + 28, y=y + (height - diameter) / 2, w=diameter, h=diameter)
-        _badge(placement, theme, f"letter_{index}", badge)
+        _badge(placement, theme, f"letter_{index}", badge, _click(roles, f"letter_{index}"))
         option = Box(x=x + diameter + 56, y=y + 16, w=width - diameter - 56 - 96, h=height - 32)
         placement.boxes[f"option_{index}"] = (option, "tile option")
         placement.colors[f"option_{index}"] = on_tile
@@ -1385,7 +1453,8 @@ def _agenda_rows(placement: Placement, roles: dict[str, Content], theme: Theme, 
     y, height = _spread(top, _CONTENT_BOTTOM, len(items), 16, 140)
     for index in items:
         diameter = height - 24
-        _badge(placement, theme, f"number_{index}", Box(x=x, y=y + 12, w=diameter, h=diameter))
+        badge = Box(x=x, y=y + 12, w=diameter, h=diameter)
+        _badge(placement, theme, f"number_{index}", badge, _click(roles, f"number_{index}"))
         item_x = x + diameter + 40
         placement.boxes[f"item_{index}"] = (Box(x=item_x, y=y, w=WIDTH - MARGIN - item_x, h=height), "item")
         y += height + 16
@@ -1408,7 +1477,8 @@ def _agenda_steps(roles: dict[str, Content], theme: Theme) -> Placement:
     )
     for position, index in enumerate(items):
         x = MARGIN + position * (width + gap)
-        _badge(placement, theme, f"number_{index}", Box(x=x + (width - diameter) / 2, y=top, w=diameter, h=diameter))
+        badge = Box(x=x + (width - diameter) / 2, y=top, w=diameter, h=diameter)
+        _badge(placement, theme, f"number_{index}", badge, _click(roles, f"number_{index}"))
         placement.boxes[f"item_{index}"] = (Box(x=x, y=top + diameter + 40, w=width, h=item_height), "step")
     return placement
 
@@ -1485,7 +1555,8 @@ def _dot(
 
 def _timeline(roles: dict[str, Content], theme: Theme) -> Placement:
     """The moments side by side along a line in the theme's accent, oldest first: a dot on the line for each (the
-    punchline's in the second accent, appearing with it), its date above it and what happened under it."""
+    last one's, the punchline's, in the second accent), appearing with it, its date above it and what happened under
+    it."""
     palette = theme.palette
     placement = Placement("v5/timeline")
     top = _with_title(placement, roles, theme) if "title" in roles else MARGIN
@@ -1500,7 +1571,7 @@ def _timeline(roles: dict[str, Content], theme: Theme) -> Placement:
     for position, index in enumerate(moments):
         x = MARGIN + position * (width + gap)
         click = _click(roles, f"event_{index}")
-        colour = palette.accent_2 if click else palette.accent
+        colour = palette.accent_2 if index == moments[-1] else palette.accent
         placement.shapes.append(_dot(f"dot_{index}", (x + width / 2, line), 48, colour, click))
         placement.boxes[f"date_{index}"] = (Box(x=x, y=top + 40, w=width, h=line - 48 - top - 40), "date")
         placement.boxes[f"event_{index}"] = (Box(x=x, y=line + 48, w=width, h=_CONTENT_BOTTOM - line - 48), "step")
@@ -1523,7 +1594,7 @@ def _timeline_down(roles: dict[str, Content], theme: Theme) -> Placement:
     )
     for index in moments:
         click = _click(roles, f"event_{index}")
-        colour = palette.accent_2 if click else palette.accent
+        colour = palette.accent_2 if index == moments[-1] else palette.accent
         placement.shapes.append(_dot(f"dot_{index}", (line, y + height / 2), 44, colour, click))
         placement.boxes[f"date_{index}"] = (Box(x=MARGIN, y=y, w=330, h=height), "row date")
         placement.boxes[f"event_{index}"] = (Box(x=line + 56, y=y, w=WIDTH - MARGIN - line - 56, h=height), "item")
@@ -1547,13 +1618,14 @@ def _stack(
 ) -> Callable[[dict[str, Content], Theme], Placement]:
     """Bands one under the other, in the middle, each with its text: wider and wider going down (a pyramid), or
     narrower and narrower (a funnel). In the theme's accent, a little lighter or darker with every band, and the
-    punchline's in its second accent, appearing with it."""
+    punchline's (a pyramid's top, a funnel's bottom) in its second accent; each appearing with its text."""
 
     def stack(roles: dict[str, Content], theme: Theme) -> Placement:
         palette = theme.palette
         placement = Placement(name)
         left, right, top = _area(placement, roles, theme, side)
         items = _numbered(roles, prefix, most)
+        punchline = (items[0] if widening else items[-1]) if items else None
         gap = 12
         y, height = _spread(top + 24, _CONTENT_BOTTOM, len(items), gap, 170)
         widest = min(1500.0, right - left)
@@ -1562,7 +1634,8 @@ def _stack(
             share = position / max(1, len(items) - 1)  # (from 0 at the top to 1 at the bottom)
             width = narrowest + (widest - narrowest) * (share if widening else 1 - share)
             click = _click(roles, f"{prefix}_{index}")
-            fill = palette.accent_2 if click else color.mix(palette.accent, palette.background, 0.2 * share)
+            shade = color.mix(palette.accent, palette.background, 0.2 * share)
+            fill = palette.accent_2 if index == punchline else shade
             band = Box(x=(left + right - width) / 2, y=y, w=width, h=height)
             placement.shapes.append(
                 ShapeElement(role=f"{prefix} {index} band", box=band, color=fill, appears_on_click=click)
@@ -1577,7 +1650,8 @@ def _stack(
 
 def _cycle(side: bool) -> Callable[[dict[str, Content], Theme], Placement]:
     """The steps on ovals in the theme's accent around a ring of dots, clockwise from the top: each leads to the next,
-    and the last back to the first. (Ovals, wide enough for a long word, on an oval ring as wide as there's room.)"""
+    and the last back to the first; each oval appears with its step. (Ovals, wide enough for a long word, on an oval
+    ring as wide as there's room.)"""
 
     def cycle(roles: dict[str, Content], theme: Theme) -> Placement:
         accent = theme.palette.accent
@@ -1597,7 +1671,10 @@ def _cycle(side: bool) -> Callable[[dict[str, Content], Theme], Placement]:
         for position, index in enumerate(steps):
             x, y = on_ring(2 * math.pi * position / len(steps))
             oval = Box(x=x - width / 2, y=y - height / 2, w=width, h=height)
-            placement.shapes.append(ShapeElement(role=f"step {index} oval", shape="ellipse", box=oval, color=accent))
+            click = _click(roles, f"step_{index}")
+            placement.shapes.append(
+                ShapeElement(role=f"step {index} oval", shape="ellipse", box=oval, color=accent, appears_on_click=click)
+            )
             text = Box(x=x - 0.4 * width, y=y - 0.27 * height, w=0.8 * width, h=0.54 * height)
             placement.boxes[f"step_{index}"] = (text, "disc")
             placement.colors[f"step_{index}"] = _on([accent], theme)
@@ -1607,8 +1684,8 @@ def _cycle(side: bool) -> Callable[[dict[str, Content], Theme], Placement]:
 
 
 def _org_chart(side: bool) -> Callable[[dict[str, Content], Theme], Placement]:
-    """Who's in charge, on a box in the theme's accent at the top (appearing with them), joined by lines to the
-    people under them, on boxes in its surface colour."""
+    """Who's in charge, on a box in the theme's accent at the top, joined by lines to the people under them, on
+    boxes in its surface colour: each box (and a report's line to it) appearing with its text."""
 
     def org_chart(roles: dict[str, Content], theme: Theme) -> Placement:
         palette = theme.palette
@@ -1634,11 +1711,13 @@ def _org_chart(side: bool) -> Callable[[dict[str, Content], Theme], Placement]:
         ]
         for position, index in enumerate(reports):
             x = first + position * (width + gap)
-            placement.shapes.append(
-                ShapeElement(role="line", box=Box(x=x + width / 2 - 3, y=joint, w=6, h=drop), color=ink)
-            )
+            click = _click(roles, f"report_{index}")
+            down = Box(x=x + width / 2 - 3, y=joint, w=6, h=drop)
+            placement.shapes.append(ShapeElement(role="line", box=down, color=ink, appears_on_click=click))
             report = Box(x=x, y=row, w=width, h=box_height)
-            placement.shapes.append(ShapeElement(role=f"report {index} box", box=report, color=palette.surface))
+            placement.shapes.append(
+                ShapeElement(role=f"report {index} box", box=report, color=palette.surface, appears_on_click=click)
+            )
             placement.boxes[f"report_{index}"] = (_inset(report, inset), "box")
             placement.colors[f"report_{index}"] = _on([palette.surface], theme)
         click = _click(roles, "boss")
@@ -1652,7 +1731,7 @@ def _org_chart(side: bool) -> Callable[[dict[str, Content], Theme], Placement]:
 
 def _iceberg(side: bool) -> Callable[[dict[str, Content], Theme], Placement]:
     """An iceberg in the theme's surface colour, outlined in its accent and mostly under water (the accent, see-
-    through): what everyone sees on its tip, above the water, and what's under it, below (appearing on a click)."""
+    through): what everyone sees on its tip, above the water, and what's under it, below (each on a click)."""
 
     def iceberg(roles: dict[str, Content], theme: Theme) -> Placement:
         palette = theme.palette
@@ -1726,9 +1805,10 @@ def _meme(roles: dict[str, Content], theme: Theme) -> Placement:
         spec, padding = ("plain meme", 6.0) if box.style == "plain" else ("meme", 4.0)
         place = Box(x=shown.x + box.x * shown.w, y=shown.y + box.y * shown.h, w=box.w * shown.w, h=box.h * shown.h)
         place = _room_for(caption.text, place, spec, padding, shown)
-        if box.style == "plain":
+        if box.style == "plain":  # (the label comes with its caption)
             fill = box.fill or "#ffffff"
-            placement.overlays.append(ShapeElement(role=f"{role} label", box=place, color=fill))
+            label = ShapeElement(role=f"{role} label", box=place, color=fill, appears_on_click=_click(roles, role))
+            placement.overlays.append(label)
             placement.colors[role] = color.readable_on("#000000", [fill])
         placement.boxes[role] = (_inset(place, padding), spec)
     return placement
@@ -2067,7 +2147,8 @@ def _dare_tape(roles: dict[str, Content], theme: Theme) -> Placement:
 def _flowchart(side: bool) -> Callable[[dict[str, Content], Theme], Placement]:
     """A yes-or-no question on an oval in the theme's accent at the top; lines down to where each answer leads (Yes
     on the left, No on the right), on boxes in its surface colour; and lines from both down to the same end, on a box
-    in its second accent, which appears on a click."""
+    in its second accent. Each answer's way (its label, line and box) appears with its step, and the lines to the end
+    with the end."""
 
     def flowchart(roles: dict[str, Content], theme: Theme) -> Placement:
         palette = theme.palette
@@ -2093,21 +2174,25 @@ def _flowchart(side: bool) -> Callable[[dict[str, Content], Theme], Placement]:
         joint = steps + step_height + 40
         end_top = joint + 50
 
-        def line(x: float, y: float, w: float, h: float) -> None:
-            placement.shapes.append(ShapeElement(role="line", box=Box(x=x, y=y, w=w, h=h), color=ink))
+        def line(x: float, y: float, w: float, h: float, click: int | None = None) -> None:
+            box = Box(x=x, y=y, w=w, h=h)
+            placement.shapes.append(ShapeElement(role="line", box=box, color=ink, appears_on_click=click))
 
         line(centre - 3, oval.y + oval.h, 6, split - oval.y - oval.h + 3)
         line(centre - branch - 3, split - 3, 2 * branch + 6, 6)
-        line(centre - branch - 3, joint - 3, 2 * branch + 6, 6)
-        line(centre - 3, joint, 6, end_top - joint)
+        line(centre - branch - 3, joint - 3, 2 * branch + 6, 6, _click(roles, "end"))
+        line(centre - 3, joint, 6, end_top - joint, _click(roles, "end"))
         for role, x, label, spec in (
             ("yes_step", centre - branch, "yes", "flow label"),
             ("no_step", centre + branch, "no", "flow label right"),
         ):
-            line(x - 3, split, 6, steps - split)
-            line(x - 3, steps + step_height, 6, joint - steps - step_height)
+            click = _click(roles, role)
+            line(x - 3, split, 6, steps - split, click)
+            line(x - 3, steps + step_height, 6, joint - steps - step_height, click)
             box = Box(x=x - step_width / 2, y=steps, w=step_width, h=step_height)
-            placement.shapes.append(ShapeElement(role=f"{role} box", box=box, color=palette.surface))
+            placement.shapes.append(
+                ShapeElement(role=f"{role} box", box=box, color=palette.surface, appears_on_click=click)
+            )
             placement.boxes[role] = (_inset(box, 16), "flow step")
             placement.colors[role] = _on([palette.surface], theme)
             label_x = x + 20 if spec == "flow label" else x - 20 - 200
@@ -2129,7 +2214,8 @@ _TIER_COLOURS: Final = {"s": "#ff7f7f", "a": "#ffbf7f", "b": "#ffdf7f", "c": "#f
 
 def _tier_list(side: bool) -> Callable[[dict[str, Content], Theme], Placement]:
     """The tiers one under the other, best first: each tier's letter on a tile in its colour, and its things side by
-    side on a band in the theme's surface colour (the S tier's appear on a click)."""
+    side on a band in the theme's surface colour (a tier's things on a click of their own, from the worst tier up to
+    the S tier)."""
 
     def tier_list(roles: dict[str, Content], theme: Theme) -> Placement:
         palette = theme.palette

@@ -681,7 +681,9 @@ the model's, as "The French Revolution" deserves better than itself.
   languages, which stays as typed (polished); a topic gets the classic title.
 - **WikiHow's how-tos** are only the pages that teach an action ("How to ...", "4 Easy Ways to ..."): its search now
   also finds lists, quizzes and questions, which the 2019 code cut into actions such as "e 20 Top Games Like Club
-  Penguin". That helps the classic slides and titles too.
+  Penguin". That helps the classic slides and titles too. And only the actions about the seed, none of the worst
+  (D55): wikiHow pads a search it knows little about with its most popular how-tos, which titled a lighthouse talk
+  "Never, Ever Make Sex Better". Crude ones about the seed stay.
 - **The deck and `talk.started`** record it: `topic_or_title` = {text, `read_as`: topic or title}.
 
 Live on 2026-11-07, with OpenRouter's free router: a benchmark of 20 typed inputs, 10 topics (two misspelled, two
@@ -902,6 +904,20 @@ and of real countries or peoples with politics' words, which none of the 336 mod
 trips; the request asks for none, and `talkgenerator check` warns of what's left (as of a quiz whose explanation names
 other options).
 
+Then the pacing, after the user's look at the decks (2026-11-08, D53): with a list shown at once and only its
+punchline on a click, it was unclear when to expect the next thing, and presenter and audience both had to read ahead.
+Now a list of things comes a click a thing, the punchline last: a KPI slide's figures, a quiz's options (its answer on
+the click after them), an agenda's items, a timeline's moments, a pyramid's levels from its base up, a funnel's stages,
+a cycle's steps, an org chart's people (who's in charge after them), an iceberg's hidden things, an acronym's words (its
+letters are there from the start), a flowchart's Yes and No ways and then its end, a tier list's tiers from the worst up
+to S (its letters there from the start), and a meme's captions, of two or more. The slide's title and its list's frame
+(a timeline's line, the iceberg and its tip, a cycle's ring, the line over an org chart's people, the question at the
+top of a flowchart) are there from the start; what a thing is drawn on (a tile, a badge, a band, an oval, a box, a dot,
+a line to it) comes with it, and the punchline keeps its colour. The slides set their clicks (`DrawnSlide.clicks()`),
+the layouts give a thing's shapes its click, and the engine numbers a slide's clicks in turn (an empty click goes).
+`talkgenerator.render.reveal` says what appears when, for PowerPoint, the previewer's steps (`slide_image(step=)`,
+`steps_sheet`) and talk-generator-web alike. Venn diagrams and matrices keep their one punchline click.
+
 Variety per slide type comes from four axes, each sampled per slide with the talk's random generator:
 
 1. layout: image left or right, full-bleed, framed, split, grid;
@@ -1005,12 +1021,36 @@ fixed place for its texts; and the sources treat pictures as a family's property
 - **Checks** (D46): a text has to read on what's behind its letters, its lines as the engine breaks them, as tall as
   their letters (not its whole box: a cursor after its last word doesn't count), where a shape over part of them
   counts, and a background's pattern too; diagrams are coloured for the decoration that reaches under them; and the
-  band behind credits that need one hugs the credit line, clear of a status line under it.
+  credit line keeps clear of a status line under it (a band behind it hugged it then; since D51 it has none).
 - **Measured:** 17 saved talks (the site's live ones, the free models' cat, peanuts and time travel in English and
   Swedish, the lighthouse talks with every slide type, the memes) laid out again in all 17 families over 4 seeds:
   15,708 slides, no design finding (the first run found 5, a Swiss poster's diagram labels over its grid lines on red:
   fixed). In the browser, talk-generator-web's dev server drew a deck of the new families as the previewer
   does (kids' title, terminal, blueprint, chalkboard, newspaper, Swiss). Not checked in PowerPoint itself yet.
+
+Then calmer slides, from the user's look at the themed decks (2026-11-08, D51 and D52; the pacing of lists, D53, is in
+section 8):
+
+- **Credits** (D51): image credits had a band behind them over photos and across panels, at 9 points in the muted
+  colour, links in PowerPoint's own blue. They're for whoever wants to know where a picture came from, and for its
+  license, so now they're 7 points, aligned right, in the colour nearest the slide's background that reads at a
+  contrast of 2.5 on what's behind their letters (the muted colour mixed into the background, as if see-through: 2.5 to
+  3.3 in every family, higher only where a gradient's two ends both need it), their links in the same colour
+  (PowerPoint's `hlinkClr` of the text), and no band anywhere. Over a picture, which could be any grey as well as black
+  or white, no colour reads, so they're light with a dark halo (a glow of 1.5 points), which PowerPoint, the previewer
+  and the browser all draw. The design checks hold them to floors of their own: a contrast of 2.5 (by their halo on a
+  picture, which counts as black, white or grey) and 6 points. A chalkboard's tape on a picture's bottom corners moves
+  up off the credit line.
+- **Frames with their pictures** (D52): a column slide's second column (and every column of three) comes on a click,
+  but a family's frame around its picture (kids' sticker border and shadow, brutalist's hard shadow, a terminal's
+  window and its name, a blueprint's figure plate, a chalkboard's tape, a newspaper's outline and the rule between its
+  columns) was there from the start, around nothing. The deck's shapes and texts gained `part_of`, the role of the
+  element they belong to: the motifs set it, and the renderers show and dim them with it. And the split two-column
+  layout's panel behind its first half, which looked like a stray background before the second came, is gone: a thin
+  rule between the halves comes in with the second.
+- **Found** by laying the saved talks out in all 17 families over 6 seeds (scratchpad scripts in the hand-over notes):
+  the split layout's panel was the only shape behind one column alone, and the six framing motifs the only decoration
+  that showed before its picture.
 
 ## 10. Images: sources, aesthetics and generation
 
@@ -1159,7 +1199,7 @@ As built (2026-11-07, `profiles.py`, `catalog.py`, `analysis.py`):
 - **Treatment**: a vintage picture that isn't monochrome gets its look's sepia in a theme without a filter of its
   own (`treatments.for_look`); the classic template keeps its pictures as they are.
 - Not yet: icon sets for `illustration` (10.4: Iconify serves SVG only). The museums' date and classification
-  filters came with the new sources (10.4), generated images with 10.5, and the vision pick (4.) on 2026-11-08 (D56:
+  filters came with the new sources (10.4), generated images with 10.5, and the vision pick (4.) on 2026-11-08 (D58:
   see "The vision pick, as built" below).
 - **Live** (2026-11-07, `talkgenerator check`, every key, themed talks; the free OpenRouter router for the talks it
   writes; reports in the session's scratchpad, sample decks in the comparison folder's `15-v5-9997e28-image-looks`):
@@ -1181,7 +1221,7 @@ As built (2026-11-07, `profiles.py`, `catalog.py`, `analysis.py`):
     Pixabay's and Pexels' CDNs), which the second round had remembered. Search APIs: Pexels 8 against 5, the Art
     Institute 8 against 5, Openverse 7 against 0 (on the site: to watch, with Unsplash at 50 an hour).
 
-**The vision pick, as built** (2026-11-08, `talkgenerator.images.vision`, D56). Off by default; `vision_pick=` on
+**The vision pick, as built** (2026-11-08, `talkgenerator.images.vision`, D58). Off by default; `vision_pick=` on
 `generate_presentation`, `stream_talk` and `render_plan`, `--vision_pick` on the command line, `talkgenerator render`
 and `talkgenerator check`. Only planned slides take part (a language model's, or a plan's), as their queries say what
 a picture is to show:
@@ -1447,7 +1487,8 @@ As built (2026-11-07, `talkgenerator.images.generation` and `talkgenerator.image
 - **Streaming:** `stream_talk` sends `slide.updated` (`SlideUpdated`: the index of the slide.ready it replaces, and
   the slide, laid out as before by `DeckLayout.again`), and `talk.finished` once every picture is in. A cancelled talk
   stops what hasn't started generating.
-- **The site's side** (talk-generator-web, not built yet): pass a visitor's generator with their key
+- **The site's side** (talk-generator-web, built on 2026-11-08 and merged into its `master`, one "AI pictures" row
+  in the Talk tab, as the user chose): pass a visitor's generator with their key
   (`OpenAIImageGenerator(model, api_key=...)`, `OpenRouterImageGenerator(model, api_key=...)`, or a `client=` of its
   own, as its language models take a client), with an `ImageBudget`; show `generation.estimate(...)` before a talk
   spends their money; take `slide.updated` as it takes `slide.ready` (the slide at that index), and keep copies of
@@ -1480,11 +1521,25 @@ As built (2026-11-07, `talkgenerator.images.generation` and `talkgenerator.image
   APIs, each to check for terms and uptime, and always optional.
 - **Grounding:** in LLM mode, a few retrieved facts (a Wikipedia summary, some dates) go into the prompt, so
   history and did-you-know slides mix real facts with nonsense. That's funnier, and less made up.
-- **Content packs:** the classic grammars and templates become versioned data per format and slide type
-  (`content/packs/<format>/`). We grow them a lot with LLM help at build time (drafted in Claude Code or through
-  the Batch API, then curated by hand), and tests lint them: every template formats with the known variables,
-  fields respect their length limits, nothing hits the blocklist, and there are no duplicates. This makes the
-  free classic mode better for everyone, and costs nothing at runtime.
+- **Content packs** (D54): the classic grammars and templates are versioned data per format and kind of slide,
+  `talkgenerator/data/packs/<format>/` (`talkgenerator.sources.packs`): a grammar per kind of slide (`title`,
+  `about_me`, `history`, `images`, `statements`, `captions`, `charts`, `diagrams`, `numbers`, `quiz`, `mockups`,
+  `structure`, `karaoke`, `memes` and `conclusions`) and a manifest, `pack.json`, with the pack's version, what each
+  version changed, and its slots: the rules the code fills in, with the variables their templates may use and the
+  text field of a kind whose length their texts keep to. The TED pack (`ted`, for the default, ted, interview and
+  test schemas) came first, on 2026-11-08: its version 1 moved v4's templates and milestone 6's there unchanged
+  (12,810 texts of 61 generators, compared before and after: the same), and version 2 grew them in a TED talk's
+  voice, drafted and curated in Claude Code, from 909 templates to 2,872 (besides the lists of jobs and countries),
+  most slots three to six times as many (TED titles 18 to 99, two captions 36 to 98, three captions 4 to 41,
+  conclusions' titles 11 to 41, statements 45 to 152, the memes' classic captions 85 to 181). Tests lint every pack
+  (`tests/test_content_pack.py`): every template fills in with its slot's variables through talkgenerator's
+  functions, keeps to its field's length with words of 22 to 24 letters, has no word of the blocklists (what a slide
+  shouldn't make light of, gore, brands, real people, insults, and death, war and drink), speaks of its topic as
+  English does, and no rule has a template twice. This makes the free classic mode better for everyone, and the
+  language model's per-slide fallback too, and costs nothing at runtime. Measured on the way: one seed gives every
+  topic the same templates (with seed 1, 98 of 100 classic `ted` talks had "What if ... ?", and 96 the same
+  historical figure), so what repeats takes several seeds to see; over ten seeds, plain words repeated most:
+  "Discussion" as a slide's title, "Conclusion 1" as a caption, and the conclusions' six titles.
 
 ## 12. Determinism, seeds, tests and the paper baseline
 
@@ -1594,7 +1649,7 @@ As built (2026-11-07, `talkgenerator.images.generation` and `talkgenerator.image
   today), nginx `limit_req` on the API, quota counters in a small SQLite file, and Cloudflare Turnstile only if
   bots show up.
 - **Images:** stock and open sources, as now (Unsplash stays at 50 requests an hour until its production review
-  passes), and no AI images on the site's budget. The vision pick (10.3, D56), if the site turns it on, is one more
+  passes), and no AI images on the site's budget. The vision pick (10.3, D58), if the site turns it on, is one more
   free request a talk: two a talk, so 500 talks a day and 10 a minute on the free tier instead of 1,000 and 20.
 - **Upgrades paid by the visitor** (decided: all of them): "Connect OpenRouter" (OAuth PKCE: the visitor's own
   free quota or credits, and their choice of model, image models included); an Anthropic or OpenAI key for one
@@ -1664,8 +1719,8 @@ before the new formats. A milestone is a checkpoint on `v5`, not a release; only
 | 2 (under way: the TalkPlan schema, the planner, the `openrouter`, `anthropic`, `openai` and `chatgpt` adapters, `render`, `schema`, `formats`, the Skill, languages with their check, `login openrouter` and `login chatgpt`, and trend and ranking charts are in; on 2026-11-06, 30 benchmark talks by the free models had 0 errors, one request each, at $0, and 290 of 300 slides by the model) | LLM TED talks and the Claude Skill | TalkPlan schema; the LLM planner (one streamed call, dice, per-slide fallback, safety); `openrouter`, `anthropic` and `openai` adapters; languages, Dutch first; `render plan.json`, `schema`, `formats`; `skill/` with SKILL.md; `login openrouter`; the `chatgpt` adapter (may slip to milestone 3); checks for requests, cost, speed and language | on the benchmark with OpenRouter's free models: no holes, no leftovers, $0 and one request per talk; Dutch talks pass the language check; Claude Code makes a deck end to end with the Skill |
 | 3 (done, 2026-11-07: theme families and extremes, procedural palettes with contrast repair, layouts and their variants (never twice in a row), image treatments, WordArt-style heading effects, text fitting with bundled metric twins, the shapes renderer with the classic animations (columns click by click), previews and contact sheets, the design checks and the local MCP server; 0 design findings on 792 benchmark decks in 12 seeds; thumbnails in CI left out, D29) | Themes and layouts | theme tokens and families, extremes on by default; procedural palettes and font pairs; layout variants; text fitting; image treatments; the `classic` theme; thumbnails and contact sheet in CI; the local MCP server | contrast and overflow checks pass on every theme |
 | 4 (under way: `stream_talk()`, probe validation, display policies, presenter names in styles (5.10, for the site's settings) and what's typed read as a topic or a title (5.11, `topic_or_title=`, for the site's Automatic choice) are in; since 2026-11-07, talkgenerator.com runs v5 from GitHub (D31): talks stream into the browser, the .pptx is made on download, Pixabay's images are copied, and classic and LLM talks meet the speed and memory bars on the VPS (section 14), but for the first talk after a restart; left: deploying the streamed-titles fix (`be09a7e`: on the site, a free model that writes its answer's fields in alphabetical order put `slide_10` before `slide_2`, so slides 2 to 9 fell back to classic ones, or were left out of a Dutch copyright-free talk), the new settings with 5.10's and 5.11's options, and loading the library before the first talk) | Streaming and the web view | `stream_talk()`, display policies, probe validation; in talk-generator-web: the SSE endpoint, the Angular renderer, LLM talks by default with the classic switch, a language choice, Connect OpenRouter and pasted keys, .pptx on download, an Automatic topic-or-title choice (5.11), the site running `v5` from git (D31) | first slide on screen within the calibrated target on the VPS; a 20-slide talk under the memory bar; the downloaded .pptx matches the web view |
-| 5 (under way: image slots and the finder, license classes and policies, aesthetic profiles with local analysis, and the first flavour packs are in, 2026-11-07; generated images too, on the user's own key or server, credited "AI-generated with <model>" in the `generated` class (10.5, D38, D39); and new sources (10.4): the Met, Cleveland, the Wellcome Collection, NASA, Flagpedia's flags, Imgflip's templates and the Smithsonian (with the user's api.data.gov key), with the museums' type and date filters and more subreddits; and the vision pick, off by default (10.3, D56: a vision model picks each picture among the finder's and three runners-up, in one request a talk, by OpenRouter's free models or the talk's own; 2026-11-08); left: generated pictures on talkgenerator.com on a visitor's key, and the Library of Congress, Flickr and Iconify, which need an exception, a paid key or a new dependency) | Images | slots, aesthetic profiles and flavour packs, local analysis, license classes; new open and weird sources; AI image generation with the user's own keys; the optional vision pick | license policies enforced; profile checks pass (such as the grayscale share for `vintage`); generated images credited |
-| 6 (under way: fourteen slide types are in, drawn as texts on shapes (D37, section 8); on 2026-11-07, benchmark talks over seeds that bring each of them up had no design, completeness, leftover or language findings: 63 classic talks, and 63 by OpenRouter's free models (620 of 630 slides by the model, at $0), plus 20 classic `ted` talks and 8 Dutch ones, where a long Dutch compound overflowed a narrow box (since, every new layout takes a 20-letter word in every theme, a Venn diagram's labels beside its circles when they don't fit in them); the only other findings were InspiroBot's and Reddit's live answers differing between a talk's two runs. talk-generator-web draws them all unchanged, and needs a small change to hold back what appears on a click in its presentations (merged into the site's master, not deployed yet). Memes with live captions came in later that day (D40); on 2026-11-08 they came to about half of all talks (D48, "I really love the generated memes"), and five slide types from real PowerPoint karaoke decks came in (D49: a fun fact, an acronym, a dare, a flowchart, a tier list), with no findings on them in 36 benchmark talks, 18 classic and 18 by OpenRouter's free models (179 of 180 slides by the model, $0, every talk the same made again), over six seeds and random themes; the same day, so did the user's other two ideas of 2026-11-07: personas that shape a talk (5.2, D47), and bolder themes with subtler, rarer image filters (section 9, D43 to D46). Left: the TED content pack, and section 8's other candidates and the karaoke catalogue's) | More slide types for TED-like talks | native diagrams, big numbers, quiz, memes with live captions, social posts and more; a much larger, curated TED content pack; memes more often; what real PowerPoint karaoke decks do; personas that shape a talk; bolder themes | every new slide type passes the checks in classic and LLM mode |
+| 5 (under way: image slots and the finder, license classes and policies, aesthetic profiles with local analysis, and the first flavour packs are in, 2026-11-07; generated images too, on the user's own key or server, credited "AI-generated with <model>" in the `generated` class (10.5, D38, D39); and new sources (10.4): the Met, Cleveland, the Wellcome Collection, NASA, Flagpedia's flags, Imgflip's templates and the Smithsonian (with the user's api.data.gov key), with the museums' type and date filters and more subreddits; talkgenerator.com draws them on a visitor's own OpenRouter account or OpenAI key since 2026-11-08 (in the site's `master`, deployed with its next push); and the vision pick, off by default (10.3, D58: a vision model picks each picture among the finder's and three runners-up, in one request a talk, by OpenRouter's free models or the talk's own; 2026-11-08); left: the Library of Congress, Flickr and Iconify, which need an exception, a paid key or a new dependency) | Images | slots, aesthetic profiles and flavour packs, local analysis, license classes; new open and weird sources; AI image generation with the user's own keys; the optional vision pick | license policies enforced; profile checks pass (such as the grayscale share for `vintage`); generated images credited |
+| 6 (under way: fourteen slide types are in, drawn as texts on shapes (D37, section 8); on 2026-11-07, benchmark talks over seeds that bring each of them up had no design, completeness, leftover or language findings: 63 classic talks, and 63 by OpenRouter's free models (620 of 630 slides by the model, at $0), plus 20 classic `ted` talks and 8 Dutch ones, where a long Dutch compound overflowed a narrow box (since, every new layout takes a 20-letter word in every theme, a Venn diagram's labels beside its circles when they don't fit in them); the only other findings were InspiroBot's and Reddit's live answers differing between a talk's two runs. talk-generator-web draws them all unchanged, and needs a small change to hold back what appears on a click in its presentations (merged into the site's master, not deployed yet). Memes with live captions came in later that day (D40); on 2026-11-08 they came to about half of all talks (D48, "I really love the generated memes"), and five slide types from real PowerPoint karaoke decks came in (D49: a fun fact, an acronym, a dare, a flowchart, a tier list), with no findings on them in 36 benchmark talks, 18 classic and 18 by OpenRouter's free models (179 of 180 slides by the model, $0, every talk the same made again), over six seeds and random themes; the same day, so did the user's other two ideas of 2026-11-07: personas that shape a talk (5.2, D47), and bolder themes with subtler, rarer image filters (section 9, D43 to D46). Then the TED content pack (section 11, D54): the classic texts of TED-like talks as data, per kind of slide, grown from 909 templates to 2,872 in a TED talk's voice and linted by tests, with no errors in 184 classic benchmark talks (130 `ted`, the last 30 made twice and the same, and 54 `default`), and a text seen again in a talk on the same topic half as often (9% before, 4% to 5% after). Left: section 8's other candidates and the karaoke catalogue's) | More slide types for TED-like talks | native diagrams, big numbers, quiz, memes with live captions, social posts and more; a much larger, curated TED content pack; memes more often; what real PowerPoint karaoke decks do; personas that shape a talk; bolder themes | every new slide type passes the checks in classic and LLM mode |
 | 7 | New talk formats | pitch, academic, corporate, keynote and Pecha Kucha timing, with their content packs (or in 5.1 if the TED work takes longer) | every format works in classic and LLM mode and passes the checks |
 | 8 | Integration | the site runs `v5` on the preview, then in production behind a switch; Sign in with ChatGPT on the site, if OpenAI has admitted it; docs and deprecation warnings | the site runs `v5` for a week without quota or memory incidents |
 | 5.0.0 | The release | freeze and fix; merge `v5` into `master`; release 5.0.0 with the release script; the site pins `talkgenerator==5.0.0`; 4.x ends | |
@@ -1729,10 +1784,15 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D48 | Memes with live captions are what a TED-like talk that allows fair use has most often in its middle: four times the weight of the other slides there, two a talk at most (and two memes of any kind in ten slides), never of one template twice. Classic captions speak of a talk's topic as English does ("coffee", "penguins"), never with a verb that has to agree with it. |
 | D49 | New slide types come from what real PowerPoint karaoke and battle decks, TED parodies and bad-PowerPoint humour have (a catalogue with its sources), drawn from the deck's texts, shapes and pictures (D37): one of each a talk, in its middle. Kinds that need a new element (diagonal lines) or text under the design checks' floor wait. |
 | D50 | A format's tag caps hold from a talk's first slide: an absolute cap is a number of slides (0: none at all, as the `interview` format's about-me slides), and a relative one a share of the talk's slides, rounded down but at least one, so that short talks keep every kind of slide (a strict rounding would leave talks of 3 and 4 slides without memes, diagrams, quotes and captioned pictures). A kind that only longer talks have says so by its weight: a section divider, in talks of ten slides or more. |
-| D56 | A vision model can pick a talk's pictures (the vision pick, 10.3), off by default (`vision_pick=`, `--vision_pick`), for the pictures of planned slides only, in one request a talk once its last slide is settled: each picture among the finder's own and up to three runners-up, which the finder keeps in order, without a draw of the talk's dice (so a talk finds the same pictures with it or without it, before the pick), its own source's first; on one contact sheet, a row a picture, with what it asks for beside it, the candidates in an order the seed shuffles. The model says what each row's candidates show, then picks one or none; a pick takes the finder's picture's place once it passes the finder's checks, and "none", a failure, an answer later than 30 seconds or a budget that doesn't allow the request keep the finder's. `on` asks the talk's own model when it reads pictures, else OpenRouter's free vision models without thinking (not the free router). The request is the talk's (its ledger and budget), never names the presenter it was given, and replays from a cassette, which keys the sheet by its candidates and never keeps its bytes. talkgenerator.com may turn it on for the free models' talks once it hands over `slide.updated`: one more free request a talk. |
+| D51 | Image credits are quiet: 7 points, aligned right, in the colour nearest the slide's background that reads at a contrast of 2.5 on what's behind their letters, their links in the same colour, and no band behind them anywhere; over a picture (any colour, grey too), light with a dark halo. They're for whoever wants to know a picture's source, and for its license: the design checks hold them to floors of their own (that contrast, by their halo on a picture; 6 points), not to the 4.5 and 12 points of a slide's texts. |
+| D52 | What belongs to a picture comes in with it: a theme's frame, shadow, tape, window or rule around it names the element it belongs to (`part_of`), and every renderer that plays clicks shows and dims it with that element. No layout puts a panel behind one column of a slide. |
+| D53 | A slide of a list of things shows its title and the list's frame from the start, and its things one by one, a click each, the punchline last (a pyramid from its base up, a tier list from its worst tier up, a quiz's answer after its options, an org chart's boss after its people); the shapes a thing is drawn on come with it. A slide of one thing (a big number, a post, a fun fact, a meme with one caption) shows at once. |
+| D54 | A format's classic texts are a content pack, `talkgenerator/data/packs/<format>/`: a grammar per kind of slide, whose rules are lists of templates, and a manifest (`pack.json`) with the pack's version, what each version changed, and its slots, the rules the code fills in, with the variables their templates may use and the text field whose length their texts keep to; a rule is named by its grammar and itself ("karaoke.dare"), the pack's only one. The version goes up whenever the texts change. The TED pack (`ted`) serves the default, ted, interview and test schemas. Its templates speak of the topic as English does: `{seed.generic}` ("penguins", "coffee"), `{seed.one}` ("a penguin", "coffee") and, after a word of the template's own (an article, a possessive, an adjective) or before another noun, `{seed.bare}` ("The moon paradox", "a penguin expert"), never with a verb that has to agree with the topic; tests lint every pack. Presenter names stay in `data/text-templates` (every format's), and a meme template's boxes in `data/memes.json` (its classic captions are the pack's). |
+| D55 | A seed gets only wikiHow's actions about it (`wikihow.about`): with one of its telling words in any form (its rarest word, and its others rarer than 5.5 on the Zipf scale), or with one of the telling words of its related words (rarer than 5.0); and none of the worst (`wikihow.unfit`): none with a word a slide shouldn't make light of, a faith, violence, hate, death or hard drugs, but crude ones stay ("Clean Your Penis" for cleaning), as much of classic talks' humour is crude. WikiHow pads a search it knows little about with its most popular how-tos and with loose matches. The user chose both on 2026-11-08: related actions over the seed's own words only and over leaving out just the padding (36 of 39 sample topics and 29 of 39 of the seeds that slides wander to keep some actions), and crude ones in. |
+| D58 | A vision model can pick a talk's pictures (the vision pick, 10.3), off by default (`vision_pick=`, `--vision_pick`), for the pictures of planned slides only, in one request a talk once its last slide is settled: each picture among the finder's own and up to three runners-up, which the finder keeps in order, without a draw of the talk's dice (so a talk finds the same pictures with it or without it, before the pick), its own source's first; on one contact sheet, a row a picture, with what it asks for beside it, the candidates in an order the seed shuffles. The model says what each row's candidates show, then picks one or none; a pick takes the finder's picture's place once it passes the finder's checks, and "none", a failure, an answer later than 30 seconds or a budget that doesn't allow the request keep the finder's. `on` asks the talk's own model when it reads pictures, else OpenRouter's free vision models without thinking (not the free router). The request is the talk's (its ledger and budget), never names the presenter it was given, and replays from a cassette, which keys the sheet by its candidates and never keeps its bytes. talkgenerator.com may turn it on for the free models' talks once it hands over `slide.updated`: one more free request a talk. |
 
-D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, and D43 to D50 and D56 on
-2026-11-08; the others follow from the design.
+D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, and D43 to D55 and D58 on 2026-11-08; the
+others follow from the design.
 
 ### Open questions
 

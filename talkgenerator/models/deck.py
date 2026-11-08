@@ -7,7 +7,8 @@ data, and `deck_version` changes whenever the format changes in a way older read
 A slide has a type and a layout. Its content is a list of elements, each with a role that the layout knows where to
 put ("title", "caption_1", "content_1", ...), so a layout or theme can change without changing the content. A text,
 picture or shape can appear on a click of its slide instead of with it (`appears_on_click`), such as a quiz's answer:
-a renderer that plays no clicks shows it from the start.
+a renderer that plays no clicks shows it from the start. A shape or text of a theme's decoration that belongs to an
+element (a frame around a picture) names it (`part_of`), and appears with it.
 
 In a deck with a theme other than the classic one, every element also has its place (a box on a 1920×1080
 canvas) and every text its style, as the layout engine (`talkgenerator.design.engine`) put them: so every
@@ -139,8 +140,12 @@ class ImageAsset(_Data):
 
 
 # The click of its slide on which an element appears (the first is 1), when it isn't there from the start: a quiz's
-# answer, say, or the punchline of a row of figures. Elements with the same click appear together, fading in
+# answer, say, or the next of a row of figures. Elements with the same click appear together, fading in
 AppearsOnClick = Annotated[int | None, Field(ge=1)]
+# The role of the element that a shape or a text of a theme's decoration belongs to (a frame around a picture, the
+# picture's shadow or the tape on it, the name on its window): it appears when that element does (on its click, or
+# with its column), and dims with it
+PartOf = str | None
 
 
 class TextElement(_Data):
@@ -150,6 +155,7 @@ class TextElement(_Data):
     box: Box | None = None
     style: TextStyle | None = None
     appears_on_click: AppearsOnClick = None
+    part_of: PartOf = None
 
 
 class ImageTreatment(_Data):
@@ -228,6 +234,7 @@ class ShapeElement(_Data):
     outline: str | None = None
     outline_width: float = 0.0  # (in canvas pixels)
     appears_on_click: AppearsOnClick = None
+    part_of: PartOf = None
 
 
 class SlideBackground(_Data):

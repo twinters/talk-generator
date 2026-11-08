@@ -168,9 +168,7 @@ def _create_drawn_slide(presentation: Presentation, slide: DeckSlide, images: Im
     look = themes.CLASSIC_LOOK
     ppt_slide: Slide = presentation.slides.add_slide(presentation.slide_layouts[creator.LAYOUT_BLANK])
     placed = engine.lay_out_slide(slide, look, random_util.Rng(0).child("classic", slide.type))
-    # (without the band that the credits of a themed deck's full-screen photo go on: the template has its own place)
-    elements = tuple(element for element in placed.elements if element.role != "credits band")
-    shapes.draw_elements(ppt_slide, placed.model_copy(update={"elements": elements}), look, images=images)
+    shapes.draw_elements(ppt_slide, placed, look, images=images)
     return ppt_slide
 
 

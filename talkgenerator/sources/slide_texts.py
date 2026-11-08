@@ -1,28 +1,26 @@
 """The texts of milestone 6's slide types, the classic way: big numbers and KPI tiles, quizzes, social media posts and
 news headlines, an agenda, a section's divider and the closing "Questions?" (docs/v5-plan.md, section 8).
 
-They come from templates (`data/text-templates/slide_texts.json`) about the slide's seed, with the words ConceptNet
-relates to it where a slide needs more than one thing (a quiz's options, an agenda's items), and numbers made up
-here. Each generator takes a presentation context and returns its Slide class's arguments (or None when it can't make
-one), for `talkgenerator.slide.slide_generator_types.DrawnSlideGenerator`. A talk's seeds wander from its topic, so
-words on faiths, violence and hate, or not for a family audience, are left out: a slide whose seed is one of them
-isn't made this way (another kind of slide takes its place), and such related words are skipped.
+They come from the TED content pack's templates (`data/packs/ted`: see talkgenerator.sources.packs) about the slide's
+seed, with the words ConceptNet relates to it where a slide needs more than one thing (a quiz's options, an agenda's
+items), and numbers made up here. Each generator takes a presentation context and returns its Slide class's arguments
+(or None when it can't make one), for `talkgenerator.slide.slide_generator_types.DrawnSlideGenerator`. A talk's seeds
+wander from its topic, so words on faiths, violence and hate, or not for a family audience, are left out: a slide whose
+seed is one of them isn't made this way (another kind of slide takes its place), and such related words are skipped.
 """
 
 from __future__ import annotations
 
 import functools
-import json
 import re
 from collections.abc import Callable
 from functools import cache
 from typing import Any, Final, TypeVar
 
 from talkgenerator.plan.languages import ENGLISH
-from talkgenerator.sources import conceptnet, memes, text_generator
-from talkgenerator.util import language_util, os_util, random_util
+from talkgenerator.sources import conceptnet, memes, packs, text_generator
+from talkgenerator.util import language_util, random_util
 
-_TEMPLATES: Final = "data/text-templates/slide_texts.json"
 _LONGEST_WORD: Final = 24  # a related word longer than this is a phrase that doesn't fit an option or an item
 ImageSource = Callable[[dict[str, Any]], Any]
 # Words a slide shouldn't make light of (see the module's documentation)
@@ -33,24 +31,25 @@ _SENSITIVE: Final = frozenset(
     + ("buddhism", "sikh", "prophet", "religion", "religious", "kill", "killing", "killer", "murder", "rape")
     + ("suicide", "terror", "terrorist", "terrorism", "bomb", "nazi", "nazis", "hitler", "genocide", "holocaust")
     + ("slave", "slavery", "racist", "racism", "sex", "sexual", "sexy", "porn", "nude", "naked", "penis", "vagina")
+    + ("breast", "breasts", "boob", "boobs", "nipple", "nipples", "genitals")
     + ("drug", "drugs", "cocaine", "heroin", "abuse", "torture", "weapon", "gun", "guns", "corpse", "death")
+    + ("fentanyl",)
 )
 
 
 @cache
 def _template(name: str) -> Callable[[dict[str, Any]], str | None]:
-    generate: Callable[[dict[str, Any]], str | None] = text_generator.TraceryTextGenerator(_TEMPLATES, name).generate
+    """A generator of a rule's texts, by its full name in the TED pack ("numbers.kpi_title")."""
+    generate: Callable[[dict[str, Any]], str | None] = packs.pack(packs.TED).tracery(name)
     return generate
 
 
 _full_name = text_generator.TraceryTextGenerator("data/text-templates/name.json", "full_name").generate
 
 
-@cache
-def _grammar() -> dict[str, list[str]]:
-    with open(os_util.to_actual_file(_TEMPLATES), encoding="utf-8") as file:
-        grammar: dict[str, list[str]] = json.load(file)
-    return grammar
+def _rule(name: str) -> list[str]:
+    """A rule's templates (or words), by its full name in the TED pack ("karaoke.tier_list_worst")."""
+    return packs.pack(packs.TED).rule(name)
 
 
 def sensitive(text: str) -> bool:
@@ -101,7 +100,7 @@ def _different(name: str, presentation_context: dict[str, Any], related: list[st
     about another one (fewer if there aren't enough)."""
     words = list(related)
     found: list[str] = []
-    templates = _grammar()[name]
+    templates = _rule(name)
     for template in random_util.sample(templates, len(templates)):
         if len(found) == count:
             break
@@ -141,17 +140,25 @@ def _figure(kind: str) -> str:
     )
 
 
+# What a big number of each kind counts: the pack's labels
+_LABELS: Final = {
+    "percent": "numbers.percent_label",
+    "count": "numbers.count_label",
+    "ratio": "numbers.ratio_label",
+}
+
+
 @_unless_sensitive
 def generate_big_number(presentation_context: dict[str, Any]) -> tuple[str | None, str, str, str | None] | None:
     """A big number about the seed, with what it counts and a made-up source: a title, the number, its label, the
     source."""
     kind = random_util.choice(("percent", "percent", "count", "ratio"))
     variables = _context(presentation_context)
-    label = _template(f"{kind}_label")(variables)
+    label = _template(_LABELS[kind])(variables)
     if not label:
         return None
-    title = _maybe(0.6, _template("big_number_title")(variables))
-    return title, _figure(kind), label, _maybe(0.7, _template("big_number_source")(variables))
+    title = _maybe(0.6, _template("numbers.big_number_title")(variables))
+    return title, _figure(kind), label, _maybe(0.7, _template("numbers.big_number_source")(variables))
 
 
 def _kpi_number(punchline: bool) -> str:
@@ -174,10 +181,10 @@ def generate_kpi(presentation_context: dict[str, Any]) -> tuple[str | None, ...]
     every figure's number and label."""
     related = related_words(presentation_context["seed"])
     variables = _context(presentation_context, related)
-    title = _template("kpi_title")(variables)
+    title = _template("numbers.kpi_title")(variables)
     count = 4 if random_util.random() < 0.4 else 3
-    labels = _different("kpi_label", presentation_context, related, count - 1)
-    punchline = _template("kpi_punchline")(_context(presentation_context, related))
+    labels = _different("numbers.kpi_label", presentation_context, related, count - 1)
+    punchline = _template("numbers.kpi_punchline")(_context(presentation_context, related))
     if not title or len(labels) < count - 1 or not punchline:
         return None
     figures: list[str | None] = []
@@ -199,13 +206,13 @@ def generate_quiz(presentation_context: dict[str, Any]) -> tuple[str | None, ...
     if len(related) < count:
         return None
     variables = _context(presentation_context)
-    question = _template("quiz_question")(variables)
+    question = _template("quiz.quiz_question")(variables)
     if not question:
         return None
     options: list[str | None] = list(random_util.sample(related, count))
     options += [None] * (4 - count)
     answer = "ABCD"[random_util.randrange(count)]
-    return (question, *options, answer, _maybe(0.6, _template("quiz_explanation")(variables)))
+    return (question, *options, answer, _maybe(0.6, _template("quiz.quiz_explanation")(variables)))
 
 
 # MOCKUPS
@@ -227,7 +234,7 @@ def social_post(image: ImageSource) -> Callable[[dict[str, Any]], tuple[Any, ...
     def generate(presentation_context: dict[str, Any]) -> tuple[Any, ...] | None:
         variables = _context(presentation_context)
         author = _full_name({})
-        text = _template("post_text")(variables)
+        text = _template("mockups.post_text")(variables)
         if not author or not text:
             return None
         photo = image(dict(presentation_context))
@@ -235,7 +242,7 @@ def social_post(image: ImageSource) -> Callable[[dict[str, Any]], tuple[Any, ...
             return None
         likes = round(10 ** random_util.uniform(1.5, 6.3))
         shares = round(likes * random_util.uniform(0.02, 0.4))
-        title = _maybe(0.3, _template("post_title")(variables))
+        title = _maybe(0.3, _template("mockups.post_title")(variables))
         return title, author, _handle(author, presentation_context["seed"]), text, photo, likes, shares
 
     return generate
@@ -248,14 +255,14 @@ def news_headline(image: ImageSource) -> Callable[[dict[str, Any]], tuple[Any, .
     @_unless_sensitive
     def generate(presentation_context: dict[str, Any]) -> tuple[Any, ...] | None:
         variables = _context(presentation_context)
-        outlet = _template("news_outlet")(variables)
-        headline = _template("news_headline")(variables)
+        outlet = _template("mockups.news_outlet")(variables)
+        headline = _template("mockups.news_headline")(variables)
         if not outlet or not headline:
             return None
         photo = image(dict(presentation_context))
         if photo is None:
             return None
-        return outlet, headline, _maybe(0.7, _template("news_subheadline")(variables)), photo
+        return outlet, headline, _maybe(0.7, _template("mockups.news_subheadline")(variables)), photo
 
     return generate
 
@@ -296,9 +303,9 @@ def generate_agenda(presentation_context: dict[str, Any]) -> tuple[str | None, .
     and an end)."""
     related = related_words(presentation_context["seed"])
     variables = _context(presentation_context)
-    title = _template("agenda_title")(variables)
-    first, last = _template("agenda_first")(variables), _template("agenda_last")(variables)
-    middle = _different("agenda_item", presentation_context, related, random_util.randint(1, 3))
+    title = _template("structure.agenda_title")(variables)
+    first, last = _template("structure.agenda_first")(variables), _template("structure.agenda_last")(variables)
+    middle = _different("structure.agenda_item", presentation_context, related, random_util.randint(1, 3))
     if not title or not first or not last or not middle:
         return None
     return title, first, *middle, last
@@ -308,26 +315,23 @@ def generate_agenda(presentation_context: dict[str, Any]) -> tuple[str | None, .
 def generate_section(presentation_context: dict[str, Any]) -> tuple[str, str | None] | None:
     """A section's divider about the seed: its title and subtitle (if any). The deck numbers it."""
     variables = _context(presentation_context)
-    title = _template("section_title")(variables)
+    title = _template("structure.section_title")(variables)
     if not title:
         return None
-    return title, _maybe(0.5, _template("section_subtitle")(variables))
+    return title, _maybe(0.5, _template("structure.section_subtitle")(variables))
 
 
 @_unless_sensitive
 def generate_questions(presentation_context: dict[str, Any]) -> tuple[str, str | None] | None:
     """The closing slide: a question to the audience, and a subtitle (if any)."""
     variables = _context(presentation_context)
-    title = _template("questions_title")(variables)
+    title = _template("structure.questions_title")(variables)
     if not title:
         return None
-    return title, _maybe(0.6, _template("questions_subtitle")(variables))
+    return title, _maybe(0.6, _template("structure.questions_subtitle")(variables))
 
 
 # NATIVE DIAGRAMS
-
-# Dates, oldest first, for a timeline
-_DATES: Final = ("3000 BC", "1492", "1888", "1969", "2003", "Last Tuesday", "2087")
 
 
 @_unless_sensitive
@@ -336,15 +340,16 @@ def generate_timeline(presentation_context: dict[str, Any]) -> tuple[str | None,
     the last one a punchline."""
     related = related_words(presentation_context["seed"])
     count = random_util.randint(3, 5)
-    title = _template("timeline_title")(_context(presentation_context))
-    events = _different("timeline_event", presentation_context, related, count - 1)
-    punchline = _template("timeline_punchline")(_context(presentation_context, related))
+    title = _template("diagrams.timeline_title")(_context(presentation_context))
+    events = _different("diagrams.timeline_event", presentation_context, related, count - 1)
+    punchline = _template("diagrams.timeline_punchline")(_context(presentation_context, related))
     if not title or len(events) < count - 1 or not punchline:
         return None
-    dates = sorted(random_util.sample(range(len(_DATES)), count))
+    known = _rule("diagrams.timeline_dates")  # (oldest first)
+    dates = sorted(random_util.sample(range(len(known)), count))
     moments: list[str | None] = []
     for date, event in zip(dates, [*events, punchline], strict=True):
-        moments += [_DATES[date], event]
+        moments += [known[date], event]
     return (title, *moments)
 
 
@@ -356,8 +361,8 @@ def generate_pyramid(presentation_context: dict[str, Any]) -> tuple[str | None, 
     count = 4 if len(related) >= 2 and random_util.random() < 0.5 else 3
     if len(related) < count - 2:
         return None
-    title = _template("pyramid_title")(_context(presentation_context))
-    base = _template("pyramid_base")({})
+    title = _template("diagrams.pyramid_title")(_context(presentation_context))
+    base = _template("diagrams.pyramid_base")({})
     if not title or not base:
         return None
     return title, _capitalised(presentation_context["seed"]), *random_util.sample(related, count - 2), base
@@ -371,8 +376,8 @@ def generate_funnel(presentation_context: dict[str, Any]) -> tuple[str | None, .
     count = min(random_util.randint(3, 5), len(related) + 1)
     if count < 3:
         return None
-    title = _template("funnel_title")(_context(presentation_context, related))
-    punchline = _template("funnel_punchline")(_context(presentation_context))
+    title = _template("diagrams.funnel_title")(_context(presentation_context, related))
+    punchline = _template("diagrams.funnel_punchline")(_context(presentation_context))
     if not title or not punchline:
         return None
     return title, *random_util.sample(related, count - 1), punchline
@@ -385,7 +390,7 @@ def generate_cycle(presentation_context: dict[str, Any]) -> tuple[str | None, ..
     count = min(random_util.randint(3, 5), len(related))
     if count < 3:
         return None
-    title = _template("cycle_title")(_context(presentation_context))
+    title = _template("diagrams.cycle_title")(_context(presentation_context))
     if not title:
         return None
     return title, *random_util.sample(related, count)
@@ -398,9 +403,9 @@ def generate_org_chart(presentation_context: dict[str, Any]) -> tuple[str | None
     related = related_words(presentation_context["seed"])
     if len(related) < 2:
         return None
-    title = _template("org_chart_title")(_context(presentation_context))
-    boss = _template("org_chart_boss")(_context(presentation_context))
-    reports = _different("org_chart_report", presentation_context, related, random_util.randint(2, 4))
+    title = _template("diagrams.org_chart_title")(_context(presentation_context))
+    boss = _template("diagrams.org_chart_boss")(_context(presentation_context))
+    reports = _different("diagrams.org_chart_report", presentation_context, related, random_util.randint(2, 4))
     if not title or not boss or len(reports) < 2:
         return None
     return title, boss, *reports
@@ -410,8 +415,8 @@ def generate_org_chart(presentation_context: dict[str, Any]) -> tuple[str | None
 def generate_iceberg(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
     """An iceberg of the seed: a title, the seed on its tip, and two or three things under the water."""
     related = related_words(presentation_context["seed"])
-    title = _template("iceberg_title")(_context(presentation_context))
-    hidden = _different("iceberg_hidden", presentation_context, related, random_util.randint(2, 3))
+    title = _template("diagrams.iceberg_title")(_context(presentation_context))
+    hidden = _different("diagrams.iceberg_hidden", presentation_context, related, random_util.randint(2, 3))
     if not title or len(hidden) < 2:
         return None
     return title, _capitalised(presentation_context["seed"]), *hidden
@@ -420,15 +425,13 @@ def generate_iceberg(presentation_context: dict[str, Any]) -> tuple[str | None, 
 # SLIDE TYPES FROM POWERPOINT KARAOKE DECKS (their templates say "{seed.generic}": "penguins", but "coffee"; and no
 # verb agrees with the seed, which may be either)
 
-_YEARS: Final = ("1347", "1666", "1752", "1823", "1911", "1978", "2003")
-
 
 def _numbers() -> dict[str, str]:
     """Made-up numbers for a template: a count, a percentage and a year."""
     return {
         "number": str(random_util.randint(3, 99)),
         "percent": f"{random_util.randint(3, 97)}%",
-        "year": random_util.choice(_YEARS),
+        "year": random_util.choice(_rule("karaoke.fun_fact_years")),
     }
 
 
@@ -441,10 +444,10 @@ def fun_fact(image: ImageSource) -> Callable[[dict[str, Any]], tuple[Any, ...] |
     def generate(presentation_context: dict[str, Any]) -> tuple[Any, ...] | None:
         related = related_words(presentation_context["seed"])
         variables = {**_context(presentation_context, related), **_numbers()}
-        fact = _template("fun_fact")(variables)
+        fact = _template("karaoke.fun_fact")(variables)
         if not fact:
             return None
-        source = _maybe(0.7, _template("big_number_source")(variables))
+        source = _maybe(0.7, _template("numbers.big_number_source")(variables))
         photo = image(dict(presentation_context)) if random_util.random() < 0.6 else None
         return random_util.choice(ENGLISH.fun_facts), fact, source, photo
 
@@ -452,64 +455,8 @@ def fun_fact(image: ImageSource) -> Callable[[dict[str, Any]], tuple[Any, ...] |
 
 
 # An acronym's words: corporate buzzwords for its letters (when no word related to the seed starts with one), and
-# something absurd for its last letter, the punchline
-_BUZZWORDS: Final[dict[str, tuple[str, ...]]] = {
-    "A": ("Agility", "Alignment", "Accountability", "Authenticity"),
-    "B": ("Bandwidth", "Best practices", "Boldness", "Branding"),
-    "C": ("Collaboration", "Courage", "Clarity", "Commitment"),
-    "D": ("Disruption", "Dedication", "Data", "Discipline"),
-    "E": ("Empowerment", "Excellence", "Engagement", "Empathy"),
-    "F": ("Focus", "Flexibility", "Feedback", "Frameworks"),
-    "G": ("Growth", "Grit", "Gratitude", "Governance"),
-    "H": ("Hustle", "Harmony", "Honesty", "Hyperfocus"),
-    "I": ("Innovation", "Integrity", "Impact", "Insight"),
-    "J": ("Journey", "Joy", "Judgement"),
-    "K": ("Knowledge", "KPIs", "Kindness"),
-    "L": ("Leadership", "Leverage", "Learning", "Loyalty"),
-    "M": ("Mindfulness", "Momentum", "Motivation", "Metrics"),
-    "N": ("Networking", "Nimbleness", "Next steps"),
-    "O": ("Ownership", "Optimism", "Outcomes", "Openness"),
-    "P": ("Passion", "Purpose", "Productivity", "Paradigms"),
-    "Q": ("Quality", "Questions", "Quick wins"),
-    "R": ("Resilience", "Results", "Respect", "Roadmaps"),
-    "S": ("Synergy", "Strategy", "Scalability", "Stakeholders"),
-    "T": ("Teamwork", "Transparency", "Trust", "Thought leadership"),
-    "U": ("Understanding", "Upskilling", "Unity"),
-    "V": ("Vision", "Value", "Velocity"),
-    "W": ("Wellbeing", "Wisdom", "Workflow"),
-    "X": ("X-factor", "eXcellence", "eXperience"),
-    "Y": ("Yield", "Youthfulness", "Yes-saying"),
-    "Z": ("Zeal", "Zen", "Zero waste"),
-}
-_ABSURD: Final[dict[str, tuple[str, ...]]] = {
-    "A": ("Avocados", "Alpacas"),
-    "B": ("Biscuits", "Bananas", "Bubble wrap"),
-    "C": ("Cheese", "Capybaras"),
-    "D": ("Ducks", "Doughnuts"),
-    "E": ("Eels", "Eyebrows"),
-    "F": ("Flamingos", "Fondue"),
-    "G": ("Goats", "Glitter"),
-    "H": ("Hamsters", "Hats"),
-    "I": ("Ice cream", "Iguanas"),
-    "J": ("Jelly", "Jazz hands"),
-    "K": ("Kazoos", "Kittens"),
-    "L": ("Llamas", "Lasagna"),
-    "M": ("Moustaches", "Muffins"),
-    "N": ("Naps", "Noodles"),
-    "O": ("Otters", "Onions"),
-    "P": ("Pancakes", "Pyjamas"),
-    "Q": ("Quokkas", "Quiche"),
-    "R": ("Rubber ducks", "Raccoons"),
-    "S": ("Snacks", "Sloths", "Socks"),
-    "T": ("Toast", "Tuesdays", "Tap dancing"),
-    "U": ("Unicorns", "Ukuleles"),
-    "V": ("Velcro", "Vegetables"),
-    "W": ("Waffles", "Wombats"),
-    "X": ("Xylophones", "X-rays"),
-    "Y": ("Yoghurt", "Yodelling"),
-    "Z": ("Zebras", "Zucchini"),
-}
-_ACRONYMS: Final = ("SPARK", "SHINE", "BRAVE", "TRUST", "SMART", "FOCUS", "DREAM", "GROW")
+# something absurd for its last letter, the punchline: the pack's karaoke.buzzword_a... and karaoke.absurd_a...,
+# and the method names everyone has heard (karaoke.acronyms)
 
 
 def _acronym_word(seed: str, related: list[str]) -> str:
@@ -518,7 +465,7 @@ def _acronym_word(seed: str, related: list[str]) -> str:
     for word in (seed, *related):
         if word.isascii() and word.isalpha() and 3 <= len(word) <= 6:
             return word.upper()
-    return random_util.choice(_ACRONYMS)
+    return random_util.choice(_rule("karaoke.acronyms"))
 
 
 @_unless_sensitive
@@ -536,16 +483,17 @@ def generate_acronym(presentation_context: dict[str, Any]) -> tuple[str | None, 
         topical = (
             [word for word in related if word[:1].upper() == letter and word.upper() != acronym] if not last else []
         )
-        pool = topical + [word for word in (_ABSURD if last else _BUZZWORDS)[letter] if not topical]
+        known = _rule(f"karaoke.absurd_{letter.lower()}" if last else f"karaoke.buzzword_{letter.lower()}")
+        pool = topical + [word for word in known if not topical]
         words.append(random_util.choice([word for word in pool if word not in words] or pool))
-    title = _template("acronym_title")({**_context(presentation_context), "acronym": acronym})
+    title = _template("karaoke.acronym_title")({**_context(presentation_context), "acronym": acronym})
     return (title, *words) if title else None
 
 
 @_unless_sensitive
 def generate_dare(presentation_context: dict[str, Any]) -> tuple[str, str] | None:
     """A dare for the presenter (from a list of playful ones, some about the seed): its heading and the dare."""
-    dare = _template("dare")(_context(presentation_context, related_words(presentation_context["seed"])))
+    dare = _template("karaoke.dare")(_context(presentation_context, related_words(presentation_context["seed"])))
     return (ENGLISH.dare, dare) if dare else None
 
 
@@ -554,11 +502,11 @@ def generate_flowchart(presentation_context: dict[str, Any]) -> tuple[str | None
     """A flowchart about the seed: a title (if any), a yes-or-no question, where yes and no lead, the end both lead
     to, and the words for yes and no."""
     related = related_words(presentation_context["seed"])
-    question = _template("flowchart_question")(_context(presentation_context))
-    yes_step = _template("flowchart_yes")(_context(presentation_context, related))
-    no_step = _template("flowchart_no")(_context(presentation_context, related))
-    end = _template("flowchart_end")(_context(presentation_context, related))
-    title = _maybe(0.5, _template("flowchart_title")(_context(presentation_context)))
+    question = _template("karaoke.flowchart_question")(_context(presentation_context))
+    yes_step = _template("karaoke.flowchart_yes")(_context(presentation_context, related))
+    no_step = _template("karaoke.flowchart_no")(_context(presentation_context, related))
+    end = _template("karaoke.flowchart_end")(_context(presentation_context, related))
+    title = _maybe(0.5, _template("karaoke.flowchart_title")(_context(presentation_context)))
     if not question or not yes_step or not no_step or not end:
         return None
     return title, question, yes_step, no_step, end, ENGLISH.yes, ENGLISH.no
@@ -576,8 +524,8 @@ def generate_tier_list(presentation_context: dict[str, Any]) -> tuple[Any, ...] 
     tiers: list[list[str]] = [[], [], []]
     for index, thing in enumerate(things):  # (A, B and C in turn, A first: three things at most in each)
         tiers[index % 3].append(thing)
-    loved = [thing for thing in _grammar()["tier_list_worst"] if thing.lower() != seed.lower()]
-    title = _template("tier_list_title")(_context(presentation_context))
+    loved = [thing for thing in _rule("karaoke.tier_list_worst") if thing.lower() != seed.lower()]
+    title = _template("karaoke.tier_list_title")(_context(presentation_context))
     if not title:
         return None
     best = _capitalised(language_util.generic(seed))

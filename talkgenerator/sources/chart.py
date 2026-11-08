@@ -6,36 +6,18 @@ from pptx.chart.data import ChartData, XyChartData
 from pptx.enum.chart import XL_CHART_TYPE
 
 from talkgenerator.render.charts import set_doughnut_properties, set_histogram_properties, set_pie_properties
-from talkgenerator.sources import conceptnet, text_generator
+from talkgenerator.sources import conceptnet, packs
 from talkgenerator.util import generator_util, random_util
 
-yes_no_question_generator = text_generator.TraceryTextGenerator(
-    "data/text-templates/chart_texts.json", "yes_no_question"
-).generate
-funny_yes_no_answer_generator = text_generator.TraceryTextGenerator(
-    "data/text-templates/chart_texts.json", "funny_yes_no_answer"
-).generate
-location_question_generator = text_generator.TraceryTextGenerator(
-    "data/text-templates/chart_texts.json", "location_question"
-).generate
-property_question_generator = text_generator.TraceryTextGenerator(
-    "data/text-templates/chart_texts.json", "property_question"
-).generate
-correlation_title_generator = text_generator.TraceryTextGenerator(
-    "data/text-templates/chart_texts.json", "correlation_title"
-).generate
-ranking_title_generator = text_generator.TraceryTextGenerator(
-    "data/text-templates/chart_texts.json", "ranking_title"
-).generate
-trend_event_generator = text_generator.TraceryTextGenerator(
-    "data/text-templates/chart_texts.json", "trend_event"
-).generate
-x_axis_title_generator = text_generator.TraceryTextGenerator(
-    "data/text-templates/chart_texts.json", "x_axis_title"
-).generate
-y_axis_title_generator = text_generator.TraceryTextGenerator(
-    "data/text-templates/chart_texts.json", "y_axis_title"
-).generate
+yes_no_question_generator = packs.pack(packs.TED).tracery("charts.yes_no_question")
+funny_yes_no_answer_generator = packs.pack(packs.TED).tracery("charts.funny_yes_no_answer")
+location_question_generator = packs.pack(packs.TED).tracery("charts.location_question")
+property_question_generator = packs.pack(packs.TED).tracery("charts.property_question")
+correlation_title_generator = packs.pack(packs.TED).tracery("charts.correlation_title")
+ranking_title_generator = packs.pack(packs.TED).tracery("charts.ranking_title")
+trend_event_generator = packs.pack(packs.TED).tracery("charts.trend_event")
+x_axis_title_generator = packs.pack(packs.TED).tracery("charts.x_axis_title")
+y_axis_title_generator = packs.pack(packs.TED).tracery("charts.y_axis_title")
 # How often a classic chart goes without axis titles, for the presenter to explain
 BARE_CHARTS: Final = 1 / 3
 

@@ -12,6 +12,9 @@ from talkgenerator.models.deck import Box, Content, ImageElement, ShapeElement, 
 
 # How tall a line's letters are, from the top of its capitals to the bottom of its descenders, as a share of its size
 GLYPHS: Final = 0.8
+# What a picture could be behind a text: anything, so the worst of black and white (for a text that has to read at
+# 4.5 or 3, a grey between them is no worse)
+ANYTHING: Final = ("#000000", "#ffffff")
 
 
 def letters(lines: Sequence[Box], size: float) -> list[Box]:
@@ -22,20 +25,28 @@ def letters(lines: Sequence[Box], size: float) -> list[Box]:
 
 
 def behind_letters(
-    background: SlideBackground | None, elements: Sequence[Content], lines: Sequence[Box], size: float
+    background: SlideBackground | None,
+    elements: Sequence[Content],
+    lines: Sequence[Box],
+    size: float,
+    anything: Sequence[str] = ANYTHING,
 ) -> list[str]:
     """The colours that may be behind a text's letters (see behind)."""
     colours: list[str] = []
     for area in letters(lines, size):
-        colours += [colour for colour in behind(background, elements, area) if colour not in colours]
+        colours += [colour for colour in behind(background, elements, area, anything) if colour not in colours]
     return colours
 
 
-def behind(background: SlideBackground | None, elements: Sequence[Content], box: Box) -> list[str]:
+def behind(
+    background: SlideBackground | None, elements: Sequence[Content], box: Box, anything: Sequence[str] = ANYTHING
+) -> list[str]:
     """The colours that may be behind a box: the slide's background (both ends of a gradient, and where its pattern's
     lines or dots are), as the elements drawn before it (in order) change it. A picture under the box's middle could
-    be anything. A shape over all of the box puts its colour behind all of it; one over a part of it (or its outline
-    crossing it), its colour behind that part: so the box may have either."""
+    be anything (the worst of black and white, or of the colours given: a text that reads at a lower contrast, such
+    as the credit line, could read on both and not on a grey). A shape over all of the box puts its colour behind all
+    of it; one over a part of it (or its outline crossing it), its colour behind that part: so the box may have
+    either."""
     backgrounds = [background.color] if background is not None else ["#ffffff"]
     if background is not None and background.color_2:
         backgrounds.append(background.color_2)
@@ -49,7 +60,7 @@ def behind(background: SlideBackground | None, elements: Sequence[Content], box:
             continue
         if isinstance(element, ImageElement):
             if area.x <= center_x <= area.x + area.w and area.y <= center_y <= area.y + area.h:
-                backgrounds = ["#000000", "#ffffff"]  # an image could be anything
+                backgrounds = list(anything)  # an image could be anything
         elif isinstance(element, ShapeElement) and geometry.touches(element, box):
             mixed: list[str] = []
             if element.filled:
