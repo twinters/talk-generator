@@ -34,6 +34,7 @@ _SENSITIVE: Final = frozenset(
     + ("suicide", "terror", "terrorist", "terrorism", "bomb", "nazi", "nazis", "hitler", "genocide", "holocaust")
     + ("slave", "slavery", "racist", "racism", "sex", "sexual", "sexy", "porn", "nude", "naked", "penis", "vagina")
     + ("drug", "drugs", "cocaine", "heroin", "abuse", "torture", "weapon", "gun", "guns", "corpse", "death")
+    + ("fentanyl",)
 )
 
 

@@ -678,7 +678,9 @@ the model's, as "The French Revolution" deserves better than itself.
   languages, which stays as typed (polished); a topic gets the classic title.
 - **WikiHow's how-tos** are only the pages that teach an action ("How to ...", "4 Easy Ways to ..."): its search now
   also finds lists, quizzes and questions, which the 2019 code cut into actions such as "e 20 Top Games Like Club
-  Penguin". That helps the classic slides and titles too.
+  Penguin". That helps the classic slides and titles too. And only the actions about the seed, none of the worst
+  (D55): wikiHow pads a search it knows little about with its most popular how-tos, which titled a lighthouse talk
+  "Never, Ever Make Sex Better". Crude ones about the seed stay.
 - **The deck and `talk.started`** record it: `topic_or_title` = {text, `read_as`: topic or title}.
 
 Live on 2026-11-07, with OpenRouter's free router: a benchmark of 20 typed inputs, 10 topics (two misspelled, two
@@ -1695,6 +1697,7 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D51 | Image credits are quiet: 7 points, aligned right, in the colour nearest the slide's background that reads at a contrast of 2.5 on what's behind their letters, their links in the same colour, and no band behind them anywhere; over a picture (any colour, grey too), light with a dark halo. They're for whoever wants to know a picture's source, and for its license: the design checks hold them to floors of their own (that contrast, by their halo on a picture; 6 points), not to the 4.5 and 12 points of a slide's texts. |
 | D52 | What belongs to a picture comes in with it: a theme's frame, shadow, tape, window or rule around it names the element it belongs to (`part_of`), and every renderer that plays clicks shows and dims it with that element. No layout puts a panel behind one column of a slide. |
 | D53 | A slide of a list of things shows its title and the list's frame from the start, and its things one by one, a click each, the punchline last (a pyramid from its base up, a tier list from its worst tier up, a quiz's answer after its options, an org chart's boss after its people); the shapes a thing is drawn on come with it. A slide of one thing (a big number, a post, a fun fact, a meme with one caption) shows at once. |
+| D55 | A seed gets only wikiHow's actions about it (`wikihow.about`): with one of its telling words in any form (its rarest word, and its others rarer than 5.5 on the Zipf scale), or with one of the telling words of its related words (rarer than 5.0); and none of the worst (`wikihow.unfit`): none with a word a slide shouldn't make light of, a faith, violence, hate, death or hard drugs, but crude ones stay ("Clean Your Penis" for cleaning), as much of classic talks' humour is crude. WikiHow pads a search it knows little about with its most popular how-tos and with loose matches. The user chose both on 2026-11-08: related actions over the seed's own words only and over leaving out just the padding (36 of 39 sample topics and 29 of 39 of the seeds that slides wander to keep some actions), and crude ones in. |
 
 D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, and D43 to D53 on 2026-11-08; the
 others follow from the design.
