@@ -4,7 +4,7 @@ from talkgenerator.datastructures.slide_generator_data import ConstantWeightFunc
 from talkgenerator.plan.kinds import Recipe
 from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema import slide_topic_generators
-from talkgenerator.schema.formats import academic, pitch
+from talkgenerator.schema.formats import academic, corporate, keynote, pitch
 from talkgenerator.schema.presentation_schema import PresentationSchema
 from talkgenerator.schema.registry import Registry
 from talkgenerator.schema.slide_schemas import default_max_allowed_tags, slide_generators
@@ -195,6 +195,28 @@ academic_schema = schemas.register(
         slide_generators=slide_generators.group("academic"),
         max_allowed_tags=academic.CAPS,
         format=academic.ACADEMIC,
+    ),
+)
+corporate_schema = schemas.register(
+    "corporate",
+    PresentationSchema(
+        powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
+        seed_generator=_wandering,
+        title_generator=corporate.title_generator,
+        slide_generators=slide_generators.group("corporate"),
+        max_allowed_tags=corporate.CAPS,
+        format=corporate.CORPORATE,
+    ),
+)
+keynote_schema = schemas.register(
+    "keynote",
+    PresentationSchema(
+        powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
+        seed_generator=_wandering,
+        title_generator=keynote.title_generator,
+        slide_generators=slide_generators.group("keynote"),
+        max_allowed_tags=keynote.CAPS,
+        format=keynote.KEYNOTE,
     ),
 )
 

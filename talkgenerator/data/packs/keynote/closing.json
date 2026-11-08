@@ -1,0 +1,38 @@
+{
+  "closing_line": [
+    "{product}. Only better.",
+    "Thank you. Now go and change {seed.generic}.",
+    "This is only the beginning.",
+    "We can't wait to see what you do with {seed.generic}.",
+    "{product}. Simple. Beautiful. Yours.",
+    "The future of {seed.generic} starts today.",
+    "Thank you. And remember: {seed.generic}.",
+    "{product}. Available today, wherever {seed.generic} can be found."
+  ],
+  "closing_title": [
+    "Thank you.",
+    "Thank you. Go build something.",
+    "See you next year.",
+    "Thank you, and good night.",
+    "That's {product}.",
+    "Now go and try it."
+  ],
+  "reaction_title": [
+    "What people are saying",
+    "The internet reacts",
+    "Live reactions",
+    "Already trending",
+    "From the audience",
+    "Moments ago"
+  ],
+  "reaction": [
+    "Just watched the {product} keynote. I don't need one. I've already ordered three.",
+    "The demo crashed and it was honestly the best part.",
+    "Watching the keynote from bed. {product} looks incredible. I still don't know what it does.",
+    "My {seed.bare} habit just got a serious upgrade.",
+    "I came for the product and stayed for the one more thing.",
+    "Not sure I need {product}, but I want it more than anything.",
+    "Cried twice during the keynote. Once at the price.",
+    "Can't believe they put {seed.generic} in it. Take my money."
+  ]
+}

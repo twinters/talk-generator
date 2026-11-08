@@ -1,0 +1,88 @@
+{
+  "error_title": [
+    "{product}",
+    "Live demo",
+    "Keynote demo",
+    "Demo mode",
+    "Stage display",
+    "System alert"
+  ],
+  "error": [
+    "{product} has stopped responding.",
+    "{product} isn't sure what you meant. It never is.",
+    "The demo could not connect to this building's Wi-Fi.",
+    "{product} needs to update before it can do anything impressive.",
+    "Something went wrong. It's not you, it's the demo.",
+    "This feature is coming soon. It was supposed to come today.",
+    "{product} is out of {seed.generic}. Please try again later.",
+    "An unexpected {seed.bare} error occurred."
+  ],
+  "error_code": [
+    "ERR_DEMO_0x0042",
+    "Error 418",
+    "KEYNOTE_FAIL_7",
+    "E-404-LIVE",
+    "ONSTAGE_PANIC_3",
+    "WIFI_GONE_99"
+  ],
+  "button": [
+    "Retry",
+    "Restart",
+    "Report",
+    "Try again",
+    "Cancel",
+    "Wait",
+    "Update now"
+  ],
+  "button_punchline": [
+    "Blame the Wi-Fi",
+    "Move on quickly",
+    "Switch to slides",
+    "Applaud anyway",
+    "Pretend it worked",
+    "Ask the intern",
+    "Play a video"
+  ],
+  "how_title": [
+    "How it works",
+    "Let me show you",
+    "It's this simple",
+    "Watch this",
+    "Three steps. That's it.",
+    "Here's how"
+  ],
+  "how_first": [
+    "Take it out of the box",
+    "Say hello",
+    "Hold it up",
+    "Tap once",
+    "Open the lid",
+    "Look at it"
+  ],
+  "how_step": [
+    "Tap twice",
+    "Wait a moment",
+    "Swipe left",
+    "Shake gently",
+    "Add {seed.one}",
+    "Say the magic word",
+    "Agree to the terms",
+    "Wait for the update"
+  ],
+  "how_last": [
+    "Magic",
+    "That's it",
+    "Profit",
+    "Nobody knows",
+    "It just works",
+    "Applause"
+  ],
+  "demo_title": [
+    "Live demo",
+    "Let's try it live",
+    "Here it is, live",
+    "Demo time",
+    "Live, on stage",
+    "Let me show you something"
+  ]
+}

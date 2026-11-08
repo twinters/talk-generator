@@ -1,0 +1,20 @@
+{
+  "reveal_title": [
+    "Introducing {product}",
+    "Meet {product}",
+    "This is {product}",
+    "Say hello to {product}",
+    "{product}. It's here.",
+    "Here it is: {product}",
+    "Ladies and gentlemen, {product}"
+  ],
+  "shot_title": [
+    "{product}",
+    "{product}. Finally.",
+    "{product}. Only better.",
+    "{product}. Built for {seed.generic}.",
+    "The all-new {product}",
+    "{product}. Beautiful.",
+    "{product}. Nothing else comes close."
+  ]
+}

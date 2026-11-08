@@ -1,0 +1,40 @@
+{
+  "idea": [
+    "What if {seed.generic} could do more?",
+    "What if everything you knew about {seed.generic} turned out to be wrong?",
+    "What if {seed.generic} just worked?",
+    "We asked ourselves one question: why not {seed.generic}?",
+    "One idea changed everything: {seed.generic}, but simpler.",
+    "What if you never had to think about {seed.generic} again?",
+    "The best {seed.bare} experience is the one you don't notice.",
+    "What would {seed.generic} look like if we started from scratch?",
+    "Simple. Beautiful. {seed.generic.cap}.",
+    "What if {seed.generic} fit in your pocket?"
+  ],
+  "venn_title": [
+    "The idea",
+    "Where it all comes together",
+    "One idea",
+    "Where the magic happens",
+    "It all starts here",
+    "The big idea"
+  ],
+  "circle": [
+    "{seed.generic.cap}",
+    "{seed.bare.cap} lovers",
+    "{seed.bare.cap} fans",
+    "{seed.bare.cap} people",
+    "{seed.bare.cap} buffs",
+    "{seed.bare.cap} nerds",
+    "Design",
+    "The cloud",
+    "Courage",
+    "A very small battery",
+    "Your pocket",
+    "Machine learning",
+    "Simplicity",
+    "Your living room",
+    "Recycled aluminium",
+    "Pure magic"
+  ]
+}

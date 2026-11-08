@@ -1,0 +1,90 @@
+{
+  "wins_title": [
+    "Wins of the quarter",
+    "Celebrating our wins",
+    "Shout-outs",
+    "What went well",
+    "Q3 highlights",
+    "Wins worth celebrating",
+    "Our proudest moments"
+  ],
+  "win": [
+    "Launched {seed.bare} 2.0",
+    "Fixed the printer",
+    "Signed our biggest client",
+    "Shipped on time (once)",
+    "{seed.bare.cap} sales up 2%",
+    "Opened a new office",
+    "Zero incidents in March",
+    "Moved to the cloud",
+    "Finished the migration",
+    "Record {seed.bare} month"
+  ],
+  "win_punchline": [
+    "Survived the offsite",
+    "Found the missing laptop",
+    "The coffee machine works again",
+    "Nobody replied-all this week",
+    "Renamed every team, twice",
+    "Ended a meeting early",
+    "Learned what we do",
+    "Finally read the strategy"
+  ],
+  "post_title": [
+    "From our CEO",
+    "As posted this morning",
+    "Our CEO on the quarter",
+    "A message from the top",
+    "Straight from leadership",
+    "Posted at 5 a.m."
+  ],
+  "post": [
+    "Humbled to announce that our {seed.bare} team hit 98% of target. Agree?",
+    "I asked our team for 110% this quarter. They gave 97%. That's what leadership looks like.",
+    "Woke up at 4 a.m., ran 10 km, read three reports on {seed.generic}. Then I hugged my team. Grateful.",
+    "Proud of everyone at {company}. We didn't hit our numbers, but we missed them together.",
+    "Unpopular opinion: {seed.generic} and quarterly targets have a lot in common. Let that sink in.",
+    "Excited to share that {company} now puts {seed.generic} first. More soon.",
+    "Five things our {seed.bare} team taught me about resilience. Number four will surprise you.",
+    "Some ask why I start every meeting with a minute of silence for our targets. Leadership is lonely.",
+    "Our intern asked me what we do. I didn't have an answer. Then I did: {seed.generic}. Thank you, intern.",
+    "Closed the quarter with a team hug and a spreadsheet. Both were emotional."
+  ],
+  "review_good": [
+    "Exactly what I needed for {seed.generic}. Fast delivery, friendly staff.",
+    "Reliable, professional, and they always pick up the phone.",
+    "Would recommend {company} to anyone who needs {seed.generic}.",
+    "Great value. My whole department uses it now.",
+    "The account manager knows my name and my birthday.",
+    "Changed how our office thinks about {seed.generic}.",
+    "Solid product. The onboarding took a while, but it was worth it.",
+    "Five stars. Everything I hoped for, and an invoice that adds up."
+  ],
+  "review_bad": [
+    "I asked a simple question and got invited to a webinar.",
+    "Ordered {seed.generic}, received a strategy deck.",
+    "Still waiting for someone to call me back. It's been a quarter.",
+    "They sent me a survey about the survey.",
+    "One star. The invoice was the only thing that arrived on time.",
+    "My order was escalated to a steering committee.",
+    "Customer service said they'd circle back. I've been circling since May."
+  ],
+  "reviewer": [
+    "Pat, procurement",
+    "Sam, a loyal customer",
+    "Alex, head of operations",
+    "Robin, verified buyer",
+    "Jo, customer since 2019",
+    "Kim, from a partner firm",
+    "Chris, an old client",
+    "Morgan, in accounts"
+  ],
+  "reviews_title": [
+    "Voice of the customer",
+    "What customers say",
+    "Customer feedback, Q3",
+    "Net promoter highlights",
+    "Straight from our customers",
+    "Customer love"
+  ]
+}

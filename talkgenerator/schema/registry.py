@@ -6,7 +6,8 @@ unique name (and optionally a group), and looked up explicitly:
     from talkgenerator.schema.slide_schemas import slide_generators
     from talkgenerator.schema.presentation_schema_types import schemas
 
-    schemas.names()                      # ['default', 'interview', 'test', 'ted', 'pitch', 'academic']
+    schemas.names()                      # ['default', 'interview', 'test', 'ted', 'pitch', 'academic', 'corporate',
+                                         #  'keynote']
     slide_generators.get("Inspirobot")
     slide_generators.group("conclusion")
 """

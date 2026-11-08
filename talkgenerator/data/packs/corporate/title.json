@@ -1,0 +1,65 @@
+{
+  "talk_title": [
+    "#dated#",
+    "#dated#",
+    "#dated#",
+    "{company} #meeting#",
+    "#slogan#"
+  ],
+  "dated": [
+    "#quarter#: #slogan#"
+  ],
+  "quarter": [
+    "Q1 All-Hands",
+    "Q2 All-Hands",
+    "Q3 All-Hands",
+    "Q4 All-Hands",
+    "Q3 Business Review",
+    "Q4 Business Review",
+    "FY27 Kickoff",
+    "Quarterly Town Hall",
+    "Half-Year Review",
+    "Annual All-Hands"
+  ],
+  "meeting": [
+    "All-Hands",
+    "Town Hall",
+    "Quarterly Business Review",
+    "Kickoff, Q1",
+    "All-Hands, Q3",
+    "Strategy Day"
+  ],
+  "slogan": [
+    "Doubling Down on {seed.generic.title}",
+    "The Year of {seed.generic.title}",
+    "{seed.generic.title} at Scale",
+    "Leaning Into {seed.generic.title}",
+    "One Team, One {seed.bare.title} Strategy",
+    "{seed.generic.title}, Together",
+    "Unlocking Value in {seed.generic.title}",
+    "Our {seed.bare.title} Journey Continues",
+    "Rethinking {seed.generic.title}",
+    "Back to Basics: {seed.generic.title}",
+    "Accelerating {seed.generic.title}",
+    "{seed.generic.title} First",
+    "Driving Growth Through {seed.generic.title}",
+    "Winning With {seed.generic.title}",
+    "Building the Future of {seed.generic.title}",
+    "Focus, Execution and {seed.generic.title}",
+    "Fewer Meetings, More {seed.bare.title} Meetings",
+    "Aligned on {seed.generic.title}"
+  ],
+  "subtitle": [
+    "{presenter}, CEO of {company}",
+    "{presenter}, Chief Executive Officer, {company}",
+    "Presented by {presenter}, for the {company} leadership team",
+    "{presenter}, SVP of {seed.bare.title} Operations, {company}",
+    "Internal only. Presented by {presenter}, {company}",
+    "{presenter}, Head of Strategy and Synergy, {company}",
+    "{company} · {presenter} · Confidential, do not forward",
+    "{presenter}, interim CEO (since Tuesday), {company}",
+    "{presenter}, Chief Alignment Officer at {company}",
+    "{presenter}, Managing Director, {company}, with the leadership team",
+    "{presenter}, VP of Everything, {company}"
+  ]
+}

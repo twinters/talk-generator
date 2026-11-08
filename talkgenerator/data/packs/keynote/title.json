@@ -1,0 +1,47 @@
+{
+  "talk_title": [
+    "#launch#",
+    "#launch#",
+    "#named#",
+    "#named#",
+    "#promise#"
+  ],
+  "named": [
+    "{product}: #promise#"
+  ],
+  "launch": [
+    "The {product} Keynote",
+    "{product}: The Keynote",
+    "{product} Launch Event",
+    "{product}. Reimagined.",
+    "The All-New {product}",
+    "Hello, {product}",
+    "{product}: Live From the Main Stage"
+  ],
+  "promise": [
+    "The Future of {seed.generic.title}",
+    "{seed.generic.title}, Reimagined",
+    "{seed.generic.title}. All New.",
+    "{seed.generic.title}, Like Never Before",
+    "The Biggest Leap in {seed.generic.title} Yet",
+    "A Whole New Kind of {seed.bare.title}",
+    "{seed.generic.title}, but Better",
+    "The Last {seed.bare.title} You'll Ever Need",
+    "Everything Changes for {seed.generic.title}",
+    "{seed.generic.title}, Simplified",
+    "It's Time for {seed.generic.title}",
+    "{seed.generic.title} for Everyone"
+  ],
+  "subtitle": [
+    "{presenter}, Chief Executive Officer",
+    "{presenter}, CEO and Chief Visionary",
+    "{presenter}, founder, on stage for the first time",
+    "Keynote by {presenter}",
+    "{presenter}, Senior Vice President of {seed.bare.title}",
+    "{presenter}, Head of Product, {product}",
+    "{presenter}, live from the main stage",
+    "{presenter}, who has been waiting all year for this",
+    "{presenter}, Chief Product Officer and part-time visionary",
+    "Presented by {presenter}, in a very simple sweater"
+  ]
+}

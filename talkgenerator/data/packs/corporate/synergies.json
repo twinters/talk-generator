@@ -1,0 +1,80 @@
+{
+  "venn_title": [
+    "Synergies",
+    "Where we create value",
+    "Unlocking synergies",
+    "Better together",
+    "The sweet spot",
+    "Our synergy map"
+  ],
+  "circle": [
+    "Sales",
+    "Finance",
+    "{seed.generic.cap}",
+    "{company}",
+    "The company we bought",
+    "Marketing",
+    "IT",
+    "Customer service",
+    "The night shift",
+    "Legal"
+  ],
+  "overlap": [
+    "Synergy",
+    "Another meeting",
+    "A shared inbox",
+    "Q4",
+    "The same three people",
+    "Pizza",
+    "A new acronym",
+    "More synergy",
+    "A task force"
+  ],
+  "matrix_title": [
+    "Strategic priorities",
+    "Where we focus",
+    "Impact against effort",
+    "Our priority matrix",
+    "What we do next",
+    "Prioritisation, at last"
+  ],
+  "axis": [
+    "Low impact|High impact",
+    "Costly|Cheap",
+    "Hard|Easy",
+    "Slow|Fast",
+    "Nobody asked|The board asked",
+    "Risky|Safe",
+    "Long term|This quarter",
+    "Unclear|Obvious"
+  ],
+  "initiative": [
+    "Project Phoenix",
+    "The new intranet",
+    "Casual Fridays",
+    "A second offsite",
+    "Rebranding",
+    "The loyalty app",
+    "Office plants",
+    "Moving to the cloud (again)",
+    "A new CRM",
+    "The values workshop"
+  ],
+  "best_quadrant": [
+    "Quick wins",
+    "Do it now",
+    "Synergies",
+    "Low-hanging fruit",
+    "Priority one",
+    "Obvious wins",
+    "Strategic bets"
+  ],
+  "dot": [
+    "{seed.bare.cap} lab",
+    "{seed.generic.cap}",
+    "{seed.bare.cap} 2.0",
+    "{seed.bare.cap} pilot",
+    "{seed.bare.cap} bet",
+    "{seed.bare.title} One"
+  ]
+}

@@ -1,4 +1,4 @@
-"""Talk formats beyond the TED-like talks (docs/v5-plan.md, section 7; decision D56).
+"""Talk formats beyond the TED-like talks (docs/v5-plan.md, section 7; decisions D56 and D59).
 
 A format is a presentation schema (talkgenerator.schema.presentation_schema) with a Format: what the format is, for the
 language model (its brief: "a startup pitch to investors..."), what its titles and its presenter's job are like, how
@@ -8,13 +8,14 @@ language model and a classic way, from the format's content pack (talkgenerator/
 talkgenerator.sources.packs), so a format works without a language model too.
 
 Each format has a module here, with its arc, its slide generators and its tag caps, which
-talkgenerator.schema.presentation_schema_types registers: `pitch` (a startup pitch to investors) and `academic` (a talk
-at an academic conference). The formats to come (a corporate all-hands, a product keynote, Pecha Kucha's timing) follow
-the same pattern: a module with a Format and its slide generators, a content pack, a line in plan.external.FORMATS,
-and the schema registered.
+talkgenerator.schema.presentation_schema_types registers: `pitch` (a startup pitch to investors), `academic` (a talk
+at an academic conference), `corporate` (a company's all-hands, or its quarterly business review) and `keynote` (a
+product keynote on a big stage). Another format would follow the same pattern: a module with a Format and its slide
+generators, a content pack, a line in plan.external.FORMATS, and the schema registered.
 
 A format's slides reuse the slide types there are (a big number for a pitch's ask, a funnel for its market, a 2×2
-matrix for its competition; charts for an academic talk's results, an iceberg for its limitations), with recipes and
+matrix for its competition; charts for an academic talk's results, an iceberg for its limitations; KPI tiles against
+their targets and a new org chart for an all-hands; a fake error message for a keynote's demo), with recipes and
 classic texts of their own: KindSlideGenerator makes a classic slide of a kind from texts, as a planned slide is made
 from the language model's (talkgenerator.plan.kinds).
 """
@@ -213,3 +214,42 @@ def startup(topic: str) -> str:
 def method(topic: str) -> str:
     """The made-up name of an academic talk's method, from the talk's topic: the same on every slide."""
     return _stable(topic, _METHOD_FORMS).format(_name_word(topic))
+
+
+# How a company and a product get their made-up names from a talk's topic, as a corporation and a keynote would name
+# them (at most 9 and 7 characters around the topic's word: "PenguinCo", "Global Penguin"; "Penguin Pro", "HyperPenguin")
+_COMPANY_FORMS = (
+    "{} Corp",
+    "{} Group",
+    "{}Co",
+    "{} Inc.",
+    "{} Holdings",
+    "Global {}",
+    "United {}",
+    "{} Systems",
+    "{} Partners",
+    "{} Works",
+)
+_PRODUCT_FORMS = (
+    "{} Pro",
+    "{} One",
+    "{} X",
+    "{} Air",
+    "{} Max",
+    "{} Ultra",
+    "{}OS",
+    "{} 2",
+    "Hyper{}",
+    "{} Neo",
+    "{} Studio",
+)
+
+
+def company(topic: str) -> str:
+    """The made-up name of the company whose all-hands it is, from the talk's topic: the same on every slide."""
+    return _stable(topic, _COMPANY_FORMS).format(_name_word(topic))
+
+
+def product(topic: str) -> str:
+    """The made-up name of the product that a keynote launches, from the talk's topic: the same on every slide."""
+    return _stable(topic, _PRODUCT_FORMS).format(_name_word(topic))

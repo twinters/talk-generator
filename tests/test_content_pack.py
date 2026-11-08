@@ -53,10 +53,12 @@ LONG: dict[str, tuple[str, ...]] = {
     "percent": ("97%",),
     "year": ("2003",),
     "acronym": ("SPARKS",),
-    # (the made-up names of a pitch's startup and of an academic talk's method, at their longest: see
-    # talkgenerator.schema.formats.startup and method)
+    # (the made-up names of a pitch's startup, an academic talk's method, an all-hands' company and a keynote's
+    # product, at their longest: see talkgenerator.schema.formats.startup, method, company and product)
     "startup": ("Overinterpreting Labs",),
     "method": ("OverinterpretingFormer",),
+    "company": ("Overinterpreting Holdings",),
+    "product": ("Overinterpreting Studio",),
 }
 # Topics of every kind, to check that every template reads right with each: a countable noun, a mass noun, a plural, a
 # name, a phrase with an article, two words, a premise with a clause of its own, and a phrase with words about its
@@ -85,6 +87,8 @@ COMMON = {
     "acronym": "PEN",
     "startup": "Penguinly",
     "method": "PenguinNet",
+    "company": "Penguin Corp",
+    "product": "Penguin Pro",
 }
 # What the functions that ask the internet give, in these tests: a long wikiHow action, and for the moon a short one,
 # which a template that makes one word of an action takes (a longer one gives way, see text_generator.LONGEST_WORD)

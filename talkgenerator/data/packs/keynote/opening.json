@@ -1,0 +1,59 @@
+{
+  "opening_statement": [
+    "Today, we're going to reinvent {seed.generic}.",
+    "Every once in a while, something comes along that changes {seed.generic} forever.",
+    "Some days change everything. Today is one of them.",
+    "We've been working on this for a very long time.",
+    "This is the biggest day in the history of {seed.generic}.",
+    "Good morning. We have a lot to show you, and most of it is about {seed.generic}.",
+    "A year ago, we asked ourselves a simple question about {seed.generic}.",
+    "We think you're going to love what we've done with {seed.generic}.",
+    "Get ready to forget everything you know about {seed.generic}.",
+    "Today, we're not launching a product. We're launching a feeling."
+  ],
+  "opening_number_title": [
+    "Since last year",
+    "A big year",
+    "Where we are",
+    "By the numbers",
+    "Thank you",
+    "Some numbers"
+  ],
+  "opening_number": [
+    "2 billion",
+    "1 million",
+    "500,000",
+    "11 million",
+    "42",
+    "7",
+    "3 billion",
+    "800 million"
+  ],
+  "opening_label": [
+    "people who use {seed.generic} every day",
+    "customers who love {seed.generic}",
+    "hours spent on {seed.generic} this year",
+    "downloads since our last keynote",
+    "people who asked for this",
+    "five-star reviews, most of them ours",
+    "countries, and counting",
+    "people watching this keynote right now"
+  ],
+  "opening_source": [
+    "Internal numbers",
+    "Our own survey",
+    "Counted by hand",
+    "Source: the marketing team",
+    "As of this morning",
+    "Rounded up"
+  ],
+  "greeting": [
+    "Good morning.",
+    "Hello.",
+    "It's been a big year.",
+    "Welcome.",
+    "Thank you for coming.",
+    "Let's get started.",
+    "Good morning, everyone."
+  ]
+}

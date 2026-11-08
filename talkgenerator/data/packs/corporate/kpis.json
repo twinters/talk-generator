@@ -1,0 +1,216 @@
+{
+  "dashboard_title": [
+    "KPIs against target",
+    "The quarter at a glance",
+    "Our numbers",
+    "Scorecard",
+    "Q3 dashboard",
+    "Key metrics",
+    "How we did",
+    "The {seed.bare} dashboard",
+    "Performance against plan"
+  ],
+  "target_label": [
+    "of the revenue target",
+    "of the {seed.bare} target",
+    "of our quarterly goal",
+    "of plan (the revised plan)",
+    "of target, give or take",
+    "of the sales target",
+    "of last year's numbers",
+    "of the {seed.bare} budget"
+  ],
+  "count_label": [
+    "meetings about {seed.generic}",
+    "slides in this deck",
+    "emails marked urgent",
+    "hours in alignment meetings",
+    "new {seed.bare} initiatives",
+    "dashboards about dashboards",
+    "action items, all open",
+    "customers who called back",
+    "new acronyms",
+    "steering committees",
+    "surveys sent",
+    "reply-all incidents"
+  ],
+  "punchline_number": [
+    "0",
+    "1",
+    "0.5",
+    "-2",
+    "3",
+    "1 (me)"
+  ],
+  "punchline_label": [
+    "people who read the last deck",
+    "decisions made",
+    "meetings that could have been emails",
+    "customers who know what we do",
+    "working printers",
+    "clear owners",
+    "days without a reorg",
+    "employees who know the strategy",
+    "chairs in the meeting room"
+  ],
+  "trend_title": [
+    "Revenue against target",
+    "Actual against target, Q3",
+    "We're tracking close to plan",
+    "{seed.bare.cap} output against forecast",
+    "Slightly behind plan, as planned",
+    "The gap is closing (slowly)",
+    "On track, more or less",
+    "Where we are against where we said we'd be"
+  ],
+  "trend_x": [
+    "Weeks into the quarter",
+    "Months since the offsite",
+    "Quarter",
+    "Weeks since the reorg",
+    "Meetings held",
+    "Days since the forecast"
+  ],
+  "trend_y": [
+    "Revenue",
+    "{seed.bare.cap} output",
+    "Sales",
+    "Customer happiness",
+    "Synergy",
+    "Units shipped",
+    "Morale"
+  ],
+  "target_line": [
+    "Target",
+    "Forecast",
+    "The plan",
+    "What we promised",
+    "Budget",
+    "The board's target"
+  ],
+  "actual_line": [
+    "Actual",
+    "Reality",
+    "What happened",
+    "Us",
+    "Results",
+    "Actual (preliminary)"
+  ],
+  "trend_event": [
+    "Board meeting",
+    "The offsite",
+    "New CEO",
+    "The reorg",
+    "We hired consultants",
+    "Strategy refresh",
+    "Budget approved"
+  ],
+  "region": [
+    "EMEA",
+    "APAC",
+    "North America",
+    "Head office",
+    "Benelux",
+    "The Nordics",
+    "Online",
+    "Wholesale",
+    "Latin America"
+  ],
+  "winner": [
+    "Team {seed.bare.title}",
+    "{seed.generic.cap}",
+    "The intern",
+    "The coffee machine",
+    "A spreadsheet error",
+    "The new hire",
+    "Marketing (somehow)",
+    "The night shift"
+  ],
+  "bars_title": [
+    "Results by region",
+    "{seed.bare.cap} sales by region",
+    "Performance by team",
+    "Who hit their target?",
+    "Revenue by business unit",
+    "Top performers this quarter",
+    "Growth by region (unaudited)"
+  ],
+  "bars_axis": [
+    "% of target",
+    "Revenue (in thousands)",
+    "Units shipped",
+    "Growth",
+    "Synergy points",
+    "Gold stars"
+  ],
+  "number_title": [
+    "The quarter in one number",
+    "Year over year",
+    "Headline number",
+    "Q3 in a nutshell",
+    "Our north star",
+    "The number that matters"
+  ],
+  "share_label": [
+    "of target, once we lowered the target",
+    "of the {seed.bare} target, which is nearly all of it",
+    "of our goal, a record for a third quarter",
+    "of plan, against a very ambitious plan",
+    "of the forecast, adjusted for everything",
+    "of what we promised the board",
+    "of the target we set for {seed.generic} in January"
+  ],
+  "growth_label": [
+    "growth year over year, adjusted for everything",
+    "growth in {seed.bare} sales, our best quarter since the last one",
+    "growth, which is still growth",
+    "change in revenue, rounded generously",
+    "growth in customers who stayed",
+    "year-over-year growth in {seed.bare} output",
+    "growth, if you count the way we count"
+  ],
+  "number_source": [
+    "Finance, preliminary",
+    "Unaudited",
+    "The intern's spreadsheet",
+    "Source: internal estimate",
+    "Pending review by the board",
+    "Rounded up, then up again"
+  ],
+  "funnel_title": [
+    "Our pipeline",
+    "The sales funnel",
+    "Pipeline, Q3",
+    "From lead to deal",
+    "The {seed.bare} pipeline",
+    "Conversion, stage by stage"
+  ],
+  "funnel_top": [
+    "leads",
+    "people who saw the ad",
+    "website visits",
+    "cold emails sent",
+    "contacts at the fair",
+    "brochure downloads"
+  ],
+  "funnel_stage": [
+    "opened the email",
+    "replied",
+    "took a meeting",
+    "asked for a discount",
+    "said 'interesting'",
+    "asked what we do",
+    "forwarded it on",
+    "asked for a demo",
+    "booked a second call"
+  ],
+  "funnel_bottom": [
+    "1 deal (my uncle)",
+    "1 signed contract",
+    "1 customer, pending legal",
+    "0 deals, 3 hugs",
+    "2 deals, both internal",
+    "1 deal, refunded",
+    "1 very loyal customer"
+  ]
+}
