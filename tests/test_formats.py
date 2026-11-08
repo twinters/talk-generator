@@ -508,6 +508,8 @@ def test_a_title_slide_names_its_presenter_once():
     )
     _, plain = presentation_schema._title_slide("T", "Ann Wells", "Founder of Annly", None, random_util.Rng(1))
     assert plain[1].endswith("Ann Wells, Founder of Annly")
+    _, prefix = presentation_schema._title_slide("T", "Ann", "Annual Report Analyst", None, random_util.Rng(1))
+    assert prefix[1].endswith("Ann, Annual Report Analyst")
 
 
 def test_the_arc_check_reads_a_rendered_plans_recipes_too():
