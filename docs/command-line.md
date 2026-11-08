@@ -184,9 +184,9 @@ talkgenerator check --quick
 with its seed to see that it comes out the same, and writes a report to `output/check-report.json`. It exits with 1
 when a talk has an error: a slide without what it needs, template code such as `{seed}` on a slide, an image its
 license policy doesn't allow, a talk that comes out differently the second time, or, in another language than
-English, a talk that reads as English. Warnings, such as a credit that doesn't name its license, a quiz whose
-explanation names another option than its answer, or a text about real-world politics in a talk that isn't about
-it, are in the report.
+English, a talk that reads as English. Warnings, such as a title with words of its request in it ("Come Up With
+One: ..."), a credit that doesn't name its license, a quiz whose explanation names another option than its answer,
+or a text about real-world politics in a talk that isn't about it, are in the report.
 
 | Option | What it does |
 | --- | --- |

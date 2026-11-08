@@ -1,9 +1,10 @@
 """Automated checks of a deck (docs/v5-plan.md, section 14): a deck in, findings out.
 
 An error is a broken talk: a slide without what it needs, template code on a slide (or a slide's key in the language
-model's answer), or an image its license policy doesn't allow. A warning is worth a look, such as an image without a
-credit, one that comes back on another slide (or nearly the same one), or one without the look it was found for (a
-vintage photo in colour). Checks of contrast and overflowing text are in talkgenerator.checks.design.
+model's answer), or an image its license policy doesn't allow. A warning is worth a look, such as a title with words of
+its request in it ("Come Up With One: ..."), an image without a credit, one that comes back on another slide (or nearly
+the same one), or one without the look it was found for (a vintage photo in colour). Checks of contrast and
+overflowing text are in talkgenerator.checks.design.
 """
 
 from __future__ import annotations
@@ -179,6 +180,7 @@ def check_deck(deck: Deck, expected_slides: int | None = None) -> list[Finding]:
     return [
         *check_completeness(deck, expected_slides),
         *check_leftovers(deck),
+        *check_title(deck),
         *check_arc(deck, expected_slides),
         *check_quizzes(deck),
         *check_politics(deck),
@@ -283,6 +285,32 @@ def check_leftovers(deck: Deck) -> list[Finding]:
             if _NONE.search(text):
                 findings.append(Finding("leftovers", "warning", f"'None' in its {role}: {text!r}", number))
     return findings
+
+
+# Words of a talk's request that a language model put in the talk's title: Claude Haiku took the request's line "Title:
+# come up with one" for the title ("Come Up With One: Retrocausal Roasting in Arabica Beans", in 3 of 12 talks on
+# 2026-11-08, before the request lost that line). The others are what the request says of a title (see
+# talkgenerator.titles), which a title has no reason to have
+_REQUEST_WORDS: Final = re.compile(
+    r"(?<![\w-])(?:come up with one|title of your own|funnier and more specific|the user typed|own_title|"
+    r"a premise for it|the talk's title)(?![\w-])",
+    re.IGNORECASE,
+)
+
+
+def check_title(deck: Deck) -> list[Finding]:
+    """The talk's title has none of its request's own words (see _REQUEST_WORDS), but those of what was typed for it:
+    a warning (on the title slide) for a title that echoes them."""
+    typed = " ".join([*deck.topics, deck.topic_or_title.text if deck.topic_or_title is not None else ""]).lower()
+    echoed = [
+        found.group(0)
+        for found in _REQUEST_WORDS.finditer((deck.title or "").replace("’", "'"))
+        if found.group(0).lower() not in typed.replace("’", "'")
+    ]
+    return [
+        Finding("title", "warning", f"its title has the request's own words: {words!r} in {deck.title!r}", 1)
+        for words in echoed
+    ]
 
 
 # What made a slide, as its notes say: a classic slide's generator, or the slide generator a planned slide stood for

@@ -264,6 +264,11 @@ def _about(title: str, topic: str) -> bool:
 
 # WHAT THE LANGUAGE MODEL IS ASKED
 
+# What the spine's title is, for a talk whose title the language model makes up (see talkgenerator.plan.prompt): the
+# request has no line about the title then, as Claude Haiku took its line "Title: come up with one" for the title
+# ("Come Up With One: Retrocausal Roasting in Arabica Beans", in 3 of 12 talks on 2026-11-08)
+OWN_TITLE: Final = "a title of your own for the talk"
+
 
 @dataclass(frozen=True)
 class TitleRequest:
@@ -280,7 +285,9 @@ class TitleRequest:
     meaning: str | None = None  # (what a short input means, with its misspellings fixed, when that's different)
 
     def lines(self, topic: str) -> list[str]:
-        """The request's lines about it, instead of its topic and title (topic: the talk's, for a title to keep)."""
+        """The request's lines about it, instead of its topic and title (topic: the talk's, for a title to keep). For a
+        title of the model's own, no line is about the title (the spine's field says what it is to be): Claude Haiku
+        took the line it had, "Title: come up with one, ...", for the title ("Come Up With One: ...")."""
         if self.exact:
             return [f"Topic: {topic}", f'Title: "{self.typed}" (as the user typed it, in quotes: word for word)']
         if self.keep:
@@ -290,10 +297,7 @@ class TitleRequest:
                 "capitals)",
             ]
         meaning = f', meaning "{self.meaning}"' if self.meaning else ""
-        lines = [
-            f'Topic: "{self.typed}" (as the user typed it{meaning}: the talk\'s topic, or a premise for it)',
-            "Title: come up with one, funnier and more specific than what the user typed",
-        ]
+        lines = [f'Topic: "{self.typed}" (as the user typed it{meaning}: the talk\'s topic, or a premise for it)']
         if self.candidates:
             listed = "; ".join(f'"{candidate}"' for candidate in self.candidates)
             if self.inspiration:
@@ -316,8 +320,8 @@ class TitleRequest:
             }
         like = f", {hint}" if hint else ""
         own = (
-            f"a title of your own for the talk, in {name}: funnier and more specific than what the user typed, "
-            f"building on it{like}, spelled right (a premise such as 'Cats are liquid' keeps its words) ({limit})"
+            f"{OWN_TITLE}, in {name}: funnier and more specific than what the user typed, building on it{like}, "
+            f"spelled right (a premise such as 'Cats are liquid' keeps its words) ({limit})"
         )
         if self.candidates and not self.inspiration:
             return {

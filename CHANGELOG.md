@@ -360,9 +360,9 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
 - Made-up presenter names in styles (`--name_styles`): `pun` ("Prof. Anna Tomy" for medicine), `fun_surname`
   ("Linda Hivesworth" for bees) and `famous_pun` ("Albert Einstone" for geology) by default, and `classic`, the
   random first and last name of 2019. The language model writes the name in the same request, and a name that won't
-  do (too long, a placeholder, a real famous name, one on a short blocklist) is turned down. Without a model,
-  talkgenerator has names of its own for 642 of the 736 topics in its topic list. A plan can name its presenter
-  (`presenter_name`).
+  do (too long, a placeholder, a real famous name, a dictator's or a famous living person's) is turned down. Without a
+  model, talkgenerator has names of its own for 642 of the 736 topics in its topic list. A plan can name its
+  presenter (`presenter_name`).
 
 ### Personas
 
@@ -602,6 +602,18 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   any gives way to another. A how-to with a word on a faith, violence, hate, death or hard drugs is left out ("Live
   a Good Christian Life", "Apply a Fentanyl Patch"); crude ones about the seed stay, as much of a classic talk's
   humour is ("Clean Your Penis" for cleaning). The words that slides leave out have fentanyl too.
+- A language model's title doesn't repeat the request anymore. Claude Haiku took the request's line "Title: come up
+  with one" for the title ("Come Up With One: Retrocausal Roasting in Arabica Beans", in 3 of 12 talks): a talk
+  whose title the model makes up has no such line now, and the answer's title field asks for a title of the model's
+  own. `talkgenerator check` warns about a title with words of its request in it.
+- A presenter's name that puns on a famous living person goes, and the talk gets one of talkgenerator's own instead:
+  a free model named a keynote's presenter "Umbrella Chomsky". The blocklist knows 175 living people that models
+  reach for: a name that's theirs alone counts on its own ("Chomsky", "Oprah"), and their ordinary names only
+  together, the first name before the surname, as they are or with one of them bent ("Taylor Swiftly", "Gordon
+  Hamsay", "Tailor Swift"). An ordinary name stays ("Dr. Emma Swift", "Tim Cookson", "Greta Gosling"): of
+  talkgenerator's 18,839 classic surnames and 2,297 first names, only Trump's and a dictator's go. The model is
+  asked for a historical figure who died long ago, never anyone alive today, however old or famous, and a generated
+  picture's prompt that names one of them isn't sent either.
 - A slide's key in the language model's answer never goes on a slide. A free model's conclusion called back to an
   earlier slide by its key: "Huddling scales trust (from slide_03)". The request now asks for callbacks by what the
   earlier slide said, never by its key or number; brackets that name a slide by its key are dropped from a text

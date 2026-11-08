@@ -7,8 +7,9 @@ from datetime import timedelta
 
 import pytest
 
-from talkgenerator import generator, run
+from talkgenerator import generator, run, titles
 from talkgenerator.checks import benchmark
+from talkgenerator.checks import deck as deck_checks
 from talkgenerator.checks.deck import (
     Finding,
     check_completeness,
@@ -16,6 +17,7 @@ from talkgenerator.checks.deck import (
     check_images,
     check_language,
     check_leftovers,
+    check_title,
     deck_metrics,
 )
 from talkgenerator.models import classic
@@ -29,7 +31,9 @@ from talkgenerator.models.deck import (
     ImageAsset,
     ImageElement,
     TextElement,
+    TopicOrTitle,
 )
+from talkgenerator.plan import prompt
 from talkgenerator.slide import slides
 from talkgenerator.util import http_util
 from tests import test_seeds
@@ -203,6 +207,50 @@ def test_none_is_suspicious_but_not_always_wrong():
     assert severities("About None") == ["warning"]
     assert severities("None") == ["warning"]
     assert severities("None of us were ready") == []
+
+
+@pytest.mark.parametrize(
+    "title, words",
+    [
+        # (Claude Haiku took the request's "Title: come up with one" for the title, 2026-11-08)
+        ("Come Up With One: Retrocausal Roasting in Arabica Beans", "Come Up With One"),
+        ("Fernix One: Come Up With One. Master Houseplants in Five Steps", "Come Up With One"),
+        ("A Title of Your Own for the Talk", "Title of Your Own"),
+        ("Penguins, as the User Typed Them", "the User Typed"),
+    ],
+)
+def test_a_title_with_its_request_s_own_words_is_a_warning(title, words):
+    deck = Deck(generator="test", title=title, topics=("coffee",), slides=(TITLE,))
+    (finding,) = check_title(deck)
+    assert (finding.check, finding.severity, finding.slide) == ("title", "warning", 1)
+    assert finding.message == f"its title has the request's own words: {words!r} in {title!r}"
+    assert finding in check_deck(deck)
+
+
+@pytest.mark.parametrize(
+    "title", ["Why I Joined a Penguin Cult", "Come Up With Ones and Zeros", "The Talk's Titles Are Lies", "Cats"]
+)
+def test_a_title_of_its_own_is_no_finding(title):
+    assert check_title(Deck(generator="test", title=title, topics=("cats",), slides=(TITLE,))) == []
+
+
+def test_a_title_may_have_the_request_s_words_that_were_typed_for_it():
+    typed = TopicOrTitle(text="How to come up with one good idea", read_as="title")
+    deck = Deck(generator="test", title="How to Come Up With One Good Idea", topic_or_title=typed, slides=(TITLE,))
+    assert check_title(deck) == []
+
+
+def test_the_check_knows_what_the_request_says_of_a_title():
+    # (so that a title that echoes the request's words about it gets a warning, however it's asked for)
+    asked = [
+        prompt.spine()["title"],
+        prompt.spine(titled=True)["title"],
+        *titles.TitleRequest("cats").fields().values(),
+        *titles.TitleRequest("cats", candidates=("Cats, Explained",)).fields().values(),
+        *titles.TitleRequest("Why I Joined a Penguin Cult", keep=True).fields().values(),
+        *titles.TitleRequest("Cats are liquid", exact=True).fields().values(),
+    ]
+    assert [description for description in asked if not deck_checks._REQUEST_WORDS.search(description)] == []
 
 
 def test_chart_labels_are_checked_too():

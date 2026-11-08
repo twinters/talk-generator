@@ -178,6 +178,75 @@ def test_a_name_that_wont_do_is_turned_down(written):
     assert names.clean(written) is None
 
 
+@pytest.mark.parametrize(
+    "written",
+    [
+        "Umbrella Chomsky",  # (a free model's, for a keynote on umbrellas: Noam Chomsky's surname is his alone)
+        "Dr. Gnome Chomsky",
+        "Oprah Windfrey",
+        "Dalai Llama",
+        "Kanye Vest",
+        "Noam Chompsky",  # (a surname bent, after the first name)
+        "Gordon Hamsay",
+        "Ryan Goosling",
+        "Benedict Cucumberbatch",
+        "Mark Zuckerbird",
+        "Sir David Attenburrow",
+        "Harrison Fjord",
+        "Prof. Taylor Q. Swiftly",
+        "Tailor Swift",  # (a first name bent, before the surname)
+        "Bread Pitt",
+        "Hairy Styles",
+        "Dr. Bill Gates",  # (a real name as it is)
+        "Mary Berry",
+    ],
+)
+def test_a_pun_on_a_famous_living_person_is_turned_down(written):
+    # (a famous-name pun is on a historical figure who died long ago: docs/v5-plan.md, section 5.10)
+    assert names.clean(written) is None
+    assert names.real_person(f"a portrait of {written} in the rain") is not None  # (nor drawn in a picture)
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "Dr. Emma Swift",  # (an ordinary surname, which a famous living person has too)
+        "Linda Gates",
+        "Prof. Sarah Cook",
+        "Jill Gates",  # (an ordinary first name, a letter off a famous living person's)
+        "Dr. Tim Cookson",  # (an ordinary surname, which starts like a famous living person's)
+        "Tom Banks",
+        "Stephen Kingsley",
+        "Dr. Greta Gosling",  # (a word, for a talk on geese, that a famous living person's surname is too)
+        "Prof. Anna Streep",  # (a Dutch stripe)
+        "Albert Einstone",  # (historical figures who died long ago)
+        "Dr. Leonardo da Stone",
+        "Hamilton Partnership",
+        "Ada Lovefern",
+    ],
+)
+def test_a_name_that_shares_a_word_with_a_famous_living_person_s_goes(name):
+    assert names.clean(name) == name
+    assert names.real_person(f"{name} riding a camel") is None
+
+
+def test_every_ordinary_name_goes_on_a_title_slide():
+    # (the classic names' 18,839 surnames and 2,297 first names: but a dictator's, and Trump, a surname of its own too)
+    with open(os_util.to_actual_file(names.CLASSIC_NAMES_FILE), encoding="utf-8") as file:
+        grammar = json.load(file)
+    turned_down = [surname for surname in grammar["last_name"] if names.clean(f"Linda {surname}") is None]
+    assert turned_down == ["Mao", "Trump"]
+    first_names = grammar["male_name"] + grammar["female_name"]
+    assert [first for first in first_names if names.clean(f"{first} Hivesworth") is None] == []
+
+
+def test_a_famous_name_pun_is_asked_for_on_someone_who_died_long_ago():
+    asked = names.STYLES["famous_pun"].asked
+    assert "one famous historical figure who died long ago" in asked
+    assert "never the name of anyone alive today (however old or famous)" in asked
+    assert "died long ago" in names.STYLES["famous_pun"].plays_on
+
+
 def test_a_copy_of_an_example_is_turned_down():
     request = names.NameRequest("pun", (names.Example("Anna Tomy", "medicine", "anatomy"),))
     assert names.clean("Prof. Anna Tomy", request) is None
@@ -256,7 +325,9 @@ def test_a_talk_whose_dice_pick_classic_names_gets_one(schema):
     assert deck.presenter == names.classic(random_util.Rng(3))
 
 
-@pytest.mark.parametrize("written", ["The presenter name", "{presenter}", "Elon Muskrat", "Dr. Kitty Litter" * 3, 42])
+@pytest.mark.parametrize(
+    "written", ["The presenter name", "{presenter}", "Elon Muskrat", "Umbrella Chomsky", "Dr. Kitty Litter" * 3, 42]
+)
 def test_a_name_that_wont_do_is_made_up_instead(schema, written):
     deck = _deck(FakeModel(change=_naming(written)), name_styles="pun")
     assert deck.presenter == names.from_pack(["cats"], ("pun",), random_util.Rng(1))

@@ -344,13 +344,13 @@ def test_the_talk_s_dice_pick_how_the_classic_titles_go():
         ways.setdefault(way, request)
     assert set(ways) == {"options", "inspiration", "none"}
     options, inspiration, none = ways["options"], ways["inspiration"], ways["none"]
-    assert options.lines("penguins")[2].startswith("Classic titles from talkgenerator, to pick from:")
+    assert options.lines("penguins")[1].startswith("Classic titles from talkgenerator, to pick from:")
     assert list(options.fields()) == ["own_title", "title"]
-    assert inspiration.lines("penguins")[2].startswith(
+    assert inspiration.lines("penguins")[1].startswith(
         "Classic talkgenerator titles, for inspiration only (write your own):"
     )
     assert list(inspiration.fields()) == ["title"]
-    assert len(none.lines("penguins")) == 2 and list(none.fields()) == ["title"]
+    assert len(none.lines("penguins")) == 1 and list(none.fields()) == ["title"]
 
 
 def test_without_classic_titles_none_are_made(monkeypatch):
@@ -511,27 +511,41 @@ def test_a_short_input_is_asked_for_a_funnier_title_with_classic_ones_to_pick(sc
     model = FakeModel()
     _talk(model, topic_or_title="penguin cults")
     lines = _lines(model.requests[0])
-    assert lines[:2] == [
-        'Topic: "penguin cults" (as the user typed it: the talk\'s topic, or a premise for it)',
-        "Title: come up with one, funnier and more specific than what the user typed",
-    ]
-    assert lines[2].startswith('Classic titles from talkgenerator, to pick from: "A classic title about penguin cults"')
+    assert lines[0] == 'Topic: "penguin cults" (as the user typed it: the talk\'s topic, or a premise for it)'
+    assert lines[1].startswith('Classic titles from talkgenerator, to pick from: "A classic title about penguin cults"')
+    # (no line about the title, whose words a model could take for it: the spine says what it is to be)
+    assert not any(line.startswith("Title:") for line in lines)
     spine = _spine_schema(model.requests[0])
     assert list(spine)[:4] == ["unsafe_topic", "thesis", "own_title", "title"]
-    assert "funnier and more specific than what the user typed" in spine["own_title"]["description"]
+    assert spine["own_title"]["description"].startswith(
+        "a title of your own for the talk, in English: funnier and more specific than what the user typed"
+    )
 
 
 def test_a_topic_or_title_given_as_such_is_asked_for_as_before(schema):
     model = FakeModel()
     deck = _talk(model, topic="penguins")
     lines = _lines(model.requests[0])
-    assert lines[:2] == ["Topic: penguins", "Title: come up with one"]
-    assert lines[2].startswith("Language: write the title, the presenter's job and every slide in English")
+    # (no line about the title: Claude Haiku took "Title: come up with one" for the title)
+    assert lines[0] == "Topic: penguins"
+    assert lines[1].startswith("Language: write the title, the presenter's job and every slide in English")
     spine = _spine_schema(model.requests[0])
     assert "own_title" not in spine
-    # (like the titles of the talk's persona)
+    # (one of the model's own, like the titles of the talk's persona)
     hint = personas.persona(deck.persona.name).title_hint
-    assert spine["title"]["description"] == f"the talk's title, {hint}, in English (at most 80 characters)"
+    assert (
+        spine["title"]["description"] == f"a title of your own for the talk, {hint}, in English (at most 80 characters)"
+    )
+    assert f"- title: a title of your own for the talk, {hint}, in English" in model.requests[0].messages[0].content
+
+
+def test_a_title_given_as_such_is_the_request_s_title(schema):
+    model = FakeModel()
+    deck = _talk(model, topic="penguins", title="Penguins, Explained")
+    assert _lines(model.requests[0])[:2] == ["Topic: penguins", "Title: Penguins, Explained"]
+    description = _spine_schema(model.requests[0])["title"]["description"]
+    assert description == "the talk's title, in English (at most 80 characters)"
+    assert deck.title == "Penguins, Explained"
 
 
 def test_a_clear_title_keeps_its_words_with_its_slips_fixed(schema):
