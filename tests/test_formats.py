@@ -508,3 +508,25 @@ def test_a_title_slide_names_its_presenter_once():
     )
     _, plain = presentation_schema._title_slide("T", "Ann Wells", "Founder of Annly", None, random_util.Rng(1))
     assert plain[1].endswith("Ann Wells, Founder of Annly")
+
+
+def test_the_arc_check_reads_a_rendered_plans_recipes_too():
+    # (a talk's notes name the slide generator, "The Ask (Pitch)"; a rendered plan's its recipe, "the-ask-pitch")
+    from talkgenerator.models.deck import Deck, DeckSlide
+
+    def slide(maker):
+        return DeckSlide(
+            type="big_number", layout="classic/big_number", notes=f"Planned: a big_number slide for {maker}, about 'x'"
+        )
+
+    def deck(*makers):
+        return Deck(
+            generator="test",
+            schema_name="pitch",
+            slides=(DeckSlide(type="title", layout="classic/title"), *map(slide, makers)),
+        )
+
+    assert check_arc(deck("problem-number-pitch", "solution-pitch", "the-ask-pitch"), 4) == []
+    assert check_arc(deck("Problem Number (Pitch)", "Solution (Pitch)", "The Ask (Pitch)"), 4) == []
+    out_of_order = check_arc(deck("the-ask-pitch", "problem-number-pitch", "solution-pitch"), 4)
+    assert [finding.message for finding in out_of_order] == ["its problem slide comes after its ask slide"]

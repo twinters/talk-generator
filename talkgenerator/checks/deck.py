@@ -296,7 +296,8 @@ def check_arc(deck: Deck, expected_slides: int | None = None) -> list[Finding]:
     parts that a talk of its length keeps, in their order, as its slides' notes say who made them: a warning for a
     part it misses (when none of the part's slide generators could make its slide, one of the format's other slides
     stands in), and for a part that comes before one it should follow."""
-    from talkgenerator.schema.presentation_schema_types import schemas  # (here: the checks don't need them otherwise)
+    from talkgenerator.plan.external import recipe_id  # (here: the checks don't need them otherwise)
+    from talkgenerator.schema.presentation_schema_types import schemas
 
     if deck.schema_name is None or deck.schema_name not in schemas:
         return []
@@ -304,10 +305,11 @@ def check_arc(deck: Deck, expected_slides: int | None = None) -> list[Finding]:
     arc = schema.format.arc if schema.format is not None else None
     if arc is None:
         return []
-    part_of = {
-        generator.name: next((tag for tag in generator.get_tags() if tag in arc.names()), None)
-        for generator in schema.slide_generators
-    }
+    # (by a slide generator's name, which a talk's notes give, and by its recipe's id, which a rendered plan's give)
+    part_of: dict[str, str | None] = {}
+    for generator in schema.slide_generators:
+        part = next((tag for tag in generator.get_tags() if tag in arc.names()), None)
+        part_of[generator.name or ""] = part_of[recipe_id(generator.name or "")] = part
     seen: list[tuple[int, str]] = []
     for number, slide in enumerate(deck.slides, 1):
         made_by = _MADE_BY.search(slide.notes)
