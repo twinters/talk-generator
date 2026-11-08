@@ -37,19 +37,20 @@ ENGLISH = languages.ENGLISH
 
 def every_karaoke_type(image):
     """Slides of every karaoke type, with what every one of their layouts takes (a photo and none, a title and none,
-    few words and many), each credited."""
+    few words and many), each credited; of each type, the one that fits one layout only before the one that fits
+    more, so that one after the other, they never have the same layout twice in a row."""
     made = [
         slides.FunFactSlide("Did you know?", "Cats invented the internet in 1347.", "Source: my uncle", image),
         slides.FunFactSlide("Fun fact", "Owls can't see penguins.", "Source: trust me"),
-        slides.AcronymSlide("The CAT method", "Curiosity", "Agility", "Tuna"),
         slides.AcronymSlide(
             "The SPARKLE way", "Synergy", "Passion", "Accountability", "Resilience", "Kindness", "Lasagna"
         ),
+        slides.AcronymSlide("The CAT method", "Curiosity", "Agility", "Tuna"),
         slides.DareSlide("Challenge", "Present the next slide as a haiku."),
-        slides.FlowchartSlide("Should you get a cat?", "Do you like cats?", "Get a cat", "Get a cat anyway", "A cat"),
         slides.FlowchartSlide(None, "Is it Tuesday?", "Feed the cat", "Ask the cat", "The cat decides"),
-        slides.TierListSlide("Cat toys, ranked", "A box", "Yarn | Laser", "Mouse", None, "The expensive bed"),
+        slides.FlowchartSlide("Should you get a cat?", "Do you like cats?", "Get a cat", "Get a cat anyway", "A cat"),
         slides.TierListSlide(None, "Naps", "Tuna | Sun", "Yarn", "Water | Baths | Vets", "Dogs"),
+        slides.TierListSlide("Cat toys, ranked", "A box", "Yarn | Laser", "Mouse", None, "The expensive bed"),
     ]
     for slide in made:
         slide.add_source("Ann (via Pexels)", "https://www.pexels.com/photo/cat-123/")

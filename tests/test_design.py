@@ -26,7 +26,7 @@ from talkgenerator.util import os_util, random_util
 from tests import test_seeds
 from tests.test_deck import _every_kind_of_slide, _image, _pie_chart_data
 from tests.test_deck import images as images  # the fake image downloads (a fixture)
-from tests.test_karaoke_types import KARAOKE
+from tests.test_karaoke_types import KARAOKE, every_karaoke_type
 from tests.test_karaoke_types import _longest as _karaoke_longest
 from tests.test_slide_types import EVERY_KIND, _built, _longest_texts
 from tests.test_slide_types import _deck as _deck_of
@@ -346,6 +346,8 @@ def _runs(seed=1, theme=None):
         # (and a meme, of a picture whose boxes talkgenerator doesn't know: its captions at its top and its bottom;
         # one, as memes have a layout of their own, and a talk at most one meme)
         slides.MemeSlide(wide, "When the cat", "Sits on the keyboard"),
+        # (and the ones from PowerPoint karaoke decks, with a photo and without, few words and many...)
+        *(every_karaoke_type(wide) * 3),
     ]
     slide_deck = SlideDeck(len(runs), title="Cats", topics=["cats"], seed=seed)
     for index, slide in enumerate(runs):
