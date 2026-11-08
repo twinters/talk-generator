@@ -3,6 +3,7 @@ after a read timeout), a transfer that breaks off makes a picture unusable rathe
 pictures are downloaded a few at a time before it's drawn, and only one picture is prepared (decoded, turned, checked)
 at a time."""
 
+import http.server
 import io
 import socket
 import threading
@@ -114,6 +115,59 @@ def test_a_search_that_answers_slowly_counts_but_its_service_is_skipped_a_while(
     cooldown = http_util.Cooldown("A museum")
     assert http_util.search_json("https://museum.example/search", cooldown) == {"found": 1}
     assert cooldown.active == (seconds > http_util.SLOW_SECONDS)
+
+
+@pytest.fixture
+def local_site():
+    """A web server here that answers every GET with "ok", and keeps its connections open (HTTP/1.1)."""
+
+    class Answer(http.server.BaseHTTPRequestHandler):
+        protocol_version = "HTTP/1.1"
+
+        def do_GET(self):
+            self.send_response(200)
+            self.send_header("Content-Length", "2")
+            self.end_headers()
+            self.wfile.write(b"ok")
+
+        def log_message(self, *args):
+            pass
+
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Answer)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    yield f"http://127.0.0.1:{server.server_address[1]}"
+    server.shutdown()
+    server.server_close()
+
+
+def test_every_thread_s_idle_connections_are_closed_and_requests_go_on(local_site, monkeypatch):
+    monkeypatch.setenv("DISABLE_CACHE", "1")
+    http_util.reset_sessions()
+    sessions, asked, done = [], threading.Event(), threading.Event()
+
+    def pools(session):
+        return sum(len(adapter.poolmanager.pools) for adapter in set(session.adapters.values()))  # (one for both)
+
+    def live_on():  # (as the image finder's threads do: their sessions stay)
+        http_util.get(local_site + "/a")
+        sessions.append(http_util.get_session())
+        asked.set()
+        done.wait(5)
+
+    thread = threading.Thread(target=live_on)
+    thread.start()
+    assert http_util.get(local_site + "/b").status_code == 200
+    sessions.append(http_util.get_session())
+    asked.wait(5)
+    try:
+        assert [pools(session) for session in sessions] == [1, 1]
+        http_util.close_idle_connections()
+        assert [pools(session) for session in sessions] == [0, 0]
+        assert http_util.get(local_site + "/c").status_code == 200  # (on a new connection)
+    finally:
+        done.set()
+        thread.join()
+    http_util.reset_sessions()
 
 
 # TRANSFERS THAT BREAK OFF

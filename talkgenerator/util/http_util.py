@@ -18,6 +18,7 @@ import logging
 import re
 import threading
 import time
+import weakref
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import timedelta
@@ -99,6 +100,7 @@ _SECRET_TOKENS = re.compile(
 )
 _thread_local = threading.local()
 _cache_lock = threading.Lock()
+_sessions: weakref.WeakSet[requests.Session] = weakref.WeakSet()  # (every thread's: see close_idle_connections)
 _cache_backend: requests_cache.SQLiteCache | None = None
 _cache_unavailable = False
 
@@ -183,7 +185,22 @@ def get_session() -> requests.Session:
         session.mount("http://", adapter)
         session.headers["User-Agent"] = USER_AGENT
         _thread_local.session = session
+        with _cache_lock:
+            _sessions.add(session)
     return session
+
+
+def close_idle_connections() -> None:
+    """Close the connections that every thread's session keeps open for its next request, as a server may once it has
+    made a talk or a PowerPoint. Each holds the TLS state of its handshake (the host's certificate chain, parsed, among
+    it: tens of KB in C memory), and the threads that live on (the image finder's, some sources' own) keep one to every
+    host they asked, which the host mostly drops long before the next talk asks again: on talkgenerator.com, they took
+    its memory up by 3 to 4 MB a talk. Requests under way finish as they would; the next ones open new connections."""
+    with _cache_lock:
+        sessions = list(_sessions)
+    for session in sessions:
+        for adapter in set(session.adapters.values()):  # (one adapter serves both http and https)
+            adapter.close()  # (closes its idle connections: the adapter itself goes on working)
 
 
 # Headers that an answer the cache keeps may not vary on: requests_cache wouldn't read it back. One that varies on a

@@ -315,7 +315,9 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
 - A host that lets a request time out isn't asked again (urllib3 asked three times, so a hung image host held a slide
   for 25 s), thumbnails get 5 s to answer and probes 8 s, a transfer that breaks off makes a picture unusable rather
   than failing its slide, and a search service that takes more than 8 s to answer is skipped for 5 minutes, as one
-  that fails is (the Met's object API took 15 s an object).
+  that fails is (the Met's object API took 15 s an object). `http_util.close_idle_connections()` closes the
+  connections that every thread's session keeps open, as a server may after a talk: the threads that live on kept one
+  to every host they asked, with its TLS state, which took a server's memory up by 3 to 4 MB a talk.
 
 ### Checks
 
