@@ -563,18 +563,17 @@ class PresentationSchema:
         comes in on a thread of its own, and this returns at once, for the slides to be settled while it does."""
         num_slides = len(seeds)
         picks = self._pick_generators(num_slides, rng, language, persona)
-        planned = {
+        planned: dict[int, PlannedSlide] = {}
+        queried: frozenset[str] = frozenset()  # (what the variants so far search for: a meme's template comes once)
+        for slide_nr, pick in enumerate(picks):
+            if pick is None or pick.llm is None or pick.llm.kind == "title":
+                continue
             # (a recipe with variants comes out as one of them, such as a chart with labels or without)
-            slide_nr: PlannedSlide(
-                slide_nr + 1,
-                pick.name or str(pick),
-                pick.llm.varied(rng.child("slide", slide_nr, "variant")),
-                seeds[slide_nr],
-                digits=len(str(num_slides)),
+            recipe = pick.llm.varied(rng.child("slide", slide_nr, "variant"), avoid=queried)
+            queried |= frozenset(recipe.queries.values())
+            planned[slide_nr] = PlannedSlide(
+                slide_nr + 1, pick.name or str(pick), recipe, seeds[slide_nr], digits=len(str(num_slides))
             )
-            for slide_nr, pick in enumerate(picks)
-            if pick is not None and pick.llm is not None and pick.llm.kind != "title"
-        }
         talk = _PlannedTalk(
             picks,
             planned,

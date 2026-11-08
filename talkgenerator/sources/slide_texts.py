@@ -18,8 +18,9 @@ from collections.abc import Callable
 from functools import cache
 from typing import Any, Final, TypeVar
 
+from talkgenerator.plan.languages import ENGLISH
 from talkgenerator.sources import conceptnet, memes, text_generator
-from talkgenerator.util import os_util, random_util
+from talkgenerator.util import language_util, os_util, random_util
 
 _TEMPLATES: Final = "data/text-templates/slide_texts.json"
 _LONGEST_WORD: Final = 24  # a related word longer than this is a phrase that doesn't fit an option or an item
@@ -414,6 +415,173 @@ def generate_iceberg(presentation_context: dict[str, Any]) -> tuple[str | None, 
     if not title or len(hidden) < 2:
         return None
     return title, _capitalised(presentation_context["seed"]), *hidden
+
+
+# SLIDE TYPES FROM POWERPOINT KARAOKE DECKS (their templates say "{seed.generic}": "penguins", but "coffee"; and no
+# verb agrees with the seed, which may be either)
+
+_YEARS: Final = ("1347", "1666", "1752", "1823", "1911", "1978", "2003")
+
+
+def _numbers() -> dict[str, str]:
+    """Made-up numbers for a template: a count, a percentage and a year."""
+    return {
+        "number": str(random_util.randint(3, 99)),
+        "percent": f"{random_util.randint(3, 97)}%",
+        "year": random_util.choice(_YEARS),
+    }
+
+
+def fun_fact(image: ImageSource) -> Callable[[dict[str, Any]], tuple[Any, ...] | None]:
+    """A generator of fun facts about the seed: a heading ("Did you know?"), the fact (from templates about the seed
+    and a word related to it, with made-up numbers), a made-up source (if any) and a photo from the image source (three
+    times in five, when it finds one)."""
+
+    @_unless_sensitive
+    def generate(presentation_context: dict[str, Any]) -> tuple[Any, ...] | None:
+        related = related_words(presentation_context["seed"])
+        variables = {**_context(presentation_context, related), **_numbers()}
+        fact = _template("fun_fact")(variables)
+        if not fact:
+            return None
+        source = _maybe(0.7, _template("big_number_source")(variables))
+        photo = image(dict(presentation_context)) if random_util.random() < 0.6 else None
+        return random_util.choice(ENGLISH.fun_facts), fact, source, photo
+
+    return generate
+
+
+# An acronym's words: corporate buzzwords for its letters (when no word related to the seed starts with one), and
+# something absurd for its last letter, the punchline
+_BUZZWORDS: Final[dict[str, tuple[str, ...]]] = {
+    "A": ("Agility", "Alignment", "Accountability", "Authenticity"),
+    "B": ("Bandwidth", "Best practices", "Boldness", "Branding"),
+    "C": ("Collaboration", "Courage", "Clarity", "Commitment"),
+    "D": ("Disruption", "Dedication", "Data", "Discipline"),
+    "E": ("Empowerment", "Excellence", "Engagement", "Empathy"),
+    "F": ("Focus", "Flexibility", "Feedback", "Frameworks"),
+    "G": ("Growth", "Grit", "Gratitude", "Governance"),
+    "H": ("Hustle", "Harmony", "Honesty", "Hyperfocus"),
+    "I": ("Innovation", "Integrity", "Impact", "Insight"),
+    "J": ("Journey", "Joy", "Judgement"),
+    "K": ("Knowledge", "KPIs", "Kindness"),
+    "L": ("Leadership", "Leverage", "Learning", "Loyalty"),
+    "M": ("Mindfulness", "Momentum", "Motivation", "Metrics"),
+    "N": ("Networking", "Nimbleness", "Next steps"),
+    "O": ("Ownership", "Optimism", "Outcomes", "Openness"),
+    "P": ("Passion", "Purpose", "Productivity", "Paradigms"),
+    "Q": ("Quality", "Questions", "Quick wins"),
+    "R": ("Resilience", "Results", "Respect", "Roadmaps"),
+    "S": ("Synergy", "Strategy", "Scalability", "Stakeholders"),
+    "T": ("Teamwork", "Transparency", "Trust", "Thought leadership"),
+    "U": ("Understanding", "Upskilling", "Unity"),
+    "V": ("Vision", "Value", "Velocity"),
+    "W": ("Wellbeing", "Wisdom", "Workflow"),
+    "X": ("X-factor", "eXcellence", "eXperience"),
+    "Y": ("Yield", "Youthfulness", "Yes-saying"),
+    "Z": ("Zeal", "Zen", "Zero waste"),
+}
+_ABSURD: Final[dict[str, tuple[str, ...]]] = {
+    "A": ("Avocados", "Alpacas"),
+    "B": ("Biscuits", "Bananas", "Bubble wrap"),
+    "C": ("Cheese", "Capybaras"),
+    "D": ("Ducks", "Doughnuts"),
+    "E": ("Eels", "Eyebrows"),
+    "F": ("Flamingos", "Fondue"),
+    "G": ("Goats", "Glitter"),
+    "H": ("Hamsters", "Hats"),
+    "I": ("Ice cream", "Iguanas"),
+    "J": ("Jelly", "Jazz hands"),
+    "K": ("Kazoos", "Kittens"),
+    "L": ("Llamas", "Lasagna"),
+    "M": ("Moustaches", "Muffins"),
+    "N": ("Naps", "Noodles"),
+    "O": ("Otters", "Onions"),
+    "P": ("Pancakes", "Pyjamas"),
+    "Q": ("Quokkas", "Quiche"),
+    "R": ("Rubber ducks", "Raccoons"),
+    "S": ("Snacks", "Sloths", "Socks"),
+    "T": ("Toast", "Tuesdays", "Tap dancing"),
+    "U": ("Unicorns", "Ukuleles"),
+    "V": ("Velcro", "Vegetables"),
+    "W": ("Waffles", "Wombats"),
+    "X": ("Xylophones", "X-rays"),
+    "Y": ("Yoghurt", "Yodelling"),
+    "Z": ("Zebras", "Zucchini"),
+}
+_ACRONYMS: Final = ("SPARK", "SHINE", "BRAVE", "TRUST", "SMART", "FOCUS", "DREAM", "GROW")
+
+
+def _acronym_word(seed: str, related: list[str]) -> str:
+    """The word an acronym spells: the seed, or a word related to it, of three to six plain letters; or else one of
+    the method names everyone has heard."""
+    for word in (seed, *related):
+        if word.isascii() and word.isalpha() and 3 <= len(word) <= 6:
+            return word.upper()
+    return random_util.choice(_ACRONYMS)
+
+
+@_unless_sensitive
+def generate_acronym(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
+    """A made-up method about the seed, as an acronym that spells the seed (or a word related to it): a title, then
+    the word every letter stands for, words related to the seed where one starts with the letter, else corporate
+    buzzwords, and something absurd for the last letter."""
+    seed = str(presentation_context["seed"])
+    related = related_words(seed)
+    acronym = _acronym_word(seed, related)
+    words: list[str] = []
+    for position, letter in enumerate(acronym):
+        last = position == len(acronym) - 1
+        # (never a word twice, nor the word it spells; a repeated letter's last word from the same pool stays)
+        topical = (
+            [word for word in related if word[:1].upper() == letter and word.upper() != acronym] if not last else []
+        )
+        pool = topical + [word for word in (_ABSURD if last else _BUZZWORDS)[letter] if not topical]
+        words.append(random_util.choice([word for word in pool if word not in words] or pool))
+    title = _template("acronym_title")({**_context(presentation_context), "acronym": acronym})
+    return (title, *words) if title else None
+
+
+@_unless_sensitive
+def generate_dare(presentation_context: dict[str, Any]) -> tuple[str, str] | None:
+    """A dare for the presenter (from a list of playful ones, some about the seed): its heading and the dare."""
+    dare = _template("dare")(_context(presentation_context, related_words(presentation_context["seed"])))
+    return (ENGLISH.dare, dare) if dare else None
+
+
+@_unless_sensitive
+def generate_flowchart(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
+    """A flowchart about the seed: a title (if any), a yes-or-no question, where yes and no lead, the end both lead
+    to, and the words for yes and no."""
+    related = related_words(presentation_context["seed"])
+    question = _template("flowchart_question")(_context(presentation_context))
+    yes_step = _template("flowchart_yes")(_context(presentation_context, related))
+    no_step = _template("flowchart_no")(_context(presentation_context, related))
+    end = _template("flowchart_end")(_context(presentation_context, related))
+    title = _maybe(0.5, _template("flowchart_title")(_context(presentation_context)))
+    if not question or not yes_step or not no_step or not end:
+        return None
+    return title, question, yes_step, no_step, end, ENGLISH.yes, ENGLISH.no
+
+
+@_unless_sensitive
+def generate_tier_list(presentation_context: dict[str, Any]) -> tuple[Any, ...] | None:
+    """A tier list about the seed: a title, the seed itself in the S tier (deadpan), words related to it in the A, B
+    and C tiers, and something everyone loves in the F tier."""
+    seed = str(presentation_context["seed"])
+    related = related_words(seed)
+    if len(related) < 3:
+        return None
+    things = random_util.sample(related, min(len(related), random_util.randint(3, 7)))
+    tiers: list[list[str]] = [[], [], []]
+    for index, thing in enumerate(things):  # (A, B and C in turn, A first: three things at most in each)
+        tiers[index % 3].append(thing)
+    loved = [thing for thing in _grammar()["tier_list_worst"] if thing.lower() != seed.lower()]
+    title = _template("tier_list_title")(_context(presentation_context))
+    if not title:
+        return None
+    best = _capitalised(language_util.generic(seed))
+    return title, best, *(" | ".join(tier[:3]) or None for tier in tiers), random_util.choice(loved)
 
 
 def _capitalised(text: str) -> str:

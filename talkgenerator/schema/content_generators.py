@@ -57,6 +57,18 @@ default_or_no_title_generator = CombinedGenerator((1, default_slide_title_genera
 anticipation_title_generator = create_templated_text_generator("data/text-templates/anticipation_title.txt")
 
 conclusion_title_generator = create_templated_text_generator("data/text-templates/conclusion_title.txt")
+# (a confident conclusion over a real chart from the internet, which it supposedly proves: PowerPoint karaoke's)
+chart_conclusion_generator = create_templated_text_generator("data/text-templates/chart_conclusion.txt")
+
+
+def chart_conclusion_or_none_generator(presentation_context):
+    """A real chart's confident conclusion two times in three, and else none, for a bare chart. (Not a
+    CombinedGenerator with a NoneGenerator, which tries its other generators when one gives None.)"""
+    if random_util.random() < 2 / 3:
+        return chart_conclusion_generator(presentation_context)
+    return None
+
+
 inspiration_title_generator = create_templated_text_generator("data/text-templates/inspiration.txt")
 anecdote_title_generator = create_templated_text_generator("data/text-templates/anecdote_title.txt")
 history_title_generator = create_templated_text_generator("data/text-templates/history.txt")

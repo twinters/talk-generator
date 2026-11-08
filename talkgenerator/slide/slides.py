@@ -675,6 +675,111 @@ class IcebergSlide(DrawnSlide):
         return {f"hidden_{index}": 1 for index in range(1, 4)}
 
 
+class FunFactSlide(DrawnSlide):
+    """A fun fact: one absurd fact, stated as certain, under a heading in the talk's language ("Did you know?"), with
+    its (made-up) source and a photo, if it has them."""
+
+    required_arguments = ("kicker", "fact")
+
+    def __init__(self, kicker: str | None, fact: str | None, source: str | None = None, photo: ImageData | None = None):
+        super().__init__("fun_fact", None, {"kicker": kicker, "fact": fact, "source": source, "photo": photo})
+
+
+# The most letters an acronym has, and the tiers of a tier list, best first (as tier lists have them)
+ACRONYM_LETTERS = 6
+TIERS = ("S", "A", "B", "C", "F")
+TIER_ITEMS = 3  # the most things in a tier
+
+
+class AcronymSlide(DrawnSlide):
+    """A made-up method, as an acronym: its letters, each with the word it stands for (three to six), under a title;
+    the last word, the punchline, appears on a click."""
+
+    required_arguments = ("letter_1", "word_1", "letter_2", "word_2", "letter_3", "word_3")
+
+    def __init__(self, title: str | None, *words: str | None):
+        listed = [word.strip() for word in words if word and word.strip()][:ACRONYM_LETTERS]
+        arguments: dict[str, str | None] = {"title": title}
+        for index in range(1, ACRONYM_LETTERS + 1):
+            word = listed[index - 1] if index <= len(listed) else None
+            arguments[f"letter_{index}"] = word[0].upper() if word else None
+            arguments[f"word_{index}"] = word
+        super().__init__("acronym", None, arguments)
+
+    def clicks(self) -> dict[str, int]:
+        last = max(
+            index for index in range(1, ACRONYM_LETTERS + 1) if self._arguments.get(f"word_{index}") or index == 1
+        )
+        return {f"word_{last}": 1}
+
+
+class DareSlide(DrawnSlide):
+    """A dare for the presenter: a playful task for the next slide or the rest of the talk, under a heading in the
+    talk's language ("Challenge")."""
+
+    required_arguments = ("kicker", "dare")
+
+    def __init__(self, kicker: str | None, dare: str | None):
+        super().__init__("dare", None, {"kicker": kicker, "dare": dare})
+
+
+class FlowchartSlide(DrawnSlide):
+    """A flowchart that pretends to help decide: a yes-or-no question, where each answer leads (labelled with the
+    talk's words for yes and no), and the end both lead to, the punchline, which appears on a click."""
+
+    required_arguments = ("question", "yes_step", "no_step", "end")
+
+    def __init__(
+        self,
+        title: str | None,
+        question: str | None,
+        yes_step: str | None,
+        no_step: str | None,
+        end: str | None,
+        yes: str = "Yes",
+        no: str = "No",
+    ):
+        arguments = {
+            "title": title,
+            "question": question,
+            "yes": yes,
+            "no": no,
+            "yes_step": yes_step,
+            "no_step": no_step,
+            "end": end,
+        }
+        super().__init__("flowchart", None, arguments)
+
+    def clicks(self) -> dict[str, int]:
+        return {"end": 1}
+
+
+def tier_items(text: str | None) -> list[str]:
+    """The things of a tier, as written: separated by |, at most three."""
+    return [part.strip() for part in (text or "").split("|") if part.strip()][:TIER_ITEMS]
+
+
+class TierListSlide(DrawnSlide):
+    """A tier list: things ranked in tiers, from S (the best) to F (the worst), each tier a row of one to three things
+    under its letter (each tier as written: its things separated by |); the S tier's things, the punchline, appear on
+    a click. A tier without things is left out."""
+
+    required_arguments = ("tier_s", "item_s_1", "tier_a", "item_a_1")
+
+    def __init__(self, title: str | None, *tiers: str | None):
+        arguments: dict[str, str | None] = {"title": title}
+        for letter, written in zip(TIERS, (*tiers, *([None] * len(TIERS)))[: len(TIERS)], strict=True):
+            things = tier_items(written)
+            key = letter.lower()
+            arguments[f"tier_{key}"] = letter if things else None
+            for index in range(1, TIER_ITEMS + 1):
+                arguments[f"item_{key}_{index}"] = things[index - 1] if index <= len(things) else None
+        super().__init__("tier_list", None, arguments)
+
+    def clicks(self) -> dict[str, int]:
+        return {f"item_s_{index}": 1 for index in range(1, TIER_ITEMS + 1)}
+
+
 class MemeSlide(DrawnSlide):
     """A meme: a template's picture (one of Imgflip's, see talkgenerator.sources.memes), with its captions as texts on
     it, each in the box the template has for it (a box that repeats another's caption gets it too)."""

@@ -649,12 +649,20 @@ own_chart_generators = _register(
     ],
 )
 
+# (A real chart from the internet, out of context: in PowerPoint karaoke, best under a confident conclusion that it
+# supposedly proves, or else bare)
+_CHART_CONCLUSION = (
+    "a confident conclusion about the concept that the chart supposedly proves, as if it were obvious (the chart is a "
+    "real one, about something else entirely)"
+)
 chart_slide_generators = (
     _register(
         "reddit_chart",
         [
             SlideGeneratorData(
-                slide_generator_types.FullImageSlideGenerator.of(NoneGenerator(), cg.reddit_chart_generator),
+                slide_generator_types.FullImageSlideGenerator.of(
+                    cg.chart_conclusion_or_none_generator, cg.reddit_chart_generator
+                ),
                 weight_function=ConstantWeightFunction(4),
                 allowed_repeated_elements=0,
                 tags=["chart"],
@@ -662,8 +670,12 @@ chart_slide_generators = (
                 llm=Recipe(
                     "full_image",
                     (cg.reddit_chart_generator,),
-                    brief="A chart, filling the slide",
-                    omit=frozenset({"title"}),
+                    brief="A real chart from the internet, filling the slide",
+                    hints={"title": _CHART_CONCLUSION},
+                    variants=(
+                        Variant(2, note="under a confident conclusion that it supposedly proves"),
+                        Variant(1, frozenset({"title"}), "bare: without a title, for the presenter to explain"),
+                    ),
                 ),
             )
         ],
@@ -820,8 +832,11 @@ mockup_slide_generators_copyright_free = _register(
 
 # MEMES WITH LIVE CAPTIONS: one of Imgflip's templates, with captions of the talk's own in its boxes (see
 # talkgenerator.sources.memes): the dice pick the template, and the language model writes what each box says (or, in
-# a classic talk, the template's own sentences about the slide's topic)
+# a classic talk, the template's own sentences about the slide's topic). The user loves them (2026-11-07), so they
+# weigh four times what the other middle slides weigh: about half of all 10-slide talks have one (one in five did),
+# and a talk has two at most (caption_meme), and two memes of any kind in ten slides, Reddit's too (meme)
 _MEME_BRIEF = "A meme about the concept"
+MEME_WEIGHT = 4
 
 
 def _meme_variants() -> tuple[Variant, ...]:
@@ -849,12 +864,108 @@ meme_slide_generators = _register(
         _drawn(
             slide_texts.meme(cg.meme_template_generator),
             slides.MemeSlide,
-            _middle(1),
+            _middle(MEME_WEIGHT),
             ["meme", "caption_meme"],
             "Meme",
             Recipe("meme", (cg.meme_template_generator,), brief=_MEME_BRIEF, variants=_meme_variants()),
             repeats=1,
         )
+    ],
+)
+
+# SLIDE TYPES FROM POWERPOINT KARAOKE DECKS (docs/v5-plan.md, section 8): what real karaoke and battle decks have that
+# makes audiences laugh, drawn as texts on shapes (and a photo), in the middle of a talk
+_FUN_FACT_BRIEF = "A fun fact about the concept: something absurd, stated as certain, that the presenter has to back up"
+
+
+def _fun_fact(photo, suffix: str = "") -> list[SlideGeneratorData]:
+    return [
+        _drawn(
+            slide_texts.fun_fact(photo),
+            slides.FunFactSlide,
+            _middle(1),
+            ["fun_fact"],
+            f"Fun Fact{suffix}",
+            Recipe(
+                "fun_fact",
+                (photo,),
+                brief=_FUN_FACT_BRIEF,
+                variants=(
+                    Variant(2, note="with a photo of what it's about"),
+                    Variant(1, frozenset({"photo"}), "without a photo"),
+                    Variant(1, frozenset({"source"}), "with a photo, without a source: the presenter names one"),
+                ),
+            ),
+            repeats=1,
+        ),
+    ]
+
+
+fun_fact_slide_generators = _register("fun_fact", _fun_fact(cg.neutral_or_weird_image_generator))
+fun_fact_slide_generators_copyright_free = _register(
+    "fun_fact_copyright_free", _fun_fact(cg.copyright_free_generator, " (CRF)")
+)
+
+# The ones without pictures, in every format: an acronym for a made-up method, a dare for the presenter (organisers put
+# one such slide in a deck, at most: so it's rarer), a flowchart whose every path leads to the same end, and a tier list
+karaoke_slide_generators = _register(
+    "karaoke",
+    [
+        _drawn(
+            slide_texts.generate_acronym,
+            slides.AcronymSlide,
+            _middle(1),
+            ["acronym"],
+            "Acronym",
+            Recipe(
+                "acronym",
+                brief="A made-up method for the concept, as an acronym sold as the key to it all: its words get less "
+                "plausible letter by letter, and the last one is the punchline",
+                variants=(
+                    Variant(1, frozenset({"word_5", "word_6"}), "of three or four letters"),
+                    Variant(1, note="of four to six letters"),
+                ),
+            ),
+        ),
+        _drawn(
+            slide_texts.generate_dare,
+            slides.DareSlide,
+            _middle(0.6),
+            ["dare"],
+            "Dare",
+            Recipe(
+                "dare",
+                brief="A dare for the presenter, halfway through the talk: something playful they now have to do on "
+                "the next slide or for the rest of the talk",
+            ),
+            repeats=1,
+        ),
+        _drawn(
+            slide_texts.generate_flowchart,
+            slides.FlowchartSlide,
+            _middle(0.8),
+            ["flowchart", "diagram"],
+            "Flowchart",
+            Recipe(
+                "flowchart",
+                brief="A flowchart that pretends to help decide something about the concept, but whatever the answer, "
+                "it leads to the same absurd end",
+                variants=(Variant(1), Variant(1, frozenset({"title"}), "without a title")),
+            ),
+        ),
+        _drawn(
+            slide_texts.generate_tier_list,
+            slides.TierListSlide,
+            _middle(1),
+            ["tier_list"],
+            "Tier List",
+            Recipe(
+                "tier_list",
+                brief="A tier list that ranks things to do with the concept as if it were science: arguable "
+                "placements, and a surprising S tier as the punchline",
+                variants=(Variant(2), Variant(1, frozenset({"b_tier", "c_tier"}), "with only its S, A and F tiers")),
+            ),
+        ),
     ],
 )
 
@@ -1067,6 +1178,8 @@ all_slide_generators = (
     + quiz_slide_generators
     + mockup_slide_generators
     + meme_slide_generators
+    + fun_fact_slide_generators
+    + karaoke_slide_generators
     + structure_slide_generators
     + native_diagram_slide_generators
     + conclusion_slide_generators
@@ -1088,7 +1201,12 @@ default_max_allowed_tags = {
     "quiz": 1,
     "social_post": 1,
     "news": 1,
-    "caption_meme": 1,
+    "caption_meme": 2,  # (memes with live captions; and every meme, from Reddit too, two in ten slides: "meme")
+    "fun_fact": 1,
+    "acronym": 1,
+    "dare": 1,
+    "flowchart": 1,
+    "tier_list": 1,
     "agenda": 1,
     "questions": 1,
     "timeline": 1,

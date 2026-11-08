@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import dataclasses
 import re
+import unicodedata
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Final
@@ -116,12 +117,14 @@ class Recipe:
             if name not in self.omit
         ]
 
-    def varied(self, rng: random_util.Rng) -> Recipe:
-        """The recipe as one of its variants, picked by weight with the random stream (itself, without variants)."""
+    def varied(self, rng: random_util.Rng, avoid: frozenset[str] = frozenset()) -> Recipe:
+        """The recipe as one of its variants, picked by weight with the random stream (itself, without variants): not
+        one whose queries are in avoid, while there are others (a meme's template that the talk has already)."""
         if not self.variants:
             return self
+        fresh = [variant for variant in self.variants if not set(variant.queries.values()) & avoid] or self.variants
         with random_util.use(rng):
-            variant = random_util.weighted_random([(variant.weight, variant) for variant in self.variants])
+            variant = random_util.weighted_random([(variant.weight, variant) for variant in fresh])
         if variant is None:
             return self
         brief = (self.brief or KINDS[self.kind].description).rstrip(".")
@@ -377,6 +380,83 @@ def _meme(texts: Mapping[str, str | None], images: Mapping[str, Any], language: 
     return slides.MemeSlide(picture, *template.texts(captions))
 
 
+def _fun_fact(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    # (its heading is talkgenerator's, in the talk's language: "Did you know?" or "Fun fact")
+    kicker = random_util.choice(language.fun_facts)
+    return slides.FunFactSlide(kicker, texts["fact"], texts.get("source"), images.get("photo"))
+
+
+def _plain_letters(text: str) -> str:
+    """The text's letters, without their accents ("Élan": "Elan"), in capitals."""
+    return "".join(
+        character for character in unicodedata.normalize("NFKD", text) if character.isascii() and character.isalpha()
+    ).upper()
+
+
+def _acronym(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    # (without a letter of their own in front: some models write "S - Synergy", and the slide adds the letters)
+    words = [_SPELLED.sub("", word or "").strip() for word in _numbered(texts, "word", slides.ACRONYM_LETTERS)]
+    written = [word for word in words if word]
+    if len(written) < 3:
+        raise ValueError("an acronym needs three words or more")
+    initials = "".join(_plain_letters(word)[:1] for word in written)
+    title = texts["title"]
+    if title and _plain_letters(texts.get("acronym") or "") not in ("", initials):
+        title = _respelled(title, texts.get("acronym") or "", initials)
+    if title and not _spelled_in(title, initials):  # (a title that names another acronym: "PRISM" over P, A, P)
+        title = _ACRONYM_LIKE.sub(lambda match: _respelled(match.group(0), match.group(0), initials), title, count=1)
+    return slides.AcronymSlide(title, *written)
+
+
+# A word in capitals, or letters with dots between them, as a title names an acronym ("SPARK", "S.P.A.R.K.")
+_ACRONYM_LIKE: Final = re.compile(r"\b(?:[A-Z]\.){2,}[A-Z]?\.?(?![A-Za-z])|\b[A-Z]{3,}\b")
+
+
+def _spelled_in(title: str, initials: str) -> bool:
+    """Whether the title names the acronym of these initials, dotted or not."""
+    return bool(re.search(r"\b" + r"[.\s]?".join(map(re.escape, initials)) + r"\.?(?![A-Za-z])", title, re.IGNORECASE))
+
+
+def _respelled(title: str, acronym: str, initials: str) -> str:
+    """The title with the acronym it names spelled as its words' initials, where a model's acronym isn't (its
+    "PIRATES" over the words "Public Invoicing, Reimbursement...", or an eight-letter one over six words): the letters
+    on the slide are the words', so the title says them too, with dots between them where the title has them
+    ("S.P.A.R.K."). A title that doesn't name the acronym, dotted or not, stays as it is."""
+    letters = _plain_letters(acronym)
+    if not letters:
+        return title
+    # (its letters, each maybe followed by a dot or a space, as a word of its own)
+    pattern = re.compile(r"\b" + r"[.\s]?".join(map(re.escape, letters)) + r"\.?(?![A-Za-z])", re.IGNORECASE)
+
+    def respell(match: re.Match[str]) -> str:
+        return "".join(f"{letter}." for letter in initials) if "." in match.group(0) else initials
+
+    return pattern.sub(respell, title, count=1)
+
+
+def _dare(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    return slides.DareSlide(language.dare, texts["dare"])  # (its heading is talkgenerator's: "Challenge")
+
+
+def _flowchart(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    return slides.FlowchartSlide(
+        texts.get("title"),
+        texts["question"],
+        texts["yes_step"],
+        texts["no_step"],
+        texts["end"],
+        yes=language.yes,
+        no=language.no,
+    )
+
+
+def _tier_list(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    tiers = [texts.get(f"{tier.lower()}_tier") for tier in slides.TIERS]
+    if not slides.tier_items(tiers[0]) or not slides.tier_items(tiers[1]):
+        raise ValueError("a tier list needs things in its S and A tiers")
+    return slides.TierListSlide(texts["title"], *tiers)
+
+
 def _shortened(text: str, length: int) -> str:
     """The text, cut between words to at most this many characters (or within its first word, if that's longer)."""
     if len(text) <= length:
@@ -391,6 +471,7 @@ def _quadrant(corner: str, ends: str) -> TextField:
 
 _NUMBER: Final = re.compile(r"[-+]?\d+(?:[.,]\d+)?\s*%?")
 _LETTERED: Final = re.compile(r"^\(?[A-Da-d]\s*[).:]\s*")  # a quiz option's own letter, as in "A) Yes"
+_SPELLED: Final = re.compile(r"^[A-Za-z]\s*[-–—:.)=]\s+")  # an acronym's word's own letter, as in "S - Synergy"
 _OPTIONAL_TITLE = TextField("title", "the slide's title", 60, optional=True)
 
 # The talk's own texts, on its title slide: "By <presenter>, <job>" under the title. The name is a made-up one, when
@@ -834,6 +915,85 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             ("template",),
             _meme,
+        ),
+        # Slide types from real PowerPoint karaoke decks (docs/v5-plan.md, section 8)
+        Kind(
+            "fun_fact",
+            "A fun fact: one absurd fact, stated as certain, under a heading such as 'Did you know?' (talkgenerator "
+            "adds it), with a made-up source, and a photo if it has one.",
+            (
+                TextField("fact", "the fact: one sentence, stated as certain, that the presenter has to back up", 150),
+                TextField("source", "a made-up, unreliable source for the fact", 60, optional=True),
+            ),
+            ("photo",),
+            _fun_fact,
+        ),
+        Kind(
+            "acronym",
+            "A made-up method, as an acronym: its letters down the slide, each with the word it stands for; the last "
+            "word, the punchline, appears on a click.",
+            (
+                TextField("title", "the method's title, which names the acronym", 60),
+                TextField(
+                    "acronym", "the acronym the words spell: their first letters in order, three to six capitals", 6
+                ),
+                *_items(
+                    "word",
+                    24,
+                    "the word the first letter stands for (one word for one letter)",
+                    "the second letter's word",
+                    "the third letter's word (the punchline, if it's the last)",
+                    "the fourth letter's word",
+                    "the fifth letter's word",
+                    "the sixth letter's word",
+                ),
+            ),
+            (),
+            _acronym,
+        ),
+        Kind(
+            "dare",
+            "A dare for the presenter, on a card: a playful task for the next slide or the rest of the talk, which the "
+            "audience then watches them do (talkgenerator adds its heading).",
+            (
+                TextField(
+                    "dare",
+                    "the task, said to the presenter: a way of speaking, a word to work in, a voice; for the presenter "
+                    "alone, and nothing physical",
+                    130,
+                ),
+            ),
+            (),
+            _dare,
+        ),
+        Kind(
+            "flowchart",
+            "A flowchart that pretends to help decide: a yes-or-no question at the top, where each answer leads, and "
+            "the end both lead to, the punchline, which appears on a click (talkgenerator adds the Yes and the No).",
+            (
+                _OPTIONAL_TITLE,
+                TextField("question", "the yes-or-no question at the top", 70),
+                TextField("yes_step", "where Yes leads: a short step", 48),
+                TextField("no_step", "where No leads: another short step", 48),
+                TextField("end", "where both steps lead: the same end, the punchline", 48),
+            ),
+            (),
+            _flowchart,
+        ),
+        Kind(
+            "tier_list",
+            "A tier list: things ranked in tiers from S (the best) to F (the worst), one to three in a tier; the S "
+            "tier, the punchline, appears on a click.",
+            (
+                TextField("title", "the tier list's title", 60),
+                TextField("s_tier", "the S tier, the very best: one surprising thing, the punchline", 70),
+                TextField("a_tier", "the A tier: one to three things, separated by |", 70),
+                TextField("b_tier", "the B tier: one to three things, separated by |", 70, optional=True),
+                TextField("c_tier", "the C tier: one to three things, separated by |", 70, optional=True),
+                TextField("f_tier", "the F tier, the worst: one to three things, separated by |", 70, optional=True),
+            ),
+            (),
+            _tier_list,
         ),
     )
 }

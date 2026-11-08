@@ -21,6 +21,11 @@ known_functions = {
     "ing": language_util.to_present_participle,
     "plural": language_util.to_plural,
     "singular": language_util.to_singular,
+    # How English speaks of the thing in general ("penguins", but "coffee"), one of it ("a penguin", but "coffee"), and
+    # a first letter in capitals (see language_util.generic)
+    "generic": language_util.generic,
+    "one": language_util.one,
+    "cap": language_util.capitalised,
     # "synonym": generator_util.FromListGenerator(language_util.get_synonyms),
     "2_to_1_pronouns": language_util.second_to_first_pronouns,
     "wikihow_action": lambda seed: random_util.choice_optional(wikihow.get_related_wikihow_actions(seed)),

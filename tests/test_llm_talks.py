@@ -572,8 +572,11 @@ def test_every_recipe_of_the_schemas_fits_its_kind():
         kind = KINDS[recipe.kind]
         assert len(recipe.images) == len(kind.images), generator_.name
         assert set(recipe.hints) <= {text.name for text in kind.texts}, generator_.name
-        for variant in recipe.variants:  # they leave out fields the kind has, which may stay empty
-            assert variant.omit <= {text.name for text in kind.texts if text.optional}, generator_.name
+        # (their variants leave out fields the kind has, which may stay empty, or an image slot: a fun fact's photo)
+        for variant in recipe.variants:
+            assert variant.omit <= {text.name for text in kind.texts if text.optional} | set(kind.images), (
+                generator_.name
+            )
 
 
 # READING THE ANSWER
@@ -607,6 +610,17 @@ def test_slide_texts_are_cleaned_up():
     assert clean_text("About {seed.plural}", field) is None
     assert clean_text("   ", field) is None
     assert clean_text(42, field) is None
+
+
+def test_a_text_keeps_the_quote_marks_of_a_quote_in_it():
+    # (a free model's "Watering it and calling it 'Steve'" lost its last mark, 2026-11-08)
+    field = TextField("caption", "a caption", 80)
+    assert clean_text("Watering it and calling it 'Steve'", field) == "Watering it and calling it 'Steve'"
+    assert clean_text("Ignoring them | Calling them 'just decor'", field) == "Ignoring them | Calling them 'just decor'"
+    assert clean_text("“Expectation”", field) == "Expectation"  # (quote marks around all of it go)
+    assert clean_text("'It's fine'", field) == "It's fine"
+    assert clean_text('"Hello," she said, "bye"', field) == '"Hello," she said, "bye"'
+    assert clean_text("'A claim", field) == "A claim" == clean_text("A claim'", field)  # (stray ones go)
 
 
 def test_a_text_thats_cut_ends_on_a_word_that_matters():

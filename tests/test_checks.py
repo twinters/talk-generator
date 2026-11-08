@@ -248,6 +248,11 @@ def test_the_required_roles_are_what_the_slide_classes_require():
         slides.OrgChartSlide: "org_chart",
         slides.IcebergSlide: "iceberg",
         slides.MemeSlide: "meme",
+        slides.FunFactSlide: "fun_fact",
+        slides.AcronymSlide: "acronym",
+        slides.DareSlide: "dare",
+        slides.FlowchartSlide: "flowchart",
+        slides.TierListSlide: "tier_list",
     }
     assert set(types.values()) == set(classic.REQUIRED_ROLES) == set(classic.CLASSIC_ROLES)
     for slide_class, slide_type in types.items():
