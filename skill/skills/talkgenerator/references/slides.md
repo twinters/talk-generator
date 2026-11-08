@@ -536,8 +536,8 @@ A made-up method, as an acronym: its letters down the slide, each with the word 
 | Text | At most | What to write |
 | --- | --- | --- |
 | `title` | 60 | the method's title, which names the acronym |
-| `acronym` | 6 | the acronym: the words' first letters, three to six, in capitals |
-| `word_1` | 24 | the word the first letter stands for |
+| `acronym` | 6 | the acronym the words spell: their first letters in order, three to six capitals |
+| `word_1` | 24 | the word the first letter stands for (one word for one letter) |
 | `word_2` | 24 | the second letter's word |
 | `word_3` | 24 | the third letter's word (the punchline, if it's the last) |
 | `word_4` | 24 | the fourth letter's word (or empty, for none) |
@@ -556,7 +556,7 @@ A dare for the presenter, on a card: a playful task for the next slide or the re
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `dare` | 100 | the task, said to the presenter: a way of speaking, a word to work in, a voice; for the presenter alone, and nothing physical |
+| `dare` | 130 | the task, said to the presenter: a way of speaking, a word to work in, a voice; for the presenter alone, and nothing physical |
 
 Images: none
 

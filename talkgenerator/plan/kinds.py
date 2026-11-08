@@ -400,10 +400,24 @@ def _acronym(texts: Mapping[str, str | None], images: Mapping[str, Any], languag
     if len(written) < 3:
         raise ValueError("an acronym needs three words or more")
     initials = "".join(_plain_letters(word)[:1] for word in written)
-    acronym = _plain_letters(texts.get("acronym") or "")
-    if acronym and acronym != initials:
-        raise ValueError(f"the acronym {acronym!r} isn't the initials of its words ({initials!r})")
-    return slides.AcronymSlide(texts["title"], *written)
+    title = texts["title"]
+    if title and _plain_letters(texts.get("acronym") or "") not in ("", initials):
+        title = _respelled(title, texts.get("acronym") or "", initials)
+    return slides.AcronymSlide(title, *written)
+
+
+def _respelled(title: str, acronym: str, initials: str) -> str:
+    """The title with the acronym it names spelled as its words' initials, where a model's acronym isn't (its
+    "PIRATES" over the words "Public Invoicing, Reimbursement..."): the letters on the slide are the words', so the
+    title says them too, with dots between them if the model wrote it so ("S.P.A.R.K.")."""
+    written = acronym.strip()
+    dotted = "." in written
+    respelled = "".join(f"{letter}." for letter in initials) if dotted else initials
+    if written and written in title:
+        return title.replace(written, respelled)
+    plain = written.replace(".", "")
+    pattern = re.compile(rf"\b{re.escape(plain)}\b", re.IGNORECASE) if plain else None
+    return pattern.sub(respelled, title) if pattern is not None and pattern.search(title) else title
 
 
 def _dare(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
@@ -906,11 +920,13 @@ KINDS: Final[dict[str, Kind]] = {
             "word, the punchline, appears on a click.",
             (
                 TextField("title", "the method's title, which names the acronym", 60),
-                TextField("acronym", "the acronym: the words' first letters, three to six, in capitals", 6),
+                TextField(
+                    "acronym", "the acronym the words spell: their first letters in order, three to six capitals", 6
+                ),
                 *_items(
                     "word",
                     24,
-                    "the word the first letter stands for",
+                    "the word the first letter stands for (one word for one letter)",
                     "the second letter's word",
                     "the third letter's word (the punchline, if it's the last)",
                     "the fourth letter's word",
@@ -930,7 +946,7 @@ KINDS: Final[dict[str, Kind]] = {
                     "dare",
                     "the task, said to the presenter: a way of speaking, a word to work in, a voice; for the presenter "
                     "alone, and nothing physical",
-                    100,
+                    130,
                 ),
             ),
             (),

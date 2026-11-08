@@ -248,9 +248,11 @@ def test_planned_slides_come_out_as_planned(images):
     slide, _ = _realized("acronym", {"title": "The SPEK method", "acronym": "S.P.E.K.", **words})
     assert [slide.to_deck_slide().element(f"letter_{index}").text for index in range(1, 5)] == ["S", "P", "É", "K"]
     assert slide.to_deck_slide().element("word_1").text == "Synergy"  # (without the letter the model put in front)
-    problems = []
-    assert _realized("acronym", {"title": "The SPARK method", "acronym": "SPARK", **words}, problems=problems) is None
-    assert problems == ["the acronym 'SPARK' isn't the initials of its words ('SPEK')"]
+    # (a model's acronym that its words don't spell: the words decide, and the title says what they spell)
+    slide, _ = _realized("acronym", {"title": "The S.P.A.R.K. method", "acronym": "S.P.A.R.K.", **words})
+    assert slide.to_deck_slide().element("title").text == "The S.P.E.K. method"
+    slide, _ = _realized("acronym", {"title": "The Pirates way", "acronym": "PIRATES", **words})
+    assert slide.to_deck_slide().element("title").text == "The SPEK way"
     tiers = {"title": "Ranked", "s_tier": "Naps", "a_tier": "Tuna | Sun | Yarn | Laser", "f_tier": ""}
     slide, _ = _realized("tier_list", tiers)
     assert [element.text for element in slide.to_deck_slide().elements if element.role.startswith("item_a")] == [
