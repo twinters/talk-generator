@@ -67,6 +67,7 @@ talkgenerator --topic penguins --schema ted                  # copyright-free im
 talkgenerator --topic penguins --schema pitch                # a startup pitch: the problem, the market, the ask...
 talkgenerator --topic penguins --schema academic             # a conference talk: the method, p-values, Reviewer 2
 talkgenerator --topic penguins --persona kindergarten_teacher # who presents it: by default, the seed picks
+talkgenerator --topic penguins --schema random               # a format the persona favours: a founder mostly pitches
 talkgenerator --topic penguins --llm none --theme classic --name_styles classic --persona none   # closest to 2019
 ```
 

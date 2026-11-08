@@ -13,11 +13,17 @@ talk names one: generate_presentation's persona), which shapes more of the talk 
   medieval historian's name is a famous-name pun more often), and for the model, how the presenter goes by (a
   professor with "Prof." before the name, a kindergarten teacher as the children call them). A talk that says which
   name styles it may have (name_styles) goes by those alone;
-- the presenter's job on the title slide, for the model (job_hint: a founder is the founder and CEO of a startup).
+- the presenter's job on the title slide, for the model (job_hint: a founder is the founder and CEO of a startup);
+- the talk's format, when the talk leaves it to its seed (schema "random", decision D61: see
+  talkgenerator.schema.presentation_schema_types.pick_format): multipliers on the formats' weights, so a startup
+  founder mostly pitches and a disgraced professor mostly gives academic talks, while every other format keeps some
+  chance with every persona.
 
 Classic talks get the slides, the titles and the name styles; the voice and the angle are for a language model. The
-persona comes from the talk's seed (its "persona" stream), before the slides are picked, so the same seed with the same
-answers gives the same talk. The deck and talk.started say which persona a talk had (see record).
+persona comes from the talk's seed (its "persona" stream), before the format, the theme and the slides are picked, so
+the same seed with the same answers gives the same talk. A talk may say which personas the seed picks from (see
+allowed): a talk whose persona is among them keeps it, and the others get one of those. The deck and talk.started say
+which persona a talk had (see record).
 
 Across the personas, every kind of slide comes up about as often as the format's weights say (a test keeps their
 average multiplier near 1): personas move a talk's slides around, rather than change the mix of all talks.
@@ -71,6 +77,10 @@ class Persona:
     # Its favourite looks for some of the looks slides ask for, searched first, before the slide's own look (see
     # talkgenerator.images.context.ImageContext.tries): a medieval historian's weird pictures are weird medieval art
     looks: Mapping[str, str] = field(default_factory=dict)
+    # Multipliers on the formats' weights, for a talk that leaves its format to its seed (schema "random": see
+    # talkgenerator.schema.presentation_schema_types.FORMAT_WEIGHTS): a startup founder mostly pitches (1 for the formats
+    # it doesn't name)
+    formats: Mapping[str, float] = field(default_factory=dict)
 
     def weight(self, tags: Iterable[str]) -> float:
         """How many times as often a slide generator with these tags comes up in the persona's talks: the product of
@@ -160,6 +170,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             "the chair they held before the scandal, in an absurdly specific field",
             themes={"academic": 5, "chalkboard": 3, "blueprint": 2, "kids": 0.3, "neon": 0.5},
             looks={"weird": "bad-charts", "neutral": "illustration"},
+            formats={"academic": 12},
         ),
         Persona(
             "startup_founder",
@@ -200,6 +211,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             "founder and CEO of their startup, with its made-up name",
             themes={"startup": 5, "Swiss poster": 2.5, "clean keynote": 2, "vintage paper": 0.3, "chalkboard": 0.5},
             looks={"photo": "corporate-stock", "neutral": "corporate-stock", "weird": "corporate-cringe"},
+            formats={"pitch": 12},
         ),
         Persona(
             "medieval_historian",
@@ -239,6 +251,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             "a professorship in medieval studies, as grand and specific as it gets",
             themes={"vintage paper": 5, "newspaper": 2, "neon": 0.3, "hacker terminal": 0.3, "startup": 0.5},
             looks={"weird": "medieval", "neutral": "museum"},
+            formats={"academic": 2, "pitch": 0.5},
         ),
         Persona(
             "conspiracy_blogger",
@@ -279,6 +292,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             "a title they gave themselves, as an independent researcher of something",
             themes={"hacker terminal": 5, "newspaper": 3, "1997 WordArt": 2, "corporate": 0.5, "clean keynote": 0.5},
             looks={"weird": "pareidolia", "neutral": "liminal"},
+            formats={"pitch": 0.5},
         ),
         Persona(
             "kindergarten_teacher",
@@ -324,6 +338,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             "their role at the kindergarten, made to sound grand",
             themes={"kids": 5, "chalkboard": 3, "Comic Sans everywhere": 2, "hacker terminal": 0.3, "brutalist": 0.3},
             looks={"weird": "wholesome", "neutral": "illustration"},
+            formats={"pitch": 0.3, "academic": 0.5},
         ),
         Persona(
             "consultant",
@@ -368,6 +383,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             "a consultancy title, with Senior, Principal or Partner in it",
             themes={"corporate": 5, "clip-art corporate": 3, "Swiss poster": 2, "kids": 0.3, "chalkboard": 0.5},
             looks={"photo": "corporate-stock", "neutral": "corporate-stock", "weird": "corporate-cringe"},
+            formats={"pitch": 2},
         ),
         Persona(
             "motivational_speaker",
@@ -405,6 +421,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             "a title like a self-help guru's",
             themes={"dark minimal": 3, "neon": 3, "1997 WordArt": 2, "academic": 0.5, "blueprint": 0.5},
             looks={"neutral": "places", "weird": "accidental-art"},
+            formats={"pitch": 1.5},
         ),
         Persona(
             "influencer",
@@ -445,6 +462,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             "a title like an influencer's bio",
             themes={"neon": 4, "kids": 2, "Comic Sans everywhere": 2, "academic": 0.3, "newspaper": 0.5},
             looks={"weird": "memes", "neutral": "pictures"},
+            formats={"pitch": 2, "academic": 0.5},
         ),
         Persona(
             "time_traveller",
@@ -480,6 +498,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             "a job from a future they won't say much about",
             themes={"blueprint": 3, "neon": 3, "hacker terminal": 2, "corporate": 0.5},
             looks={"weird": "retro-futurism", "neutral": "space-science"},
+            formats={"academic": 1.5},
         ),
         Persona(
             "life_coach",
@@ -519,6 +538,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             "a title like a wellness guru's",
             themes={"clean keynote": 4, "dark minimal": 3, "brutalist": 0.3, "hacker terminal": 0.5},
             looks={"weird": "wholesome", "neutral": "places"},
+            formats={"academic": 0.5},
         ),
         Persona(
             "lighthouse_keeper",
@@ -560,6 +580,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             "their old post at the lighthouse",
             themes={"vintage paper": 4, "newspaper": 3, "neon": 0.3, "startup": 0.3},
             looks={"weird": "old-photos", "neutral": "places"},
+            formats={"pitch": 0.3, "academic": 0.5},
         ),
         Persona(
             "former_athlete",
@@ -600,6 +621,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             "the sport they played, and their new calling in philosophy",
             themes={"brutalist": 4, "Swiss poster": 4, "vintage paper": 0.5},
             looks={"weird": "accidental-art"},
+            formats={"academic": 0.5},
         ),
         Persona(
             "passionate_expert",
@@ -637,6 +659,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             "a professorship in an absurdly specific field",
             themes={"academic": 3, "chalkboard": 2, "dark minimal": 2, "clip-art corporate": 0.5},
             looks={"neutral": "museum"},
+            formats={"academic": 3},
         ),
     )
 }
@@ -664,19 +687,56 @@ def persona(name: str) -> Persona:
     return found
 
 
-def pick(chosen: str | None, rng: random_util.Rng, weights: Mapping[str, float] | None = None) -> Persona | None:
+def allowed(chosen: str | Iterable[str] | None = None) -> tuple[str, ...]:
+    """The personas a talk's seed picks from (generate_presentation's personas), by their names (in any order and
+    case), or one string with their names separated by commas ("startup_founder,consultant"): in the order of PERSONAS,
+    so the order they're given in doesn't change a talk. None gives them all. A ValueError for a persona there isn't,
+    for random or none among them (they go alone, as persona), and for none at all (persona "none" makes a talk
+    without a persona)."""
+    if chosen is None:
+        return tuple(PERSONAS)
+    parts = chosen.split(",") if isinstance(chosen, str) else list(chosen)
+    wanted = {part.strip().lower() for part in parts if part.strip()}
+    for name in sorted(wanted):  # (in a fixed order: the same names, the same error)
+        if name in (RANDOM, NONE):
+            raise ValueError(f"personas names the personas to pick from: {name!r} goes alone, as persona")
+        if name not in PERSONAS:
+            raise ValueError(f"There's no persona {name!r}; there are {', '.join(PERSONAS)}")
+    if not wanted:
+        raise ValueError("personas names at least one persona to pick from (persona 'none' has a talk without one)")
+    return tuple(name for name in PERSONAS if name in wanted)
+
+
+def pick(
+    chosen: str | None,
+    rng: random_util.Rng,
+    weights: Mapping[str, float] | None = None,
+    among: str | Iterable[str] | None = None,
+) -> Persona | None:
     """The talk's persona: the one chosen, by name, or else (None, or random) one the talk's dice pick (rng: the talk's,
-    whose "persona" stream picks it); none for "none". A ValueError for a persona there isn't.
+    whose "persona" stream picks it) among the personas it allows (among: see allowed; None, all of them); none for
+    "none". A ValueError for a persona there isn't. (A persona chosen by name needn't be among them: it goes first, as a
+    presenter's name goes before the name styles.)
 
     The dice pick each persona as likely as the others, or by weights (a talk format's: a startup founder pitches more
-    often), by the personas' names (1 for those they don't name)."""
+    often), by the personas' names (1 for those they don't name). They pick among all the personas first, and only
+    when that one isn't allowed, again among those that are: so a talk whose persona is allowed keeps it, whichever
+    others aren't, and each allowed persona comes up as often as the weights say among them."""
     wanted = chosen.strip().lower() if chosen is not None else RANDOM
     if wanted == NONE:
         return None
-    if wanted == RANDOM:
-        with random_util.use(rng.child("persona")):
-            if not weights:
-                return random_util.choice(tuple(PERSONAS.values()))
-            weighted = [(weights.get(name, 1.0), each) for name, each in PERSONAS.items()]
-            return random_util.weighted_random(weighted) or next(iter(PERSONAS.values()))
-    return persona(wanted)
+    if wanted != RANDOM:
+        return persona(wanted)
+    names = allowed(among)
+    with random_util.use(rng.child("persona")):
+        picked = _draw(tuple(PERSONAS.values()), weights)
+        if picked.name not in names:
+            picked = _draw(tuple(PERSONAS[name] for name in names), weights)
+    return picked
+
+
+def _draw(pool: tuple[Persona, ...], weights: Mapping[str, float] | None) -> Persona:
+    """One of the personas, as the current random stream picks it: each as likely, or by the weights."""
+    if not weights:
+        return random_util.choice(pool)
+    return random_util.weighted_random([(weights.get(each.name, 1.0), each) for each in pool]) or pool[0]

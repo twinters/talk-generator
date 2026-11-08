@@ -1,8 +1,10 @@
 """Offline tests of talks' personas (talkgenerator.personas): who presents a talk, as its dice pick them (or as it
-names them), and how they shape it, with a language model or without: its kinds of slides, its title, its presenter's
-name, and the model's voice and angle. The deck and talk.started say which persona a talk had.
+names them, or among the ones it allows), and how they shape it, with a language model or without: its kinds of
+slides, its title, its presenter's name, the model's voice and angle, and the format when the talk leaves it to its
+seed (D61). The deck and talk.started say which persona a talk had.
 
-The talks are the fake ones of test_llm_talks: a fake schema with recipes, a fake model and fake images.
+The talks are the fake ones of test_llm_talks: a fake schema with recipes, a fake model and fake images (a talk with
+schema random gets the fake schema too, whichever format its seed picks, and its deck names that format).
 """
 
 import collections
@@ -13,6 +15,7 @@ import statistics
 import pytest
 
 from talkgenerator import generator, llm, names, personas, runtime_checker
+from talkgenerator.checks import benchmark
 from talkgenerator.checks.deck import deck_metrics
 from talkgenerator.design import themes
 from talkgenerator.images import context as image_context
@@ -22,6 +25,8 @@ from talkgenerator.models.deck import Deck, TalkPersona
 from talkgenerator.models.events import TalkFinished, TalkStarted
 from talkgenerator.plan.prompt import SPINE
 from talkgenerator.schema import content_generators, slide_schemas
+from talkgenerator.schema import presentation_schema_types as schema_types
+from talkgenerator.schema.formats import pitch
 from talkgenerator.schema.presentation_schema_types import get_schema
 from talkgenerator.util import image_util, random_util
 from tests.test_llm_talks import NUM_SLIDES, FakeModel, _jpeg, fake_schema
@@ -43,11 +48,12 @@ def schema(monkeypatch):
     return schema
 
 
-def _deck(model, int_seed=1, topic="cats", **options):
+def _deck(model, int_seed=1, topic="cats", schema_name="fake", **options):
+    """A talk of the fake schema (whatever format a talk with schema random gets), as a deck that names its format."""
     _, slide_deck, _ = generator._generate_presentation(
-        schema="fake", slides=NUM_SLIDES, topic=topic, int_seed=int_seed, save_ppt=False, llm=model, **options
+        schema=schema_name, slides=NUM_SLIDES, topic=topic, int_seed=int_seed, save_ppt=False, llm=model, **options
     )
-    return slide_deck.to_deck(schema_name="fake")
+    return slide_deck.to_deck()
 
 
 def _prompt(model):
@@ -457,3 +463,219 @@ def test_the_command_line_takes_a_persona(monkeypatch):
     monkeypatch.setattr(generator, "_generate_presentation", lambda **options: given.update(options))
     generator.generate_presentation_using_cli_arguments(args)
     assert given["persona"] == "time_traveller"
+
+
+# THE PERSONAS A TALK ALLOWS (decision D61)
+
+
+def _picks(seeds=range(400), weights=None, among=None):
+    return [personas.pick(None, random_util.Rng(seed), weights, among).name for seed in seeds]
+
+
+def test_a_talk_says_which_personas_its_seed_picks_from():
+    assert personas.allowed(None) == tuple(personas.PERSONAS)
+    # In the order of PERSONAS, whatever order and case they come in, as a list or separated by commas
+    assert personas.allowed(" Consultant,startup_founder ") == ("startup_founder", "consultant")
+    assert personas.allowed(["consultant", "startup_founder", "consultant"]) == ("startup_founder", "consultant")
+    with pytest.raises(ValueError, match="There's no persona 'pirate'; there are disgraced_professor, startup_founder"):
+        personas.allowed("consultant,pirate")
+    for alone in ("random", "none"):
+        with pytest.raises(ValueError, match=f"'{alone}' goes alone, as persona"):
+            personas.allowed(["consultant", alone])
+    for nothing in ("", " , ", []):
+        with pytest.raises(ValueError, match="at least one persona"):
+            personas.allowed(nothing)
+
+
+def test_the_seed_picks_only_among_the_personas_a_talk_allows():
+    two = ("startup_founder", "lighthouse_keeper")
+    picked = collections.Counter(_picks(among=two))
+    assert set(picked) == set(two) and min(picked.values()) > 150  # (each about as often: 200 of 400)
+    assert set(_picks(among=["time_traveller"])) == {"time_traveller"}
+    # By a format's weights too, among the allowed: a startup founder pitches more often than a lighthouse keeper
+    pitches = collections.Counter(_picks(weights=pitch.PITCH.personas, among=two))
+    assert pitches["startup_founder"] > 3 * pitches["lighthouse_keeper"] > 0
+    # Allowing all of them is allowing any: the same persona as before there was a choice of them
+    assert _picks() == _picks(among=personas.PERSONAS) == _picks(among=",".join(personas.PERSONAS))
+    assert _picks(weights=pitch.PITCH.personas) == _picks(weights=pitch.PITCH.personas, among=personas.PERSONAS)
+
+
+def test_a_talk_whose_persona_is_allowed_keeps_it_whichever_others_are_left_out():
+    every = _picks()
+    without = [name for name in personas.PERSONAS if name not in ("startup_founder", "influencer")]
+    fewer = _picks(among=without)
+    for before, after in zip(every, fewer, strict=True):
+        assert after == before if before in without else after in without
+    # And the others' talks are shared out among the allowed ones as their weights say (each as likely, here)
+    moved = collections.Counter(after for before, after in zip(every, fewer, strict=True) if before not in without)
+    assert len(moved) >= 6
+
+
+def test_a_persona_the_talk_names_goes_before_the_ones_it_allows():
+    # (as a presenter's name goes before the name styles)
+    assert personas.pick("consultant", random_util.Rng(1), among=["startup_founder"]).name == "consultant"
+    assert personas.pick("none", random_util.Rng(1), among=["startup_founder"]) is None
+
+
+def test_a_talk_s_persona_is_one_it_allows(schema):
+    allowed = ("medieval_historian", "kindergarten_teacher")
+    for seed in range(1, 7):
+        deck = _deck(None, int_seed=seed, personas=allowed)
+        assert deck.persona.name in allowed
+        assert deck.persona.name == personas.pick(None, random_util.Rng(seed), among=allowed).name
+    # The same seed and personas, the same talk; and in a stream
+    assert _deck(None, int_seed=3, personas=allowed).to_json() == _deck(None, int_seed=3, personas=allowed).to_json()
+    events = list(generator.stream_talk("fake", NUM_SLIDES, topic="cats", int_seed=3, llm="none", personas=allowed))
+    assert (
+        events[0].persona.name == events[-1].deck.persona.name == _deck(None, int_seed=3, personas=allowed).persona.name
+    )
+    with pytest.raises(ValueError, match="There's no persona 'pirate'"):
+        _deck(None, personas="pirate")
+
+
+def test_the_command_line_takes_the_personas_the_seed_picks_from(monkeypatch):
+    parser = generator.get_argument_parser()
+    args = parser.parse_args(["--topic", "cats", "--personas", "consultant,startup_founder", "--print_logs", "false"])
+    assert args.personas == ("startup_founder", "consultant")
+    assert parser.parse_args([]).personas is None
+    for wrong in ("nope", "consultant,none", ""):
+        with pytest.raises(SystemExit):
+            parser.parse_args(["--personas", wrong])
+
+    given = {}
+    monkeypatch.setattr(runtime_checker, "check_runtime_environment", lambda: True)
+    monkeypatch.setattr(generator, "_generate_presentation", lambda **options: given.update(options))
+    generator.generate_presentation_using_cli_arguments(args)
+    assert given["personas"] == ("startup_founder", "consultant")
+
+
+# THE FORMAT, WHEN A TALK LEAVES IT TO ITS SEED (decision D61)
+
+
+FAVOURITES = {"startup_founder": "pitch", "disgraced_professor": "academic"}
+
+
+def test_personas_favour_formats_a_talk_s_seed_can_pick():
+    assert set(schema_types.FORMAT_WEIGHTS) <= set(schema_types.schemas.names())
+    # The formats meant for talks: not ted (the TED-like talk's copyright-free images are a license policy), interview
+    # or test
+    assert not {"ted", "interview", "test"} & set(schema_types.FORMAT_WEIGHTS)
+    assert schema_types.choices() == ("random", *schema_types.schemas.names())
+    for name, persona in personas.PERSONAS.items():
+        assert persona.formats and set(persona.formats) <= set(schema_types.FORMAT_WEIGHTS), name
+        assert all(0.2 <= factor <= 15 for factor in persona.formats.values()), name
+
+
+def test_each_persona_s_favourite_format_comes_up_most_and_every_format_keeps_a_chance():
+    for name, persona in personas.PERSONAS.items():
+        odds = schema_types.format_odds(persona)
+        assert sum(odds.values()) == pytest.approx(1)
+        first, second = sorted(odds.values(), reverse=True)[:2]
+        favourite = max(odds, key=odds.__getitem__)
+        assert favourite == FAVOURITES.get(name, "default"), name
+        assert first > 0.5 and first > 1.8 * second, (name, odds)  # (the favourite dominates)
+        assert min(odds.values()) > 0.03, (name, odds)  # (and every format keeps some chance)
+    # Without a persona, most talks are TED-like
+    assert schema_types.format_odds(None)["default"] > 0.7
+
+
+def test_the_seed_picks_a_format_as_often_as_the_persona_s_odds_say():
+    for name in ("startup_founder", "disgraced_professor", "passionate_expert", "kindergarten_teacher"):
+        persona = personas.persona(name)
+        picked = collections.Counter(
+            schema_types.pick_format("random", random_util.Rng(seed), persona) for seed in range(2000)
+        )
+        assert set(picked) == set(schema_types.FORMAT_WEIGHTS), name  # (all of them come up)
+        for format_name, odds in schema_types.format_odds(persona).items():
+            assert picked[format_name] / 2000 == pytest.approx(odds, abs=0.04), (name, format_name)
+
+
+def test_across_the_personas_most_talks_are_still_ted_like():
+    shares = {
+        name: statistics.mean(schema_types.format_odds(persona)[name] for persona in personas.PERSONAS.values())
+        for name in schema_types.FORMAT_WEIGHTS
+    }
+    assert shares["default"] > 0.6
+    assert all(0.08 < share < 0.25 for name, share in shares.items() if name != "default"), shares
+
+
+def test_a_format_the_talk_names_is_its_format():
+    founder = personas.persona("startup_founder")
+    for seed in range(30):
+        assert schema_types.pick_format("academic", random_util.Rng(seed), founder) == "academic"
+        assert schema_types.pick_format("ted", random_util.Rng(seed), founder) == "ted"
+
+
+def test_the_same_seed_picks_the_same_persona_and_format_and_the_format_moves_nothing_else():
+    def picked(seed):
+        rng = random_util.Rng(seed)
+        persona = personas.pick(None, rng)
+        return persona.name, schema_types.pick_format("random", rng, persona)
+
+    assert [picked(seed) for seed in range(200)] == [picked(seed) for seed in range(200)]
+    assert len({format_name for _, format_name in map(picked, range(200))}) == len(schema_types.FORMAT_WEIGHTS)
+    # The format comes from a stream of its own: the persona and the theme are what they were before it was picked
+    for seed in range(20):
+        rng = random_util.Rng(seed)
+        schema_types.pick_format("random", rng, personas.pick(None, rng))
+        assert personas.pick(None, rng) == personas.pick(None, random_util.Rng(seed))
+        assert themes.pick("random", rng.child("theme"), True) == themes.pick(
+            "random", random_util.Rng(seed).child("theme"), True
+        )
+
+
+def test_a_talk_that_leaves_its_format_to_its_seed_has_the_one_its_persona_favours(schema):
+    seen = set()
+    for seed in range(1, 9):
+        deck = _deck(None, int_seed=seed, schema_name="random")
+        persona = personas.pick(None, random_util.Rng(seed))
+        assert deck.persona.name == persona.name  # (the persona first, as a TED-like talk's)
+        assert deck.schema_name == schema_types.pick_format("random", random_util.Rng(seed), persona)
+        seen.add(deck.schema_name)
+    assert "default" in seen
+    # The persona it names, and the personas it allows, weigh in on the format
+    founders = {
+        _deck(None, int_seed=seed, schema_name="random", persona="startup_founder").schema_name for seed in range(1, 9)
+    }
+    assert "pitch" in founders
+    professor = _deck(None, int_seed=2, schema_name="random", personas=["disgraced_professor"])
+    expected = schema_types.pick_format("random", random_util.Rng(2), personas.persona("disgraced_professor"))
+    assert professor.persona.name == "disgraced_professor" and professor.schema_name == expected
+    # The deck and the stream say which format the talk got, and the same seed gives the same talk
+    events = list(generator.stream_talk("random", NUM_SLIDES, topic="cats", int_seed=4, llm="none"))
+    assert isinstance(events[-1], TalkFinished)
+    assert events[-1].deck.schema_name == _deck(None, int_seed=4, schema_name="random").schema_name
+    assert events[-1].deck.to_json() == _deck(None, int_seed=4, schema_name="random").to_json()
+    assert deck_metrics(events[-1].deck)["format"] == events[-1].deck.schema_name  # (for talkgenerator check)
+
+
+def test_a_talk_without_a_persona_gets_a_format_by_the_formats_own_weights(schema):
+    for seed in range(1, 6):
+        deck = _deck(None, int_seed=seed, schema_name="random", persona="none")
+        assert deck.persona is None
+        assert deck.schema_name == schema_types.pick_format("random", random_util.Rng(seed), None)
+
+
+def test_a_talk_s_license_policy_holds_whatever_format_its_seed_picks(schema):
+    for seed in range(1, 5):
+        assert _deck(None, int_seed=seed, schema_name="random", license_policy="open").license_policy == "open"
+
+
+def test_the_command_line_leaves_the_format_to_the_seed_with_random():
+    parser = generator.get_argument_parser()
+    assert parser.parse_args(["--schema", "random"]).schema == "random"
+    assert parser.parse_args([]).schema == "default"
+    with pytest.raises(SystemExit):
+        parser.parse_args(["--schema", "karaoke"])
+
+
+def test_the_check_reports_the_formats_and_personas_its_talks_got(schema):
+    report = benchmark.run(
+        ["cats"], [1, 2, 3], schema="random", slides=NUM_SLIDES, determinism=False, personas="consultant,influencer"
+    )
+    assert report["summary"]["formats"] == dict(
+        sorted(collections.Counter(talk["metrics"]["format"] for talk in report["talks"]).items())
+    )
+    assert set(report["summary"]["personas"]) <= {"consultant", "influencer"}
+    assert sum(report["summary"]["personas"].values()) == 3
+    assert report["license_policy"] == "each format's" and report["personas"] == "consultant,influencer"

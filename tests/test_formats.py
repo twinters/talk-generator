@@ -27,7 +27,7 @@ from talkgenerator.plan import external, prompt, realize
 from talkgenerator.plan.kinds import KINDS
 from talkgenerator.render import preview
 from talkgenerator.render.powerpoint import render_pptx
-from talkgenerator.schema import formats, presentation_schema
+from talkgenerator.schema import formats, presentation_schema, presentation_schema_types
 from talkgenerator.schema.formats import academic, pitch
 from talkgenerator.schema.formats.arcs import PART_WEIGHT, STAND_IN, Arc, Free, InPart, Part
 from talkgenerator.schema.presentation_schema_types import get_schema, schemas
@@ -273,7 +273,7 @@ def _talk(name, seed=1, parallel=True, llm="none", **options):
     _, slide_deck, _ = generator._generate_presentation(
         schema=name, slides=10, topic="penguins", int_seed=seed, parallel=parallel, save_ppt=False, llm=llm, **options
     )
-    return slide_deck.to_deck(schema_name=name)
+    return slide_deck.to_deck()  # (with the format its seed picked, for schema random)
 
 
 @pytest.mark.parametrize("name", FORMATS)
@@ -284,6 +284,22 @@ def test_a_classic_talk_of_each_format_follows_its_arc_and_passes_the_checks(off
         assert [finding for finding in check_deck(deck, 10) if finding.severity == "error"] == [], seed
         assert check_arc(deck, 10) == []
     assert _talk(name, 4, parallel=True).to_json() == _talk(name, 4, parallel=False).to_json()
+
+
+def test_a_talk_that_leaves_its_format_to_its_seed_is_the_talk_of_the_format_it_picked(offline):
+    # (decision D61: the seed's format stream moves nothing else, so with the persona it names, a talk of schema random
+    # is the talk of the format its seed picked)
+    founder = personas.persona("startup_founder")
+    picked = set()
+    for seed in (1, 4, 7):  # (a pitch, an academic talk and a TED-like talk, as it happens)
+        deck = _talk(presentation_schema_types.RANDOM, seed, persona="startup_founder", theme="random")
+        assert deck.schema_name == presentation_schema_types.pick_format("random", random_util.Rng(seed), founder)
+        assert deck.to_json() == _talk(deck.schema_name, seed, persona="startup_founder", theme="random").to_json()
+        assert [finding for finding in check_deck(deck, 10) if finding.severity == "error"] == [], seed
+        if deck.schema_name in FORMATS:
+            assert check_arc(deck, 10) == []
+        picked.add(deck.schema_name)
+    assert picked == {"pitch", "academic", "default"}
 
 
 def test_a_classic_pitch_names_its_startup_and_an_academic_talk_its_affiliation(offline):

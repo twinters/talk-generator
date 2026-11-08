@@ -59,6 +59,9 @@ class SlideDeck:
         self.topic_or_title: TopicOrTitle | None = None
         # Who presents it, as its dice picked them (see talkgenerator.personas)
         self.persona: TalkPersona | None = None
+        # Its format: the name of the schema it asked for, or of the one its seed picked (see
+        # talkgenerator.schema.presentation_schema_types.pick_format)
+        self.schema_name: str | None = None
         # Who wants to know about every slide once it's added (a talk that streams: see talkgenerator.generator), and
         # about a slide that changed after it was added (a generated picture in its stock photo's place)
         self.listener: Callable[[SlideDeck, int, Slide], None] | None = None
@@ -121,7 +124,8 @@ class SlideDeck:
         ]
 
     def to_deck(self, schema_name: str | None = None) -> Deck:
-        """The talk as a deck: plain data that renders the same PowerPoint, and that can be saved as JSON."""
+        """The talk as a deck: plain data that renders the same PowerPoint, and that can be saved as JSON. Its schema
+        is the talk's format (schema_name), unless one is given."""
         deck = Deck(
             generator=f"talkgenerator {__version__}",
             title=self._title,
@@ -130,7 +134,7 @@ class SlideDeck:
             presenter=self._presenter,
             persona=self.persona,
             language=self._language,
-            schema_name=schema_name,
+            schema_name=schema_name if schema_name is not None else self.schema_name,
             seed=self._seed,
             language_model=self.language_model,
             vision_model=self.vision_model,

@@ -40,7 +40,8 @@ Who writes the talk depends on your settings: a language model when one is set u
 | `--num_slides`, `--slides` | How many slides, the title slide included (*default: 10*) |
 | `--presenter` | The name on the title slide. It never goes to a language model. Without it, the talk makes one up (see `--name_styles`) |
 | `--name_styles` | Without `--presenter`, the kinds of made-up names the talk's seed picks from, separated by commas: `pun` ("Prof. Anna Tomy" for a talk on medicine), `fun_surname` ("Linda Hivesworth" for bees), `famous_pun` ("Albert Einstone" for geology) and `classic` (a random first and last name, as in 2019). The language model writes the name; without one, talkgenerator has names of its own for many topics, and makes up a classic one for the others (*default: `pun,fun_surname,famous_pun`, as the talk's persona favours them*) |
-| `--persona` | Who presents the talk: `disgraced_professor`, `startup_founder`, `medieval_historian`, `conspiracy_blogger`, `kindergarten_teacher`, `consultant`, `motivational_speaker`, `influencer`, `time_traveller`, `life_coach`, `lighthouse_keeper`, `former_athlete` or `passionate_expert`. They favour some kinds of slides (a founder's KPI tiles and funnels, a historian's timelines), give the talk their kind of title (half of a classic talk's titles are their own: "Disrupting Penguins"), nudge the style of the presenter's made-up name (unless `--name_styles` says), give the language model a voice and an angle, favour some theme families for a random theme (a teacher's `kids` and `chalkboard`), and have favourite looks for some pictures (a historian's weird medieval art). `none` makes the format's own talk (*default: `random`, a persona the talk's seed picks*) |
+| `--persona` | Who presents the talk: `disgraced_professor`, `startup_founder`, `medieval_historian`, `conspiracy_blogger`, `kindergarten_teacher`, `consultant`, `motivational_speaker`, `influencer`, `time_traveller`, `life_coach`, `lighthouse_keeper`, `former_athlete` or `passionate_expert`. They favour some kinds of slides (a founder's KPI tiles and funnels, a historian's timelines), give the talk their kind of title (half of a classic talk's titles are their own: "Disrupting Penguins"), nudge the style of the presenter's made-up name (unless `--name_styles` says), give the language model a voice and an angle, favour some theme families for a random theme (a teacher's `kids` and `chalkboard`), have favourite looks for some pictures (a historian's weird medieval art), and with `--schema random` favour some formats (a founder pitches). `none` makes the format's own talk (*default: `random`, a persona the talk's seed picks*) |
+| `--personas` | The personas the talk's seed picks from, separated by commas, such as `startup_founder,consultant`. A talk whose seed picks one of them keeps it, and the others get one of them (*default: all of them*) |
 | `--language` | The language of the slides: `en`, `nl`, `fr`, `de`, `es`, `it`, `pt` or `sv`. Other languages than English need a language model: a classic talk is English, and says so in the logs (*default: `en`*) |
 
 ### Who writes it
@@ -54,7 +55,7 @@ Who writes the talk depends on your settings: a language model when one is set u
 ### Formats and license policies
 
 `--schema` picks the talk's format: which kinds of slides it has, how often, and where its images may come from.
-(`render` and `formats` call the same choice `--format`.)
+(`render` and `formats` call the same choice `--format`.) `random` leaves it to the talk's seed (see below).
 
 | `--schema` | The talk | License policy |
 | --- | --- | --- |
@@ -71,6 +72,13 @@ long one gives some parts more slides and has memes, quotes and the like between
 often than the other personas, and a disgraced professor gives more of the academic talks; their themes are the
 `startup` and `academic` families more often. Their arcs' slides need no image that's fair use, so `--license_policy open`
 keeps them whole. `talkgenerator formats --details --format pitch` lists a format's arc and the slides of each part.
+
+`--schema random` leaves the format to the talk's seed, which picks the persona first and then a format that persona
+favours: a startup founder pitches in about 6 of 10 talks and a disgraced professor gives an academic talk in about 6 of
+10, an over-passionate expert in 3 of 10; most of the others give TED-like talks, in 7 to 9 of 10. Every format keeps a
+few talks in a hundred with every persona, and over all the personas about 7 talks in 10 are TED-like. Only the formats
+for talks take part: `default`, `pitch` and `academic`. Copyright-free images go with any of them:
+`--schema random --license_policy open`. The deck's `schema_name` says which format the talk got.
 
 A format's license policy says which license classes its images may have. `--license_policy` sets another one:
 `open` allows every image but fair use (no memes, gifs or Reddit's posts), `all` every image, and license classes
@@ -180,7 +188,8 @@ it, are in the report.
 | `--topics` | Topics, separated by commas (*default: a set of 10*) |
 | `--quick`, `--all`, `--random N` | The first 3 topics of that set, all 30 topics, or N topics drawn from talkgenerator's list of 736 (the same N for the same first seed) |
 | `--seeds` | Seeds, separated by commas (*default: 1*) |
-| `--schema`, `--slides` | The format, and the slides per talk (*default: `default`, 10*) |
+| `--schema`, `--slides` | The format (or `random`, for one each talk's seed picks), and the slides per talk (*default: `default`, 10*); the report counts the formats and personas the talks got |
+| `--persona`, `--personas` | As for a talk |
 | `--llm` | The language model that writes the talks (*default: `none`, for classic talks*); the second run replays the first one's answers |
 | `--language` | The language of the talks (other languages than English need `--llm`) |
 | `--theme`, `--license_policy` | As for a talk; themed talks get the design checks too (texts that read on their backgrounds, fit their boxes and stay on the slide) |

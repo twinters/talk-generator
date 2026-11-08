@@ -1,4 +1,7 @@
-"""The presentation schemas: which groups of slide generators a talk is made of, and how many of each kind."""
+"""The presentation schemas: which groups of slide generators a talk is made of, and how many of each kind. And the
+format a talk's seed picks, when the talk leaves it to its seed (see pick_format)."""
+
+from typing import TYPE_CHECKING, Final
 
 from talkgenerator.datastructures.slide_generator_data import ConstantWeightFunction, SlideGeneratorData
 from talkgenerator.plan.kinds import Recipe
@@ -9,6 +12,10 @@ from talkgenerator.schema.presentation_schema import PresentationSchema
 from talkgenerator.schema.registry import Registry
 from talkgenerator.schema.slide_schemas import default_max_allowed_tags, slide_generators
 from talkgenerator.slide import powerpoint_slide_creator, slide_generator_types
+from talkgenerator.util import random_util
+
+if TYPE_CHECKING:
+    from talkgenerator.personas import Persona
 
 schemas: Registry[PresentationSchema] = Registry("presentation schema")
 
@@ -197,6 +204,40 @@ academic_schema = schemas.register(
         format=academic.ACADEMIC,
     ),
 )
+
+
+# THE FORMAT A TALK'S SEED PICKS (decision D61): a talk that leaves its format to its seed (schema "random") gets one of
+# these, by these weights times its persona's multipliers (talkgenerator.personas.Persona.formats), so a startup founder
+# mostly pitches and a disgraced professor mostly gives academic talks, and every format keeps some chance with every
+# persona. Without a persona, most talks are TED-like. Not ted: that's the TED-like talk with copyright-free images
+# only, which is a choice of license rather than of format: a talk asks for those images with license_policy "open",
+# whatever format its seed picks (the formats' arcs need no image that's fair use). Nor interview and test.
+RANDOM: Final = "random"
+FORMAT_WEIGHTS: Final[dict[str, float]] = {"default": 6, "pitch": 1, "academic": 1}
+
+
+def choices() -> tuple[str, ...]:
+    """What generate_presentation's schema takes: random (a format the talk's seed picks) or a schema's name."""
+    return (RANDOM, *schemas.names())
+
+
+def format_odds(persona: "Persona | None" = None) -> dict[str, float]:
+    """How likely a talk that leaves its format to its seed is to be of each format (FORMAT_WEIGHTS), with that
+    persona (or with none), from 0 to 1."""
+    multipliers = persona.formats if persona is not None else {}
+    weights = {name: weight * multipliers.get(name, 1.0) for name, weight in FORMAT_WEIGHTS.items()}
+    total = sum(weights.values())
+    return {name: weight / total for name, weight in weights.items()}
+
+
+def pick_format(chosen: str, rng: random_util.Rng, persona: "Persona | None" = None) -> str:
+    """The talk's format, as the name of its schema: the one chosen, or for random, one the talk's dice pick (rng: the
+    talk's, whose "format" stream picks it), after its persona, by the odds that persona gives them (format_odds)."""
+    if chosen != RANDOM:
+        return chosen
+    odds = format_odds(persona)
+    with random_util.use(rng.child("format")):
+        return random_util.weighted_random([(odds[name], name) for name in odds]) or next(iter(odds))
 
 
 def get_schema(name):

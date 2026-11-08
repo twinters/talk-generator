@@ -29,6 +29,7 @@ from pathlib import Path
 from typing import Any, Final
 
 from talkgenerator import __version__, generator
+from talkgenerator import personas as talk_personas
 from talkgenerator import topics as topic_list
 from talkgenerator.checks.deck import Finding, check_deck, deck_metrics
 from talkgenerator.design import themes
@@ -38,6 +39,7 @@ from talkgenerator.llm.providers import provider_from_spec
 from talkgenerator.llm.replay import ReplayProvider
 from talkgenerator.models.deck import Deck
 from talkgenerator.plan import languages
+from talkgenerator.schema.presentation_schema_types import RANDOM
 from talkgenerator.util import http_util, os_util, random_util
 
 logger = logging.getLogger("talkgenerator")
@@ -108,6 +110,8 @@ def generate_deck(
     theme: str | None = None,
     license_policy: str | None = None,
     vision_pick: TextProvider | None = None,
+    persona: str | None = None,
+    personas: str | None = None,
 ) -> Deck:
     _, slide_deck, _ = generator._generate_presentation(
         schema=schema,
@@ -124,8 +128,10 @@ def generate_deck(
         # TALKGENERATOR_IMAGE_GENERATOR says)
         image_generator="none",
         vision_pick=vision_pick,
+        persona=persona,
+        personas=personas,
     )
-    return slide_deck.to_deck(schema_name=schema)
+    return slide_deck.to_deck()  # (with the format its seed picked, for schema random)
 
 
 def check_talk(
@@ -140,6 +146,8 @@ def check_talk(
     theme: str | None = None,
     license_policy: str | None = None,
     vision_pick: str | None = None,
+    persona: str | None = None,
+    personas: str | None = None,
 ) -> TalkReport:
     """Generate a talk and check it; with determinism, generate it again one by one, which has to give the same.
 
@@ -158,7 +166,18 @@ def check_talk(
         start = time.monotonic()
         try:
             deck = generate_deck(
-                topic, seed, schema, slides, True, recording, language, theme, license_policy, vision_recording
+                topic,
+                seed,
+                schema,
+                slides,
+                True,
+                recording,
+                language,
+                theme,
+                license_policy,
+                vision_recording,
+                persona,
+                personas,
             )
         except Exception as error:  # a talk should never fail: if it does, that's what the check found
             logger.exception("Generating a talk about %r crashed", topic)
@@ -181,7 +200,18 @@ def check_talk(
             replaying: TextProvider | str = ReplayProvider(cassette) if llm != "none" else "none"
             replaying_vision = ReplayProvider(cassette) if vision_recording is not None else None
             again = generate_deck(
-                topic, seed, schema, slides, False, replaying, language, theme, license_policy, replaying_vision
+                topic,
+                seed,
+                schema,
+                slides,
+                False,
+                replaying,
+                language,
+                theme,
+                license_policy,
+                replaying_vision,
+                persona,
+                personas,
             )
             # What the talks asked of language models differs (the second one replayed); their slides may not
             report.deterministic = again.model_copy(update={"usage": deck.usage}).to_json() == deck.to_json()
@@ -203,20 +233,39 @@ def run(
     theme: str | None = None,
     license_policy: str | None = None,
     vision_pick: str | None = None,
+    persona: str | None = None,
+    personas: str | None = None,
 ) -> dict[str, Any]:
     """Check a talk for every topic and seed, and return the report."""
     talks = []
     for topic in topics:
         for seed in seeds:
             talk = check_talk(
-                topic, seed, schema, slides, determinism, llm, language, decks, theme, license_policy, vision_pick
+                topic,
+                seed,
+                schema,
+                slides,
+                determinism,
+                llm,
+                language,
+                decks,
+                theme,
+                license_policy,
+                vision_pick,
+                persona,
+                personas,
             )
             talks.append(talk)
             if on_talk is not None:
                 on_talk(talk)
     report = _report(talks, schema, slides, seeds, llm, language, theme)
-    report["license_policy"] = license_policy or generator.get_schema(schema).license_policy
+    # (for schema random, each talk's is its format's, unless one is given)
+    report["license_policy"] = license_policy or (
+        "each format's" if schema == RANDOM else generator.get_schema(schema).license_policy
+    )
     report["vision_pick"] = vision_pick
+    report["persona"] = persona
+    report["personas"] = personas
     return report
 
 
@@ -259,6 +308,9 @@ def _report(
                 "models": sorted({talk.metrics["vision_model"] for talk in talks if talk.metrics.get("vision_model")}),
             },
             "repeated_titles": _sum_of(talks, "repeated_titles"),
+            # How many talks had each format and persona (for schema random, the ones their seeds picked)
+            "formats": _counted(talks, "format"),
+            "personas": _counted(talks, "persona"),
             "license_classes": _summed(talks, "license_classes"),
             # Per look: how many of its pictures were looked at, and how many of those have the look
             "looks": {
@@ -282,6 +334,16 @@ def _report(
 
 def _sum_of(talks: list[TalkReport], metric: str) -> int:
     return sum(talk.metrics.get(metric, 0) for talk in talks)
+
+
+def _counted(talks: list[TalkReport], metric: str) -> dict[str, int]:
+    """How many talks had each value of a metric (none: "none")."""
+    counts: dict[str, int] = {}
+    for talk in talks:
+        if "slides" in talk.metrics:  # (not a talk that crashed)
+            value = str(talk.metrics.get(metric) or "none")
+            counts[value] = counts.get(value, 0) + 1
+    return dict(sorted(counts.items()))
 
 
 def _summed(talks: list[TalkReport], metric: str) -> dict[str, int]:
@@ -336,7 +398,19 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="N topics drawn from talkgenerator's topic list (data/topics.txt); the same N for the same first seed",
     )
     parser.add_argument("--seeds", default="1", help="comma-separated seeds (default: 1)")
-    parser.add_argument("--schema", default="default", help="the presentation schema (default: default)")
+    parser.add_argument(
+        "--schema",
+        default="default",
+        help="the talks' format, or random for one each talk's seed picks after its persona (default: default)",
+    )
+    parser.add_argument(
+        "--persona",
+        help="who presents the talks: a persona, or none (default: random, one each talk's seed picks)",
+    )
+    parser.add_argument(
+        "--personas",
+        help="the personas the talks' seeds pick from, separated by commas (default: all of them)",
+    )
     parser.add_argument("--slides", type=int, default=10, help="slides per talk (default: 10)")
     parser.add_argument(
         "--llm",
@@ -379,7 +453,12 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     try:
         seeds = [int(seed) for seed in args.seeds.split(",")]
-        generator.get_schema(args.schema)
+        if args.schema != RANDOM:
+            generator.get_schema(args.schema)
+        if args.persona is not None:
+            talk_personas.pick(args.persona, random_util.Rng(0))  # (a ValueError for a persona there isn't)
+        if args.personas is not None:
+            talk_personas.allowed(args.personas)
         provider_from_spec(args.llm)
         if args.license_policy is not None:
             licenses.policy(args.license_policy)
@@ -421,6 +500,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         theme=args.theme,
         license_policy=args.license_policy,
         vision_pick=args.vision_pick,
+        persona=args.persona,
+        personas=args.personas,
     )
     summary = report["summary"]
     print(

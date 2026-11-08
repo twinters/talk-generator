@@ -12,7 +12,8 @@ from typing import Any, Final
 
 from pptx.presentation import Presentation
 
-from talkgenerator import names, personas, runtime_checker, settings, titles
+from talkgenerator import names, runtime_checker, settings, titles
+from talkgenerator import personas as talk_personas
 from talkgenerator.design import engine, themes
 from talkgenerator.images import context as image_context
 from talkgenerator.images import generation as image_generation
@@ -28,7 +29,7 @@ from talkgenerator.models.theme import Theme
 from talkgenerator.plan import languages
 from talkgenerator.schema import formats
 from talkgenerator.schema.presentation_schema import Progress, TalkCancelled
-from talkgenerator.schema.presentation_schema_types import get_schema, schemas
+from talkgenerator.schema.presentation_schema_types import RANDOM, get_schema, pick_format, schemas
 from talkgenerator.slide.slide_deck import SlideDeck
 from talkgenerator.sources import word_frequency
 from talkgenerator.util import image_util, os_util, random_util
@@ -85,6 +86,7 @@ def generate_presentation_using_cli_arguments(args) -> tuple[Presentation | None
         image_generator=getattr(args, "image_generator", None),
         image_budget=_image_budget(getattr(args, "generated_images", None)),
         persona=getattr(args, "persona", None),
+        personas=getattr(args, "personas", None),
         vision_pick=getattr(args, "vision_pick", None),
     )
 
@@ -123,6 +125,7 @@ def generate_presentation(
     image_generator: ImageGenerator | str | None = None,
     image_budget: ImageBudget | None = None,
     persona: str | None = None,
+    personas: str | Iterable[str] | None = None,
     vision_pick: bool | str | TextProvider | None = None,
 ) -> tuple[Presentation | None, SlideDeck, str | None]:
     """Deprecated, for talkgenerator 4's callers: generate a talk, save it as a PowerPoint in output_folder (unless
@@ -163,6 +166,7 @@ def generate_presentation(
         image_generator=image_generator,
         image_budget=image_budget,
         persona=persona,
+        personas=personas,
         vision_pick=vision_pick,
     )
 
@@ -194,10 +198,18 @@ def _generate_presentation(
     image_generator: ImageGenerator | str | None = None,
     image_budget: ImageBudget | None = None,
     persona: str | None = None,
+    personas: str | Iterable[str] | None = None,
     vision_pick: bool | str | TextProvider | None = None,
 ) -> tuple[Presentation | None, SlideDeck, str | None]:
     """Generate a talk, as talkgenerator's own commands and stream_talk do: what generate_presentation does, without
     its DeprecationWarning. With debug_notes, every slide's speaker notes explain how it was generated.
+
+    schema is the talk's format, the name of a presentation schema: "default" (a TED-like talk), "ted" (the TED-like
+    talk with copyright-free images only), "pitch", "academic" and the others of talkgenerator.plan.external.FORMATS;
+    or "random", for one the talk's seed picks after its persona, who favours some (a startup founder mostly pitches, a
+    disgraced professor mostly gives academic talks), among the TED-like talk and the formats beyond it (see
+    talkgenerator.schema.presentation_schema_types.pick_format). Copyright-free images go with any format: ask for
+    them with license_policy "open". The deck says which format the talk had (schema_name).
 
     topic is what the talk is about (or topics, separated by commas), and title its title; without a title, it gets
     one. topic_or_title stands for both, when what's given could be either, as what someone types can be: "penguins",
@@ -236,12 +248,17 @@ def _generate_presentation(
     funnels), its title (their kind of title, from the language model, or in a classic talk half the time one of their
     own templates), the style of the presenter's name (unless name_styles says), the voice and angle the language
     model writes in, the theme's family when the theme is random (a kindergarten teacher's talks are in the kids
-    family more often), and the looks some of its pictures are searched in first (a medieval historian's weird
-    pictures are weird medieval art). The deck says which persona it had.
+    family more often), the looks some of its pictures are searched in first (a medieval historian's weird pictures
+    are weird medieval art), and the format when the schema is random. The deck says which persona it had.
+
+    personas are the personas the talk's seed picks from (when persona is None or "random"): their names, as a list or
+    one string separated by commas (see talkgenerator.personas.allowed). None: all of them. A talk whose seed picks a
+    persona among them keeps it, whichever others are left out; the others get one of those. A persona named (or
+    "none") goes first, as a presenter's name goes before name_styles.
 
     license_policy is the license classes the talk's images may have (see talkgenerator.images.licenses): "all", "open"
     (everything but fair use: no memes, gifs or Reddit's posts, for decks shown in public), or the classes, as a list
-    or separated by commas ("public-domain,open"). None is the schema's: "open" for ted, else "all".
+    or separated by commas ("public-domain,open"). None is the format's: "open" for ted, else "all".
 
     image_generator generates pictures for the slides stock photos can't show well (the presenter's weird hobby, the
     cover of the book they wrote, an old photo of a moment in the made-up history of something), and for a slide whose
@@ -274,9 +291,10 @@ def _generate_presentation(
         raise ValueError("topic_or_title stands for both the topic and the title: give it without them")
     # (on one line, but with its quote marks, if any: they make it a title, word for word)
     typed = " ".join(topic_or_title.split()) if topic_or_title and titles.normalised(topic_or_title) else None
-    presentation_schema = get_schema(schema)
-    # (a ValueError for a policy there isn't)
-    policy = licenses.policy(license_policy if license_policy is not None else presentation_schema.license_policy)
+    named = get_schema(schema) if schema != RANDOM else None  # (a KeyError for a schema there isn't)
+    allowed = talk_personas.allowed(personas)  # (a ValueError for a persona there isn't)
+    if license_policy is not None:
+        licenses.policy(license_policy)  # (a ValueError for a policy there isn't)
     if print_logs:
         os_util.show_logs(logger)
     logger.info("**************************")
@@ -288,14 +306,27 @@ def _generate_presentation(
     rng = random_util.Rng(int_seed)
     logger.info("Presentation seed: {} (pass it as int_seed to make this talk again)".format(rng.root_seed))
 
-    # Who presents it: a persona its seed picks (a format beyond the TED-like talks has its favourites: a startup
-    # founder pitches more often), unless it names one, or none (see talkgenerator.personas)
-    talk_format = presentation_schema.format
-    chosen_persona = personas.pick(persona, rng, talk_format.personas if talk_format is not None else None)
+    # Who presents it: a persona its seed picks among those it allows (a format beyond the TED-like talks it asks for
+    # has its favourites: a startup founder pitches more often), unless it names one, or none (see
+    # talkgenerator.personas)
+    asked_format = named.format if named is not None else None
+    chosen_persona = talk_personas.pick(
+        persona, rng, asked_format.personas if asked_format is not None else None, allowed
+    )
+    among = "" if len(allowed) == len(talk_personas.PERSONAS) else f", one of the {len(allowed)} it allows"
     if chosen_persona is not None:
-        logger.info("Persona: {} ({})".format(chosen_persona.label, chosen_persona.voice))
+        logger.info("Persona: {} ({}){}".format(chosen_persona.label, chosen_persona.voice, among))
     else:
         logger.info("Persona: none (the format's own talk)")
+
+    # Its format: the one it asks for, or one its seed picks, which its persona favours (a startup founder mostly
+    # pitches: see talkgenerator.schema.presentation_schema_types.pick_format)
+    schema = pick_format(schema, rng, chosen_persona)
+    if named is None:
+        logger.info("Format: {} (the talk's seed picked it, as its persona favours)".format(schema))
+    presentation_schema = named if named is not None else get_schema(schema)
+    talk_format = presentation_schema.format
+    policy = licenses.policy(license_policy if license_policy is not None else presentation_schema.license_policy)
 
     # The talk's theme, from its seed too, of a family its persona and its format favour more often (see
     # talkgenerator.design.themes)
@@ -393,6 +424,7 @@ def _generate_presentation(
             topic_or_title=typed,
             persona=chosen_persona,
         )
+    slide_deck.schema_name = schema  # (the format it asked for, or the one its seed picked)
     slide_deck.license_policy = policy.name
     slide_deck.usage = ledger.total()
     answered = ledger.language_models()
@@ -418,7 +450,7 @@ def _generate_presentation(
         presentation_file = save_presentation_to_pptx(output_folder, file_name, presentation)
 
     if save_json:
-        save_deck_to_json(slide_deck.to_deck(schema_name=schema), output_folder, file_name, next_to=presentation_file)
+        save_deck_to_json(slide_deck.to_deck(), output_folder, file_name, next_to=presentation_file)
 
     # Open the presentation
     if save_ppt and open_ppt and presentation_file is not None:
@@ -448,6 +480,7 @@ def stream_talk(
     image_generator: ImageGenerator | str | None = None,
     image_budget: ImageBudget | None = None,
     persona: str | None = None,
+    personas: str | Iterable[str] | None = None,
     vision_pick: bool | str | TextProvider | None = None,
 ) -> Iterator[TalkEvent]:
     """Make a talk as generate_presentation does (the same deck, for the same options, seed and answers), handing
@@ -497,9 +530,10 @@ def stream_talk(
                     image_generator=image_generator,
                     image_budget=image_budget,
                     persona=persona,
+                    personas=personas,
                     vision_pick=vision_pick,
                 )
-                events.put(TalkFinished(deck=slide_deck.to_deck(schema_name=schema)))
+                events.put(TalkFinished(deck=slide_deck.to_deck()))
         except TalkCancelled:
             pass
         except BaseException as error:  # (for whoever iterates)
@@ -700,6 +734,14 @@ def _name_styles(value: str) -> tuple[str, ...]:
         raise argparse.ArgumentTypeError(str(error)) from error
 
 
+def _personas(value: str) -> tuple[str, ...]:
+    """--personas's value, once it's known to name only personas there are."""
+    try:
+        return talk_personas.allowed(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError(str(error)) from error
+
+
 def _llm_spec(spec: str) -> str:
     """--llm's value, once it's known to name a language model provider."""
     try:
@@ -743,8 +785,11 @@ def get_argument_parser():
         "--schema",
         default="default",
         type=str,
-        choices=schemas.names(),
-        help="The presentation schema to generate the presentation with (see --list)",
+        choices=(RANDOM, *schemas.names()),
+        help="The talk's format: default (a TED-like talk), ted (with copyright-free images only), pitch, academic and "
+        "the others (see --list), or random, for one the talk's seed picks after its persona, who favours some (a "
+        "startup founder mostly pitches); --license_policy open gives copyright-free images with any (default: "
+        "default)",
     )
     parser.add_argument(
         "--list",
@@ -770,11 +815,18 @@ def get_argument_parser():
     parser.add_argument(
         "--persona",
         default=None,
-        choices=personas.choices(),
+        choices=talk_personas.choices(),
         help="Who presents the talk, such as startup_founder or kindergarten_teacher: they shape which kinds of slides "
         "it favours, its title, the style of the presenter's name, the language model's voice, a random theme's family "
-        "and the looks some pictures are searched in first; none makes the format's own talk (default: random, a "
-        "persona the talk's seed picks)",
+        "and the looks some pictures are searched in first, and with --schema random the format; none makes the "
+        "format's own talk (default: random, a persona the talk's seed picks)",
+    )
+    parser.add_argument(
+        "--personas",
+        default=None,
+        type=_personas,
+        help="The personas the talk's seed picks from, separated by commas, such as startup_founder,consultant: a "
+        "talk whose seed picks one of them keeps it, and the others get one of them (default: all of them)",
     )
     parser.add_argument(
         "--title",

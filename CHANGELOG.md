@@ -353,6 +353,16 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
     pictures are weird medieval art, a founder's photos office stock), with the slide's own look after them.
 - The deck and `talk.started` say which persona a talk had (`persona`: its name, label and voice, and the angle the
   model was given). `--persona none` makes the format's own talk.
+- A talk can leave its format to its seed (`--schema random`, `schema="random"`, the MCP server's `format="random"`),
+  which picks the persona first and then a format that persona favours: a startup founder pitches in about 6 of 10
+  talks, a disgraced professor gives an academic talk in about 6 of 10, and most of the others give TED-like talks.
+  Every format keeps a few talks in a hundred with every persona, and over all the personas about 7 in 10 are TED-like
+  (`Persona.formats`, multipliers on `presentation_schema_types.FORMAT_WEIGHTS`; `format_odds()` says the odds). The
+  TED-like talk with copyright-free images only (`ted`) is a license choice there: `--license_policy open` goes with
+  any format. The deck's `schema_name`, and `talkgenerator check`'s report, say which format a talk got.
+- A talk can say which personas its seed picks from (`--personas startup_founder,consultant`, `personas=`, the MCP
+  server's `generate_talk`): a talk whose seed picks one of them keeps it, and the others get one of them.
+  `talkgenerator check` takes `--persona` and `--personas` too.
 
 ### Talks that stream, and decks
 
