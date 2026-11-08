@@ -887,16 +887,18 @@ and 44% a chart; from 5 slides on, it gives the same talks), and the section div
 title or none" always gave a title (a generator that gives none on purpose gave way to the title's), so classic
 captioned pictures and full-screen photos now go without one half the time. A historical figure's title could make a
 61-letter word of a wikiHow action, which overflowed in brutalist (the classic benchmark's two errors): such a word has
-20 letters at most now, as every theme fits. Milestone 6's classic texts speak of the topic as English does ("of experts
-call penguins overrated", "the penguin pyramid": `generic`, `one`, and `adjunct` for a noun before another). A text cut
-to its length ends where a sentence or a clause does (in English, also before a word that opens the next one, such as
-"when"), when that keeps half of it ("Your plants are not decorations", where a free model's conclusion read "Your
-plants are not decorations—they"), and conclusions are asked for six words at most. A quiz's explanation decides its
-answer when it names one other option than the one marked. And a model's text about real-world politics that the talk
-isn't about (a statement on Japan's "history of aggression" as a lighthouse talk's quote, seed 12) is left out by a
-cheap check, of phrases that only statements on politics have and of real countries or peoples with politics' words,
-which none of the 336 model-written texts in the sample decks trips; the request asks for none, and `talkgenerator
-check` warns of what's left (as of a quiz whose explanation names other options).
+20 letters at most now, as every theme fits (`dashes` gives none for a longer one, and `short_wikihow_action` finds a
+short action). Milestone 6's classic texts had the memes' plural slips ("of experts agree that penguins is overrated",
+"The penguins pyramid"): the TED content pack's rewrite of the templates fixes them, with a new template function for a
+noun before another (`adjunct`: "the penguin pyramid", and none for "the French Revolution"). A text cut to its length
+ends where a sentence or a clause does (in English, also before a word that opens the next one, such as "when"), when
+that keeps half of it ("Your plants are not decorations", where a free model's conclusion read "Your plants are not
+decorations—they"), and conclusions are asked for six words at most. A quiz's explanation decides its answer when it
+names one other option than the one marked. And a model's text about real-world politics that the talk isn't about (a
+statement on Japan's "history of aggression" as a lighthouse talk's quote, seed 12) is left out by a cheap check, of
+phrases that only statements on politics have and of real countries or peoples with politics' words, which none of the
+336 model-written texts in the sample decks trips; the request asks for none, and `talkgenerator check` warns of what's
+left (as of a quiz whose explanation names other options).
 
 Variety per slide type comes from four axes, each sampled per slide with the talk's random generator:
 

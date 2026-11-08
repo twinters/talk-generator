@@ -1,39 +1,39 @@
 {
   "big_number_title": [
-    "The {seed.adjunct} economy",
-    "{seed.generic.title} by the numbers",
+    "The {seed} economy",
+    "{seed.title} by the numbers",
     "The numbers don't lie",
     "One number to remember",
     "Let that sink in",
-    "The {seed.adjunct} index",
+    "The {seed} index",
     "A shocking statistic"
   ],
   "percent_label": [
-    "of people have never seen {seed.generic} up close",
-    "of experts call {seed.generic} overrated",
-    "of all {seed.generic}, lost and never found again",
-    "of my budget goes to {seed.generic}",
-    "of scientists still can't explain {seed.generic}",
-    "of people pretend to understand {seed.generic}",
-    "of dentists recommend {seed.generic}",
-    "of the internet is about {seed.generic}",
-    "of {seed.generic} we never even notice"
+    "of people have never seen {seed} up close",
+    "of experts agree that {seed} is overrated",
+    "of all {seed} is never found again",
+    "of my budget goes to {seed}",
+    "of scientists still can't explain {seed}",
+    "of people pretend to understand {seed}",
+    "of dentists recommend {seed}",
+    "of the internet is about {seed}",
+    "of {seed} goes unnoticed"
   ],
   "count_label": [
-    "times a day the average person thinks about {seed.generic}",
-    "years until we're all replaced by {seed.generic}",
-    "{seed.adjunct} incidents reported last year",
-    "hours I spent researching {seed.generic}",
-    "people who truly understand {seed.generic}",
-    "unanswered emails about {seed.generic}",
-    "books written about {seed.generic}, none of them read"
+    "times a day the average person thinks about {seed}",
+    "years until {seed} replaces us all",
+    "{seed} incidents reported last year",
+    "hours I spent researching {seed}",
+    "people who truly understand {seed}",
+    "unanswered emails about {seed}",
+    "books written about {seed}, none of them read"
   ],
   "ratio_label": [
-    "people secretly prefer {seed.generic}",
-    "meetings are secretly about {seed.generic}",
+    "people secretly prefer {seed}",
+    "meetings are secretly about {seed}",
     "people can't spell {seed}",
-    "pets have strong opinions about {seed.generic}",
-    "families never talk about {seed.generic}"
+    "pets have strong opinions about {seed}",
+    "families never talk about {seed}"
   ],
   "big_number_source": [
     "Source: my uncle",
@@ -44,28 +44,28 @@
     "Source: I made it up",
     "Source: the back of a cereal box",
     "Source: a man at the bus stop",
-    "Source: an anonymous {seed.adjunct} expert"
+    "Source: an anonymous {seed} expert"
   ],
   "kpi_title": [
-    "{seed.adjunct.title} dashboard",
-    "Quarterly {seed.adjunct} results",
-    "Key {seed.adjunct} indicators",
-    "This year's {seed.adjunct} numbers",
-    "Our {seed.adjunct} KPIs",
-    "Performance review: {seed.generic}"
+    "{seed.title} dashboard",
+    "Quarterly {seed} results",
+    "Key {seed} indicators",
+    "This year's {seed} numbers",
+    "Our {seed} KPIs",
+    "Performance review: {seed}"
   ],
   "kpi_label": [
-    "{seed.adjunct.title} satisfaction",
-    "Meetings about {seed.generic}",
-    "Unread {seed.adjunct} emails",
-    "Hours spent on {seed.generic}",
-    "Complaints about {related.generic}",
-    "{related.generic.title} per hour",
-    "{seed.adjunct.title} incidents",
+    "{seed.title} satisfaction",
+    "Meetings about {seed}",
+    "Unread {seed} emails",
+    "Hours spent on {seed}",
+    "Complaints about {related}",
+    "{related.title} per hour",
+    "{seed.title} incidents",
     "Synergy",
     "Customer confusion",
     "Coffee consumed",
-    "{related.generic.title} found",
+    "{related.title} found",
     "Budget left"
   ],
   "kpi_punchline": [
@@ -73,25 +73,25 @@
     "Naps taken",
     "Times I cried",
     "Ducks befriended",
-    "{related.generic.title} lost forever",
+    "{related.title} lost forever",
     "Lawsuits",
     "Fires started",
     "Friends left",
     "Plans to stop"
   ],
   "quiz_question": [
-    "Which of these is the most important part of {seed.generic}?",
+    "Which of these is the most important part of {seed}?",
     "Which of these was invented first?",
-    "Which of these do {seed.adjunct} experts fear most?",
-    "Which of these is secretly {seed.adjunct.one}?",
-    "Which of these would you bring to a party about {seed.generic}?",
-    "Which of these has nothing to do with {seed.generic}?",
+    "Which of these do {seed} experts fear most?",
+    "Which of these is secretly {seed}?",
+    "Which of these would you bring to a {seed} party?",
+    "Which of these has nothing to do with {seed}?",
     "Which of these did the ancient Romans call {seed}?"
   ],
   "quiz_explanation": [
     "Obviously.",
     "It's in all the textbooks.",
-    "Ask any {seed.adjunct} expert.",
+    "Ask any {seed} expert.",
     "Trust me, I checked.",
     "As everyone knows.",
     "This one surprises people every time."
@@ -103,37 +103,37 @@
     "The people have spoken"
   ],
   "post_text": [
-    "Hot take: {seed.generic}? Overrated.",
-    "Just saw {seed.adjunct.one} in the wild. My life will never be the same.",
-    "Nobody talks about how {seed.generic} ruined my wedding.",
-    "Me: I'll be productive today. Also me: {seed.generic}.",
-    "Unpopular opinion: we owe {seed.generic} more respect.",
-    "Day 47 of asking {seed.generic} to notice me.",
-    "My therapist says I talk about {seed.generic} too much. Anyway, {seed.generic}.",
-    "Can we talk about {seed.generic} for a second?",
-    "Thinking about {seed.generic} again. Send help.",
-    "Rate my {seed.adjunct}. Be honest."
+    "Hot take: {seed} is overrated.",
+    "Just saw {seed} in the wild. My life will never be the same.",
+    "Nobody talks about how {seed} ruined my wedding.",
+    "Me: I'll be productive today. Also me: {seed}.",
+    "Unpopular opinion: {seed} deserves more respect.",
+    "Day 47 of asking {seed} to notice me.",
+    "My therapist says I talk about {seed} too much. Anyway, {seed}.",
+    "Can we talk about {seed} for a second?",
+    "Thinking about {seed} again. Send help.",
+    "Rate my {seed}. Be honest."
   ],
   "news_outlet": [
-    "The Daily {seed.adjunct.title}",
+    "The Daily {seed.title}",
     "{seed.title} Times",
-    "The {seed.adjunct.title} Gazette",
+    "The {seed.title} Gazette",
     "{seed.title} News Network",
-    "The Morning {seed.adjunct.title}",
-    "The {seed.adjunct.title} Tribune",
+    "The Morning {seed.title}",
+    "The {seed.title} Tribune",
     "{seed.title} Today",
-    "The Weekly {seed.adjunct.title}"
+    "The Weekly {seed.title}"
   ],
   "news_headline": [
-    "Local man discovers {seed.generic}, refuses to elaborate",
-    "Scientists baffled by {seed.generic}",
-    "{seed.adjunct.title} prices soar after mysterious shortage",
-    "Study finds {seed.generic} more popular than democracy",
-    "Experts warn: {seed.generic} may be sentient",
-    "Town celebrates its first {seed.adjunct} in forty years",
-    "{seed.generic.title} declared a national treasure",
-    "Area woman still not over {seed.generic}",
-    "Government denies all knowledge of {seed.generic}",
+    "Local man discovers {seed}, refuses to elaborate",
+    "Scientists baffled by {seed}",
+    "{seed.title} prices soar after mysterious shortage",
+    "Study finds {seed} more popular than democracy",
+    "Experts warn: {seed} may be sentient",
+    "Town celebrates its first {seed} in forty years",
+    "{seed.title} declared a national treasure",
+    "Area woman still not over {seed}",
+    "Government denies all knowledge of {seed}",
     "{seed.title} found in unexpected place, again"
   ],
   "news_subheadline": [
@@ -154,17 +154,17 @@
     "Where this is going"
   ],
   "agenda_first": [
-    "Why {seed.generic}?",
+    "Why {seed}?",
     "Introduction",
-    "A brief history of {seed.generic}"
+    "A brief history of {seed}"
   ],
   "agenda_item": [
-    "The science of {related.generic}",
-    "{related.generic.title} and you",
-    "{seed.generic.title} in practice",
+    "The science of {related}",
+    "{related.title} and you",
+    "{seed.title} in practice",
     "What could possibly go wrong",
-    "A word about {related.generic}",
-    "The {seed.adjunct} question",
+    "A word about {related}",
+    "The {seed} question",
     "My personal journey"
   ],
   "agenda_last": [
@@ -175,24 +175,24 @@
     "What now?"
   ],
   "section_title": [
-    "The {seed.adjunct} years",
+    "The {seed} years",
     "Where it all began",
-    "Enter: {seed.generic}",
-    "The rise of {seed.generic}",
+    "Enter: {seed}",
+    "The rise of {seed}",
     "Things get weird",
     "A turning point",
-    "The dark side of {seed.generic}",
-    "Back to {seed.generic}",
-    "Meanwhile, {seed.generic}",
+    "The dark side of {seed}",
+    "Back to {seed}",
+    "Meanwhile, {seed}",
     "The plot thickens"
   ],
   "section_subtitle": [
     "In which everything changes",
-    "Or: how I learned to love {seed.generic}",
+    "Or: how I learned to love {seed}",
     "Brace yourselves",
     "It gets worse",
     "Bear with me",
-    "Spoiler: it's {seed.one}"
+    "Spoiler: it's {seed}"
   ],
   "questions_title": [
     "Questions?",
@@ -207,36 +207,36 @@
     "No refunds",
     "Easy ones first, please",
     "I will pretend to know",
-    "Please, nothing about {seed.generic}",
-    "Bonus points for questions about {seed.generic}"
+    "Please, nothing about {seed}",
+    "Bonus points for questions about {seed}"
   ],
   "timeline_title": [
-    "A brief history of {seed.generic}",
-    "The {seed.adjunct} timeline",
+    "A brief history of {seed}",
+    "The {seed} timeline",
     "How we got here",
-    "{seed.generic.title} through the ages",
-    "The road to {seed.generic}"
+    "{seed.title} through the ages",
+    "The road to {seed}"
   ],
   "timeline_event": [
-    "The first {related.adjunct} is found",
-    "The great {seed.adjunct} panic",
-    "Someone invents {related.generic}",
-    "The world discovers {seed.generic}",
-    "Someone finally explains {related.generic}",
-    "{related.generic.title} banned",
-    "The {seed.adjunct} renaissance"
+    "The first {related} is found",
+    "The great {seed} panic",
+    "{related.title} is invented",
+    "{seed.title} goes mainstream",
+    "Someone finally explains {related}",
+    "{related.title} is banned",
+    "The {seed} renaissance"
   ],
   "timeline_punchline": [
     "This talk",
-    "The {seed.adjunct} takeover",
-    "I discover {seed.generic}",
+    "{seed.title} takes over",
+    "I discover {seed}",
     "Peak {seed}",
-    "Nobody remembers {related.generic}"
+    "Nobody remembers {related}"
   ],
   "pyramid_title": [
-    "The {seed.adjunct} pyramid",
-    "Maslow's hierarchy of {seed.generic}",
-    "The {seed.adjunct} hierarchy",
+    "The {seed} pyramid",
+    "Maslow's hierarchy of {seed}",
+    "The {seed} hierarchy",
     "What we really need"
   ],
   "pyramid_base": [
@@ -248,10 +248,10 @@
     "A charger"
   ],
   "funnel_title": [
-    "The {seed.adjunct} funnel",
-    "From {related.generic} to {seed.generic}",
-    "Our {seed.adjunct} pipeline",
-    "The making of {seed.generic}"
+    "The {seed} funnel",
+    "From {related} to {seed}",
+    "Our {seed} pipeline",
+    "How {seed} happens"
   ],
   "funnel_punchline": [
     "{seed.title}",
@@ -261,16 +261,16 @@
     "{seed.title}, finally"
   ],
   "cycle_title": [
-    "The {seed.adjunct} cycle",
-    "The circle of {seed.generic}",
-    "The {seed.adjunct} loop",
-    "The vicious circle of {seed.generic}"
+    "The {seed} cycle",
+    "The circle of {seed}",
+    "The {seed} loop",
+    "The vicious circle of {seed}"
   ],
   "org_chart_title": [
-    "Who's in charge of {seed.generic}",
-    "The {seed.adjunct} department",
+    "Who's in charge of {seed}",
+    "The {seed} department",
     "{seed.title}, Inc.",
-    "How we organise {seed.generic}"
+    "How {seed} is organised"
   ],
   "org_chart_boss": [
     "{seed.title}",
@@ -281,24 +281,24 @@
     "Me"
   ],
   "org_chart_report": [
-    "Head of {related.generic}",
-    "Chief {related.adjunct} officer",
-    "{related.adjunct.title} intern",
-    "VP of {related.generic}",
-    "{related.adjunct.title} manager"
+    "Head of {related}",
+    "Chief {related} officer",
+    "{related.title} intern",
+    "VP of {related}",
+    "{related.title} manager"
   ],
   "iceberg_title": [
-    "The {seed.adjunct} iceberg",
+    "The {seed} iceberg",
     "What you don't see",
-    "Beneath the surface of {seed.generic}",
-    "The tip of the {seed.adjunct}"
+    "Beneath the surface of {seed}",
+    "The tip of the {seed}"
   ],
   "iceberg_hidden": [
-    "Years of {related.generic}",
+    "Years of {related}",
     "Tears",
     "Paperwork",
     "{related.title}",
-    "Very tired {related.generic}",
+    "A very tired {related}",
     "Mild panic"
   ],
   "fun_fact": [

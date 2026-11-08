@@ -9,7 +9,6 @@ vintage photo in colour). Checks of contrast and overflowing text are in talkgen
 from __future__ import annotations
 
 import itertools
-import json
 import re
 from collections import Counter
 from collections.abc import Iterable
@@ -108,7 +107,7 @@ _POLITICAL_WORDS: Final = (
     "massacres",
 )
 # The peoples, regions and political bodies that statements on politics name, besides the countries (whose names are
-# in data/text-templates/about_me_facts.json)
+# in data/countries.txt, apart from the content packs' words)
 _PEOPLES: Final = (
     ("American", "Americans", "Asian", "Asians", "African", "Arab", "Arabs", "British", "Chinese", "European")
     + ("French", "German", "Indian", "Iranian", "Iraqi", "Israeli", "Israelis", "Japanese", "Korean", "Koreans")
@@ -127,11 +126,9 @@ def _political() -> tuple[re.Pattern[str], re.Pattern[str], re.Pattern[str]]:
     """Patterns of the political phrases, the political words, and the peoples and countries (in capitals)."""
     from talkgenerator.util import os_util  # (here: the checks don't need it otherwise)
 
-    with open(os_util.to_actual_file("data/text-templates/about_me_facts.json"), encoding="utf-8") as file:
-        countries: list[str] = json.load(file)["country"]
-    # (as "Bosnia & Herzegovina" and "Israel and the Occupied Territories" name two)
-    names = {part.strip() for country in countries for part in re.split(r" & | and the | and ", country)}
-    names = (names - _NOT_ONLY_COUNTRIES) | set(_PEOPLES)
+    with open(os_util.to_actual_file("data/countries.txt"), encoding="utf-8") as file:
+        countries = {line.strip() for line in file if line.strip() and not line.startswith("#")}
+    names = (countries - _NOT_ONLY_COUNTRIES) | set(_PEOPLES)
 
     def words(terms: Iterable[str], flags: int = 0) -> re.Pattern[str]:
         alternatives = "|".join(re.escape(term) for term in sorted(set(terms), key=len, reverse=True))
