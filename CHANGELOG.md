@@ -244,6 +244,18 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
 - A real chart from the internet (Reddit's) now comes under a confident conclusion that it supposedly proves, two
   times in three, or bare, as karaoke decks have them.
 
+### Classic texts: the TED content pack
+
+- Classic talks take their texts from the TED content pack (`talkgenerator/data/packs/ted`, docs/v5-plan.md section
+  11): a grammar per kind of slide, and a manifest with the pack's version and the slots the code fills in, with
+  their variables and length limits (`talkgenerator.sources.packs`). It has every classic text of TED-like talks, the
+  memes' classic captions too, and about three times as many as before (2,872 templates, from 909, besides the lists
+  of jobs and countries): titles in a TED talk's voice ("The Quiet Revolution of Penguins", "Notes From a Penguin
+  Survivor"), about-me slides, history, statements, captions, charts, diagrams, big numbers and KPI tiles, quizzes,
+  posts and headlines, agendas and sections, the karaoke types, memes and conclusions. Every template speaks of the
+  topic as English does, keeps to its slide's length with long words, and is checked by `tests/test_content_pack.py`.
+  Jobs a family audience doesn't need (escort, embalmer, soldier...) left the presenters' list.
+
 ### Titles and presenter names
 
 - What someone types can be the topic or the title (`--topic_or_title`, `topic_or_title=`): "penguins" as well as
@@ -383,6 +395,16 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
 
 ### Fixed
 
+- Classic texts speak of the topic as English does: no more "How many the titanics are "too many the titanics"?",
+  "Fanatic in Renewable A Plant That Won'T Die Systems", "Plant That Won'T Dies are great" or "Can we talk about
+  regulator for a second?". The templates say `{seed.generic}`, `{seed.one}` and the new `{seed.bare}`, the thing
+  after a word of the template's or before another noun ("The moon paradox" for "the moon", "a penguin expert" for
+  "penguins"); title case leaves a word's other letters as they are ("Won't", "AI"); and `generic` speaks of time,
+  work, art, science and life as amounts ("Hours with time", not "times"), and keeps whole a premise ("a plant that
+  won't die") and a phrase with an "a" and words about its noun after it ("Think about a message in a bottle", not
+  "Think about message in a bottle"; `one` said "cup of tea" for "a cup of tea", by its last word). A slide whose
+  topic drifts to a word about the body (one went from "the Titanic" to "breasts") is made another way, as one about
+  a faith or violence is.
 - Classic memes read as English speaks of the topic: "Love coffee" and "Is this a lighthouse?", not "Love coffees",
   "happinesses" or "a the french revolution" (every caption pluralised the topic). The template functions
   `{seed.generic}`, `{seed.one}` and `.cap` tell a countable noun from a mass noun by wordfreq's frequencies of the
@@ -468,6 +490,15 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   have, or with a real country or people and politics' words, is left out (its slide comes out the classic way when
   it can't do without it), and `talkgenerator check` warns of one. Absurd humour about places stays ("There are
   more penguins in Belgium than people").
+- A classic talk takes only wikiHow's actions about its seed, and none of the worst: a lighthouse talk was titled
+  "Never, Ever Make Sex Better". WikiHow pads a search it knows little about with its most popular how-tos ("Kiss",
+  "Tie a Tie", "Make Sex Better") and with loose matches ("Be a Secret Agent" for penguins), and had nothing else
+  for one in four of the seeds that slides wander to. An action now has one of the seed's telling words in any form
+  ("Plan a High School Reunion" for school reunions, not "Skip School"), or one of the words related to it ("Draw a
+  Bird" for birdwatching): 36 of 39 sample topics keep some, and a template that wants an action of a seed without
+  any gives way to another. A how-to with a word on a faith, violence, hate, death or hard drugs is left out ("Live
+  a Good Christian Life", "Apply a Fentanyl Patch"); crude ones about the seed stay, as much of a classic talk's
+  humour is ("Clean Your Penis" for cleaning). The words that slides leave out have fentanyl too.
 - A slide's key in the language model's answer never goes on a slide. A free model's conclusion called back to an
   earlier slide by its key: "Huddling scales trust (from slide_03)". The request now asks for callbacks by what the
   earlier slide said, never by its key or number; brackets that name a slide by its key are dropped from a text

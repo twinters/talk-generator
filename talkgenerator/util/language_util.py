@@ -252,6 +252,12 @@ _DETERMINERS: Final = frozenset(
 # counts: "penguins" is about as common as "penguin", "lighthouses" 0.8 rarer than "lighthouse", but "coffees" 1.8
 # rarer than "coffee", "music" and "happiness" have no plurals to speak of, and "rains" is a verb as often as not
 _RARER_PLURAL: Final = 0.9
+# Words English speaks of as amounts though their plurals are common, in another sense ("times", "works", "lives"):
+# "Hours with time", not "Hours with times"
+_AMOUNTS: Final = frozenset(
+    ("time", "work", "art", "science", "life", "light", "power", "sand", "rain", "wind", "glass", "paper", "wood")
+    + ("iron",)
+)
 
 
 @lru_cache(maxsize=4096)
@@ -279,7 +285,7 @@ def is_countable(phrase: str) -> bool:
     amount ("coffee", "happiness", "running", "physics"): whether the plural of its last word is about as common as
     that word, by wordfreq's English frequencies."""
     last = phrase.split()[-1] if phrase.split() else ""
-    if not last or is_plural_noun(last):
+    if not last or last.lower() in _AMOUNTS or is_plural_noun(last):
         return False
     plural = inflect_engine.plural_noun(last)
     if not plural or plural == last:
@@ -294,10 +300,46 @@ def _without_a(phrase: str) -> str:
     return " ".join(words[1:]) if len(words) > 1 and words[0].lower() in ("a", "an") else phrase
 
 
+# Words that open a clause about a phrase's noun ("a plant that won't die", "a dog who reads"): such a phrase stays as
+# it is, as its clause's verb agrees with the noun as it stands ("plants that won't die" would do, "sofas that eats
+# remotes" wouldn't)
+_CLAUSES: Final = frozenset(("that", "who", "which", "whose", "where"))
+
+
+def _has_clause(phrase: str) -> bool:
+    return any(word.lower() in _CLAUSES for word in phrase.split()[1:])
+
+
+# Words that open a phrase about the noun before them ("a cup of tea", "a message in a bottle", "a day at the beach"):
+# its last word is no longer the noun, which English counts ("cups of tea", not "cup of teas"), so a phrase with an "a"
+# of its own and such words after its noun stays as it is ("Love a cup of tea", "Think about a message in a bottle")
+_PREPOSITIONS: Final = frozenset(
+    ("of", "in", "on", "at", "for", "with", "without", "from", "to", "into", "by", "under", "over", "about", "near")
+    + ("behind", "inside", "outside", "around", "through", "across", "against", "between", "among", "beyond", "out")
+    + ("after", "before", "during", "like")
+)
+
+
+def _has_preposition(phrase: str) -> bool:
+    """Whether words about the phrase's noun follow it ("cup of tea", "game of thrones")."""
+    return any(word.lower() in _PREPOSITIONS for word in phrase.split()[1:])
+
+
+def _stays(phrase: str) -> bool:
+    """Whether generic and one keep the phrase as it is: one with a clause about its noun ("a plant that won't die"),
+    or with an "a" of its own and words about its noun after it ("a cup of tea")."""
+    words = phrase.split()
+    article = len(words) > 2 and words[0].lower() in ("a", "an")
+    return _has_clause(phrase) or (article and _has_preposition(" ".join(words[1:])))
+
+
 def generic(phrase: str) -> str:
     """The phrase as English speaks of such things in general ("I love ..."): a countable noun in the plural
     ("penguins", "lighthouses"), and as it is a mass noun ("coffee", "happiness"), a plural, a name, or a phrase with
-    an article of its own ("the French Revolution")."""
+    an article of its own ("the French Revolution"), a clause about its noun ("a plant that won't die") or an "a" and
+    words about its noun after it ("a cup of tea")."""
+    if _stays(phrase):
+        return phrase.strip()
     text = _without_a(phrase.strip())
     if not text or _has_article(text) or is_plural_noun(text) or not is_countable(text):
         return text
@@ -306,11 +348,37 @@ def generic(phrase: str) -> str:
 
 def one(phrase: str) -> str:
     """One of the phrase ("Is this ...?"): a countable noun with its article ("a lighthouse", "an owl", "an hour"),
-    and the others as generic has them ("coffee", "penguins", "the French Revolution")."""
+    and the others as generic has them ("coffee", "penguins", "the French Revolution", "a plant that won't die", "a
+    cup of tea")."""
+    if _stays(phrase):
+        return phrase.strip()
     text = _without_a(phrase.strip())
     if not text or _has_article(text) or is_plural_noun(text) or not is_countable(text):
         return text
     return str(inflect_engine.a(text))
+
+
+def bare(phrase: str) -> str:
+    """The thing the phrase names as it stands after a word of a template's (an article, a possessive or an
+    adjective) and before another noun: without an article of its own, and one of it when it's a plural (as English
+    says "a penguin expert"). "The {seed.bare} paradox" is "The moon paradox" for "the moon", "The penguin paradox"
+    for "penguins" and "The coffee paradox" for "coffee". A phrase with a clause about its noun, or with words about
+    it after it, keeps its words ("sofa that eats remotes", "game of thrones")."""
+    words = phrase.split()
+    if len(words) > 1 and words[0].lower() in ("the", "a", "an"):
+        words = words[1:]
+    text = " ".join(words)
+    if text and not _has_clause(text) and not _has_preposition(text) and is_plural_noun(text):
+        singular = inflect_engine.singular_noun(words[-1])
+        if singular:
+            return " ".join([*words[:-1], str(singular)])
+    return text
+
+
+def title_case(text: str) -> str:
+    """The text in title case: every word with its first letter in capitals, and its others as they are ("Plant That
+    Won't Die", "Rise Of AI"), where str.title makes "Won'T" and "Ai"."""
+    return " ".join(capitalised(word) for word in text.split(" "))
 
 
 def capitalised(text: str) -> str:

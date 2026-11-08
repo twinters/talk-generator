@@ -9,18 +9,20 @@ A box may repeat another's caption (`same_as`): Gru's fourth board is his third,
 
 A meme slide is the template's picture with its captions as texts on it (talkgenerator.design.engine lays them out):
 deck elements every renderer draws already. The language model writes the captions, for a template the talk's dice
-pick; a classic talk takes them from each template's own sentences about the slide's topic (`classic`).
+pick; a classic talk takes them from each template's own sentences about the slide's topic (`classic`), which the
+TED content pack has (`data/packs/ted/memes.json`, a rule per template: see rule_of).
 """
 
 from __future__ import annotations
 
 import functools
 import json
+import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Final, Literal
 
-from talkgenerator.sources import imgflip
+from talkgenerator.sources import imgflip, packs
 from talkgenerator.util import os_util
 
 _DATA: Final = "data/memes.json"
@@ -54,7 +56,8 @@ class MemeTemplate:
     height: int
     about: str  # what the template shows, for the language model
     boxes: tuple[CaptionBox, ...]
-    classic: tuple[tuple[str, ...], ...]  # its captions for classic talks, about the slide's topic ({seed}, {related})
+    # Its captions for classic talks, about the slide's topic ({seed}, {related}): the TED content pack's
+    classic: tuple[tuple[str, ...], ...]
 
     @property
     def captions(self) -> int:
@@ -127,10 +130,25 @@ def templates() -> dict[str, MemeTemplate]:
             height=int(entry["height"]),
             about=str(entry["about"]),
             boxes=tuple(_box(box) for box in entry["boxes"]),
-            classic=tuple(tuple(str(caption) for caption in captions) for captions in entry["classic"]),
+            classic=_classic(str(entry["name"])),
         )
         found[template.id] = template
     return found
+
+
+def rule_of(name: str) -> str:
+    """The rule of a template's classic captions in a content pack's memes grammar: the template's name in lower
+    case, its words joined by underscores ("grus_plan", "buff_doge_vs_cheems")."""
+    return re.sub(r"[^a-z0-9]+", "_", name.lower().replace("'", "")).strip("_")
+
+
+def _classic(name: str) -> tuple[tuple[str, ...], ...]:
+    """A template's captions for classic talks, from the TED content pack: sentences of a caption per box, each
+    "first|second|..." in the pack."""
+    pack = packs.pack(packs.TED)
+    rule = f"memes.{rule_of(name)}"
+    sentences = pack.rule(rule) if pack.has(rule) else []
+    return tuple(tuple(sentence.split("|")) for sentence in sentences)
 
 
 def template(key: str | None) -> MemeTemplate | None:
