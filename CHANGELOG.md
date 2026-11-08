@@ -165,6 +165,23 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   that names a real person, the talk's presenter, a brand or a trademarked character, or asks for gore or sexual
   content, is never sent, every prompt asks for none of that, and a talk whose topic a slide shouldn't make light of
   generates nothing; a refused or failed picture keeps its stock photo.
+- **The vision pick** (`talkgenerator.images.vision`; off by default): with `--vision_pick` (also on `talkgenerator
+  render` and `talkgenerator check`) or `vision_pick=` (`generate_presentation`, `stream_talk`, `render_plan`), a
+  vision model picks every picture of a talk's planned slides among the finder's picture and up to three runners-up
+  the finder kept (without a draw of the talk's dice, so the talk finds the same pictures with it or without it), seen
+  side by side on one contact sheet, in one request a talk once the last slide is settled. It says what each row's
+  candidates show before it picks, or answers "none" (the finder's picture stays, as it does when the request fails,
+  takes over 30 seconds or doesn't fit the talk's budget). `on` asks the talk's own model when it reads pictures
+  (Claude, OpenAI's), else OpenRouter's free vision models (Nemotron 3.5 Super VL, then dots-3; not the free router,
+  which sent the sheet to a model that couldn't read it); any model takes its spec. Requests can show pictures now
+  (`Message.images`, `ImagePart`), which the OpenRouter, Claude and OpenAI adapters send as their APIs take them,
+  budgets count by Claude's tokens for a picture, and cassettes name instead of keeping (a request without pictures
+  keeps its old key; two providers can record on one cassette). A streamed talk hands the slides it changed over again
+  (`slide.updated`) before `talk.finished`; the deck says what the model made of each picture it saw
+  (`ImageAsset.vision`: picked, kept or refused) and which model it was (`Deck.vision_model`), its usage counts the
+  request (`vision_requests`, among `requests`), and `talkgenerator check` reports the picks. In 12 talks by the free
+  models on 2026-11-08, the pictures that show what they were searched for went from 36% to 50% of those it saw (judged
+  by eye), for one more request a talk, answered in 3 to 11 seconds.
 - **New image sources** (milestone 5, docs/v5-plan.md 10.4), each with its license classes, its display policy and
   its filters: **The Met** (public domain artworks, CC0; its search since October 2026, v1.1, and an object per
   request), the **Cleveland Museum of Art** (CC0), the **Wellcome Collection** (medicine, science and odd history:

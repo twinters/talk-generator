@@ -79,6 +79,7 @@ lists the classes, and `talkgenerator formats --licenses` the policies.
 | `--no_extreme_themes` | Leaves the themes for laughs (1997 WordArt, Comic Sans everywhere, clip-art corporate) out of `--theme random` |
 | `--image_generator` | Generates pictures, at your own cost (see [Generated pictures](images-and-themes.md#generated-pictures)): `openai`, `openrouter`, `gemini`, `flux`, `comfyui` or `automatic1111`, each with `:<model>` if you like, or `none` (*default: `TALKGENERATOR_IMAGE_GENERATOR`'s, or else none*) |
 | `--generated_images` | How many pictures a talk generates at most (*default: 3*) |
+| `--vision_pick` | Has a vision model pick the pictures of the slides a language model writes, each among a few candidates it sees side by side, in one request a talk (see [The vision pick](images-and-themes.md#the-vision-pick)): alone or `on` for the talk's own model when it reads pictures, else OpenRouter's free models that do; or a model, such as `anthropic:claude-haiku-5-5`; or `none` (*default: none*) |
 
 [Images and themes](images-and-themes.md#themes) describes the families.
 
@@ -124,6 +125,7 @@ it's from; the checks on the deck; and the sources it had to skip for lack of ke
 | `--theme` | The look, before the plan's own (*default: the plan's, or else `TALKGENERATOR_THEME`, or else `random`*) |
 | `--license_policy` | The license classes the images may have (*default: the format's*) |
 | `--image_generator`, `--generated_images` | Generated pictures, as for a talk (see [Generated pictures](images-and-themes.md#generated-pictures)) |
+| `--vision_pick` | A vision model picks every image among a few candidates, as for a talk (alone or `on`: OpenRouter's free models that read pictures); the report says what it made of them |
 | `--int_seed` | The seed for the random choices, such as which of the images found to use; the report gives the one it used |
 | `--no_json`, `--no_contact_sheet` | Leaves out the deck's JSON, or the contact sheet |
 | `--open` | Opens the PowerPoint afterwards |
@@ -173,6 +175,7 @@ it, are in the report.
 | `--llm` | The language model that writes the talks (*default: `none`, for classic talks*); the second run replays the first one's answers |
 | `--language` | The language of the talks (other languages than English need `--llm`) |
 | `--theme`, `--license_policy` | As for a talk; themed talks get the design checks too (texts that read on their backgrounds, fit their boxes and stay on the slide) |
+| `--vision_pick` | As for a talk; the second run replays the vision model's answers too, and the report counts its picks |
 | `--no_determinism` | Doesn't make every talk a second time |
 | `--report` | Where to write the report |
 | `--decks` | A folder to save every talk's deck in, as JSON, to read what the talks say |

@@ -20,7 +20,9 @@ same images, whatever order the searches come back in, in parallel or not. A loo
 anything hands over to its fallback, and then to the slot's backups.
 
 The picked image notes its look and what the look at its thumbnail found (ImageData.look and .analysis), which the
-deck keeps, and the checks read (talkgenerator.checks.deck).
+deck keeps, and the checks read (talkgenerator.checks.deck). In a talk with a vision pick, an image for a planned
+slide keeps its runners-up too (ImageData.runners_up), for a vision model to pick among (talkgenerator.images.vision):
+taken in order, so the talk's dice draw the same, with a vision pick or without.
 """
 
 from __future__ import annotations
@@ -48,6 +50,9 @@ logger = logging.getLogger("talkgenerator")
 
 MAX_TRIES: Final = 8  # candidates checked (downloaded or probed) for one look's sources, at most, as v4 did
 PALETTE_LOOKS: Final = 3  # candidates looked at in a themed talk, for colours that go with the theme
+# The runners-up an image for a planned slide keeps in a talk with a vision pick (it shows three: these leave room for
+# those without a thumbnail, or on another slide)
+RUNNERS_UP: Final = 6
 # What a candidate's description may not say (beside the sources' own filters, such as Reddit's NSFW mark)
 _UNSAFE: Final = re.compile(r"\b(?:nsfw|nude|nudity|porn|porno|gore|hentai)\b", re.IGNORECASE)
 _THREADS: Final = 16
@@ -64,6 +69,18 @@ class _Candidate:
     weight: float  # its share of its source's weight (by its rating, for ShitpostBot)
     look: ImageAnalysis | None = None
     looked: bool = False
+
+
+@dataclass(frozen=True)
+class RunnersUp:
+    """The other candidates for an image's place (as the finder found them, not yet checked), best first: for a vision
+    model to pick among (see talkgenerator.images.vision). With the look they were found for, where the slide's text
+    goes over them (for a look at them), and what the image is for (its slot's intent)."""
+
+    images: tuple[ImageData, ...]
+    look: str
+    area: Area | None = None
+    intent: str = ""
 
 
 def find(slot: ImageSlot, query: str | None, avoid: Collection[ImageData] = ()) -> ImageData | None:
@@ -256,6 +273,7 @@ def _pick(
     area = slot.text_area or look.text_area
     looks = look.looks or (PALETTE_LOOKS if talk.palette else 0)
     remaining = list(candidates)
+    passed_over: list[_Candidate] = []  # (those that won't do)
     for _ in range(MAX_TRIES):
         if not remaining:
             return None
@@ -272,6 +290,7 @@ def _pick(
             first = [candidate for candidate in remaining if candidate.use is remaining[0].use]
             chosen = random_util.weighted_random([(candidate.weight, candidate) for candidate in first]) or first[0]
         remaining.remove(chosen)
+        passed_over.append(chosen)
         if any(chosen.image == other for other in avoid):
             continue
         if not chosen.looked:
@@ -282,8 +301,38 @@ def _pick(
             continue
         found = copy.copy(chosen.image)  # (a source may hand out the same object again: this one is the slide's)
         found.look, found.analysis = look.name, chosen.look
+        if talk.vision is not None and generator_util.planned():
+            found.runners_up = _runners_up(candidates, chosen, passed_over, avoid, look, area, slot.intent)
         return found
     return None
+
+
+def _runners_up(
+    candidates: Sequence[_Candidate],
+    chosen: _Candidate,
+    passed_over: Sequence[_Candidate],
+    avoid: Collection[ImageData],
+    look: Profile,
+    area: Area | None,
+    intent: str,
+) -> RunnersUp | None:
+    """The candidates that may take the picked one's place (with a thumbnail to show, and not passed over, nor on the
+    slide), best first: its own source's first, as the finder takes the first source that found any, and then the
+    others', in their order. Up to RUNNERS_UP of them; None if there are none. (Taken in order, without drawing from
+    the talk's dice. Alternating between the sources put a second source's memes and screenshots beside the first's
+    stock photos, which a vision model then had to turn down.)"""
+    own: list[ImageData] = []
+    others: list[ImageData] = []
+    for candidate in candidates:
+        if any(candidate is other for other in passed_over) or not candidate.image.thumbnail_url:
+            continue
+        if any(candidate.image == other for other in avoid):
+            continue
+        (own if candidate.use is chosen.use else others).append(candidate.image)
+    taken = own + others
+    if not taken:
+        return None
+    return RunnersUp(tuple(taken[:RUNNERS_UP]), look.name, area, intent)
 
 
 def _sample(candidates: list[_Candidate], size: int) -> list[_Candidate]:

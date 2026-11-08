@@ -32,7 +32,7 @@ from talkgenerator import __version__, generator
 from talkgenerator import topics as topic_list
 from talkgenerator.checks.deck import Finding, check_deck, deck_metrics
 from talkgenerator.design import themes
-from talkgenerator.images import licenses
+from talkgenerator.images import licenses, vision
 from talkgenerator.llm.base import TextProvider
 from talkgenerator.llm.providers import provider_from_spec
 from talkgenerator.llm.replay import ReplayProvider
@@ -107,6 +107,7 @@ def generate_deck(
     language: str = "en",
     theme: str | None = None,
     license_policy: str | None = None,
+    vision_pick: TextProvider | None = None,
 ) -> Deck:
     _, slide_deck, _ = generator._generate_presentation(
         schema=schema,
@@ -122,6 +123,7 @@ def generate_deck(
         # (a benchmark makes many talks, each twice: never with generated pictures, which cost money, whatever
         # TALKGENERATOR_IMAGE_GENERATOR says)
         image_generator="none",
+        vision_pick=vision_pick,
     )
     return slide_deck.to_deck(schema_name=schema)
 
@@ -137,20 +139,27 @@ def check_talk(
     decks: Path | None = None,
     theme: str | None = None,
     license_policy: str | None = None,
+    vision_pick: str | None = None,
 ) -> TalkReport:
     """Generate a talk and check it; with determinism, generate it again one by one, which has to give the same.
 
     With a language model (a spec, see talkgenerator.llm.providers), its answers are recorded, and the second run
     replays them, and so do the sources' answers that the on-disk cache keeps (http_util.same_answers), which can
-    expire in between. With decks (a folder), the talk's deck is saved there as JSON, to read what it says."""
+    expire in between; with a vision pick (see talkgenerator.images.vision), its answer too. With decks (a folder),
+    the talk's deck is saved there as JSON, to read what it says."""
     with tempfile.TemporaryDirectory(prefix="talkgenerator-check-") as folder, http_util.same_answers():
         cassette = Path(folder) / "answers.json"
         recording: TextProvider | str = llm
         if llm != "none":
             recording = ReplayProvider(cassette, record=provider_from_spec(llm))
+        # (the vision model's answers on the same cassette, which the second run replays too)
+        picking = vision.provider_for(vision_pick, provider_from_spec(llm) if llm != "none" else None)
+        vision_recording = ReplayProvider(cassette, record=picking) if picking is not None else None
         start = time.monotonic()
         try:
-            deck = generate_deck(topic, seed, schema, slides, True, recording, language, theme, license_policy)
+            deck = generate_deck(
+                topic, seed, schema, slides, True, recording, language, theme, license_policy, vision_recording
+            )
         except Exception as error:  # a talk should never fail: if it does, that's what the check found
             logger.exception("Generating a talk about %r crashed", topic)
             crash = Finding("generation", "error", f"generating the talk crashed: {error!r}")
@@ -170,7 +179,10 @@ def check_talk(
             )
         if determinism:
             replaying: TextProvider | str = ReplayProvider(cassette) if llm != "none" else "none"
-            again = generate_deck(topic, seed, schema, slides, False, replaying, language, theme, license_policy)
+            replaying_vision = ReplayProvider(cassette) if vision_recording is not None else None
+            again = generate_deck(
+                topic, seed, schema, slides, False, replaying, language, theme, license_policy, replaying_vision
+            )
             # What the talks asked of language models differs (the second one replayed); their slides may not
             report.deterministic = again.model_copy(update={"usage": deck.usage}).to_json() == deck.to_json()
             if not report.deterministic:
@@ -190,17 +202,21 @@ def run(
     decks: Path | None = None,
     theme: str | None = None,
     license_policy: str | None = None,
+    vision_pick: str | None = None,
 ) -> dict[str, Any]:
     """Check a talk for every topic and seed, and return the report."""
     talks = []
     for topic in topics:
         for seed in seeds:
-            talk = check_talk(topic, seed, schema, slides, determinism, llm, language, decks, theme, license_policy)
+            talk = check_talk(
+                topic, seed, schema, slides, determinism, llm, language, decks, theme, license_policy, vision_pick
+            )
             talks.append(talk)
             if on_talk is not None:
                 on_talk(talk)
     report = _report(talks, schema, slides, seeds, llm, language, theme)
     report["license_policy"] = license_policy or generator.get_schema(schema).license_policy
+    report["vision_pick"] = vision_pick
     return report
 
 
@@ -236,6 +252,12 @@ def _report(
             "cost_usd": round(sum(talk.metrics.get("usage", {}).get("cost_usd", 0.0) for talk in talks), 6),
             "images_matching_their_query": f"{_sum_of(talks, 'images_matching_their_query')} of "
             f"{_sum_of(talks, 'images_with_query_and_description')} with a query and a description",
+            # What vision picks made of the pictures they looked at, in how many requests, by which models
+            "vision_pick": {
+                **_summed(talks, "vision_pick"),
+                "requests": sum(talk.metrics.get("usage", {}).get("vision_requests", 0) for talk in talks),
+                "models": sorted({talk.metrics["vision_model"] for talk in talks if talk.metrics.get("vision_model")}),
+            },
             "repeated_titles": _sum_of(talks, "repeated_titles"),
             "license_classes": _summed(talks, "license_classes"),
             # Per look: how many of its pictures were looked at, and how many of those have the look
@@ -345,6 +367,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="the license classes the talks' images may have: all, open (no fair use), or classes separated by "
         "commas (default: the schema's)",
     )
+    parser.add_argument(
+        "--vision_pick",
+        nargs="?",
+        const="on",
+        help="have a vision model pick the pictures of the slides the language model writes (see talkgenerator "
+        "--help): on (alone), or a model, as provider:model (default: none)",
+    )
     parser.add_argument("--verbose", "-v", action="store_true", help="show the generator's logs")
     args = parser.parse_args(argv)
 
@@ -354,6 +383,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         provider_from_spec(args.llm)
         if args.license_policy is not None:
             licenses.policy(args.license_policy)
+        if args.vision_pick is not None:
+            vision.check_spec(args.vision_pick)
     except (ValueError, KeyError) as error:
         parser.error(str(error))
     if args.topics:
@@ -389,6 +420,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         decks=Path(args.decks) if args.decks else None,
         theme=args.theme,
         license_policy=args.license_policy,
+        vision_pick=args.vision_pick,
     )
     summary = report["summary"]
     print(
@@ -400,6 +432,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(
             f"Written by the language model: {summary['written_by_language_model']}, in"
             f" {_count(summary['language_model_requests'], 'request')}, for ${summary['cost_usd']}"
+        )
+    picks = summary["vision_pick"]
+    if picks["requests"]:
+        print(
+            f"Vision pick: {picks['picked']} picked, {picks['kept']} kept, {picks['refused']} refused, in"
+            f" {_count(picks['requests'], 'request')}"
         )
     path = Path(args.report)
     path.parent.mkdir(parents=True, exist_ok=True)

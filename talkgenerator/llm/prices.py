@@ -73,10 +73,11 @@ def estimate_cost(model: str, input_tokens: int, cached_input_tokens: int, outpu
 
 def worst_case_cost(model: str, request: TextRequest, max_output_tokens: int | None = None) -> float | None:
     """The most a request can cost: all its text as uncached input, at a generous three characters per token, and
-    its whole output allowance (the request's, or a larger one that leaves room for thinking). None if the model's
-    price isn't known."""
+    the pictures it shows as many tokens as Claude counts for them, and its whole output allowance (the request's, or
+    a larger one that leaves room for thinking). None if the model's price isn't known."""
     characters = len(request.system) + sum(len(message.content) for message in request.messages)
     if request.json_schema is not None:
         characters += len(json.dumps(request.json_schema))
+    pictures = sum(image.tokens for message in request.messages for image in message.images)
     output_tokens = request.max_output_tokens if max_output_tokens is None else max_output_tokens
-    return estimate_cost(model, math.ceil(characters / 3), 0, output_tokens)
+    return estimate_cost(model, math.ceil(characters / 3) + pictures, 0, output_tokens)

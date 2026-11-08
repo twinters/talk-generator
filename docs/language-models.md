@@ -48,8 +48,9 @@ model you name instead (`openrouter:<model>`) can have fallbacks after it, separ
 providers that hold to the talk's JSON schema get the request.
 
 The free models answer 20 requests a minute, and 50 a day for accounts that have bought less than $10 of credits in
-all, or 1,000 a day once they have. A talk is one request, and `talkgenerator login openrouter --status` says how
-many are left today. A request is billed at the price of the model that answers it, so only models whose ids end in
+all, or 1,000 a day once they have. A talk is one request (two with a [vision pick](images-and-themes.md#the-vision-pick),
+which has a free model that reads pictures pick the talk's pictures), and `talkgenerator login openrouter --status`
+says how many are left today. A request is billed at the price of the model that answers it, so only models whose ids end in
 `:free` (and the free router) are sure to cost nothing.
 
 They write without thinking first: thinking made them take minutes, and they write as well without. A model that has
@@ -87,7 +88,8 @@ as:
 1 language model request (openrouter:dots-studio/dots-3-note-preview:free): 1,973 tokens in (0 cached), 771 out, $0.0000
 ```
 
-The talk's deck says the same in its `usage`, and which model answered in its `language_model`. In Python, a
+The talk's deck says the same in its `usage` (with `vision_requests`, those of a vision pick, among its requests),
+and which model answered in its `language_model` (and `vision_model`, for a vision pick). In Python, a
 `budget` holds a talk to a limit: `talkgenerator.llm.ledger.Budget(max_cost_usd=0)` lets only free models write it,
 and `max_requests` caps the requests.
 

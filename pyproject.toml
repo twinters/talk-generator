@@ -125,6 +125,7 @@ module = [
     "talkgenerator.images.profiles",
     "talkgenerator.images.safety",
     "talkgenerator.images.slots",
+    "talkgenerator.images.vision",
     "talkgenerator.llm",
     "talkgenerator.llm.base",
     "talkgenerator.llm.chatgpt",

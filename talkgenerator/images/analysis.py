@@ -50,6 +50,10 @@ _COLOURFUL: Final = 109.0
 NEAR_DUPLICATE: Final = 10  # the most bits in which the hashes of two near-duplicates differ (of 64)
 _MAX_LOOKS: Final = 2048
 _looks: OrderedDict[tuple[str, Area | None], ImageAnalysis | None] = OrderedDict()
+# The thumbnails downloaded last (their bytes, or None for one that couldn't be had), for a vision pick's contact
+# sheet to show the same pictures that were looked at (see talkgenerator.images.vision), without asking again
+_MAX_THUMBNAILS: Final = 256
+_thumbnails: OrderedDict[str, bytes | None] = OrderedDict()
 _lock = threading.Lock()
 
 
@@ -88,13 +92,27 @@ def look_at(url: str, area: Area | None = None) -> ImageAnalysis | None:
         if key in _looks:
             _looks.move_to_end(key)
             return _looks[key]
-    data = _download(url)
+    data = thumbnail(url)
     found = analyse(data, area) if data is not None else None
     with _lock:
         _looks[key] = found
         while len(_looks) > _MAX_LOOKS:
             _looks.popitem(last=False)
     return found
+
+
+def thumbnail(url: str) -> bytes | None:
+    """The thumbnail at the URL (at most a megabyte), remembered for a while: None if it can't be had."""
+    with _lock:
+        if url in _thumbnails:
+            _thumbnails.move_to_end(url)
+            return _thumbnails[url]
+    data = _download(url)
+    with _lock:
+        _thumbnails[url] = data
+        while len(_thumbnails) > _MAX_THUMBNAILS:
+            _thumbnails.popitem(last=False)
+    return data
 
 
 def _download(url: str) -> bytes | None:
@@ -247,6 +265,7 @@ def _distance(first: str, second: str) -> float:
 
 
 def forget() -> None:
-    """Forget the looks taken (for tests, say)."""
+    """Forget the looks taken and the thumbnails downloaded (for tests, say)."""
     with _lock:
         _looks.clear()
+        _thumbnails.clear()

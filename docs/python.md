@@ -48,6 +48,7 @@ The options, after the format (`"default"`, `"ted"`, `"interview"` or `"test"`) 
 | `theme`, `style_chaos`, `extreme_themes` | The look (see [Themes](images-and-themes.md#themes)) |
 | `license_policy` | The license classes its images may have (see [Licenses](images-and-themes.md#licenses)) |
 | `image_generator`, `image_budget` | An image generator, as `--image_generator` names one or an object, and how many pictures it may make (see [Generated pictures](images-and-themes.md#generated-pictures)) |
+| `vision_pick` | A vision model that picks the pictures of the slides a language model writes, each among a few candidates (see [The vision pick](images-and-themes.md#the-vision-pick)): `True` (the talk's own model when it reads pictures, else OpenRouter's free models that do), a spec such as `"anthropic:claude-haiku-5-5"`, a provider object, or `None` (off, the default). In `stream_talk`, a slide whose picture it changed comes again, as `slide.updated`, before `talk.finished` |
 | `int_seed`, `parallel` | The seed (the same seed gives the same talk, in parallel or not) and whether slides are made at the same time |
 
 ## A PowerPoint: `render_pptx`

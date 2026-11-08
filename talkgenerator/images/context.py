@@ -1,6 +1,7 @@
 """What a talk's images are found by while the talk is made: its license policy, its theme's colours, its format's
-own looks, its persona's favourite looks, and its generated pictures, if it has any. The talk sets it (see `for_talk`), and the image finder reads
-it, in whichever thread finds the images (talkgenerator.util.image_util.carry takes it into a talk's threads)."""
+own looks, its persona's favourite looks, its generated pictures, if it has any, and its vision pick, if it has one.
+The talk sets it (see `for_talk`), and the image finder reads it, in whichever thread finds the images
+(talkgenerator.util.image_util.carry takes it into a talk's threads)."""
 
 from __future__ import annotations
 
@@ -14,6 +15,7 @@ from talkgenerator.images import licenses
 
 if TYPE_CHECKING:
     from talkgenerator.images.generation import ImageGeneration
+    from talkgenerator.images.vision import VisionPick
 
 
 @dataclass(frozen=True)
@@ -21,14 +23,17 @@ class ImageContext:
     """The license policy of a talk; the colours of its theme (none for the classic one), which its pictures had better
     go with; its format's own looks for the looks its slides ask for (a corporate format's "corporate-stock" for
     "photo", say); its image generation, for a talk that generates pictures (see talkgenerator.images.generation);
-    and its persona's favourite looks for some of the looks its slides ask for (a medieval historian's weird medieval
-    art for "weird", see talkgenerator.personas), which are searched first, before the slide's own look."""
+    its persona's favourite looks for some of the looks its slides ask for (a medieval historian's weird medieval
+    art for "weird", see talkgenerator.personas), which are searched first, before the slide's own look; and its
+    vision pick, for a talk with one, which has its planned slides' pictures keep their runners-up (see
+    talkgenerator.images.vision)."""
 
     policy: licenses.LicensePolicy = licenses.ALL
     palette: tuple[str, ...] = ()
     looks: Mapping[str, str] = field(default_factory=dict)
     generation: ImageGeneration | None = None
     persona_looks: Mapping[str, str] = field(default_factory=dict)
+    vision: VisionPick | None = None
 
     def look(self, name: str) -> str:
         """The look a slide's look is in this talk (its format's own, if it has one)."""

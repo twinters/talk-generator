@@ -61,9 +61,10 @@ class OpenRouterProvider(TextProvider):
 
     capabilities = Capabilities(structured_output=True, streaming=True)
 
-    def __init__(self, models: Sequence[str] = (), *, client: Any = None) -> None:
+    def __init__(self, models: Sequence[str] = (), *, effort: str | None = None, client: Any = None) -> None:
         self.models = tuple(model.strip() for model in models if model.strip()) or (DEFAULT_MODEL,)
         self.id = f"openrouter:{self.models[0]}"
+        self.effort = effort  # (None: TALKGENERATOR_LLM_EFFORT's, or for the free router, DEFAULT_EFFORT)
         self._client = client
 
     def possible_models(self) -> tuple[str, ...]:
@@ -137,9 +138,17 @@ class OpenRouterProvider(TextProvider):
         )
 
     def arguments(self, request: TextRequest) -> dict[str, Any]:
-        """The request, as OpenRouter's Chat Completions API takes it."""
-        messages = [{"role": "system", "content": request.system}] if request.system else []
-        messages += [{"role": message.role, "content": message.content} for message in request.messages]
+        """The request, as OpenRouter's Chat Completions API takes it (a message that shows pictures as parts: its
+        pictures, then its text)."""
+        messages: list[dict[str, Any]] = [{"role": "system", "content": request.system}] if request.system else []
+        for message in request.messages:
+            content: Any = message.content
+            if message.images:
+                content = [
+                    *({"type": "image_url", "image_url": {"url": image.data_url()}} for image in message.images),
+                    {"type": "text", "text": message.content},
+                ]
+            messages.append({"role": message.role, "content": content})
         arguments: dict[str, Any] = {
             "model": self.models[0],
             "messages": messages,
@@ -156,7 +165,7 @@ class OpenRouterProvider(TextProvider):
             }
             # Only to providers that hold their answer to the schema
             extra["provider"] = {"require_parameters": True}
-        effort = settings.llm_effort() or (DEFAULT_EFFORT if self.models == (DEFAULT_MODEL,) else None)
+        effort = self.effort or settings.llm_effort() or (DEFAULT_EFFORT if self.models == (DEFAULT_MODEL,) else None)
         if effort:
             extra["reasoning"] = {"effort": effort}
         if extra:

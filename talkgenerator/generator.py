@@ -16,7 +16,7 @@ from talkgenerator import names, personas, runtime_checker, settings, titles
 from talkgenerator.design import engine, themes
 from talkgenerator.images import context as image_context
 from talkgenerator.images import generation as image_generation
-from talkgenerator.images import generators, licenses
+from talkgenerator.images import generators, licenses, vision
 from talkgenerator.images.generation import ImageBudget
 from talkgenerator.images.generators import ImageGenerator
 from talkgenerator.llm.base import TextProvider
@@ -84,6 +84,7 @@ def generate_presentation_using_cli_arguments(args) -> tuple[Presentation | None
         image_generator=getattr(args, "image_generator", None),
         image_budget=_image_budget(getattr(args, "generated_images", None)),
         persona=getattr(args, "persona", None),
+        vision_pick=getattr(args, "vision_pick", None),
     )
 
 
@@ -121,6 +122,7 @@ def generate_presentation(
     image_generator: ImageGenerator | str | None = None,
     image_budget: ImageBudget | None = None,
     persona: str | None = None,
+    vision_pick: bool | str | TextProvider | None = None,
 ) -> tuple[Presentation | None, SlideDeck, str | None]:
     """Deprecated, for talkgenerator 4's callers: generate a talk, save it as a PowerPoint in output_folder (unless
     save_ppt is off), and return the PowerPoint, the talk and the file it went to (see _generate_presentation for the
@@ -160,6 +162,7 @@ def generate_presentation(
         image_generator=image_generator,
         image_budget=image_budget,
         persona=persona,
+        vision_pick=vision_pick,
     )
 
 
@@ -190,6 +193,7 @@ def _generate_presentation(
     image_generator: ImageGenerator | str | None = None,
     image_budget: ImageBudget | None = None,
     persona: str | None = None,
+    vision_pick: bool | str | TextProvider | None = None,
 ) -> tuple[Presentation | None, SlideDeck, str | None]:
     """Generate a talk, as talkgenerator's own commands and stream_talk do: what generate_presentation does, without
     its DeprecationWarning. With debug_notes, every slide's speaker notes explain how it was generated.
@@ -246,6 +250,14 @@ def _generate_presentation(
     show; their pictures are generated while the talk is made, a few at most (image_budget: by default 3, and no
     dollar limit), at the cost of the generator's owner, which the deck's usage says. See
     talkgenerator.images.generation.
+
+    vision_pick has a vision model look at a few candidates for every picture of the slides a language model writes,
+    side by side on one contact sheet, and pick the one that shows what the slide asked for (or none: the finder's
+    picture then stays), in one request a talk, once the last slide is settled: True for the talk's own model when it
+    reads pictures (Claude, OpenAI), else OpenRouter's free models that do (they need an OpenRouter key, and cost
+    nothing but a request of the free tier's); or a model's spec, such as "anthropic:claude-haiku-5-5", or a
+    provider. Off by default (None, False or "none"). The picks are in the deck (each picture's `vision`), its usage
+    counts the request, and the talk's budget holds it too. See talkgenerator.images.vision.
 
     progress follows the talk while it's made (see stream_talk, which hands it over in events)."""
     theme = theme or settings.theme()
@@ -331,11 +343,22 @@ def _generate_presentation(
             "Image generator: {} (this talk may generate {})".format(generation.generator.id, generation.estimate())
         )
 
+    # A vision model that picks its pictures among their candidates, if it's asked for: for the slides a language
+    # model writes, whose image queries say what a picture is to show, in one request once they're settled
+    picking = vision.for_talk(vision_pick, provider, ledger, budget, rng.child("vision pick"), presenter)
+    if picking is not None:
+        logger.info("Vision pick: {}".format(picking.id))
+
     # Generate the presentation object, finding its images by its license policy, theme and format
     # (with the persona's favourite looks, searched first for the looks they have one for)
     persona_looks = chosen_persona.looks if chosen_persona is not None else {}
     images = image_context.ImageContext(
-        policy, palette(chosen_theme), presentation_schema.looks, generation, persona_looks=persona_looks
+        policy,
+        palette(chosen_theme),
+        presentation_schema.looks,
+        generation,
+        persona_looks=persona_looks,
+        vision=picking,
     )
     with image_context.for_talk(images):
         presentation, slide_deck = presentation_schema.generate_presentation(
@@ -364,6 +387,8 @@ def _generate_presentation(
     answered = ledger.language_models()
     if slide_deck.language_model is not None and answered:
         slide_deck.language_model = answered[-1]  # (the model that answered, which a router picks)
+    picked_by = ledger.vision_models()
+    slide_deck.vision_model = picked_by[-1] if picked_by else None
     if provider is not None or generation is not None:
         logger.info(ledger.summary())
 
@@ -412,6 +437,7 @@ def stream_talk(
     image_generator: ImageGenerator | str | None = None,
     image_budget: ImageBudget | None = None,
     persona: str | None = None,
+    vision_pick: bool | str | TextProvider | None = None,
 ) -> Iterator[TalkEvent]:
     """Make a talk as generate_presentation does (the same deck, for the same options, seed and answers), handing
     over what's ready while it's made (see talkgenerator.models.events): talk.started once its title is known (the
@@ -421,7 +447,10 @@ def stream_talk(
 
     In a talk that generates pictures (image_generator: see generate_presentation), a slide comes with its stock photo
     where a generated picture is to go, and comes again (slide.updated, at the same index, laid out the same way) once
-    that's in; talk.finished comes once all of them are in.
+    that's in; talk.finished comes once all of them are in. In a talk with a vision pick (vision_pick: see
+    generate_presentation), the slides come with the finder's pictures as soon as they're settled, as without one, and a
+    slide whose picture the vision model picked another one for comes again (slide.updated) once the last slide is
+    settled and the model has answered; talk.finished comes after that.
 
     Images are probed rather than downloaded (see talkgenerator.util.image_util.probing): a browser that shows the
     slides loads them itself. Nothing is saved: the deck in talk.finished renders as a PowerPoint
@@ -457,6 +486,7 @@ def stream_talk(
                     image_generator=image_generator,
                     image_budget=image_budget,
                     persona=persona,
+                    vision_pick=vision_pick,
                 )
                 events.put(TalkFinished(deck=slide_deck.to_deck(schema_name=schema)))
         except TalkCancelled:
@@ -524,8 +554,8 @@ class _Following:
             image.mark_used()
 
     def updated(self, slide_deck: SlideDeck, slide_nr: int, slide: Any) -> None:
-        """A slide handed over before has changed (a generated picture in its stock photo's place): hand it over
-        again, at its index, laid out as it was."""
+        """A slide handed over before has changed (a generated picture in its stock photo's place, or a vision pick in
+        the finder's): hand it over again, at its index, laid out as it was."""
         if self.cancelled.is_set():
             return
         with self._lock:
@@ -536,6 +566,8 @@ class _Following:
             if self._layout is not None:
                 deck_slide = self._layout.again(index, deck_slide)
             self.hand_over(SlideUpdated(index=index, slide=deck_slide))
+        for image in slide.image_store().values():  # (a picture shown is a picture used, as in settled)
+            image.mark_used()
 
     def _go_on(self) -> None:
         if self.cancelled.is_set():
@@ -639,6 +671,14 @@ def _image_generator_spec(value: str) -> str:
     except ValueError as error:
         raise argparse.ArgumentTypeError(str(error)) from error
     return value
+
+
+def _vision_pick_spec(value: str) -> str:
+    """--vision_pick's value, once it's known to turn the vision pick on or off, or to name a model."""
+    try:
+        return vision.check_spec(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError(str(error)) from error
 
 
 def _name_styles(value: str) -> tuple[str, ...]:
@@ -765,6 +805,18 @@ def get_argument_parser():
         default=None,
         type=int,
         help="How many pictures a talk generates at most (default: TALKGENERATOR_GENERATED_IMAGES's, or else 3)",
+    )
+    parser.add_argument(
+        "--vision_pick",
+        nargs="?",
+        const="on",
+        default=None,
+        type=_vision_pick_spec,
+        help="Has a vision model pick the pictures of the slides a language model writes, each among a few "
+        "candidates, which it sees side by side on one contact sheet, in one request a talk (it can refuse them all: "
+        "the finder's picture then stays). Alone or 'on': the talk's own model when it reads pictures (Claude, "
+        "OpenAI), else OpenRouter's free models that do (with an OpenRouter key: one more request of the free tier's "
+        "a talk); or a model, as provider:model, such as anthropic:claude-haiku-5-5; or none (default: none)",
     )
     parser.add_argument(
         "--parallel",

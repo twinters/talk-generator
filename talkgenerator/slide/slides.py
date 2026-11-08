@@ -170,6 +170,7 @@ def _to_image_asset(image: ImageData) -> model.ImageAsset:
         license_url=image.license_url,
         look=image.look,
         analysis=image.analysis,
+        vision=image.vision,
     )
 
 
