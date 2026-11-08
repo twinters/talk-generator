@@ -416,11 +416,7 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   always had a title, as a generator that gives none on purpose gave way to the title's.
 - A historical figure's title no longer makes a 61-letter word of a wikiHow action, which ran out of its box in
   brutalist themes: a template's `dashes` gives nothing for a word of more than 20 letters, so its template gives
-  way to another, and `{seed.short_wikihow_action}` finds an action short enough to make one word of ("First Olympic
-  "Removing-Rust" Champion").
-- A template function for a noun before another: `{seed.adjunct}` gives "the penguin pyramid" for "penguins", and
-  nothing for a phrase with an article of its own ("the French Revolution"), so its template gives way;
-  `{seed.adjunct.one}` gives "a penguin" for "penguins" too.
+  way to another.
 - A text cut to its length ends where a sentence or a clause in it does, when that keeps half of it, or in English
   before a word that opens the next clause ("when", "but", "because"...): free models' conclusions read "Your plants
   are not decorations—they" and "The mountain breathes when prayers", and are "Your plants are not decorations" and

@@ -1,7 +1,7 @@
 """Offline tests of the fixes for what v5's live and benchmark runs of 2026-11-08 found (docs/v5-plan.md, D50): tag
 caps of none that hold from a talk's first slide, "a title or none" that gives none, historical figures' titles that
-fit every theme, a template function for a noun before another, cut texts that end where a clause does, quizzes whose
-answer agrees with their explanation, and texts about real-world politics left out of talks that aren't about it.
+fit every theme, cut texts that end where a clause does, quizzes whose answer agrees with their explanation, and texts
+about real-world politics left out of talks that aren't about it.
 (The classic templates' plural slips are for the TED content pack to fix, as it rewrites the templates.)"""
 
 from collections import Counter
@@ -119,11 +119,11 @@ def _history_titles(monkeypatch, actions, seeds=range(80)):
     return _calls(cg.history_person_title_generator, seeds, {"seed": "headlight"})
 
 
-def test_a_historical_figures_title_makes_one_word_only_of_a_short_action(monkeypatch):
+def test_a_historical_figures_title_never_makes_one_word_of_a_long_action(monkeypatch):
     titles = _history_titles(monkeypatch, [_LONG_ACTION, "Remove Rust", "Clean Headlights"])
     words = [word.strip('"') for title in titles for word in title.split()]
     assert max(len(word) for word in words) <= text_generator.LONGEST_WORD
-    assert {"Removing-Rust", "Cleaning-Headlights"} <= set(words)  # (the champions are still there)
+    assert {"Removing-Rust", "Cleaning-Headlights"} <= set(words)  # (short ones still make one)
     # With only long actions, the titles that make one word of one give way to the others
     titles = _history_titles(monkeypatch, [_LONG_ACTION])
     assert all(title.count("-") == 0 for title in titles) and len(set(titles)) >= 3
@@ -140,32 +140,6 @@ def test_the_longest_historical_figures_title_fits_a_brutalist_theme(images):
     for seed in range(3):
         deck = _deck(made, _theme("brutalist", seed), seed)
         assert [finding for finding in check_design(deck) if finding.check == "overflow"] == [], seed
-
-
-# A NOUN BEFORE ANOTHER NOUN
-
-
-def test_a_noun_before_another_noun_is_singular():
-    cases = {
-        "penguins": "penguin",
-        "office plants": "office plant",
-        "Penguins": "Penguin",
-        "a penguin": "penguin",
-        "coffee": "coffee",
-        "physics": "physics",
-        "news": "news",
-        "the French Revolution": None,
-        "": None,
-    }
-    assert {phrase: language_util.adjunct(phrase) for phrase in cases} == cases
-    # (as a template function: a template that asks for one gives way where there's none)
-    pyramid = "The {seed.adjunct} pyramid"
-    assert text_generator.apply_variables_to_template(pyramid, {"seed": "penguins"}) == "The penguin pyramid"
-    assert text_generator.apply_variables_to_template(pyramid, {"seed": "the French Revolution"}) is None
-    one = "Which of these is secretly {seed.adjunct.one}?"
-    assert text_generator.apply_variables_to_template(one, {"seed": "office plants"}) == (
-        "Which of these is secretly an office plant?"
-    )
 
 
 # CONCLUSIONS THAT AREN'T CUT MID-CLAUSE
