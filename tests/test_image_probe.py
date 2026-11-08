@@ -254,7 +254,8 @@ def test_a_probe_and_a_download_tell_the_same_size(web):
     assert image_util.check_image(downloaded)
 
     assert probed.size == downloaded.size == (4000, 3000)
-    assert max(image_util.get_image_size(downloaded.data)) == image_util.MAX_DIMENSION  # (scaled down to embed)
+    # (scaled down to embed, decoded at half its size: still as wide as a slide)
+    assert image_util.get_image_size(downloaded.data) == (2000, 1500)
 
 
 def test_an_image_that_plays_its_video_has_its_posters_size(web):
