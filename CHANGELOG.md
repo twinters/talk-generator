@@ -471,6 +471,15 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   have, or with a real country or people and politics' words, is left out (its slide comes out the classic way when
   it can't do without it), and `talkgenerator check` warns of one. Absurd humour about places stays ("There are
   more penguins in Belgium than people").
+- A classic talk takes only wikiHow's actions about its seed, and none of the worst: a lighthouse talk was titled
+  "Never, Ever Make Sex Better". WikiHow pads a search it knows little about with its most popular how-tos ("Kiss",
+  "Tie a Tie", "Make Sex Better") and with loose matches ("Be a Secret Agent" for penguins), and had nothing else
+  for one in four of the seeds that slides wander to. An action now has one of the seed's telling words in any form
+  ("Plan a High School Reunion" for school reunions, not "Skip School"), or one of the words related to it ("Draw a
+  Bird" for birdwatching): 36 of 39 sample topics keep some, and a template that wants an action of a seed without
+  any gives way to another. A how-to with a word on a faith, violence, hate, death or hard drugs is left out ("Live
+  a Good Christian Life", "Apply a Fentanyl Patch"); crude ones about the seed stay, as much of a classic talk's
+  humour is ("Clean Your Penis" for cleaning). The words that slides leave out have fentanyl too.
 - A slide's key in the language model's answer never goes on a slide. A free model's conclusion called back to an
   earlier slide by its key: "Huddling scales trust (from slide_03)". The request now asks for callbacks by what the
   earlier slide said, never by its key or number; brackets that name a slide by its key are dropped from a text
