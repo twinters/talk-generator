@@ -1,0 +1,51 @@
+{
+  "references_title": [
+    "References",
+    "Bibliography",
+    "Selected references",
+    "Further reading",
+    "Works cited",
+    "Literature"
+  ],
+  "reference": [
+    "#author# et al. (#published#), J. Irrepr. Res.",
+    "#author# (#published#), Proc. of Nothing",
+    "#author# and #author# (#published#)",
+    "A blog post (#published#), since deleted",
+    "Reviewer 2 (#published#), personal remark",
+    "My own thesis (#published#), unpublished",
+    "#author# et al. (#published#), in preparation",
+    "A napkin (#published#), the conference dinner",
+    "{seed.bare.cap} Quarterly (#published#)",
+    "#author# (#published#), a preprint, never cited"
+  ],
+  "author": [
+    "Smith",
+    "Jones",
+    "Müller",
+    "García",
+    "Chen",
+    "Kowalski",
+    "Okafor",
+    "Nakamura",
+    "Rossi",
+    "Novak",
+    "Silva",
+    "Andersen",
+    "Dubois",
+    "Petrov",
+    "Haddad",
+    "Murphy",
+    "Janssens"
+  ],
+  "published": [
+    "1987",
+    "1994",
+    "2003",
+    "2011",
+    "2017",
+    "2019",
+    "2021",
+    "2023"
+  ]
+}

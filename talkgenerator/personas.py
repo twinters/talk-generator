@@ -620,13 +620,19 @@ def persona(name: str) -> Persona:
     return found
 
 
-def pick(chosen: str | None, rng: random_util.Rng) -> Persona | None:
+def pick(chosen: str | None, rng: random_util.Rng, weights: Mapping[str, float] | None = None) -> Persona | None:
     """The talk's persona: the one chosen, by name, or else (None, or random) one the talk's dice pick (rng: the talk's,
-    whose "persona" stream picks it); none for "none". A ValueError for a persona there isn't."""
+    whose "persona" stream picks it); none for "none". A ValueError for a persona there isn't.
+
+    The dice pick each persona as likely as the others, or by weights (a talk format's: a startup founder pitches more
+    often), by the personas' names (1 for those they don't name)."""
     wanted = chosen.strip().lower() if chosen is not None else RANDOM
     if wanted == NONE:
         return None
     if wanted == RANDOM:
         with random_util.use(rng.child("persona")):
-            return random_util.choice(tuple(PERSONAS.values()))
+            if not weights:
+                return random_util.choice(tuple(PERSONAS.values()))
+            weighted = [(weights.get(name, 1.0), each) for name, each in PERSONAS.items()]
+            return random_util.weighted_random(weighted) or next(iter(PERSONAS.values()))
     return persona(wanted)

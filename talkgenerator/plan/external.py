@@ -58,6 +58,11 @@ FORMATS: Final = {
     "shown in public; it has no full-screen images, gifs or memes, and no recipes for slides about the presenter",
     "interview": "The TED-like talk, without slides about the presenter",
     "test": "For testing talkgenerator itself",
+    "pitch": "A startup pitch to investors: the problem, the solution, the market (TAM, SAM and SOM), the business "
+    "model, the traction, the competition, the team, the roadmap and the ask, each a part of its arc, in that order",
+    "academic": "A talk at an academic conference, with affiliations on its title slide: the outline, related work, "
+    "the method, the results (with p-values), the limitations, future work, the acknowledgements, the references and "
+    "questions, each a part of its arc, in that order",
 }
 
 # The recipe a kind of slide gets when its plan doesn't name one, the first of these the format has: plain photos,
@@ -97,7 +102,8 @@ def recipe_id(name: str) -> str:
 
 def recipes_of(schema: PresentationSchema) -> list[RecipeChoice]:
     """The recipes a plan for this schema can pick from: those of its slide generators (but the title slide's), and
-    a copyright-free default for a kind that has none of its default recipes."""
+    a copyright-free default for a kind that has none of its default recipes. (A format beyond the TED-like talks,
+    such as a pitch, borrows one only for a kind it has no recipes of: its own are its kinds' defaults.)"""
     from talkgenerator.schema.slide_schemas import slide_generators  # every registered slide generator
 
     own = _choices(schema.slide_generators)
@@ -105,6 +111,8 @@ def recipes_of(schema: PresentationSchema) -> list[RecipeChoice]:
     borrowed = []
     for kind, preferred in _DEFAULT_RECIPES.items():
         if any(choice.id in preferred and choice.recipe.kind == kind for choice in own):
+            continue
+        if schema.format is not None and any(choice.recipe.kind == kind for choice in own):
             continue
         for choice in everywhere:
             if choice.id in preferred and choice.recipe.kind == kind and _COPYRIGHT_FREE.search(choice.id):
@@ -493,7 +501,8 @@ def catalog(schema_name: str = "default") -> dict[str, Any]:
     """The slide kinds a plan for the format can have: their texts, images and recipes."""
     from talkgenerator import generator
 
-    choices = recipes_of(generator.get_schema(schema_name))
+    schema = generator.get_schema(schema_name)
+    choices = recipes_of(schema)
     kinds = []
     for name in PLANNABLE_KINDS:
         of_kind = [choice for choice in choices if choice.recipe.kind == name]
@@ -510,7 +519,22 @@ def catalog(schema_name: str = "default") -> dict[str, Any]:
                 "recipes": [_recipe_entry(choice, choice is default) for choice in of_kind],
             }
         )
-    return {"format": schema_name, "description": FORMATS.get(schema_name, ""), "kinds": kinds}
+    data: dict[str, Any] = {"format": schema_name, "description": FORMATS.get(schema_name, ""), "kinds": kinds}
+    talk_format = schema.format
+    if talk_format is not None:
+        # What a format beyond the TED-like talks is (see talkgenerator.schema.formats): what its titles and its
+        # presenter's job are like, and its arc, each part with the fewest and the most slides it has, and its recipes
+        data["titles"], data["presenter_job"] = talk_format.title_hint, talk_format.job_hint
+    if talk_format is not None and talk_format.arc is not None:
+        data["arc"] = [
+            {
+                "part": part.name,
+                "slides": [part.fewest, part.most],
+                "recipes": sorted(choice.id for choice in choices if part.name in choice.generator.get_tags()),
+            }
+            for part in talk_format.arc.parts
+        ]
+    return data
 
 
 def _text_entry(text: TextField) -> dict[str, Any]:
@@ -578,6 +602,29 @@ def catalog_markdown(schema_name: str = "default") -> str:
         "",
         f"Made by `talkgenerator formats --details --format {schema_name}`.",
     ]
+    if "titles" in data:
+        lines += [
+            "",
+            f"A plan's `title` is {data['titles']}, and its `presenter_job` is {data['presenter_job']}.",
+        ]
+    if "arc" in data:
+        lines += [
+            "",
+            "## The arc",
+            "",
+            "A talk of this format goes through these parts, in this order, each with the slides of its recipes: a "
+            "talk too short for all of them keeps the most important ones, and a long one gives some of them more "
+            "slides, with the format's other slides in between. A plan reads as one of this format when its slides "
+            "follow the arc (talkgenerator doesn't hold a plan to it).",
+            "",
+            "| Part | Slides | Recipes |",
+            "| --- | --- | --- |",
+        ]
+        for part in data["arc"]:
+            fewest, most = part["slides"]
+            count = str(fewest) if fewest == most else f"{fewest} to {most}"
+            recipes = ", ".join(f"`{recipe}`" for recipe in part["recipes"])
+            lines.append(f"| `{part['part']}` | {count} | {recipes} |")
     for kind in data["kinds"]:
         lines += ["", f"## `{kind['kind']}`", "", kind["description"], ""]
         lines += ["| Text | At most | What to write |", "| --- | --- | --- |"]

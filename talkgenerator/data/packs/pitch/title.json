@@ -1,0 +1,58 @@
+{
+  "talk_title": [
+    "#named_tagline#",
+    "#named_tagline#",
+    "#named_tagline#",
+    "#tagline#"
+  ],
+  "named_tagline": [
+    "{startup}: #tagline#"
+  ],
+  "tagline": [
+    "{seed.generic.title}, Reinvented",
+    "{seed.generic.title} on Demand",
+    "Disrupting {seed.generic.title}",
+    "{seed.generic.title} for Everyone",
+    "The Future of {seed.generic.title}",
+    "{seed.generic.title} on the Blockchain",
+    "{seed.generic.title} as a Service",
+    "{seed.generic.title}, Powered by AI",
+    "The Operating System for {seed.generic.title}",
+    "{seed.generic.title} at Scale",
+    "{seed.generic.title} Without the Hassle",
+    "{seed.generic.title}, Delivered in Ten Minutes",
+    "We Put {seed.generic.title} in the Cloud",
+    "{seed.generic.title} for Busy Professionals",
+    "The Last {seed.bare.title} App You'll Ever Need",
+    "{seed.generic.title}, Finally Fixed",
+    "One App for Every {seed.bare.title} Problem",
+    "The {seed.bare.title} Platform of Tomorrow",
+    "{seed.generic.title}, but Make It a Subscription",
+    "{seed.generic.title} in Your Pocket",
+    "The Smartest Way to Enjoy {seed.generic.title}",
+    "{seed.generic.title}, Now With an App",
+    "Rethinking {seed.generic.title} From First Principles",
+    "Your {seed.bare.title} Copilot",
+    "{seed.generic.title} for the Next Billion Users",
+    "A Marketplace for {seed.generic.title}",
+    "{seed.generic.title}. Simplified.",
+    "Zero-Friction {seed.generic.title}",
+    "{seed.generic.title} Without the Middleman",
+    "Democratising {seed.generic.title}"
+  ],
+  "subtitle": [
+    "{presenter}, founder and CEO of {startup}",
+    "{presenter}, co-founder and CEO, {startup}",
+    "{presenter}, Chief Visionary Officer at {startup}",
+    "{presenter}, founder (and so far only employee) of {startup}",
+    "Pitched by {presenter}, founder of {startup}",
+    "{presenter}, CEO of {startup}, pre-seed",
+    "{presenter}, serial entrepreneur, {startup}",
+    "{presenter}, founder of {startup} and two startups you've never heard of",
+    "{presenter}, CEO of {startup}, pre-revenue and proud",
+    "{presenter} · {startup} · seed round",
+    "{presenter}, founder of {startup}, three-time dropout",
+    "{presenter}, Chief Everything Officer at {startup}",
+    "{presenter}, founder of {startup} (we're hiring)"
+  ]
+}

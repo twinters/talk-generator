@@ -4,6 +4,7 @@ from talkgenerator.datastructures.slide_generator_data import ConstantWeightFunc
 from talkgenerator.plan.kinds import Recipe
 from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema import slide_topic_generators
+from talkgenerator.schema.formats import academic, pitch
 from talkgenerator.schema.presentation_schema import PresentationSchema
 from talkgenerator.schema.registry import Registry
 from talkgenerator.schema.slide_schemas import default_max_allowed_tags, slide_generators
@@ -154,6 +155,41 @@ ted_schema = schemas.register(
             "quote": 0.2,
             "statement": 0.2,
         },
+    ),
+)
+
+
+def _wandering(topics, num_slides):
+    """The topics of a talk's slides that wander from its topic and come back to it every two or three slides."""
+    return slide_topic_generators.SideTrackingTopicGenerator(
+        topics=topics, num_slides=num_slides, topic_return_period_range=range(2, 4)
+    )
+
+
+# TALK FORMATS BEYOND THE TED-LIKE TALKS (docs/v5-plan.md, section 7; see talkgenerator.schema.formats): each its arc
+# of slides, its content pack, its brief for the language model, and its favourite personas and themes. Their images
+# come from every source, as the default schema's do; their arcs' slides need none that's fair use, so they work with
+# the open license policy too.
+pitch_schema = schemas.register(
+    "pitch",
+    PresentationSchema(
+        powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
+        seed_generator=_wandering,
+        title_generator=pitch.title_generator,
+        slide_generators=slide_generators.group("pitch"),
+        max_allowed_tags=pitch.CAPS,
+        format=pitch.PITCH,
+    ),
+)
+academic_schema = schemas.register(
+    "academic",
+    PresentationSchema(
+        powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
+        seed_generator=_wandering,
+        title_generator=academic.title_generator,
+        slide_generators=slide_generators.group("academic"),
+        max_allowed_tags=academic.CAPS,
+        format=academic.ACADEMIC,
     ),
 )
 

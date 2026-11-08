@@ -1,0 +1,107 @@
+{
+  "future_title": [
+    "Future work",
+    "Next steps",
+    "What's next",
+    "The road ahead",
+    "Our research agenda",
+    "Future directions",
+    "The next forty years"
+  ],
+  "future_when": [
+    "Next week",
+    "2027",
+    "2028",
+    "2030",
+    "2035",
+    "2050",
+    "2100"
+  ],
+  "future_step": [
+    "Replicate the results",
+    "More data on {seed.generic}",
+    "A bigger sample",
+    "Apply for a grant",
+    "Find a second participant",
+    "Write the paper",
+    "Get the paper accepted",
+    "Hire a postdoc",
+    "Fix the code",
+    "A follow-up study",
+    "Read the related work",
+    "Add a control group"
+  ],
+  "future_punchline": [
+    "A Nobel Prize",
+    "Tenure",
+    "Retire",
+    "A sequel paper",
+    "{seed.generic.cap} on the Moon",
+    "A talk on the main stage",
+    "Explain our results",
+    "Understand our own method",
+    "A statue in the lab"
+  ],
+  "cycle_title": [
+    "Future work",
+    "The research cycle",
+    "Our plan, forever",
+    "The academic life cycle",
+    "Next steps, and the ones after",
+    "How research works"
+  ],
+  "cycle_step": [
+    "Apply for a grant",
+    "Do the research",
+    "Write the paper",
+    "Get rejected",
+    "Resubmit",
+    "Present it",
+    "Get cited, once",
+    "Apply for another grant",
+    "Drink coffee",
+    "Hire a PhD student",
+    "Revise and resubmit"
+  ],
+  "flow_title": [
+    "Future work",
+    "Our decision process",
+    "What happens next",
+    "Next steps",
+    "The plan",
+    "Where this goes",
+    "The decision tree"
+  ],
+  "flow_question": [
+    "Should we do more research on {seed.generic}?",
+    "Did the results replicate?",
+    "Is the paper accepted?",
+    "Do we understand our own results?",
+    "Is the grant approved?",
+    "Did it work?"
+  ],
+  "flow_yes": [
+    "Apply for a bigger grant",
+    "Write a follow-up paper",
+    "Celebrate briefly",
+    "Present it everywhere",
+    "Hire more students",
+    "Write a book about it"
+  ],
+  "flow_no": [
+    "Apply for a grant anyway",
+    "Blame the reviewers",
+    "Call it preliminary",
+    "Change the hypothesis",
+    "Remove some outliers",
+    "Try a different journal"
+  ],
+  "flow_end": [
+    "More research on {seed.generic}",
+    "Another grant application",
+    "More research is needed",
+    "A sequel paper",
+    "The same talk, next year",
+    "Tenure, eventually"
+  ]
+}

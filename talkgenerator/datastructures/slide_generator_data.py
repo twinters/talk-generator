@@ -126,6 +126,19 @@ class SlideGeneratorData:
 
                     return slide, generated_elements
 
+    def weighted(self, weight_function: Callable[[int, int], float], name: str) -> "SlideGeneratorData":
+        """The same slide generator under another name, with another weight: a talk format's, which has the slides of
+        another format among its own (see talkgenerator.schema.formats)."""
+        return SlideGeneratorData(
+            self._generator,
+            weight_function=weight_function,
+            retries=self._retries,
+            allowed_repeated_elements=self._allowed_repeated_elements,
+            tags=set(self._tags),
+            name=name,
+            llm=self.llm,
+        )
+
     def get_weight_for(self, slide_nr: int, total_slides: int) -> float:
         """The weight of the generator for a particular slide.
         Determines how much chance it has being picked for a particular slide number"""

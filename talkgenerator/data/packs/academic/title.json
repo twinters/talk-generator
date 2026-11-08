@@ -1,0 +1,86 @@
+{
+  "talk_title": [
+    "#paper_title#",
+    "#paper_title#",
+    "#paper_title#",
+    "#titled_method#"
+  ],
+  "paper_title": [
+    "Towards a Unified Theory of {seed.generic.title}",
+    "On the Origin of {seed.generic.title}",
+    "{seed.generic.title}: A Longitudinal Study",
+    "{seed.generic.title} Considered Harmful",
+    "All You Need Is {seed.generic.title}",
+    "Rethinking {seed.generic.title}: A Critical Review",
+    "{seed.generic.title} Revisited",
+    "A Large-Scale Study of {seed.generic.title}",
+    "The Unreasonable Effectiveness of {seed.generic.title}",
+    "{seed.generic.title} in the Wild: Lessons From a Failed Experiment",
+    "Why {seed.generic.title}? A Meta-Analysis",
+    "Quantifying {seed.generic.title}: A Bayesian Approach",
+    "A Theory of Everything, Mostly {seed.generic.title}",
+    "Revisiting the {seed.bare.title} Hypothesis",
+    "The {seed.bare.title} Paradox: Evidence From a Survey of Three",
+    "Learning {seed.generic.title} From Very Few Examples",
+    "{seed.generic.title} at Scale: A Cautionary Tale",
+    "An Empirical Investigation of {seed.generic.title}",
+    "Beyond {seed.generic.title}: Towards a New Paradigm",
+    "Is It {seed.generic.title}? A Replication Study",
+    "{seed.generic.title}: Preliminary Results From an Unfunded Project",
+    "Some Remarks on {seed.generic.title}, and a Correction",
+    "What We Talk About When We Talk About {seed.generic.title}",
+    "{seed.generic.title} and the Limits of Knowledge"
+  ],
+  "titled_method": [
+    "{method}: #method_promise#"
+  ],
+  "method_promise": [
+    "Learning {seed.generic.title} Without Labels",
+    "Scalable {seed.bare.title} Detection in the Wild",
+    "A Neural Approach to {seed.generic.title}",
+    "Towards Robust {seed.bare.title} Understanding",
+    "Self-Supervised {seed.bare.title} Modelling",
+    "{seed.bare.title} Prediction From First Principles",
+    "Fast and Frugal {seed.bare.title} Inference",
+    "Explaining {seed.generic.title} Simply"
+  ],
+  "subtitle": [
+    "{presenter}, #department#, #university#",
+    "{presenter}, #department#",
+    "{presenter}, #position#, #university#",
+    "{presenter} et al., #university#",
+    "{presenter} (presenting) and fourteen co-authors, #university#",
+    "{presenter}, #position#, #department#",
+    "{presenter}, #university#"
+  ],
+  "department": [
+    "Department of {seed.bare.title} Studies",
+    "Institute of {seed.bare.title} Research",
+    "Faculty of {seed.bare.title} Science",
+    "School of {seed.bare.title} Engineering",
+    "Centre for {seed.bare.title} Ethics",
+    "Lab for Odd {seed.bare.title} Phenomena",
+    "{seed.bare.title} Research Group"
+  ],
+  "university": [
+    "University of Lower Antarctica",
+    "The Open University of Nowhere",
+    "Institute of Technology, Second Floor",
+    "University of Somewhere Cold",
+    "Polytechnic of the North Pole",
+    "Institute for Things We Can't Explain",
+    "Grand University of Smalltown",
+    "University of the Seven Seas",
+    "Unaccredited Online University"
+  ],
+  "position": [
+    "Associate Professor",
+    "Postdoc, year nine",
+    "PhD candidate, year seven",
+    "Visiting Researcher",
+    "Professor Emeritus",
+    "Research Fellow",
+    "Junior Lecturer",
+    "Professor, on leave"
+  ]
+}

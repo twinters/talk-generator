@@ -1,0 +1,44 @@
+{
+  "outline_title": [
+    "Outline",
+    "Overview",
+    "Roadmap",
+    "Talk outline",
+    "Contents",
+    "Structure of this talk",
+    "Plan of the talk",
+    "In this talk"
+  ],
+  "outline_first": [
+    "Introduction",
+    "Motivation",
+    "Background",
+    "Why {seed.generic}?",
+    "The problem",
+    "Preliminaries"
+  ],
+  "outline_item": [
+    "Related work",
+    "Method",
+    "Experiments",
+    "Results",
+    "Discussion",
+    "Our approach",
+    "Data collection",
+    "Evaluation",
+    "Theory",
+    "A quick detour",
+    "Results (if any)",
+    "The {seed.bare} model",
+    "Ethical considerations"
+  ],
+  "outline_last": [
+    "Conclusion",
+    "Conclusion and future work",
+    "Questions",
+    "Excuses",
+    "Future work",
+    "Lunch",
+    "Open problems"
+  ]
+}

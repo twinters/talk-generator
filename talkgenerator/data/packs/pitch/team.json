@@ -1,0 +1,61 @@
+{
+  "team_title": [
+    "The team",
+    "Meet the team",
+    "Our team",
+    "Who we are",
+    "The founding team",
+    "The dream team",
+    "A world-class team",
+    "The people behind {startup}"
+  ],
+  "team_roles": [
+    "CEO|CTO|Chief {seed.bare.title} Officer",
+    "CEO, ex-intern|CTO, self-taught|Head of Vibes",
+    "Founder|Co-founder|Co-co-founder",
+    "The visionary|The coder|The one with the van",
+    "CEO|Our first investor (my mum)|Office dog",
+    "Chief Executive|Chief Technologist|Chief Snack Officer",
+    "The dealmaker|The hacker|The intern who stayed",
+    "CEO and founder|Advisor (unpaid)|Head of Growth (also unpaid)",
+    "Product|Engineering|Making coffee",
+    "CEO|CFO, my cousin|Head of {seed.bare.title}"
+  ],
+  "org_title": [
+    "The team",
+    "Who's in charge",
+    "Our org chart",
+    "Leadership",
+    "Company structure",
+    "How we're organised",
+    "The {startup} family"
+  ],
+  "boss": [
+    "Our investors",
+    "The office dog",
+    "The intern",
+    "Our biggest customer",
+    "My mum",
+    "The algorithm",
+    "Whoever has the van keys",
+    "Our lawyer",
+    "The group chat",
+    "The cat",
+    "A spreadsheet"
+  ],
+  "member": [
+    "CEO",
+    "CTO",
+    "Head of Growth",
+    "VP of Vibes",
+    "Head of Snacks",
+    "Lead engineer",
+    "Growth hacker",
+    "Chief Meme Officer",
+    "The other founder",
+    "Our only employee",
+    "Head of Sales",
+    "Designer (part-time)",
+    "Advisor (unpaid)"
+  ]
+}

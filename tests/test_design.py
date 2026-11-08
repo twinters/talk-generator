@@ -357,6 +357,8 @@ def _runs(seed=1, theme=None):
         slides.MemeSlide(wide, "When the cat", "Sits on the keyboard"),
         # (and the ones from PowerPoint karaoke decks, with a photo and without, few words and many...)
         *(every_karaoke_type(wide) * 3),
+        # (and the talk formats' process, whose words are short enough to go across, or one under the other)
+        *(slides.ProcessSlide("Method", "Collect cats", "Clean data", "???", "Profit") for _ in range(3)),
     ]
     slide_deck = SlideDeck(len(runs), title="Cats", topics=["cats"], seed=seed)
     for index, slide in enumerate(runs):

@@ -53,6 +53,10 @@ LONG: dict[str, tuple[str, ...]] = {
     "percent": ("97%",),
     "year": ("2003",),
     "acronym": ("SPARKS",),
+    # (the made-up names of a pitch's startup and of an academic talk's method, at their longest: see
+    # talkgenerator.schema.formats.startup and method)
+    "startup": ("Overinterpreting Labs",),
+    "method": ("OverinterpretingFormer",),
 }
 # Topics of every kind, to check that every template reads right with each: a countable noun, a mass noun, a plural, a
 # name, a phrase with an article, two words, a premise with a clause of its own, and a phrase with words about its
@@ -79,6 +83,8 @@ COMMON = {
     "percent": "40%",
     "year": "1823",
     "acronym": "PEN",
+    "startup": "Penguinly",
+    "method": "PenguinNet",
 }
 # What the functions that ask the internet give, in these tests: a long wikiHow action, and for the moon a short one,
 # which a template that makes one word of an action takes (a longer one gives way, see text_generator.LONGEST_WORD)
@@ -469,7 +475,12 @@ def test_how_the_lint_tells_a_topic_spoken_of_wrongly(template, wrong):
 # MEMES
 
 
-@pytest.mark.parametrize("format_name", FORMATS)
+def _with(grammar: str) -> list[str]:
+    """The formats whose packs have the grammar (only TED-like talks have memes and karaoke's types, say)."""
+    return [name for name in FORMATS if grammar in packs.pack(name).grammars()]
+
+
+@pytest.mark.parametrize("format_name", _with("memes"))
 def test_every_meme_template_has_captions_that_fit_its_boxes(format_name):
     captions = packs.pack(format_name).grammar("memes")
     known = memes.templates()
@@ -490,7 +501,7 @@ def test_every_meme_template_has_captions_that_fit_its_boxes(format_name):
 # AN ACRONYM'S WORDS
 
 
-@pytest.mark.parametrize("format_name", FORMATS)
+@pytest.mark.parametrize("format_name", _with("karaoke"))
 def test_an_acronyms_words_start_with_their_letter(format_name):
     karaoke = packs.pack(format_name).grammar("karaoke")
     for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":

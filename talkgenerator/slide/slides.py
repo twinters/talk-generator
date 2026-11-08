@@ -693,6 +693,19 @@ class IcebergSlide(DrawnSlide):
         return self._one_by_one(*((f"hidden_{index}",) for index in range(1, 4)))
 
 
+class ProcessSlide(DrawnSlide):
+    """A process: three to five steps, each leading to the next by an arrow, appearing one by one, a click each: the
+    last one is the punchline (a talk format's method, or how its product works)."""
+
+    required_arguments = ("step_1", "step_2", "step_3")
+
+    def __init__(self, title: str | None, *steps: str | None):
+        super().__init__("process", None, {"title": title, **_listed("step", 5, steps)})
+
+    def clicks(self) -> dict[str, int]:
+        return self._one_by_one(*((f"step_{index}",) for index in range(1, 6)))
+
+
 class FunFactSlide(DrawnSlide):
     """A fun fact: one absurd fact, stated as certain, under a heading in the talk's language ("Did you know?"), with
     its (made-up) source and a photo, if it has them."""

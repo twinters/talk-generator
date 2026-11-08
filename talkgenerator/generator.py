@@ -26,6 +26,7 @@ from talkgenerator.models.deck import Deck
 from talkgenerator.models.events import SlideReady, SlideUpdated, TalkEvent, TalkFinished, TalkStarted
 from talkgenerator.models.theme import Theme
 from talkgenerator.plan import languages
+from talkgenerator.schema import formats
 from talkgenerator.schema.presentation_schema import Progress, TalkCancelled
 from talkgenerator.schema.presentation_schema_types import get_schema, schemas
 from talkgenerator.slide.slide_deck import SlideDeck
@@ -271,17 +272,23 @@ def _generate_presentation(
     rng = random_util.Rng(int_seed)
     logger.info("Presentation seed: {} (pass it as int_seed to make this talk again)".format(rng.root_seed))
 
-    # Who presents it: a persona its seed picks, unless it names one, or none (see talkgenerator.personas)
-    chosen_persona = personas.pick(persona, rng)
+    # Who presents it: a persona its seed picks (a format beyond the TED-like talks has its favourites: a startup
+    # founder pitches more often), unless it names one, or none (see talkgenerator.personas)
+    talk_format = presentation_schema.format
+    chosen_persona = personas.pick(persona, rng, talk_format.personas if talk_format is not None else None)
     if chosen_persona is not None:
         logger.info("Persona: {} ({})".format(chosen_persona.label, chosen_persona.voice))
     else:
         logger.info("Persona: none (the format's own talk)")
 
-    # The talk's theme, from its seed too, of a family its persona favours more often (see talkgenerator.design.themes)
+    # The talk's theme, from its seed too, of a family its persona and its format favour more often (see
+    # talkgenerator.design.themes)
     if theme == themes.CHAOS:
         theme, style_chaos = themes.RANDOM, 1.0
-    favoured = chosen_persona.themes if chosen_persona is not None else None
+    favoured = formats.multiplied(
+        chosen_persona.themes if chosen_persona is not None else None,
+        talk_format.themes if talk_format is not None else None,
+    )
     chosen_theme = themes.pick(theme, rng.child("theme"), extreme_themes, favoured)
     if chosen_theme is not None:
         logger.info("Theme: {}".format(chosen_theme.name))

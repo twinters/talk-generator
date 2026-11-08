@@ -1,0 +1,34 @@
+{
+  "thanks_title": [
+    "Acknowledgements",
+    "Thank you",
+    "With thanks to",
+    "Special thanks",
+    "Funding",
+    "Made possible by",
+    "Credits"
+  ],
+  "three_thanks": [
+    "My supervisor|The coffee machine|Reviewer 2 (no thanks)",
+    "The funding agency|My family|The {seed.bare} community",
+    "Grant No. 4815162342|The lab cat|Whoever fixed the printer",
+    "My co-authors|The cleaning staff|The vending machine",
+    "The {seed.bare} society|My patient partner|Coffee",
+    "The anonymous reviewers|My mum|The night shift",
+    "Our test subjects|The ethics board (sorry)|Pizza",
+    "Grant No. 42|My PhD students|The free conference lunch"
+  ],
+  "thanks_item": [
+    "My supervisor, for the freedom",
+    "The funding agency (please renew)",
+    "Reviewer 2, for nothing",
+    "The coffee machine on the third floor",
+    "My co-authors, who did the work",
+    "The lab's cat, for moral support",
+    "My family, who still asks what I do",
+    "The {seed.bare} community",
+    "Grant No. 4815162342",
+    "The IT helpdesk, for the backups",
+    "The conference's free lunch"
+  ]
+}

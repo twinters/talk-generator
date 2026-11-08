@@ -371,6 +371,10 @@ def _iceberg(texts: Mapping[str, str | None], images: Mapping[str, Any], languag
     return slides.IcebergSlide(texts["title"], texts["tip"], *_numbered(texts, "hidden", 3))
 
 
+def _process(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    return slides.ProcessSlide(texts["title"], *_numbered(texts, "step", 5))
+
+
 def _meme(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
     picture = images.get("template")
     if picture is None:
@@ -906,6 +910,26 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             (),
             _iceberg,
+        ),
+        # The talk formats' (docs/v5-plan.md, section 7): a method, or how a product works
+        Kind(
+            "process",
+            "A process of three to five steps, each leading to the next by an arrow, from the first to the last, the "
+            "punchline; they appear one by one, a click each.",
+            (
+                TextField("title", "the process's title", 60),
+                *_items(
+                    "step",
+                    40,
+                    "the first step",
+                    "the second step",
+                    "the third step (the last, the punchline, if there are no more)",
+                    "a fourth step",
+                    "a fifth step",
+                ),
+            ),
+            (),
+            _process,
         ),
         # Media
         Kind(

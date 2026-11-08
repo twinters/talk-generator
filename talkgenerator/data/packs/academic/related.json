@@ -1,0 +1,153 @@
+{
+  "venn_title": [
+    "Related work",
+    "Where this work sits",
+    "Prior work",
+    "The state of the art",
+    "Positioning this work",
+    "Three fields, one gap",
+    "Background"
+  ],
+  "field": [
+    "Machine learning",
+    "Wishful thinking",
+    "Statistics",
+    "Philosophy",
+    "Linguistics",
+    "Folk wisdom",
+    "Economics",
+    "Quantum physics",
+    "Cooking",
+    "Common sense",
+    "Grant writing",
+    "Ornithology",
+    "Interpretive dance",
+    "Astronomy",
+    "Gastronomy"
+  ],
+  "overlap": [
+    "This paper",
+    "Our work",
+    "Us",
+    "My thesis",
+    "This talk",
+    "{method}",
+    "The gap we fill"
+  ],
+  "matrix_title": [
+    "Related work",
+    "Prior approaches",
+    "The landscape of prior work",
+    "Positioning our approach",
+    "How we compare",
+    "Earlier work, in four boxes"
+  ],
+  "axis": [
+    "Theoretical|Practical",
+    "Old|New",
+    "Small data|Big data",
+    "Slow|Fast",
+    "Narrow|General",
+    "Shallow|Deep",
+    "Expensive|Free",
+    "Unreproducible|Reproducible",
+    "Linear|Nonlinear",
+    "Supervised|Self-supervised",
+    "Peer-reviewed|Preprint"
+  ],
+  "citation": [
+    "#surname# et al. (#year#)",
+    "#surname# and #surname# (#year#)",
+    "#surname# (#year#)",
+    "Our earlier work (#year#)",
+    "A blog post (#year#)",
+    "Reviewer 2 (#year#)",
+    "A textbook, chapter 3"
+  ],
+  "surname": [
+    "Smith",
+    "Jones",
+    "Müller",
+    "García",
+    "Chen",
+    "Kowalski",
+    "Okafor",
+    "Nakamura",
+    "Rossi",
+    "Novak",
+    "Silva",
+    "Andersen",
+    "Dubois",
+    "Petrov",
+    "Haddad",
+    "Murphy",
+    "Janssens"
+  ],
+  "year": [
+    "1987",
+    "1994",
+    "2003",
+    "2011",
+    "2017",
+    "2019",
+    "2021",
+    "2023"
+  ],
+  "gap": [
+    "Nobody, until now",
+    "The gap in the literature",
+    "Unexplored",
+    "Here be dragons",
+    "Where no grant has gone",
+    "Our corner"
+  ],
+  "timeline_title": [
+    "A brief history of {seed.bare} research",
+    "The field so far",
+    "Prior work, in order",
+    "How we got here",
+    "Milestones of the field",
+    "The literature, briefly"
+  ],
+  "when": [
+    "1859",
+    "1903",
+    "1952",
+    "1968",
+    "1987",
+    "1999",
+    "2008",
+    "2015",
+    "2021"
+  ],
+  "now": [
+    "Today",
+    "Now",
+    "This year",
+    "This talk",
+    "Right now",
+    "At last"
+  ],
+  "milestone": [
+    "{seed.generic.cap}, first described",
+    "A grant is awarded",
+    "The field's first conference",
+    "Someone gets it wrong",
+    "A famous correction",
+    "Nobody cares, for decades",
+    "A heated letter to the editor",
+    "The first replication fails",
+    "The field splits in two",
+    "Funding dries up",
+    "A breakthrough, retracted",
+    "A textbook gets it wrong"
+  ],
+  "this_work": [
+    "This work",
+    "Our paper (under review)",
+    "This talk",
+    "Us, finally",
+    "The {method} breakthrough",
+    "We fix everything"
+  ]
+}

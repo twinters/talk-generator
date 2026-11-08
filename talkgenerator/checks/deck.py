@@ -179,6 +179,7 @@ def check_deck(deck: Deck, expected_slides: int | None = None) -> list[Finding]:
     return [
         *check_completeness(deck, expected_slides),
         *check_leftovers(deck),
+        *check_arc(deck, expected_slides),
         *check_quizzes(deck),
         *check_politics(deck),
         *check_images(deck),
@@ -281,6 +282,55 @@ def check_leftovers(deck: Deck) -> list[Finding]:
                     findings.append(Finding("leftovers", "error", f"{what} in its {role}: {found.group(0)!r}", number))
             if _NONE.search(text):
                 findings.append(Finding("leftovers", "warning", f"'None' in its {role}: {text!r}", number))
+    return findings
+
+
+# What made a slide, as its notes say: a classic slide's generator, or the slide generator a planned slide stood for
+_MADE_BY: Final = re.compile(
+    r"^(?:Generator: (?P<classic>.+?)|Planned: an? \S+ slide for (?P<planned>.+?), about .*)\s*$", re.MULTILINE
+)
+
+
+def check_arc(deck: Deck, expected_slides: int | None = None) -> list[Finding]:
+    """A talk of a format with an arc (a pitch, an academic talk: see talkgenerator.schema.formats) goes through the
+    parts that a talk of its length keeps, in their order, as its slides' notes say who made them: a warning for a
+    part it misses (when none of the part's slide generators could make its slide, one of the format's other slides
+    stands in), and for a part that comes before one it should follow."""
+    from talkgenerator.schema.presentation_schema_types import schemas  # (here: the checks don't need them otherwise)
+
+    if deck.schema_name is None or deck.schema_name not in schemas:
+        return []
+    schema = schemas.get(deck.schema_name)
+    arc = schema.format.arc if schema.format is not None else None
+    if arc is None:
+        return []
+    part_of = {
+        generator.name: next((tag for tag in generator.get_tags() if tag in arc.names()), None)
+        for generator in schema.slide_generators
+    }
+    seen: list[tuple[int, str]] = []
+    for number, slide in enumerate(deck.slides, 1):
+        made_by = _MADE_BY.search(slide.notes)
+        name = (made_by.group("classic") or made_by.group("planned")) if made_by else None
+        part = part_of.get(name.strip()) if name else None
+        if part is not None:
+            seen.append((number, part))
+    findings = []
+    order = arc.names()
+    for (_, before), (number, after) in itertools.pairwise(seen):
+        if order.index(after) < order.index(before):
+            findings.append(
+                Finding(
+                    "arc",
+                    "warning",
+                    f"its {after.replace('_', ' ')} slide comes after its {before.replace('_', ' ')} slide",
+                    number,
+                )
+            )
+    parts = {part for _, part in seen}
+    for part in arc.kept(expected_slides or len(deck.slides)):
+        if part not in parts:
+            findings.append(Finding("arc", "warning", f"it has no slide of its {part.replace('_', ' ')} part"))
     return findings
 
 

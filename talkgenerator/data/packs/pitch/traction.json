@@ -1,0 +1,127 @@
+{
+  "traction_title": [
+    "Traction",
+    "We're growing fast",
+    "Hockey stick, as promised",
+    "Month-over-month growth",
+    "Users love {startup}",
+    "Growth since launch",
+    "Up and to the right",
+    "Our growth (log scale, for drama)",
+    "{startup} is taking off",
+    "Nothing can stop us now",
+    "Growth beyond our wildest dreams"
+  ],
+  "traction_x": [
+    "Months since launch",
+    "Time",
+    "Weeks since we pivoted",
+    "Days since the press release",
+    "Cups of coffee the founders drank",
+    "Pitch decks sent",
+    "Months, roughly",
+    "Quarters since we started"
+  ],
+  "traction_y": [
+    "Users",
+    "Monthly revenue",
+    "Downloads",
+    "Happy customers",
+    "Sign-ups, the team included",
+    "Hype",
+    "Five-star reviews",
+    "People on the waitlist",
+    "Investor emails",
+    "Monthly active {seed.generic}"
+  ],
+  "traction_event": [
+    "We pivoted",
+    "Launch day",
+    "Mum shared it",
+    "We were on the radio",
+    "We went viral",
+    "Free pizza day",
+    "We fixed the bug",
+    "We added AI",
+    "A celebrity liked it",
+    "The press release",
+    "We hired a marketer",
+    "We changed our name"
+  ],
+  "kpi_title": [
+    "Traction",
+    "Our numbers",
+    "Key metrics",
+    "By the numbers",
+    "Growth so far",
+    "KPIs that matter",
+    "Momentum",
+    "The numbers",
+    "How we're doing"
+  ],
+  "kpi_share": [
+    "growth, month over month",
+    "growth since we pivoted",
+    "growth in {seed.bare} sales",
+    "week-over-week growth",
+    "growth since Tuesday",
+    "growth in sign-ups",
+    "growth in office snacks",
+    "growth in hype"
+  ],
+  "kpi_count": [
+    "users on the waitlist",
+    "daily active users",
+    "five-star reviews",
+    "countries (soon)",
+    "letters of intent",
+    "pilot customers",
+    "partnerships",
+    "press mentions",
+    "{seed.bare} deals signed",
+    "app downloads",
+    "newsletter subscribers",
+    "followers"
+  ],
+  "kpi_punchline_number": [
+    "0",
+    "1",
+    "$12",
+    "-3",
+    "0.5",
+    "$0",
+    "2"
+  ],
+  "kpi_punchline": [
+    "paying customers",
+    "revenue (so far)",
+    "profit",
+    "employees who aren't founders",
+    "investors who called back",
+    "competitors who noticed us",
+    "users who aren't family",
+    "days without a pivot",
+    "lawsuits (so far)"
+  ],
+  "testimonial_title": [
+    "What our users say",
+    "Customers love us",
+    "Real reviews",
+    "Testimonials",
+    "Don't take our word for it",
+    "Our users speak"
+  ],
+  "testimonial": [
+    "{startup} changed the way I think about {seed.generic}. Five stars.",
+    "I used to dread {seed.generic}. Now there's an app for it, and I dread the app.",
+    "Honestly can't remember life before {startup}. It's been two days.",
+    "Ten out of ten, would disrupt again.",
+    "My kids won't stop talking about {startup}. Please make it stop.",
+    "Finally, someone did something about {seed.generic}!",
+    "Signed up by accident. Still here. Four stars.",
+    "I told my therapist about {startup}. She signed up too.",
+    "Not sure what {startup} does, but I love it.",
+    "Before {startup}: {seed.generic}. After {startup}: also {seed.generic}, but faster.",
+    "Cancelled my subscription, came back the next morning. Can't explain it."
+  ]
+}

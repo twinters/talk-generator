@@ -12,6 +12,7 @@ from PIL import Image
 
 from talkgenerator import generator, names
 from talkgenerator.checks.deck import check_deck
+from talkgenerator.models import classic
 from talkgenerator.models.deck import Deck
 from talkgenerator.models.plan import SlidePlan, TalkPlan
 from talkgenerator.plan import external
@@ -294,7 +295,8 @@ def test_formats_lists_the_formats_and_their_slides(capsys):
     assert external.main("formats", ["--details", "--json"]) == 0
     catalog = json.loads(capsys.readouterr().out)
     kinds = {kind["kind"]: kind for kind in catalog["kinds"]}
-    assert set(kinds) == set(external.PLANNABLE_KINDS)
+    # (every kind but the ones that the formats beyond TED-like talks brought, such as an academic talk's process)
+    assert set(kinds) == set(external.PLANNABLE_KINDS) - classic.FORMAT_TYPES
     defaults = [recipe["id"] for recipe in kinds["image"]["recipes"] if recipe["default"]]
     assert defaults == ["single-image-copyright-free"]  # borrowed: the default format has no plain photo slide
 
@@ -308,7 +310,15 @@ def test_copyright_free_formats_only_get_copyright_free_defaults():
 # THE SKILL
 
 
-@pytest.mark.parametrize(("format_name", "file_name"), [("default", "slides.md"), ("ted", "slides-ted.md")])
+@pytest.mark.parametrize(
+    ("format_name", "file_name"),
+    [
+        ("default", "slides.md"),
+        ("ted", "slides-ted.md"),
+        ("pitch", "slides-pitch.md"),
+        ("academic", "slides-academic.md"),
+    ],
+)
 def test_the_skills_slide_references_are_up_to_date(format_name, file_name):
     # Made with: talkgenerator formats --details --format <format> > skill/skills/talkgenerator/references/<file>
     reference = (SKILL / "references" / file_name).read_text(encoding="utf-8")

@@ -34,7 +34,7 @@ from collections.abc import Callable, Collection, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 from pptx.presentation import Presentation
 
@@ -58,6 +58,9 @@ from talkgenerator.schema.slide_topic_generators import SlideSeedGenerator
 from talkgenerator.slide import slide_generator_types, slides
 from talkgenerator.slide.slide_deck import SlideDeck
 from talkgenerator.util import image_util, random_util
+
+if TYPE_CHECKING:
+    from talkgenerator.schema.formats import Format
 
 logger = logging.getLogger("talkgenerator")
 
@@ -115,6 +118,9 @@ def _title_slide(
     """The title slide of a planned talk ("By <presenter>, <job>", in the talk's language), with its texts."""
     with random_util.use(rng.child("subtitle")):
         by = random_util.choice(languages.language(language).by)
+    if job and presenter and job.casefold().startswith(presenter.casefold()):
+        # (a free model wrote the presenter's name into their job: "By Dr. Chronos Vance, Dr. Chronos Vance, Founder")
+        job = job[len(presenter) :].lstrip(" ,;:-–—") or None
     subtitle = ", ".join(part for part in (f"{by} {presenter}" if presenter else "", job or "") if part) or None
     slide = slides.TitleSlide(title, subtitle)
     slide.set_note(f"Planned: the title slide\nThesis: {thesis!r}")
@@ -322,10 +328,17 @@ class PresentationSchema:
         title_candidates: Sequence[titles.TitleGenerator] = (),
         license_policy: str = licenses.DEFAULT,
         looks: Mapping[str, str] | None = None,
+        format: "Format | None" = None,
     ):
         """title_generator makes a classic talk's title, and title_candidates are more classic title generators (such
         as wikiHow's "How to ..." titles), whose titles, with the title generator's, a language model may pick for a
-        talk on what was typed when it reads that as a topic (see talkgenerator.titles)."""
+        talk on what was typed when it reads that as a topic (see talkgenerator.titles).
+
+        format is what a talk format beyond the TED-like talks is besides its slides (see
+        talkgenerator.schema.formats): its brief for the language model, what its titles and its presenter's job are
+        like, how likely each persona is to present it, its talks' theme families and its arc. Without one, a talk is
+        a TED-like talk, and its requests to a language model say nothing of a format."""
+        self.format = format
         self._powerpoint_creator = powerpoint_creator
         # The license classes its talks' images may have, unless a talk says otherwise (see talkgenerator.images.licenses)
         self.license_policy = licenses.policy(license_policy).name
@@ -605,6 +618,7 @@ class PresentationSchema:
                         typed,
                         generation,
                         persona=persona,
+                        talk_format=self.format,
                     )
                     self._ask(llm, request, talk)
                     if talk.cancelled.is_set() or talk.spine.get("unsafe_topic") is not True:

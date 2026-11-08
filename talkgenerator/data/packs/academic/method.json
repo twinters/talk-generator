@@ -1,0 +1,72 @@
+{
+  "method_title": [
+    "Method",
+    "Our approach",
+    "Methodology",
+    "Proposed method",
+    "The {method} pipeline",
+    "Experimental design",
+    "How {method} works",
+    "Our framework"
+  ],
+  "step_first": [
+    "Collect {seed.generic}",
+    "Recruit three volunteers",
+    "Gather the data",
+    "Ask a grad student",
+    "Sample some {seed.bare} data",
+    "Download a dataset",
+    "Define the problem",
+    "Formulate a hypothesis",
+    "Write the grant proposal"
+  ],
+  "step": [
+    "Clean the data",
+    "Remove the outliers",
+    "Train the model",
+    "Apply {method}",
+    "Run it again",
+    "Add more layers",
+    "Tweak the parameters",
+    "Remove more outliers",
+    "Ask the supervisor",
+    "???",
+    "Wait for the cluster",
+    "Normalise everything",
+    "Run 10,000 simulations",
+    "Bootstrap, a lot"
+  ],
+  "step_last": [
+    "p < 0.05",
+    "Publish",
+    "Significance!",
+    "A Nobel Prize",
+    "Tenure",
+    "A press release",
+    "Profit",
+    "Results, eventually",
+    "Cite ourselves"
+  ],
+  "equation": [
+    "Happiness = {seed.bare}² / Monday",
+    "E = mc², where c is the speed of {seed.generic}",
+    "{seed.bare.cap} = 42 (give or take 41)",
+    "Truth = {seed.bare}² + coffee × 0",
+    "y = {seed.bare} × x + error (the error does most of the work)",
+    "P({seed.bare}, given coffee) > P(coffee, given {seed.bare})",
+    "Success = (grants × {seed.bare}) / reviewers²",
+    "Everything = {seed.bare} + {seed.bare}² + {seed.bare}³ (it converges, trust us)",
+    "f({seed.bare}) = f({seed.bare}) + 1",
+    "Impact = citations × {seed.bare} ÷ sleep"
+  ],
+  "setup_title": [
+    "Experimental setup",
+    "Our lab",
+    "The apparatus",
+    "Data collection, in the field",
+    "Our setup",
+    "The experiment",
+    "Where the magic happens",
+    "Fieldwork"
+  ]
+}

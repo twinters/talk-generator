@@ -1,0 +1,139 @@
+{
+  "p_value": [
+    "p = 0.049",
+    "p = 0.0499",
+    "p < 0.05",
+    "p = 0.051",
+    "p = 0.050",
+    "p < 0.06"
+  ],
+  "ranking_title": [
+    "Accuracy on the {seed.bare} benchmark (#p_value#)",
+    "{method} beats every baseline (#p_value#)",
+    "Performance, by method (#p_value#)",
+    "Our results (#p_value#)",
+    "How {method} compares (#p_value#)",
+    "Main results, after removing the outliers",
+    "Results on the {seed.bare} dataset (#p_value#)"
+  ],
+  "baseline": [
+    "Random guessing",
+    "Prior work",
+    "A coin flip",
+    "The baseline",
+    "Human experts",
+    "A spreadsheet",
+    "Our earlier method",
+    "The state of the art",
+    "Asking a friend",
+    "The intern",
+    "Linear regression",
+    "A fair coin"
+  ],
+  "measure": [
+    "Accuracy (%)",
+    "F1 score",
+    "{seed.generic.cap} per second",
+    "Effect size",
+    "Statistical significance",
+    "Citations",
+    "Score (higher is better)",
+    "Score (lower is better?)"
+  ],
+  "correlation_title": [
+    "A strong correlation between {seed.generic} and sleep (r = 0.98, #p_value#)",
+    "{seed.generic.cap} versus everything else (r = 0.97, #p_value#)",
+    "More {seed.bare} exposure, more grants (r = 0.91, #p_value#)",
+    "Correlation, therefore causation (#p_value#)",
+    "97% of the variance, explained by {seed.generic} (#p_value#)",
+    "Our main finding: it's linear, roughly (r = 0.4, #p_value#)",
+    "Exposure to {seed.generic} and happiness (r = 0.99, #p_value#)"
+  ],
+  "correlation_x": [
+    "{seed.generic.cap} per capita",
+    "Exposure to {seed.generic}",
+    "Hours of sleep",
+    "Coffee consumed (cups)",
+    "Years since the PhD",
+    "Number of co-authors",
+    "Grant money (€)"
+  ],
+  "correlation_y": [
+    "Happiness",
+    "Citations",
+    "Productivity",
+    "Reviewer satisfaction",
+    "Funding",
+    "Publications per year",
+    "Confidence"
+  ],
+  "outlier": [
+    "Reviewer 2",
+    "My supervisor",
+    "The control group",
+    "A typo",
+    "Last year's data",
+    "The pilot study",
+    "Our intern's results"
+  ],
+  "trend_title": [
+    "{method} over time (#p_value#)",
+    "Performance over training time (#p_value#)",
+    "Results over the years",
+    "Learning curves (#p_value#)",
+    "Convergence, eventually",
+    "Our method vs. the baseline, over time"
+  ],
+  "trend_x": [
+    "Training epochs",
+    "Years of research",
+    "Grant cycles",
+    "Coffee breaks",
+    "Time (s)",
+    "Revisions"
+  ],
+  "trend_y": [
+    "Accuracy",
+    "Loss",
+    "Citations",
+    "Confidence",
+    "Sanity",
+    "Significance"
+  ],
+  "p_title": [
+    "The key result",
+    "Results",
+    "Statistically significant",
+    "Our main finding",
+    "The number that matters",
+    "Significance!",
+    "Main result"
+  ],
+  "p_number": [
+    "p = 0.049",
+    "p = 0.0499",
+    "p < 0.05",
+    "p = 0.051",
+    "p = 0.050",
+    "p < 0.06",
+    "p = 0.04999"
+  ],
+  "p_label": [
+    "the effect of {seed.generic} on everything, after we removed the outliers",
+    "statistically significant, after the fourth try",
+    "the chance that our results are a coincidence (allegedly)",
+    "significant at the 5% level, if you squint",
+    "our main finding about {seed.generic}, one-tailed",
+    "the probability that Reviewer 2 is right",
+    "the only number in this talk you need to remember"
+  ],
+  "p_source": [
+    "Table 3, appendix F",
+    "See the supplementary material (not included)",
+    "Footnote 47",
+    "Our own analysis, run once",
+    "Figure 2b, cropped",
+    "Data available on request (no)",
+    "Preregistered after the fact"
+  ]
+}

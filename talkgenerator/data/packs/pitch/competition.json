@@ -1,0 +1,77 @@
+{
+  "matrix_title": [
+    "Competition",
+    "The competitive landscape",
+    "Why we win",
+    "Where we stand",
+    "The market map",
+    "Us vs. them",
+    "Competitive advantage",
+    "A crowded market? Not really."
+  ],
+  "axis": [
+    "Expensive|Cheap",
+    "Boring|Exciting",
+    "Slow|Fast",
+    "Old-fashioned|Disruptive",
+    "Analogue|AI-powered",
+    "Hard to use|Effortless",
+    "Local|Global",
+    "Niche|For everyone",
+    "Clunky|Beautiful",
+    "Lonely|Social",
+    "Offline|Online",
+    "Serious|Fun"
+  ],
+  "competitor": [
+    "Big Corp",
+    "A spreadsheet",
+    "Doing nothing",
+    "Pen and paper",
+    "The old way",
+    "Your uncle",
+    "A startup that folded",
+    "Legacy players",
+    "Carrier pigeons",
+    "Asking a friend",
+    "A guy on the internet",
+    "Incumbents",
+    "Copycats",
+    "Our previous startup",
+    "Hope",
+    "Doing it by hand",
+    "A very long email",
+    "Grandma's method"
+  ],
+  "best_quadrant": [
+    "Nobody, until now",
+    "The future",
+    "Unicorns",
+    "Where the money is",
+    "Blue ocean",
+    "The sweet spot",
+    "Uncharted territory",
+    "Our happy place"
+  ],
+  "ranking_title": [
+    "Why {startup} wins",
+    "Features, compared",
+    "Customer satisfaction, by product",
+    "How we stack up",
+    "Us vs. the competition",
+    "Ease of use, as rated by our friends",
+    "Who does it best?",
+    "Speed, compared (we did the testing)"
+  ],
+  "ranking_axis": [
+    "Customer happiness",
+    "Speed",
+    "Features",
+    "Coolness",
+    "Satisfaction (%)",
+    "Investor excitement",
+    "Vibes",
+    "Awesomeness",
+    "Five-star reviews"
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "market_title": [
+    "Market size",
+    "A huge market",
+    "The opportunity",
+    "Our market",
+    "Who needs {seed.generic}? Everyone.",
+    "The {seed.bare} market",
+    "TAM, SAM, SOM",
+    "Market opportunity",
+    "A trillion-dollar opportunity",
+    "Room to grow"
+  ],
+  "tam": [
+    "TAM: $4.2 trillion",
+    "TAM: every human alive",
+    "TAM: everyone with a phone",
+    "TAM: $97 billion",
+    "TAM: the whole planet",
+    "TAM: humanity, $8 trillion",
+    "TAM: anyone with a pulse",
+    "TAM: $1.1 quadrillion",
+    "TAM: all 8 billion of us"
+  ],
+  "sam": [
+    "SAM: $300 billion",
+    "SAM: people with internet",
+    "SAM: Europe, roughly",
+    "SAM: anyone who'll listen",
+    "SAM: $12 billion",
+    "SAM: our time zone",
+    "SAM: the early adopters",
+    "SAM: people who own shoes",
+    "SAM: $40 billion"
+  ],
+  "som": [
+    "SOM: my mum",
+    "SOM: $12",
+    "SOM: our friends",
+    "SOM: three people in Ghent",
+    "SOM: the founders",
+    "SOM: one very loyal user",
+    "SOM: $40 and a coffee",
+    "SOM: our investors' kids",
+    "SOM: my neighbour",
+    "SOM: whoever is in this room"
+  ],
+  "market_number_title": [
+    "Market size",
+    "The opportunity",
+    "A massive market",
+    "Total addressable market",
+    "The prize",
+    "Big. Really big."
+  ],
+  "market_amount": [
+    "$4.2T",
+    "$97B",
+    "$300B",
+    "$8 trillion",
+    "$1.1Q",
+    "$12B",
+    "$640B",
+    "$2.4T"
+  ],
+  "market_label": [
+    "the global {seed.bare} market by 2035, conservatively",
+    "spent on {seed.generic} worldwide, every year",
+    "the market for {seed.generic}, if everyone buys two",
+    "what the world would pay to never think about {seed.generic} again",
+    "the total addressable market for {seed.generic} (we rounded up)",
+    "the {seed.bare} economy, give or take a few billion",
+    "the market our competitors are too scared to go after",
+    "what {seed.generic} will be worth once we're done with it"
+  ],
+  "market_source": [
+    "Source: an analyst we met at a party",
+    "Source: our pitch deck from last year",
+    "Source: the back of an envelope",
+    "Source: one data point, extrapolated",
+    "Source: a very optimistic spreadsheet",
+    "Source: the founders' best guess",
+    "Source: we multiplied everything by ten",
+    "Source: vibes"
+  ]
+}

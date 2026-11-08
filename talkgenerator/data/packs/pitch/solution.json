@@ -1,0 +1,93 @@
+{
+  "solution_title": [
+    "Introducing {startup}",
+    "Meet {startup}",
+    "{startup}: {seed.generic} on demand",
+    "The solution: {startup}",
+    "Say hello to {startup}",
+    "{startup} fixes {seed.generic}",
+    "There's an app for that now",
+    "{startup}: it just works",
+    "Our solution",
+    "{seed.generic.cap}, solved",
+    "This changes everything",
+    "One app for every {seed.bare} problem",
+    "{startup}, the {seed.bare} app"
+  ],
+  "before_after_title": [
+    "Before and after {startup}",
+    "Life before {startup}",
+    "The {startup} effect",
+    "Before vs. after",
+    "Spot the difference",
+    "What changes with {startup}",
+    "Life, upgraded"
+  ],
+  "before_after": [
+    "Before: chaos|After: {startup}",
+    "Without {startup}|With {startup}",
+    "You, before {startup}|You, after {startup}",
+    "Yesterday|Tomorrow",
+    "The old way|The {startup} way",
+    "Analogue|Disrupted",
+    "Hard mode|Easy mode",
+    "2019|2029",
+    "Sad|Subscribed",
+    "Stuck|Scaling",
+    "{seed.generic.cap}, by hand|{seed.generic.cap}, by app",
+    "Before: stress|After: synergy",
+    "Before we came along|Now"
+  ],
+  "how_title": [
+    "How it works",
+    "How {startup} works",
+    "It's simple",
+    "Easy as one, two, three",
+    "The {startup} way",
+    "Our secret sauce",
+    "Under the hood",
+    "The magic, explained",
+    "Three easy steps"
+  ],
+  "how_first": [
+    "Download the app",
+    "Sign up in seconds",
+    "Scan your {seed.bare}",
+    "Upload a photo",
+    "Answer three questions",
+    "Order {seed.one}",
+    "Open the app",
+    "Pair your phone",
+    "Describe your {seed.bare}",
+    "Subscribe"
+  ],
+  "how_step": [
+    "Our AI does its thing",
+    "We add the blockchain",
+    "Machine learning happens",
+    "We hand it to an intern",
+    "Synergy",
+    "The algorithm decides",
+    "A man in a van shows up",
+    "We take a 30% cut",
+    "Wait three to five days",
+    "???",
+    "Something with the cloud",
+    "Our patented secret step",
+    "We call our mum",
+    "Nobody knows"
+  ],
+  "how_last": [
+    "Profit",
+    "Profit (eventually)",
+    "Unicorn status",
+    "World domination",
+    "Everybody's happy",
+    "You pay us",
+    "Repeat forever",
+    "{seed.generic.cap}, disrupted",
+    "An exit",
+    "An IPO",
+    "You never leave"
+  ]
+}

@@ -612,7 +612,8 @@ def test_the_response_schema_is_strict_and_in_order():
     spine = schema["properties"][prompt.SPINE]
     assert list(spine["properties"]) == ["unsafe_topic", "thesis", "title", "presenter_job"]
     # In alphabetical order too, in which some models write the answer: the spine first, and slide_02 before slide_10
-    assert planned[-1].number >= 10 and planned[0].key == f"slide_0{planned[0].number}"
+    # (as many digits as the last slide's number has: three, now that there are over a hundred slide generators)
+    assert planned[-1].number >= 10 and planned[0].key == f"slide_{planned[0].number:0{digits}d}"
     assert sorted(schema["properties"]) == list(schema["properties"])
 
 

@@ -1,0 +1,46 @@
+{
+  "limitations_title": [
+    "Limitations",
+    "Threats to validity",
+    "Caveats",
+    "What could go wrong",
+    "Known limitations",
+    "Limitations of this study",
+    "A few small caveats"
+  ],
+  "tip": [
+    "Small sample size",
+    "n = 3",
+    "Limited data",
+    "Some assumptions",
+    "One minor caveat",
+    "A few outliers",
+    "Not yet replicated"
+  ],
+  "hidden": [
+    "All the samples were plastic",
+    "We forgot the control group",
+    "Reviewer 2 was right",
+    "The data is from 1987",
+    "The intern made it up",
+    "We never checked the units",
+    "The code was never run",
+    "It only works on Tuesdays",
+    "We lost the original data",
+    "The model is a lookup table",
+    "Nobody can reproduce it",
+    "Our survey had one respondent"
+  ],
+  "admission": [
+    "Limitation: our whole sample fit in one shoebox",
+    "Our results hold, as long as nobody checks them",
+    "We assumed {seed.generic} to be perfectly spherical",
+    "This study was not peer reviewed. Peers were consulted, briefly.",
+    "Limitations: everything about {seed.generic} we didn't measure",
+    "The findings may not apply outside our lab, our city or Tuesdays",
+    "Correlation is not causation. But it's close.",
+    "Some of the data may have been imagined",
+    "We only studied {seed.generic} on weekdays",
+    "Our model works perfectly for {seed.generic}, in theory"
+  ]
+}

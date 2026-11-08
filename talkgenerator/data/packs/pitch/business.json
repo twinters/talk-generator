@@ -1,0 +1,141 @@
+{
+  "model_title": [
+    "Business model",
+    "How we make money",
+    "Pricing",
+    "Our plans",
+    "Revenue model",
+    "Simple, honest pricing",
+    "Plans for everyone",
+    "Monetisation",
+    "Choose your plan"
+  ],
+  "free_price": [
+    "$0",
+    "Free",
+    "€0",
+    "$0.00",
+    "Gratis",
+    "£0"
+  ],
+  "paid_price": [
+    "$9/mo",
+    "$19/mo",
+    "$29/mo",
+    "$4.99",
+    "$99/yr",
+    "€12/mo",
+    "$7.50"
+  ],
+  "high_price": [
+    "$499/mo",
+    "$999/yr",
+    "$2,500",
+    "$199/mo",
+    "€750/mo",
+    "$4,000"
+  ],
+  "odd_price": [
+    "∞",
+    "$1M",
+    "Call us",
+    "Your soul",
+    "$9,999",
+    "Priceless",
+    "$0.01",
+    "Ask mum"
+  ],
+  "tier_basic": [
+    "Free: ads, lots of ads",
+    "Basic: the essentials",
+    "Free: you are the product",
+    "Free, forever (for now)",
+    "Starter: one feature",
+    "Free trial: seven minutes",
+    "Lite: the app, mostly",
+    "Free: Tuesdays only"
+  ],
+  "tier_pro": [
+    "Pro: everything, twice",
+    "Pro: no ads, probably",
+    "Premium: a human answers",
+    "Plus: dark mode",
+    "Pro: unlimited {seed.generic}",
+    "Premium: the good stuff",
+    "Pro: priority support",
+    "Plus: twice the {seed.bare}"
+  ],
+  "tier_team": [
+    "Team: for 2 to 2,000 people",
+    "Business: invoices included",
+    "Enterprise: a sales call",
+    "Teams: shared {seed.generic}",
+    "Business: our CEO's number",
+    "Agency: our name removed"
+  ],
+  "tier_punchline": [
+    "Enterprise: we come to your house",
+    "Founders' friends: free forever",
+    "Investors: a tour of our garage",
+    "Platinum: the CEO's phone number",
+    "Diamond: a hug from the founder",
+    "Ultra: we do it for you",
+    "Gold: you own us now",
+    "VIP: a framed photo of the team"
+  ],
+  "flywheel_title": [
+    "Our flywheel",
+    "The {startup} flywheel",
+    "The virtuous circle",
+    "How we grow",
+    "Growth engine",
+    "The loop",
+    "Network effects, explained",
+    "Why we can't lose"
+  ],
+  "flywheel_step": [
+    "More users",
+    "More data",
+    "A better product",
+    "More hype",
+    "More funding",
+    "More press",
+    "Network effects",
+    "Lower prices",
+    "More investors",
+    "A bigger valuation",
+    "A podcast",
+    "Even more users",
+    "A pivot",
+    "Synergy",
+    "More word of mouth",
+    "Happier users"
+  ],
+  "revenue_question": [
+    "Where the money comes from",
+    "Our revenue streams",
+    "How {startup} makes money",
+    "Revenue by source",
+    "Who pays for {seed.generic}?",
+    "Revenue next year (projected)",
+    "How we'll make money, roughly"
+  ],
+  "revenue_stream": [
+    "Subscriptions",
+    "Ads",
+    "Merchandise",
+    "Consulting",
+    "Licensing",
+    "Our parents",
+    "Hope",
+    "Premium stickers",
+    "Donations",
+    "A government grant",
+    "In-app purchases",
+    "Sponsored content",
+    "Selling the office",
+    "A bake sale",
+    "Tips",
+    "Enterprise deals"
+  ]
+}

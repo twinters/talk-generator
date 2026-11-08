@@ -1765,6 +1765,84 @@ def _iceberg(side: bool) -> Callable[[dict[str, Content], Theme], Placement]:
     return iceberg
 
 
+# The talk formats' (docs/v5-plan.md, section 7): a process, such as an academic talk's method or how a pitch's
+# product works
+
+# How long a word of a process's steps may be for them to go side by side, by how many steps there are (a longer one,
+# as German and Dutch compounds are, gets the steps one under the other)
+_ACROSS_WORDS: Final = {3: 20, 4: 15, 5: 12}
+
+
+def _arrow(role: str, box: Box, down: bool, colour: str, click: int | None) -> ShapeElement:
+    """An arrowhead in the box, pointing down or to the right."""
+    points = ((0.0, 0.0), (1.0, 0.0), (0.5, 1.0)) if down else ((0.0, 0.0), (1.0, 0.5), (0.0, 1.0))
+    return ShapeElement(role=role, shape="polygon", points=points, box=box, color=colour, appears_on_click=click)
+
+
+def _process_steps(roles: dict[str, Content], theme: Theme) -> tuple[list[int], str, str, str]:
+    """A process's steps, the colour of its arrows, of its steps and of its last step (the punchline)."""
+    palette = theme.palette
+    ink = color.readable_on(palette.muted, _backgrounds(theme), LINE_CONTRAST)
+    return _numbered(roles, "step", 5), ink, palette.accent, palette.accent_2
+
+
+def _process_down(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The steps one under the other, on bands in the theme's accent (the last one, the punchline, in its second
+    accent), each led to by an arrow from the one above it; a step's band and its arrow appear with it."""
+    placement = Placement("v5/process")
+    top = (_with_title(placement, roles, theme) if "title" in roles else MARGIN) + 16
+    steps, ink, fill, last = _process_steps(roles, theme)
+    gap = 48.0
+    y, height = _spread(top, _CONTENT_BOTTOM, len(steps), gap, 150)
+    width = min(1300.0, WIDTH - 2 * MARGIN)
+    x = (WIDTH - width) / 2
+    for position, index in enumerate(steps):
+        click = _click(roles, f"step_{index}")
+        colour = last if position == len(steps) - 1 else fill
+        band = Box(x=x, y=y, w=width, h=height)
+        if position:
+            head = Box(x=WIDTH / 2 - 32, y=y - gap + 8, w=64, h=gap - 16)
+            placement.shapes.append(_arrow(f"step {index} arrow", head, True, ink, click))
+        placement.shapes.append(ShapeElement(role=f"step {index} band", box=band, color=colour, appears_on_click=click))
+        placement.boxes[f"step_{index}"] = (Box(x=band.x + 24, y=y + 8, w=width - 48, h=height - 16), "level")
+        placement.colors[f"step_{index}"] = _on([colour], theme)
+        y += height + gap
+    return placement
+
+
+def _process_across(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The steps side by side, from left to right, on boxes in the theme's accent (the last one, the punchline, in its
+    second accent), each led to by an arrow from the one on its left; a step's box and its arrow appear with it."""
+    placement = Placement("v5/process-across")
+    top = _with_title(placement, roles, theme) if "title" in roles else MARGIN
+    steps, ink, fill, last = _process_steps(roles, theme)
+    gap = 64.0
+    width = (WIDTH - 2 * MARGIN - gap * (len(steps) - 1)) / len(steps)
+    height = min(340.0, _CONTENT_BOTTOM - top - 48)
+    y = top + (_CONTENT_BOTTOM - top - height) / 2
+    for position, index in enumerate(steps):
+        click = _click(roles, f"step_{index}")
+        colour = last if position == len(steps) - 1 else fill
+        x = MARGIN + position * (width + gap)
+        if position:
+            head = Box(x=x - gap + 14, y=y + height / 2 - 28, w=gap - 28, h=56)
+            placement.shapes.append(_arrow(f"step {index} arrow", head, False, ink, click))
+        box = Box(x=x, y=y, w=width, h=height)
+        placement.shapes.append(ShapeElement(role=f"step {index} box", box=box, color=colour, appears_on_click=click))
+        placement.boxes[f"step_{index}"] = (_inset(box, 18), "box")
+        placement.colors[f"step_{index}"] = _on([colour], theme)
+    return placement
+
+
+def _short_steps(roles: dict[str, Content]) -> bool:
+    """Whether a process's steps can go side by side: three to five, each without a word too long for its box."""
+    steps = [roles[f"step_{index}"] for index in _numbered(roles, "step", 5)]
+    longest = _ACROSS_WORDS.get(len(steps))
+    return longest is not None and all(
+        isinstance(step, TextElement) and all(len(word) <= longest for word in step.text.split()) for step in steps
+    )
+
+
 # A MEME: a template's picture as large as fits, with its captions in its boxes (see talkgenerator.sources.memes)
 
 _MEME_AREA: Final = Box(x=MARGIN, y=_CONTENT_BOTTOM - memes.AREA[1], w=memes.AREA[0], h=memes.AREA[1])
@@ -2366,6 +2444,11 @@ _LAYOUTS: Final[dict[str, tuple[_Layout, ...]]] = {
     "iceberg": (
         _Layout("v5/iceberg", _iceberg(side=False)),
         _Layout("v5/iceberg-side", _iceberg(side=True), 0.7, _beside_title),
+    ),
+    # (the talk formats')
+    "process": (
+        _Layout("v5/process", _process_down),
+        _Layout("v5/process-across", _process_across, 1.5, _short_steps),
     ),
     "meme": (_Layout("v5/meme", _meme),),
     # (slide types from PowerPoint karaoke decks)

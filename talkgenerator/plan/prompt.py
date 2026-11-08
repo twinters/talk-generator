@@ -31,6 +31,7 @@ from talkgenerator.util import random_util
 if TYPE_CHECKING:
     from talkgenerator.images.generation import ImageGeneration
     from talkgenerator.personas import Persona
+    from talkgenerator.schema.formats import Format
 
 SYSTEM_PROMPT: Final = """\
 You write the slides of talks for improv theatre, for formats such as PowerPoint karaoke and improvised TED talks. A \
@@ -140,6 +141,7 @@ def talk_request(
     typed: TitleRequest | None = None,
     generation: ImageGeneration | None = None,
     persona: Persona | None = None,
+    talk_format: Format | None = None,
 ) -> TextRequest:
     """The request for a talk (with the presenter's name, when there's a name request). Asked again, it says that a
     model found the topic unsafe: some of the free models get the flag wrong whichever way it's asked (one turned
@@ -149,9 +151,13 @@ def talk_request(
 
     The talk's persona (see talkgenerator.personas) is who presents it: the model writes in its voice, on the angle
     the talk's dice pick among its angles, a title it makes up is like the persona's titles, and the presenter's job
-    is the persona's kind of job. (Without one, the request has none of that: the talk is the format's own.)"""
-    hint = title_hint(persona, title, typed)
-    job = persona.job_hint if persona is not None else None
+    is the persona's kind of job. (Without one, the request has none of that: the talk is the format's own.)
+
+    A talk format beyond the TED-like talks (talk_format: see talkgenerator.schema.formats) says what the talk is, on
+    a line of its own, and what its titles and its presenter's job are like, with the persona's. (The TED-like
+    formats have none, and their requests say nothing of a format.)"""
+    hint = title_hint(persona, title, typed, talk_format)
+    job = job_hint(persona, talk_format)
     topic = topics[0] + (f" (and {', '.join(topics[1:])})" if len(topics) > 1 else "")
     kept = " (the typed title keeps its words)" if typed is not None and typed.keep else ""
     lines = [
@@ -162,6 +168,7 @@ def talk_request(
         ),
         f"Language: write the title{kept}, the presenter's {'name and ' if name is not None else ''}job and every "
         f"slide in {languages.language(language).name}, and the image search queries in English",
+        *([f"The format: {talk_format.brief}"] if talk_format is not None else []),
         *([f"The presenter: {persona.voice}", f"The angle: {persona.angle(rng)}"] if persona is not None else []),
         "",
         *(
@@ -196,12 +203,32 @@ def talk_request(
     )
 
 
-def title_hint(persona: Persona | None, title: str | None = None, typed: TitleRequest | None = None) -> str | None:
-    """What the persona's titles are like, for a title the model makes up: none when the talk has its title already
-    (given, or typed and kept), or no persona."""
-    if persona is None or title or (typed is not None and typed.keep):
+def title_hint(
+    persona: Persona | None,
+    title: str | None = None,
+    typed: TitleRequest | None = None,
+    talk_format: Format | None = None,
+) -> str | None:
+    """What the talk's titles are like, for a title the model makes up: the format's kind of title (a pitch's, a
+    paper's), and the persona's; none when the talk has its title already (given, or typed and kept), or neither."""
+    if title or (typed is not None and typed.keep):
         return None
-    return persona.title_hint
+    hints = [
+        hint
+        for hint in (talk_format.title_hint if talk_format is not None else "", persona.title_hint if persona else "")
+        if hint
+    ]
+    return ", and ".join(hints) or None
+
+
+def job_hint(persona: Persona | None, talk_format: Format | None = None) -> str | None:
+    """What the presenter's job on the title slide is, for the model: the persona's kind of job, given as the format
+    has it (a pitch's role at the startup, an academic talk's affiliation); none for neither."""
+    persona_hint = persona.job_hint if persona is not None else ""
+    format_hint = talk_format.job_hint if talk_format is not None else ""
+    if persona_hint and format_hint:
+        return f"{persona_hint}, given as {format_hint}"
+    return persona_hint or format_hint or None
 
 
 def response_schema(

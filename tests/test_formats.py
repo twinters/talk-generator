@@ -1,0 +1,510 @@
+"""Offline tests of the talk formats beyond TED-like talks (docs/v5-plan.md, section 7; decision D56): the startup
+pitch and the academic conference talk (talkgenerator.schema.formats).
+
+A format's talks go through its arc, the same for every persona, classic or planned; a short talk keeps its most
+important parts and a long one gets free slides between them. Its classic slides come from its content pack, its
+requests tell the language model what the format is, its favourite personas present it more often and its themes come
+up more often. And the process, the slide type an academic talk's method brought, draws in every theme.
+"""
+
+from __future__ import annotations
+
+import collections
+import json
+
+import pytest
+
+from talkgenerator import generator, personas
+from talkgenerator.checks.deck import check_arc, check_completeness, check_deck, check_leftovers
+from talkgenerator.checks.design import check_design
+from talkgenerator.datastructures.image_data import ImageData
+from talkgenerator.design import engine, themes
+from talkgenerator.images import context as image_context
+from talkgenerator.images import finder, licenses
+from talkgenerator.llm.base import Capabilities, TextProvider, TextResponse
+from talkgenerator.models import classic
+from talkgenerator.plan import external, prompt, realize
+from talkgenerator.plan.kinds import KINDS
+from talkgenerator.render import preview
+from talkgenerator.render.powerpoint import render_pptx
+from talkgenerator.schema import formats, presentation_schema
+from talkgenerator.schema.formats import academic, pitch
+from talkgenerator.schema.formats.arcs import PART_WEIGHT, STAND_IN, Arc, Free, InPart, Part
+from talkgenerator.schema.presentation_schema_types import get_schema, schemas
+from talkgenerator.slide import slides
+from talkgenerator.sources import conceptnet
+from talkgenerator.util import image_util, random_util
+from tests.test_deck import _jpeg
+from tests.test_slide_types import _clicks, _deck, _longest, _theme
+
+FORMATS = {"pitch": pitch, "academic": academic}
+FAMILIES = list(themes.FAMILIES)
+
+
+def _part_of(generator_data, arc):
+    """The part of the arc a slide generator makes slides of (None for the format's other slides)."""
+    return next((tag for tag in generator_data.get_tags() if tag in arc.names()), None)
+
+
+# THE ARCS
+
+
+@pytest.mark.parametrize("name", FORMATS)
+def test_an_arc_lays_out_talks_of_every_length(name):
+    arc = FORMATS[name].ARC
+    ranked = sorted(arc.parts, key=lambda part: part.rank)
+    for num_slides in range(1, 31):
+        layout = arc.layout(num_slides)
+        assert len(layout) == num_slides and layout[0] is None
+        kept = arc.kept(num_slides)
+        # The parts it keeps: the lowest ranks, in the arc's order, each with as many slides as it takes
+        assert set(kept) == {part.name for part in ranked[: min(len(ranked), num_slides - 1)]}
+        assert list(kept) == [part for part in arc.names() if part in kept]
+        counts = collections.Counter(part for part in layout if part is not None)
+        assert all(part.fewest <= counts[part.name] <= part.most for part in arc.parts if part.name in kept)
+        # Free slides only once every part has its most slides, and between parts (none after the last)
+        free = arc.free_slides(num_slides)
+        assert free == 0 or all(counts[part.name] == part.most for part in arc.parts)
+        if free and len(kept) > 1:
+            assert layout[1] is not None and layout[-1] is not None
+        runs = [part for index, part in enumerate(layout[1:], 1) if part is not None and part != layout[index - 1]]
+        assert runs == list(kept)  # (each part's slides one after the other)
+
+
+def test_ten_and_five_slide_talks_have_the_arcs_the_formats_promise():
+    assert pitch.ARC.layout(10) == (
+        None,
+        "problem",
+        "solution",
+        "market",
+        "business_model",
+        "traction",
+        "competition",
+        "team",
+        "ask",
+        "closing",
+    )
+    assert pitch.ARC.kept(5) == ("problem", "solution", "traction", "ask")
+    assert academic.ARC.layout(10) == (
+        None,
+        "outline",
+        "related_work",
+        "method",
+        "results",
+        "limitations",
+        "future_work",
+        "acknowledgements",
+        "references",
+        "questions",
+    )
+    assert academic.ARC.kept(5) == ("outline", "method", "results", "questions")
+
+
+def test_a_long_talk_gives_its_parts_more_slides_and_then_free_ones():
+    layout = pitch.ARC.layout(20)
+    counts = collections.Counter(layout[1:])
+    assert counts["problem"] == counts["solution"] == counts["traction"] == 2 and counts["roadmap"] == 1
+    assert counts[None] == pitch.ARC.free_slides(20) == 19 - 13
+    assert academic.ARC.layout(13).count("results") == 3 and academic.ARC.layout(13).count("method") == 2
+
+
+def test_a_parts_slide_generators_weigh_in_on_its_slides_and_the_others_on_the_free_ones():
+    arc = Arc((Part("first", rank=1), Part("last", rank=0)))
+    assert arc.layout(5) == (None, "first", None, None, "last")
+    in_first, free = InPart(arc, "first", 2), Free(arc, 3)
+    assert [in_first(slide_nr, 5) for slide_nr in range(5)] == [0, 2 * PART_WEIGHT, 0, 0, 0]
+    assert [free(slide_nr, 5) for slide_nr in range(5)] == [
+        0,
+        3 * STAND_IN,
+        3 * PART_WEIGHT,
+        3 * PART_WEIGHT,
+        3 * STAND_IN,
+    ]
+    with pytest.raises(ValueError):
+        InPart(arc, "middle")
+    with pytest.raises(ValueError):
+        Arc((Part("twice"), Part("twice")))
+
+
+# PERSONAS AND THEMES
+
+
+@pytest.mark.parametrize("name", FORMATS)
+def test_every_persona_keeps_the_formats_arc(name):
+    schema, arc = get_schema(name), FORMATS[name].ARC
+    for persona in (None, *personas.PERSONAS.values()):
+        for num_slides in (5, 10, 15):
+            for seed in range(12):
+                picks = schema._pick_generators(num_slides, random_util.Rng(seed), "en", persona)
+                assert picks[0] is not None and "title" in picks[0].get_tags()
+                parts = [_part_of(pick, arc) if pick is not None else "?" for pick in picks[1:]]
+                assert parts == list(arc.layout(num_slides)[1:]), (persona, num_slides, seed)
+
+
+@pytest.mark.parametrize("name", FORMATS)
+def test_a_formats_arc_needs_no_image_that_is_fair_use(name):
+    # (so a talk with the open license policy keeps every part: only the format's other slides may go, its memes)
+    schema, arc = get_schema(name), FORMATS[name].ARC
+    with image_context.for_talk(image_context.ImageContext(licenses.policy("open"))):
+        unservable = schema.unservable()
+    assert unservable and [maker.name for maker in unservable if _part_of(maker, arc) is not None] == []
+    for policy in ("open", "all"):
+        for num_slides in (5, 10, 20, 30):
+            for seed in range(4):
+                with image_context.for_talk(image_context.ImageContext(licenses.policy(policy))):
+                    picks = schema._pick_generators(num_slides, random_util.Rng(seed), "en", None)
+                parts = [_part_of(pick, arc) if pick is not None else "?" for pick in picks[1:]]
+                assert parts == list(arc.layout(num_slides)[1:]), (policy, num_slides, seed)
+
+
+def test_a_persona_still_moves_a_parts_slides_between_its_kinds():
+    schema = get_schema("pitch")
+
+    def kpis(persona):
+        return sum(
+            "kpi" in pick.get_tags()
+            for seed in range(200)
+            for pick in schema._pick_generators(10, random_util.Rng(seed), "en", persona)
+            if pick is not None
+        )
+
+    assert kpis(personas.persona("startup_founder")) > 1.25 * kpis(None)  # (one a talk at most, by its cap)
+    assert kpis(personas.persona("medieval_historian")) < kpis(None)
+
+
+def test_a_formats_favourite_personas_present_it_more_often():
+    def shares(weights):
+        picked = collections.Counter(
+            personas.pick(None, random_util.Rng(seed), weights).name
+            for seed in range(1300)  # type: ignore[union-attr]
+        )
+        return {name: count / 1300 for name, count in picked.items()}
+
+    plain, pitches, talks = shares(None), shares(pitch.PITCH.personas), shares(academic.ACADEMIC.personas)
+    assert pitches["startup_founder"] > 0.24 > 2.5 * plain["startup_founder"]
+    assert talks["disgraced_professor"] > 0.24 > 2.5 * plain["disgraced_professor"]
+    assert all(talks.get(name, 0) > 0 for name in personas.PERSONAS)  # (every persona still presents some)
+    # A TED-like talk's persona is the one its seed picked before
+    for seed in range(50):
+        assert personas.pick(None, random_util.Rng(seed), None) == personas.pick(None, random_util.Rng(seed), {})
+    assert personas.pick("none", random_util.Rng(1), pitch.PITCH.personas) is None
+
+
+def test_a_formats_talks_are_in_its_favourite_theme_families_more_often():
+    def share(family, multipliers):
+        picked = [themes.pick("random", random_util.Rng(seed).child("theme"), True, multipliers) for seed in range(800)]
+        return sum(theme is not None and theme.family == family for theme in picked) / len(picked)
+
+    assert share("startup", pitch.PITCH.themes) > 2.5 * share("startup", None)
+    assert share("academic", academic.ACADEMIC.themes) > 2.5 * share("academic", None)
+    founder = personas.persona("startup_founder").themes
+    assert (
+        formats.multiplied(founder, pitch.PITCH.themes)["startup"] == founder["startup"] * pitch.PITCH.themes["startup"]
+    )
+    assert formats.multiplied(None, None) is None and formats.multiplied(founder, None) == dict(founder)
+
+
+# MADE-UP NAMES
+
+
+def test_a_pitch_s_startup_and_a_talk_s_method_are_named_after_the_topic():
+    assert formats.startup("penguins") == formats.startup("penguins") and "Penguin" in formats.startup("penguins")
+    assert "Penguins" not in formats.startup("penguins")  # (one of it)
+    assert "TimeTravel" in formats.startup("time travel") and "Intelligence" in formats.method(
+        "artificial intelligence"
+    )
+    names = {formats.startup(topic) for topic in ("cat", "coffee", "the moon", "Belgium", "socks", "jazz", "bread")}
+    assert len(names) > 3  # (topics get startups of several kinds)
+    for topic in ("conference interpreters", "a plant that won't die", "the French Revolution", "x", ""):
+        assert 0 < len(formats.startup(topic)) <= 21 and 0 < len(formats.method(topic)) <= 22
+
+
+# CLASSIC SLIDES AND TALKS, OFFLINE
+
+
+@pytest.fixture
+def offline(monkeypatch):
+    """Talks without the internet: images found and served from example.com (each search finds others than those to
+    avoid), and the same related words for any word."""
+    jpeg = _jpeg((400, 300))
+
+    def find(slot, query, avoid=()):
+        for number in range(20):
+            image = ImageData(
+                f"https://example.com/{slot.aesthetic}-{query}-{number}.jpg".replace(" ", "-"),
+                source="Test",
+                source_url="https://example.com/",
+            )
+            if image not in avoid:
+                return image
+        return None
+
+    fetch = image_util.fetch_image
+    monkeypatch.setattr(finder, "find", find)
+    monkeypatch.setattr(
+        image_util, "fetch_image", lambda url: jpeg if url.startswith("https://example.com/") else fetch(url)
+    )
+    monkeypatch.setattr(image_util, "probe", lambda url: url.startswith("https://example.com/"))
+    words = [(1.0, "feather"), (0.9, "ice"), (0.8, "fish"), (0.7, "snow"), (0.6, "beak"), (0.5, "colony")]
+    monkeypatch.setattr(conceptnet, "get_weighted_related_words", lambda word, limit=50: list(words))
+
+
+def _context(seed="penguin"):
+    return {"seed": seed, "topic": "penguins", "presenter": "Ann Wells", "title": "Penguinly: Penguins on Demand"}
+
+
+@pytest.mark.parametrize("name", FORMATS)
+def test_every_parts_slide_generator_makes_complete_classic_slides(offline, name):
+    module = FORMATS[name]
+    makers = [maker for maker in module.GENERATORS if _part_of(maker, module.ARC) is not None]
+    assert {_part_of(maker, module.ARC) for maker in makers} == set(module.ARC.names())
+    for maker in makers:
+        for seed in range(6):
+            with random_util.use(random_util.Rng(seed)):
+                made = maker.generate(_context(("penguin", "coffee", "the moon")[seed % 3]), set())
+            assert made is not None, (maker.name, seed)
+            slide, _ = made
+            deck = _deck([slide])
+            assert [finding for finding in check_completeness(deck) if finding.severity == "error"] == [], maker.name
+            assert check_leftovers(deck) == [], maker.name
+
+
+def _talk(name, seed=1, parallel=True, llm="none", **options):
+    _, slide_deck, _ = generator._generate_presentation(
+        schema=name, slides=10, topic="penguins", int_seed=seed, parallel=parallel, save_ppt=False, llm=llm, **options
+    )
+    return slide_deck.to_deck(schema_name=name)
+
+
+@pytest.mark.parametrize("name", FORMATS)
+def test_a_classic_talk_of_each_format_follows_its_arc_and_passes_the_checks(offline, name):
+    for seed in (1, 2, 3):
+        deck = _talk(name, seed, theme="random")
+        assert len(deck.slides) == 10 and deck.schema_name == name
+        assert [finding for finding in check_deck(deck, 10) if finding.severity == "error"] == [], seed
+        assert check_arc(deck, 10) == []
+    assert _talk(name, 4, parallel=True).to_json() == _talk(name, 4, parallel=False).to_json()
+
+
+def test_a_classic_pitch_names_its_startup_and_an_academic_talk_its_affiliation(offline):
+    deck = _talk("pitch", 5, persona="none")
+    texts = " ".join(element.text for slide in deck.slides for element in slide.elements if hasattr(element, "text"))
+    assert formats.startup("penguins") in texts
+    talk = _talk("academic", 5, persona="none")
+    subtitle = talk.slides[0].element("subtitle")
+    assert subtitle is not None and talk.presenter in subtitle.text  # type: ignore[union-attr, operator]
+
+
+# PLANNED TALKS
+
+
+def _plausible(schema):
+    """An answer to a talk request with a plausible text in every field: a field's first option, several things
+    separated by | where a slide lists them, and else the field's name and the slide's number."""
+    answer = {}
+    for key, value in schema["properties"].items():
+        if value["type"] == "boolean":
+            answer[key] = False
+        elif value["type"] == "string":
+            answer[key] = "Ann Wells" if key == "presenter_name" else f"The {key.replace('_', ' ')}"
+        elif key == prompt.SPINE:
+            answer[key] = _plausible(value)
+        else:
+            number = key.rsplit("_", 1)[-1]
+            slide = {}
+            for name, field in value["properties"].items():
+                if "enum" in field:
+                    slide[name] = next(option for option in field["enum"] if option)
+                elif name in ("bars", "categories", "items"):
+                    slide[name] = "Alpha | Beta | Gamma | Delta"
+                elif name.startswith("number"):
+                    slide[name] = f"{number}%"
+                else:
+                    slide[name] = f"{name.replace('_', ' ').capitalize()} {number}"
+            answer[key] = slide
+    return answer
+
+
+class PlausibleModel(TextProvider):
+    id = "fake:plausible"
+    capabilities = Capabilities(structured_output=True, streaming=True)
+
+    def __init__(self):
+        self.requests = []
+
+    def complete(self, request):
+        self.requests.append(request)
+        return TextResponse(text=json.dumps(_plausible(request.json_schema)), model=self.id, output_tokens=300)
+
+    def stream(self, request, on_text):
+        response = self.complete(request)
+        on_text(response.text)
+        return response
+
+
+@pytest.mark.parametrize("name", FORMATS)
+def test_a_planned_talk_of_each_format_follows_its_arc_as_the_model_wrote_it(offline, name):
+    model = PlausibleModel()
+    deck = _talk(name, 2, llm=model, persona="startup_founder" if name == "pitch" else "disgraced_professor")
+    planned = sum(1 for slide in deck.slides if "Planned:" in slide.notes)
+    assert planned >= 8, [slide.notes.splitlines()[:2] for slide in deck.slides]
+    assert [finding for finding in check_deck(deck, 10) if finding.severity == "error"] == []
+    assert check_arc(deck, 10) == []
+    request = model.requests[0].messages[0].content
+    assert f"The format: {FORMATS[name].__dict__[name.upper()].brief}" in request
+
+
+def test_a_formats_request_tells_the_model_the_format_and_its_kinds_of_title_and_job():
+    founder = personas.persona("startup_founder")
+    request = prompt.talk_request(["penguins"], [], random_util.Rng(1), persona=founder, talk_format=pitch.PITCH)
+    lines = request.messages[0].content.splitlines()
+    assert f"The format: {pitch.PITCH.brief}" in lines
+    assert lines.index(f"The format: {pitch.PITCH.brief}") < lines.index(f"The presenter: {founder.voice}")
+    spine = request.json_schema["properties"][prompt.SPINE]["properties"]
+    assert pitch.PITCH.title_hint in spine["title"]["description"]
+    assert founder.title_hint in spine["title"]["description"]
+    assert f"{founder.job_hint}, given as {pitch.PITCH.job_hint}" in spine["presenter_job"]["description"]
+    # Without a persona, the format's hints alone; with a title of its own, no title hint
+    alone = prompt.talk_request(["penguins"], [], random_util.Rng(1), talk_format=academic.ACADEMIC)
+    alone_spine = alone.json_schema["properties"][prompt.SPINE]["properties"]
+    assert academic.ACADEMIC.title_hint in alone_spine["title"]["description"]
+    assert academic.ACADEMIC.job_hint in alone_spine["presenter_job"]["description"]
+    titled = prompt.talk_request(["penguins"], [], random_util.Rng(1), title="A Title", talk_format=pitch.PITCH)
+    assert pitch.PITCH.title_hint not in titled.messages[0].content
+
+
+def test_a_ted_like_talks_request_says_nothing_of_a_format():
+    request = prompt.talk_request(["penguins"], [], random_util.Rng(1), persona=personas.persona("consultant"))
+    assert "The format:" not in request.messages[0].content
+    assert prompt.title_hint(None) is None and prompt.job_hint(None) is None
+    assert get_schema("default").format is None and get_schema("ted").format is None
+
+
+# WHAT THE FORMATS ARE, FOR PEOPLE AND AGENTS
+
+
+def test_the_formats_are_listed_with_what_they_are_and_their_slides():
+    assert {"pitch", "academic"} <= set(schemas.names()) and {"pitch", "academic"} <= set(external.FORMATS)
+    for name, module in FORMATS.items():
+        catalog = external.catalog(name)
+        assert catalog["description"] == external.FORMATS[name]
+        recipes = [recipe for kind in catalog["kinds"] for recipe in kind["recipes"]]
+        assert catalog["arc"] == [
+            {
+                "part": part.name,
+                "slides": [part.fewest, part.most],
+                "recipes": sorted(recipe["id"] for recipe in recipes if part.name in recipe["tags"]),
+            }
+            for part in module.ARC.parts
+        ]
+        # Its own recipes are its kinds' defaults; it borrows a TED-like talk's only for a kind it has none of
+        own = {kind["kind"] for kind in catalog["kinds"] if any(r["id"].endswith(f"-{name}") for r in kind["recipes"])}
+        for kind in catalog["kinds"]:
+            default = next(recipe for recipe in kind["recipes"] if recipe["default"])
+            assert default["id"].endswith(f"-{name}") == (kind["kind"] in own), (name, kind["kind"])
+        assert catalog["titles"] == module.__dict__[name.upper()].title_hint
+    assert "process" in {kind["kind"] for kind in external.catalog("academic")["kinds"]}
+    assert "process" not in {kind["kind"] for kind in external.catalog("default")["kinds"]}
+    assert "## The arc" in external.catalog_markdown("pitch") and "## The arc" not in external.catalog_markdown("ted")
+
+
+# THE PROCESS SLIDE
+
+
+def _process_texts(word="Expectation", steps=5):
+    texts = {text.name: _longest(text, word) for text in KINDS["process"].texts}
+    return {name: value for name, value in texts.items() if not name.startswith("step_") or int(name[-1]) <= steps}
+
+
+def _process(texts):
+    with random_util.use(random_util.Rng(1)):
+        return KINDS["process"].build(texts, {}, None)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("family", FAMILIES)
+def test_a_process_fits_and_reads_in_every_theme(family):
+    made = [
+        _process(_process_texts()),
+        _process(_process_texts("Brandweerkazernedeur", 3)),
+        slides.ProcessSlide("Method", "Collect cats", "Clean data", "???", "Profit"),
+        slides.ProcessSlide(None, "A", "B", "C"),
+    ]
+    for seed in range(3):
+        deck = _deck(made, _theme(family, seed), seed)
+        assert check_design(deck) == [], (family, seed)
+
+
+def test_a_process_goes_across_when_its_words_are_short_and_down_when_they_are_not():
+    def fitting(*steps):
+        return engine.layouts_for(slides.ProcessSlide("Method", *steps).to_deck_slide())
+
+    assert fitting("Collect cats", "Clean data", "???", "Profit") == ["v5/process", "v5/process-across"]
+    assert fitting("Brandweerkazernedeur", "B", "C") == ["v5/process", "v5/process-across"]
+    assert fitting("Brandweerkazernedeur", "B", "C", "D") == ["v5/process"]
+    assert fitting("Twelveletter", "B", "C", "D", "Thirteenlette") == ["v5/process"]
+
+
+def test_a_process_s_steps_appear_one_by_one_with_their_boxes_and_arrows():
+    slide = slides.ProcessSlide("Method", "Collect", "Clean", "???", "Profit")
+    for theme in (_theme(), _theme("brutalist")):
+        for laid_out in (_deck([slide], theme, seed) for seed in range(6)):
+            shown = _clicks(render_pptx(laid_out).slides[0])
+            assert len(shown) == 4
+            assert {"step_1", "step 1 box"} <= set(shown[0]) or {"step_1", "step 1 band"} <= set(shown[0])
+            assert {"step_4", "step 4 arrow"} <= set(shown[3])
+    deck_slide = slide.to_deck_slide()
+    assert [deck_slide.element(f"step_{index}").appears_on_click for index in range(1, 5)] == [1, 2, 3, 4]
+
+
+def test_the_punchline_step_is_in_the_second_accent():
+    theme = _theme()
+    (laid_out,) = _deck([slides.ProcessSlide("M", "One", "Two", "Three")], theme).slides
+    fills = [element.color for element in laid_out.elements if element.role.endswith((" box", " band"))]
+    assert fills == [theme.palette.accent, theme.palette.accent, theme.palette.accent_2]
+
+
+def test_a_classic_deck_and_the_previews_draw_a_process():
+    slide = slides.ProcessSlide("Method", "Collect", "Clean", "???", "Profit")
+    deck = _deck([slide])
+    assert deck.slides[0].layout == "classic/process" and "process" in classic.DRAWN_TYPES
+    assert len(render_pptx(deck).slides) == 1
+    themed = _deck([slide], _theme("academic"))
+    assert preview.contact_sheet(themed).width > 0
+
+
+# WHAT THE LIVE RUNS NEEDED: CUTS THAT READ WHOLE, AND A PRESENTER NAMED ONCE
+
+
+def test_a_cut_ends_after_a_comma_or_before_a_bracket_it_would_leave_open():
+    # (free models' affiliations and roles, too long for their places: "Professor of Serenity Studies, Department")
+    long = "Professor of Serenity Studies, Department of Calm, University of Tranquil Grounds"
+    assert realize._cut(long, 50, "en") == "Professor of Serenity Studies, Department of Calm"
+    assert realize._cut("Kaito Tanaka (Head of Temporal Planning)", 30, "en") == "Kaito Tanaka"
+    assert (
+        realize._cut("Fresh beans, roasted daily, delivered by drone to your door", 45, "en")
+        == "Fresh beans, roasted daily"
+    )
+    # A clause's end still comes first, a closed bracket stays, and a comma that keeps too little gives way to words
+    decorations = "Your plants are not decorations—they are coworkers who need feedback"
+    assert realize._cut(decorations, 40, "en") == "Your plants are not decorations"
+    assert realize._cut("Dr. Elara Myles (CTO) leads the whole team now", 30, "en") == "Dr. Elara Myles (CTO) leads"
+    assert (
+        realize._cut("Penguins, the tuxedoed overlords of the frozen south", 40, "en")
+        == "Penguins, the tuxedoed overlords"
+    )
+
+
+def test_a_title_slide_names_its_presenter_once():
+    # (a free model wrote the presenter's name into their job: "By Dr. Chronos Vance, Dr. Chronos Vance, Founder...")
+    _, texts = presentation_schema._title_slide(
+        "Temporal Shift",
+        "Dr. Chronos Vance",
+        "Dr. Chronos Vance, Founder of Temporal Shift Inc.",
+        None,
+        random_util.Rng(1),
+    )
+    assert texts[1].count("Chronos Vance") == 1 and texts[1].endswith(
+        "Dr. Chronos Vance, Founder of Temporal Shift Inc."
+    )
+    _, plain = presentation_schema._title_slide("T", "Ann Wells", "Founder of Annly", None, random_util.Rng(1))
+    assert plain[1].endswith("Ann Wells, Founder of Annly")
