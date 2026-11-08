@@ -68,8 +68,8 @@ Who writes the talk depends on your settings: a language model when one is set u
 A pitch and an academic talk go through the parts of their arc, in that order, whoever presents them: a short talk
 keeps the parts that matter most (a five-slide pitch has the problem, the solution, the traction and the ask), and a
 long one gives some parts more slides and has memes, quotes and the like between them. A startup founder pitches more
-often than the other personas, and a disgraced professor gives the academic talks; their themes are the `startup`
-and `academic` families more often. Their arcs' slides need no image that's fair use, so `--license_policy open`
+often than the other personas, and a disgraced professor gives more of the academic talks; their themes are the
+`startup` and `academic` families more often. Their arcs' slides need no image that's fair use, so `--license_policy open`
 keeps them whole. `talkgenerator formats --details --format pitch` lists a format's arc and the slides of each part.
 
 A format's license policy says which license classes its images may have. `--license_policy` sets another one:
