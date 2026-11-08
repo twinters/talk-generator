@@ -313,7 +313,8 @@ def _generate_presentation(
     chosen_persona = talk_personas.pick(
         persona, rng, asked_format.personas if asked_format is not None else None, allowed
     )
-    among = "" if len(allowed) == len(talk_personas.PERSONAS) else f", one of the {len(allowed)} it allows"
+    picked = persona is None or persona.strip().lower() == talk_personas.RANDOM
+    among = f", one of the {len(allowed)} it allows" if picked and len(allowed) < len(talk_personas.PERSONAS) else ""
     if chosen_persona is not None:
         logger.info("Persona: {} ({}){}".format(chosen_persona.label, chosen_persona.voice, among))
     else:
