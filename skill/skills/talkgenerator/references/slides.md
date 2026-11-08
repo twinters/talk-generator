@@ -520,7 +520,7 @@ A fun fact: one absurd fact, stated as certain, under a heading such as 'Did you
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `fact` | 120 | the fact: one sentence, stated as certain, that the presenter has to back up |
+| `fact` | 150 | the fact: one sentence, stated as certain, that the presenter has to back up |
 | `source` | 60 | a made-up, unreliable source for the fact (or empty, for none) |
 
 Images: `photo`

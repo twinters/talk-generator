@@ -403,7 +403,18 @@ def _acronym(texts: Mapping[str, str | None], images: Mapping[str, Any], languag
     title = texts["title"]
     if title and _plain_letters(texts.get("acronym") or "") not in ("", initials):
         title = _respelled(title, texts.get("acronym") or "", initials)
+    if title and not _spelled_in(title, initials):  # (a title that names another acronym: "PRISM" over P, A, P)
+        title = _ACRONYM_LIKE.sub(lambda match: _respelled(match.group(0), match.group(0), initials), title, count=1)
     return slides.AcronymSlide(title, *written)
+
+
+# A word in capitals, or letters with dots between them, as a title names an acronym ("SPARK", "S.P.A.R.K.")
+_ACRONYM_LIKE: Final = re.compile(r"\b(?:[A-Z]\.){2,}[A-Z]?\.?(?![A-Za-z])|\b[A-Z]{3,}\b")
+
+
+def _spelled_in(title: str, initials: str) -> bool:
+    """Whether the title names the acronym of these initials, dotted or not."""
+    return bool(re.search(r"\b" + r"[.\s]?".join(map(re.escape, initials)) + r"\.?(?![A-Za-z])", title, re.IGNORECASE))
 
 
 def _respelled(title: str, acronym: str, initials: str) -> str:
@@ -911,7 +922,7 @@ KINDS: Final[dict[str, Kind]] = {
             "A fun fact: one absurd fact, stated as certain, under a heading such as 'Did you know?' (talkgenerator "
             "adds it), with a made-up source, and a photo if it has one.",
             (
-                TextField("fact", "the fact: one sentence, stated as certain, that the presenter has to back up", 120),
+                TextField("fact", "the fact: one sentence, stated as certain, that the presenter has to back up", 150),
                 TextField("source", "a made-up, unreliable source for the fact", 60, optional=True),
             ),
             ("photo",),
