@@ -1,6 +1,0 @@
-History
-Some {seed.singular.title} History
-Historic Background
-Important Figures in {seed.title} History
-Quick Historical Note
-History of {seed.plural.title}

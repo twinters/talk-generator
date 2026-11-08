@@ -1,4 +1,17 @@
 {
+  "conclusion_title": [
+    "Conclusions",
+    "Conclusions",
+    "Conclusion",
+    "Key Points to End",
+    "Ending Points",
+    "To Wrap Up:",
+    "Remember:",
+    "Final points",
+    "{title}?",
+    "\"{title}\"",
+    "To end: \"{title}\""
+  ],
   "two_conclusions": [
     "Conclusion 1|Conclusion 2",
     "|",

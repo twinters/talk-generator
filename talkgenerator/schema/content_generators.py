@@ -8,11 +8,10 @@ from talkgenerator.schema.content_generator_structures import (
     JobPrefixApplier,
     SplitCaptionsGenerator,
     WikiquoteQuoteGenerator,
-    create_templated_text_generator,
     create_tracery_generator,
     generate_wikihow_bold_statement,
 )
-from talkgenerator.sources import wikihow
+from talkgenerator.sources import packs, wikihow
 from talkgenerator.util import random_util
 from talkgenerator.util.generator_util import (
     CombinedGenerator,
@@ -29,11 +28,13 @@ from talkgenerator.util.generator_util import (
 # ===============================
 
 # === TEXT GENERATORS ===
+# Their templates are the TED content pack's (data/packs/ted: see talkgenerator.sources.packs)
+_PACK = packs.pack(packs.TED)
 
 # TITLES
-talk_title_generator = create_tracery_generator("data/text-templates/talk_title.json")
-talk_ted_title_generator = create_tracery_generator("data/text-templates/talk_title.json", "ted_title")
-talk_subtitle_generator = create_tracery_generator("data/text-templates/talk_subtitle.json")
+talk_title_generator = _PACK.tracery("title.talk_title")
+talk_ted_title_generator = _PACK.tracery("title.ted_title")
+talk_subtitle_generator = _PACK.tracery("title.subtitle")
 
 
 def talk_title_generator_if_not_generated(presentation_context):
@@ -49,16 +50,16 @@ def wikihow_title_generator(presentation_context) -> str | None:
     return f"How to {action}" if action else None
 
 
-default_slide_title_generator = create_templated_text_generator("data/text-templates/default_slide_title.txt")
-deep_abstract_generator = create_templated_text_generator("data/text-templates/deep_abstract.txt")
+default_slide_title_generator = _PACK.templates("images.slide_title")
+deep_abstract_generator = _PACK.templates("statements.deep_question")
 
 default_or_no_title_generator = CombinedGenerator((1, default_slide_title_generator), (1, NoneGenerator()))
 
-anticipation_title_generator = create_templated_text_generator("data/text-templates/anticipation_title.txt")
+anticipation_title_generator = _PACK.templates("images.anticipation_title")
 
-conclusion_title_generator = create_templated_text_generator("data/text-templates/conclusion_title.txt")
+conclusion_title_generator = _PACK.templates("conclusions.conclusion_title")
 # (a confident conclusion over a real chart from the internet, which it supposedly proves: PowerPoint karaoke's)
-chart_conclusion_generator = create_templated_text_generator("data/text-templates/chart_conclusion.txt")
+chart_conclusion_generator = _PACK.templates("charts.chart_conclusion")
 
 
 def chart_conclusion_or_none_generator(presentation_context):
@@ -69,33 +70,31 @@ def chart_conclusion_or_none_generator(presentation_context):
     return None
 
 
-inspiration_title_generator = create_templated_text_generator("data/text-templates/inspiration.txt")
-anecdote_title_generator = create_templated_text_generator("data/text-templates/anecdote_title.txt")
-history_title_generator = create_templated_text_generator("data/text-templates/history.txt")
-history_person_title_generator = create_templated_text_generator("data/text-templates/history_person.txt")
+inspiration_title_generator = _PACK.templates("images.inspiration_title")
+history_title_generator = _PACK.templates("history.history_title")
+history_person_title_generator = _PACK.templates("history.history_person_title")
 history_and_history_person_title_generator = CombinedGenerator(
     (4, history_title_generator), (6, history_person_title_generator)
 )
-about_me_title_generator = create_templated_text_generator("data/text-templates/about_me_title.txt")
+about_me_title_generator = _PACK.templates("about_me.about_me_title")
 
 # NAMES
 historical_name_generator = create_tracery_generator("data/text-templates/name.json", "title_name")
 full_name_generator = create_tracery_generator("data/text-templates/name.json", "full_name")
 
 # ABOUT ME
-_about_me_facts_grammar = "data/text-templates/about_me_facts.json"
-book_description_generator = create_tracery_generator(_about_me_facts_grammar, "book_description")
-location_description_generator = create_tracery_generator(_about_me_facts_grammar, "location_description")
-hobby_description_generator = create_tracery_generator(_about_me_facts_grammar, "hobby_description")
-job_generator = create_tracery_generator(_about_me_facts_grammar, "job")
-country_generator = create_tracery_generator(_about_me_facts_grammar, "country")
+book_description_generator = _PACK.tracery("about_me.book_description")
+location_description_generator = _PACK.tracery("about_me.location_description")
+hobby_description_generator = _PACK.tracery("about_me.hobby_description")
+job_generator = _PACK.tracery("about_me.job")
+country_generator = _PACK.tracery("about_me.country")
 
 # BOLD STATEMENTS
 wikihow_bold_statement_generator = generate_wikihow_bold_statement
 
 # PROMPTS & CHALLENGES
 
-anecdote_prompt_generator = create_templated_text_generator("data/text-templates/anecdote_prompt.txt")
+anecdote_prompt_generator = _PACK.templates("statements.anecdote")
 
 # QUOTES: mostly Goodreads, with Wikiquote for variety and as a backup when one of them fails
 quote_generator = CombinedGenerator((3, GoodReadsQuoteGenerator(250)), (1, WikiquoteQuoteGenerator(250)))
@@ -103,25 +102,17 @@ short_quote_generator = CombinedGenerator((3, GoodReadsQuoteGenerator(140)), (1,
 
 # DOUBLE CAPTIONS
 
-_double_image_captions_generator = create_templated_text_generator("data/text-templates/double_captions.txt")
-_triple_image_captions_generator = create_templated_text_generator("data/text-templates/triple_captions.txt")
-_historic_double_captions_generator = create_templated_text_generator(
-    "data/text-templates/historic_double_captions.txt"
-)
+_double_image_captions_generator = _PACK.templates("captions.two_captions")
+_triple_image_captions_generator = _PACK.templates("captions.three_captions")
+_historic_double_captions_generator = _PACK.templates("history.historic_captions")
 
 double_image_captions_generator = SplitCaptionsGenerator(_double_image_captions_generator)
 triple_image_captions_generator = SplitCaptionsGenerator(_triple_image_captions_generator)
 historic_double_captions_generator = SplitCaptionsGenerator(_historic_double_captions_generator)
 
 # Conclusions
-_conclusions_tuple_grammar = "data/text-templates/conclusion_tuple.json"
-conclusion_two_captions_tuple_generator = SplitCaptionsGenerator(
-    create_tracery_generator(_conclusions_tuple_grammar, "two_conclusions")
-)
-
-conclusion_three_captions_tuple_generator = SplitCaptionsGenerator(
-    create_tracery_generator(_conclusions_tuple_grammar, "three_conclusions")
-)
+conclusion_two_captions_tuple_generator = SplitCaptionsGenerator(_PACK.tracery("conclusions.two_conclusions"))
+conclusion_three_captions_tuple_generator = SplitCaptionsGenerator(_PACK.tracery("conclusions.three_conclusions"))
 
 # === IMAGE GENERATORS ===
 # Image slots (see talkgenerator.images.slots): what kind of image a slide asks for, in which look. Called with a

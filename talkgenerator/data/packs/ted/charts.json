@@ -1,7 +1,4 @@
 {
-  "origin": [
-    "#yes_no_question#"
-  ],
   "yes_no_question": [
     "Do you know what {seed.a} is?",
     "Do you like {seed.wikihow_action.ing.lower}?",
@@ -39,14 +36,14 @@
     "Can I instead just {seed.wikihow_action.2_to_1_pronouns.lower}?",
     "I'd rather {seed.wikihow_action.2_to_1_pronouns.lower}",
     "But sir, I *AM* {seed.a}",
-    "{chart_title.get_last_noun_and_article.2_to_1_pronouns.title}#?#",
-    "HOW DARE YOU SPEAK ABOUT {chart_title.get_last_noun_and_article.2_to_1_pronouns.upper.plural}#?#",
+    "{chart_title.get_last_noun_and_article.2_to_1_pronouns.title}#question_marks#",
+    "HOW DARE YOU SPEAK ABOUT {chart_title.get_last_noun_and_article.2_to_1_pronouns.upper.plural}#question_marks#",
     "I'd rather not talk about {chart_title.get_last_noun_and_article.2_to_1_pronouns.lower}",
     "My beliefs don't allow that",
     "My #family_member# doesn't allow me that",
     "Who wouldn't?"
   ],
-  "?": [
+  "question_marks": [
     "?",
     "??",
     "???"
@@ -98,5 +95,21 @@
     "Interest in {y_label.plural}",
     "{y_label.plural.title} (in thousands)",
     "How much we talk about {y_label.plural}"
+  ],
+  "chart_conclusion": [
+    "Conclusion: more {seed.generic}",
+    "The data speaks for itself",
+    "This proves everything about {seed.generic}",
+    "Case closed: {seed.generic}",
+    "As you can see, it's {seed.generic}",
+    "Clearly, the answer is {seed.generic}",
+    "Science agrees: {seed.generic}",
+    "Exactly as I predicted",
+    "The numbers don't lie about {seed.generic}",
+    "Proof, once again, of {seed.generic}",
+    "Any questions? No? Good.",
+    "Which is why I'm right about {seed.generic}",
+    "The evidence is overwhelming",
+    "This is why we need more {seed.generic}"
   ]
 }

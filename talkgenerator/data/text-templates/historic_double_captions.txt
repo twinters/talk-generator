@@ -1,7 +1,0 @@
-Before|Afterwards
-First|Then
-Initially|Afterwards
-Early 1990's|Couple of years later
-Before the invention of {seed.plural.lower}|After
-Before the invention of {seed.wikihow_action.ing.lower}|After
-What people looked like before they knew how to {seed.wikihow_action.lower}|After they realised the importance of {seed.plural}

@@ -1,0 +1,122 @@
+{
+  "venn_title": [
+    "The {seed} paradox",
+    "The {seed} theory",
+    "The {seed} question, answered",
+    "{seed.title} science, simplified",
+    "The {seed} equation",
+    "Where the {seed} magic happens",
+    "The {seed} connection",
+    "The {seed} principle"
+  ],
+  "matrix_title": [
+    "The {seed} matrix",
+    "The {seed} landscape",
+    "The {seed} framework",
+    "The {seed} strategy, simplified",
+    "The {seed} quadrants",
+    "Positioning the {seed} market",
+    "The {seed} positioning map",
+    "The {seed} decision grid"
+  ],
+  "timeline_title": [
+    "A brief history of {seed}",
+    "The {seed} timeline",
+    "How we got here",
+    "{seed.title} through the ages",
+    "The road to {seed}"
+  ],
+  "timeline_event": [
+    "The first {related} is found",
+    "The great {seed} panic",
+    "{related.title} is invented",
+    "{seed.title} goes mainstream",
+    "Someone finally explains {related}",
+    "{related.title} is banned",
+    "The {seed} renaissance"
+  ],
+  "timeline_punchline": [
+    "This talk",
+    "{seed.title} takes over",
+    "I discover {seed}",
+    "Peak {seed}",
+    "Nobody remembers {related}"
+  ],
+  "pyramid_title": [
+    "The {seed} pyramid",
+    "Maslow's hierarchy of {seed}",
+    "The {seed} hierarchy",
+    "What we really need"
+  ],
+  "pyramid_base": [
+    "Coffee",
+    "Wi-Fi",
+    "Snacks",
+    "Sleep",
+    "Naps",
+    "A charger"
+  ],
+  "funnel_title": [
+    "The {seed} funnel",
+    "From {related} to {seed}",
+    "Our {seed} pipeline",
+    "How {seed} happens"
+  ],
+  "funnel_punchline": [
+    "{seed.title}",
+    "My mom",
+    "One very tired intern",
+    "Nobody",
+    "{seed.title}, finally"
+  ],
+  "cycle_title": [
+    "The {seed} cycle",
+    "The circle of {seed}",
+    "The {seed} loop",
+    "The vicious circle of {seed}"
+  ],
+  "org_chart_title": [
+    "Who's in charge of {seed}",
+    "The {seed} department",
+    "{seed.title}, Inc.",
+    "How {seed} is organised"
+  ],
+  "org_chart_boss": [
+    "{seed.title}",
+    "The cat",
+    "Nobody",
+    "A raccoon",
+    "The intern",
+    "Me"
+  ],
+  "org_chart_report": [
+    "Head of {related}",
+    "Chief {related} officer",
+    "{related.title} intern",
+    "VP of {related}",
+    "{related.title} manager"
+  ],
+  "iceberg_title": [
+    "The {seed} iceberg",
+    "What you don't see",
+    "Beneath the surface of {seed}",
+    "The tip of the {seed}"
+  ],
+  "iceberg_hidden": [
+    "Years of {related}",
+    "Tears",
+    "Paperwork",
+    "{related.title}",
+    "A very tired {related}",
+    "Mild panic"
+  ],
+  "timeline_dates": [
+    "3000 BC",
+    "1492",
+    "1888",
+    "1969",
+    "2003",
+    "Last Tuesday",
+    "2087"
+  ]
+}

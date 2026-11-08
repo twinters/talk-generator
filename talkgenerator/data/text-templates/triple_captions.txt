@@ -1,4 +1,0 @@
-Past|Currently|Future
-Danger 1|Danger 2|Danger 3
-Good|Better|Best
-Bad|Worse|Worst

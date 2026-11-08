@@ -1,5 +1,0 @@
-Historical {seed.title} People
-The First Person to {seed.wikihow_action}
-The Inventor of {seed.wikihow_action.ing}
-First Olympic "{seed.wikihow_action.ing.dashes}" Champion
-First Winner of the "{seed.wikihow_action.ing.dashes}" Championships

@@ -53,7 +53,7 @@ class AbstractTextGenerator:
 
 
 class TemplatedTextGenerator(AbstractTextGenerator):
-    def __init__(self, template_file=None, templates_list=None):
+    def __init__(self, template_file=None, templates_list=None, rules=None):
         templates = []
         if template_file:
             templates.extend(read_lines(template_file))
@@ -61,6 +61,8 @@ class TemplatedTextGenerator(AbstractTextGenerator):
             templates.extend(templates_list)
         # Create a tuple so no templates can accidentally be deleted from the generator
         self._templates = tuple(templates)
+        # The rules that a template's "#rule#" expands with, as tracery's do (a content pack's grammar), if any
+        self._rules = rules
 
     def generate(self, variables_dictionary=None):
         """Generates a text from the templates using the given variables dictionary"""
@@ -71,12 +73,19 @@ class TemplatedTextGenerator(AbstractTextGenerator):
         possible_templates = list(self._templates)
         for _ in range(len(possible_templates)):
             template = random_util.choice(possible_templates)
-            if can_format_with(template, variables_dictionary):
-                result = apply_variables_to_template(template, variables_dictionary)
+            expanded = self._expanded(template)
+            if can_format_with(expanded, variables_dictionary):
+                result = apply_variables_to_template(expanded, variables_dictionary)
                 if result:
                     return result
             # Remove the template from the possible templates list, such that it won
             possible_templates.remove(template)
+
+    def _expanded(self, template):
+        """The template with its rules expanded (a template without one draws no random numbers for it)."""
+        if self._rules is None or "#" not in template:
+            return template
+        return new_tracery_grammar(self._rules).flatten(template)
 
 
 # Tracery picks its rules with random.choice, the only random function it uses: make it draw from the talk's random
@@ -86,7 +95,12 @@ tracery.random = random_util
 
 class TraceryTextGenerator(AbstractTextGenerator):
     def __init__(self, tracery_json, variable="origin"):
-        self._rules = load_tracery_rules(os_util.to_actual_file(tracery_json))
+        """A generator of the texts of a grammar's rule (variable): the grammar's rules (a content pack's, see
+        talkgenerator.sources.packs), or the path of a JSON file of them in the package."""
+        if isinstance(tracery_json, str):
+            self._rules = load_tracery_rules(os_util.to_actual_file(tracery_json))
+        else:
+            self._rules = tracery_json
         self._variable = variable
 
     def generate(self, variables_dictionary=None):

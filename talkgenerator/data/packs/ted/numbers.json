@@ -1,0 +1,82 @@
+{
+  "big_number_title": [
+    "The {seed} economy",
+    "{seed.title} by the numbers",
+    "The numbers don't lie",
+    "One number to remember",
+    "Let that sink in",
+    "The {seed} index",
+    "A shocking statistic"
+  ],
+  "percent_label": [
+    "of people have never seen {seed} up close",
+    "of experts agree that {seed} is overrated",
+    "of all {seed} is never found again",
+    "of my budget goes to {seed}",
+    "of scientists still can't explain {seed}",
+    "of people pretend to understand {seed}",
+    "of dentists recommend {seed}",
+    "of the internet is about {seed}",
+    "of {seed} goes unnoticed"
+  ],
+  "count_label": [
+    "times a day the average person thinks about {seed}",
+    "years until {seed} replaces us all",
+    "{seed} incidents reported last year",
+    "hours I spent researching {seed}",
+    "people who truly understand {seed}",
+    "unanswered emails about {seed}",
+    "books written about {seed}, none of them read"
+  ],
+  "ratio_label": [
+    "people secretly prefer {seed}",
+    "meetings are secretly about {seed}",
+    "people can't spell {seed}",
+    "pets have strong opinions about {seed}",
+    "families never talk about {seed}"
+  ],
+  "big_number_source": [
+    "Source: my uncle",
+    "Source: a dream I had",
+    "Source: trust me",
+    "Source: the internet",
+    "Source: a survey of my cat",
+    "Source: I made it up",
+    "Source: the back of a cereal box",
+    "Source: a man at the bus stop",
+    "Source: an anonymous {seed} expert"
+  ],
+  "kpi_title": [
+    "{seed.title} dashboard",
+    "Quarterly {seed} results",
+    "Key {seed} indicators",
+    "This year's {seed} numbers",
+    "Our {seed} KPIs",
+    "Performance review: {seed}"
+  ],
+  "kpi_label": [
+    "{seed.title} satisfaction",
+    "Meetings about {seed}",
+    "Unread {seed} emails",
+    "Hours spent on {seed}",
+    "Complaints about {related}",
+    "{related.title} per hour",
+    "{seed.title} incidents",
+    "Synergy",
+    "Customer confusion",
+    "Coffee consumed",
+    "{related.title} found",
+    "Budget left"
+  ],
+  "kpi_punchline": [
+    "Regrets",
+    "Naps taken",
+    "Times I cried",
+    "Ducks befriended",
+    "{related.title} lost forever",
+    "Lawsuits",
+    "Fires started",
+    "Friends left",
+    "Plans to stop"
+  ]
+}

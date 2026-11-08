@@ -1,0 +1,50 @@
+{
+  "post_title": [
+    "What the internet thinks",
+    "Seen online",
+    "Trending now",
+    "The people have spoken"
+  ],
+  "post_text": [
+    "Hot take: {seed} is overrated.",
+    "Just saw {seed} in the wild. My life will never be the same.",
+    "Nobody talks about how {seed} ruined my wedding.",
+    "Me: I'll be productive today. Also me: {seed}.",
+    "Unpopular opinion: {seed} deserves more respect.",
+    "Day 47 of asking {seed} to notice me.",
+    "My therapist says I talk about {seed} too much. Anyway, {seed}.",
+    "Can we talk about {seed} for a second?",
+    "Thinking about {seed} again. Send help.",
+    "Rate my {seed}. Be honest."
+  ],
+  "news_outlet": [
+    "The Daily {seed.title}",
+    "{seed.title} Times",
+    "The {seed.title} Gazette",
+    "{seed.title} News Network",
+    "The Morning {seed.title}",
+    "The {seed.title} Tribune",
+    "{seed.title} Today",
+    "The Weekly {seed.title}"
+  ],
+  "news_headline": [
+    "Local man discovers {seed}, refuses to elaborate",
+    "Scientists baffled by {seed}",
+    "{seed.title} prices soar after mysterious shortage",
+    "Study finds {seed} more popular than democracy",
+    "Experts warn: {seed} may be sentient",
+    "Town celebrates its first {seed} in forty years",
+    "{seed.title} declared a national treasure",
+    "Area woman still not over {seed}",
+    "Government denies all knowledge of {seed}",
+    "{seed.title} found in unexpected place, again"
+  ],
+  "news_subheadline": [
+    "Neighbours say they saw it coming",
+    "Officials decline to comment",
+    "Experts remain divided",
+    "More on page 7",
+    "Witnesses describe the scene as 'a lot'",
+    "Investigation ongoing"
+  ]
+}

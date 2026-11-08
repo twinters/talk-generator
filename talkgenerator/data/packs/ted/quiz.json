@@ -1,0 +1,19 @@
+{
+  "quiz_question": [
+    "Which of these is the most important part of {seed}?",
+    "Which of these was invented first?",
+    "Which of these do {seed} experts fear most?",
+    "Which of these is secretly {seed}?",
+    "Which of these would you bring to a {seed} party?",
+    "Which of these has nothing to do with {seed}?",
+    "Which of these did the ancient Romans call {seed}?"
+  ],
+  "quiz_explanation": [
+    "Obviously.",
+    "It's in all the textbooks.",
+    "Ask any {seed} expert.",
+    "Trust me, I checked.",
+    "As everyone knows.",
+    "This one surprises people every time."
+  ]
+}

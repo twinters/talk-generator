@@ -1,4 +1,15 @@
 {
+  "about_me_title": [
+    "About me",
+    "A little bit about me",
+    "Who am I?",
+    "Some things about me",
+    "My background",
+    "Personal background",
+    "{presenter}",
+    "{presenter}'s bio",
+    "Short bio"
+  ],
   "book_description": [
     "#book_adjective# #publication#",
     "My #book_adjective# #publication#"

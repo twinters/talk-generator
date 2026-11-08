@@ -1,7 +1,7 @@
 import random
 import unittest
 
-from talkgenerator.sources import text_generator
+from talkgenerator.sources import packs, text_generator
 from talkgenerator.util import os_util
 
 
@@ -93,7 +93,7 @@ class TextGeneratorTest(unittest.TestCase):
             self.assertTrue(tracery.generate())
 
     def test_ted_title(self):
-        tracery = text_generator.TraceryTextGenerator("data/text-templates/talk_title.json", "ted_title")
+        tracery = text_generator.TraceryTextGenerator(packs.pack().grammar("title"), "ted_title")
         words = list(os_util.read_lines("data/eval/common_words.txt"))
         random.shuffle(words)
         words = words[0:10]

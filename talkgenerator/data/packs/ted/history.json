@@ -1,0 +1,26 @@
+{
+  "history_title": [
+    "History",
+    "Some {seed.singular.title} History",
+    "Historic Background",
+    "Important Figures in {seed.title} History",
+    "Quick Historical Note",
+    "History of {seed.plural.title}"
+  ],
+  "history_person_title": [
+    "Historical {seed.title} People",
+    "The First Person to {seed.wikihow_action}",
+    "The Inventor of {seed.wikihow_action.ing}",
+    "First Olympic \"{seed.wikihow_action.ing.dashes}\" Champion",
+    "First Winner of the \"{seed.wikihow_action.ing.dashes}\" Championships"
+  ],
+  "historic_captions": [
+    "Before|Afterwards",
+    "First|Then",
+    "Initially|Afterwards",
+    "Early 1990's|Couple of years later",
+    "Before the invention of {seed.plural.lower}|After",
+    "Before the invention of {seed.wikihow_action.ing.lower}|After",
+    "What people looked like before they knew how to {seed.wikihow_action.lower}|After they realised the importance of {seed.plural}"
+  ]
+}

@@ -1,11 +1,11 @@
 {
-  "origin": [
+  "talk_title": [
     "#ted_title#",
     "#ted_title#",
     "#in_between#",
-    "#title#",
-    "#title#",
-    "#title#"
+    "#classic_title#",
+    "#classic_title#",
+    "#classic_title#"
   ],
   "ted_title": [
     "I Quit {seed.wikihow_action.ing.title} (and so should you)",
@@ -38,7 +38,7 @@
     "You are {seed.wikihow_action.ing} (and Don't Even Know It)",
     "How I {seed.wikihow_action.title}: Confessions of {seed.title.a}"
   ],
-  "title": [
+  "classic_title": [
     "#two_or_larger# Things You Didn't Know About {seed.plural.title}",
     "#one_or_larger##number# Things You Didn't Know About {seed.plural.title}",
     "99 problems but {seed.a} ain't one",
@@ -95,8 +95,154 @@
     "{seed.wikihow_action.ing.title} in #one_or_larger##number##number# easy steps",
     "{seed.wikihow_action.ing.title}: Amazing Delight or Sign of Apocalypse?"
   ],
-  "number": ["0","1","2","3","4","5","6","7","8","9"],
-  "one_or_larger": ["1","2","3","4","5","6","7","8","9"],
-  "two_or_larger": ["2","3","4","5","6","7","8","9"],
-  "two_to_five": ["2","3","4","5"]
+  "number": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9"
+  ],
+  "one_or_larger": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9"
+  ],
+  "two_or_larger": [
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9"
+  ],
+  "two_to_five": [
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "subtitle": [
+    "#presented_by#"
+  ],
+  "presented_by": [
+    "A presentation by #name_and_job#",
+    "By #name_and_job#",
+    "Presented by #name_and_job#"
+  ],
+  "name_and_job": [
+    "{presenter}, #presenter_job#",
+    "{presenter},\n#presenter_job#"
+  ],
+  "knowledge_person": [
+    "Researcher",
+    "Expert",
+    "Professor",
+    "Doctor",
+    "Master",
+    "Guru",
+    "PhD",
+    "Fanatic"
+  ],
+  "presenter_job": [
+    "#knowledge_person# in #science#",
+    "#knowledge_person# of #science#",
+    "#science# #knowledge_person#",
+    "#science# #knowledge_person#"
+  ],
+  "science": [
+    "{seed.title} #science_type#",
+    "{seed.title} #science_type#",
+    "#science_specifier# {seed.title} #science_type#",
+    "#science_specifier# {seed.title} #science_type#",
+    "#science_specifier# {seed.title} #science_type#",
+    "#science_prefix#{seed.title.last_letter_is_vowel}#science_suffix#",
+    "#science_prefix#{seed.title.last_letter_is_consonant}o#science_suffix#",
+    "#science_prefix#{seed.title} #science_type#",
+    "#science_specifier# #science_prefix#{seed.title} #science_type#"
+  ],
+  "science_prefix": [
+    "Meta-",
+    "Aero",
+    "Bio",
+    "Anti-",
+    "Eco",
+    "Electro",
+    "Micro",
+    "Macro",
+    "Nano",
+    "Poly"
+  ],
+  "science_suffix": [
+    "graphy",
+    "logy",
+    "nomy",
+    "nomics",
+    "mony",
+    "nymy"
+  ],
+  "science_specifier": [
+    "Advanced",
+    "Applied",
+    "Comparative",
+    "Descriptive",
+    "Digital",
+    "Dynamical",
+    "Ecological",
+    "Electronic",
+    "Empirical",
+    "Ethical",
+    "Executive",
+    "Exploratory",
+    "Fundamental",
+    "Instrumental",
+    "Logical",
+    "Molecular",
+    "Moral",
+    "Neural",
+    "Nuclear",
+    "Observational",
+    "Philosophy of",
+    "Physical",
+    "Pure",
+    "Quantum",
+    "Renewable",
+    "Social",
+    "Statistical",
+    "Systematic",
+    "Theoretical"
+  ],
+  "science_type": [
+    "Biology",
+    "Chemistry",
+    "Design",
+    "Dynamics",
+    "Engineering",
+    "Fusion",
+    "Literature",
+    "Logic",
+    "Mechanics",
+    "Medicine",
+    "Methodology",
+    "Philosophy",
+    "Physics",
+    "Science",
+    "Statistics",
+    "Studies",
+    "Systems",
+    "Technology",
+    "Theory"
+  ]
 }

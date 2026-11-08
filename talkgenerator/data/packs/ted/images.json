@@ -1,0 +1,49 @@
+{
+  "slide_title": [
+    "{seed.plural.title}",
+    "{seed.plural.title}",
+    "About {seed.is_noun.plural.title}",
+    "About {seed.is_noun.plural.title}",
+    "About {seed.is_noun.plural.title}",
+    "What about {seed.is_noun.plural.title}?",
+    "What about {seed.is_verb.ing.title}?",
+    "Let's look at {seed.is_noun.plural.title}",
+    "Let's Discuss {seed.is_noun.plural.title}",
+    "Let's look at {seed.is_verb.ing.title}",
+    "Let's Discuss {seed.is_verb.ing.title}",
+    "Getting {seed.is_noun.plural.title} involved",
+    "Getting {seed.is_verb.ing.title} involved",
+    "Discussion"
+  ],
+  "anticipation_title": [
+    "Let's look at this",
+    "Look at this!",
+    "Now this:",
+    "This amazed me earlier",
+    "Can you see it?",
+    "How does {seed.singular} help?",
+    "Getting {seed.plural.title} Involved",
+    "How to {seed.wikihow_action}",
+    "\"But what about {seed.plural}?\"",
+    "\"But what do you do with {seed.plural}?\", well...",
+    "What I say to people complaining about {seed.plural}"
+  ],
+  "inspiration_title": [
+    "Something to think about",
+    "Some Inspiration",
+    "Something my father always told me",
+    "My mother always told me",
+    "My grandma always said:",
+    "Think about it...",
+    "Consequence:",
+    "Thus...",
+    "Logical Implication",
+    "Logical Implication for {seed.plural.title}",
+    "Implication",
+    "Something that motivated me",
+    "Food for Thought",
+    "My Life Motto",
+    "Best Thing About {seed.plural.title}",
+    "What {seed.plural.title} Really Think:"
+  ]
+}

@@ -1,0 +1,382 @@
+{
+  "fun_fact": [
+    "The average person thinks about {seed.generic} {number} times a day.",
+    "{seed.generic.cap} can't be seen from space.",
+    "There are more {seed.generic} in Belgium than people.",
+    "Ancient Romans were terrified of {seed.generic}.",
+    "Scientists still can't explain {seed.generic}.",
+    "You are never more than two metres away from {seed.generic}.",
+    "Ohio has banned {seed.generic} twice.",
+    "Cats are secretly afraid of {seed.generic}.",
+    "The word '{seed}' was first written down in {year}, on a napkin.",
+    "{seed.generic.cap} and {related.generic} share a common ancestor.",
+    "In {year}, {seed.generic} cost more than gold.",
+    "Astronauts are not allowed to talk about {seed.generic}.",
+    "Someone discovered {seed.generic} by accident, in a shoe, in {year}.",
+    "Dolphins have a word for {seed.generic}.",
+    "{percent} of people dreamt about {seed.generic} this week.",
+    "A town in Norway celebrates {seed.generic} every Tuesday.",
+    "Until {year}, it was illegal to whistle about {seed.generic}.",
+    "The human body is {percent} {seed.generic}.",
+    "Experts recommend at least {number} minutes of {seed.generic} a day.",
+    "Owls can't see {seed.generic}.",
+    "Nobody has ever finished a sentence about {seed.generic}.",
+    "The very first phone call was about {seed.generic}."
+  ],
+  "acronym_title": [
+    "The {acronym} method",
+    "Introducing the {acronym} framework",
+    "{acronym}: a model for {seed.generic}",
+    "Remember: {acronym}",
+    "The {acronym} principle",
+    "{seed.generic.cap}, the {acronym} way"
+  ],
+  "dare": [
+    "Present the next slide as a haiku.",
+    "Present the next slide in a nature-documentary voice.",
+    "From now on, end every sentence with 'allegedly'.",
+    "Work the word '{related}' into the next slide three times.",
+    "Present the next slide as the biggest news of the century.",
+    "Present the next slide in a whisper.",
+    "Present the next slide as a sports commentator.",
+    "Explain the next slide to an imaginary five-year-old.",
+    "Get the audience to applaud, for no reason at all.",
+    "Present the next slide in rhyme.",
+    "From now on, call {seed.generic} 'the thing'.",
+    "Present the next slide in slow motion.",
+    "Thank an imaginary sponsor for the next slide.",
+    "Start every sentence on the next slide with 'Spoiler alert'.",
+    "Present the next slide as a heartfelt apology.",
+    "Describe the next slide using only questions."
+  ],
+  "flowchart_title": [
+    "Should you?",
+    "How to decide about {seed.generic}",
+    "A simple guide",
+    "Science, simplified",
+    "A decision tree for {seed.generic}"
+  ],
+  "flowchart_question": [
+    "Do you like {seed.generic}?",
+    "Have you heard of {seed.generic}?",
+    "Is it about {seed.generic}?",
+    "Are you sure about {seed.generic}?",
+    "Do you understand {seed.generic}?",
+    "Is it Tuesday?",
+    "Did you read the manual?"
+  ],
+  "flowchart_yes": [
+    "Great!",
+    "Tell everyone",
+    "Think about {related.generic}",
+    "Ask an expert",
+    "Celebrate",
+    "Write it down"
+  ],
+  "flowchart_no": [
+    "Are you sure?",
+    "Think again",
+    "Ask your neighbour",
+    "Read about {related.generic}",
+    "Take a nap",
+    "Pretend you do"
+  ],
+  "flowchart_end": [
+    "Talk about {seed.generic} anyway",
+    "Buy more {seed.generic}",
+    "Give a talk about it",
+    "Get {seed.one}",
+    "Ask again tomorrow",
+    "Blame {related.generic}",
+    "Write a song about it"
+  ],
+  "tier_list_title": [
+    "{seed.generic.cap}, ranked",
+    "The definitive tier list of {seed.generic}",
+    "Everything, ranked by {seed.generic}",
+    "My honest tier list",
+    "Ranking {seed.generic}"
+  ],
+  "tier_list_worst": [
+    "Sleep",
+    "Weekends",
+    "Puppies",
+    "Pizza",
+    "Common sense",
+    "Holidays",
+    "Sunshine",
+    "Chocolate"
+  ],
+  "fun_fact_years": [
+    "1347",
+    "1666",
+    "1752",
+    "1823",
+    "1911",
+    "1978",
+    "2003"
+  ],
+  "acronyms": [
+    "SPARK",
+    "SHINE",
+    "BRAVE",
+    "TRUST",
+    "SMART",
+    "FOCUS",
+    "DREAM",
+    "GROW"
+  ],
+  "buzzword_a": [
+    "Agility",
+    "Alignment",
+    "Accountability",
+    "Authenticity"
+  ],
+  "buzzword_b": [
+    "Bandwidth",
+    "Best practices",
+    "Boldness",
+    "Branding"
+  ],
+  "buzzword_c": [
+    "Collaboration",
+    "Courage",
+    "Clarity",
+    "Commitment"
+  ],
+  "buzzword_d": [
+    "Disruption",
+    "Dedication",
+    "Data",
+    "Discipline"
+  ],
+  "buzzword_e": [
+    "Empowerment",
+    "Excellence",
+    "Engagement",
+    "Empathy"
+  ],
+  "buzzword_f": [
+    "Focus",
+    "Flexibility",
+    "Feedback",
+    "Frameworks"
+  ],
+  "buzzword_g": [
+    "Growth",
+    "Grit",
+    "Gratitude",
+    "Governance"
+  ],
+  "buzzword_h": [
+    "Hustle",
+    "Harmony",
+    "Honesty",
+    "Hyperfocus"
+  ],
+  "buzzword_i": [
+    "Innovation",
+    "Integrity",
+    "Impact",
+    "Insight"
+  ],
+  "buzzword_j": [
+    "Journey",
+    "Joy",
+    "Judgement"
+  ],
+  "buzzword_k": [
+    "Knowledge",
+    "KPIs",
+    "Kindness"
+  ],
+  "buzzword_l": [
+    "Leadership",
+    "Leverage",
+    "Learning",
+    "Loyalty"
+  ],
+  "buzzword_m": [
+    "Mindfulness",
+    "Momentum",
+    "Motivation",
+    "Metrics"
+  ],
+  "buzzword_n": [
+    "Networking",
+    "Nimbleness",
+    "Next steps"
+  ],
+  "buzzword_o": [
+    "Ownership",
+    "Optimism",
+    "Outcomes",
+    "Openness"
+  ],
+  "buzzword_p": [
+    "Passion",
+    "Purpose",
+    "Productivity",
+    "Paradigms"
+  ],
+  "buzzword_q": [
+    "Quality",
+    "Questions",
+    "Quick wins"
+  ],
+  "buzzword_r": [
+    "Resilience",
+    "Results",
+    "Respect",
+    "Roadmaps"
+  ],
+  "buzzword_s": [
+    "Synergy",
+    "Strategy",
+    "Scalability",
+    "Stakeholders"
+  ],
+  "buzzword_t": [
+    "Teamwork",
+    "Transparency",
+    "Trust",
+    "Thought leadership"
+  ],
+  "buzzword_u": [
+    "Understanding",
+    "Upskilling",
+    "Unity"
+  ],
+  "buzzword_v": [
+    "Vision",
+    "Value",
+    "Velocity"
+  ],
+  "buzzword_w": [
+    "Wellbeing",
+    "Wisdom",
+    "Workflow"
+  ],
+  "buzzword_x": [
+    "X-factor",
+    "eXcellence",
+    "eXperience"
+  ],
+  "buzzword_y": [
+    "Yield",
+    "Youthfulness",
+    "Yes-saying"
+  ],
+  "buzzword_z": [
+    "Zeal",
+    "Zen",
+    "Zero waste"
+  ],
+  "absurd_a": [
+    "Avocados",
+    "Alpacas"
+  ],
+  "absurd_b": [
+    "Biscuits",
+    "Bananas",
+    "Bubble wrap"
+  ],
+  "absurd_c": [
+    "Cheese",
+    "Capybaras"
+  ],
+  "absurd_d": [
+    "Ducks",
+    "Doughnuts"
+  ],
+  "absurd_e": [
+    "Eels",
+    "Eyebrows"
+  ],
+  "absurd_f": [
+    "Flamingos",
+    "Fondue"
+  ],
+  "absurd_g": [
+    "Goats",
+    "Glitter"
+  ],
+  "absurd_h": [
+    "Hamsters",
+    "Hats"
+  ],
+  "absurd_i": [
+    "Ice cream",
+    "Iguanas"
+  ],
+  "absurd_j": [
+    "Jelly",
+    "Jazz hands"
+  ],
+  "absurd_k": [
+    "Kazoos",
+    "Kittens"
+  ],
+  "absurd_l": [
+    "Llamas",
+    "Lasagna"
+  ],
+  "absurd_m": [
+    "Moustaches",
+    "Muffins"
+  ],
+  "absurd_n": [
+    "Naps",
+    "Noodles"
+  ],
+  "absurd_o": [
+    "Otters",
+    "Onions"
+  ],
+  "absurd_p": [
+    "Pancakes",
+    "Pyjamas"
+  ],
+  "absurd_q": [
+    "Quokkas",
+    "Quiche"
+  ],
+  "absurd_r": [
+    "Rubber ducks",
+    "Raccoons"
+  ],
+  "absurd_s": [
+    "Snacks",
+    "Sloths",
+    "Socks"
+  ],
+  "absurd_t": [
+    "Toast",
+    "Tuesdays",
+    "Tap dancing"
+  ],
+  "absurd_u": [
+    "Unicorns",
+    "Ukuleles"
+  ],
+  "absurd_v": [
+    "Velcro",
+    "Vegetables"
+  ],
+  "absurd_w": [
+    "Waffles",
+    "Wombats"
+  ],
+  "absurd_x": [
+    "Xylophones",
+    "X-rays"
+  ],
+  "absurd_y": [
+    "Yoghurt",
+    "Yodelling"
+  ],
+  "absurd_z": [
+    "Zebras",
+    "Zucchini"
+  ]
+}

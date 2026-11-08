@@ -1,0 +1,137 @@
+{
+  "drake_hotline_bling": [
+    "{related.generic.cap}|{seed.generic.cap}",
+    "Doing it the normal way|Doing it with {seed.generic}",
+    "Sleeping eight hours|Reading about {seed.generic} all night",
+    "Small talk|Small talk about {seed.generic}",
+    "Following the instructions|Winging it with {seed.generic}",
+    "A normal hobby|Collecting facts about {seed.generic}",
+    "Asking an expert|Becoming the expert on {seed.generic}"
+  ],
+  "two_buttons": [
+    "{seed.generic.cap}|{related.generic.cap}|Me",
+    "Talk about {seed.generic}|Talk about {related.generic}|The presenter",
+    "Love {seed.generic}|Fear {seed.generic}|Everyone in this room",
+    "Finish the talk|Keep talking about {seed.generic}|Me, right now"
+  ],
+  "distracted_boyfriend": [
+    "{seed.generic.cap}|Me|My actual job",
+    "{related.generic.cap}|Me|{seed.generic.cap}",
+    "Talking about {seed.generic}|Me|Finishing this talk",
+    "One more fact about {seed.generic}|The presenter|The time limit"
+  ],
+  "uno_draw_25_cards": [
+    "Stop talking about {seed.generic}|Me",
+    "Say one bad thing about {seed.generic}|Fans of {seed.generic}",
+    "Explain {seed.generic}|Experts",
+    "Admit you don't get {seed.generic}|Everyone in this room"
+  ],
+  "left_exit_12_off_ramp": [
+    "Being normal|{seed.generic.cap}|Me",
+    "Sleep|{seed.generic.cap}|Me at 3 AM",
+    "The plan|{related.generic.cap}|This talk",
+    "The actual topic|More about {seed.generic}|The presenter"
+  ],
+  "grus_plan": [
+    "Give a talk on {seed.generic}|Pretend to be an expert|Get asked a question about {seed.generic}",
+    "Buy {seed.one}|Read the manual|The manual is about {related.generic}",
+    "Learn about {seed.generic}|Explain {seed.generic}|Realise you know nothing about {seed.generic}"
+  ],
+  "epic_handshake": [
+    "Fans of {seed.generic}|Fans of {related.generic}|Hating Mondays",
+    "{seed.generic.cap}|{related.generic.cap}|Confusing everyone",
+    "Scientists|People who love {seed.generic}|Not understanding {seed.generic}",
+    "The audience|The presenter|Wondering why this talk is about {seed.generic}"
+  ],
+  "waiting_skeleton": [
+    "Me waiting for someone|To ask me about {seed.generic}",
+    "Waiting for|{seed.generic.cap} to make sense",
+    "Still waiting|For the last slide about {seed.generic}"
+  ],
+  "always_has_been": [
+    "Wait, it's all {seed.generic}?|Always has been",
+    "Wait, it was {seed.generic} all along?|Always has been",
+    "Wait, this whole talk is about {seed.generic}?|Always has been"
+  ],
+  "woman_yelling_at_cat": [
+    "You said {seed.generic} would be simple!|Me, who explained {seed.generic}",
+    "The future is {seed.generic}!|{related.generic.cap}",
+    "Who brought {seed.generic} to dinner?!|Not me",
+    "Stop talking about {seed.generic}!|One more slide"
+  ],
+  "change_my_mind": [
+    "Nobody appreciates {seed.generic} enough",
+    "{seed.generic.cap}? Just {related.generic} with better marketing",
+    "Everything is better with {seed.generic}",
+    "Every talk should be about {seed.generic}"
+  ],
+  "batman_slapping_robin": [
+    "What about {related.generic}?|We're talking about {seed.generic}!",
+    "I don't care about {seed.generic}|Take that back!",
+    "Can we skip the part about {seed.generic}?|No!"
+  ],
+  "is_this_a_pigeon": [
+    "Me|{related.generic.cap}|Is this {seed.one}?",
+    "The audience|Any slide|Is this about {seed.generic}?",
+    "The presenter|A random picture|Is this proof of {seed.generic}?"
+  ],
+  "one_does_not_simply": [
+    "One does not simply|Explain {seed.generic} in one slide",
+    "One does not simply|Stop thinking about {seed.generic}",
+    "One does not simply|Give a talk about {seed.generic} unprepared"
+  ],
+  "ancient_aliens": [
+    "I'm not saying it was {seed.generic}|But it was {seed.generic}",
+    "{related.generic.cap}?|{seed.generic.cap}",
+    "Who built the pyramids?|{seed.generic.cap}"
+  ],
+  "expanding_brain": [
+    "Liking {seed.generic}|Talking about {seed.generic}|Giving a talk about {seed.generic}|Becoming {seed.one}",
+    "Ignoring {seed.generic}|Liking {seed.generic}|Loving {seed.generic}|Becoming {seed.one}",
+    "{related.generic.cap}|{seed.generic.cap}|{related.generic.cap} and {seed.generic}|A whole talk about {seed.generic}"
+  ],
+  "this_is_fine": [
+    "{seed.generic.cap} everywhere|Me",
+    "Everything about {seed.generic}|The presenter",
+    "My slides about {seed.generic}|Me, presenting them"
+  ],
+  "futurama_fry": [
+    "Not sure if {seed.generic}|Or just {related.generic}",
+    "Not sure if this talk is about {seed.generic}|Or about me",
+    "Not sure if I'm an expert on {seed.generic}|Or just read one article"
+  ],
+  "panik_kalm_panik": [
+    "I have to give a talk about {seed.generic}|I know everything about {seed.generic}|The talk is about {related.generic}",
+    "{seed.generic.cap}. Everywhere.|It's fine, I love {seed.generic}|I'm allergic to {seed.generic}",
+    "Someone asks about {seed.generic}|I made a slide about that|The slide is a meme"
+  ],
+  "buff_doge_vs_cheems": [
+    "{seed.generic.cap} in 1990|{seed.generic.cap} now|I can do anything|I need a nap",
+    "{seed.generic.cap}, the original|{seed.generic.cap}, the remake|Built to last|Needs an update",
+    "Experts on {seed.generic} then|Experts on {seed.generic} now|I read books|I watched a video"
+  ],
+  "bell_curve": [
+    "I like {seed.generic}|Actually, {seed.generic}: a complex system of {related.generic} and feelings",
+    "{seed.generic.cap}? Nice.|Well, it depends on {related.generic}, the context and the moon"
+  ],
+  "the_scroll_of_truth": [
+    "{seed.generic.cap}? Just {related.generic} with a better name",
+    "Nobody understands {seed.generic}",
+    "This talk is not really about {seed.generic}"
+  ],
+  "trade_offer": [
+    "Your attention|Facts about {seed.generic}",
+    "Your weekend|Everything I know about {seed.generic}",
+    "Your applause|More slides about {seed.generic}"
+  ],
+  "disaster_girl": [
+    "{seed.generic.cap}?|I did that",
+    "The talk about {seed.generic}|Went exactly as planned",
+    "Everyone's confused about {seed.generic}|My work here is done"
+  ],
+  "roll_safe_think_about_it": [
+    "You can't be wrong about {seed.generic}|If you never talk about {seed.generic}",
+    "Can't fail at {seed.generic}|If you call it {related.generic}",
+    "Can't forget your slides about {seed.generic}|If every slide is a meme"
+  ]
+}

@@ -9,15 +9,11 @@ from collections.abc import Sequence
 from typing import Any, Final
 
 from talkgenerator.models.deck import MatrixDiagram, VennDiagram
-from talkgenerator.sources import conceptnet, text_generator
+from talkgenerator.sources import conceptnet, packs
 from talkgenerator.util import language_util, random_util
 
-venn_title_generator = text_generator.TraceryTextGenerator(
-    "data/text-templates/diagram_texts.json", "venn_title"
-).generate
-matrix_title_generator = text_generator.TraceryTextGenerator(
-    "data/text-templates/diagram_texts.json", "matrix_title"
-).generate
+venn_title_generator = packs.pack(packs.TED).tracery("diagrams.venn_title")
+matrix_title_generator = packs.pack(packs.TED).tracery("diagrams.matrix_title")
 
 # The quadrants of a 2×2 matrix, as a plan names the one its dot is in
 QUADRANTS: Final = ("top left", "top right", "bottom left", "bottom right")

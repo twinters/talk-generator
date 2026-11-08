@@ -27,36 +27,6 @@
           "says": "what he points at with approval instead: the absurd thing",
           "fill": "#ffffff"
         }
-      ],
-      "classic": [
-        [
-          "{related.generic.cap}",
-          "{seed.generic.cap}"
-        ],
-        [
-          "Doing it the normal way",
-          "Doing it with {seed.generic}"
-        ],
-        [
-          "Sleeping eight hours",
-          "Reading about {seed.generic} all night"
-        ],
-        [
-          "Small talk",
-          "Small talk about {seed.generic}"
-        ],
-        [
-          "Following the instructions",
-          "Winging it with {seed.generic}"
-        ],
-        [
-          "A normal hobby",
-          "Collecting facts about {seed.generic}"
-        ],
-        [
-          "Asking an expert",
-          "Becoming the expert on {seed.generic}"
-        ]
       ]
     },
     {
@@ -91,28 +61,6 @@
           "style": "impact",
           "says": "who sweats over the choice: a person or a group, such as the presenter"
         }
-      ],
-      "classic": [
-        [
-          "{seed.generic.cap}",
-          "{related.generic.cap}",
-          "Me"
-        ],
-        [
-          "Talk about {seed.generic}",
-          "Talk about {related.generic}",
-          "The presenter"
-        ],
-        [
-          "Love {seed.generic}",
-          "Fear {seed.generic}",
-          "Everyone in this room"
-        ],
-        [
-          "Finish the talk",
-          "Keep talking about {seed.generic}",
-          "Me, right now"
-        ]
       ]
     },
     {
@@ -147,28 +95,6 @@
           "style": "impact",
           "says": "his girlfriend: what he should stick to"
         }
-      ],
-      "classic": [
-        [
-          "{seed.generic.cap}",
-          "Me",
-          "My actual job"
-        ],
-        [
-          "{related.generic.cap}",
-          "Me",
-          "{seed.generic.cap}"
-        ],
-        [
-          "Talking about {seed.generic}",
-          "Me",
-          "Finishing this talk"
-        ],
-        [
-          "One more fact about {seed.generic}",
-          "The presenter",
-          "The time limit"
-        ]
       ]
     },
     {
@@ -195,24 +121,6 @@
           "style": "impact",
           "says": "who would rather draw 25 cards"
         }
-      ],
-      "classic": [
-        [
-          "Stop talking about {seed.generic}",
-          "Me"
-        ],
-        [
-          "Say one bad thing about {seed.generic}",
-          "Fans of {seed.generic}"
-        ],
-        [
-          "Explain {seed.generic}",
-          "Experts"
-        ],
-        [
-          "Admit you don't get {seed.generic}",
-          "Everyone in this room"
-        ]
       ]
     },
     {
@@ -247,28 +155,6 @@
           "style": "impact",
           "says": "who takes the exit"
         }
-      ],
-      "classic": [
-        [
-          "Being normal",
-          "{seed.generic.cap}",
-          "Me"
-        ],
-        [
-          "Sleep",
-          "{seed.generic.cap}",
-          "Me at 3 AM"
-        ],
-        [
-          "The plan",
-          "{related.generic.cap}",
-          "This talk"
-        ],
-        [
-          "The actual topic",
-          "More about {seed.generic}",
-          "The presenter"
-        ]
       ]
     },
     {
@@ -316,23 +202,6 @@
           "same_as": 3,
           "fill": "#b1e5e3"
         }
-      ],
-      "classic": [
-        [
-          "Give a talk on {seed.generic}",
-          "Pretend to be an expert",
-          "Get asked a question about {seed.generic}"
-        ],
-        [
-          "Buy {seed.one}",
-          "Read the manual",
-          "The manual is about {related.generic}"
-        ],
-        [
-          "Learn about {seed.generic}",
-          "Explain {seed.generic}",
-          "Realise you know nothing about {seed.generic}"
-        ]
       ]
     },
     {
@@ -367,28 +236,6 @@
           "style": "impact",
           "says": "what they agree on, on the handshake"
         }
-      ],
-      "classic": [
-        [
-          "Fans of {seed.generic}",
-          "Fans of {related.generic}",
-          "Hating Mondays"
-        ],
-        [
-          "{seed.generic.cap}",
-          "{related.generic.cap}",
-          "Confusing everyone"
-        ],
-        [
-          "Scientists",
-          "People who love {seed.generic}",
-          "Not understanding {seed.generic}"
-        ],
-        [
-          "The audience",
-          "The presenter",
-          "Wondering why this talk is about {seed.generic}"
-        ]
       ]
     },
     {
@@ -415,20 +262,6 @@
           "style": "impact",
           "says": "the end of it, after forever"
         }
-      ],
-      "classic": [
-        [
-          "Me waiting for someone",
-          "To ask me about {seed.generic}"
-        ],
-        [
-          "Waiting for",
-          "{seed.generic.cap} to make sense"
-        ],
-        [
-          "Still waiting",
-          "For the last slide about {seed.generic}"
-        ]
       ]
     },
     {
@@ -455,20 +288,6 @@
           "style": "impact",
           "says": "what the second answers: 'Always has been'"
         }
-      ],
-      "classic": [
-        [
-          "Wait, it's all {seed.generic}?",
-          "Always has been"
-        ],
-        [
-          "Wait, it was {seed.generic} all along?",
-          "Always has been"
-        ],
-        [
-          "Wait, this whole talk is about {seed.generic}?",
-          "Always has been"
-        ]
       ]
     },
     {
@@ -497,24 +316,6 @@
           "says": "what the unimpressed cat says, or is",
           "fill": "#ffffff"
         }
-      ],
-      "classic": [
-        [
-          "You said {seed.generic} would be simple!",
-          "Me, who explained {seed.generic}"
-        ],
-        [
-          "The future is {seed.generic}!",
-          "{related.generic.cap}"
-        ],
-        [
-          "Who brought {seed.generic} to dinner?!",
-          "Not me"
-        ],
-        [
-          "Stop talking about {seed.generic}!",
-          "One more slide"
-        ]
       ]
     },
     {
@@ -534,20 +335,6 @@
           "says": "the bold claim on the sign (it already says 'Change my mind' under it)",
           "fill": "#d6d4e1"
         }
-      ],
-      "classic": [
-        [
-          "Nobody appreciates {seed.generic} enough"
-        ],
-        [
-          "{seed.generic.cap}? Just {related.generic} with better marketing"
-        ],
-        [
-          "Everything is better with {seed.generic}"
-        ],
-        [
-          "Every talk should be about {seed.generic}"
-        ]
       ]
     },
     {
@@ -576,20 +363,6 @@
           "says": "what Batman says as he slaps him",
           "fill": "#dcae80"
         }
-      ],
-      "classic": [
-        [
-          "What about {related.generic}?",
-          "We're talking about {seed.generic}!"
-        ],
-        [
-          "I don't care about {seed.generic}",
-          "Take that back!"
-        ],
-        [
-          "Can we skip the part about {seed.generic}?",
-          "No!"
-        ]
       ]
     },
     {
@@ -624,23 +397,6 @@
           "style": "impact",
           "says": "his wrong question, 'Is this ...?', naming what he mistakes the butterfly for"
         }
-      ],
-      "classic": [
-        [
-          "Me",
-          "{related.generic.cap}",
-          "Is this {seed.one}?"
-        ],
-        [
-          "The audience",
-          "Any slide",
-          "Is this about {seed.generic}?"
-        ],
-        [
-          "The presenter",
-          "A random picture",
-          "Is this proof of {seed.generic}?"
-        ]
       ]
     },
     {
@@ -667,20 +423,6 @@
           "style": "impact",
           "says": "what one does not simply do"
         }
-      ],
-      "classic": [
-        [
-          "One does not simply",
-          "Explain {seed.generic} in one slide"
-        ],
-        [
-          "One does not simply",
-          "Stop thinking about {seed.generic}"
-        ],
-        [
-          "One does not simply",
-          "Give a talk about {seed.generic} unprepared"
-        ]
       ]
     },
     {
@@ -707,20 +449,6 @@
           "style": "impact",
           "says": "what he blames for it"
         }
-      ],
-      "classic": [
-        [
-          "I'm not saying it was {seed.generic}",
-          "But it was {seed.generic}"
-        ],
-        [
-          "{related.generic.cap}?",
-          "{seed.generic.cap}"
-        ],
-        [
-          "Who built the pyramids?",
-          "{seed.generic.cap}"
-        ]
       ]
     },
     {
@@ -767,26 +495,6 @@
           "says": "the most absurd one, as the most enlightened",
           "fill": "#ffffff"
         }
-      ],
-      "classic": [
-        [
-          "Liking {seed.generic}",
-          "Talking about {seed.generic}",
-          "Giving a talk about {seed.generic}",
-          "Becoming {seed.one}"
-        ],
-        [
-          "Ignoring {seed.generic}",
-          "Liking {seed.generic}",
-          "Loving {seed.generic}",
-          "Becoming {seed.one}"
-        ],
-        [
-          "{related.generic.cap}",
-          "{seed.generic.cap}",
-          "{related.generic.cap} and {seed.generic}",
-          "A whole talk about {seed.generic}"
-        ]
       ]
     },
     {
@@ -813,20 +521,6 @@
           "style": "impact",
           "says": "who sits there calmly (the dog already says 'This is fine')"
         }
-      ],
-      "classic": [
-        [
-          "{seed.generic.cap} everywhere",
-          "Me"
-        ],
-        [
-          "Everything about {seed.generic}",
-          "The presenter"
-        ],
-        [
-          "My slides about {seed.generic}",
-          "Me, presenting them"
-        ]
       ]
     },
     {
@@ -853,20 +547,6 @@
           "style": "impact",
           "says": "'Or just ...'"
         }
-      ],
-      "classic": [
-        [
-          "Not sure if {seed.generic}",
-          "Or just {related.generic}"
-        ],
-        [
-          "Not sure if this talk is about {seed.generic}",
-          "Or about me"
-        ],
-        [
-          "Not sure if I'm an expert on {seed.generic}",
-          "Or just read one article"
-        ]
       ]
     },
     {
@@ -904,23 +584,6 @@
           "says": "what makes him panic again",
           "fill": "#f3f3f3"
         }
-      ],
-      "classic": [
-        [
-          "I have to give a talk about {seed.generic}",
-          "I know everything about {seed.generic}",
-          "The talk is about {related.generic}"
-        ],
-        [
-          "{seed.generic.cap}. Everywhere.",
-          "It's fine, I love {seed.generic}",
-          "I'm allergic to {seed.generic}"
-        ],
-        [
-          "Someone asks about {seed.generic}",
-          "I made a slide about that",
-          "The slide is a meme"
-        ]
       ]
     },
     {
@@ -967,26 +630,6 @@
           "says": "what the weak one says",
           "fill": "#ffffff"
         }
-      ],
-      "classic": [
-        [
-          "{seed.generic.cap} in 1990",
-          "{seed.generic.cap} now",
-          "I can do anything",
-          "I need a nap"
-        ],
-        [
-          "{seed.generic.cap}, the original",
-          "{seed.generic.cap}, the remake",
-          "Built to last",
-          "Needs an update"
-        ],
-        [
-          "Experts on {seed.generic} then",
-          "Experts on {seed.generic} now",
-          "I read books",
-          "I watched a video"
-        ]
       ]
     },
     {
@@ -1025,16 +668,6 @@
           "says": "(the simple one's words again: the wise one says the same)",
           "same_as": 1
         }
-      ],
-      "classic": [
-        [
-          "I like {seed.generic}",
-          "Actually, {seed.generic}: a complex system of {related.generic} and feelings"
-        ],
-        [
-          "{seed.generic.cap}? Nice.",
-          "Well, it depends on {related.generic}, the context and the moon"
-        ]
       ]
     },
     {
@@ -1054,17 +687,6 @@
           "says": "the truth written on the scroll: a short, plain sentence that nobody wants to hear",
           "fill": "#ffffff"
         }
-      ],
-      "classic": [
-        [
-          "{seed.generic.cap}? Just {related.generic} with a better name"
-        ],
-        [
-          "Nobody understands {seed.generic}"
-        ],
-        [
-          "This talk is not really about {seed.generic}"
-        ]
       ]
     },
     {
@@ -1091,20 +713,6 @@
           "style": "impact",
           "says": "what you receive, a bad deal (the picture already says 'you receive:')"
         }
-      ],
-      "classic": [
-        [
-          "Your attention",
-          "Facts about {seed.generic}"
-        ],
-        [
-          "Your weekend",
-          "Everything I know about {seed.generic}"
-        ],
-        [
-          "Your applause",
-          "More slides about {seed.generic}"
-        ]
       ]
     },
     {
@@ -1131,20 +739,6 @@
           "style": "impact",
           "says": "her proud claim"
         }
-      ],
-      "classic": [
-        [
-          "{seed.generic.cap}?",
-          "I did that"
-        ],
-        [
-          "The talk about {seed.generic}",
-          "Went exactly as planned"
-        ],
-        [
-          "Everyone's confused about {seed.generic}",
-          "My work here is done"
-        ]
       ]
     },
     {
@@ -1171,20 +765,6 @@
           "style": "impact",
           "says": "the clever but useless solution"
         }
-      ],
-      "classic": [
-        [
-          "You can't be wrong about {seed.generic}",
-          "If you never talk about {seed.generic}"
-        ],
-        [
-          "Can't fail at {seed.generic}",
-          "If you call it {related.generic}"
-        ],
-        [
-          "Can't forget your slides about {seed.generic}",
-          "If every slide is a meme"
-        ]
       ]
     }
   ]

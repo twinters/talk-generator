@@ -1,0 +1,68 @@
+{
+  "agenda_title": [
+    "Agenda",
+    "Today's menu",
+    "What we'll cover",
+    "The plan",
+    "Roadmap",
+    "Outline",
+    "Where this is going"
+  ],
+  "agenda_first": [
+    "Why {seed}?",
+    "Introduction",
+    "A brief history of {seed}"
+  ],
+  "agenda_item": [
+    "The science of {related}",
+    "{related.title} and you",
+    "{seed.title} in practice",
+    "What could possibly go wrong",
+    "A word about {related}",
+    "The {seed} question",
+    "My personal journey"
+  ],
+  "agenda_last": [
+    "Conclusions",
+    "Questions",
+    "Lunch",
+    "Snacks",
+    "What now?"
+  ],
+  "section_title": [
+    "The {seed} years",
+    "Where it all began",
+    "Enter: {seed}",
+    "The rise of {seed}",
+    "Things get weird",
+    "A turning point",
+    "The dark side of {seed}",
+    "Back to {seed}",
+    "Meanwhile, {seed}",
+    "The plot thickens"
+  ],
+  "section_subtitle": [
+    "In which everything changes",
+    "Or: how I learned to love {seed}",
+    "Brace yourselves",
+    "It gets worse",
+    "Bear with me",
+    "Spoiler: it's {seed}"
+  ],
+  "questions_title": [
+    "Questions?",
+    "Any questions?",
+    "Questions? Answers? Theories?",
+    "Your questions, please",
+    "Over to you",
+    "Questions, comments, confessions?"
+  ],
+  "questions_subtitle": [
+    "Answers not guaranteed",
+    "No refunds",
+    "Easy ones first, please",
+    "I will pretend to know",
+    "Please, nothing about {seed}",
+    "Bonus points for questions about {seed}"
+  ]
+}
