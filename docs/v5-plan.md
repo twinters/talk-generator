@@ -678,10 +678,15 @@ the model's, as "The French Revolution" deserves better than itself.
   title of its own, and else what was typed, with the slips fixed that talkgenerator can fix itself
   (`titles.polished`: misspellings, a capital start for a title typed in lower case). Its topic is its rarest word.
 - **Anything shorter is the topic, or a premise** ("Cats are liquid"): the request says `Topic: "<typed>" (as the
-  user typed it: the talk's topic, or a premise for it)` and `Title: come up with one, funnier and more specific
-  than what the user typed`, and the model's title goes (its own_title rather than an echo of what was typed). The
-  topics are what was typed. A misspelled input comes with what it means (`"pengiuns" (as the user typed it,
-  meaning "penguins": ...)`), as the model otherwise kept the typo in its title now and then.
+  user typed it: the talk's topic, or a premise for it)`, and its spine asks for `a title of your own for the talk,
+  in English: funnier and more specific than what the user typed, building on it`, and the model's title goes (its
+  own_title rather than an echo of what was typed). The request has no line on the title since 2026-11-08: Claude
+  Haiku took its `Title: come up with one, ...` for the title ("Come Up With One: Retrocausal Roasting in Arabica
+  Beans", in 3 of 12 talks), and so a talk on a topic given as such has none either (its spine asks for a title of
+  the model's own), where a title given as such is the request's `Title:`. `talkgenerator check` warns about a title
+  with the request's words about a title in it (the `title` check). The topics are what was typed. A misspelled
+  input comes with what it means (`"pengiuns" (as the user typed it, meaning "penguins": ...)`), as the model
+  otherwise kept the typo in its title now and then.
 - **Misspellings** are fixed before the topics are taken (`word_frequency.fix_spelling`): a rare word becomes the
   likest word one edit away that's a hundred times more frequent ("waht": "what", "joind": "joined"), a word no
   language knows the closest frequent word ("airplain": "airplane"); made-up words stay ("Zorblaxia").
@@ -1787,7 +1792,7 @@ the formats × 3 seeds, in classic mode with replay and, at every milestone, liv
 | Area | Check | Proposed bar |
 | --- | --- | --- |
 | Completeness | no missing slides, every required element present, no empty placeholders | 100% |
-| Text | no template leftovers (`{seed}`, `#tag#`, `None`); fits its box at the minimum font size or above; within its length limits | 100% |
+| Text | no template leftovers (`{seed}`, `#tag#`, `None`); fits its box at the minimum font size or above; within its length limits; a title without the request's words about it ("Come Up With One: ...", a warning since 2026-11-08) | 100% |
 | Contrast | text against its background, or against the photo behind it after dimming | at least 4.5:1 for body text, 3:1 for titles |
 | Images | loads; not enlarged beyond 1.3×; no near-duplicates within a talk; credited with its license; license policy respected; its look's preference (black and white or sepia for `vintage`, little detail behind the text for `calm-backdrop`) | 100% (the near-duplicates, licenses, policy and looks checked since 2026-11-07) |
 | Variety | distinct slide types and layouts per talk, no layout twice in a row; across seeds, the share of distinct titles and images | targets per format, set from milestone 1's measurements |

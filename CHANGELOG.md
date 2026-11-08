@@ -560,6 +560,10 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   any gives way to another. A how-to with a word on a faith, violence, hate, death or hard drugs is left out ("Live
   a Good Christian Life", "Apply a Fentanyl Patch"); crude ones about the seed stay, as much of a classic talk's
   humour is ("Clean Your Penis" for cleaning). The words that slides leave out have fentanyl too.
+- A language model's title doesn't repeat the request anymore. Claude Haiku took the request's line "Title: come up
+  with one" for the title ("Come Up With One: Retrocausal Roasting in Arabica Beans", in 3 of 12 talks): a talk
+  whose title the model makes up has no such line now, and the answer's title field asks for a title of the model's
+  own. `talkgenerator check` warns about a title with words of its request in it.
 - A presenter's name that puns on a famous living person goes, and the talk gets one of talkgenerator's own instead:
   a free model named a keynote's presenter "Umbrella Chomsky". The blocklist knows 175 living people that models
   reach for: a name that's theirs alone counts on its own ("Chomsky", "Oprah"), and their ordinary names only
