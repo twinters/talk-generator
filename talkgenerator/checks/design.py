@@ -5,8 +5,9 @@ size, be big enough to read from the back of the room, stay within the slide's s
 what's drawn after it. What's behind a text is the slide's background (both ends of a gradient), and the shapes and
 images drawn before it: an image could be anything, so for one the check takes the worst of black and white, as
 shaded by what's drawn over it. The credit line is meant to be quiet (D51): it has floors of its own, a lower
-contrast (on a picture, which could be any grey too, by its halo) and a smaller size. And a slide doesn't repeat the
-layout of the slide before it, if another one fits.
+contrast (on a picture, which could be any grey too, by its halo) and a smaller size; and a wall of text is meant to be
+unreadable (docs/v5-plan.md, section 8): its fine print has a smaller size of its own (engine.FINE_PRINT), though it
+has to read as every text does. And a slide doesn't repeat the layout of the slide before it, if another one fits.
 """
 
 from __future__ import annotations
@@ -37,6 +38,7 @@ LARGE_TEXT: Final = 36
 LARGE_BOLD_TEXT: Final = 28
 SMALLEST_TEXT: Final = 24  # 12 points, for anything but the credits
 SMALLEST_CREDITS: Final = 12  # 6 points (they're 7: engine.CREDITS_SIZE)
+SMALLEST_FINE_PRINT: Final = min(engine.FINE_PRINT_SIZES)  # 9 points, a wall of text's (engine.FINE_PRINT)
 CREDITS_CONTRAST: Final = engine.CREDITS_CONTRAST  # (WCAG asks no contrast of them: they're no content of the slide's)
 SAFE_AREA: Final = Box(x=16, y=16, w=1888, h=1048)
 
@@ -101,7 +103,8 @@ def _text_findings(
         findings.append(
             Finding("overflow", "error", f"the {role} doesn't fit its box at {style.size / 2:g} points", number)
         )
-    if style.size < SMALLEST_TEXT:
+    fine_print = role in engine.FINE_PRINT.get(slide.type, frozenset())
+    if style.size < (SMALLEST_FINE_PRINT if fine_print else SMALLEST_TEXT):
         findings.append(Finding("text size", "warning", f"the {role} is small ({style.size / 2:g} points)", number))
     if not _inside(box, SAFE_AREA):
         findings.append(Finding("margins", "warning", f"the {role} is outside the slide's safe area", number))

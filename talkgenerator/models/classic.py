@@ -8,6 +8,18 @@ from __future__ import annotations
 
 from typing import Final
 
+# A wall of text's bullets: a point's, and a point's under the one before it
+TOP_BULLET: Final = "• "
+SUB_BULLET: Final = "– "
+
+# An alignment chart's cells, in reading order: lawful to chaotic across, good to evil down (as Dungeons & Dragons
+# has them)
+ALIGNMENTS: Final = (
+    *("lawful_good", "neutral_good", "chaotic_good"),
+    *("lawful_neutral", "true_neutral", "chaotic_neutral"),
+    *("lawful_evil", "neutral_evil", "chaotic_evil"),
+)
+
 # slide type -> {Slide argument: element role}, in the order the elements appear on the slide
 CLASSIC_ROLES: Final[dict[str, dict[str, str]]] = {
     "title": {"title": "title", "subtitle": "subtitle"},
@@ -104,10 +116,41 @@ CLASSIC_ROLES: Final[dict[str, dict[str, str]]] = {
             for role in (f"tier_{tier}", *(f"item_{tier}_{number}" for number in range(1, 4)))
         },
     },
+    # (and the next ones from the karaoke catalogue: a wall of text, an alignment chart, red flags, reviews with
+    # stars and a fake error message)
+    "wall_of_text": {
+        "title": "title",
+        **{f"point_{number}": f"point_{number}" for number in range(1, 17)},
+        "highlight": "highlight",
+        "continued": "continued",
+    },
+    "alignment_chart": {
+        "title": "title",
+        **{f"column_{number}": f"column_{number}" for number in range(1, 4)},
+        **{f"row_{number}": f"row_{number}" for number in range(1, 4)},
+        **{alignment: alignment for alignment in ALIGNMENTS},
+    },
+    "red_flags": {"title": "title", **{f"flag_{number}": f"flag_{number}" for number in range(1, 6)}},
+    "reviews": {
+        "title": "title",
+        **{
+            f"{part}_{number}": f"{part}_{number}" for number in range(1, 4) for part in ("stars", "review", "reviewer")
+        },
+    },
+    "error_message": {
+        "title": "window_title",  # (the dialog's, in its title bar: no title of the slide's)
+        "icon": "icon",
+        "message": "message",
+        "code": "code",
+        **{f"button_{number}": f"button_{number}" for number in range(1, 4)},
+    },
 }
 
 # The slide types that came from real PowerPoint karaoke decks (docs/v5-plan.md, section 8)
-KARAOKE_TYPES: Final = frozenset({"fun_fact", "acronym", "dare", "flowchart", "tier_list"})
+KARAOKE_TYPES: Final = frozenset(
+    {"fun_fact", "acronym", "dare", "flowchart", "tier_list"}
+    | {"wall_of_text", "alignment_chart", "red_flags", "reviews", "error_message"}
+)
 # The slide types that the talk formats beyond TED-like talks brought (docs/v5-plan.md, section 7)
 FORMAT_TYPES: Final = frozenset({"process"})
 
@@ -151,6 +194,11 @@ REQUIRED_ROLES: Final[dict[str, tuple[str, ...]]] = {
     "dare": ("kicker", "dare"),
     "flowchart": ("question", "yes_step", "no_step", "end"),
     "tier_list": ("tier_s", "item_s_1", "tier_a", "item_a_1"),
+    "wall_of_text": ("title", *(f"point_{number}" for number in range(1, 6)), "highlight"),
+    "alignment_chart": ALIGNMENTS,
+    "red_flags": ("flag_1", "flag_2", "flag_3"),
+    "reviews": ("stars_1", "review_1", "stars_2", "review_2"),  # (a review's stars read as "4/5" beside them)
+    "error_message": ("message", "button_1", "button_2"),
 }
 
 # The roles of drawn slides that hold pictures: a post's or a story's photo, a meme's template
@@ -168,3 +216,9 @@ COVER_ROLES: Final = frozenset({"background", "photo"})
 
 def layout_id(slide_type: str) -> str:
     return "classic/" + slide_type
+
+
+def highlighted_at(points: int) -> int:
+    """Where a wall of text hides its highlighted point among its others: after this many of them (a little past the
+    middle, where nobody would look for it)."""
+    return round(points * 0.6)

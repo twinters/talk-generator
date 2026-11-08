@@ -883,6 +883,8 @@ meme_slide_generators = _register(
 # SLIDE TYPES FROM POWERPOINT KARAOKE DECKS (docs/v5-plan.md, section 8): what real karaoke and battle decks have that
 # makes audiences laugh, drawn as texts on shapes (and a photo), in the middle of a talk
 _FUN_FACT_BRIEF = "A fun fact about the concept: something absurd, stated as certain, that the presenter has to back up"
+# (the reviews' punchline: models gave three glowing ones in a row, a motivational speaker's especially)
+_ONE_STAR = "how many stars the {which} and last reviewer gives: 1, the one-star review that's the punchline"
 
 
 def _fun_fact(photo, suffix: str = "") -> list[SlideGeneratorData]:
@@ -971,6 +973,87 @@ karaoke_slide_generators = _register(
                 brief="A tier list that ranks things to do with the concept as if it were science: arguable "
                 "placements, and a surprising S tier as the punchline",
                 variants=(Variant(2), Variant(1, frozenset({"b_tier", "c_tier"}), "with only its S, A and F tiers")),
+            ),
+        ),
+        # The next ones from the catalogue (2026-11-08): a wall of text that nobody can read (organisers warn against
+        # text-heavy decks, so it's rarer), an alignment chart, red flags, reviews with stars, and a fake error
+        # message, which breaks the illusion as the dare does (so it's rarer too)
+        _drawn(
+            slide_texts.generate_wall_of_text,
+            slides.WallOfTextSlide,
+            _middle(0.6),
+            ["wall_of_text"],
+            "Wall of Text",
+            Recipe(
+                "wall_of_text",
+                brief="An executive summary of the concept that nobody can read: a wall of dense jargon about it, with "
+                "one absurd point hidden among the rest, which the presenter points at as if it were obvious",
+            ),
+            repeats=4,
+        ),
+        _drawn(
+            slide_texts.generate_alignment_chart,
+            slides.AlignmentChartSlide,
+            _middle(0.8),
+            ["alignment_chart"],
+            "Alignment Chart",
+            Recipe(
+                "alignment_chart",
+                brief="An alignment chart of things to do with the concept, as Dungeons & Dragons sorts characters: "
+                "harmless and wholesome as lawful good, unhinged as chaotic evil, the punchline",
+            ),
+            repeats=3,
+        ),
+        _drawn(
+            slide_texts.generate_red_flags,
+            slides.RedFlagsSlide,
+            _middle(0.8),
+            ["red_flags"],
+            "Red Flags",
+            Recipe(
+                "red_flags",
+                brief="Red flags about the concept, as in dating advice: warning signs that someone or something "
+                "around it is trouble, each more alarming than the last",
+                variants=(
+                    Variant(1, frozenset({"flag_4", "flag_5"}), "with three red flags"),
+                    Variant(1, frozenset({"flag_5"}), "with four red flags"),
+                    Variant(1, note="with five red flags"),
+                ),
+            ),
+        ),
+        _drawn(
+            slide_texts.generate_reviews,
+            slides.ReviewsSlide,
+            _middle(0.8),
+            ["reviews"],
+            "Reviews",
+            Recipe(
+                "reviews",
+                brief="Made-up customer reviews of the concept, as if it were a product: glowing ones that take it "
+                "far too seriously, then a one-star review, the punchline",
+                variants=(
+                    Variant(2, note="with three reviews", hints={"stars_3": _ONE_STAR.format(which="third")}),
+                    Variant(
+                        1,
+                        frozenset({"stars_3", "review_3", "reviewer_3"}),
+                        "with two reviews",
+                        hints={"stars_2": _ONE_STAR.format(which="second")},
+                    ),
+                ),
+            ),
+        ),
+        _drawn(
+            slide_texts.generate_error_message,
+            slides.ErrorMessageSlide,
+            _middle(0.5),
+            ["error_message"],
+            "Error Message",
+            Recipe(
+                "error_message",
+                brief="A fake error message about the concept, as if the talk itself just crashed: a dialog with a "
+                "playful, absurd message about the concept, worded as computers word them, and buttons, the last one "
+                "the punchline",
+                variants=(Variant(2), Variant(1, frozenset({"code"}), "without an error code")),
             ),
         ),
     ],
@@ -1217,6 +1300,11 @@ default_max_allowed_tags = {
     "dare": 1,
     "flowchart": 1,
     "tier_list": 1,
+    "wall_of_text": 1,
+    "alignment_chart": 1,
+    "red_flags": 1,
+    "reviews": 1,
+    "error_message": 1,
     "agenda": 1,
     "questions": 1,
     "timeline": 1,

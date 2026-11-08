@@ -466,6 +466,55 @@ def _tier_list(texts: Mapping[str, str | None], images: Mapping[str, Any], langu
     return slides.TierListSlide(texts["title"], *tiers)
 
 
+def _wall_of_text(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    points = slides.listed_items(texts["points"], slides.WALL_POINTS)
+    if len(points) < slides.WALL_FEWEST:
+        raise ValueError(f"a wall of text needs {slides.WALL_FEWEST} points or more")
+    highlight = slides.listed_items(texts["highlight"], 1)  # (without a bullet the model put in front)
+    return slides.WallOfTextSlide(texts["title"], highlight[0] if highlight else None, language.continued, *points)
+
+
+def _alignment_chart(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    cells = [texts.get(alignment) for alignment in slides.ALIGNMENTS]
+    return slides.AlignmentChartSlide(texts.get("title"), language.lawful_to_chaotic, language.good_to_evil, *cells)
+
+
+def _red_flags(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    return slides.RedFlagsSlide(texts["title"], *_numbered(texts, "flag", slides.RED_FLAGS))
+
+
+def _reviews(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    written = [
+        part
+        for index in range(1, slides.REVIEWS + 1)
+        for part in (texts.get(f"stars_{index}"), texts.get(f"review_{index}"), texts.get(f"reviewer_{index}"))
+    ]
+    return slides.ReviewsSlide(texts.get("title"), *written)
+
+
+def _error_message(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    buttons = [_button(button) for button in slides.listed_items(texts["buttons"], slides.ERROR_BUTTONS)]
+    if len(buttons) < 2:
+        raise ValueError("an error message needs two buttons or more")
+    return slides.ErrorMessageSlide(texts.get("title"), texts["message"], texts.get("code"), *buttons)
+
+
+def _button(text: str) -> str:
+    """A dialog's button as long as one may be: cut between words, without a little word left hanging at its end
+    ("Become the", of "Become the plant")."""
+    cut = _shortened(text, ERROR_BUTTON)
+    if cut == text:
+        return text
+    words = cut.split()
+    while len(words) > 1 and words[-1].lower() in _HANGING:
+        words.pop()
+    return " ".join(words)
+
+
+# Little words a cut text shouldn't end on
+_HANGING: Final = frozenset("a an the of to and or with for in on at by my your our their its from as".split())
+
+
 def _shortened(text: str, length: int) -> str:
     """The text, cut between words to at most this many characters (or within its first word, if that's longer)."""
     if len(text) <= length:
@@ -505,6 +554,23 @@ def _moment(index: int, which: str, optional: bool = False) -> tuple[TextField, 
         TextField(f"date_{index}", f"the {which} moment's date (a year, say, or a day)", 12, optional),
         TextField(f"event_{index}", f"what happened at the {which} moment", 40, optional),
     )
+
+
+WALL_TEXT: Final = 2600  # how long a wall of text's points may be, together (they're written as one text)
+ERROR_BUTTON: Final = 20  # how long a fake error message's button may be (they're written as one text)
+# What an alignment chart's description of its cells says of the punchline's
+_PUNCHLINE: Final = {"chaotic_evil": ": the punchline"}
+
+
+def _review(index: int, which: str, optional: bool = False) -> tuple[TextField, TextField, TextField]:
+    return (
+        TextField(f"stars_{index}", f"how many stars the {which} reviewer gives, from 1 to 5", 1, optional, STARS),
+        TextField(f"review_{index}", f"what the {which} reviewer wrote", 110, optional),
+        TextField(f"reviewer_{index}", f"who the {which} reviewer is: a made-up first name, and a detail", 30, True),
+    )
+
+
+STARS: Final = ("1", "2", "3", "4", "5")
 
 
 def _items(prefix: str, length: int, *descriptions: str, required: int = 3) -> tuple[TextField, ...]:
@@ -1026,6 +1092,100 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             (),
             _tier_list,
+        ),
+        Kind(
+            "wall_of_text",
+            "A wall of text that nobody can read: dense points of jargon filling the slide, as nested bullets, with one "
+            "more point hidden among them, the punchline, which a marker highlights on a click (talkgenerator adds "
+            "'Continued on next slide' under it).",
+            (
+                TextField("title", "the slide's title, as if it were all perfectly clear", 60),
+                TextField(
+                    "points",
+                    "twelve to sixteen points of dense jargon, separated by |, each a long sentence of fifteen to "
+                    "twenty-five words: the more the better, as nobody is meant to read them",
+                    WALL_TEXT,
+                ),
+                TextField(
+                    "highlight",
+                    "one more point, hidden among the others and highlighted on a click: the punchline, as dense as "
+                    "they are, but absurd",
+                    110,
+                ),
+            ),
+            (),
+            _wall_of_text,
+        ),
+        Kind(
+            "alignment_chart",
+            "An alignment chart, as Dungeons & Dragons sorts characters: nine things in a grid of three by three, from "
+            "lawful to chaotic across and from good to evil down (talkgenerator adds the axes' words), which appear "
+            "one by one, a click each, in reading order: chaotic evil, the punchline, last.",
+            (
+                TextField("title", "the alignment chart's title", 60),
+                *(
+                    TextField(
+                        alignment,
+                        f"the {alignment.replace('_', ' ')} one, in a few words{_PUNCHLINE.get(alignment, '')}",
+                        60,
+                    )
+                    for alignment in slides.ALIGNMENTS
+                ),
+            ),
+            (),
+            _alignment_chart,
+        ),
+        Kind(
+            "red_flags",
+            "Red flags: three to five warning signs, each beside a red flag, appearing one by one, a click each, each "
+            "more alarming than the last: the last one is the punchline.",
+            (
+                TextField("title", "the slide's title, which says these are red flags (of what)", 60),
+                *_items(
+                    "flag",
+                    90,
+                    "the first red flag",
+                    "the second red flag",
+                    "the third red flag (the punchline, if it's the last)",
+                    "a fourth red flag",
+                    "a fifth red flag",
+                ),
+            ),
+            (),
+            _red_flags,
+        ),
+        Kind(
+            "reviews",
+            "Made-up reviews, with stars: two or three reviewers' ratings (one to five stars) and what they wrote, "
+            "appearing one by one, a click each; the last one, the punchline, is a one-star review most of the time.",
+            (
+                TextField("title", "the slide's title, such as what people are saying", 60, optional=True),
+                *(
+                    field
+                    for index, which in enumerate(("first", "second", "third"), 1)
+                    for field in _review(index, which, optional=index == slides.REVIEWS)
+                ),
+            ),
+            (),
+            _reviews,
+        ),
+        Kind(
+            "error_message",
+            "A fake error message, as if the talk itself crashed: a dialog with a title, an absurd message, an error "
+            "code and two or three buttons, the last one the punchline (talkgenerator adds the warning sign).",
+            (
+                TextField("title", "the dialog's title, as in its title bar", 30, optional=True),
+                TextField("message", "the error message", 120),
+                TextField("code", "an error code, made up and absurdly precise", 24, optional=True),
+                TextField(
+                    "buttons",
+                    f"two or three of the dialog's buttons, separated by |, each at most {ERROR_BUTTON} characters: "
+                    "the last one the punchline, an absurd choice of the talk's own",
+                    3 * ERROR_BUTTON + 6,
+                ),
+            ),
+            (),
+            _error_message,
         ),
     )
 }

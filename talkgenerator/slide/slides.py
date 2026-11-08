@@ -812,6 +812,160 @@ class TierListSlide(DrawnSlide):
         return self._one_by_one(*groups)
 
 
+def listed_items(text: str | None, most: int) -> list[str]:
+    """The things of a list written as one text: separated by | (or on lines of their own), each without a bullet or
+    a number of its own in front ("• ", "- ", "3. "), at most so many."""
+    parts = re.split(r"\s*\|\s*|\s*\n\s*", text or "")
+    return [_BULLET.sub("", part).strip() for part in parts if _BULLET.sub("", part).strip()][:most]
+
+
+_BULLET = re.compile(r"^\s*(?:[•·*▪◦‣–—-]+|\d{1,2}[.)])\s*")
+
+# The most points a wall of text has (besides its highlighted one), and the fewest that make a wall
+WALL_POINTS = 16
+WALL_FEWEST = 5
+# A wall's points go in a rhythm of top-level points and points under them (as nested bullets): this one, over and
+# over (True: under the point before it)
+_WALL_RHYTHM = (False, True, True, False, True, False, True, True, True, False, False, True)
+
+
+class WallOfTextSlide(DrawnSlide):
+    """A wall of text that nobody can read, as an executive summary: dense points of jargon in fine print, some as
+    points under others, with one more point hidden among them (in the middle, a little past it), the punchline, which
+    a marker highlights on the slide's one click; under it all, "continued on next slide" in the talk's language."""
+
+    required_arguments = ("title", *(f"point_{index}" for index in range(1, WALL_FEWEST + 1)), "highlight")
+
+    def __init__(self, title: str | None, highlight: str | None, continued: str | None, *points: str | None):
+        listed = [point.strip() for point in points if point and point.strip()][:WALL_POINTS]
+        at = classic.highlighted_at(len(listed))
+        bullets = [_WALL_RHYTHM[index % len(_WALL_RHYTHM)] for index in range(len(listed) + 1)]
+        bullets[0] = False  # (the first point is no point under another)
+        arguments: dict[str, str | None] = {"title": title}
+        for index in range(1, WALL_POINTS + 1):
+            if index > len(listed):
+                arguments[f"point_{index}"] = None
+                continue
+            position = index - 1 if index <= at else index  # (the points after the highlighted one move down one)
+            bullet = classic.SUB_BULLET if bullets[position] else classic.TOP_BULLET
+            arguments[f"point_{index}"] = bullet + listed[index - 1]
+        highlighted = (highlight or "").strip()
+        bullet = classic.SUB_BULLET if bullets[at] else classic.TOP_BULLET
+        arguments["highlight"] = bullet + highlighted if highlighted else None
+        arguments["continued"] = continued
+        super().__init__("wall_of_text", None, arguments)
+
+
+# An alignment chart's cells, in reading order: lawful to chaotic across, good to evil down
+ALIGNMENTS = classic.ALIGNMENTS
+
+
+class AlignmentChartSlide(DrawnSlide):
+    """An alignment chart: nine things in a grid of three by three, lawful to chaotic across and good to evil down
+    (the axes' words in the talk's language), which appear one by one, a click each, in reading order: chaotic evil,
+    the punchline, last."""
+
+    required_arguments = ALIGNMENTS
+
+    def __init__(
+        self,
+        title: str | None,
+        columns: Sequence[str],
+        rows: Sequence[str],
+        *cells: str | None,
+    ):
+        arguments: dict[str, str | None] = {"title": title}
+        for index in range(1, 4):
+            arguments[f"column_{index}"] = columns[index - 1] if index <= len(columns) else None
+            arguments[f"row_{index}"] = rows[index - 1] if index <= len(rows) else None
+        for index, alignment in enumerate(ALIGNMENTS):
+            cell = cells[index] if index < len(cells) else None
+            arguments[alignment] = cell.strip() if cell and cell.strip() else None
+        super().__init__("alignment_chart", None, arguments)
+
+    def clicks(self) -> dict[str, int]:
+        return self._one_by_one(*((alignment,) for alignment in ALIGNMENTS))
+
+
+RED_FLAGS = 5  # the most red flags a slide has
+
+
+class RedFlagsSlide(DrawnSlide):
+    """Red flags: three to five warning signs about something, each beside a red flag, appearing one by one, a click
+    each: the last one is the punchline."""
+
+    required_arguments = ("flag_1", "flag_2", "flag_3")
+
+    def __init__(self, title: str | None, *flags: str | None):
+        super().__init__("red_flags", None, {"title": title, **_listed("flag", RED_FLAGS, flags)})
+
+    def clicks(self) -> dict[str, int]:
+        return self._one_by_one(*((f"flag_{index}",) for index in range(1, RED_FLAGS + 1)))
+
+
+REVIEWS = 3  # the most reviews a slide has
+MOST_STARS = 5
+
+
+def stars(rating: object) -> int | None:
+    """A rating as a number of stars, from 1 to 5 ("4", "4/5", "4 stars", "★★★★☆" all give 4); None when it's no
+    rating."""
+    text = str(rating or "").strip()
+    if "★" in text:
+        return min(MOST_STARS, text.count("★"))
+    match = re.match(r"(\d+(?:[.,]\d+)?)", text)
+    if match is None:
+        return None
+    number = round(float(match.group(1).replace(",", ".")))
+    return number if 1 <= number <= MOST_STARS else None
+
+
+class ReviewsSlide(DrawnSlide):
+    """Made-up reviews of something: two or three, each its stars (from one to five, drawn, and as "4/5" beside them),
+    what the reviewer wrote and who they are; appearing one by one, a click each: the last one, a one-star review most
+    of the time, is the punchline. (Each review as three arguments in a row: its stars, its text and its reviewer.)"""
+
+    required_arguments = ("stars_1", "review_1", "stars_2", "review_2")
+
+    def __init__(self, title: str | None, *stars_reviews_and_reviewers: object):
+        given = stars_reviews_and_reviewers
+        written = []
+        for index in range(0, len(given) - 1, 3):
+            rating, review = stars(given[index]), str(given[index + 1] or "").strip()
+            reviewer = str(given[index + 2] or "").strip() if index + 2 < len(given) else ""
+            if rating is not None and review:
+                written.append((rating, review, reviewer))
+        arguments: dict[str, str | None] = {"title": title}
+        for index in range(1, REVIEWS + 1):
+            there = index <= len(written)
+            given_stars, given_review, given_reviewer = written[index - 1] if there else (0, "", "")
+            arguments[f"stars_{index}"] = f"{given_stars}/{MOST_STARS}" if there else None
+            arguments[f"review_{index}"] = given_review if there else None
+            arguments[f"reviewer_{index}"] = f"— {given_reviewer}" if there and given_reviewer else None
+        super().__init__("reviews", None, arguments)
+
+    def clicks(self) -> dict[str, int]:
+        return self._one_by_one(
+            *((f"stars_{index}", f"review_{index}", f"reviewer_{index}") for index in range(1, REVIEWS + 1))
+        )
+
+
+ERROR_BUTTONS = 3  # the most buttons an error message has
+
+
+class ErrorMessageSlide(DrawnSlide):
+    """A fake error message, as if the talk itself crashed: a dialog's title, an icon ("!"), the message, an error
+    code (if any), and two or three buttons, the last one the punchline ("Panic"). It comes up whole: an error doesn't
+    build up."""
+
+    required_arguments = ("message", "button_1", "button_2")
+
+    def __init__(self, title: str | None, message: str | None, code: str | None, *buttons: str | None):
+        arguments: dict[str, str | None] = {"title": title, "icon": "!", "message": message, "code": code}
+        arguments.update(_listed("button", ERROR_BUTTONS, buttons))
+        super().__init__("error_message", None, arguments)
+
+
 class MemeSlide(DrawnSlide):
     """A meme: a template's picture (one of Imgflip's, see talkgenerator.sources.memes), with its captions as texts on
     it, each in the box the template has for it (a box that repeats another's caption gets it too). Of two captions

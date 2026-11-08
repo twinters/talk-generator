@@ -600,3 +600,101 @@ Images: none
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
 | `tier-list` | A tier list that ranks things to do with the concept as if it were science: arguable placements, and a surprising S tier as the punchline | the default; tags: tier_list |
+
+## `wall_of_text`
+
+A wall of text that nobody can read: dense points of jargon filling the slide, as nested bullets, with one more point hidden among them, the punchline, which a marker highlights on a click (talkgenerator adds 'Continued on next slide' under it).
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `title` | 60 | the slide's title, as if it were all perfectly clear |
+| `points` | 2600 | twelve to sixteen points of dense jargon, separated by \|, each a long sentence of fifteen to twenty-five words: the more the better, as nobody is meant to read them |
+| `highlight` | 110 | one more point, hidden among the others and highlighted on a click: the punchline, as dense as they are, but absurd |
+
+Images: none
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `wall-of-text` | An executive summary of the concept that nobody can read: a wall of dense jargon about it, with one absurd point hidden among the rest, which the presenter points at as if it were obvious | the default; tags: wall_of_text |
+
+## `alignment_chart`
+
+An alignment chart, as Dungeons & Dragons sorts characters: nine things in a grid of three by three, from lawful to chaotic across and from good to evil down (talkgenerator adds the axes' words), which appear one by one, a click each, in reading order: chaotic evil, the punchline, last.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `title` | 60 | the alignment chart's title |
+| `lawful_good` | 60 | the lawful good one, in a few words |
+| `neutral_good` | 60 | the neutral good one, in a few words |
+| `chaotic_good` | 60 | the chaotic good one, in a few words |
+| `lawful_neutral` | 60 | the lawful neutral one, in a few words |
+| `true_neutral` | 60 | the true neutral one, in a few words |
+| `chaotic_neutral` | 60 | the chaotic neutral one, in a few words |
+| `lawful_evil` | 60 | the lawful evil one, in a few words |
+| `neutral_evil` | 60 | the neutral evil one, in a few words |
+| `chaotic_evil` | 60 | the chaotic evil one, in a few words: the punchline |
+
+Images: none
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `alignment-chart` | An alignment chart of things to do with the concept, as Dungeons & Dragons sorts characters: harmless and wholesome as lawful good, unhinged as chaotic evil, the punchline | the default; tags: alignment_chart |
+
+## `red_flags`
+
+Red flags: three to five warning signs, each beside a red flag, appearing one by one, a click each, each more alarming than the last: the last one is the punchline.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `title` | 60 | the slide's title, which says these are red flags (of what) |
+| `flag_1` | 90 | the first red flag |
+| `flag_2` | 90 | the second red flag |
+| `flag_3` | 90 | the third red flag (the punchline, if it's the last) |
+| `flag_4` | 90 | a fourth red flag (or empty, for none) |
+| `flag_5` | 90 | a fifth red flag (or empty, for none) |
+
+Images: none
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `red-flags` | Red flags about the concept, as in dating advice: warning signs that someone or something around it is trouble, each more alarming than the last | the default; tags: red_flags |
+
+## `reviews`
+
+Made-up reviews, with stars: two or three reviewers' ratings (one to five stars) and what they wrote, appearing one by one, a click each; the last one, the punchline, is a one-star review most of the time.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `title` | 60 | the slide's title, such as what people are saying (or empty, for none) |
+| `stars_1` | 1 | how many stars the first reviewer gives, from 1 to 5: `1`, `2`, `3`, `4`, `5` |
+| `review_1` | 110 | what the first reviewer wrote |
+| `reviewer_1` | 30 | who the first reviewer is: a made-up first name, and a detail (or empty, for none) |
+| `stars_2` | 1 | how many stars the second reviewer gives, from 1 to 5: `1`, `2`, `3`, `4`, `5` |
+| `review_2` | 110 | what the second reviewer wrote |
+| `reviewer_2` | 30 | who the second reviewer is: a made-up first name, and a detail (or empty, for none) |
+| `stars_3` | 1 | how many stars the third reviewer gives, from 1 to 5: `1`, `2`, `3`, `4`, `5` (or empty, for any) |
+| `review_3` | 110 | what the third reviewer wrote (or empty, for none) |
+| `reviewer_3` | 30 | who the third reviewer is: a made-up first name, and a detail (or empty, for none) |
+
+Images: none
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `reviews` | Made-up customer reviews of the concept, as if it were a product: glowing ones that take it far too seriously, then a one-star review, the punchline | the default; tags: reviews |
+
+## `error_message`
+
+A fake error message, as if the talk itself crashed: a dialog with a title, an absurd message, an error code and two or three buttons, the last one the punchline (talkgenerator adds the warning sign).
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `title` | 30 | the dialog's title, as in its title bar (or empty, for none) |
+| `message` | 120 | the error message |
+| `code` | 24 | an error code, made up and absurdly precise (or empty, for none) |
+| `buttons` | 66 | two or three of the dialog's buttons, separated by \|, each at most 20 characters: the last one the punchline, an absurd choice of the talk's own |
+
+Images: none
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `error-message` | A fake error message about the concept, as if the talk itself just crashed: a dialog with a playful, absurd message about the concept, worded as computers word them, and buttons, the last one the punchline | the default; tags: error_message |
