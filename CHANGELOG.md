@@ -305,7 +305,8 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   `{seed.generic}`, `{seed.one}` and `.cap` tell a countable noun from a mass noun by wordfreq's frequencies of the
   noun and its plural.
 - A text a language model wrote loses the backslash it put before a quote mark ("what\'s"), where its JSON needed
-  none.
+  none, and keeps the closing mark of a quote it ends on ("calling it 'Steve'" lost its last mark): only quote marks
+  around all of a text go, and stray ones at its ends.
 - `--int_seed` gives the same talk every time, also with `--parallel` (the default), with seed 0, and in every Python
   process: slides made in parallel shared one random generator, and seed 0 skipped the reseeding.
 - No slide shows an image of a slide before it (nor nearly the same one). Conclusions, which may repeat texts as they

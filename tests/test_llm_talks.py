@@ -612,6 +612,17 @@ def test_slide_texts_are_cleaned_up():
     assert clean_text(42, field) is None
 
 
+def test_a_text_keeps_the_quote_marks_of_a_quote_in_it():
+    # (a free model's "Watering it and calling it 'Steve'" lost its last mark, 2026-11-08)
+    field = TextField("caption", "a caption", 80)
+    assert clean_text("Watering it and calling it 'Steve'", field) == "Watering it and calling it 'Steve'"
+    assert clean_text("Ignoring them | Calling them 'just decor'", field) == "Ignoring them | Calling them 'just decor'"
+    assert clean_text("“Expectation”", field) == "Expectation"  # (quote marks around all of it go)
+    assert clean_text("'It's fine'", field) == "It's fine"
+    assert clean_text('"Hello," she said, "bye"', field) == '"Hello," she said, "bye"'
+    assert clean_text("'A claim", field) == "A claim" == clean_text("A claim'", field)  # (stray ones go)
+
+
 def test_a_text_thats_cut_ends_on_a_word_that_matters():
     caption = TextField("caption", "a caption", 40)
     # A little too long is fine: up to an eighth more (here 45 characters) stays whole

@@ -834,7 +834,7 @@ mockup_slide_generators_copyright_free = _register(
 # talkgenerator.sources.memes): the dice pick the template, and the language model writes what each box says (or, in
 # a classic talk, the template's own sentences about the slide's topic). The user loves them (2026-11-07), so they
 # weigh four times what the other middle slides weigh: about half of all 10-slide talks have one (one in five did),
-# and a talk has two at most (caption_meme), with memes from Reddit two in ten slides (meme)
+# and a talk has two at most (caption_meme), and two memes of any kind in ten slides, Reddit's too (meme)
 _MEME_BRIEF = "A meme about the concept"
 MEME_WEIGHT = 4
 

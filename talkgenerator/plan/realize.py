@@ -49,11 +49,46 @@ def clean_text(value: Any, text_field: TextField, language: str = "en") -> str |
         return None
     if text_field.options:
         return option_of(value, text_field)
-    text = " ".join(_STRAY_ESCAPE.sub("", value).split()).strip(_QUOTE_MARKS + " ")
+    text = _unquoted(" ".join(_STRAY_ESCAPE.sub("", value).split()))
     if not text or leftovers_in(text):
         return None
     if len(text) > length_limit(text_field):
         text = _cut(text, text_field.max_length, language)
+    return text
+
+
+# Each quote mark that opens a quote, with the mark that closes it (Swedish and Danish close with what opens)
+_CLOSING: Final = {'"': '"', "'": "'", "“": "”", "‘": "’", "«": "»", "»": "«", "”": "”", "’": "’"}
+
+
+def _quoting(text: str, mark: str) -> bool:
+    """Whether the text uses the mark as a quote mark: not only as an apostrophe between two letters ("it's")."""
+    return any(
+        character == mark
+        and not (0 < index < len(text) - 1 and text[index - 1].isalpha() and text[index + 1].isalpha())
+        for index, character in enumerate(text)
+    )
+
+
+def _unquoted(text: str) -> str:
+    """The text without the quote marks that wrap all of it (a model's "Expectation", in quotes), and without a quote
+    mark at either end that nothing in it pairs with; but a quote that ends it keeps its closing mark ("calling it
+    'Steve'"), as one that starts it keeps its opening mark."""
+    text = text.strip()
+    while (
+        len(text) >= 2
+        and text[-1] == _CLOSING.get(text[0])
+        and not any(_quoting(text[1:-1], mark) for mark in {text[0], text[-1]})
+    ):
+        text = text[1:-1].strip()
+    if text[:1] in _CLOSING and _CLOSING[text[0]] not in text[1:]:
+        text = text[1:].strip()
+    if (
+        text
+        and text[-1] in _QUOTE_MARKS
+        and not any(text[-1] == close and mark in text[:-1] for mark, close in _CLOSING.items())
+    ):
+        text = text[:-1].strip()
     return text
 
 
