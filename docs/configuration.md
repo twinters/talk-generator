@@ -72,7 +72,8 @@ says what they cost.
 | Variable | What it does |
 | --- | --- |
 | `TALKGENERATOR_THEME` | The look of talks that don't ask for one, as `--theme` takes it (*default: `random`*); `classic` keeps the 2019 template |
-| `DISABLE_<SOURCE>` | `1` switches a source off: `REDDIT`, `UNSPLASH`, `PIXABAY`, `PEXELS`, `GIPHY`, `OPENVERSE`, `WIKIMEDIA_COMMONS`, `ART_INSTITUTE`, `WIKIHOW`, `WIKIQUOTE`, `SHITPOSTBOT`, `INSPIROBOT`, `MET`, `CLEVELAND`, `WELLCOME`, `NASA`, `SMITHSONIAN`, `FLAGS`, `IMGFLIP` or `CONCEPTNET`, such as `DISABLE_WIKIHOW=1` |
+| `DISABLE_<SOURCE>` | `1` switches a source off: `REDDIT`, `UNSPLASH`, `PIXABAY`, `PEXELS`, `GIPHY`, `OPENVERSE`, `WIKIMEDIA_COMMONS`, `ART_INSTITUTE`, `WIKIHOW`, `WIKIQUOTE`, `SHITPOSTBOT`, `INSPIROBOT`, `MET`, `CLEVELAND`, `WELLCOME`, `NASA`, `SMITHSONIAN`, `FLAGS`, `IMGFLIP`, `CONCEPTNET`, `WIKIPEDIA` or `OPENTDB` (Open Trivia DB), such as `DISABLE_WIKIHOW=1` |
+| `DISABLE_FACTS` | `1` switches the [real facts](language-models.md#real-facts) off |
 | `CONCEPTNET_API_URL` | A ConceptNet API of your own (*default: the public one, `https://api.conceptnet.io`*) |
 | `UNSPLASH_APP_NAME` | Your app's name at Unsplash, for the `utm_source` of the links to photographers (*default: `talkgenerator`*) |
 | `TALKGENERATOR_CACHE_DIR` | Where the cache of search answers goes (*default: your user cache folder*) |
@@ -83,7 +84,7 @@ says what they cost.
 ## The cache
 
 The answers of the search APIs (Datamuse, ConceptNet, Pixabay, Pexels, Unsplash, Openverse, Wikimedia Commons, the
-Art Institute, the other museums, NASA, Imgflip and Wikiquote) are cached on disk for one to thirty days, in your user cache folder. That keeps you
+Art Institute, the other museums, NASA, Imgflip, Wikiquote, Wikipedia and Open Trivia DB) are cached on disk for one to thirty days, in your user cache folder. That keeps you
 within rate limits, and it's what Pixabay's API terms ask for. GIPHY's searches aren't cached, as its API rules forbid
 it, and neither are images and web pages, but for generated pictures, so making a talk again generates nothing again.
 Keys are never stored in the cache.

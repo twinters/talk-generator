@@ -286,6 +286,28 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   topic as English does, keeps to its slide's length with long words, and is checked by `tests/test_content_pack.py`.
   Jobs a family audience doesn't need (escort, embalmer, soldier...) left the presenters' list.
 
+### Real facts
+
+- Talks a language model writes mix real facts with the nonsense (docs/v5-plan.md section 11, D60): up to three of a
+  talk's slides of history (a made-up historical figure's quote, two old photos, a timeline), fun facts, quizzes and
+  big numbers get a real fact each in the talk's request, which the model keeps true and twists ("Only one species,
+  the Galapagos penguin, lives at the equator" becomes a fun fact about why). They're the first sentences of the
+  topic's English Wikipedia article (`talkgenerator.sources.wikipedia`), and the events of the day the talk is made on
+  from Wikipedia's main page ("On this day"), which slides of history get first.
+- No fact names a living person (none for a topic that is one, as English Wikipedia's "Category:Living people" tells),
+  and none is about death, war, disasters, crime, politics, race or faiths.
+- The facts are looked up while the talk's slides are picked, from the cache (a week) or within 8 seconds of the
+  talk's start: a talk whose facts come later, or whose sources are down, goes without them. A talk made again by
+  `talkgenerator check` gets the facts the first one got.
+- A slide that builds on its fact credits the article ("Wikipedia: Penguin (CC BY-SA 4.0)"), in a credit line that
+  then starts with "Sources:" rather than "Image sources:", and the deck lists every fact the talk got (`facts`: its
+  text, page, license and slide).
+- Classic talks get real ones where they fit: half of their fun facts are a real sentence about the slide's word, with
+  a twist ("Coincidence? I think not.", the TED content pack's version 4), and half of their quizzes a real question
+  from Open Trivia DB (`talkgenerator.sources.opentdb`, of the topic's kind: animals for a talk on penguins), credited
+  on the slide. Open Trivia DB is asked five seconds apart at most, as it asks, and its questions are cached for a week.
+- `DISABLE_FACTS=1` switches facts off, `DISABLE_WIKIPEDIA=1` and `DISABLE_OPENTDB=1` a source. No keys.
+
 ### Talk formats: startup pitches and academic talks
 
 - `--schema pitch`: a startup about the topic, pitched to investors. Its slides go through its arc, in order: the
