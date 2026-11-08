@@ -274,8 +274,8 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
 - A short talk keeps the parts that matter most (a five-slide pitch has the problem, the solution, the traction and
   the ask), and a long one gives some parts more slides and has memes, quotes, press and the like between them. Every
   persona keeps a format's arc, and moves a part's slides between its kinds (a founder's traction is figures on tiles
-  more often); a startup founder pitches more often, a disgraced professor gives the academic talks, and their themes
-  are the `startup` and `academic` families more often.
+  more often). A startup founder pitches more often than the other personas, a disgraced professor gives more of the
+  academic talks, and their themes are the `startup` and `academic` families more often.
 - A language model is told the format, and what its titles and its presenter's job are like (a pitch's title names
   its made-up startup; an academic talk's job is an affiliation), with the persona's. Without one, both formats have
   content packs of their own (`talkgenerator/data/packs/pitch` and `academic`, a grammar per part of the arc, 687 and
@@ -523,6 +523,11 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   a half, a quarter or an eighth of its size, as long as its long side stays as wide as a slide (1920 pixels): a
   phone's 12-megapixel photo comes out at 2016 by 1512 pixels instead of 2400 by 1800, and a deck's peak while
   it's made is about half what it was.
+- A language model's text that's too long for its place is cut after a comma when no sentence or clause ends where it
+  keeps half of it, and before a bracket the cut would leave open: free models' affiliations lost a dangling word
+  ("Professor of Serenity Studies, Department" is "Professor of Serenity Studies" now), and their roles their open
+  brackets ("Kaito Tanaka (Head of Temporal" is "Kaito Tanaka"). A title slide names its presenter once, where a
+  model wrote the name into the presenter's job too.
 
 ## [4.0.1] - 2026-11-05
 
