@@ -54,7 +54,7 @@ Images: `image_1`, `image_2`
 | --- | --- | --- |
 | `two-history-pictures-crf` | Two old photos from the history of the slide's concept | `title`: a title about the concept's history; `caption_1`: a moment from long ago; `caption_2`: a later moment; images: `image_1` vintage (or generated, from its prompt, with an image generator set up), `image_2` vintage (or generated, from its prompt, with an image generator set up); tags: history, two_images |
 | `two-captions-copyright-free` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | the default; tags: multi_caption, two_captions |
-| `2-conclusions-crf` | The talk's conclusions | `title`: a title for the conclusions, in a few words of your own; `caption_1`: a lesson from the talk, calling back to an earlier slide; `caption_2`: a lesson from the talk, calling back to an earlier slide; images: `image_1` photo, `image_2` weird-stock; tags: conclusion |
+| `2-conclusions-crf` | The talk's conclusions | `title`: a title for the conclusions, in a few words of your own; `caption_1`: a lesson from the talk, calling back to an earlier slide by what it said (not by its number or key); `caption_2`: a lesson from the talk, calling back to an earlier slide by what it said (not by its number or key); images: `image_1` photo, `image_2` weird-stock; tags: conclusion |
 
 ## `three_columns`
 
@@ -72,7 +72,7 @@ Images: `image_1`, `image_2`, `image_3`
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
 | `three-captions-weird-crf` | Three captioned images that build up, like 'Good, Better, Best' or three steps of a plan | the default; images: `image_1` photo, `image_3` weird-stock; tags: multi_caption, three_captions |
-| `3-conclusions-crf` | The talk's conclusions | `title`: a title for the conclusions, in a few words of your own; `caption_1`: a lesson from the talk, calling back to an earlier slide; `caption_2`: a lesson from the talk, calling back to an earlier slide; `caption_3`: a lesson from the talk, calling back to an earlier slide; images: `image_1` photo, `image_3` weird-stock; tags: conclusion |
+| `3-conclusions-crf` | The talk's conclusions | `title`: a title for the conclusions, in a few words of your own; `caption_1`: a lesson from the talk, calling back to an earlier slide by what it said (not by its number or key); `caption_2`: a lesson from the talk, calling back to an earlier slide by what it said (not by its number or key); `caption_3`: a lesson from the talk, calling back to an earlier slide by what it said (not by its number or key); images: `image_1` photo, `image_3` weird-stock; tags: conclusion |
 
 ## `history_quote`
 

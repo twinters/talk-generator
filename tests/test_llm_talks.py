@@ -19,7 +19,7 @@ from pptx.enum.chart import XL_CHART_TYPE
 
 from talkgenerator import generator, llm
 from talkgenerator.checks import benchmark
-from talkgenerator.checks.deck import check_deck
+from talkgenerator.checks.deck import check_deck, leftovers_in, without_key_references
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.datastructures.slide_generator_data import ConstantWeightFunction, PeakedWeight, SlideGeneratorData
 from talkgenerator.llm import providers
@@ -152,7 +152,8 @@ def fake_schema():
 
 def _answer(schema):
     """Fill in every property of the response schema: the spine's as "The title" and so on (the only boolean,
-    unsafe_topic, with false), and every slide's as "title of slide_2"."""
+    unsafe_topic, with false), and every slide's as "title of slide 2" (not of slide_2: a slide's key in the answer
+    is a leftover on a slide)."""
     answer = {}
     for key, value in schema["properties"].items():
         if value["type"] == "boolean":
@@ -162,8 +163,9 @@ def _answer(schema):
         elif key == prompt.SPINE:
             answer[key] = _answer(value)
         else:
+            slide = key.replace("_", " ")
             answer[key] = {
-                name: "Yes | No | Only on Tuesdays" if name == "categories" else f"{name.replace('_', ' ')} of {key}"
+                name: "Yes | No | Only on Tuesdays" if name == "categories" else f"{name.replace('_', ' ')} of {slide}"
                 for name in value["properties"]
             }
     return answer
@@ -289,6 +291,38 @@ def test_slides_whose_images_cant_be_found_are_classic(schema):
     planned_types = {slide.type for slide, planned in zip(deck.slides, _planned(deck), strict=True) if planned}
     assert planned_types <= {"title", "chart"}
     assert not all(_planned(deck))
+    assert check_deck(deck, NUM_SLIDES) == []
+
+
+def _texts_of(slide):
+    return {element.role: element.text for element in slide.elements if element.kind == "text"}
+
+
+def test_a_callback_loses_the_brackets_that_name_its_slide_by_its_key(schema):
+    # A free model's conclusion read "Huddling scales trust (from slide_03)": the slide's key in its answer
+    def cite(answer):
+        first, second, *_, last = (key for key in answer if key.startswith("slide_"))
+        answer[last]["caption_1"] = f"Huddling scales trust (from {first})"
+        answer[last]["caption_2"] = f"Waddling [see {first} and {second}] wins"
+
+    deck = _talk(FakeModel(change=cite))
+    conclusions = deck.slides[-1]
+    assert conclusions.type == "three_column_image" and all(_planned(deck))
+    assert _texts_of(conclusions)["caption_1"] == "Huddling scales trust"
+    assert _texts_of(conclusions)["caption_2"] == "Waddling wins"
+    assert "slide_" not in conclusions.notes  # (the texts it planned, as they went on the slide)
+    assert check_deck(deck, NUM_SLIDES) == []
+
+
+def test_a_slide_with_a_key_of_the_answer_elsewhere_in_a_text_is_classic(schema):
+    def cite(answer):
+        first, *_, last = (key for key in answer if key.startswith("slide_"))
+        answer[last]["caption_1"] = f"As {first} showed, huddling scales"
+
+    deck = _talk(FakeModel(change=cite))
+    assert deck.slides[-1].type == "three_column_image"
+    assert _planned(deck) == [True] * (NUM_SLIDES - 1) + [False]
+    assert _texts_of(deck.slides[-1])["caption_1"] == "One"  # (the classic conclusions')
     assert check_deck(deck, NUM_SLIDES) == []
 
 
@@ -540,6 +574,22 @@ def test_the_prompt_says_what_to_write_in_every_field(schema):
     assert "A word to riff on: cats" in prompt_text
 
 
+def test_the_prompt_asks_for_callbacks_by_what_a_slide_said():
+    # Asked for "a lesson from the talk, calling back to an earlier slide", a free model wrote "Huddling scales trust
+    # (from slide_03)"
+    conclusions = slide_schemas.slide_generators.group("conclusion")
+    for generator_ in conclusions:
+        assert generator_.llm is not None
+        callbacks = [hint for name, hint in generator_.llm.hints.items() if name.startswith("caption_")]
+        assert callbacks and all("by what it said (not by its number or key)" in hint for hint in callbacks)
+    planned = [prompt.PlannedSlide(2, conclusions[0].name, conclusions[0].llm, "cat")]
+    request = prompt.talk_request(["cat"], planned, random_util.Rng(1))
+    assert "- caption_1: a lesson from the talk, calling back to an earlier slide by what it said" in (
+        request.messages[0].content
+    )
+    assert "the keys of your answer (such as slide_03)" in request.system
+
+
 def test_the_response_schema_is_strict_and_in_order():
     digits = len(str(len(slide_schemas.slide_generators) + 1))
     planned = [
@@ -621,6 +671,25 @@ def test_a_text_thats_cut_ends_on_a_word_that_matters():
     dutch = "De kat was de ware geleerde van de Middeleeuwen"
     assert clean_text(dutch, TextField("caption", "a caption", 35), "nl") == "De kat was de ware geleerde"
     assert clean_text("Supercalifragilisticexpialidocious", TextField("word", "a word", 10)) == "Supercalif"
+
+
+def test_a_slide_s_key_in_the_answer_never_goes_on_a_slide():
+    caption = TextField("caption", "a caption", 40)
+    # Brackets that name a slide by its key go; what they were in stays
+    assert clean_text("Huddling scales trust (from slide_03)", caption) == "Huddling scales trust"
+    assert clean_text("Huddling (see slide_3 and slide_10) scales", caption) == "Huddling scales"
+    assert clean_text("Trust [slide_3], always.", caption) == "Trust, always."
+    assert clean_text("Waddling wins (callback: slide_04, the ice)", caption) == "Waddling wins"
+    # A key anywhere else is a leftover, as template code is: the slide is classic
+    assert clean_text("As slide_03 showed, we huddle", caption) is None
+    assert clean_text("(Slide_03)", caption) is None
+    assert leftovers_in("As slide_03 showed") == ["a slide's key in the language model's answer: 'slide_03'"]
+    # A slide's number, written out, is no key
+    assert clean_text("Back to slide 3", caption) == "Back to slide 3"
+    # Whatever the number of digits the answer's keys have
+    for number, digits in ((2, 1), (3, 2), (10, 2)):
+        key = prompt.PlannedSlide(number, "Fake", Recipe("chart_yes_no"), "cat", digits=digits).key
+        assert leftovers_in(f"As {key} showed") and without_key_references(f"Trust (from {key})") == "Trust"
 
 
 def test_the_spine_is_in_the_talks_language():

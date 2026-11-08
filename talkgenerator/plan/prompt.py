@@ -8,7 +8,9 @@ and an angle on the topic) make every seed give its own talk, where current mode
 
 Some models write the properties in alphabetical order instead of the schema's (OpenRouter's free router often picks
 one that does), so the answer's properties are in alphabetical order too: the spine is one object, called "about",
-and the slides' numbers have as many digits as the last one's ("slide_02" to "slide_10").
+and the slides' numbers have as many digits as the last one's ("slide_02" to "slide_10"). A model may name an earlier
+slide by its key in a callback ("Huddling scales trust (from slide_03)"), but no key goes on a slide: the brackets
+that name one go, and a text with a key anywhere else is a leftover, as template code is (talkgenerator.checks.deck).
 """
 
 from __future__ import annotations
@@ -51,7 +53,8 @@ Never write:
 - quotes attributed to real people (quotes on the slides belong to made-up people, or to no one),
 - anything about real private persons, or the presenter's name on the slides (the title slide has it),
 - slurs, sexual content, or anything that mocks people for who they are,
-- markup, emoji, hashtags, or placeholders in curly braces.
+- markup, emoji, hashtags, placeholders in curly braces, or the keys of your answer (such as slide_03): a callback \
+repeats what the earlier slide said, never its key or number.
 
 If the topic asks for something hateful or harmful, set "unsafe_topic" to true, and keep everything else short.
 Answer with one JSON object in the shape you're given, and nothing else."""

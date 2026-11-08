@@ -186,6 +186,8 @@ def test_completeness():
         ("((hobby)) is fun", "a missing tracery symbol"),
         ("<built-in method title of str object at 0x0000>", "Python code"),
         ("ImageData(https://example.com/1.jpg)", "a Python object"),
+        # (a free model's conclusion called back to an earlier slide by its key in the model's answer)
+        ("Huddling scales trust (from slide_03)", "a slide's key in the language model's answer"),
     ],
 )
 def test_template_leftovers_are_errors(text, what):
