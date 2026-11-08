@@ -543,6 +543,9 @@ def deck_metrics(deck: Deck) -> dict[str, Any]:
         "slide_types": dict(sorted(Counter(types).items())),
         # Who presented it, whose kinds of slides come up more often (see talkgenerator.personas)
         "persona": deck.persona.name if deck.persona is not None else None,
+        # Its format (the one its seed picked, for a talk that left it to its seed: see
+        # talkgenerator.schema.presentation_schema_types.pick_format)
+        "format": deck.schema_name,
         "same_type_in_a_row": sum(1 for before, after in itertools.pairwise(types) if before == after),
         "layouts": len({slide.layout for slide in deck.slides}),
         "same_layout_in_a_row": sum(

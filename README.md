@@ -69,6 +69,7 @@ talkgenerator --topic penguins --schema academic             # a conference talk
 talkgenerator --topic penguins --schema corporate            # an all-hands: KPIs against target, the new org chart
 talkgenerator --topic penguins --schema keynote              # a product keynote: the reveal, the demo, one more thing
 talkgenerator --topic penguins --persona kindergarten_teacher # who presents it: by default, the seed picks
+talkgenerator --topic penguins --schema random               # a format the persona favours: a founder mostly pitches
 talkgenerator --topic penguins --llm none --theme classic --name_styles classic --persona none   # closest to 2019
 ```
 
