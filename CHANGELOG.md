@@ -413,6 +413,12 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   earlier slide said, never by its key or number; brackets that name a slide by its key are dropped from a text
   ("Huddling scales trust"), a key anywhere else in it makes the slide the classic generator's, as template code
   does, and `talkgenerator check` reports a key on a slide as an error.
+- Big photos take far less memory on their way into a .pptx. A 24-megapixel original from Reddit was decoded whole,
+  copied whole to turn it as its camera said, and converted whole twice more to compare it with known placeholders:
+  about 240 MB for one picture, which took talkgenerator.com's downloads to its server's memory limit. Now a photo
+  is scaled down first (a big JPEG even decoded at a half, a quarter or an eighth of its size, as long as that's
+  still as large as it comes out), then turned, and placeholders are compared on a reduced copy. The pictures come
+  out as large as before.
 
 ## [4.0.1] - 2026-11-05
 

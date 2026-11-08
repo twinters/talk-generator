@@ -3,7 +3,7 @@
 import io
 import os
 
-from PIL import Image
+from PIL import Image, ImageOps
 
 from talkgenerator.util import image_util, os_util
 
@@ -39,11 +39,56 @@ def test_huge_images_are_scaled_down():
     assert max(image_util.get_image_size(converted)) <= image_util.MAX_DIMENSION
 
 
+def test_a_big_jpeg_is_decoded_at_a_fraction_of_its_size_yet_comes_out_as_large(monkeypatch):
+    # (as on talkgenerator.com, where Reddit's 24-megapixel originals pushed the server to its memory limit)
+    shrunk_from = []
+    thumbnail = Image.Image.thumbnail
+
+    def spy(image, *args, **kwargs):
+        shrunk_from.append(image.size)
+        return thumbnail(image, *args, **kwargs)
+
+    monkeypatch.setattr(Image.Image, "thumbnail", spy)
+    big = io.BytesIO()
+    Image.new("L", (6000, 4000), 128).save(big, "JPEG")  # (as a 24-megapixel camera's, in gray to keep it light)
+    converted = image_util.prepare_image_bytes(big.getvalue())
+    assert shrunk_from == [(3000, 2000)]  # (decoded at half its size)
+    assert image_util.get_image_size(converted) == (image_util.MAX_DIMENSION, 1600)
+
+
+def test_a_photo_is_turned_as_its_camera_says_once_it_is_small(monkeypatch):
+    turned = []
+    exif_transpose = ImageOps.exif_transpose
+
+    def spy(image, *args, **kwargs):
+        turned.append(image.size)
+        return exif_transpose(image, *args, **kwargs)
+
+    monkeypatch.setattr(ImageOps, "exif_transpose", spy)
+    exif = Image.Exif()
+    exif[0x0112] = 6  # (orientation: the camera was turned a quarter clockwise)
+    photo = io.BytesIO()
+    Image.new("RGB", (4000, 1000), (20, 120, 200)).save(photo, "JPEG", exif=exif)
+    converted = image_util.prepare_image_bytes(photo.getvalue())
+    assert turned == [(image_util.MAX_DIMENSION, image_util.MAX_DIMENSION // 4)]
+    assert image_util.get_image_size(converted) == (image_util.MAX_DIMENSION // 4, image_util.MAX_DIMENSION)
+
+
 def test_removed_image_placeholders_are_rejected():
     directory = os_util.to_actual_file("data/prohibited_images/")
     for file_name in os.listdir(directory):
         with open(os.path.join(directory, file_name), "rb") as file:
             assert image_util.prepare_image_bytes(file.read()) is None, file_name
+
+
+def test_a_placeholder_is_recognised_at_a_larger_size_too():
+    # (its fingerprint is taken from a reduced copy of a big image)
+    directory = os_util.to_actual_file("data/prohibited_images/")
+    for file_name in ("denied.jpg", "imgur_removed.jpg", "tinypic_removed2.jpg"):
+        with Image.open(os.path.join(directory, file_name)) as placeholder:
+            larger = placeholder.convert("RGB").resize((placeholder.width * 3, placeholder.height * 3))
+        assert image_util.is_prohibited(larger), file_name
+    assert not image_util.is_prohibited(Image.new("RGB", (900, 900), (20, 120, 200)))
 
 
 def test_local_assets_are_used_as_is():

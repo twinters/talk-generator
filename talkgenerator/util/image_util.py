@@ -53,6 +53,7 @@ _NOT_AN_IMAGE_CONTENT_TYPES = ("text/", "application/json", "application/xml", "
 _PROHIBITED_IMAGES_DIR = "data/prohibited_images/"
 _FINGERPRINT_SIZE = (16, 16)
 _MAX_FINGERPRINT_DIFFERENCE = 12
+_REDUCIBLE_MODES = frozenset({"L", "LA", "RGB", "RGBA"})  # (what a fingerprint can average before converting)
 
 _CACHE_MAX_BYTES = 96 * 1024 * 1024
 _cache: OrderedDict[str, bytes | None] = OrderedDict()
@@ -476,7 +477,12 @@ def accepted_formats() -> tuple[str, ...]:
 
 
 def prepare_image_bytes(data: bytes, description: str = "image") -> bytes | None:
-    """Check that the bytes are a real, allowed image and convert them into something PowerPoint can show."""
+    """Check that the bytes are a real, allowed image and convert them into something PowerPoint can show.
+
+    A photo to convert is scaled down before anything else is done with it, and a big JPEG is even decoded at a
+    half, a quarter or an eighth of its size, as long as that's still as large as it comes out: a 24-megapixel
+    original took about 240 MB when it was decoded, turned and checked whole, which pushed talkgenerator.com's small
+    server to its limit."""
     try:
         with Image.open(io.BytesIO(data), formats=accepted_formats()) as image:
             image_format = image.format
@@ -484,24 +490,28 @@ def prepare_image_bytes(data: bytes, description: str = "image") -> bytes | None
             if width < MIN_DIMENSION or height < MIN_DIMENSION:
                 logger.info("Image %s is too small (%sx%s)", description, width, height)
                 return None
+            # Unsupported formats (WebP, AVIF, MPO...) and huge photos are converted and scaled down; GIFs never
+            # (so that they stay animated)
+            converting = image_format != "GIF" and not (
+                image_format in _POWERPOINT_FORMATS
+                and max(width, height) <= MAX_DIMENSION
+                and len(data) <= MAX_UNCONVERTED_BYTES
+            )
+            if converting:
+                scale = min(MAX_DIMENSION / width, MAX_DIMENSION / height, 1.0)
+                image.draft(None, (max(1, round(width * scale)), max(1, round(height * scale))))
+                image.thumbnail((MAX_DIMENSION, MAX_DIMENSION), Image.Resampling.LANCZOS)
             if is_prohibited(image):
                 logger.info("Image %s is a known 'image not available' placeholder", description)
                 return None
             if image_format == "GIF":
-                # Keep GIFs as they are so that they stay animated
                 if len(data) > MAX_GIF_BYTES:
                     logger.info("GIF %s is too large to use", description)
                     return None
                 return data
-            if (
-                image_format in _POWERPOINT_FORMATS
-                and max(width, height) <= MAX_DIMENSION
-                and len(data) <= MAX_UNCONVERTED_BYTES
-            ):
+            if not converting:
                 return data
-            # Unsupported format (WebP, AVIF, MPO...) or a huge photo: convert and scale it down
-            converted = ImageOps.exif_transpose(image)
-            converted.thumbnail((MAX_DIMENSION, MAX_DIMENSION), Image.Resampling.LANCZOS)
+            converted = ImageOps.exif_transpose(image)  # (turned as its camera says: now that it's small)
             output = io.BytesIO()
             if converted.mode in ("RGBA", "LA") or (converted.mode == "P" and "transparency" in converted.info):
                 converted.save(output, "PNG", optimize=True)
@@ -523,7 +533,13 @@ def get_image_size(data: bytes) -> tuple[int, int]:
 
 
 def _fingerprint(image: Image.Image) -> bytes:
-    # Via RGBA, so palette images with transparency convert cleanly
+    # Reduced before it's converted, so that a big photo isn't copied whole (a palette's colours first: they can't
+    # be averaged), and via RGBA, so palette images with transparency convert cleanly
+    if image.mode not in _REDUCIBLE_MODES:
+        image = image.convert("RGBA")
+    factor = min(image.size) // (4 * max(_FINGERPRINT_SIZE))
+    if factor > 1:
+        image = image.reduce(factor)
     return image.convert("RGBA").convert("RGB").resize(_FINGERPRINT_SIZE, Image.Resampling.BILINEAR).tobytes()
 
 
