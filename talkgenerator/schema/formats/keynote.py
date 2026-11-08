@@ -701,7 +701,8 @@ _GENERATORS: Final = [
             "full_image",
             (_THING,),
             brief="The 'one more thing': a second, stranger product, revealed in an odd photo filling the slide",
-            hints={"title": "'One more thing', and the second product's made-up name"},
+            # (A free model named the second product "One More Thing")
+            hints={"title": "'One more thing:' and then the second product, by a made-up name of its own"},
         ),
     ),
     # The closing line

@@ -28,6 +28,7 @@ generator's weight for a slide is its own, times the persona's multiplier for it
 import functools
 import itertools
 import logging
+import re
 import threading
 import time
 from collections.abc import Callable, Collection, Iterator, Mapping, Sequence
@@ -118,6 +119,10 @@ class PlanOutcome:
     problems: list[str] = field(default_factory=list)  # what went wrong on the way, even when a later try worked
 
 
+# Titles before a name, which a model may write in a presenter's job before the name it gave them ("Dr. ...")
+_HONORIFICS = re.compile(r"^(?:(?:dr|prof|mr|mrs|ms|mx|sir|dame)\.?\s+)+", re.IGNORECASE)
+
+
 def _title_slide(
     title: str,
     presenter: str | None,
@@ -129,11 +134,16 @@ def _title_slide(
     """The title slide of a planned talk ("By <presenter>, <job>", in the talk's language), with its texts."""
     with random_util.use(rng.child("subtitle")):
         by = random_util.choice(languages.language(language).by)
-    named = presenter is not None and job is not None and job.casefold().startswith(presenter.casefold())
-    if named and presenter and job and not job[len(presenter) : len(presenter) + 1].isalnum():
-        # (a free model wrote the presenter's name into their job: "By Dr. Chronos Vance, Dr. Chronos Vance, Founder";
+    if presenter and job:
+        # (a free model wrote the presenter's name into their job: "By Dr. Chronos Vance, Dr. Chronos Vance, Founder",
+        # and Claude Haiku with a title before it, "By Harold Beanmore, Dr. Harold Beanmore, Chief Chrono-Roaster";
         # but Ann's job may be "Annual Report Analyst")
-        job = job[len(presenter) :].lstrip(" ,;:-–—") or None
+        named = job if job.casefold().startswith(presenter.casefold()) else _HONORIFICS.sub("", job)
+        if (
+            named.casefold().startswith(presenter.casefold())
+            and not named[len(presenter) : len(presenter) + 1].isalnum()
+        ):
+            job = named[len(presenter) :].lstrip(" ,;:-–—") or None
     subtitle = ", ".join(part for part in (f"{by} {presenter}" if presenter else "", job or "") if part) or None
     slide = slides.TitleSlide(title, subtitle)
     slide.set_note(f"Planned: the title slide\nThesis: {thesis!r}")

@@ -580,6 +580,15 @@ def test_a_title_slide_names_its_presenter_once():
     assert plain[1].endswith("Ann Wells, Founder of Annly")
     _, prefix = presentation_schema._title_slide("T", "Ann", "Annual Report Analyst", None, random_util.Rng(1))
     assert prefix[1].endswith("Ann, Annual Report Analyst")
+    # (Claude Haiku wrote a title before the name: "By Harold Beanmore, Dr. Harold Beanmore, Chief Chrono-Roaster")
+    _, titled = presentation_schema._title_slide(
+        "T", "Harold Beanmore", "Dr. Harold Beanmore, Chief Chrono-Roaster", None, random_util.Rng(1)
+    )
+    assert titled[1].count("Beanmore") == 1 and titled[1].endswith("Harold Beanmore, Chief Chrono-Roaster")
+    _, doctor = presentation_schema._title_slide(
+        "T", "Dr. Arabica Bean", "Dr. of Temporal Aromatics", None, random_util.Rng(1)
+    )
+    assert doctor[1].endswith("Dr. Arabica Bean, Dr. of Temporal Aromatics")  # (a job that only starts with a title)
 
 
 def test_the_arc_check_reads_a_rendered_plans_recipes_too():
