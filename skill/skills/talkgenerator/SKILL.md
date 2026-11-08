@@ -114,10 +114,11 @@ that give the presenter something to work with, rather than finished jokes:
   recurring character, a strange claim from before), and the conclusions call back to several of them.
 - **Shape it like a talk.** A common arc: who the presenter is (an about-me slide), maybe an agenda, some history
   (a made-up historical figure, old photos, a timeline), the core (bold statements, contrasts such as Expectation
-  and Reality, a three-step build-up, a quiz for the audience, a social media post or a news headline), the evidence
-  (a chart or two, a big number or KPI tiles, a Venn diagram, a 2×2 matrix, a pyramid or an iceberg), and
-  conclusions that call back (or "Questions?" to end on). Mix the kinds: no two charts in a row, and each new kind
-  at most once.
+  and Reality, a three-step build-up, a quiz for the audience, a social media post or a news headline, a meme, a fun
+  fact, an acronym for a made-up method), the evidence (a chart or two, a big number or KPI tiles, a Venn diagram, a
+  2×2 matrix, a pyramid, an iceberg, a flowchart whose every path leads to the same end, a tier list), and
+  conclusions that call back (or "Questions?" to end on). A dare for the presenter ("present the next slide as a
+  haiku") works once, halfway through. Mix the kinds: no two charts in a row, and each new kind at most once.
 - **Write image queries that find something**: one to three common English words for one subject, such as "owl",
   "ficus", "old watering can" or "dense tropical jungle". Scenes with several parts ("plant on reception desk"),
   actions and moods ("waiting", "alone"), and words that are photo subjects themselves ("camera", "photo") find the

@@ -191,7 +191,17 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   `talkgenerator formats --memes` lists the templates and what each caption says, for plans
   written elsewhere, whose `template_query` names one; a picture whose boxes talkgenerator doesn't know gets its
   captions at its top and its bottom. A caption too long for a narrow box (a sign's) gets a box grown around it,
-  within the picture.
+  within the picture. A talk's two memes never share a template.
+- Five kinds from real PowerPoint karaoke and battle decks, TED parodies and bad-PowerPoint humour (docs/v5-plan.md,
+  section 8), drawn as texts on shapes in every theme and in the 2019 template, classic and by the language model:
+  a **fun fact** ("Did you know?" or "Fun fact" in the talk's language, on a sticker over the fact, with a made-up
+  source and a photo, or on a sticky note); an **acronym** for a made-up method (the S.P.A.R.K. method), its letters
+  on tiles with their words, the last one, the punchline, on a click; a **dare** for the presenter ("Challenge":
+  present the next slide as a haiku), on a card or between bands of warning tape; a **flowchart** whose Yes and No
+  lead to the same end, which appears on a click; and a **tier list** from S to F, its S tier on a click. A talk has
+  at most one of each, in its middle; a dare is rarer, as organisers put one such slide in a deck at most.
+- A real chart from the internet (Reddit's) now comes under a confident conclusion that it supposedly proves, two
+  times in three, or bare, as karaoke decks have them.
 
 ### Titles and presenter names
 
@@ -290,6 +300,12 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
 
 ### Fixed
 
+- Classic memes read as English speaks of the topic: "Love coffee" and "Is this a lighthouse?", not "Love coffees",
+  "happinesses" or "a the french revolution" (every caption pluralised the topic). The template functions
+  `{seed.generic}`, `{seed.one}` and `.cap` tell a countable noun from a mass noun by wordfreq's frequencies of the
+  noun and its plural.
+- A text a language model wrote loses the backslash it put before a quote mark ("what\'s"), where its JSON needed
+  none.
 - `--int_seed` gives the same talk every time, also with `--parallel` (the default), with seed 0, and in every Python
   process: slides made in parallel shared one random generator, and seed 0 skipped the reseeding.
 - No slide shows an image of a slide before it (nor nearly the same one). Conclusions, which may repeat texts as they
