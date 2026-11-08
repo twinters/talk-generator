@@ -91,7 +91,9 @@ def images(monkeypatch):
     """Every image at example.com exists (downloaded or probed); local files load as usual."""
     jpeg = _jpeg()
     load = image_util.fetch_image
-    monkeypatch.setattr(image_util, "fetch_image", lambda url: jpeg if url.startswith("https://example.com/") else load(url))
+    monkeypatch.setattr(
+        image_util, "fetch_image", lambda url: jpeg if url.startswith("https://example.com/") else load(url)
+    )
     monkeypatch.setattr(
         image_util, "probe", lambda url: url.startswith("https://example.com/") or load(url) is not None
     )
