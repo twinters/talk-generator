@@ -155,12 +155,14 @@ def _idea(context: dict[str, Any]) -> Made | None:
 
 
 def _idea_venn(context: dict[str, Any]) -> Made | None:
+    """The topic, in one circle, and one or two things that seem to have nothing to do with it, in the others."""
     variables = _variables(context)
-    circles = different(PACK, "idea.circle", variables, 2 if random_util.random() < 0.6 else 3)
+    topic = text(PACK, "idea.topic_circle", variables)
+    others = different(PACK, "idea.circle", variables, 1 if random_util.random() < 0.6 else 2)
     title = text(PACK, "idea.venn_title", variables)
-    if not title or len(circles) < 2:
+    if not title or not topic or not others:
         return None
-    return {"title": title, **_items("circle", circles), "overlap": variables["product"]}, {}
+    return {"title": title, **_items("circle", [topic, *others]), "overlap": variables["product"]}, {}
 
 
 # THE REVEAL: the product, in one photo or full-bleed

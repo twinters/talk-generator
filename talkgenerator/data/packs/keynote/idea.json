@@ -19,13 +19,15 @@
     "It all starts here",
     "The big idea"
   ],
-  "circle": [
+  "topic_circle": [
     "{seed.generic.cap}",
     "{seed.bare.cap} lovers",
     "{seed.bare.cap} fans",
     "{seed.bare.cap} people",
     "{seed.bare.cap} buffs",
-    "{seed.bare.cap} nerds",
+    "{seed.bare.cap} nerds"
+  ],
+  "circle": [
     "Design",
     "The cloud",
     "Courage",
