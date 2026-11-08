@@ -182,8 +182,9 @@ def look(monkeypatch):
     return install
 
 
-def _find(slot, query="owls", seed=1, policy=licenses.ALL, palette=(), looks=None):
-    with context.for_talk(context.ImageContext(policy, palette, looks or {})), random_util.use(random_util.Rng(seed)):
+def _find(slot, query="owls", seed=1, policy=licenses.ALL, palette=(), looks=None, persona_looks=None):
+    talk = context.ImageContext(policy, palette, looks or {}, persona_looks=persona_looks or {})
+    with context.for_talk(talk), random_util.use(random_util.Rng(seed)):
         return slot.find(query)
 
 
@@ -548,6 +549,25 @@ def test_a_format_can_have_looks_of_its_own(sources, look, slot_schema):
     ).looks == {"photo": "corporate-stock"}
     with pytest.raises(ValueError, match="no look"):
         PresentationSchema(None, IdentityTopicGenerator, None, [], looks={"photo": "glossy"})
+
+
+def test_a_persona_s_favourite_look_goes_first_and_the_slot_s_own_look_after(sources, look):
+    sources("fake-a")
+    sources("fake-b")
+    sources("fake-memes", classes=("fair-use",))
+    look("plain", [SourceUse("fake-a")])
+    look("favourite", [SourceUse("fake-b")])
+    look("empty", [SourceUse("fake-b", query="nothing {}")])
+    look("fair-use", [SourceUse("fake-memes")])
+    slot = ImageSlot(aesthetic="plain")
+    assert "fake-a" in _find(slot).get_image_url()
+    assert "fake-b" in _find(slot, persona_looks={"plain": "favourite"}).get_image_url()
+    # Where the favourite finds nothing, or isn't allowed, the slot's own look still does
+    assert "fake-a" in _find(slot, persona_looks={"plain": "empty"}).get_image_url()
+    assert "fake-a" in _find(slot, policy=licenses.OPEN, persona_looks={"plain": "fair-use"}).get_image_url()
+    # (and a slot's own look, as its format has it, comes after the favourite)
+    talk = context.ImageContext(looks={"plain": "favourite"}, persona_looks={"plain": "empty"})
+    assert talk.tries("plain") == ("empty", "favourite") and talk.tries("other") == ("other",)
 
 
 def test_a_slot_can_say_the_queries_it_searches_with(sources, look):

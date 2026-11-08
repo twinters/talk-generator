@@ -30,7 +30,7 @@ to a talk of 2019.
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import cache
 from typing import Any, Final
 
@@ -65,6 +65,12 @@ class Persona:
     # What the presenter's job on the title slide is, for the language model ("founder and CEO of their startup..."),
     # in place of the job field's example, which free models copied whoever presented
     job_hint: str
+    # Multipliers on the theme families' weights, for a talk whose theme the seed picks (see
+    # talkgenerator.design.themes.pick): a kindergarten teacher's talks are in the kids family more often
+    themes: Mapping[str, float] = field(default_factory=dict)
+    # Its favourite looks for some of the looks slides ask for, searched first, before the slide's own look (see
+    # talkgenerator.images.context.ImageContext.tries): a medieval historian's weird pictures are weird medieval art
+    looks: Mapping[str, str] = field(default_factory=dict)
 
     def weight(self, tags: Iterable[str]) -> float:
         """How many times as often a slide generator with these tags comes up in the persona's talks: the product of
@@ -146,6 +152,8 @@ PERSONAS: Final[dict[str, Persona]] = {
             {"pun": 2, "famous_pun": 1.5},
             "with Prof. before the name, a title they still cling to",
             "the chair they held before the scandal, in an absurdly specific field",
+            themes={"academic": 5, "chalkboard": 3, "blueprint": 2, "kids": 0.3, "neon": 0.5},
+            looks={"weird": "bad-charts", "neutral": "illustration"},
         ),
         Persona(
             "startup_founder",
@@ -180,6 +188,8 @@ PERSONAS: Final[dict[str, Persona]] = {
             {"fun_surname": 2.5},
             "a founder's first name and surname, without Dr. or Prof.",
             "founder and CEO of their startup, with its made-up name",
+            themes={"startup": 5, "Swiss poster": 2.5, "clean keynote": 2, "vintage paper": 0.3, "chalkboard": 0.5},
+            looks={"photo": "corporate-stock", "neutral": "corporate-stock", "weird": "corporate-cringe"},
         ),
         Persona(
             "medieval_historian",
@@ -212,6 +222,8 @@ PERSONAS: Final[dict[str, Persona]] = {
             {"famous_pun": 2.5},
             "with Dr. or Prof. before the name",
             "a chair in medieval studies, as grand and specific as it gets",
+            themes={"vintage paper": 5, "newspaper": 2, "neon": 0.3, "hacker terminal": 0.3, "startup": 0.5},
+            looks={"weird": "medieval", "neutral": "museum"},
         ),
         Persona(
             "conspiracy_blogger",
@@ -245,6 +257,8 @@ PERSONAS: Final[dict[str, Persona]] = {
             {"fun_surname": 2, "pun": 1.5, "famous_pun": 0.7},
             "without Dr. or Prof.: a blogger needs no degree",
             "a title they gave themselves, as an independent researcher of something",
+            themes={"hacker terminal": 5, "newspaper": 3, "1997 WordArt": 2, "corporate": 0.5, "clean keynote": 0.5},
+            looks={"weird": "pareidolia", "neutral": "liminal"},
         ),
         Persona(
             "kindergarten_teacher",
@@ -281,6 +295,8 @@ PERSONAS: Final[dict[str, Persona]] = {
             {"pun": 2, "fun_surname": 2, "famous_pun": 0.7},
             "as the children call their teacher: Miss, Ms. or Mr. and a surname",
             "their role at the kindergarten, made to sound grand",
+            themes={"kids": 5, "chalkboard": 3, "Comic Sans everywhere": 2, "hacker terminal": 0.3, "brutalist": 0.3},
+            looks={"weird": "wholesome", "neutral": "illustration"},
         ),
         Persona(
             "consultant",
@@ -317,6 +333,8 @@ PERSONAS: Final[dict[str, Persona]] = {
             {"fun_surname": 2.5, "famous_pun": 0.6},
             "a corporate first name and surname, without Dr. or Prof.",
             "a consultancy title, with Senior, Principal or Partner in it",
+            themes={"corporate": 5, "clip-art corporate": 3, "Swiss poster": 2, "kids": 0.3, "chalkboard": 0.5},
+            looks={"photo": "corporate-stock", "neutral": "corporate-stock", "weird": "corporate-cringe"},
         ),
         Persona(
             "motivational_speaker",
@@ -348,6 +366,8 @@ PERSONAS: Final[dict[str, Persona]] = {
             {"pun": 2, "fun_surname": 1.5},
             "a name that fits on a poster, without Dr. or Prof.",
             "a title like a self-help guru's",
+            themes={"dark minimal": 3, "neon": 3, "1997 WordArt": 2, "academic": 0.5, "blueprint": 0.5},
+            looks={"neutral": "places", "weird": "accidental-art"},
         ),
         Persona(
             "influencer",
@@ -380,6 +400,8 @@ PERSONAS: Final[dict[str, Persona]] = {
             {"pun": 2.5, "fun_surname": 1.5, "famous_pun": 0.7},
             "a name as catchy as a channel's, without Dr. or Prof.",
             "a title like an influencer's bio",
+            themes={"neon": 4, "kids": 2, "Comic Sans everywhere": 2, "academic": 0.3, "newspaper": 0.5},
+            looks={"weird": "memes", "neutral": "pictures"},
         ),
         Persona(
             "time_traveller",
@@ -411,6 +433,8 @@ PERSONAS: Final[dict[str, Persona]] = {
             {"famous_pun": 2.5, "pun": 1.2},
             "with Dr. before the name, a doctor of nothing in particular",
             "a job from a future they won't say much about",
+            themes={"blueprint": 3, "neon": 3, "hacker terminal": 2, "corporate": 0.5},
+            looks={"weird": "retro-futurism", "neutral": "space-science"},
         ),
         Persona(
             "life_coach",
@@ -444,6 +468,8 @@ PERSONAS: Final[dict[str, Persona]] = {
             {"pun": 2, "fun_surname": 1.5},
             "a soothing first name and surname, without Dr. or Prof.",
             "a title like a wellness guru's",
+            themes={"clean keynote": 4, "dark minimal": 3, "brutalist": 0.3, "hacker terminal": 0.5},
+            looks={"weird": "wholesome", "neutral": "places"},
         ),
         Persona(
             "lighthouse_keeper",
@@ -477,6 +503,8 @@ PERSONAS: Final[dict[str, Persona]] = {
             {"fun_surname": 2.5},
             "a weathered first name and surname, without Dr. or Prof.",
             "their old post at the lighthouse",
+            themes={"vintage paper": 4, "newspaper": 3, "neon": 0.3, "startup": 0.3},
+            looks={"weird": "old-photos", "neutral": "places"},
         ),
         Persona(
             "former_athlete",
@@ -510,6 +538,8 @@ PERSONAS: Final[dict[str, Persona]] = {
             {"fun_surname": 2, "pun": 1.5},
             "a name a stadium would chant, without Dr. or Prof.",
             "the sport they played, and their new calling in philosophy",
+            themes={"brutalist": 4, "Swiss poster": 4, "vintage paper": 0.5},
+            looks={"weird": "accidental-art"},
         ),
         Persona(
             "passionate_expert",
@@ -541,6 +571,8 @@ PERSONAS: Final[dict[str, Persona]] = {
             {"pun": 2, "famous_pun": 1.5},
             "with Dr. or Prof. before the name",
             "a professorship in an absurdly specific field",
+            themes={"academic": 3, "chalkboard": 2, "dark minimal": 2, "clip-art corporate": 0.5},
+            looks={"neutral": "museum"},
         ),
     )
 }

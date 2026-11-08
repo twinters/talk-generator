@@ -54,6 +54,11 @@ Flavour packs are looks of weird content from curated sets of subreddits: `curse
 NSFW mark and the finder's filters keep them safe for work. `talkgenerator formats --looks` lists every look, and
 `talkgenerator formats --details` names the looks of every recipe's images.
 
+A talk's persona (`--persona`) has favourite looks for some of the looks slides ask for, which are searched first: a
+medieval historian's weird pictures are weird medieval art and their neutral photos museum art, a startup founder's
+photos are office stock photos and their weird ones corporate cringe, a conspiracy blogger's weird pictures are faces
+in things. Where a favourite finds nothing, or the talk's license policy doesn't allow it, the slide's own look does.
+
 The finder takes a look at its candidates' thumbnails: their brightness and colourfulness, how gray they are, how
 much detail they have where the text goes, their main colours, and a perceptual hash that keeps nearly the same
 picture from coming back on another slide. In a themed talk, pictures that go with the theme's colours come first,
@@ -106,7 +111,10 @@ laughs, `1997 WordArt`, `Comic Sans everywhere` and `clip-art corporate`. A fami
 seed picks one: its colours (every text reads on its background, by WCAG's contrast rules), its fonts, its
 decoration and its layouts.
 
-- `--theme random` picks a family too, the ones for laughs included unless `--no_extreme_themes` leaves them out.
+- `--theme random` picks a family too, the ones for laughs included unless `--no_extreme_themes` leaves them out,
+  and the talk's persona (`--persona`) favours some: a kindergarten teacher's talks are in `kids` or `chalkboard`
+  about half the time, a conspiracy blogger's in `hacker terminal` or `newspaper`, a startup founder's in `startup`
+  or `Swiss poster`.
 - `--theme chaos` gives every slide a theme of its own, and `--style_chaos 0.3` does that for about a third of them.
 - `TALKGENERATOR_THEME` sets the look of talks that don't ask for one, such as `classic` to keep the 2019 template.
 - A plan can have a `theme` too, which `talkgenerator render --theme` overrides.

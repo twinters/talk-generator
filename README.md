@@ -73,7 +73,7 @@ talkgenerator --topic penguins --llm none --theme classic --name_styles classic 
 ## How it works
 
 talkgenerator picks a talk's slides with the talk's seed: a title slide, then slides about the presenter, history, bold statements, quotes, captioned images, gifs and memes, charts, diagrams, quizzes and more, each kind in its place and at most a few times, and conclusions at the end.
-The seed also picks who presents it, a persona such as a startup founder or a medieval historian, whose favourite kinds of slides come up more often (a founder's KPI tiles, a historian's timelines), and who colours the title and the presenter's name.
+The seed also picks who presents it, a persona such as a startup founder or a medieval historian, whose favourite kinds of slides come up more often (a founder's KPI tiles, a historian's timelines), and who colours the title, the presenter's name, the theme and the pictures.
 The same seed gives the same talk.
 
 - **A language model** can write what goes on those slides: the whole talk in one request, with a thesis, callbacks to earlier slides, and a made-up name and job for the presenter. OpenRouter's free models do so whenever there's an OpenRouter key, at no cost, and so do your ChatGPT plan's once you've signed in with ChatGPT; a paid model only when you ask for it ([Language models](https://github.com/twinters/talk-generator/blob/master/docs/language-models.md)).

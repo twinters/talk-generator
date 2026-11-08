@@ -14,10 +14,14 @@ import pytest
 
 from talkgenerator import generator, llm, names, personas, runtime_checker
 from talkgenerator.checks.deck import deck_metrics
+from talkgenerator.design import themes
+from talkgenerator.images import context as image_context
+from talkgenerator.images import profiles
+from talkgenerator.images.slots import ImageSlot
 from talkgenerator.models.deck import Deck, TalkPersona
 from talkgenerator.models.events import TalkFinished, TalkStarted
 from talkgenerator.plan.prompt import SPINE
-from talkgenerator.schema import slide_schemas
+from talkgenerator.schema import content_generators, slide_schemas
 from talkgenerator.schema.presentation_schema_types import get_schema
 from talkgenerator.util import image_util, random_util
 from tests.test_llm_talks import NUM_SLIDES, FakeModel, _jpeg, fake_schema
@@ -260,6 +264,81 @@ def test_a_classic_talk_s_title_is_one_its_persona_could_give(schema):
         own = {template.replace("{seed.title}", "Cats") for template in persona.titles}
         assert deck.title in own | {"A classic title about cats"}
         assert deck.title == fake_schema()._title(["cats"], random_util.Rng(seed), persona)
+
+
+# THE THEME, AND THE LOOKS OF ITS PICTURES
+
+
+def _families(persona, seeds=range(1000)):
+    """How often each theme family comes up in random themes of talks with these seeds, as the persona favours them."""
+    favoured = persona.themes if persona is not None else None
+    return collections.Counter(
+        themes.pick(themes.RANDOM, random_util.Rng(seed).child("theme"), True, favoured).family for seed in seeds
+    )
+
+
+def test_personas_favour_theme_families_there_are():
+    for name, persona in personas.PERSONAS.items():
+        assert persona.themes and set(persona.themes) <= set(themes.FAMILIES), (name, set(persona.themes))
+        assert all(0.2 <= factor <= 8 for factor in persona.themes.values()), name
+        assert any(factor > 1 for factor in persona.themes.values()), name
+
+
+def test_a_persona_s_talks_are_in_its_favourite_theme_families_more_often():
+    plain = _families(None)
+    teacher = _families(personas.persona("kindergarten_teacher"))
+    historian = _families(personas.persona("medieval_historian"))
+    blogger = _families(personas.persona("conspiracy_blogger"))
+    # (about 3 to 4.5 times as often; the weights say 3.7 to 4.6)
+    assert teacher["kids"] > 2.5 * plain["kids"] and teacher["hacker terminal"] < plain["hacker terminal"]
+    assert historian["vintage paper"] > 2.5 * plain["vintage paper"]
+    assert blogger["hacker terminal"] > 2.5 * plain["hacker terminal"]
+    assert len(teacher) >= 10  # (and the other families still come up)
+
+
+def test_across_the_personas_every_theme_family_comes_up_about_as_often():
+    def shares(favoured):
+        weights = {family.name: family.weight * favoured.get(family.name, 1.0) for family in themes.FAMILIES.values()}
+        return {name: weight / sum(weights.values()) for name, weight in weights.items()}
+
+    base = shares({})
+    for name in base:
+        average = statistics.mean(shares(persona.themes)[name] for persona in personas.PERSONAS.values())
+        assert 0.75 <= average / base[name] <= 1.33, (name, average / base[name])
+
+
+def test_a_theme_the_talk_asks_for_wins_over_its_persona(schema):
+    assert _deck(None, theme="neon", persona="kindergarten_teacher").style.family == "neon"
+    assert _deck(None, theme="classic", persona="kindergarten_teacher").style is None
+    teacher = personas.persona("kindergarten_teacher")
+    for seed in range(1, 4):  # (a random theme is one of a family the persona favours more often)
+        deck = _deck(None, int_seed=seed, theme="random", persona="kindergarten_teacher")
+        expected = themes.pick(themes.RANDOM, random_util.Rng(seed).child("theme"), True, teacher.themes)
+        assert deck.theme == expected.name
+
+
+def test_personas_favour_image_looks_there_are_for_looks_slides_ask_for():
+    asked = {
+        look
+        for value in vars(content_generators).values()
+        if isinstance(value, ImageSlot)
+        for look in (value.aesthetic, *value.backups)
+    }
+    for name, persona in personas.PERSONAS.items():
+        assert persona.looks and set(persona.looks) <= asked, (name, set(persona.looks) - asked)
+        for favourite in persona.looks.values():
+            profiles.profile(favourite)  # (a ValueError for a look there isn't)
+
+
+def test_a_talk_searches_its_persona_s_favourite_looks_first(schema, monkeypatch):
+    seen = []
+    for_talk = image_context.for_talk
+    monkeypatch.setattr(image_context, "for_talk", lambda talk: seen.append(talk) or for_talk(talk))
+    _deck(None, persona="medieval_historian")
+    assert seen[-1].persona_looks == personas.persona("medieval_historian").looks
+    assert seen[-1].tries("weird") == ("medieval", "weird")
+    _deck(None, persona="none")
+    assert seen[-1].persona_looks == {} and seen[-1].tries("weird") == ("weird",)
 
 
 # THE PRESENTER'S NAME

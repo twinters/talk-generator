@@ -274,6 +274,20 @@ name (particular generators, or nudge)". The talk's seed picks one of thirteen p
 - **A job hint.** What the presenter's job on the title slide is ("founder and CEO of their startup, with its
   made-up name"; "their role at the kindergarten, made to sound grand"), in place of the job field's example
   ('Professor of Applied Sock Theory'), which free models copied whoever presented (below).
+- **Its theme families** (2026-11-08, the user's "also particular types of slide themes?", after the bolder themes of
+  section 9 were merged into this branch for it): multipliers on the families' weights when the theme is random (an
+  explicit `--theme` goes alone, and `chaos` gives its slides their own as before). A kindergarten teacher has ×5 for
+  `kids` and ×3 for `chalkboard`, a conspiracy blogger ×5 for `hacker terminal` and ×3 for `newspaper`, a medieval
+  historian ×5 for `vintage paper`; each persona's talks are in its favourite families 36 to 47% of the time (13 to
+  19% without), and over all the personas every family comes up 0.87 to 1.15 times as often as without (a test keeps
+  it within 0.75 to 1.33). The persona is picked before the theme now, from its own stream, so neither moved.
+- **Its pictures' looks** ("and what about some image sources?"): favourite looks for some of the looks slides ask
+  for, searched first, with their fallbacks, and then the slide's own look (`ImageContext.persona_looks`, `tries`):
+  a historian's `weird` pictures are `medieval` art and their `neutral` ones `museum` art, a founder's and a
+  consultant's photos `corporate-stock` and their weird ones `corporate-cringe`, a blogger's weird ones `pareidolia`
+  and their neutral ones `liminal`, a teacher's weird ones `wholesome`, a time traveller's `retro-futurism` and
+  `space-science`. Only those slots change, so it's a nudge rather than a takeover; the license policy and a slot's own
+  sources still decide what may be shown, and whether a slide can be made at all is decided by its own looks, as before.
 
 The request stays one per talk, with the persona in its dynamic part, and the presenter's own name still never
 reaches a provider. The deck and `talk.started` have the persona (`persona`: `name`, `label`, `voice`, and the `angle`
@@ -1585,7 +1599,7 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D44 | Five new families, none for laughs: `hacker terminal`, `blueprint`, `chalkboard`, `newspaper` and `Swiss poster`; `kids` becomes a kindergarten's. The families that commit to a scheme pick one of a few palettes of their own; some families have title and section layouts of their own. The families keep their names, and a seed still picks a member. |
 | D45 | Strong image filters (grayscale, sepia, duotone, black and white) only in the families made for them, and only where they fit: a family's filter can be for backdrops only, and black and white never goes behind a slide's texts. Other themes leave pictures as they are or lay a gentle tint over them (a warm or cool cast, their paper, their accent). |
 | D46 | The design checks judge a text by what's behind its letters (its lines as the engine breaks them, as tall as their letters), where a shape over part of them counts and a background's pattern too, rather than by what's under its box's middle. |
-| D47 | A talk's persona, which its seed picks (or the talk names; `none` for none), shapes the talk with a language model or without: multipliers on the format's slide weights by the generators' tags (none under 0.2, and about 1 on average over the personas, so the formats' mix holds), its kind of title (a hint for the model, and half of a classic talk's titles from the persona's templates), and weights over the default name styles with how the presenter goes by (an explicit `name_styles` goes alone), besides the model's voice and an angle of the persona's. The deck and `talk.started` record it. |
+| D47 | A talk's persona, which its seed picks (or the talk names; `none` for none), shapes the talk with a language model or without: multipliers on the format's slide weights by the generators' tags (none under 0.2, and about 1 on average over the personas, so the formats' mix holds), its kind of title (a hint for the model, and half of a classic talk's titles from the persona's templates), and weights over the default name styles with how the presenter goes by (an explicit `name_styles` goes alone), besides the model's voice and an angle of the persona's, the presenter's kind of job, multipliers on the theme families' weights for a random theme (an explicit theme goes alone), and favourite looks for some of the looks slides ask for, searched before the slide's own. The deck and `talk.started` record it. |
 
 D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, and D43 to D47 on 2026-11-08; the
 others follow from the design.

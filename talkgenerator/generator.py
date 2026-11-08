@@ -229,8 +229,10 @@ def _generate_presentation(
     "kindergarten_teacher", None (or "random") for one the talk's seed picks, or "none" for none, which makes the
     format's own talk. They shape the talk: which kinds of slides it favours (a startup founder's KPI tiles and
     funnels), its title (their kind of title, from the language model, or in a classic talk half the time one of their
-    own templates), the style of the presenter's name (unless name_styles says), and the voice and angle the language
-    model writes in. The deck says which persona it had.
+    own templates), the style of the presenter's name (unless name_styles says), the voice and angle the language
+    model writes in, the theme's family when the theme is random (a kindergarten teacher's talks are in the kids
+    family more often), and the looks some of its pictures are searched in first (a medieval historian's weird
+    pictures are weird medieval art). The deck says which persona it had.
 
     license_policy is the license classes the talk's images may have (see talkgenerator.images.licenses): "all", "open"
     (everything but fair use: no memes, gifs or Reddit's posts, for decks shown in public), or the classes, as a list
@@ -269,19 +271,20 @@ def _generate_presentation(
     rng = random_util.Rng(int_seed)
     logger.info("Presentation seed: {} (pass it as int_seed to make this talk again)".format(rng.root_seed))
 
-    # The talk's theme, from its seed too (see talkgenerator.design.themes)
-    if theme == themes.CHAOS:
-        theme, style_chaos = themes.RANDOM, 1.0
-    chosen_theme = themes.pick(theme, rng.child("theme"), extreme_themes)
-    if chosen_theme is not None:
-        logger.info("Theme: {}".format(chosen_theme.name))
-
     # Who presents it: a persona its seed picks, unless it names one, or none (see talkgenerator.personas)
     chosen_persona = personas.pick(persona, rng)
     if chosen_persona is not None:
         logger.info("Persona: {} ({})".format(chosen_persona.label, chosen_persona.voice))
     else:
         logger.info("Persona: none (the format's own talk)")
+
+    # The talk's theme, from its seed too, of a family its persona favours more often (see talkgenerator.design.themes)
+    if theme == themes.CHAOS:
+        theme, style_chaos = themes.RANDOM, 1.0
+    favoured = chosen_persona.themes if chosen_persona is not None else None
+    chosen_theme = themes.pick(theme, rng.child("theme"), extreme_themes, favoured)
+    if chosen_theme is not None:
+        logger.info("Theme: {}".format(chosen_theme.name))
 
     logger.info("Presentation schema: {}".format(presentation_schema))
     logger.info("License policy: {} ({})".format(policy.name, ", ".join(sorted(policy.classes))))
@@ -329,7 +332,11 @@ def _generate_presentation(
         )
 
     # Generate the presentation object, finding its images by its license policy, theme and format
-    images = image_context.ImageContext(policy, palette(chosen_theme), presentation_schema.looks, generation)
+    # (with the persona's favourite looks, searched first for the looks they have one for)
+    persona_looks = chosen_persona.looks if chosen_persona is not None else {}
+    images = image_context.ImageContext(
+        policy, palette(chosen_theme), presentation_schema.looks, generation, persona_looks=persona_looks
+    )
     with image_context.for_talk(images):
         presentation, slide_deck = presentation_schema.generate_presentation(
             topics=topics,
@@ -714,8 +721,9 @@ def get_argument_parser():
         default=None,
         choices=personas.choices(),
         help="Who presents the talk, such as startup_founder or kindergarten_teacher: they shape which kinds of slides "
-        "it favours, its title, the style of the presenter's name, and the language model's voice; none makes the "
-        "format's own talk (default: random, a persona the talk's seed picks)",
+        "it favours, its title, the style of the presenter's name, the language model's voice, a random theme's family "
+        "and the looks some pictures are searched in first; none makes the format's own talk (default: random, a "
+        "persona the talk's seed picks)",
     )
     parser.add_argument(
         "--title",
@@ -811,8 +819,9 @@ def get_argument_parser():
     parser.add_argument(
         "--theme",
         choices=themes.choices(),
-        help="The look: random (a theme the seed picks), classic (the 2019 template), a family's name, or chaos "
-        "(every slide its own theme) (default: TALKGENERATOR_THEME's, or else random)",
+        help="The look: random (a theme the seed picks, of a family the talk's persona favours more often), classic "
+        "(the 2019 template), a family's name, or chaos (every slide its own theme) (default: TALKGENERATOR_THEME's, or "
+        "else random)",
     )
     parser.add_argument(
         "--style_chaos",

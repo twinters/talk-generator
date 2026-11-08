@@ -68,20 +68,22 @@ class _Candidate:
 
 def find(slot: ImageSlot, query: str | None, avoid: Collection[ImageData] = ()) -> ImageData | None:
     """The image for the slot, searched with the query (through the slot's own queries, if it has some): None if its
-    look, the look's fallbacks and the slot's backups find none that will do."""
+    look, the look's fallbacks and the slot's backups find none that will do. Where the talk's persona has a favourite
+    look for one of them, that's searched first, with its fallbacks (see talkgenerator.images.context.ImageContext)."""
     talk = context.current()
     queries = [template.replace("{}", query or "").strip() for template in slot.queries] or [query or ""]
     tried: set[str] = set()
     for first in (slot.aesthetic, *slot.backups):
-        name: str | None = talk.look(first)
-        while name is not None and name not in tried:
-            tried.add(name)
-            look = profiles.profile(name)
-            for asked in queries:
-                found = _find_with(look, slot, asked, avoid, talk)
-                if found is not None:
-                    return found
-            name = talk.look(look.fallback) if look.fallback else None
+        for start in talk.tries(first):
+            name: str | None = start
+            while name is not None and name not in tried:
+                tried.add(name)
+                look = profiles.profile(name)
+                for asked in queries:
+                    found = _find_with(look, slot, asked, avoid, talk)
+                    if found is not None:
+                        return found
+                name = talk.look(look.fallback) if look.fallback else None
     return None
 
 

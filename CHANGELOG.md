@@ -239,7 +239,12 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
     own templates ("Disrupting Penguins");
   - the presenter's name: a historian's is a famous-name pun more often, and a professor goes by "Prof.", unless
     `--name_styles` says which styles to use; and with a model, the presenter's job ("Founder and CEO of
-    Penguin.ly").
+    Penguin.ly");
+  - the theme, when it's random: the persona's favourite families come up 3 to 4.5 times as often (a kindergarten
+    teacher's `kids` and `chalkboard`, a conspiracy blogger's `hacker terminal` and `newspaper`), and across all
+    personas every family about as often as before;
+  - the pictures: favourite looks for some of the looks slides ask for, searched first (a historian's weird
+    pictures are weird medieval art, a founder's photos office stock), with the slide's own look after them.
 - The deck and `talk.started` say which persona a talk had (`persona`: its name, label and voice, and the angle the
   model was given). `--persona none` makes the format's own talk.
 

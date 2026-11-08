@@ -12,6 +12,7 @@ extremes keep to the installed ones: Comic Sans MS, Impact and Arial Black are t
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, Final, Literal, TypeVar
 
@@ -634,15 +635,21 @@ def catalog(extremes: bool = True) -> list[dict[str, Any]]:
     ]
 
 
-def pick(spec: str, rng: random_util.Rng, extremes: bool = True) -> Theme | None:
+def pick(
+    spec: str, rng: random_util.Rng, extremes: bool = True, favoured: Mapping[str, float] | None = None
+) -> Theme | None:
     """The theme a spec asks for: None for the classic one, a member of a family by its name, or (for "random") of
-    a family the seed picks, extremes included unless they're left out."""
+    a family the seed picks, extremes included unless they're left out, each as likely as its weight times what
+    favoured says for it (by the family's name: a talk's persona favours some families, see talkgenerator.personas;
+    1 for the others)."""
     if spec == CLASSIC:
         return None
     with random_util.use(rng):
         if spec == RANDOM:
             pool = [family for family in FAMILIES.values() if extremes or not family.extreme]
-            family = random_util.weighted_random([(family.weight, family) for family in pool]) or pool[0]
+            weights = favoured or {}
+            weighted = [(family.weight * weights.get(family.name, 1.0), family) for family in pool]
+            family = random_util.weighted_random(weighted) or pool[0]
         elif spec in FAMILIES:
             family = FAMILIES[spec]
         else:
