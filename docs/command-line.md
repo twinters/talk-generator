@@ -61,7 +61,16 @@ Who writes the talk depends on your settings: a language model when one is set u
 | `default` | A TED-like talk: about the presenter, history, bold statements, captioned images, charts, diagrams, quizzes and conclusions, with images from every source, memes and gifs too | `all` |
 | `ted` | The TED-like talk with copyright-free images only (stock photos, artworks and old photos), for decks shown in public: no full-screen images, gifs or memes | `open` |
 | `interview` | The TED-like talk, without slides about the presenter | `all` |
+| `pitch` | A startup pitch to investors: the problem, the solution, the market (TAM, SAM and SOM), the business model, the traction, the competition, the team, the roadmap and the ask | `all` |
+| `academic` | A talk at an academic conference, with affiliations on its title slide: the outline, related work, the method, the results (with p-values), the limitations, future work, the acknowledgements, the references and questions | `all` |
 | `test` | For testing talkgenerator itself | `all` |
+
+A pitch and an academic talk go through the parts of their arc, in that order, whoever presents them: a short talk
+keeps the parts that matter most (a five-slide pitch has the problem, the solution, the traction and the ask), and a
+long one gives some parts more slides and has memes, quotes and the like between them. A startup founder pitches more
+often than the other personas, and a disgraced professor gives the academic talks; their themes are the `startup`
+and `academic` families more often. Their arcs' slides need no image that's fair use, so `--license_policy open`
+keeps them whole. `talkgenerator formats --details --format pitch` lists a format's arc and the slides of each part.
 
 A format's license policy says which license classes its images may have. `--license_policy` sets another one:
 `open` allows every image but fair use (no memes, gifs or Reddit's posts), `all` every image, and license classes

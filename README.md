@@ -64,6 +64,8 @@ talkgenerator --topic_or_title "Why I Joined a Penguin Cult"   # a topic or a ti
 talkgenerator --topic penguins --language nl                 # in Dutch (with a language model)
 talkgenerator --topic penguins --theme "1997 WordArt"        # a look; by default, the talk's seed picks one
 talkgenerator --topic penguins --schema ted                  # copyright-free images only, for decks shown in public
+talkgenerator --topic penguins --schema pitch                # a startup pitch: the problem, the market, the ask...
+talkgenerator --topic penguins --schema academic             # a conference talk: the method, p-values, Reviewer 2
 talkgenerator --topic penguins --persona kindergarten_teacher # who presents it: by default, the seed picks
 talkgenerator --topic penguins --llm none --theme classic --name_styles classic --persona none   # closest to 2019
 ```
@@ -75,6 +77,7 @@ talkgenerator --topic penguins --llm none --theme classic --name_styles classic 
 talkgenerator picks a talk's slides with the talk's seed: a title slide, then slides about the presenter, history, bold statements, quotes, captioned images, gifs and memes, charts, diagrams, quizzes and more, each kind in its place and at most a few times, and conclusions at the end.
 The seed also picks who presents it, a persona such as a startup founder or a medieval historian, whose favourite kinds of slides come up more often (a founder's KPI tiles, a historian's timelines), and who colours the title, the presenter's name, the theme and the pictures.
 The same seed gives the same talk.
+Besides TED-like talks, there are startup pitches (`--schema pitch`) and academic conference talks (`--schema academic`), whose slides go through their arcs: from the problem to the market, the traction and the ask, or from the outline to the method, the results with their p-values and the questions.
 
 - **A language model** can write what goes on those slides: the whole talk in one request, with a thesis, callbacks to earlier slides, and a made-up name and job for the presenter. OpenRouter's free models do so whenever there's an OpenRouter key, at no cost, and so do your ChatGPT plan's once you've signed in with ChatGPT; a paid model only when you ask for it ([Language models](https://github.com/twinters/talk-generator/blob/master/docs/language-models.md)).
 - **The classic generator** writes them otherwise, and every slide the model gets wrong: templates and grammars, words related to the topic, quotes, how-tos and pictures from many sources. It's the method of the [EvoMUSART 2019 paper](#credits), with more kinds of slides since: `--llm none --theme classic --name_styles classic --persona none` (the classic generator, the 2019 template, random names and no persona) comes closest to a talk of 2019.

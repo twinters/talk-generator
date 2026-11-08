@@ -800,6 +800,74 @@ Decided: TED-like talks get every improvement first, and the new formats come af
 format too. Every format also works in classic mode through its content pack
 ([section 11](#11-text-sources-and-content-packs)), so formats cost nothing without an LLM.
 
+**The first two formats** (2026-11-08, D56): the startup pitch (`pitch`) and the academic conference talk
+(`academic`), which set the pattern that the corporate all-hands, the product keynote and Pecha Kucha's timing will
+follow. A format is a presentation schema with a `Format` (`talkgenerator.schema.formats`, a module per format):
+
+- **A brief for the language model**, on a line of the request of its own ("The format: a startup pitch to investors,
+  as at a demo day: the problem, the solution, the market (TAM, SAM and SOM)..."; the TED-like formats have none, and
+  their requests stay as they were), and what its titles and its presenter's job are like, with the persona's: a
+  pitch's title is "like a startup pitch's title: the startup's made-up name and its one-line promise", and its job
+  the presenter's role at the startup; an academic talk's title is a paper's, with a colon and a dry subtitle, and its
+  job an affiliation ("the chair they held before the scandal, in an absurdly specific field, given as an
+  affiliation, as on a paper"). The format's catalog says them too, for agents writing plans.
+- **Its favourite personas and themes**: weights over the personas for a talk whose seed picks one (the startup
+  founder ×6, the consultant ×2, the influencer and the motivational speaker ×1.5 for a pitch; the disgraced professor
+  ×6, the over-passionate expert ×2.5, the medieval historian ×1.5 and the time traveller ×1.3 for an academic talk:
+  the founder presents 30% of the pitches, against one talk in thirteen before, and every persona still presents
+  some), and multipliers on the theme families, with the persona's (`startup` ×4 for a pitch, `academic` ×5 for an
+  academic talk). A TED-like talk's seed picks the persona it picked before.
+- **An arc** (`talkgenerator.schema.formats.arcs`): the parts its talks go through, in order, each with the fewest and
+  the most slides it has, and a rank. The arc lays out a talk of any length from its length alone, the same in every
+  run: a short talk keeps the parts of the lowest ranks (a five-slide pitch has its problem, solution, traction and
+  ask; an academic talk its outline, method, results and questions), a longer one gives them more slides, by rank, up
+  to their most (a pitch's problem, solution and traction two each, an academic talk's method two and results three),
+  and what's left are free slides between the parts, for the format's other slides (memes, gifs, press, a quiz, quotes,
+  fun facts, real charts from the internet). A part's slide generators weigh in on its slides only, so a persona's
+  multipliers move a part's slides between its kinds (a founder's traction is figures on tiles more often than a hockey
+  stick) but never out of their part: every persona keeps the arc, in classic talks and planned ones alike. The
+  format's other generators stand in, at a hundredth of their weight, for a part's slide that none of the part's
+  generators can make, and `talkgenerator check` warns of a talk that misses a part, or has one out of order. A
+  format's tag caps let each kind of slide come once, so that a part of two slides has two kinds.
+
+Their slides reuse the slide types there are, with recipes and classic texts of their own. A pitch's problem is a bold
+statement or an alarming statistic (a big number); its solution the product in one photo (a picture that prefers to be
+generated, 10.5's product shot), life before and after it, or how it works; its market TAM, SAM and SOM in a funnel, or
+one enormous number; its business model pricing plans on KPI tiles, a flywheel (a cycle) or its revenue streams (a pie
+chart); its traction a hockey stick (a trend chart), figures on tiles, or a happy customer's post; its competition a
+2×2 matrix with the startup alone in its best corner, or a ranking it wins; its team three photos of people with
+made-up roles, or an org chart whose boss is the punchline; its roadmap a timeline, the ask a big number and the closing
+"Questions?". An academic talk's outline is an agenda; its related work a Venn diagram with this work where the fields
+meet, a 2×2 matrix of earlier work ("Okafor et al. (2019)"), or the field's history; its method a diagram of its
+steps, its equation over a photo, or its setup's odd photo; its results a ranking that its method wins, a correlation
+and a line over time, each with a suspicious p-value in its title, or one p-value as a big number ("p = 0.049"); its
+limitations an iceberg or an admission over a photo; its future work a timeline, the research cycle, or a flowchart
+whose every answer leads to more research; its acknowledgements three photos or a list, its references a list of
+made-up references, and questions. One type is new, as nothing drew a method: the **process**, three to five steps
+joined by arrows, appearing one by one, the last one the punchline (an academic talk's method, how a pitch's product
+works), side by side when their words are short enough for the boxes, and else one under the other, on bands (as
+German and Dutch compounds need); a TED-like talk has none yet. A classic pitch's startup and a classic talk's method
+get made-up names from the topic ("PenguinBase", "AutoPenguin"), the same on every slide and in every run. Each format
+has a content pack (section 11), a grammar per part of its arc: the pitch's 687 templates in 67 slots, the academic
+talk's 591 in 60, linted as the TED pack is.
+
+Checked on 2026-11-08, without GIPHY and Unsplash and in random themes: 42 classic talks (both formats, eight topics,
+five seeds) had 0 errors, and 5 warnings of one template that said "None of them" (reworded since); 20 by OpenRouter's
+free models (six topics, four seeds; 199 of 200 slides by the model, one request a talk, $0, 12 to 39 seconds a talk)
+had 0 errors and 0 warnings; every talk came out the same made again. The models' pitches read
+as pitch decks ("ChronoLoops: We Fix Your Yesterday Before It Happens", a market from "$4.2T - everyone with a past" to
+"$12M - people who admit it", an ask "to build the first franchise in 1994", a closing "Bring money. We will spend it
+yesterday."), and their academic talks as conference talks ("Penguins may not consent to mindfulness" under an
+iceberg's water, "We occasionally misplace the 14th century" as a limitation). What they needed: a big number's label
+repeated its number ("73% / 73% of Antarctic research stations...") and a job its presenter's name, which the hints and
+the title slide now keep out; and texts too long for their places were cut mid-phrase, the affiliation of every talk
+("Professor of Serenity Studies, Department"), roles in brackets ("Kaito Tanaka (Head of Temporal") and references
+("Journal of Caffeine and"): the hints now ask for a few words, and a cut ends after a comma when no clause ends where
+it keeps half the text, and before a bracket it would leave open. The second round's affiliations read whole ("Professor
+of Delayed Productivity", "Chair of Subterranean Dynamics") and its references were short ("Doe et al. (2022) Journal
+of Delay"); what it still had, a big number without its unit ("50000"), and matrices whose quadrants restated their
+axes, the hints now ask for too.
+
 ## 8. Slide types and variety
 
 v4's slide types stay: title, about me, history, full-screen gif, meme or photo, image with title, large quote over
@@ -1465,7 +1533,10 @@ As built (2026-11-07, `talkgenerator.images.generation` and `talkgenerator.image
   language model's per-slide fallback too, and costs nothing at runtime. Measured on the way: one seed gives every
   topic the same templates (with seed 1, 98 of 100 classic `ted` talks had "What if ... ?", and 96 the same
   historical figure), so what repeats takes several seeds to see; over ten seeds, plain words repeated most:
-  "Discussion" as a slide's title, "Conclusion 1" as a caption, and the conclusions' six titles.
+  "Discussion" as a slide's title, "Conclusion 1" as a caption, and the conclusions' six titles. The formats beyond
+  TED-like talks came next (section 7, D56): `pitch` (687 templates in 67 slots) and `academic` (591 in 60), a grammar
+  per part of their arcs rather than per kind of slide, with the slots' variables for the startup's and the method's
+  made-up names (`startup`, `method`), linted by the same tests.
 
 ## 12. Determinism, seeds, tests and the paper baseline
 
@@ -1646,7 +1717,7 @@ before the new formats. A milestone is a checkpoint on `v5`, not a release; only
 | 4 (under way: `stream_talk()`, probe validation, display policies, presenter names in styles (5.10, for the site's settings) and what's typed read as a topic or a title (5.11, `topic_or_title=`, for the site's Automatic choice) are in; since 2026-11-07, talkgenerator.com runs v5 from GitHub (D31): talks stream into the browser, the .pptx is made on download, Pixabay's images are copied, and classic and LLM talks meet the speed and memory bars on the VPS (section 14), but for the first talk after a restart; left: deploying the streamed-titles fix (`be09a7e`: on the site, a free model that writes its answer's fields in alphabetical order put `slide_10` before `slide_2`, so slides 2 to 9 fell back to classic ones, or were left out of a Dutch copyright-free talk), the new settings with 5.10's and 5.11's options, and loading the library before the first talk) | Streaming and the web view | `stream_talk()`, display policies, probe validation; in talk-generator-web: the SSE endpoint, the Angular renderer, LLM talks by default with the classic switch, a language choice, Connect OpenRouter and pasted keys, .pptx on download, an Automatic topic-or-title choice (5.11), the site running `v5` from git (D31) | first slide on screen within the calibrated target on the VPS; a 20-slide talk under the memory bar; the downloaded .pptx matches the web view |
 | 5 (under way: image slots and the finder, license classes and policies, aesthetic profiles with local analysis, and the first flavour packs are in, 2026-11-07; generated images too, on the user's own key or server, credited "AI-generated with <model>" in the `generated` class (10.5, D38, D39); and new sources (10.4): the Met, Cleveland, the Wellcome Collection, NASA, Flagpedia's flags, Imgflip's templates and the Smithsonian (with the user's api.data.gov key), with the museums' type and date filters and more subreddits; talkgenerator.com draws them on a visitor's own OpenRouter account or OpenAI key since 2026-11-08 (in the site's `master`, deployed with its next push); left: the vision pick, and the Library of Congress, Flickr and Iconify, which need an exception, a paid key or a new dependency) | Images | slots, aesthetic profiles and flavour packs, local analysis, license classes; new open and weird sources; AI image generation with the user's own keys; the optional vision pick | license policies enforced; profile checks pass (such as the grayscale share for `vintage`); generated images credited |
 | 6 (under way: fourteen slide types are in, drawn as texts on shapes (D37, section 8); on 2026-11-07, benchmark talks over seeds that bring each of them up had no design, completeness, leftover or language findings: 63 classic talks, and 63 by OpenRouter's free models (620 of 630 slides by the model, at $0), plus 20 classic `ted` talks and 8 Dutch ones, where a long Dutch compound overflowed a narrow box (since, every new layout takes a 20-letter word in every theme, a Venn diagram's labels beside its circles when they don't fit in them); the only other findings were InspiroBot's and Reddit's live answers differing between a talk's two runs. talk-generator-web draws them all unchanged, and needs a small change to hold back what appears on a click in its presentations (merged into the site's master, not deployed yet). Memes with live captions came in later that day (D40); on 2026-11-08 they came to about half of all talks (D48, "I really love the generated memes"), and five slide types from real PowerPoint karaoke decks came in (D49: a fun fact, an acronym, a dare, a flowchart, a tier list), with no findings on them in 36 benchmark talks, 18 classic and 18 by OpenRouter's free models (179 of 180 slides by the model, $0, every talk the same made again), over six seeds and random themes; the same day, so did the user's other two ideas of 2026-11-07: personas that shape a talk (5.2, D47), and bolder themes with subtler, rarer image filters (section 9, D43 to D46). Then the TED content pack (section 11, D54): the classic texts of TED-like talks as data, per kind of slide, grown from 909 templates to 2,872 in a TED talk's voice and linted by tests, with no errors in 184 classic benchmark talks (130 `ted`, the last 30 made twice and the same, and 54 `default`), and a text seen again in a talk on the same topic half as often (9% before, 4% to 5% after). Left: section 8's other candidates and the karaoke catalogue's) | More slide types for TED-like talks | native diagrams, big numbers, quiz, memes with live captions, social posts and more; a much larger, curated TED content pack; memes more often; what real PowerPoint karaoke decks do; personas that shape a talk; bolder themes | every new slide type passes the checks in classic and LLM mode |
-| 7 | New talk formats | pitch, academic, corporate, keynote and Pecha Kucha timing, with their content packs (or in 5.1 if the TED work takes longer) | every format works in classic and LLM mode and passes the checks |
+| 7 (under way: the startup pitch and the academic conference talk came in on 2026-11-08, each with its arc, its recipes, its content pack and its favourite personas and themes, and the process slide type (section 7, D56); 42 classic talks and 20 by OpenRouter's free models (199 of 200 slides by the model, $0) had no errors, every talk the same made again. Left: the corporate all-hands, the product keynote and Pecha Kucha's timing) | New talk formats | pitch, academic, corporate, keynote and Pecha Kucha timing, with their content packs (or in 5.1 if the TED work takes longer) | every format works in classic and LLM mode and passes the checks |
 | 8 | Integration | the site runs `v5` on the preview, then in production behind a switch; Sign in with ChatGPT on the site, if OpenAI has admitted it; docs and deprecation warnings | the site runs `v5` for a week without quota or memory incidents |
 | 5.0.0 | The release | freeze and fix; merge `v5` into `master`; release 5.0.0 with the release script; the site pins `talkgenerator==5.0.0`; 4.x ends | |
 
@@ -1714,8 +1785,9 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D53 | A slide of a list of things shows its title and the list's frame from the start, and its things one by one, a click each, the punchline last (a pyramid from its base up, a tier list from its worst tier up, a quiz's answer after its options, an org chart's boss after its people); the shapes a thing is drawn on come with it. A slide of one thing (a big number, a post, a fun fact, a meme with one caption) shows at once. |
 | D54 | A format's classic texts are a content pack, `talkgenerator/data/packs/<format>/`: a grammar per kind of slide, whose rules are lists of templates, and a manifest (`pack.json`) with the pack's version, what each version changed, and its slots, the rules the code fills in, with the variables their templates may use and the text field whose length their texts keep to; a rule is named by its grammar and itself ("karaoke.dare"), the pack's only one. The version goes up whenever the texts change. The TED pack (`ted`) serves the default, ted, interview and test schemas. Its templates speak of the topic as English does: `{seed.generic}` ("penguins", "coffee"), `{seed.one}` ("a penguin", "coffee") and, after a word of the template's own (an article, a possessive, an adjective) or before another noun, `{seed.bare}` ("The moon paradox", "a penguin expert"), never with a verb that has to agree with the topic; tests lint every pack. Presenter names stay in `data/text-templates` (every format's), and a meme template's boxes in `data/memes.json` (its classic captions are the pack's). |
 | D55 | A seed gets only wikiHow's actions about it (`wikihow.about`): with one of its telling words in any form (its rarest word, and its others rarer than 5.5 on the Zipf scale), or with one of the telling words of its related words (rarer than 5.0); and none of the worst (`wikihow.unfit`): none with a word a slide shouldn't make light of, a faith, violence, hate, death or hard drugs, but crude ones stay ("Clean Your Penis" for cleaning), as much of classic talks' humour is crude. WikiHow pads a search it knows little about with its most popular how-tos and with loose matches. The user chose both on 2026-11-08: related actions over the seed's own words only and over leaving out just the padding (36 of 39 sample topics and 29 of 39 of the seeds that slides wander to keep some actions), and crude ones in. |
+| D56 | A talk format beyond the TED-like talks is a presentation schema with a `Format`: a brief for the language model, on a line of the request of its own, what its titles and its presenter's job are like (with the persona's), weights over the personas and multipliers on the theme families (with the persona's), and an arc: its parts in order, each with the fewest and the most slides it has and a rank, which lays out a talk of any length from its length alone (a short talk keeps the parts of the lowest ranks, a long one gives them more slides and has free slides between them). A part's slide generators weigh in on its slides only, so every persona keeps the arc; the format's other slides fill the free slides, and stand in for a part's slide that can't be made. A format reuses the slide types there are, with recipes and a content pack of its own, and gets a new type only where none draws what it needs (the process, for an academic talk's method). |
 
-D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, and D43 to D55 on 2026-11-08; the
+D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, and D43 to D56 on 2026-11-08; the
 others follow from the design.
 
 ### Open questions

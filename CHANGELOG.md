@@ -256,6 +256,37 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   topic as English does, keeps to its slide's length with long words, and is checked by `tests/test_content_pack.py`.
   Jobs a family audience doesn't need (escort, embalmer, soldier...) left the presenters' list.
 
+### Talk formats: startup pitches and academic talks
+
+- `--schema pitch`: a startup about the topic, pitched to investors. Its slides go through its arc, in order: the
+  problem (a bold statement, or an alarming statistic), the solution (the product, life before and after it, or how
+  it works), the market (TAM, SAM and SOM in a funnel, or one enormous number), the business model (pricing plans, a
+  flywheel or its revenue streams), the traction (a hockey stick, figures on tiles, or a happy customer's post), the
+  competition (a 2×2 matrix with the startup alone in its best corner, or a ranking it wins), the team (three photos
+  with made-up roles, or an org chart whose boss is the punchline), the roadmap, the ask (a big number) and the
+  closing "Questions?".
+- `--schema academic`: research on the topic at an academic conference, with affiliations on the title slide: the
+  outline, related work (this work where fields meet in a Venn diagram, earlier work in a 2×2 matrix, or the field's
+  history), the method (a diagram of its steps, its equation, or its setup), the results (charts with suspicious
+  p-values, or one p-value as a big number), the limitations (an iceberg), future work (a timeline, the research
+  cycle, or a flowchart whose every answer leads to more research), the acknowledgements, the references and the
+  questions.
+- A short talk keeps the parts that matter most (a five-slide pitch has the problem, the solution, the traction and
+  the ask), and a long one gives some parts more slides and has memes, quotes, press and the like between them. Every
+  persona keeps a format's arc, and moves a part's slides between its kinds (a founder's traction is figures on tiles
+  more often); a startup founder pitches more often, a disgraced professor gives the academic talks, and their themes
+  are the `startup` and `academic` families more often.
+- A language model is told the format, and what its titles and its presenter's job are like (a pitch's title names
+  its made-up startup; an academic talk's job is an affiliation), with the persona's. Without one, both formats have
+  content packs of their own (`talkgenerator/data/packs/pitch` and `academic`, a grammar per part of the arc, 687 and
+  591 templates), and a made-up startup or method named after the topic ("PenguinBase", "AutoPenguin") on every slide.
+- A new slide type, the process: three to five steps joined by arrows, appearing one by one, the last one the
+  punchline (an academic talk's method, how a pitch's product works), side by side when their words are short enough
+  and else one under the other.
+- `talkgenerator formats --details --format pitch` (and `academic`) opens with the format's arc and the recipes of
+  each part, the Skill has references for both, and `talkgenerator check` warns of a talk that misses a part of its
+  format's arc.
+
 ### Titles and presenter names
 
 - What someone types can be the topic or the title (`--topic_or_title`, `topic_or_title=`): "penguins" as well as
