@@ -48,12 +48,12 @@ The options, after the format (`"default"`, `"ted"`, `"interview"` or `"test"`) 
 | `theme`, `style_chaos`, `extreme_themes` | The look (see [Themes](images-and-themes.md#themes)) |
 | `license_policy` | The license classes its images may have (see [Licenses](images-and-themes.md#licenses)) |
 | `image_generator`, `image_budget` | An image generator, as `--image_generator` names one or an object, and how many pictures it may make (see [Generated pictures](images-and-themes.md#generated-pictures)) |
-| `int_seed`, `parallel` | The seed (the same seed gives the same talk, in parallel or not) and whether slides are made at the same time |
+| `int_seed`, `parallel` | The seed (the same seed gives the same talk, in parallel or not) and whether slides are made at the same time: `True` (all of them; a language model's eight at a time), a number (at most that many at once, as a small server does: each slide being made holds what it found until it's settled), or `False` (one by one) |
 
 ## A PowerPoint: `render_pptx`
 
 `talkgenerator.render.powerpoint.render_pptx` draws a deck as a PowerPoint (python-pptx's `Presentation`),
-downloading its images:
+downloading its images first, a few at a time:
 
 ```python
 from talkgenerator import generator
