@@ -126,7 +126,7 @@ class SlideGeneratorData:
                             )
                         elif isinstance(generated_element, facts.CreditedText):
                             fact = generated_element.fact
-                            slide.add_source(fact.source, fact.url, facts.credit(fact))
+                            slide.add_source(fact.source, fact.url, facts.credit(fact), text=True)
                             slide.facts.append(fact)
 
                     return slide, generated_elements

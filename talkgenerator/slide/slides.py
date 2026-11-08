@@ -36,6 +36,7 @@ class Slide:
         self.wishes: list[tuple[ImageData, Wish]] = []
         # The real facts it shows as they are (a classic slide's: see talkgenerator.facts), for the deck
         self.facts: list[model.Fact] = []
+        self._text_credits = False  # (whether it credits a text too: a real fact it shows or builds on)
 
     @property
     def type_name(self) -> str:
@@ -47,14 +48,17 @@ class Slide:
         url: str | None = None,
         credit: Sequence[CreditPart] | None = None,
         image: ImageData | None = None,
+        text: bool = False,
     ):
-        """Credit an image source (for the image, if given). In the PowerPoint, the credit links to the url (if
-        given), or reads as the given credit parts, each linking to its own page."""
+        """Credit an image source (for the image, if given), or with text, a text's (a real fact the slide shows or
+        builds on: see talkgenerator.facts). In the PowerPoint, the credit links to the url (if given), or reads as the
+        given credit parts, each linking to its own page."""
         if source is not None:
             self._sources.append(source)
             self._source_urls.append(url)
             self._credits.append(tuple(credit) if credit else ((source, url),))
             self._credited.append(image)
+            self._text_credits = self._text_credits or text
 
     def replace_image(self, old: ImageData, new: ImageData) -> None:
         """Put the new image where the old one is on the slide, crediting it instead: a generated picture in place of
@@ -119,6 +123,7 @@ class Slide:
             layout=classic.layout_id(self._type_name),
             elements=elements,
             credits=credits,
+            text_credits=True if self._text_credits else None,
             notes=self._note,
         )
 

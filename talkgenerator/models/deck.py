@@ -351,7 +351,10 @@ class DeckSlide(_Data):
     type: str
     layout: str
     elements: tuple[Element, ...] = ()
-    credits: tuple[Credit, ...] = ()  # the credit line on the slide, one credit per image
+    credits: tuple[Credit, ...] = ()  # the credit line on the slide, one credit per image (and per real fact)
+    # Whether its credits credit a text too (a real fact: see talkgenerator.facts), and not only its pictures; none for a
+    # slide whose credits are its pictures' alone
+    text_credits: bool | None = None
     notes: str = ""  # how the slide was made; only rendered when asked for (presenters see the notes)
     background: SlideBackground | None = None  # (in a themed deck)
     credits_box: Box | None = None  # where the credit line goes, and how it looks (in a themed deck)
@@ -363,6 +366,11 @@ class DeckSlide(_Data):
 
     def images(self) -> tuple[ImageAsset, ...]:
         return tuple(element.image for element in self.elements if isinstance(element, ImageElement))
+
+    def credits_a_text(self) -> bool:
+        """Whether its credit line credits a text too, besides its pictures: a real fact that it shows or builds on
+        (see talkgenerator.facts). Its credit line then starts with "Sources", rather than "Image sources"."""
+        return bool(self.text_credits)
 
 
 # What was typed for a talk can be read as its topic ("penguins", or a premise such as "Cats are liquid"), which the

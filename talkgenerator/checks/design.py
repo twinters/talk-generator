@@ -63,7 +63,7 @@ def _credits_findings(slide: DeckSlide, box: Box, style: TextStyle, number: int)
     """The credit line reads at its own floor on what's behind its letters (a picture under them could be any grey
     too, where only a halo makes it read), and isn't smaller than its own smallest size."""
     findings = []
-    line = engine.credit_line(slide.credits)
+    line = engine.credit_line(slide.credits, engine.credits_prefix(slide))
     lines = engine.line_boxes(line, box, style)
     behind = layers.behind_letters(slide.background, slide.elements, lines, style.size, anything=engine.ANY_PICTURE)
     worst = engine.credits_legibility(style, behind)

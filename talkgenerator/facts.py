@@ -60,9 +60,10 @@ _ASKS: Final = {
     "slide says more than the fact",
     "quiz": "Ask about this real fact: what it says is the right option's, and the other options are made up",
     "big_number": "Start from this real fact: its number can be the big one, with an absurd twist in what it counts",
-    "timeline": "Put this real moment among the made-up ones, with its real date",
+    "timeline": "Put this real moment among the made-up ones, in its place by year (oldest first), with its year "
+    "and a few words of your own",
     "history_quote": "The made-up figure lived through this real moment, or speaks of it",
-    "history": "One of the moments is this real one",
+    "history": "One of the moments is this real one, in a few words of your own",
 }
 # The uses that would rather have an event of the day than a sentence of the topic's article
 _HISTORY: Final = frozenset({"timeline", "history_quote", "history"})
@@ -177,9 +178,11 @@ class Given:
     fact: Fact
 
     def line(self) -> str:
-        """What the request says about it, after the slide's brief."""
+        """What the request says about it, after the slide's brief: for a timeline, an event of the day with its year
+        alone ("1291: A law was passed..."), as models copied its whole date into a date's short field."""
         text = self.fact.text.replace('"', "'")
-        return f'{_ASKS[self.use]}: "{text}"'
+        day = _DAY.match(text) if self.use == "timeline" else None
+        return f'{_ASKS[self.use]}: "{text[day.end() :] if day else text}"'
 
 
 # THE FACTS OF A TALK A LANGUAGE MODEL WRITES

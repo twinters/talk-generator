@@ -184,13 +184,14 @@ def _print_all_placeholders(slide):
         print("%d %s" % (shape.placeholder_format.idx, shape.name))
 
 
-def add_sources_note(slide, credits: Sequence[Sequence[CreditPart]]):
-    """Credit the image sources on the slide. Each credit is a sequence of (text, link) parts, so that it can
-    link to its pages (the photographer, the photo, the post, Unsplash...)."""
+def add_sources_note(slide, credits: Sequence[Sequence[CreditPart]], prefix: str = "Image sources: "):
+    """Credit the image sources on the slide (and a real fact it shows: then the prefix is "Sources: "). Each credit is
+    a sequence of (text, link) parts, so that it can link to its pages (the photographer, the photo, the post,
+    Unsplash...)."""
     if not credits:
         return None
     text_frame = slide.placeholders[SOURCES_PLACEHOLDER].text_frame
-    text_frame.text = "[Image sources: "
+    text_frame.text = "[" + prefix
     paragraph = text_frame.paragraphs[0]
     for index, credit in enumerate(credits):
         if index:

@@ -612,7 +612,7 @@ def test_a_talk_s_request_gives_its_slides_real_facts_and_its_deck_records_them(
     assert [fact.slide for fact in deck.facts] == sorted(kinds[kind] for kind in ("fun_fact", "timeline", "quiz"))
     assert all(fact.use == "prompt" and fact.source == "Wikipedia" for fact in deck.facts)
     for fact in deck.facts:
-        assert f'"{fact.text}"' in request
+        assert fact.text.split(": ", 1)[-1] in request  # (a timeline's event with its year alone)
     timeline = next(fact for fact in deck.facts if fact.slide == kinds["timeline"])
     assert timeline.text.startswith(f"{datetime.date.today().day} ")  # (an event of the day the talk is made on)
     # (small: a line, and three facts on their slides' lines)
@@ -820,3 +820,42 @@ def test_classic_facts_can_be_switched_off(web, related, monkeypatch):
             )
             assert not isinstance(slide_texts.fun_fact(_photo)({"seed": "cat"})[1], facts.CreditedText)
     assert web.requests == []
+
+
+def test_a_credit_line_that_credits_a_fact_starts_with_sources(web, related):
+    from talkgenerator.design import engine, themes
+    from talkgenerator.render.powerpoint import render_pptx
+    from talkgenerator.slide.slide_deck import SlideDeck
+
+    generator_data = SlideGeneratorData(
+        slide_generator_types.DrawnSlideGenerator(slide_texts.fun_fact(_photo), slides.FunFactSlide),
+        retries=1,
+        name="Fun Fact",
+    )
+    for seed in range(20):
+        with random_util.use(random_util.Rng(seed)):
+            slide, _ = generator_data.generate({"seed": "cat", "topic": "cats"}, set())
+        if slide.facts:
+            break
+    for theme in (None, themes.pick("clean keynote", random_util.Rng(1))):
+        deck = SlideDeck(1)
+        deck.add_slide(0, slide)
+        deck.theme = theme
+        made = deck.to_deck()
+        assert made.slides[0].credits_a_text() and engine.credits_prefix(made.slides[0]) == "Sources: "
+        texts = [shape.text_frame.text for shape in render_pptx(made).slides[0].shapes if shape.has_text_frame]
+        line = "Sources: Wikipedia: Cat (CC BY-SA 4.0)"
+        assert any(text in (line, f"[{line}]") for text in texts), texts
+    # (a slide that credits its pictures alone reads as it has since 2019)
+    pictured = made.slides[0].model_copy(update={"text_credits": None})
+    assert not pictured.credits_a_text() and engine.credits_prefix(pictured) == "Image sources: "
+
+
+def test_a_timeline_gets_an_event_of_the_day_with_its_year_alone():
+    fact = Fact(text="8 November 1291: A law confined Venice's glassmaking to Murano.", source="Wikipedia")
+    assert facts.Given("timeline", fact).line().endswith(': "1291: A law confined Venice\'s glassmaking to Murano."')
+    assert (
+        facts.Given("history_quote", fact)
+        .line()
+        .endswith(': "8 November 1291: A law confined Venice\'s glassmaking to Murano."')
+    )

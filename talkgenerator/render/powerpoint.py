@@ -240,7 +240,9 @@ def _finish(ppt_slide: Slide, slide: DeckSlide, debug_notes: bool) -> None:
                 notes.text = slide.notes
         if slide.credits:
             creator.add_sources_note(
-                ppt_slide, [[(part.text, part.url) for part in credit] for credit in slide.credits]
+                ppt_slide,
+                [[(part.text, part.url) for part in credit] for credit in slide.credits],
+                "Sources: " if slide.credits_a_text() else "Image sources: ",
             )
         creator.remove_empty_placeholders(ppt_slide)
         creator.animate_like_layout(ppt_slide)  # (after: only the shapes the slide keeps are animated)

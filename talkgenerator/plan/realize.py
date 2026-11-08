@@ -284,7 +284,7 @@ def realize(
         if isinstance(image, ImageData):
             slide.add_source(image.get_source(), image.get_source_url(), image.get_credit(), image=image)
     if built_on and isinstance(fact, Fact):
-        slide.add_source(fact.source, fact.url, facts.credit(fact))
+        slide.add_source(fact.source, fact.url, facts.credit(fact), text=True)
     generated = [value for value in (*texts.values(), *images.values()) if value is not None]
     return slide, generated
 

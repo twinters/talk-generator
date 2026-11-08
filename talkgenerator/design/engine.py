@@ -52,6 +52,7 @@ CREDITS_BOX: Final = Box(x=MARGIN, y=996, w=WIDTH - 2 * MARGIN, h=36)
 CREDITS_SIZE: Final = 14  # (7 points)
 CREDITS_CONTRAST: Final = 2.5
 CREDITS_PREFIX: Final = "Image sources: "
+SOURCES_PREFIX: Final = "Sources: "  # (for a credit line that credits a text too: see credits_prefix)
 # Where a picture is under them (it could be any colour, mid-grey too, where no one colour reads), the credits are
 # light, with a dark halo around their letters (a glow, which renderers draw this opaque)
 CREDITS_ON_PICTURES: Final = "#e0e0e0"
@@ -426,7 +427,9 @@ def lay_out_slide(
             "background": slide_background,
             "style": theme if own_style else None,
             "credits_box": CREDITS_BOX,
-            "credits_style": credits_style(credit_line(slide.credits), theme, slide_background, elements),
+            "credits_style": credits_style(
+                credit_line(slide.credits, credits_prefix(slide)), theme, slide_background, elements
+            ),
         }
     )
 
@@ -446,9 +449,15 @@ def _in_turn(elements: list[Content]) -> list[Content]:
     ]
 
 
-def credit_line(credits: Sequence[Credit]) -> str:
-    """The credit line of a slide's credits, as it reads on the slide."""
-    return CREDITS_PREFIX + ", ".join("".join(part.text for part in credit) for credit in credits)
+def credit_line(credits: Sequence[Credit], prefix: str = CREDITS_PREFIX) -> str:
+    """The credit line of a slide's credits, as it reads on the slide (after credits_prefix's words)."""
+    return prefix + ", ".join("".join(part.text for part in credit) for credit in credits)
+
+
+def credits_prefix(slide: DeckSlide) -> str:
+    """How a slide's credit line starts: "Image sources: " when it credits its pictures alone, as it has since 2019,
+    and "Sources: " when it credits a text too (a real fact: see DeckSlide.credits_a_text)."""
+    return SOURCES_PREFIX if slide.credits_a_text() else CREDITS_PREFIX
 
 
 def credits_style(line: str, theme: Theme, background: SlideBackground, elements: Sequence[Content]) -> TextStyle:
