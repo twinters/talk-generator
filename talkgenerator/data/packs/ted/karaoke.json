@@ -671,6 +671,20 @@
     "Say 'as I predicted' at least twice on the next slide.",
     "Present the next slide as a radio host taking calls."
   ],
+  "joke_dare": [
+    "Tell this joke as if it changed your life: {joke}",
+    "Tell this joke, then wait for the laugh: {joke}",
+    "Tell this joke in your most serious voice: {joke}",
+    "Work this joke into the next slide: {joke}",
+    "Tell this joke, then explain why it works: {joke}",
+    "Read this joke aloud as breaking news: {joke}",
+    "Tell this joke and wait for applause: {joke}",
+    "Tell this joke like a nature documentary: {joke}",
+    "Tell this joke, then call it a key finding: {joke}",
+    "Tell this joke to the front row: {joke}",
+    "Whisper this joke, then say its end again: {joke}",
+    "Tell this joke as the moral of the story: {joke}"
+  ],
   "flowchart_title": [
     "Should you?",
     "How to decide about {seed.generic}",

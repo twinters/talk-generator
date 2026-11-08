@@ -306,7 +306,16 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   a twist ("Coincidence? I think not.", the TED content pack's version 4), and half of their quizzes a real question
   from Open Trivia DB (`talkgenerator.sources.opentdb`, of the topic's kind: animals for a talk on penguins), credited
   on the slide. Open Trivia DB is asked five seconds apart at most, as it asks, and its questions are cached for a week.
-- `DISABLE_FACTS=1` switches facts off, `DISABLE_WIKIPEDIA=1` and `DISABLE_OPENTDB=1` a source. No keys.
+- Flavour texts, which the user allowed on talkgenerator.com (2026-11-08): a fun fact may build on a random
+  useless fact instead (uselessfacts.jsph.pl: "25% of a human's bones are in its feet"), a dare dares the
+  presenter to tell a real dad joke about the topic (icanhazdadjoke, by the topic's word in the singular, else a
+  random page of them), and the closing slide's line under its title is a real piece of advice (the Advice Slip).
+  Classic talks get them too: half of their dares and two in five of their closing lines, in framings of the TED
+  content pack's version 5 ("Tell this joke as if it changed your life: ...", "Remember: ..."). They pass the
+  facts' checks and their own (no insults, drink or faiths, nobody living), are credited on the slide ("Sources:
+  icanhazdadjoke"), and are cached (a week, the advice a month), with 4-second timeouts.
+- `DISABLE_FACTS=1` switches facts off; `DISABLE_WIKIPEDIA=1`, `DISABLE_OPENTDB=1`, `DISABLE_USELESS_FACTS=1`,
+  `DISABLE_DAD_JOKES=1` and `DISABLE_ADVICE_SLIPS=1` a source. No keys.
 
 ### Talk formats: startup pitches and academic talks
 

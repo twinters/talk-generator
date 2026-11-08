@@ -18,14 +18,21 @@ The facts are looked up once a talk, while its slides' seeds are (before the req
 cache of API responses (a week) or within a few seconds (DEADLINE, from the talk's start): a talk whose sources are
 down goes without them, and so does one whose facts don't come in time (the next talk asks again, and gets the answers
 that came too late from the cache). The deck records every fact it was given (Deck.facts): its text, its page and its
-license, and its slide. With the same answers, the same seed gives the same
-deck, also when facts came too late: in a block of http_util.same_answers (`talkgenerator check`), a talk made again
-gets the facts the first one got.
+license, and its slide. With the same answers, the same seed gives the same deck, also when facts came too late: in a
+block of http_util.same_answers (`talkgenerator check`), a talk made again gets the facts the first one got.
 
-Classic talks (English) have them where they fit: half of their fun facts are a real sentence about the slide's seed,
-from Wikipedia, with an absurd twist of the content pack's, and half of their quizzes a real one from Open Trivia DB
-(talkgenerator.sources.opentdb), of the topic's kind (animals for penguins), credited on the slide. DISABLE_FACTS=1
-turns all of it off, DISABLE_WIKIPEDIA=1 and DISABLE_OPENTDB=1 a source.
+Flavour texts too (talkgenerator.sources.flavour), from three small free APIs that the user allowed on 2026-11-08: a
+fun fact may build on a random useless fact instead ("25% of a human's bones are in its feet"), a dare dares the
+presenter to tell a real dad joke (about the topic, if there's one: a groan they have to deliver), and the closing
+slide's line under its title can be a real piece of advice. They pass the facts' checks and some of their own (no
+insults, drink or faiths), and name no living person (the articles their capitalised words would be).
+
+Classic talks (English) have them where they fit: half of their fun facts are a real one, a sentence about the slide's
+seed from Wikipedia or a useless fact, with an absurd twist of the content pack's, half of their quizzes a real one
+from Open Trivia DB (talkgenerator.sources.opentdb), of the topic's kind (animals for penguins), half of their dares a
+real dad joke to tell, and some of their closing lines a real piece of advice, each credited on the slide.
+DISABLE_FACTS=1 turns all of it off, and DISABLE_WIKIPEDIA=1, DISABLE_OPENTDB=1, DISABLE_USELESS_FACTS=1,
+DISABLE_DAD_JOKES=1 and DISABLE_ADVICE_SLIPS=1 a source.
 """
 
 from __future__ import annotations
@@ -44,15 +51,18 @@ from urllib.parse import unquote
 from talkgenerator import settings
 from talkgenerator.datastructures.image_data import CreditPart
 from talkgenerator.models.deck import Fact
-from talkgenerator.sources import opentdb, wikipedia
-from talkgenerator.util import http_util, random_util
+from talkgenerator.sources import flavour, opentdb, wikipedia
+from talkgenerator.util import http_util, language_util, random_util
 
 logger = logging.getLogger("talkgenerator")
 
 MOST: Final = 3  # facts in a talk's request, at most: one a slide
 LONGEST: Final = 240  # characters in a fact for the request, at most
 DEADLINE: Final = 8.0  # seconds from the start of a talk for its facts to come in (its seeds take 3 to 5)
-REAL_SHARE: Final = 0.5  # of the classic fun facts and quizzes that are real ones, when they can be
+REAL_SHARE: Final = 0.5  # of the classic fun facts, quizzes and dares that are real ones, when they can be
+ADVICE_SHARE: Final = 0.4  # of the classic closing slides whose line under their title is a real piece of advice
+JOKE_LONGEST: Final = 85  # characters in a dad joke, at most (a dare has 130, with what it asks)
+ADVICE_LONGEST: Final = 60  # characters in a piece of advice, at most (the line under the closing title has 80)
 
 # What a slide of each kind does with its fact, as the request says it on the slide's line
 _ASKS: Final = {
@@ -64,7 +74,12 @@ _ASKS: Final = {
     "and a few words of your own",
     "history_quote": "The made-up figure lived through this real moment, or speaks of it",
     "history": "One of the moments is this real one, in a few words of your own",
+    # (flavour texts: see talkgenerator.sources.flavour)
+    "dare": "Dare the presenter to tell this real dad joke, word for word, and say how (a voice, a pause, a pose)",
+    "questions": "Make the line under the title this real piece of advice, word for word or nearly",
 }
+# The uses of flavour texts, which a talk has besides its facts (MOST counts the facts alone)
+_FLAVOUR_USES: Final = frozenset({"dare", "questions"})
 # The uses that would rather have an event of the day than a sentence of the topic's article
 _HISTORY: Final = frozenset({"timeline", "history_quote", "history"})
 # Words of facts a talk shouldn't make light of, besides the slides' (slide_texts.sensitive), which history is full
@@ -107,6 +122,16 @@ _BRACKETS: Final = re.compile(r"\s*\([^()]*\)|\s*\[[^\[\]]*\]")
 # A sentence that starts with a word for what the one before it said ("He also appears in all of the Peanuts films",
 # of Snoopy) says nothing on its own
 _BACK_REFERENCE: Final = re.compile(r"(?:he|she|it|they|his|her|its|their|this|these|those|such)\b", re.IGNORECASE)
+# Words of flavour texts that a talk doesn't need, besides the facts' (fit): insults, drink and faiths, which jokes and
+# advice have more than encyclopedias do
+_UNFIT_FLAVOUR: Final = frozenset(
+    "stupid idiot idiots dumb moron morons fat fatty obese ugly crazy insane psycho lunatic retard retarded lame "
+    "cripple midget freak freaks weirdo loser losers damn hell crap shit piss ass arse bitch bastard drunk drunken "
+    "alcohol alcoholic beer beers wine vodka whisky whiskey booze hangover cocktail catholic catholics nun nuns priest "
+    "priests monk monks vicar pastor heaven sin sins pray prayer prayers bleach toilet".split()
+)
+# A word or name a flavour text capitalises: whose article might be a living person's
+_CAPITALISED: Final = re.compile(r"\b[A-Z][\w'.-]*(?:\s+[A-Z][\w'.-]*){0,3}")
 
 
 def on() -> bool:
@@ -117,7 +142,8 @@ def on() -> bool:
 def use_of(kind: str, tags: Iterable[str] = ()) -> str | None:
     """What a planned slide of a kind (with its generator's tags) does with a real fact, or None if it has no use for
     one: a fun fact's, a quiz's, a big number's, a timeline's and a historical figure's quote's, and a slide of
-    history's (two old photos of moments in history)."""
+    history's (two old photos of moments in history); and with a flavour text, a dare's (a dad joke) and the closing
+    slide's (a piece of advice)."""
     if kind in _ASKS and kind != "history":
         return kind
     return "history" if "history" in tags else None
@@ -125,14 +151,19 @@ def use_of(kind: str, tags: Iterable[str] = ()) -> str | None:
 
 @dataclass(frozen=True)
 class Candidate:
-    """A fact that a slide could get: its text, its page, where it's from (an article's lead, or the day's events),
-    whether it's the article's first sentence (what the topic is), and the articles it names (by title)."""
+    """A fact that a slide could get: its text, its page, where it's from (an article's lead, the day's events, or a
+    flavour text's source), whether it's the article's first sentence (what the topic is), the articles it names (by
+    title), and its source as credited, with its license."""
 
     text: str
     url: str
     day: bool = False  # an event of the day's (with its date), not a sentence of the topic's article
     first: bool = False
     names: tuple[str, ...] = ()
+    flavour: str = ""  # a flavour text's kind: "useless" (a useless fact), "joke" or "advice"; none for Wikipedia's
+    source: str = "Wikipedia"
+    license: str | None = wikipedia.LICENSE
+    license_url: str | None = wikipedia.LICENSE_URL
 
     @property
     def dated(self) -> bool:
@@ -145,15 +176,15 @@ class Candidate:
     @property
     def surprising(self) -> bool:
         """Whether it says how special something is (a sentence of the article's lead, but its first)."""
-        return not self.first and not self.day and bool(_SURPRISING.search(self.text))
+        return not self.first and not self.day and not self.flavour and bool(_SURPRISING.search(self.text))
 
     def fact(self, slide: int | None = None, use: str = "prompt") -> Fact:
         return Fact(
             text=self.text,
-            source="Wikipedia",
+            source=self.source,
             url=self.url,
-            license=wikipedia.LICENSE,
-            license_url=wikipedia.LICENSE_URL,
+            license=self.license,
+            license_url=self.license_url,
             slide=slide,
             use="slide" if use == "slide" else "prompt",
         )
@@ -194,8 +225,9 @@ def request_line(language: str = "en") -> str:
         " The facts are in English; write the slides in the talk's language, as asked." if language != "en" else ""
     )
     return (
-        "Real facts: some slides come with one (from Wikipedia), to mix with the nonsense. Keep what a fact says true "
-        "where the slide states it, put the absurd around it, and pin nothing made up on a real person." + english
+        "Real facts: some slides come with one (from Wikipedia, or a real useless fact, dad joke or piece of advice), to "
+        "mix with the nonsense. Keep what a fact says true where the slide states it, put the absurd around it, and pin "
+        "nothing made up on a real person." + english
     )
 
 
@@ -248,34 +280,90 @@ def _asking() -> ThreadPoolExecutor:
         return _asked
 
 
-def gather(topic: str, language: str = "en", today: datetime.date | None = None) -> Gathering:
-    """Start looking up a talk's facts (see Gathering): its topic's English Wikipedia article's, and the day's events
-    (of today, unless another day is given)."""
+@dataclass(frozen=True)
+class Draws:
+    """A talk's draws for its flavour texts, made before they're looked up (by its random stream: see gather), so that
+    the same seed asks for the same ones: two numbers of the week's useless facts, a page of dad jokes (for a topic
+    that has none of its own), and two numbers of advice slips (the second for when the first doesn't fit)."""
+
+    useless: tuple[int, ...] = (0, 1)
+    joke_page: int = 1
+    advice: tuple[int, ...] = (1, 2)
+
+    @classmethod
+    def of(cls, rng: random_util.Rng) -> Draws:
+        return cls(
+            tuple(rng.sample(range(flavour.POOL), 2)),
+            rng.randint(1, flavour.JOKE_PAGES),
+            tuple(rng.sample(range(1, flavour.ADVICE_SLIPS + 1), 2)),
+        )
+
+
+# The uses that build on Wikipedia's facts (the others on flavour texts)
+_WIKIPEDIA_USES: Final = frozenset({"fun_fact", "quiz", "big_number", "timeline", "history_quote", "history"})
+
+
+def gather(
+    topic: str,
+    language: str = "en",
+    today: datetime.date | None = None,
+    uses: Iterable[str] | None = None,
+    rng: random_util.Rng | None = None,
+) -> Gathering:
+    """Start looking up a talk's facts (see Gathering): for the uses its slides have (see use_of; all of them, without
+    uses), its topic's English Wikipedia article's and the day's events (of today, unless another day is given), and the
+    flavour texts they want, drawn by the talk's random stream (see Draws)."""
     day = today or datetime.date.today()
-    return Gathering(("facts", topic, language, day.isoformat()), lambda: look_up(topic, language, day))
+    wanted = frozenset(uses) if uses is not None else frozenset(_ASKS)
+    draws = Draws.of(rng.child("flavour")) if rng is not None else Draws()
+    key = ("facts", topic, language, day.isoformat(), tuple(sorted(wanted)), draws)
+    return Gathering(key, lambda: look_up(topic, language, day, wanted, draws))
 
 
-def look_up(topic: str, language: str, day: datetime.date) -> Sheet:
-    """A talk's facts (see the module's documentation): the article's sentences, and the day's events, that pass
-    the checks, none about a living person."""
-    if not on() or not wikipedia.available():
+def look_up(
+    topic: str,
+    language: str,
+    day: datetime.date,
+    uses: frozenset[str] = frozenset(_ASKS),
+    draws: Draws = Draws(),
+) -> Sheet:
+    """A talk's facts (see the module's documentation), for the uses its slides have: the article's sentences, and the
+    day's events, that pass the checks, and the flavour texts that do (useless facts for a fun fact, dad jokes for a
+    dare, advice for the closing slide), none about a living person."""
+    if not on():
         return EMPTY
     started = time.monotonic()
-    found = _asking().submit(wikipedia.article, topic, language)
-    happened = _asking().submit(wikipedia.on_this_day, day.month, day.day)
-    article, events = found.result(), happened.result()
+    asking = _asking()
+    wiki = wikipedia.available() and bool(uses & _WIKIPEDIA_USES)
+    found = asking.submit(wikipedia.article, topic, language) if wiki else None
+    happened = asking.submit(wikipedia.on_this_day, day.month, day.day) if wiki else None
+    useless = [asking.submit(flavour.useless_fact, number) for number in draws.useless] if "fun_fact" in uses else []
+    joking = asking.submit(_jokes_about, topic, draws.joke_page) if "dare" in uses else None
+    advising = [asking.submit(flavour.advice, number) for number in draws.advice] if "questions" in uses else []
+    article = found.result() if found is not None else None
+    events = happened.result() if happened is not None else []
+    flavours = [
+        *((future.result(), "useless") for future in useless),
+        *((joke, "joke") for joke in (joking.result() if joking is not None else [])),
+        *((future.result(), "advice") for future in advising),
+    ]
     looked_up = time.monotonic()
-    candidates = [*article_candidates(article, topic), *day_candidates(events, day, topic)]
+    candidates = [
+        *article_candidates(article, topic),
+        *day_candidates(events, day, topic),
+        *(candidate for candidate in (flavour_candidate(text, kind, topic) for text, kind in flavours) if candidate),
+    ]
     checked = time.monotonic()
-    kept = _asking().submit(without_living, candidates).result()
+    kept = asking.submit(without_living, candidates).result()
     logger.info(
-        "Real facts: %s of %s (%s), %s of the day's %s events, in %.1f s (%.1f s to look up, %.1f s to check, %.1f s "
-        "for who's living)",
-        sum(not candidate.day for candidate in kept),
+        "Real facts: %s of %s (%s), %s of the day's %s events, %s flavour texts, in %.1f s (%.1f s to look up, %.1f s "
+        "to check, %.1f s for who's living)",
+        sum(not candidate.day and not candidate.flavour for candidate in kept),
         "the article" if article is not None else "no article",
         article.title if article is not None else topic,
         sum(candidate.day for candidate in kept),
         len(events),
+        sum(bool(candidate.flavour) for candidate in kept),
         time.monotonic() - started,
         looked_up - started,
         checked - looked_up,
@@ -311,6 +399,30 @@ def day_candidates(events: Sequence[wikipedia.Event], day: datetime.date, topic:
     return candidates
 
 
+# What a flavour text of each kind may be at most: a useless fact as a fact, a joke and advice as their slides take them
+_FLAVOUR_LONGEST: Final = {"useless": LONGEST, "joke": JOKE_LONGEST, "advice": ADVICE_LONGEST}
+
+
+def flavour_candidate(text: flavour.Flavour | None, kind: str, topic: str = "") -> Candidate | None:
+    """A flavour text as a fact a slide could get (kind "useless", "joke" or "advice"), with its capitalised words and
+    names as the articles it may name (for who's living); none for one that's too long or doesn't fit a talk."""
+    if text is None or len(text.text) > _FLAVOUR_LONGEST[kind] or not fit_flavour(text.text, topic):
+        return None
+    names = tuple(dict.fromkeys(found.group(0).strip(" .'") for found in _CAPITALISED.finditer(text.text)))
+    return Candidate(
+        text.text, text.url, names=names[:8], flavour=kind, source=text.source, license=None, license_url=None
+    )
+
+
+def _jokes_about(topic: str, page: int) -> list[flavour.Flavour]:
+    """Dad jokes about the topic's longest word, in the singular (whose search finds "penguin" in "penguins", but not
+    the other way round) and as a whole word, or else the page's."""
+    words = [word for word in re.findall(r"[a-zA-Z]{3,}", topic) if word.lower() not in _STOPWORDS]
+    word = language_util.to_singular(max(words, key=len).lower()) if words else ""
+    jokes = flavour.dad_jokes(word) if word else []
+    return jokes[:12] or flavour.dad_jokes(page=page)[:12]
+
+
 def without_living(candidates: Sequence[Candidate]) -> list[Candidate]:
     """The candidates that name no living person, as English Wikipedia's articles tell (all those that name nobody,
     when it can't tell)."""
@@ -324,27 +436,35 @@ def without_living(candidates: Sequence[Candidate]) -> list[Candidate]:
 
 def assign(sheet: Sheet, slides: Sequence[tuple[int, str]], rng: random_util.Rng) -> dict[int, Given]:
     """The facts that the slides get, by slide number (as given): up to MOST slides, in order, one each, never one
-    fact twice. A slide of history gets an event of the day first, then a sentence with a date; a big number one with
-    a number; a fun fact one that says how special something is (not what the topic is: the first sentence); a quiz
-    any. Among the ones a slide likes as much, its pick is the random stream's."""
+    fact twice, and a flavour text for a dare and the closing slide besides. A slide of history gets an event of the
+    day first, then a sentence with a date; a big number one with a number; a fun fact one that says how special
+    something is (not what the topic is: the first sentence) or a useless fact; a quiz any of the article's; a dare a
+    dad joke, and the closing slide a piece of advice. Among the ones a slide likes as much, its pick is the random
+    stream's."""
     taken: set[Candidate] = set()
     given: dict[int, Given] = {}
+    facts = 0
     shuffled = list(sheet.candidates)
     rng.shuffle(shuffled)
     for number, use in slides:
-        if len(given) == MOST:
-            break
-        fresh = [candidate for candidate in shuffled if candidate not in taken]
+        if use not in _FLAVOUR_USES and facts == MOST:
+            continue
+        ranked = [(rank, candidate) for candidate in shuffled if (rank := _rank(candidate, use)) is not None]
+        fresh = [(rank, candidate) for rank, candidate in ranked if candidate not in taken]
         if not fresh:
-            break
-        best = min(fresh, key=lambda candidate: _rank(candidate, use))
+            continue
+        best = min(fresh, key=lambda ranked_candidate: ranked_candidate[0])[1]
         taken.add(best)
         given[number] = Given(use, best.fact(number))
+        facts += use not in _FLAVOUR_USES
     return given
 
 
-def _rank(candidate: Candidate, use: str) -> int:
-    """How well a fact suits a slide's use: the lower, the better."""
+def _rank(candidate: Candidate, use: str) -> int | None:
+    """How well a fact suits a slide's use: the lower, the better; None for one it can't use."""
+    if use in _FLAVOUR_USES or candidate.flavour:
+        wanted = {"dare": "joke", "questions": "advice", "fun_fact": "useless"}.get(use)
+        return 0 if candidate.flavour and candidate.flavour == wanted else None
     if use in _HISTORY:
         return 0 if candidate.day else 1 if candidate.dated else 2 if not candidate.first else 3
     if use == "big_number":  # (an event's date is no figure to count)
@@ -413,6 +533,13 @@ def fit(text: str, topic: str = "") -> bool:
     return not grim and not slide_texts.sensitive(text) and real_politics(text, topic) is None
 
 
+def fit_flavour(text: str, topic: str = "") -> bool:
+    """Whether a flavour text (a useless fact, a dad joke, a piece of advice) may go on a slide: as a fact may (fit),
+    and without an insult, drink or a faith (_UNFIT_FLAVOUR), which jokes have more than encyclopedias."""
+    words = set(re.findall(r"[a-z]+", text.lower().replace("’", "'")))
+    return fit(text, topic) and not words & _UNFIT_FLAVOUR
+
+
 def sentences(extract: str) -> list[str]:
     """An article's lead as sentences, without what's in brackets (pronunciations, dates of birth, notes)."""
     found: list[str] = []
@@ -478,8 +605,10 @@ def real_sentence(seed: str, longest: int) -> Candidate | None:
     candidates = without_living(article_candidates(article, seed, longest))
     if not candidates:
         return None
-    best = min(_rank(candidate, "fun_fact") for candidate in candidates)
-    return random_util.choice([candidate for candidate in candidates if _rank(candidate, "fun_fact") == best])
+    ranks = [_rank(candidate, "fun_fact") or 0 for candidate in candidates]  # (an article's: never None)
+    return random_util.choice(
+        [candidate for candidate, rank in zip(candidates, ranks, strict=True) if rank == min(ranks)]
+    )
 
 
 def trivia_on() -> bool:
@@ -513,3 +642,40 @@ def real_question(topic: str, seed: str, longest: int, longest_option: int) -> t
         use="slide",
     )
     return question, fact
+
+
+def flavour_on(name: str) -> bool:
+    """Whether classic slides get a flavour source's texts: with real facts on, and the source ("USELESS_FACTS",
+    "DAD_JOKES" or "ADVICE_SLIPS")."""
+    return on() and flavour.available(name)
+
+
+def real_useless_fact(longest: int) -> Candidate | None:
+    """A useless fact for a classic fun fact: one of the week's pool, which the slide's random stream picks (or the
+    next one, when it doesn't fit), naming no living person."""
+    start = random_util.randrange(flavour.POOL)
+    for number in (start, (start + 1) % flavour.POOL):
+        candidate = flavour_candidate(flavour.useless_fact(number), "useless")
+        if candidate is not None and len(candidate.text) <= longest and without_living([candidate]):
+            return candidate
+    return None
+
+
+def real_joke(seed: str, longest: int) -> Candidate | None:
+    """A dad joke for a classic dare: one about the seed's longest word, if there are any, else one of a page of all
+    of them (the slide's random stream picks both), as long as the dare takes, naming no living person."""
+    page = random_util.randint(1, flavour.JOKE_PAGES)
+    jokes = [flavour_candidate(joke, "joke", seed) for joke in _jokes_about(seed, page)]
+    usable = without_living([joke for joke in jokes if joke is not None and len(joke.text) <= longest])
+    return random_util.choice(usable) if usable else None
+
+
+def real_advice(longest: int) -> Candidate | None:
+    """A piece of advice for a classic closing slide: the advice slip the slide's random stream picks (or one of the
+    next two, when it doesn't fit), naming no living person."""
+    start = random_util.randint(1, flavour.ADVICE_SLIPS)
+    for number in (start, start + 1, start + 2):
+        candidate = flavour_candidate(flavour.advice(number), "advice")
+        if candidate is not None and len(candidate.text) <= longest and without_living([candidate]):
+            return candidate
+    return None

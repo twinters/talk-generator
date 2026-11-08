@@ -32,7 +32,7 @@ from talkgenerator.plan.kinds import Recipe
 from talkgenerator.schema.presentation_schema import PresentationSchema
 from talkgenerator.schema.slide_topic_generators import IdentityTopicGenerator
 from talkgenerator.slide import powerpoint_slide_creator, slide_generator_types, slides
-from talkgenerator.sources import opentdb, packs, slide_texts, wikipedia
+from talkgenerator.sources import flavour, opentdb, packs, slide_texts, wikipedia
 from talkgenerator.util import http_util, random_util
 from tests.test_slide_types import related as related  # fake ConceptNet (a fixture)
 
@@ -101,6 +101,30 @@ TRIVIA = {
         ),  # (too long)
     ],
 }
+# The flavour texts' APIs: a useless fact by its number in the pool (the API answers at random; talkgenerator's cache
+# keys it by the number), dad jokes by search term or page, advice slips by their number
+USELESS = (
+    "25% of a human's bones are in its feet.",
+    "Elon Musk once ate a whole pineapple in one go.",  # (a living person)
+    "A snail can sleep for three years.",
+    "The beer in the fridge was always cold.",  # (drink)
+)
+JOKES = {
+    "penguin": (
+        ("p1", "What do you call a penguin in the desert? Lost."),
+        ("p2", "Why don't penguins like stupid jokes? They're too cool."),  # (an insult)
+    ),
+    "cat": (
+        ("c1", "What do you call a pile of cats? A meowntain."),
+        ("c2", "Did you hear about the wandering nun? She was a roman catholic."),  # ("cat" as no whole word)
+    ),
+}
+PAGE_JOKES = (
+    ("a1", "I'm reading a book about anti-gravity. It's impossible to put down."),
+    ("a2", "Why did the scarecrow win an award? He was outstanding in his field."),
+)
+# (every number from 1 to 224 has one, as on the real API: these three, in turn)
+ADVICE_SLIPS = ("Smile at strangers.", "Remember to stretch now and then.", "Don't drink bleach.")
 
 
 class _Response:
@@ -119,8 +143,8 @@ def _normalized(title: str) -> str:
 
 
 class FakeWeb:
-    """Wikipedia's and Open Trivia DB's APIs, as far as talkgenerator asks them (every thread's session): down, slow,
-    or answering from the data above; it keeps the requests it got."""
+    """Wikipedia's, Open Trivia DB's and the flavour texts' APIs, as far as talkgenerator asks them (every thread's
+    session): down, slow, or answering from the data above; it keeps the requests it got."""
 
     def __init__(self, down: bool = False, slow: float = 0.0):
         self.down = down
@@ -140,6 +164,18 @@ class FakeWeb:
             return _Response(503)
         if parts.netloc == "opentdb.com":
             return self._trivia(params)
+        if parts.netloc == "uselessfacts.jsph.pl":
+            text = USELESS[int(params["i"]) % len(USELESS)]
+            return _Response(200, {"id": f"u{params['i']}", "text": text, "language": "en", "permalink": url})
+        if parts.netloc == "icanhazdadjoke.com":
+            assert headers == {"Accept": "application/json"}  # (else it answers in text)
+            found = JOKES.get(params.get("term", ""), ()) if "term" in params else PAGE_JOKES
+            return _Response(200, {"results": [{"id": key, "joke": joke} for key, joke in found], "status": 200})
+        if parts.netloc == "api.adviceslip.com":
+            number = int(parts.path.rsplit("/", 1)[-1])
+            if not 1 <= number <= 224:
+                return _Response(200, {"message": {"type": "error", "text": "Advice slip not found."}})
+            return _Response(200, {"slip": {"id": number, "advice": ADVICE_SLIPS[number % len(ADVICE_SLIPS)]}})
         if "/feed/onthisday/selected/" in parts.path:
             return self._day()
         if params.get("action") == "parse":
@@ -233,7 +269,8 @@ class FakeWeb:
 
 @pytest.fixture
 def web(monkeypatch):
-    """Real facts on, from the fake Wikipedia and Open Trivia DB, with their cooldowns and turns as new."""
+    """Real facts on, from the fake Wikipedia, Open Trivia DB and flavour texts, with their cooldowns and turns as
+    new."""
     monkeypatch.delenv("DISABLE_FACTS", raising=False)
     fake = FakeWeb()
     monkeypatch.setattr(http_util, "get_session", fake)
@@ -241,6 +278,8 @@ def web(monkeypatch):
     monkeypatch.setattr(opentdb, "_cooldown", http_util.Cooldown("Open Trivia DB"))
     monkeypatch.setattr(opentdb, "_last_asked", float("-inf"))
     monkeypatch.setattr(opentdb, "SPACING", 0.0)  # (but in test_open_trivia_db_is_asked_five_seconds_apart)
+    for cooldown in ("_useless", "_jokes", "_advice"):
+        monkeypatch.setattr(flavour, cooldown, http_util.Cooldown(cooldown))
     return fake
 
 
@@ -408,7 +447,8 @@ def test_no_fact_names_a_living_person(web):
 
 
 def test_a_living_persons_article_gives_no_facts(web):
-    assert [candidate for candidate in facts.look_up("Elon Musk", "en", DAY).candidates if not candidate.day] == []
+    candidates = facts.look_up("Elon Musk", "en", DAY).candidates
+    assert [candidate for candidate in candidates if not candidate.day and not candidate.flavour] == []
 
 
 def test_facts_that_name_someone_stay_out_when_wikipedia_cant_tell_whos_living(web, monkeypatch):
@@ -566,8 +606,8 @@ class FakeModel(TextProvider):
                     fields[name] = False
                 elif field.get("enum"):
                     fields[name] = field["enum"][0]
-                elif name == "fact" and _given_fact(request, key):
-                    fields[name] = _given_fact(request, key)
+                elif name in ("fact", "dare", "subtitle") and _given_fact(request, key):
+                    fields[name] = _given_fact(request, key)  # (a fun fact's, a dad joke, a piece of advice)
                 elif name.startswith("date_"):
                     fields[name] = str(1900 + 10 * int(name[-1]))
                 else:
@@ -609,26 +649,29 @@ def test_a_talk_s_request_gives_its_slides_real_facts_and_its_deck_records_them(
     request = model.requests[0].messages[0].content
     assert facts.request_line() in request
     kinds = {slide.type: number for number, slide in enumerate(deck.slides, 1)}
-    assert [fact.slide for fact in deck.facts] == sorted(kinds[kind] for kind in ("fun_fact", "timeline", "quiz"))
-    assert all(fact.use == "prompt" and fact.source == "Wikipedia" for fact in deck.facts)
+    uses = {kinds[kind]: kind for kind in ("fun_fact", "timeline", "quiz", "questions")}
+    assert [fact.slide for fact in deck.facts] == sorted(uses)  # (the closing slide's: a piece of advice)
+    assert all(fact.use == "prompt" for fact in deck.facts)
+    by_slide = {fact.slide: fact for fact in deck.facts}
+    assert by_slide[kinds["questions"]].source == "Advice Slip"
+    assert {by_slide[kinds[kind]].source for kind in ("timeline", "quiz")} == {"Wikipedia"}
+    assert by_slide[kinds["fun_fact"]].source in ("Wikipedia", "Useless Facts")  # (as the seed's shuffle picks)
     for fact in deck.facts:
         assert fact.text.split(": ", 1)[-1] in request  # (a timeline's event with its year alone)
-    timeline = next(fact for fact in deck.facts if fact.slide == kinds["timeline"])
+    timeline = by_slide[kinds["timeline"]]
     assert timeline.text.startswith(f"{datetime.date.today().day} ")  # (an event of the day the talk is made on)
-    # (small: a line, and three facts on their slides' lines)
+    # (small: a line, and three facts and a piece of advice on their slides' lines)
     added = len(facts.request_line()) + sum(
-        len(facts.Given(use, fact).line())
-        for use, fact in zip(("fun_fact", "timeline", "quiz"), deck.facts, strict=True)
+        len(facts.Given(uses[fact.slide], fact).line()) for fact in deck.facts if fact.slide is not None
     )
-    assert added < 1000
+    assert added < 1200
 
 
 def test_a_slide_that_builds_on_its_fact_credits_it(web, schema):
     deck = _talk(FakeModel())
     fun_fact = next(slide for slide in deck.slides if slide.type == "fun_fact")
-    assert any(
-        "".join(part.text for part in credit) == "Wikipedia: Penguin (CC BY-SA 4.0)" for credit in fun_fact.credits
-    )
+    credited = {"".join(part.text for part in credit) for credit in fun_fact.credits}
+    assert credited & {"Wikipedia: Penguin (CC BY-SA 4.0)", "Useless Facts"}, credited
     assert "Real fact (built on)" in fun_fact.notes
     quiz = next(slide for slide in deck.slides if slide.type == "quiz")  # (it wrote "The question": not built on)
     assert quiz.credits == () and "Real fact (left out)" in quiz.notes
@@ -642,9 +685,20 @@ def test_the_same_seed_and_answers_give_the_same_talk_with_facts(web, schema, tm
     assert _talk(ReplayProvider(cassette), int_seed=4).to_json() == recorded.to_json()
 
 
-def test_a_talk_without_slides_for_facts_asks_wikipedia_nothing(web, monkeypatch):
+def test_a_talk_asks_only_for_what_its_slides_use(web, monkeypatch):
+    plain = fact_schema(with_facts=False)  # (a title slide and a closing slide)
+    monkeypatch.setattr(generator, "get_schema", lambda name: plain)
+    deck = _talk(FakeModel(), slides=2)
+    assert [fact.source for fact in deck.facts] == ["Advice Slip"]
+    # (no article, no day's events: Wikipedia only tells whether the advice's capitalised words are living people)
+    wikipedia_asked = [params for where, params in web.requests if "wikipedia" in where]
+    assert wikipedia_asked and all(params.get("prop") == "categories" for params in wikipedia_asked)
+
+
+def test_a_talk_without_slides_for_facts_asks_nothing_and_its_deck_is_as_before(web, monkeypatch):
     plain = fact_schema(with_facts=False)
     monkeypatch.setattr(generator, "get_schema", lambda name: plain)
+    monkeypatch.setenv("DISABLE_ADVICE_SLIPS", "1")  # (its closing slide's only use)
     model = FakeModel()
     deck = _talk(model, slides=2)
     assert deck.facts is None and web.requests == []
@@ -684,7 +738,8 @@ def test_a_wikipedia_that_is_down_makes_a_talk_without_facts(web, schema):
 
 def test_a_talk_on_a_living_person_gets_no_facts_about_them(web, schema):
     deck = _talk(FakeModel(), topic="Elon Musk")
-    assert all(fact.text.startswith(f"{datetime.date.today().day} ") for fact in deck.facts or ())
+    of_wikipedia = [fact for fact in deck.facts or () if fact.source == "Wikipedia"]
+    assert all(fact.text.startswith(f"{datetime.date.today().day} ") for fact in of_wikipedia)  # (the day's alone)
     assert not [fact for fact in deck.facts or () if "Musk" in fact.text]
 
 
@@ -763,7 +818,7 @@ def test_half_of_the_classic_fun_facts_are_real_ones_with_a_twist(web, related):
             kicker, fact, source, _ = slide_texts.fun_fact(_photo)({"seed": "cat", "topic": "cats"})
         if isinstance(fact, facts.CreditedText):
             real += 1
-            assert source == "Wikipedia" and fact.fact.use == "slide"
+            assert source == fact.fact.source in ("Wikipedia", "Useless Facts") and fact.fact.use == "slide"
             assert fact.startswith(fact.fact.text) and fact[len(fact.fact.text) + 1 :] in twists
             assert len(fact) <= 150 and "The cat is" not in fact  # (not what a cat is)
         else:
@@ -859,3 +914,164 @@ def test_a_timeline_gets_an_event_of_the_day_with_its_year_alone():
         .line()
         .endswith(': "8 November 1291: A law confined Venice\'s glassmaking to Murano."')
     )
+
+
+# FLAVOUR TEXTS: USELESS FACTS, DAD JOKES AND ADVICE SLIPS
+
+
+def test_a_useless_fact_comes_by_its_number_in_the_weeks_pool(web):
+    found = flavour.useless_fact(14)
+    assert web.asked("uselessfacts.jsph.pl")[0] == {"language": "en", "i": 2}  # (14 of a pool of 12)
+    assert (found.text, found.source) == (USELESS[2], "Useless Facts")
+
+
+def test_dad_jokes_are_about_a_whole_word_or_from_a_page(web):
+    assert [joke.text for joke in flavour.dad_jokes("cat")] == [JOKES["cat"][0][1]]  # (not the roman catholic)
+    assert flavour.dad_jokes("cat")[0].url == "https://icanhazdadjoke.com/j/c1"
+    assert [joke.text for joke in flavour.dad_jokes(page=3)] == [joke for _, joke in PAGE_JOKES]
+    assert web.asked("icanhazdadjoke.com")[-1] == {"limit": 30, "page": 3}
+
+
+def test_an_advice_slip_comes_by_its_number(web):
+    assert flavour.advice(1).text == ADVICE_SLIPS[1]
+    assert flavour.advice(225).text == flavour.advice(1).text  # (the numbers go round the 224 slips)
+    assert flavour.advice(1).url == "https://api.adviceslip.com/advice/1"
+
+
+def test_the_flavour_sources_can_be_switched_off(web, monkeypatch):
+    for name in ("USELESS_FACTS", "DAD_JOKES", "ADVICE_SLIPS"):
+        monkeypatch.setenv(f"DISABLE_{name}", "1")
+    assert flavour.useless_fact(0) is None and flavour.dad_jokes("cat") == [] and flavour.advice(1) is None
+    assert web.requests == []
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Why don't penguins like stupid jokes? They're too cool.",
+        "The beer in the fridge was always cold.",
+        "Did you hear about the wandering nun? She was a roman catholic.",
+        "Don't drink bleach.",
+        "A cat killed the mood.",
+    ],
+)
+def test_flavour_texts_of_insults_drink_faiths_or_death_stay_out(text):
+    assert not facts.fit_flavour(text)
+
+
+def test_a_flavour_text_that_names_a_living_person_stays_out(web):
+    candidates = [facts.flavour_candidate(flavour.Flavour(text, "Useless Facts", "u"), "useless") for text in USELESS]
+    kept = facts.without_living([candidate for candidate in candidates if candidate is not None])
+    assert [candidate.text for candidate in kept] == [USELESS[0], USELESS[2]]  # (not Elon Musk's, nor the beer)
+
+
+def test_a_dare_gets_a_dad_joke_and_the_closing_slide_a_piece_of_advice(web):
+    sheet = facts.look_up("penguins", "en", DAY)
+    slides = [(2, "timeline"), (3, "fun_fact"), (4, "quiz"), (5, "big_number"), (6, "dare"), (9, "questions")]
+    given = facts.assign(sheet, slides, random_util.Rng(1))
+    assert list(given) == [2, 3, 4, 6, 9]  # (three facts at most, and a joke and a piece of advice besides)
+    assert (given[6].fact.source, given[6].fact.text) == ("icanhazdadjoke", JOKES["penguin"][0][1])
+    assert given[9].fact.source == "Advice Slip" and "bleach" not in given[9].fact.text
+    assert given[6].line().startswith("Dare the presenter to tell this real dad joke")
+    assert given[9].fact.license is None  # (their sites state none)
+
+
+def test_a_fun_fact_builds_on_the_topics_facts_or_a_useless_fact(web):
+    sheet = facts.look_up("penguins", "en", DAY)
+    picks = {facts.assign(sheet, [(3, "fun_fact")], random_util.Rng(seed))[3].fact.source for seed in range(20)}
+    assert picks == {"Wikipedia", "Useless Facts"}
+
+
+def test_each_kind_of_text_goes_to_its_own_slides(web):
+    lead = facts.Sheet((facts.Candidate("Penguins are birds that swim very well.", "u"),))
+    assert facts.assign(lead, [(2, "dare"), (3, "questions")], random_util.Rng(1)) == {}
+    joke = facts.Sheet((facts.Candidate("A joke.", "u", flavour="joke", source="icanhazdadjoke"),))
+    uses = [(2, "quiz"), (3, "timeline"), (4, "fun_fact"), (5, "questions")]
+    assert facts.assign(joke, uses, random_util.Rng(1)) == {}
+
+
+def test_a_talk_draws_its_flavour_texts_by_its_seed():
+    assert facts.Draws.of(random_util.Rng(3)) == facts.Draws.of(random_util.Rng(3))
+    assert facts.Draws.of(random_util.Rng(3)) != facts.Draws.of(random_util.Rng(4))
+    draws = facts.Draws.of(random_util.Rng(3))
+    assert all(0 <= number < flavour.POOL for number in draws.useless) and 1 <= draws.joke_page <= flavour.JOKE_PAGES
+
+
+def dare_schema() -> PresentationSchema:
+    """A talk of a title slide, a dare and a closing slide."""
+    title = SlideGeneratorData(
+        slide_generator_types.TitleSlideGenerator.of(lambda c: c["title"], lambda c: c["presenter"]),
+        weight_function=PeakedWeight((0,), 100000, 0),
+        tags=["title"],
+        name="Fake title",
+        llm=Recipe("title"),
+    )
+    return PresentationSchema(
+        powerpoint_slide_creator.create_new_powerpoint,
+        seed_generator=IdentityTopicGenerator,
+        title_generator=lambda context: "A classic title",
+        slide_generators=[
+            title,
+            _drawn("dare", lambda c: ("Challenge", "A classic dare"), slides.DareSlide, PeakedWeight((1,), 1000, 0)),
+            _drawn("questions", lambda c: ("Questions?", None), slides.QuestionsSlide, PeakedWeight((-1,), 1000, 0)),
+        ],
+        max_allowed_tags={"title": 1, "dare": 1, "questions": 1},
+    )
+
+
+def test_a_talk_s_dare_dares_its_presenter_to_tell_a_real_dad_joke(web, monkeypatch):
+    made = dare_schema()
+    monkeypatch.setattr(generator, "get_schema", lambda name: made)
+    model = FakeModel()
+    deck = _talk(model, slides=3)
+    assert [slide.type for slide in deck.slides] == ["title", "dare", "questions"]
+    request = model.requests[0].messages[0].content
+    joke = JOKES["penguin"][0][1]
+    assert f'tell this real dad joke, word for word, and say how (a voice, a pause, a pose): "{joke}"' in request
+    assert [(fact.slide, fact.source) for fact in deck.facts] == [(2, "icanhazdadjoke"), (3, "Advice Slip")]
+    dare, closing = deck.slides[1], deck.slides[2]
+    assert ["".join(part.text for part in credit) for credit in dare.credits] == ["icanhazdadjoke"]
+    assert dare.text_credits and closing.text_credits  # (their credit lines say "Sources:")
+
+
+def test_half_of_the_classic_dares_dare_the_presenter_to_tell_a_real_dad_joke(web, related):
+    framings = packs.pack(packs.TED).rule("karaoke.joke_dare")
+    jokes = 0
+    for seed in range(20):
+        with random_util.use(random_util.Rng(seed)):
+            _, dare = slide_texts.generate_dare({"seed": "cat", "topic": "cats"})
+        if isinstance(dare, facts.CreditedText):
+            jokes += 1
+            assert (dare.fact.source, dare.fact.text) == ("icanhazdadjoke", JOKES["cat"][0][1])
+            assert dare in [framing.replace("{joke}", dare.fact.text) for framing in framings] and len(dare) <= 130
+    assert 3 < jokes < 17
+
+
+def test_some_classic_closing_slides_end_on_a_real_piece_of_advice(web, related):
+    framings = packs.pack(packs.TED).rule("structure.advice_line")
+    advised = 0
+    for seed in range(30):
+        with random_util.use(random_util.Rng(seed)):
+            _, line = slide_texts.generate_questions({"seed": "cat", "topic": "cats"})
+        if isinstance(line, facts.CreditedText):
+            advised += 1
+            assert line.fact.source == "Advice Slip" and "bleach" not in line
+            assert line in [framing.replace("{advice}", line.fact.text) for framing in framings] and len(line) <= 80
+    assert 3 < advised < 25
+
+
+def test_classic_flavour_texts_switched_off_leave_the_slides_as_they_were(web, related, monkeypatch):
+    def made(*switched_off: str) -> list[tuple]:
+        for name in ("FACTS", "DAD_JOKES", "ADVICE_SLIPS"):
+            monkeypatch.delenv(f"DISABLE_{name}", raising=False)
+        for name in switched_off:
+            monkeypatch.setenv(f"DISABLE_{name}", "1")
+        texts = []
+        for seed in range(10):
+            with random_util.use(random_util.Rng(seed)):
+                texts.append(
+                    (slide_texts.generate_dare({"seed": "cat"}), slide_texts.generate_questions({"seed": "cat"}))
+                )
+        return texts
+
+    assert made("DAD_JOKES", "ADVICE_SLIPS") == made("FACTS")  # (no draw of theirs either)
