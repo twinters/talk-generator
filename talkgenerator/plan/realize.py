@@ -11,7 +11,7 @@ import re
 from pathlib import Path
 from typing import Any, Final
 
-from talkgenerator.checks.deck import leftovers_in
+from talkgenerator.checks.deck import leftovers_in, without_key_references
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.images import context as image_context
 from talkgenerator.images.generation import FALLBACK, FIRST, Wish
@@ -41,12 +41,14 @@ def length_limit(text_field: TextField) -> int:
 
 
 def clean_text(value: Any, text_field: TextField, language: str = "en") -> str | None:
-    """The text as it goes on a slide: on one line, without wrapping quote marks, and cut to the field's length when
-    it's longer than its length_limit (between words, and not after a little word of its language, such as "the"),
-    or the option it names when the field is a choice. None when it's empty, names no option, or holds bits of
-    templates or code."""
+    """The text as it goes on a slide: on one line, without wrapping quote marks or brackets that name a slide by its
+    key in the model's answer ("(from slide_03)"), and cut to the field's length when it's longer than its
+    length_limit (between words, and not after a little word of its language, such as "the"), or the option it names
+    when the field is a choice. None when it's empty, names no option, or holds bits of templates or code (a slide's
+    key elsewhere in it too: see talkgenerator.checks.deck)."""
     if not isinstance(value, str):
         return None
+    value = without_key_references(value)  # (a callback that names its slide by its key keeps the rest of it)
     if text_field.options:
         return option_of(value, text_field)
     text = _unquoted(" ".join(_STRAY_ESCAPE.sub("", value).split()))
@@ -155,7 +157,8 @@ def realize(
                 value = plan.texts.get(name)
                 texts[name] = clean_text(value, text_field, language)
                 written = isinstance(value, str) and value.strip()
-                why = f"{name}: not written" if not written else f"{name}: holds template code ({value!r})"
+                held = ", ".join(leftovers_in(value)) if isinstance(value, str) else ""
+                why = f"{name}: holds {held or 'template code'} ({value!r})" if written else f"{name}: not written"
             if texts[name] is None and not text_field.optional:
                 _note(problems, why)
                 return None

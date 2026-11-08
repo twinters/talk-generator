@@ -1,9 +1,9 @@
 """Automated checks of a deck (docs/v5-plan.md, section 14): a deck in, findings out.
 
-An error is a broken talk: a slide without what it needs, template code on a slide, or an image its license policy
-doesn't allow. A warning is worth a look, such as an image without a credit, one that comes back on another slide
-(or nearly the same one), or one without the look it was found for (a vintage photo in colour). Checks of contrast
-and overflowing text are in talkgenerator.checks.design.
+An error is a broken talk: a slide without what it needs, template code on a slide (or a slide's key in the language
+model's answer), or an image its license policy doesn't allow. A warning is worth a look, such as an image without a
+credit, one that comes back on another slide (or nearly the same one), or one without the look it was found for (a
+vintage photo in colour). Checks of contrast and overflowing text are in talkgenerator.checks.design.
 """
 
 from __future__ import annotations
@@ -43,6 +43,9 @@ class Finding:
         return f"{self.severity}: {where}{self.message} [{self.check}]"
 
 
+# A slide's key in a language model's answer, slide_2 or slide_02 (see talkgenerator.plan.prompt), by which a free
+# model named the slide that a conclusion called back to: "Huddling scales trust (from slide_03)"
+_SLIDE_KEY = r"\bslide_\d+\b"
 # Bits of generator machinery that should never make it onto a slide
 _LEFTOVERS: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"\{[A-Za-z_]\w*(?:\.\w+)*\}"), "an unfilled template variable"),
@@ -50,14 +53,24 @@ _LEFTOVERS: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"\(\([A-Za-z_]\w*\)\)"), "a missing tracery symbol"),
     (re.compile(r"<(?:built-in method|bound method|function|lambda)\b"), "Python code"),
     (re.compile(r"\b(?:ImageData|ChartData|XyChartData|DeckSlide)\("), "a Python object"),
+    (re.compile(_SLIDE_KEY, re.IGNORECASE), "a slide's key in the language model's answer"),
 )
 # A word followed by None, as in "About None": a template variable that was None. (Not "None of us were ready")
 _NONE = re.compile(r"\S\s+None\b|^None$")
+# Brackets that name a slide by its key, as in "(from slide_03)" or "[see slide_3 and slide_5]"
+_KEY_REFERENCE = re.compile(rf"\s*[(\[][^()\[\]]*{_SLIDE_KEY}[^()\[\]]*[)\]]", re.IGNORECASE)
 
 
 def leftovers_in(text: str) -> list[str]:
     """The bits of generator machinery in a text: what they are, and the bit itself."""
     return [f"{what}: {found.group(0)!r}" for pattern, what in _LEFTOVERS if (found := pattern.search(text))]
+
+
+def without_key_references(text: str) -> str:
+    """The text without the brackets in it that name a slide by its key in the language model's answer: "Huddling
+    scales trust (from slide_03)" becomes "Huddling scales trust". (A key elsewhere in a text is a leftover, as in "As
+    slide_03 showed": see leftovers_in.)"""
+    return _KEY_REFERENCE.sub("", text)
 
 
 def check_deck(deck: Deck, expected_slides: int | None = None) -> list[Finding]:

@@ -408,6 +408,11 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   also keeps its place among a look's sources, so the sources searched together stay the same. That holds for
   Pixabay, Pexels, Unsplash, Openverse, Reddit and ConceptNet; GIPHY's answers aren't kept, so it finds nothing
   meanwhile, as before.
+- A slide's key in the language model's answer never goes on a slide. A free model's conclusion called back to an
+  earlier slide by its key: "Huddling scales trust (from slide_03)". The request now asks for callbacks by what the
+  earlier slide said, never by its key or number; brackets that name a slide by its key are dropped from a text
+  ("Huddling scales trust"), a key anywhere else in it makes the slide the classic generator's, as template code
+  does, and `talkgenerator check` reports a key on a slide as an error.
 
 ## [4.0.1] - 2026-11-05
 

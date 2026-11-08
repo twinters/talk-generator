@@ -611,12 +611,12 @@ def test_a_talk_generates_the_pictures_its_slots_prefer_from_the_models_prompts(
         assert (
             image.display == "copy" and os.path.isfile(image.url) and os.path.dirname(image.url) == str(cache.folder())
         )
-        assert image.license == "the fake painter's terms" and image.description.startswith("image prompt of slide_")
+        assert image.license == "the fake painter's terms" and image.description.startswith("image prompt of slide ")
         assert deck.slides[number].credits[0][0].text == "AI-generated with painter"
     # Every other picture is a stock photo, and the photo slides' pictures aren't generated
     assert all(image.license_class == "stock" for _, image in _images(deck) if image.license_class != "generated")
     request = painter.requests[0]
-    assert request.prompt.startswith("image prompt of slide_") and request.seed is not None
+    assert request.prompt.startswith("image prompt of slide ") and request.seed is not None
     assert (
         request.style == generation.STYLES["meme-chaos"] and "logos" in request.avoid and request.aspect_ratio == "4:3"
     )
@@ -708,7 +708,7 @@ def test_a_slide_whose_search_finds_nothing_gets_a_generated_picture_on_its_last
 
 
 def test_a_refused_or_failed_picture_keeps_its_stock_photo(stock):
-    refusing = FakePainter(refuse=("slide_",))
+    refusing = FakePainter(refuse=("of slide",))
     deck = _talk(refusing)
     assert refusing.requests and not _generated(deck)
     assert deck.usage.failed_images == len(refusing.requests) and deck.usage.images == 0

@@ -36,12 +36,15 @@ _HOBBY = "the presenter's weird hobby"
 _CONTRAST = "Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing"
 _SEQUENCE = "Three captioned images that build up, like 'Good, Better, Best' or three steps of a plan"
 _CONCLUSIONS_TITLE = "a title for the conclusions, in a few words of your own"
+# (Asked for "a lesson from the talk, calling back to an earlier slide", a free model wrote "Huddling scales trust
+# (from slide_03)": the slide's key in its answer)
+_CALLBACK = "a lesson from the talk, calling back to an earlier slide by what it said (not by its number or key)"
 
 
 def _conclusions(number: int) -> dict[str, str]:
     hints = {"title": _CONCLUSIONS_TITLE}
     for nr in range(1, number + 1):
-        hints[f"caption_{nr}"] = "a lesson from the talk, calling back to an earlier slide"
+        hints[f"caption_{nr}"] = _CALLBACK
     return hints
 
 
