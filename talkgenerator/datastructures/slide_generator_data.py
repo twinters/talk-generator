@@ -35,14 +35,17 @@ class ConstantWeightFunction:
 
 class BetweenWeight:
     """A weight for the slides after the first few and before the last few (a section's divider, which opens a part
-    in the middle of a talk), and none for the others."""
+    in the middle of a talk), and none for the others, nor in a talk of fewer than shortest slides."""
 
-    def __init__(self, weight: float, after: int, before: int):
+    def __init__(self, weight: float, after: int, before: int, shortest: int = 0):
         self._weight = weight
         self._after = after  # how many slides it never is at the start (the title slide included)
         self._before = before  # and at the end
+        self._shortest = shortest
 
     def __call__(self, slide_nr: int, num_slides: int) -> float:
+        if num_slides < self._shortest:
+            return 0
         return self._weight if self._after <= slide_nr < num_slides - self._before else 0
 
 

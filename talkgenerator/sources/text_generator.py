@@ -9,11 +9,16 @@ from tracery.modifiers import base_english
 from talkgenerator.sources import conceptnet, wikihow, word_frequency
 from talkgenerator.util import language_util, os_util, random_util
 
+# The longest word that a title fits in every theme (the design tests' 20-letter word): one that `dashes` makes of
+# more words may be no longer (a 61-letter wikiHow action overflowed a historical figure's title)
+LONGEST_WORD = 20
+
 known_functions = {
     "title": str.title,
     "lower": str.lower,
     "upper": str.upper,
-    "dashes": lambda words: words.replace(" ", "-"),
+    # The words as one word ("Removing-Bees"), unless that's too long a word for a title (then the template gives way)
+    "dashes": lambda words: dashed if len(dashed := words.replace(" ", "-")) <= LONGEST_WORD else None,
     "first_letter": lambda words: words[0],
     "last_letter_is_vowel": lambda word: word if language_util.is_vowel(word[-1]) else None,
     "last_letter_is_consonant": lambda word: word if language_util.is_consonant(word[-1]) else None,

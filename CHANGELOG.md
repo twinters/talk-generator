@@ -408,6 +408,28 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   also keeps its place among a look's sources, so the sources searched together stay the same. That holds for
   Pixabay, Pexels, Unsplash, Openverse, Reddit and ConceptNet; GIPHY's answers aren't kept, so it finds nothing
   meanwhile, as before.
+- A format's cap of none on a kind of slide holds from a talk's first slide: `interview` talks, which have no about-me
+  slide, got one in two talks in five, as caps only counted once a talk had a slide of their kind. A cap that's a
+  share of a talk's slides still allows one, so short talks keep their memes, diagrams and quotes, and a section
+  divider needs a talk of ten slides (about one 9-slide talk in ten had one).
+- "A title or none" gives none half the time: classic two and three captioned pictures, and full-screen photos,
+  always had a title, as a generator that gives none on purpose gave way to the title's.
+- A historical figure's title no longer makes a 61-letter word of a wikiHow action, which ran out of its box in
+  brutalist themes: a template's `dashes` gives nothing for a word of more than 20 letters, so its template gives
+  way to another.
+- A text cut to its length ends where a sentence or a clause in it does, when that keeps half of it, or in English
+  before a word that opens the next clause ("when", "but", "because"...): free models' conclusions read "Your plants
+  are not decorations—they" and "The mountain breathes when prayers", and are "Your plants are not decorations" and
+  "The mountain breathes" now. The language model is asked for conclusions of six words at most.
+- A quiz's answer agrees with its explanation: a free model marked one option and explained why another one was
+  right. When the explanation names one other option, by its words or its letter, that one is the answer, and
+  `talkgenerator check` warns of an explanation that names other options than the answer.
+- A text about real-world politics stays out of a talk that isn't about it: a free model wrote "Japan needs to
+  earnestly reflect on its history of aggression, respect the security concerns of Asian neighbors..." as a
+  lighthouse talk's quote. The request asks for none, a model's text with a phrase that only statements on politics
+  have, or with a real country or people and politics' words, is left out (its slide comes out the classic way when
+  it can't do without it), and `talkgenerator check` warns of one. Absurd humour about places stays ("There are
+  more penguins in Belgium than people").
 - A slide's key in the language model's answer never goes on a slide. A free model's conclusion called back to an
   earlier slide by its key: "Huddling scales trust (from slide_03)". The request now asks for callbacks by what the
   earlier slide said, never by its key or number; brackets that name a slide by its key are dropped from a text

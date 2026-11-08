@@ -878,6 +878,27 @@ starter pack, a conspiracy board), and cheap recipe variants ("Pick One:" over t
 "In conclusion...", a demotivational frame for InspiroBot, the planet for no reason, charts without numbers, "Not on
 Agenda!", a spurious correlation).
 
+**What the live and benchmark runs of 2026-11-08 found** (D50). A cap of none, such as the `interview` format's on
+about-me slides, only held after a first slide of its kind (41% of interviews had one, over 300 seeds), and a cap that's
+a share of a talk's slides allowed one where it rounds to none (about one 9-slide talk in ten had a section divider,
+meant for ten slides or more): caps hold from a talk's first slide now, a share still allows one (a strict rounding
+would take memes, diagrams, quotes and captioned pictures out of 4-slide talks, and give 57% of them an about-me slide
+and 44% a chart; from 5 slides on, it gives the same talks), and the section divider needs ten slides by its weight. "A
+title or none" always gave a title (a generator that gives none on purpose gave way to the title's), so classic
+captioned pictures and full-screen photos now go without one half the time. A historical figure's title could make a
+61-letter word of a wikiHow action, which overflowed in brutalist (the classic benchmark's two errors): such a word has
+20 letters at most now, as every theme fits (`dashes` gives none for a longer one). Milestone 6's classic texts had the
+memes' plural slips ("of experts agree that penguins is overrated", "The penguins pyramid"): the TED content pack's
+rewrite of the templates fixes them, from a list of them all. A text cut to its length ends where a sentence or a clause
+does (in English, also before a word that opens the next one, such as "when"), when that keeps half of it ("Your plants
+are not decorations", where a free model's conclusion read "Your plants are not decorations—they"), and conclusions are
+asked for six words at most. A quiz's explanation decides its answer when it names one other option than the one marked.
+And a model's text about real-world politics that the talk isn't about (a statement on Japan's "history of aggression"
+as a lighthouse talk's quote, seed 12) is left out by a cheap check, of phrases that only statements on politics have
+and of real countries or peoples with politics' words, which none of the 336 model-written texts in the sample decks
+trips; the request asks for none, and `talkgenerator check` warns of what's left (as of a quiz whose explanation names
+other options).
+
 Variety per slide type comes from four axes, each sampled per slide with the talk's random generator:
 
 1. layout: image left or right, full-bleed, framed, split, grid;
@@ -1632,8 +1653,9 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D47 | A talk's persona, which its seed picks (or the talk names; `none` for none), shapes the talk with a language model or without: multipliers on the format's slide weights by the generators' tags (none under 0.2, and about 1 on average over the personas, so the formats' mix holds), its kind of title (a hint for the model, and half of a classic talk's titles from the persona's templates), and weights over the default name styles with how the presenter goes by (an explicit `name_styles` goes alone), besides the model's voice and an angle of the persona's, the presenter's kind of job, multipliers on the theme families' weights for a random theme (an explicit theme goes alone), and favourite looks for some of the looks slides ask for, searched before the slide's own. The deck and `talk.started` record it. |
 | D48 | Memes with live captions are what a TED-like talk that allows fair use has most often in its middle: four times the weight of the other slides there, two a talk at most (and two memes of any kind in ten slides), never of one template twice. Classic captions speak of a talk's topic as English does ("coffee", "penguins"), never with a verb that has to agree with it. |
 | D49 | New slide types come from what real PowerPoint karaoke and battle decks, TED parodies and bad-PowerPoint humour have (a catalogue with its sources), drawn from the deck's texts, shapes and pictures (D37): one of each a talk, in its middle. Kinds that need a new element (diagonal lines) or text under the design checks' floor wait. |
+| D50 | A format's tag caps hold from a talk's first slide: an absolute cap is a number of slides (0: none at all, as the `interview` format's about-me slides), and a relative one a share of the talk's slides, rounded down but at least one, so that short talks keep every kind of slide (a strict rounding would leave talks of 3 and 4 slides without memes, diagrams, quotes and captioned pictures). A kind that only longer talks have says so by its weight: a section divider, in talks of ten slides or more. |
 
-D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, and D43 to D49 on 2026-11-08; the
+D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, and D43 to D50 on 2026-11-08; the
 others follow from the design.
 
 ### Open questions
