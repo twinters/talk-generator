@@ -148,10 +148,14 @@ Tests live in `tests/`. Many of them talk to the live APIs, and are marked as `n
 ```sh
 uv run pytest                     # everything (tests needing missing API keys are skipped)
 uv run pytest -m "not network"    # only the offline tests, as in CI
+uv run pytest -m "not network and not slow"  # the quick set, while you work: a few minutes
 uv run pytest -m "not network" --bundled-fonts-only  # measuring texts as CI does, without this computer's fonts
 uv run ruff check . && uv run ruff format --check .
 uv run mypy                       # type checking
 ```
+
+The `slow` tests draw whole decks in every theme family, or sweep every template: about 200 of the offline tests, and
+most of their time (over an hour on one core). Run them, or the files of what you change, before you merge.
 
 Type checking is gradual: mypy checks the whole package, and the modules listed under `[[tool.mypy.overrides]]` in `pyproject.toml` must be fully annotated.
 Add a module to that list once you've typed it.
