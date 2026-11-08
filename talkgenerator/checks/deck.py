@@ -16,6 +16,7 @@ from typing import Any, Literal
 
 from talkgenerator.models import classic
 from talkgenerator.models.deck import (
+    DECORATION,
     ChartElement,
     Content,
     Deck,
@@ -416,10 +417,13 @@ def _repeated_titles(deck: Deck) -> int:
 
 
 def _texts(elements: tuple[Content, ...]) -> list[tuple[str, str]]:
+    """The talk's texts on a slide, with their roles (charts' and diagrams' labels too; not its theme's decoration's,
+    such as a slide's number or a terminal's prompt, which aren't the talk's words)."""
     texts = []
     for element in elements:
         if isinstance(element, TextElement):
-            texts.append((element.role, element.text))
+            if element.role != DECORATION:
+                texts.append((element.role, element.text))
         elif isinstance(element, ChartElement):
             texts.extend((f"{element.role} label", category) for category in element.chart.categories)
             texts.extend((f"{element.role} label", name) for series in element.chart.series for name in series.labels)

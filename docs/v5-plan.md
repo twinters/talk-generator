@@ -814,10 +814,59 @@ optional memory of recently shown quotes and images, so popular topics don't kee
   font sizes, contrast, safe margins, no image enlarged beyond about 1.3× its size, small but legible credits.
 - Later: bring-your-own .pptx templates, such as corporate master slides.
 
-Next, the user's direction (2026-11-07): themes should be more than a reskin by font and colour. Families that make
+The user's direction (2026-11-07): themes should be more than a reskin by font and colour. Families that make
 harder choices, such as a childlike kindergarten style with vector shapes, or a hacker style in a monospace font,
 green on black, each with decoration and layouts of their own; and image filters that are subtler, rarer, and only
 where they fit. Themes made for decks online are the place to look first.
+
+As built (2026-11-08, D43 to D46), after a look at Slidesgo, SlidesCarnival, PresentationGo, SlidesMania, SlideSpeak's
+design prompts and open-design's decks (Canva, Behance and Dribbble only by their search results): what sets a strong
+theme apart is a fixture on every slide (a status line, a title block, a top rule), its big motif saved for the title
+and section slides, a small palette with its accent rationed, a few pieces of decoration a slide and never behind a
+text, handmade families tilting things a little where grid families keep everything square, one casing rule, and a
+fixed place for its texts; and the sources treat pictures as a family's property, most of them untouched.
+
+- **Motifs** (`talkgenerator.design.motifs`, D43): every family has one, which decorates a slide's placement before
+  the engine styles its texts. It draws behind everything (scenery, a frame, a grid), over the layout's shapes (a
+  sticker, an underline) or over the content (tape on a photo), writes texts of its own (role `decoration`: a slide's
+  number, a prompt, numbers, symbols and code, so any language suits them; the language and leftover checks leave
+  them out), and may move a text (for a prompt) or fit a picture to a frame around it. Its texts' colours come from
+  what's behind their letters, and its see-through pieces are only as strong as the texts over them allow.
+- **Shapes and patterns** for it, in the deck, drawn alike by PowerPoint, the previewer and talk-generator-web (its
+  branch `claude/bolder-themes`): polygons (their corners as shares of their box: PowerPoint freeforms, CSS clip
+  paths; stars, pennants, bursts, hearts, arrows, waves, and lines drawn as polygons for squiggles and strokes), shapes
+  turned around their middle, rounded corners, outlines inside the box, shapes without a fill, and a background
+  pattern (lines, a grid or dots: PowerPoint's slide background is a picture of it, which a .pptx keeps once; CSS
+  repeating gradients in the browser). `talkgenerator.design.geometry` has what they share.
+- **Families** (D44): five new ones, none for laughs: `hacker terminal` (green, amber or cool phosphor on black, a
+  window bar, scanlines, prompts before the titles, a block cursor after the talk's title, pictures in windows named
+  `./evidence_031.jpg`, a status line), `blueprint` (a white grid on a blueprint's blue, a border with registration
+  marks, dimension lines under the titles, figure plates, a title block, a red pencil's punchlines), `chalkboard`
+  (a green or slate board in a wooden frame, a ledge with chalk and an eraser, eraser strokes, dashed chalk
+  underlines, doodles, taped pictures, handwriting), `newspaper` (newsprint, masthead rules with the edition's numbers,
+  a front page for the title slide, rules between columns, grayscale photos) and `Swiss poster` (a grotesk flush left
+  on a three-column grid, a heavy black rule, one red block a slide, a big red circle and huge type on the title slide,
+  black dividers with a giant number). `kids` became a kindergarten's: crayon colours on cream, bunting on every
+  slide, crayon squiggles, confetti, sticker pictures, a title card with a sun, a cloud and hills with flowers, section
+  numbers on a sun. The others got theirs: academic's Beamer-like title band, dots counting the slides and footer;
+  neon's sunset over a grid floor; vintage paper's ornamented double frame; brutalist's title blocks, hard shadows
+  and number tag; corporate's top band and slanted title panel; startup's blobs; Comic Sans' panel border, speech
+  balloons and POW; WordArt's starbursts; clip-art's swoosh; keynote's and dark minimal's quieter marks. The families
+  that commit to a scheme pick one of a few palettes (repaired as any), some have open fonts more often, and kids,
+  neon, Swiss poster, newspaper, academic and corporate have their own title slides (and kids, neon and Swiss poster
+  their own section slides), 61 layouts in all. Names stay; a seed still picks a family's member.
+- **Image treatments** (D45): the strong filters are for the families made for them, and only where they fit (a
+  family's filter can be for backdrops only; black and white never goes behind a slide's texts), and a theme can lay a
+  gentle tint over its pictures instead (a warm or cool cast at 7%, its paper at 10%, its accent at 8%): of 3,000
+  random themes' pictures, 21% got a strong filter (34% before), and 30% of themes tint theirs.
+- **Checks** (D46): a text has to read on what's behind its letters, its lines as the engine breaks them, as tall as
+  their letters (not its whole box: a cursor after its last word doesn't count), where a shape over part of them
+  counts, and a background's pattern too; diagrams are coloured for the decoration that reaches under them; and the
+  band behind credits that need one hugs the credit line, clear of a status line under it.
+- **Measured:** 17 saved talks (the site's live ones, the free models' cat, peanuts and time travel in English and
+  Swedish, the lighthouse talks with every slide type, the memes) laid out again in all 17 families over 4 seeds:
+  BENCHMARK_RESULT. In the browser, talk-generator-web's dev server drew a deck of the new families as the previewer
+  does (kids' title, terminal, blueprint, chalkboard, newspaper, Swiss). Not checked in PowerPoint itself yet.
 
 ## 10. Images: sources, aesthetics and generation
 
@@ -1455,8 +1504,13 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D40 | Memes are captioned live by talkgenerator, never drawn into the picture: the template's picture from Imgflip (fair use, so not in talks without fair use), its captions as texts in boxes measured once per template (`data/memes.json`, 25 templates), and the template picked by the talk's dice before the language model writes its captions (a recipe can fix a slot's query). New image sources join only where their terms allow a talk to show them, without working around a bot check, and without the user's paying for a key. |
 | D41 | Swedish (`sv`) is a talk language too, on the terms of D19 and D25: a language model writes the talk in Swedish, with talkgenerator's own words in Swedish; without one, the talk is classic and English. |
 | D42 | Themes use open fonts from Google Fonts besides the installed ones: two pairings per family (not the extremes), which a member has two times in three. They're bundled, so they're measured everywhere, and embedded in every .pptx that uses them, whole, as uncompressed EOT (python-pptx can't embed fonts; PowerPoint for Windows showed one, regular and bold, on a computer without it). Each has an installed stand-in that its texts fit too, for where embedded fonts are ignored (PowerPoint for the web, Keynote). |
+| D43 | Every theme family has a motif of its own (`talkgenerator.design.motifs`): a fixture on every slide and its big pieces on the title and section slides, drawn with the deck's own elements, which gained polygons, turned shapes, rounded corners, outlines, shapes without a fill and background patterns, drawn alike by PowerPoint, the previewer and talk-generator-web. Its texts are numbers, symbols and code (role `decoration`), not the talk's words; no decoration sits behind a text's letters unless the text is made to read on it. |
+| D44 | Five new families, none for laughs: `hacker terminal`, `blueprint`, `chalkboard`, `newspaper` and `Swiss poster`; `kids` becomes a kindergarten's. The families that commit to a scheme pick one of a few palettes of their own; some families have title and section layouts of their own. The families keep their names, and a seed still picks a member. |
+| D45 | Strong image filters (grayscale, sepia, duotone, black and white) only in the families made for them, and only where they fit: a family's filter can be for backdrops only, and black and white never goes behind a slide's texts. Other themes leave pictures as they are or lay a gentle tint over them (a warm or cool cast, their paper, their accent). |
+| D46 | The design checks judge a text by what's behind its letters (its lines as the engine breaks them, as tall as their letters), where a shape over part of them counts and a background's pattern too, rather than by what's under its box's middle. |
 
-D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, and D28 to D42 on 2026-11-07; the others follow from the design.
+D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, and D43 to D46 on 2026-11-08; the
+others follow from the design.
 
 ### Open questions
 

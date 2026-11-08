@@ -59,7 +59,7 @@ by. If it's long, tell the user once that free keys give better images, and leav
    name bent to fit it, such as "Albert Einstone" for geology; with a title such as Prof., the job agrees),
    `thesis`, and `language` when it isn't English, then its `slides`, and optionally its `theme`: without one, the
    user's default (a random theme, unless their TALKGENERATOR_THEME says otherwise); `classic`, the 2019 template;
-   `random`; a family such as `"dark minimal"`, `"vintage paper"` or `"1997 WordArt"` (`talkgenerator render
+   `random`; a family such as `"hacker terminal"`, `"chalkboard"` or `"1997 WordArt"` (`talkgenerator render
    --help` lists them); or `chaos`, every slide its own. The title slide is made for you, from these. Talks can be in
    Dutch (`"nl"`), French (`"fr"`), German (`"de"`), Spanish (`"es"`), Italian (`"it"`), Portuguese (`"pt"`) and
    Swedish (`"sv"`): write every text in that language, and keep the image queries in English.

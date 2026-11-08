@@ -79,7 +79,7 @@ The same seed gives the same talk.
 - **Claude** can write the talk too, as a plan that talkgenerator renders, through the Skill or the MCP server ([Use it with Claude](https://github.com/twinters/talk-generator/blob/master/docs/use-with-claude.md)).
 
 Images come from Unsplash, Pexels, Pixabay, Openverse, Wikimedia Commons, the Art Institute of Chicago, Reddit, GIPHY, InspiroBot and ShitpostBot, in a look that fits the slide (stock photos, old photographs, museum art, weird pictures...), each credited on its slide, with its license when it's openly licensed or public domain.
-Talks come in themes, from `clean keynote` and `dark minimal` to `1997 WordArt` ([Images and themes](https://github.com/twinters/talk-generator/blob/master/docs/images-and-themes.md)).
+Talks come in themes, from `clean keynote` and `hacker terminal` to `chalkboard` and `1997 WordArt` ([Images and themes](https://github.com/twinters/talk-generator/blob/master/docs/images-and-themes.md)).
 
 Every talk becomes a deck: plain, versioned JSON data with every text, image, credit and layout of its slides.
 The PowerPoint is drawn from it, talkgenerator.com shows it in the browser, and a saved deck renders again as the same slides ([Python](https://github.com/twinters/talk-generator/blob/master/docs/python.md#decks)).

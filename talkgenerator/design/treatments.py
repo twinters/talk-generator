@@ -48,26 +48,33 @@ def duotone(palette: Palette) -> tuple[str, str]:
 
 def treatment(theme: Theme, framed: bool) -> ImageTreatment | None:
     """How the theme treats a picture (in a box, if framed, else over a whole slide or half of it, where it gets no
-    frame), or None if it leaves it as it is. A polaroid's tilt comes from the current random stream."""
+    frame), or None if it leaves it as it is. A theme whose filter is for backdrops leaves pictures in a box
+    unfiltered. A polaroid's tilt comes from the current random stream."""
     frame = theme.image_frame if framed else "none"
-    if theme.image_filter == "none" and frame == "none" and not theme.image_grain and not theme.image_vignette:
+    image_filter = theme.image_filter if theme.image_filter_scope == "all" or not framed else "none"
+    if image_filter == "black and white" and not framed:  # (too harsh behind a slide's texts: for pictures in a box)
+        image_filter = "none"
+    tint = theme.image_tint if theme.image_tint_opacity > 0 else None
+    if image_filter == "none" and frame == "none" and not (theme.image_grain or theme.image_vignette or tint):
         return None
     dark = light = None
-    if theme.image_filter == "sepia":
+    if image_filter == "sepia":
         dark, light = SEPIA
-    elif theme.image_filter == "duotone":
+    elif image_filter == "duotone":
         dark, light = duotone(theme.palette)
     tilt = 0.0
     if frame == "polaroid":
         tilt = round(random_util.uniform(*POLAROID_TILT) * random_util.choice((-1, 1)), 1)
     return ImageTreatment(
-        filter=theme.image_filter,
+        filter=image_filter,
         dark=dark,
         light=light,
         frame=frame,
         tilt=tilt,
         grain=theme.image_grain,
         vignette=theme.image_vignette,
+        tint=tint,
+        tint_opacity=theme.image_tint_opacity if tint else 0.0,
     )
 
 
@@ -134,6 +141,9 @@ def filtered(picture: Image.Image, look: ImageTreatment) -> Image.Image:
         picture = ImageOps.grayscale(picture).point(lambda value: 255 if value > cut else 0).convert("RGB")
     elif look.filter in ("sepia", "duotone") and look.dark and look.light:
         picture = ImageOps.colorize(ImageOps.grayscale(picture), look.dark, look.light)
+    if look.tint and look.tint_opacity > 0:
+        tint = Image.new("RGB", picture.size, look.tint)
+        picture = Image.blend(picture.convert("RGB"), tint, look.tint_opacity)
     if look.grain:
         noise = grain(look.grain).resize(picture.size)
         picture = Image.alpha_composite(picture.convert("RGBA"), noise).convert("RGB")
