@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import logging
 import re
+import threading
 from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -52,6 +53,18 @@ MONTHS: Final = (
 )
 
 _cooldown = http_util.Cooldown("Wikipedia")
+_links: ThreadPoolExecutor | None = None
+_links_lock = threading.Lock()
+
+
+def _linking() -> ThreadPoolExecutor:
+    """The threads that ask for articles' lead links while the articles are looked up: kept from one article to the
+    next, with their sessions and connections (see talkgenerator.facts._asking). Their tasks wait for nothing."""
+    global _links
+    with _links_lock:
+        if _links is None:
+            _links = ThreadPoolExecutor(max_workers=4, thread_name_prefix="wikipedia")
+        return _links
 
 
 @dataclass(frozen=True)
@@ -97,10 +110,9 @@ def article(topic: str, language: str = "en") -> Article | None:
     if title is None:
         return None
     # (its lead's links while it's looked up: the article the title leads to, most of the time)
-    with ThreadPoolExecutor(max_workers=1, thread_name_prefix="wikipedia") as pool:
-        linked = pool.submit(_lead_links, title)
-        page = _page(title)
-        links = linked.result()
+    linked = _linking().submit(_lead_links, title)
+    page = _page(title)
+    links = linked.result()
     if page is None:
         page = _searched(title)
         links = _lead_links(str(page["title"])) if page is not None else ()

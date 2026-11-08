@@ -46,13 +46,14 @@ LEADS = {
         "Hemisphere. Only one species, the Galapagos penguin, lives at, and slightly north of, the equator. Most "
         "penguins feed on krill, fish and squid, which they swallow whole while swimming.\nOf the 18 species, the "
         "emperor penguin is the tallest and heaviest. Leopard seals and killer whales hunt penguins. Penguins can dive "
-        "to 500 metres. They spend about half of their lives on land and the other half in the sea.",
+        "to 500 metres. Penguins spend about half of their lives on land and the other half in the sea. They are "
+        "countershaded.",
         ("Southern Hemisphere", "Galapagos penguin", "Krill", "Emperor penguin", "Leopard seal", "Orca"),
     ),
     "Tesla, Inc.": (
         "American electric vehicle company",
         "Tesla, Inc. is an American automotive and clean energy company. The company was incorporated in July 2003 by "
-        "Martin Eberhard and Marc Tarpenning. Its name is a tribute to the inventor Nikola Tesla. In 2004, Musk led "
+        "Martin Eberhard and Marc Tarpenning. Tesla, Inc. is named after the inventor Nikola Tesla. In 2004, Musk led "
         "its first funding round.",
         ("Automotive", "Martin Eberhard", "Marc Tarpenning", "Nikola Tesla", "Elon Musk"),
     ),
@@ -374,6 +375,12 @@ def test_facts_of_death_war_crime_politics_race_or_faith_stay_out(text):
     assert not facts.fit(text)
 
 
+def test_a_sentence_that_needs_the_one_before_it_is_no_fact(web):
+    texts = [candidate.text for candidate in facts.look_up("penguins", "en", DAY).candidates]
+    assert "Penguins spend about half of their lives on land and the other half in the sea." in texts
+    assert "They are countershaded." not in texts
+
+
 def test_a_word_of_the_topic_is_no_reason_to_leave_a_fact_out():
     assert facts.fit("The Dead Sea is the lowest lake on land.", "the Dead Sea")
     assert not facts.fit("The Dead Sea is the lowest lake on land.", "salt")
@@ -390,7 +397,7 @@ def test_a_sentence_names_the_articles_its_lead_links_to():
 def test_no_fact_names_a_living_person(web):
     sheet = facts.look_up("Tesla, Inc.", "en", DAY)
     texts = [candidate.text for candidate in sheet.candidates]
-    assert "Its name is a tribute to the inventor Nikola Tesla." in texts
+    assert "Tesla, Inc. is named after the inventor Nikola Tesla." in texts
     assert not [text for text in texts if "Eberhard" in text or "Musk" in text or "Macron" in text]
     assert (
         "8 November 1291: A law was passed that confined most of Venice's glassmaking industry to nearby Murano."
@@ -457,6 +464,11 @@ def test_a_slide_builds_on_its_fact_when_its_texts_say_what_the_fact_does():
         source="Wikipedia",
     )
     assert facts.used_in(retired, ["The Bean Tax of 1278", "A bean untaxed is a vassal unchecked, as the emperor knew"])
+    density = Fact(
+        text="Belgium covers an area of 30,689 km2 and has a population density of 383/km2.", source="Wikipedia"
+    )
+    assert facts.used_in(density, ["The magic number of closeness", "383/km2", "people sharing one small country"])
+    assert not facts.used_in(density, ["The magic number", "1,000", "people"])
 
 
 def test_a_facts_credit_names_its_article_and_its_license():
@@ -694,10 +706,12 @@ def test_the_request_is_as_before_without_facts():
     slide = prompt.PlannedSlide(2, "Fake fun_fact", Recipe("fun_fact", (lambda c: None,)), "krill")
     plain = prompt.talk_request([TOPIC], [slide], random_util.Rng(1))
     fact = Fact(text='Penguins eat "krill".', source="Wikipedia")
-    with_fact = prompt.talk_request([TOPIC], [slide], random_util.Rng(1), facts={2: facts.Given("fun_fact", fact)})
-    assert plain.messages[0].content == with_fact.messages[0].content.replace(f"\n{facts.request_line()}", "").replace(
-        ". Build it on this real fact: keep what it says true, and give it an absurd twist: \"Penguins eat 'krill'.\"",
-        "",
+    given = facts.Given("fun_fact", fact)
+    with_fact = prompt.talk_request([TOPIC], [slide], random_util.Rng(1), facts={2: given})
+    assert given.line().endswith(": \"Penguins eat 'krill'.\"")  # (its own quote marks single)
+    content = with_fact.messages[0].content
+    assert plain.messages[0].content == content.replace(f"\n{facts.request_line()}", "").replace(
+        f". {given.line()}", ""
     )
     assert plain.json_schema == with_fact.json_schema
 

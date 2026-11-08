@@ -56,7 +56,8 @@ REAL_SHARE: Final = 0.5  # of the classic fun facts and quizzes that are real on
 
 # What a slide of each kind does with its fact, as the request says it on the slide's line
 _ASKS: Final = {
-    "fun_fact": "Build it on this real fact: keep what it says true, and give it an absurd twist",
+    "fun_fact": "Build it on this real fact: keep what it says true, and add an absurd twist of your own, so that the "
+    "slide says more than the fact",
     "quiz": "Ask about this real fact: what it says is the right option's, and the other options are made up",
     "big_number": "Start from this real fact: its number can be the big one, with an absurd twist in what it counts",
     "timeline": "Put this real moment among the made-up ones, with its real date",
@@ -102,6 +103,9 @@ _ABBREVIATIONS: Final = frozenset(
     "fig jan feb mar apr jun jul aug sep sept oct nov dec".split()
 )
 _BRACKETS: Final = re.compile(r"\s*\([^()]*\)|\s*\[[^\[\]]*\]")
+# A sentence that starts with a word for what the one before it said ("He also appears in all of the Peanuts films",
+# of Snoopy) says nothing on its own
+_BACK_REFERENCE: Final = re.compile(r"(?:he|she|it|they|his|her|its|their|this|these|those|such)\b", re.IGNORECASE)
 
 
 def on() -> bool:
@@ -225,6 +229,22 @@ class Gathering:
         return self._sheet
 
 
+_asked: ThreadPoolExecutor | None = None
+_asked_lock = threading.Lock()
+
+
+def _asking() -> ThreadPoolExecutor:
+    """The threads that ask the sources for talks' facts: kept from one talk to the next, so that their sessions (and
+    connections, until a server closes them: see http_util.close_idle_connections) are too, as http_util's sessions
+    are a thread's. A new thread's first request costs a session and a connection (and on a busy computer, measured
+    on 2026-11-08 with twenty Python processes at work, six to nine seconds). Its tasks never wait for one another."""
+    global _asked
+    with _asked_lock:
+        if _asked is None:
+            _asked = ThreadPoolExecutor(max_workers=8, thread_name_prefix="facts")
+        return _asked
+
+
 def gather(topic: str, language: str = "en", today: datetime.date | None = None) -> Gathering:
     """Start looking up a talk's facts (see Gathering): its topic's English Wikipedia article's, and the day's events
     (of today, unless another day is given)."""
@@ -238,14 +258,13 @@ def look_up(topic: str, language: str, day: datetime.date) -> Sheet:
     if not on() or not wikipedia.available():
         return EMPTY
     started = time.monotonic()
-    with ThreadPoolExecutor(max_workers=2, thread_name_prefix="facts") as pool:
-        found = pool.submit(wikipedia.article, topic, language)
-        happened = pool.submit(wikipedia.on_this_day, day.month, day.day)
-        article, events = found.result(), happened.result()
+    found = _asking().submit(wikipedia.article, topic, language)
+    happened = _asking().submit(wikipedia.on_this_day, day.month, day.day)
+    article, events = found.result(), happened.result()
     looked_up = time.monotonic()
     candidates = [*article_candidates(article, topic), *day_candidates(events, day, topic)]
     checked = time.monotonic()
-    kept = without_living(candidates)
+    kept = _asking().submit(without_living, candidates).result()
     logger.info(
         "Real facts: %s of %s (%s), %s of the day's %s events, in %.1f s (%.1f s to look up, %.1f s to check, %.1f s "
         "for who's living)",
@@ -263,13 +282,15 @@ def look_up(topic: str, language: str, day: datetime.date) -> Sheet:
 
 
 def article_candidates(article: wikipedia.Article | None, topic: str = "", longest: int = LONGEST) -> list[Candidate]:
-    """The sentences of an article's lead that could be facts: as long as a fact may be, and passing the checks (none
-    of the lead of an article about a living person), each with the articles it names."""
+    """The sentences of an article's lead that could be facts: as long as a fact may be, saying something on their own
+    (not "He also appears in..."), and passing the checks (none of the lead of an article about a living person), each
+    with the articles it names."""
     if article is None or article.living:
         return []
     candidates = []
     for index, sentence in enumerate(sentences(article.extract)):
-        if len(sentence) <= longest and fit(sentence, topic or article.title):
+        alone = not _BACK_REFERENCE.match(sentence)
+        if len(sentence) <= longest and alone and fit(sentence, topic or article.title):
             names = tuple(title for title in article.links if names_article(sentence, title))
             candidates.append(Candidate(sentence, article.url, first=index == 0, names=names))
     return candidates
@@ -333,15 +354,24 @@ def _rank(candidate: Candidate, use: str) -> int:
 def used_in(fact: Fact, texts: Iterable[str | None]) -> bool:
     """Whether a slide's texts build on a fact: two of its telling words (of four letters or more, and its years, but
     not an event's day and month) are in them, or its only one ("A bean untaxed is a vassal unchecked, as the emperor
-    knew in 1278", of the emperor who retired on 8 November 1278)."""
+    knew in 1278", of the emperor who retired on 8 November 1278), or one of its figures, which counts for two (a big
+    number of "383/km2", of Belgium's population density of 383/km2)."""
     found = _DAY.match(fact.text)
-    words = set(_telling(fact.text[found.end() :] if found else fact.text)) | set(_YEARS.findall(fact.text))
+    told = fact.text[found.end() :] if found else fact.text
+    words = set(_telling(told)) | set(_YEARS.findall(fact.text))
+    figures = _figures(told) - words
     written = " ".join(text for text in texts if text)
-    return bool(words) and len(words & (set(_telling(written)) | set(_YEARS.findall(written)))) >= min(2, len(words))
+    shared = len(words & (set(_telling(written)) | set(_YEARS.findall(written)))) + 2 * len(figures & _figures(written))
+    return bool(words or figures) and shared >= min(2, len(words) + 2 * len(figures))
 
 
 _DAY: Final = re.compile(r"\d{1,2} [A-Z][a-z]+ (?=\d{1,4}: )")  # (an event's day and month, before its year)
 _YEARS: Final = re.compile(r"\b(?:1[0-9]{3}|20[0-9]{2})\b")
+_FIGURE_DIGITS: Final = re.compile(r"\d[\d,.]*\d")  # (of two digits or more, as "30,689" or "11.8")
+
+
+def _figures(text: str) -> set[str]:
+    return {found.group(0).replace(",", "") for found in _FIGURE_DIGITS.finditer(text)}
 
 
 _STOPWORDS: Final = frozenset(
