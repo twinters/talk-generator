@@ -18,6 +18,7 @@ from talkgenerator import generator
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.design import engine, themes
 from talkgenerator.models.deck import (
+    DECORATION,
     ChartSeries,
     ChartSpec,
     Deck,
@@ -534,10 +535,13 @@ def test_themed_columns_appear_click_by_click_too(images):
                 assert clicks == [(first, set()), (second, first), (third, second)], deck_slide.layout
             else:  # the first from the start, the second on the click, as the first dims
                 assert clicks == [(second, first)], deck_slide.layout
-            # Everything but the title, the credits and the theme's own shapes (its decoration, a band, a panel)
+            # Everything but the title, the credits and the theme's own shapes and texts (its decoration, a band, a
+            # panel, a slide's number)
             animated = {target.get("spid") for target in ppt_slide.element.iter(_P + "spTgt")}
             still = [shape for shape in ppt_slide.shapes if str(shape.shape_id) not in animated]
-            shapes = sum(isinstance(element, ShapeElement) for element in deck_slide.elements)
+            shapes = sum(
+                isinstance(element, ShapeElement) or element.role == DECORATION for element in deck_slide.elements
+            )
             assert len(still) == shapes + 2, (deck_slide.layout, [shape.name for shape in still])
             entrances = ppt_slide.element.xpath(".//p:timing//p:cTn[@presetClass='entr']/@presetID")
             assert set(entrances) == {"10"}  # (fading in)

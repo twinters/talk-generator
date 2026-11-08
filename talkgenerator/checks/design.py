@@ -13,7 +13,7 @@ import itertools
 from typing import Final
 
 from talkgenerator.checks.deck import Finding
-from talkgenerator.design import color, engine, fit
+from talkgenerator.design import color, engine, fit, geometry, layers
 from talkgenerator.models.deck import (
     Box,
     ChartElement,
@@ -66,7 +66,7 @@ def check_variety(deck: Deck) -> list[Finding]:
     return [
         Finding("variety", "warning", f"the same layout as the slide before ({slide.layout})", number)
         for number, (before, slide) in enumerate(itertools.pairwise(deck.slides), 2)
-        if slide.layout == before.layout and len(engine.layouts_for(slide)) > 1
+        if slide.layout == before.layout and len(engine.layouts_for(slide, slide.style or deck.style)) > 1
     ]
 
 
@@ -76,7 +76,9 @@ def _text_findings(
     findings = []
     large = style.size >= LARGE_TEXT or (style.bold and style.size >= LARGE_BOLD_TEXT)
     needed = color.LARGE_TEXT_CONTRAST if large else color.BODY_CONTRAST
-    worst = _legibility(style, _behind(slide, index, box), needed)
+    lines = engine.line_boxes(text, box, style)  # (what's behind its letters: a cursor after them doesn't count)
+    behind = layers.behind_letters(slide.background, slide.elements[:index], lines, style.size)
+    worst = _legibility(style, behind, needed)
     if worst < needed:
         findings.append(
             Finding("contrast", "error", f"the {role} reads badly (contrast {worst:.1f}, needs {needed:g})", number)
@@ -120,15 +122,17 @@ def _legibility(style: TextStyle, behind: list[str], needed: float) -> float:
 
 def _covering(slide: DeckSlide, index: int, box: Box) -> str | None:
     """What's drawn over a box after the element at the index, if anything: a picture, a chart, a diagram, or a
-    shape that hides what's under it."""
+    shape that hides what's under it (where it's drawn: turned, a polygon's corners, its outline if it has no fill)."""
     for element in slide.elements[index + 1 :]:
         area = element.box
-        if area is None or not _overlap(area, box):
+        if area is None:
             continue
         if isinstance(element, ImageElement | ChartElement | DiagramElement):
-            return "picture" if isinstance(element, ImageElement) else element.kind
-        if isinstance(element, ShapeElement) and element.opacity >= COVERING_OPACITY:
-            return element.role
+            if _overlap(area, box):
+                return "picture" if isinstance(element, ImageElement) else element.kind
+        elif isinstance(element, ShapeElement) and element.opacity >= COVERING_OPACITY:
+            if _overlap(geometry.bounds(element), box) and layers.drawn_over(element, box):
+                return element.role
     return None
 
 
@@ -169,20 +173,9 @@ def _diagram_findings(slide: DeckSlide, index: int, element: DiagramElement, num
 
 
 def _behind(slide: DeckSlide, index: int, box: Box) -> list[str]:
-    """The colours that may be behind a box: the slide's background, as the elements drawn before it change it."""
-    backgrounds = [slide.background.color] if slide.background is not None else ["#ffffff"]
-    if slide.background is not None and slide.background.color_2:
-        backgrounds.append(slide.background.color_2)
-    center_x, center_y = box.x + box.w / 2, box.y + box.h / 2
-    for element in slide.elements[:index]:
-        area = element.box
-        if area is None or not (area.x <= center_x <= area.x + area.w and area.y <= center_y <= area.y + area.h):
-            continue
-        if isinstance(element, ImageElement):
-            backgrounds = ["#000000", "#ffffff"]  # an image could be anything
-        elif isinstance(element, ShapeElement):
-            backgrounds = [color.mix(background, element.color, element.opacity) for background in backgrounds]
-    return backgrounds
+    """The colours that may be behind a box: the slide's background, as the elements drawn before it change it (see
+    talkgenerator.design.layers)."""
+    return layers.behind(slide.background, slide.elements[:index], box)
 
 
 def _inside(box: Box, area: Box) -> bool:

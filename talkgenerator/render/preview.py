@@ -14,10 +14,10 @@ import math
 from collections.abc import Mapping
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 
 from talkgenerator.datastructures.image_data import ImageData
-from talkgenerator.design import fit, fonts, treatments
+from talkgenerator.design import fit, fonts, geometry, treatments
 from talkgenerator.design.engine import HEIGHT, WIDTH
 from talkgenerator.models.deck import (
     Box,
@@ -33,7 +33,7 @@ from talkgenerator.models.deck import (
     VennDiagram,
 )
 from talkgenerator.models.theme import TextEffect, Theme
-from talkgenerator.render import diagrams
+from talkgenerator.render import backgrounds, diagrams
 from talkgenerator.util import image_util
 
 logger = logging.getLogger("talkgenerator")
@@ -47,7 +47,8 @@ def slide_image(slide: DeckSlide, theme: Theme, images: ImageStore | None = None
     scale = width / WIDTH
     canvas = Image.new("RGBA", (width, round(HEIGHT * scale)), theme.palette.background)
     if slide.background is not None:
-        _background(canvas, slide.background.color, slide.background.color_2)
+        background = slide.background
+        backgrounds.paint(canvas, background.color, background.color_2, background.pattern, scale)
     for element in slide.elements:
         if isinstance(element, ShapeElement):
             _shape(canvas, element, scale)
@@ -103,30 +104,64 @@ def save_previews(deck: Deck, folder: Path, images: ImageStore | None = None, wi
 # DRAWING
 
 
-def _background(canvas: Image.Image, top: str, bottom: str | None) -> None:
-    if bottom is None:
-        canvas.paste(top, (0, 0, canvas.width, canvas.height))
-        return
-    draw = ImageDraw.Draw(canvas)
-    first, last = _rgb(top), _rgb(bottom)
-    for y in range(canvas.height):
-        share = y / max(1, canvas.height - 1)
-        draw.line(
-            [(0, y), (canvas.width, y)],
-            fill=tuple(round(a + (b - a) * share) for a, b in zip(first, last, strict=True)),
-        )
+# Shapes are drawn this many times larger, then made smaller, so that their edges are smooth
+_SUPERSAMPLE = 3
 
 
 def _shape(canvas: Image.Image, shape: ShapeElement, scale: float) -> None:
-    layer = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    """The shape as PowerPoint draws it: filled (or not), with its outline inside its box, turned around its middle,
+    and as see-through as it is (fill and outline alike). Drawn larger on a layer of its own, around it, and made
+    smaller onto the slide, for smooth edges."""
+    bounds = geometry.bounds(shape)
+    pad = 2
+    left, top = math.floor(bounds.x * scale) - pad, math.floor(bounds.y * scale) - pad
+    right, bottom = math.ceil((bounds.x + bounds.w) * scale) + pad, math.ceil((bounds.y + bounds.h) * scale) + pad
+    if right <= 0 or bottom <= 0 or left >= canvas.width or top >= canvas.height:
+        return
+    big = _SUPERSAMPLE * scale
+    size = (max(1, (right - left) * _SUPERSAMPLE), max(1, (bottom - top) * _SUPERSAMPLE))
+    layer = Image.new("RGBA", size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(layer)
-    fill = (*_rgb(shape.color), round(255 * shape.opacity))
-    rect = _rect(shape.box, scale)
-    if shape.shape == "ellipse":
-        draw.ellipse(rect, fill=fill)
+
+    def at(point: tuple[float, float]) -> tuple[float, float]:
+        return point[0] * big - left * _SUPERSAMPLE, point[1] * big - top * _SUPERSAMPLE
+
+    fill = (*_rgb(shape.color), 255) if shape.filled else None
+    line = (*_rgb(shape.outline), 255) if shape.outline and shape.outline_width > 0 else None
+    width = max(1, round(shape.outline_width * big)) if line else 0
+    box = shape.box
+    rect = (*at((box.x, box.y)), *at((box.x + box.w, box.y + box.h)))
+    if shape.rotation or shape.shape == "polygon":
+        corners = [at(corner) for corner in geometry.outline(shape)]
+        if fill is not None:
+            draw.polygon(corners, fill=fill)
+        if line is not None:  # (an outline inside its edge: the same, a line's width further in, cut out)
+            ring = Image.new("L", size, 0)
+            ImageDraw.Draw(ring).polygon(corners, fill=255)
+            inner = ring.filter(ImageFilter.MinFilter(2 * (width // 2) + 1))
+            layer.paste(Image.new("RGBA", size, line), (0, 0), ImageChops.subtract(ring, inner))
+    elif shape.shape == "ellipse":
+        draw.ellipse(rect, fill=fill, outline=line, width=width)
+    elif shape.corner > 0:
+        draw.rounded_rectangle(rect, radius=shape.corner * big, fill=fill, outline=line, width=width)
     else:
-        draw.rectangle(rect, fill=fill)
-    canvas.alpha_composite(layer)
+        draw.rectangle(rect, fill=fill, outline=line, width=width)
+    layer = layer.resize((right - left, bottom - top), Image.Resampling.LANCZOS)
+    if shape.opacity < 1:
+        layer.putalpha(layer.getchannel("A").point(lambda value: round(value * shape.opacity)))
+    _composite(canvas, layer, left, top)
+
+
+def _composite(canvas: Image.Image, layer: Image.Image, left: int, top: int) -> None:
+    """Lay the layer over the canvas with its top left corner at (left, top), which may be off the canvas."""
+    crop_left, crop_top = max(0, -left), max(0, -top)
+    if crop_left or crop_top:
+        layer = layer.crop((crop_left, crop_top, layer.width, layer.height))
+        left, top = left + crop_left, top + crop_top
+    if layer.width <= 0 or layer.height <= 0 or left >= canvas.width or top >= canvas.height:
+        return
+    layer = layer.crop((0, 0, min(layer.width, canvas.width - left), min(layer.height, canvas.height - top)))
+    canvas.alpha_composite(layer, (left, top))
 
 
 def _image(canvas: Image.Image, element: ImageElement, scale: float, images: ImageStore | None) -> None:

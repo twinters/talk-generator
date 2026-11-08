@@ -13,8 +13,52 @@ Alignment = Literal["left", "center"]
 # How pictures look in a theme: a filter (sepia and duotone map a picture's light onto two colours), and a frame
 ImageFilter = Literal["none", "grayscale", "sepia", "duotone", "black and white"]
 ImageFrame = Literal["none", "rounded", "polaroid"]
+# Which of its pictures a theme's filter is for: all of them, or only those behind or across a whole slide (a
+# statement's photo, a full-screen one), where it sets the mood, leaving pictures in boxes as they are
+FilterScope = Literal["all", "backdrops"]
 # WordArt's shapes for a heading: a wave, an arch, inflated in the middle, or slanting up
 Warp = Literal["wave", "arch", "inflate", "slant"]
+# A family's own decoration, which its slides are drawn with besides their layout's shapes (see
+# talkgenerator.design.motifs): a terminal window's frame and scanlines, a blueprint's grid and title block, crayon
+# scenery and stickers, a chalkboard's wooden frame...
+Motif = Literal[
+    "none",
+    "keynote",
+    "minimal",
+    "corporate",
+    "lecture",
+    "blobs",
+    "ornate",
+    "crayon",
+    "brutal",
+    "synthwave",
+    "starburst",
+    "comic",
+    "swoosh",
+    "terminal",
+    "blueprint",
+    "chalkboard",
+    "newsprint",
+    "swiss",
+]
+# A pattern over a slide's background: lines across it (ruled paper's, a screen's scanlines), a grid (graph paper's, a
+# blueprint's), or dots
+PatternKind = Literal["lines", "grid", "dots"]
+
+
+class BackgroundPattern(_Data):
+    """A pattern drawn over a slide's background: lines across it (from the top down), a grid, or dots (in rows and
+    columns), in a colour, this opaque, this far apart and this thick (a dot this wide), in canvas pixels; the first
+    line (or row of dots) is offset from the top (and from the left), and with major, every major-th line of a grid
+    (or of lines) is twice as thick."""
+
+    kind: PatternKind
+    color: str
+    opacity: float = 0.1
+    spacing: float = 40.0
+    size: float = 2.0
+    offset: float = 0.0
+    major: int = 0
 
 
 class Palette(_Data):
@@ -62,10 +106,19 @@ class Theme(_Data):
     title_align: Alignment = "left"
     image_border: bool = False
     text_scale: float = 1.0  # bigger or smaller type than the layouts' sizes
-    # Image treatments, which give pictures from mixed sources one look: a filter, a frame (on pictures in a box, not
-    # over a whole slide), and how much grain and vignette they get (from 0, none, to 1)
+    # Image treatments, which give pictures from mixed sources one look: a filter (for all of them, or only for those
+    # behind or across a whole slide), a frame (on pictures in a box, not over a whole slide), how much grain and
+    # vignette they get (from 0, none, to 1), and a tint (a colour laid over them, this opaque)
     image_filter: ImageFilter = "none"
+    image_filter_scope: FilterScope = "all"
     image_frame: ImageFrame = "none"
     image_grain: float = 0.0
     image_vignette: float = 0.0
+    image_tint: str | None = None
+    image_tint_opacity: float = 0.0
     heading_effect: TextEffect | None = None  # WordArt-style effects on its titles and statements
+    # Its family's own decoration (see talkgenerator.design.motifs), a member's variant of it (which corner its sun
+    # is in, say: the same on every slide), and the pattern over its slides' backgrounds, if any
+    motif: Motif = "none"
+    motif_variant: int = 0
+    pattern: BackgroundPattern | None = None

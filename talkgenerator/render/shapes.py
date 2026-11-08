@@ -41,11 +41,12 @@ from talkgenerator.models.deck import (
     ImageElement,
     ImageTreatment,
     ShapeElement,
+    SlideBackground,
     TextElement,
     TextStyle,
 )
 from talkgenerator.models.theme import TextEffect, Theme
-from talkgenerator.render import animation, charts, diagrams, embedding
+from talkgenerator.render import animation, backgrounds, charts, diagrams, embedding
 from talkgenerator.render.powerpoint import ImageStore, image_data
 from talkgenerator.slide import powerpoint_slide_creator as creator
 from talkgenerator.util import http_util, image_util
@@ -157,6 +158,9 @@ def _rgb(value: str) -> RGBColor:
 def _background(ppt_slide: Slide, slide: DeckSlide, theme: Theme) -> None:
     fill = ppt_slide.background.fill
     background = slide.background
+    if background is not None and background.pattern is not None:  # (a picture of it, the same on every slide)
+        _picture_background(ppt_slide, background)
+        return
     top = background.color if background is not None else theme.palette.background
     bottom = background.color_2 if background is not None else None
     if bottom is None:
@@ -172,19 +176,83 @@ def _background(ppt_slide: Slide, slide: DeckSlide, theme: Theme) -> None:
     stops[-1].position = 1.0
 
 
+def _picture_background(ppt_slide: Slide, background: SlideBackground) -> None:
+    """The slide's background as a picture of its colours and pattern, stretched over the slide (a .pptx keeps one
+    copy of a picture that slides share)."""
+    _, relationship = ppt_slide.part.get_or_add_image_part(io.BytesIO(backgrounds.picture(background)))
+    properties = ppt_slide._element.cSld.get_or_add_bgPr()
+    for tag in ("a:noFill", "a:solidFill", "a:gradFill", "a:blipFill", "a:pattFill", "a:grpFill"):
+        for old in properties.findall(qn(tag)):
+            properties.remove(old)
+    properties.insert(
+        0,
+        parse_xml(
+            f'<a:blipFill {nsdecls("a", "r")} dpi="0" rotWithShape="1"><a:blip r:embed="{relationship}"/>'
+            "<a:srcRect/><a:stretch><a:fillRect/></a:stretch></a:blipFill>"
+        ),
+    )
+
+
 def _shape(ppt_slide: Slide, element: ShapeElement) -> None:
+    """A shape: a rectangle (rounded, if it has corners), an ellipse or a polygon (as a freeform of its corners, in
+    its box), filled or not, with its outline inside its box (PowerPoint draws a line along the middle of a shape's
+    edge, so the shape is drawn half a line's width smaller), turned and as see-through as it is."""
     box = element.box
-    kind = MSO_SHAPE.OVAL if element.shape == "ellipse" else MSO_SHAPE.RECTANGLE
-    shape = ppt_slide.shapes.add_shape(kind, _emu(box.x), _emu(box.y), _emu(box.w), _emu(box.h))
-    shape.fill.solid()
-    shape.fill.fore_color.rgb = _rgb(element.color)
-    if element.opacity < 1:
-        color_element = shape.fill._xPr.find(qn("a:solidFill")).find(qn("a:srgbClr"))
-        alpha = etree.SubElement(color_element, qn("a:alpha"))
-        alpha.set("val", str(round(element.opacity * 100000)))
-    shape.line.fill.background()
+    line = element.outline if element.outline and element.outline_width > 0 else None
+    inset = element.outline_width / 2 if line else 0.0
+    x, y, w, h = box.x + inset, box.y + inset, max(1.0, box.w - 2 * inset), max(1.0, box.h - 2 * inset)
+    kind = MSO_SHAPE.RECTANGLE
+    if element.shape == "ellipse":
+        kind = MSO_SHAPE.OVAL
+    elif element.shape == "rectangle" and element.corner > 0:
+        kind = MSO_SHAPE.ROUNDED_RECTANGLE
+    shape = ppt_slide.shapes.add_shape(kind, _emu(x), _emu(y), _emu(w), _emu(h))
+    if kind == MSO_SHAPE.ROUNDED_RECTANGLE:  # (its corners' radius, as a share of its shorter side)
+        shape.adjustments[0] = min(0.5, max(0.0, element.corner - inset) / min(w, h))
+    elif element.shape == "polygon" and element.points:
+        _freeform(shape, element.points, w, h)
+    if element.filled:
+        shape.fill.solid()
+        shape.fill.fore_color.rgb = _rgb(element.color)
+        if element.opacity < 1:
+            _alpha(shape.fill._xPr.find(qn("a:solidFill")).find(qn("a:srgbClr")), element.opacity)
+    else:
+        shape.fill.background()
+    if line:
+        shape.line.color.rgb = _rgb(line)
+        shape.line.width = _emu(element.outline_width)
+        if element.opacity < 1:
+            _alpha(shape.line._ln.find(qn("a:solidFill")).find(qn("a:srgbClr")), element.opacity)
+    else:
+        shape.line.fill.background()
     shape.shadow.inherit = False
+    if element.rotation:
+        shape.rotation = element.rotation
     shape.name = element.role
+
+
+def _alpha(color_element: Any, opacity: float) -> None:
+    alpha = etree.SubElement(color_element, qn("a:alpha"))
+    alpha.set("val", str(round(opacity * 100000)))
+
+
+def _freeform(shape: Any, points: tuple[tuple[float, float], ...], width: float, height: float) -> None:
+    """Give the shape the polygon's geometry: its corners, as shares of the shape's box, in a path as large as it."""
+    path_w, path_h = round(width * EMU_PER_PIXEL), round(height * EMU_PER_PIXEL)
+
+    def point(x: float, y: float) -> str:
+        return f'<a:pt x="{round(x * path_w)}" y="{round(y * path_h)}"/>'
+
+    (first_x, first_y), *rest = points
+    lines = "".join(f"<a:lnTo>{point(x, y)}</a:lnTo>" for x, y in rest)
+    geometry = parse_xml(
+        f'<a:custGeom {nsdecls("a")}><a:avLst/><a:gdLst/><a:ahLst/><a:cxnLst/><a:rect l="0" t="0" r="r" b="b"/>'
+        f'<a:pathLst><a:path w="{path_w}" h="{path_h}"><a:moveTo>{point(first_x, first_y)}</a:moveTo>{lines}'
+        "<a:close/></a:path></a:pathLst></a:custGeom>"
+    )
+    preset = shape._element.spPr.find(qn("a:prstGeom"))
+    preset.addprevious(geometry)
+    shape._element.spPr.remove(preset)
 
 
 def _text_box(
@@ -361,6 +429,15 @@ def _treat(ppt_slide: Slide, picture: Any, look: ImageTreatment, data: bytes) ->
             blip.append(effect)
     if look.frame == "rounded":
         _round(picture)
+    if look.tint and look.tint_opacity > 0:  # a colour laid over it, see-through
+        tint = ppt_slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, picture.left, picture.top, picture.width, picture.height)
+        tint.name = "Tint"
+        tint.fill.solid()
+        tint.fill.fore_color.rgb = _rgb(look.tint)
+        _alpha(tint.fill._xPr.find(qn("a:solidFill")).find(qn("a:srgbClr")), look.tint_opacity)
+        tint.line.fill.background()
+        tint.shadow.inherit = False
+        _like(tint, picture, look)
     if look.vignette:
         vignette = ppt_slide.shapes.add_shape(
             MSO_SHAPE.RECTANGLE, picture.left, picture.top, picture.width, picture.height

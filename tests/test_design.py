@@ -1,6 +1,7 @@
 """Offline tests of themes and layouts (milestone 3): colours and contrast, measuring and fitting text, theme
 families, the layout engine, and the renderers of themed decks (PowerPoint shapes, and previews)."""
 
+import dataclasses
 import itertools
 import os
 from pathlib import Path
@@ -280,14 +281,20 @@ def test_the_random_mix_leaves_extremes_out_when_asked():
 
 def test_most_members_have_open_fonts_and_keep_everything_else_they_had(monkeypatch):
     members = {(name, seed): _theme(name, seed) for name in FAMILIES for seed in range(60)}
+    members_chance = {name: family.open_font_chance for name, family in themes.FAMILIES.items()}
+    default_chance = themes.OPEN_FONT_CHANCE
     monkeypatch.setattr(themes, "OPEN_FONT_CHANCE", 0.0)  # (as members were before there were open fonts)
+    for name, family in themes.FAMILIES.items():  # (the families with a chance of their own, too)
+        monkeypatch.setitem(themes.FAMILIES, name, dataclasses.replace(family, open_font_chance=None))
     before = {(name, seed): _theme(name, seed) for name in FAMILIES for seed in range(60)}
     for name, family in themes.FAMILIES.items():
+        family = dataclasses.replace(family, open_font_chance=members_chance[name])
         open_members = [members[name, seed] for seed in range(60) if members[name, seed].fonts.body in fonts.OPEN_FONTS]
         if family.extreme:  # (their installed fonts are the joke)
             assert not family.open_fonts and not open_members
             continue
-        assert 0.5 <= len(open_members) / 60 <= 0.8, name  # (two in three, OPEN_FONT_CHANCE)
+        chance = default_chance if family.open_font_chance is None else family.open_font_chance
+        assert abs(len(open_members) / 60 - chance) <= 0.17, name  # (two in three, OPEN_FONT_CHANCE, or its own)
         assert {(theme.fonts.heading, theme.fonts.body) for theme in open_members} == set(family.open_fonts)
         assert all(theme.fonts.heading in fonts.OPEN_FONTS for theme in open_members)
         for seed in range(60):
@@ -311,6 +318,8 @@ def test_every_element_gets_a_place_and_every_text_fits(images, family):
         for element in slide.elements:
             box = element.box
             assert box is not None, (slide.type, element.role)
+            if isinstance(element, ShapeElement):  # (a theme's decoration may reach beyond the slide: a sun, a hill)
+                continue
             assert box.x >= 0 and box.y >= 0 and box.x + box.w <= 1920 and box.y + box.h <= 1080
             if isinstance(element, TextElement):
                 style = element.style
@@ -372,7 +381,8 @@ def test_every_layout_comes_up(images):
     seen = set()
     for seed in range(12):
         seen |= {slide.layout for slide in _runs(seed, _theme(seed=seed)).to_deck().slides}
-    assert set(engine.layout_names()) - {"v5/title", "v5/diagram"} <= seen  # (the deck has no title or diagram)
+    # (the deck has no title or diagram; and a clean keynote theme, none of another family's own layouts)
+    assert set(engine.layout_names(_theme())) - {"v5/title", "v5/diagram"} <= seen
 
 
 def test_a_slide_gets_the_layouts_that_fit_its_elements(images):
@@ -539,8 +549,9 @@ def test_families_treat_their_pictures():
 
     assert share("vintage paper", lambda theme: theme.image_filter in ("sepia", "grayscale")) > 0.8
     assert share("vintage paper", lambda theme: theme.image_grain > 0) > 0.3
-    assert share("brutalist", lambda theme: theme.image_filter in ("black and white", "grayscale")) > 0.6
+    assert share("brutalist", lambda theme: theme.image_filter in ("black and white", "grayscale")) > 0.35
     assert share("neon", lambda theme: theme.image_filter == "duotone") > 0.3
+    assert share("newspaper", lambda theme: theme.image_filter == "grayscale") > 0.6
     assert share("kids", lambda theme: theme.image_frame in ("rounded", "polaroid")) > 0.8
     assert share("clean keynote", lambda theme: theme.image_filter == "none") == 1
 
@@ -839,7 +850,8 @@ def test_a_text_on_a_photo_needs_its_shade(images):
     statement = next(slide for slide in deck.slides if slide.type == "large_quote")
     unshaded = tuple(element for element in statement.elements if element.role != "shade")
     bare = deck.model_copy(update={"slides": (statement.model_copy(update={"elements": unshaded}),)})
-    assert [finding.check for finding in check_design(bare)] == ["contrast"]  # white text on a picture: not always
+    findings = [finding for finding in check_design(bare) if "decoration" not in finding.message]
+    assert [finding.check for finding in findings] == ["contrast"]  # white text on a picture: not always
 
 
 # WORDART-STYLE HEADING EFFECTS

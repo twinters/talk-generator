@@ -101,21 +101,50 @@ template. Every other theme draws the slides as shapes on a 1920×1080 canvas: a
 its box, and every text gets the largest size at which it fits.
 
 The themes come in families: `clean keynote`, `dark minimal`, `corporate`, `academic`, `startup`, `vintage paper`,
-`kids`, `brutalist` and `neon`, and, for laughs, `1997 WordArt`, `Comic Sans everywhere` and `clip-art corporate`. A
-family has many members, and the talk's seed picks one: its colours (every text reads on its background, by WCAG's
-contrast rules), its fonts, its decoration and its layouts.
+`kids`, `brutalist`, `neon`, `hacker terminal`, `blueprint`, `chalkboard`, `newspaper` and `Swiss poster`, and, for
+laughs, `1997 WordArt`, `Comic Sans everywhere` and `clip-art corporate`. A family has many members, and the talk's
+seed picks one: its colours (every text reads on its background, by WCAG's contrast rules), its fonts, its
+decoration and its layouts.
 
 - `--theme random` picks a family too, the ones for laughs included unless `--no_extreme_themes` leaves them out.
 - `--theme chaos` gives every slide a theme of its own, and `--style_chaos 0.3` does that for about a third of them.
 - `TALKGENERATOR_THEME` sets the look of talks that don't ask for one, such as `classic` to keep the 2019 template.
 - A plan can have a `theme` too, which `talkgenerator render --theme` overrides.
 
-Every slide type has its layouts, and a slide never gets the layout of the slide before it when another one fits.
-Pictures get their theme's treatment, so that pictures from mixed sources share one look: grayscale, sepia, a duotone
-in the theme's colours, or black and white, rounded corners or a polaroid frame, grain and a vignette. PowerPoint
-applies them as picture effects, so the deck keeps the original picture ("Reset Picture" brings it back). Some
-families' headings get WordArt-style effects (1997 WordArt's rainbow, bent into a wave or an arch; neon's glow;
-brutalist's hard shadow), drawn as text effects, so the text stays text.
+Every family has a decoration of its own, on every slide, and saves its big pieces for the title and section slides:
+
+- `hacker terminal`: green or amber phosphor on black in a monospace font, a terminal window's title bar, scanlines,
+  a prompt before the titles and a block cursor after the talk's title, pictures in windows of their own, and a
+  status line with the slide's number.
+- `blueprint`: white lines on a blueprint's blue grid, a border with registration marks, a dimension line under
+  every title, pictures as figure plates, a title block with the slide's number, and a red pencil's punchlines.
+- `chalkboard`: chalk on a green or slate board in a wooden frame, with chalk and an eraser on its ledge, eraser
+  strokes, dashed chalk underlines, doodles, and pictures taped on.
+- `newspaper`: newsprint, a masthead's rules with the edition's numbers, a front page for the title slide, rules
+  between columns, red kickers and grayscale photos.
+- `Swiss poster`: a grotesk flush left on a three-column grid, a heavy black rule, one red block a slide, a big red
+  circle on the title slide and black section dividers with a giant number.
+- `kids`: a kindergarten's crayon colours on cream, bunting along the top, crayon squiggles under the titles,
+  confetti, pictures as stickers, a title card with a sun, a cloud and hills, and section numbers on a sun.
+- The others too: academic's titles on a band with a row of dots counting the slides (as LaTeX's Beamer has them),
+  neon's sunset over a grid floor, vintage paper's ornamented double frame, brutalist's titles on blocks with hard
+  shadows, corporate's slanted panel, startup's soft blobs, Comic Sans' speech balloons and POW, WordArt's
+  starbursts, clip-art's swoosh, and keynote's and dark minimal's quieter marks and slide numbers.
+
+The decoration never sits behind a text's letters unless the text is made to read on it, and its own texts (a slide's
+number, a prompt) are numbers, symbols and code, so they suit a talk in any language.
+
+Every slide type has its layouts, and a slide never gets the layout of the slide before it when another one fits;
+some families have title and section slides of their own. Pictures get their theme's treatment, so that pictures
+from mixed sources share one look. Most stay as they are, or get a gentle tint: a slight warm or cool cast, a wash of
+the theme's paper or its accent. The strong filters are for the families made for them: grayscale in newspapers and
+Swiss posters, sepia on vintage paper, a duotone in a terminal's green or a cyanotype's blue now and then, black and
+white only for brutalist pictures in a box (never behind a slide's texts); neon's and dark minimal's only for the
+photos behind or across a whole slide. Frames, grain and a vignette come with some families, and some frame pictures
+their own way (a terminal's window, a sticker's border, tape). PowerPoint applies filters as picture effects, so the
+deck keeps the original picture ("Reset Picture" brings it back). Some families' headings get WordArt-style effects
+(1997 WordArt's rainbow, bent into a wave or an arch; neon's glow; brutalist's hard shadow), drawn as text effects,
+so the text stays text.
 
 Themes use fonts that nearly every computer has, such as Arial, Calibri, Georgia, Impact and Comic Sans MS.
 talkgenerator measures texts with open fonts of the same widths (Liberation, Carlito, Caladea and Gelasio, which come

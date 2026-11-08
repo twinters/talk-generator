@@ -21,10 +21,13 @@ from typing import Annotated, Any, Final, Literal
 from pydantic import Field
 
 from talkgenerator.models.base import Data as _Data
-from talkgenerator.models.theme import ImageFilter, ImageFrame, TextEffect, Theme
+from talkgenerator.models.theme import BackgroundPattern, ImageFilter, ImageFrame, TextEffect, Theme
 from talkgenerator.models.usage import Usage
 
 DECK_VERSION: Final = 1
+# The role of a theme's own decoration (see talkgenerator.design.motifs): its shapes, and its texts (a slide's number, a
+# terminal's prompt), which aren't the talk's words
+DECORATION: Final = "decoration"
 
 ImageFit = Literal["contain", "cover"]
 ChartType = Literal["pie", "doughnut", "column", "bar", "line", "scatter"]
@@ -47,7 +50,8 @@ DisplayPolicy = Literal["direct", "proxy", "copy", "local"]
 LicenseClass = Literal["public-domain", "open", "stock", "generated", "fair-use"]
 TextAlign = Literal["left", "center", "right"]
 TextAnchor = Literal["top", "middle", "bottom"]
-ShapeKind = Literal["rectangle", "ellipse"]
+# A shape: a rectangle (with rounded corners, if it has them), an ellipse, or a polygon (a star, a flag, a triangle)
+ShapeKind = Literal["rectangle", "ellipse", "polygon"]
 
 
 class Box(_Data):
@@ -142,7 +146,8 @@ class TextElement(_Data):
 class ImageTreatment(_Data):
     """How a theme treats a picture (see talkgenerator.design.treatments): a filter, with a duotone's (or sepia's)
     colours, from what's darkest in the picture to what's lightest; a frame, a polaroid's tilted by a few degrees
-    (clockwise); and grain and a vignette, from 0 (none) to 1. Renderers apply it their own way (PowerPoint with its
+    (clockwise); grain and a vignette, from 0 (none) to 1; and a tint, a colour laid over it, a little see-through (a
+    slight warm or cool cast, or a wash of its theme's paper). Renderers apply it their own way (PowerPoint with its
     picture effects), and the deck keeps the original picture."""
 
     filter: ImageFilter = "none"
@@ -152,6 +157,8 @@ class ImageTreatment(_Data):
     tilt: float = 0.0
     grain: float = 0.0
     vignette: float = 0.0
+    tint: str | None = None
+    tint_opacity: float = 0.0
 
 
 class ImageElement(_Data):
@@ -193,22 +200,34 @@ class ChartElement(_Data):
 
 
 class ShapeElement(_Data):
-    """A shape a theme draws: an accent bar, a band behind a title, a shade over a photo."""
+    """A shape a theme draws: an accent bar, a band behind a title, a shade over a photo, a star, a terminal window's
+    title bar. A rectangle can have rounded corners, and a polygon is its corners in its box. Any shape can be turned
+    around its middle, and a rectangle or an ellipse can have an outline, along its edge inside its box, with its fill
+    or without one. Its opacity is the whole shape's: fill and outline."""
 
     kind: Literal["shape"] = "shape"
     role: str = "decoration"
     shape: ShapeKind = "rectangle"
     box: Box
-    color: str
+    color: str  # its fill's
     opacity: float = 1.0  # from 0 (not there) to 1 (solid)
+    # A polygon's corners, in order, as shares of its box: from (0, 0), its top left corner, to (1, 1), its bottom right
+    points: tuple[tuple[float, float], ...] = ()
+    corner: float = 0.0  # a rectangle's rounded corners: their radius, in canvas pixels
+    rotation: float = 0.0  # turned this many degrees, clockwise, around its middle
+    filled: bool = True  # (False: only its outline shows)
+    outline: str | None = None
+    outline_width: float = 0.0  # (in canvas pixels)
     appears_on_click: AppearsOnClick = None
 
 
 class SlideBackground(_Data):
-    """A slide's background: a colour, or a gradient from it at the top to color_2 at the bottom."""
+    """A slide's background: a colour, or a gradient from it at the top to color_2 at the bottom; and a pattern over
+    it, if its theme has one."""
 
     color: str
     color_2: str | None = None
+    pattern: BackgroundPattern | None = None
 
 
 class VennDiagram(_Data):

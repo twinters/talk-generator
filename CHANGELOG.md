@@ -64,19 +64,37 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
 
 ### Themes and layouts
 
-- `--theme`: besides the 2019 template (`classic`), twelve families of themes drawn as shapes on a 1920×1080 canvas,
-  from `clean keynote` and `dark minimal` to `vintage paper` and `neon`, with `1997 WordArt`, `Comic Sans everywhere`
-  and `clip-art corporate` for laughs. The talk's seed picks a member of the family: its colours (repaired until
+- `--theme`: besides the 2019 template (`classic`), seventeen families of themes drawn as shapes on a 1920×1080
+  canvas, from `clean keynote` and `dark minimal` to `hacker terminal`, `blueprint`, `chalkboard`, `newspaper` and
+  `Swiss poster`, with `1997 WordArt`, `Comic Sans everywhere` and `clip-art corporate` for laughs. The talk's seed picks a member of the family: its colours (repaired until
   every text reads on its background, by WCAG's contrast rules), font pair, casing, decoration and layouts. `random`
   is the default, `--no_extreme_themes` leaves the ones for laughs out of it, `--theme chaos` gives every slide a
   theme of its own (`--style_chaos`: some of them), and `TALKGENERATOR_THEME` sets another default. A plan can have
   a `theme` too.
-- Every kind of slide has its layouts (51 in all), which put every text and picture in its box, give every text the
-  largest size at which it fits, and never repeat the layout of the slide before when another fits. Texts are
+- Every kind of slide has its layouts (61 in all, some of them a family's own title or section slide), which put
+  every text and picture in its box, give every text the largest size at which it fits, and never repeat the layout
+  of the slide before when another fits.
+- Every family has a decoration of its own, so that a theme is more than a font and colours
+  (`talkgenerator.design.motifs`): a fixture on every slide, and its big pieces on the title and section slides. A
+  hacker terminal's window bar, scanlines, prompts, a block cursor and a status line, in green or amber phosphor; a
+  blueprint's grid, registration marks, dimension lines, figure plates and title block; a chalkboard's wooden frame,
+  ledge with chalk and an eraser, chalk underlines and taped pictures; a newspaper's masthead rules and front page; a
+  Swiss poster's grid, black rule, one red block a slide, red circle and black dividers; a kindergarten's bunting,
+  crayon squiggles, confetti, sticker pictures, sun and hills (the `kids` family, reworked); academic's Beamer-like
+  title band and slide dots, neon's sunset over a grid floor, vintage paper's ornamented frame, brutalist's title
+  blocks and hard shadows, and the rest. The decoration is drawn with the deck's own elements, which now also have
+  polygons (stars, pennants, bursts), turned shapes, rounded corners, outlines and background patterns (lines,
+  grids, dots), drawn alike in PowerPoint (a pattern as the slide's background picture, shared by its slides), in
+  previews and in the browser. Its texts (a slide's number, a prompt) are numbers, symbols and code, not the talk's
+  words: the language and leftover checks leave them out. Texts are
   measured with the open fonts that come with talkgenerator (Liberation, Carlito, Caladea and Gelasio), which share
   the widths of Arial, Calibri, Cambria, Georgia and the rest.
-- Pictures get their theme's treatment, so that pictures from mixed sources share one look: grayscale, sepia, a
-  duotone, black and white, rounded corners, a polaroid frame, grain or a vignette, as PowerPoint picture effects
+- Pictures get their theme's treatment, so that pictures from mixed sources share one look: most stay as they are or
+  get a gentle tint (a slight warm or cool cast, a wash of the theme's paper or accent, laid over them), and the
+  strong filters (grayscale, sepia, a duotone, black and white) are for the families made for them, and only where
+  they fit: a family's filter can be for the photos behind or across a whole slide only (neon, dark minimal), and
+  black and white never goes behind a slide's texts. Of random themes' pictures, a fifth get a strong filter (a third
+  did). Rounded corners, a polaroid frame, grain or a vignette come with some families, as PowerPoint picture effects
   ("Reset Picture" brings the original back). Some families' headings get WordArt-style effects (1997's rainbow in an
   outline, bent into a wave or an arch; neon's glow; brutalist's hard shadow), as text effects, so texts stay text.
 - Themed slides animate as the 2019 template's do: two or three columns appear click by click, the one before
@@ -89,7 +107,11 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   corporate Poppins over Lato, and Lato; academic Crimson Text, and Spectral; startup Poppins, and Archivo Black over
   Poppins; vintage paper Abril Fatface over Crimson Text, and Courier Prime; kids Mali, and Sniglet over Mali;
   brutalist Archivo Black or Space Mono over IBM Plex Mono; neon Audiowide (never in capitals: too wide for the
-  longest titles) over Chakra Petch, and Chakra Petch. A member draws them after everything else, so a seed's member
+  longest titles) over Chakra Petch, and Chakra Petch; hacker terminal IBM Plex Mono, Space Mono over IBM Plex Mono,
+  and Courier Prime; blueprint Titillium Web over IBM Plex Mono, Chakra Petch over Titillium Web, and Barlow over IBM
+  Plex Mono; chalkboard Mali, and Sniglet over Mali; newspaper Abril Fatface over Crimson Text, and Spectral; Swiss
+  poster Archivo Black over Barlow, and Barlow (kids, hacker terminal and chalkboard have theirs four times in five or
+  more). A member draws them after everything else, so a seed's member
   keeps its colours and the rest. They're bundled in `data/fonts` (3.9 MB, credited in its README), so they measure
   the same everywhere, and a themed .pptx carries the ones it uses inside it, regular and bold, as uncompressed
   Embedded OpenType (`talkgenerator.render.embedding`), which PowerPoint shows where they aren't installed (a deck
@@ -245,7 +267,8 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
 - `talkgenerator check` makes talks on a set of topics (10 by default, `--quick` for 3, `--all` for 30, `--random N`
   from talkgenerator's list of 736 topics), checks every deck (every slide has what it needs, no template leftovers
   such as `{seed}`, images credited and allowed by the license policy, the talk's language, and in themed talks texts
-  that read on their backgrounds, fit their boxes and stay on the slide), makes every talk again with its seed to see
+  whose letters read on what's behind them, a theme's decoration and background pattern included, that fit their
+  boxes and stay on the slide), makes every talk again with its seed to see
   that it comes out the same, and writes a JSON report. `--llm` checks talks a language model writes (the second run
   replays its answers), `--theme` themed talks, and `--decks` saves every deck. `talkgenerator.topics` has the list
   of topics, for suggestions.

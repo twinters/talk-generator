@@ -240,7 +240,7 @@ twice per talk.
 The prompt also encodes what makes karaoke decks work: short titles, no paragraphs, odd juxtapositions instead
 of explanations, a deadpan expert voice, callbacks, and room for the presenter to justify each slide.
 
-**Personas** came in on 2026-11-08 (`talkgenerator.personas`, D43), after the user's idea: "having already like random
+**Personas** came in on 2026-11-08 (`talkgenerator.personas`, D47), after the user's idea: "having already like random
 persona loaded that only has particular types of talks, and that helps inspire llm for title (...) and maybe even for
 name (particular generators, or nudge)". The talk's seed picks one of thirteen personas (from a stream of its own,
 `persona`), before the slides are picked. `persona=` names one instead (`--persona`, the MCP server's
@@ -888,10 +888,61 @@ optional memory of recently shown quotes and images, so popular topics don't kee
   font sizes, contrast, safe margins, no image enlarged beyond about 1.3× its size, small but legible credits.
 - Later: bring-your-own .pptx templates, such as corporate master slides.
 
-Next, the user's direction (2026-11-07): themes should be more than a reskin by font and colour. Families that make
+The user's direction (2026-11-07): themes should be more than a reskin by font and colour. Families that make
 harder choices, such as a childlike kindergarten style with vector shapes, or a hacker style in a monospace font,
 green on black, each with decoration and layouts of their own; and image filters that are subtler, rarer, and only
 where they fit. Themes made for decks online are the place to look first.
+
+As built (2026-11-08, D43 to D46), after a look at Slidesgo, SlidesCarnival, PresentationGo, SlidesMania, SlideSpeak's
+design prompts and open-design's decks (Canva, Behance and Dribbble only by their search results): what sets a strong
+theme apart is a fixture on every slide (a status line, a title block, a top rule), its big motif saved for the title
+and section slides, a small palette with its accent rationed, a few pieces of decoration a slide and never behind a
+text, handmade families tilting things a little where grid families keep everything square, one casing rule, and a
+fixed place for its texts; and the sources treat pictures as a family's property, most of them untouched.
+
+- **Motifs** (`talkgenerator.design.motifs`, D43): every family has one, which decorates a slide's placement before
+  the engine styles its texts. It draws behind everything (scenery, a frame, a grid), over the layout's shapes (a
+  sticker, an underline) or over the content (tape on a photo), writes texts of its own (role `decoration`: a slide's
+  number, a prompt, numbers, symbols and code, so any language suits them; the language and leftover checks leave
+  them out), and may move a text (for a prompt) or fit a picture to a frame around it. Its texts' colours come from
+  what's behind their letters, and its see-through pieces are only as strong as the texts over them allow.
+- **Shapes and patterns** for it, in the deck, drawn alike by PowerPoint, the previewer and talk-generator-web (its
+  branch `claude/bolder-themes`): polygons (their corners as shares of their box: PowerPoint freeforms, CSS clip
+  paths; stars, pennants, bursts, hearts, arrows, waves, and lines drawn as polygons for squiggles and strokes), shapes
+  turned around their middle, rounded corners, outlines inside the box, shapes without a fill, and a background
+  pattern (lines, a grid or dots: PowerPoint's slide background is a picture of it, which a .pptx keeps once; CSS
+  repeating gradients in the browser). `talkgenerator.design.geometry` has what they share.
+- **Families** (D44): five new ones, none for laughs: `hacker terminal` (green, amber or cool phosphor on black, a
+  window bar, scanlines, prompts before the titles, a block cursor after the talk's title, pictures in windows named
+  `./evidence_031.jpg`, a status line), `blueprint` (a white grid on a blueprint's blue, a border with registration
+  marks, dimension lines under the titles, figure plates, a title block, a red pencil's punchlines), `chalkboard`
+  (a green or slate board in a wooden frame, a ledge with chalk and an eraser, eraser strokes, dashed chalk
+  underlines, doodles, taped pictures, handwriting), `newspaper` (newsprint, masthead rules with the edition's numbers,
+  a front page for the title slide, rules between columns, grayscale photos) and `Swiss poster` (a grotesk flush left
+  on a three-column grid, a heavy black rule, one red block a slide, a big red circle and huge type on the title slide,
+  black dividers with a giant number). `kids` became a kindergarten's: crayon colours on cream, bunting on every
+  slide, crayon squiggles, confetti, sticker pictures, a title card with a sun, a cloud and hills with flowers, section
+  numbers on a sun. The others got theirs: academic's Beamer-like title band, dots counting the slides and footer;
+  neon's sunset over a grid floor; vintage paper's ornamented double frame; brutalist's title blocks, hard shadows
+  and number tag; corporate's top band and slanted title panel; startup's blobs; Comic Sans' panel border, speech
+  balloons and POW; WordArt's starbursts; clip-art's swoosh; keynote's and dark minimal's quieter marks. The families
+  that commit to a scheme pick one of a few palettes (repaired as any), some have open fonts more often, and kids,
+  neon, Swiss poster, newspaper, academic and corporate have their own title slides (and kids, neon and Swiss poster
+  their own section slides), 61 layouts in all. Names stay; a seed still picks a family's member.
+- **Image treatments** (D45): the strong filters are for the families made for them, and only where they fit (a
+  family's filter can be for backdrops only; black and white never goes behind a slide's texts), and a theme can lay a
+  gentle tint over its pictures instead (a warm or cool cast at 7%, its paper at 10%, its accent at 8%): of 3,000
+  random themes' pictures, 21% got a strong filter (34% before; black and white 0.5%, 3.9% before), and 30% of themes
+  tint theirs.
+- **Checks** (D46): a text has to read on what's behind its letters, its lines as the engine breaks them, as tall as
+  their letters (not its whole box: a cursor after its last word doesn't count), where a shape over part of them
+  counts, and a background's pattern too; diagrams are coloured for the decoration that reaches under them; and the
+  band behind credits that need one hugs the credit line, clear of a status line under it.
+- **Measured:** 17 saved talks (the site's live ones, the free models' cat, peanuts and time travel in English and
+  Swedish, the lighthouse talks with every slide type, the memes) laid out again in all 17 families over 4 seeds:
+  15,708 slides, no design finding (the first run found 5, a Swiss poster's diagram labels over its grid lines on red:
+  fixed). In the browser, talk-generator-web's dev server drew a deck of the new families as the previewer
+  does (kids' title, terminal, blueprint, chalkboard, newspaper, Swiss). Not checked in PowerPoint itself yet.
 
 ## 10. Images: sources, aesthetics and generation
 
@@ -1474,7 +1525,7 @@ before the new formats. A milestone is a checkpoint on `v5`, not a release; only
 | 3 (done, 2026-11-07: theme families and extremes, procedural palettes with contrast repair, layouts and their variants (never twice in a row), image treatments, WordArt-style heading effects, text fitting with bundled metric twins, the shapes renderer with the classic animations (columns click by click), previews and contact sheets, the design checks and the local MCP server; 0 design findings on 792 benchmark decks in 12 seeds; thumbnails in CI left out, D29) | Themes and layouts | theme tokens and families, extremes on by default; procedural palettes and font pairs; layout variants; text fitting; image treatments; the `classic` theme; thumbnails and contact sheet in CI; the local MCP server | contrast and overflow checks pass on every theme |
 | 4 (under way: `stream_talk()`, probe validation, display policies, presenter names in styles (5.10, for the site's settings) and what's typed read as a topic or a title (5.11, `topic_or_title=`, for the site's Automatic choice) are in; since 2026-11-07, talkgenerator.com runs v5 from GitHub (D31): talks stream into the browser, the .pptx is made on download, Pixabay's images are copied, and classic and LLM talks meet the speed and memory bars on the VPS (section 14), but for the first talk after a restart; left: deploying the streamed-titles fix (`be09a7e`: on the site, a free model that writes its answer's fields in alphabetical order put `slide_10` before `slide_2`, so slides 2 to 9 fell back to classic ones, or were left out of a Dutch copyright-free talk), the new settings with 5.10's and 5.11's options, and loading the library before the first talk) | Streaming and the web view | `stream_talk()`, display policies, probe validation; in talk-generator-web: the SSE endpoint, the Angular renderer, LLM talks by default with the classic switch, a language choice, Connect OpenRouter and pasted keys, .pptx on download, an Automatic topic-or-title choice (5.11), the site running `v5` from git (D31) | first slide on screen within the calibrated target on the VPS; a 20-slide talk under the memory bar; the downloaded .pptx matches the web view |
 | 5 (under way: image slots and the finder, license classes and policies, aesthetic profiles with local analysis, and the first flavour packs are in, 2026-11-07; generated images too, on the user's own key or server, credited "AI-generated with <model>" in the `generated` class (10.5, D38, D39); and new sources (10.4): the Met, Cleveland, the Wellcome Collection, NASA, Flagpedia's flags, Imgflip's templates and the Smithsonian (with the user's api.data.gov key), with the museums' type and date filters and more subreddits; left: the vision pick, generated pictures on talkgenerator.com on a visitor's key, and the Library of Congress, Flickr and Iconify, which need an exception, a paid key or a new dependency) | Images | slots, aesthetic profiles and flavour packs, local analysis, license classes; new open and weird sources; AI image generation with the user's own keys; the optional vision pick | license policies enforced; profile checks pass (such as the grayscale share for `vintage`); generated images credited |
-| 6 (under way: fourteen slide types are in, drawn as texts on shapes (D37, section 8); on 2026-11-07, benchmark talks over seeds that bring each of them up had no design, completeness, leftover or language findings: 63 classic talks, and 63 by OpenRouter's free models (620 of 630 slides by the model, at $0), plus 20 classic `ted` talks and 8 Dutch ones, where a long Dutch compound overflowed a narrow box (since, every new layout takes a 20-letter word in every theme, a Venn diagram's labels beside its circles when they don't fit in them); the only other findings were InspiroBot's and Reddit's live answers differing between a talk's two runs. talk-generator-web draws them all unchanged, and needs a small change to hold back what appears on a click in its presentations (merged into the site's master, not deployed yet). Memes with live captions came in later that day (D40). Left: the TED content pack, section 8's other candidates, and the user's ideas of 2026-11-07: memes more often ("I really love the generated memes"), slide styles and types from real PowerPoint karaoke decks, personas that shape a talk (5.2: in on 2026-11-08, D43), and bolder themes with subtler, rarer image filters (section 9)) | More slide types for TED-like talks | native diagrams, big numbers, quiz, memes with live captions, social posts and more; a much larger, curated TED content pack; memes more often; what real PowerPoint karaoke decks do; personas that shape a talk; bolder themes | every new slide type passes the checks in classic and LLM mode |
+| 6 (under way: fourteen slide types are in, drawn as texts on shapes (D37, section 8); on 2026-11-07, benchmark talks over seeds that bring each of them up had no design, completeness, leftover or language findings: 63 classic talks, and 63 by OpenRouter's free models (620 of 630 slides by the model, at $0), plus 20 classic `ted` talks and 8 Dutch ones, where a long Dutch compound overflowed a narrow box (since, every new layout takes a 20-letter word in every theme, a Venn diagram's labels beside its circles when they don't fit in them); the only other findings were InspiroBot's and Reddit's live answers differing between a talk's two runs. talk-generator-web draws them all unchanged, and needs a small change to hold back what appears on a click in its presentations (merged into the site's master, not deployed yet). Memes with live captions came in later that day (D40). Left: the TED content pack, section 8's other candidates, and the user's ideas of 2026-11-07: memes more often ("I really love the generated memes"), slide styles and types from real PowerPoint karaoke decks, personas that shape a talk (5.2: in on 2026-11-08, D47), and bolder themes with subtler, rarer image filters (section 9)) | More slide types for TED-like talks | native diagrams, big numbers, quiz, memes with live captions, social posts and more; a much larger, curated TED content pack; memes more often; what real PowerPoint karaoke decks do; personas that shape a talk; bolder themes | every new slide type passes the checks in classic and LLM mode |
 | 7 | New talk formats | pitch, academic, corporate, keynote and Pecha Kucha timing, with their content packs (or in 5.1 if the TED work takes longer) | every format works in classic and LLM mode and passes the checks |
 | 8 | Integration | the site runs `v5` on the preview, then in production behind a switch; Sign in with ChatGPT on the site, if OpenAI has admitted it; docs and deprecation warnings | the site runs `v5` for a week without quota or memory incidents |
 | 5.0.0 | The release | freeze and fix; merge `v5` into `master`; release 5.0.0 with the release script; the site pins `talkgenerator==5.0.0`; 4.x ends | |
@@ -1530,9 +1581,14 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D40 | Memes are captioned live by talkgenerator, never drawn into the picture: the template's picture from Imgflip (fair use, so not in talks without fair use), its captions as texts in boxes measured once per template (`data/memes.json`, 25 templates), and the template picked by the talk's dice before the language model writes its captions (a recipe can fix a slot's query). New image sources join only where their terms allow a talk to show them, without working around a bot check, and without the user's paying for a key. |
 | D41 | Swedish (`sv`) is a talk language too, on the terms of D19 and D25: a language model writes the talk in Swedish, with talkgenerator's own words in Swedish; without one, the talk is classic and English. |
 | D42 | Themes use open fonts from Google Fonts besides the installed ones: two pairings per family (not the extremes), which a member has two times in three. They're bundled, so they're measured everywhere, and embedded in every .pptx that uses them, whole, as uncompressed EOT (python-pptx can't embed fonts; PowerPoint for Windows showed one, regular and bold, on a computer without it). Each has an installed stand-in that its texts fit too, for where embedded fonts are ignored (PowerPoint for the web, Keynote). |
-| D43 | A talk's persona, which its seed picks (or the talk names; `none` for none), shapes the talk with a language model or without: multipliers on the format's slide weights by the generators' tags (none under 0.2, and about 1 on average over the personas, so the formats' mix holds), its kind of title (a hint for the model, and half of a classic talk's titles from the persona's templates), and weights over the default name styles with how the presenter goes by (an explicit `name_styles` goes alone), besides the model's voice and an angle of the persona's. The deck and `talk.started` record it. |
+| D43 | Every theme family has a motif of its own (`talkgenerator.design.motifs`): a fixture on every slide and its big pieces on the title and section slides, drawn with the deck's own elements, which gained polygons, turned shapes, rounded corners, outlines, shapes without a fill and background patterns, drawn alike by PowerPoint, the previewer and talk-generator-web. Its texts are numbers, symbols and code (role `decoration`), not the talk's words; no decoration sits behind a text's letters unless the text is made to read on it. |
+| D44 | Five new families, none for laughs: `hacker terminal`, `blueprint`, `chalkboard`, `newspaper` and `Swiss poster`; `kids` becomes a kindergarten's. The families that commit to a scheme pick one of a few palettes of their own; some families have title and section layouts of their own. The families keep their names, and a seed still picks a member. |
+| D45 | Strong image filters (grayscale, sepia, duotone, black and white) only in the families made for them, and only where they fit: a family's filter can be for backdrops only, and black and white never goes behind a slide's texts. Other themes leave pictures as they are or lay a gentle tint over them (a warm or cool cast, their paper, their accent). |
+| D46 | The design checks judge a text by what's behind its letters (its lines as the engine breaks them, as tall as their letters), where a shape over part of them counts and a background's pattern too, rather than by what's under its box's middle. |
+| D47 | A talk's persona, which its seed picks (or the talk names; `none` for none), shapes the talk with a language model or without: multipliers on the format's slide weights by the generators' tags (none under 0.2, and about 1 on average over the personas, so the formats' mix holds), its kind of title (a hint for the model, and half of a classic talk's titles from the persona's templates), and weights over the default name styles with how the presenter goes by (an explicit `name_styles` goes alone), besides the model's voice and an angle of the persona's. The deck and `talk.started` record it. |
 
-D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, and D43 on 2026-11-08; the others follow from the design.
+D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, and D43 to D47 on 2026-11-08; the
+others follow from the design.
 
 ### Open questions
 
