@@ -44,20 +44,25 @@ by. If it's long, tell the user once that free keys give better images, and leav
    For a deck shown beyond a circle of friends (at a company event, on a stage, online), use `ted`: copyright-free
    images only (its license policy, `open`, allows every image but fair use: no memes, gifs or Reddit's posts).
    Another format can keep to it too: `talkgenerator render plan.json --license_policy open`. For a startup pitch,
-   use `pitch`, and for a talk at an academic conference, `academic`. Don't hold things up with questions: pick
-   sensible defaults and say which.
+   use `pitch`; for a talk at an academic conference, `academic`; for a company's all-hands or quarterly business
+   review, `corporate`; and for a product keynote, `keynote`. Don't hold things up with questions: pick sensible
+   defaults and say which.
 2. **Look up the slides you can use** in the format's reference: [references/slides.md](references/slides.md) for
    `default`, [references/slides-ted.md](references/slides-ted.md) for `ted`,
-   [references/slides-pitch.md](references/slides-pitch.md) for `pitch` and
-   [references/slides-academic.md](references/slides-academic.md) for `academic`. They list the slide kinds, their
+   [references/slides-pitch.md](references/slides-pitch.md) for `pitch`,
+   [references/slides-academic.md](references/slides-academic.md) for `academic`,
+   [references/slides-corporate.md](references/slides-corporate.md) for `corporate` and
+   [references/slides-keynote.md](references/slides-keynote.md) for `keynote`. They list the slide kinds, their
    texts, length limits, images and recipes. (`ted` has no full-screen images and no recipes for slides about the
-   presenter: an about-me slide there is a two- or three-column slide with about-me captions.) A pitch and an
-   academic talk have an arc, which their references open with: the parts their slides go through, in order (a
-   pitch's problem, solution, market, business model, traction, competition, team, roadmap and ask; an academic
-   talk's outline, related work, method, results, limitations, future work, acknowledgements, references and
-   questions), each with its recipes. Plan their slides in that order, each with a recipe of its part, and write the
-   `title` and `presenter_job` as their references say (a pitch's title names its made-up startup; an academic
-   talk's job is an affiliation).
+   presenter: an about-me slide there is a two- or three-column slide with about-me captions.) A pitch, an academic
+   talk, an all-hands and a keynote have an arc, which their references open with: the parts their slides go
+   through, in order (a pitch's problem, solution, market, business model, traction, competition, team, roadmap and
+   ask; an academic talk's outline, related work, method, results, limitations, future work, acknowledgements,
+   references and questions; an all-hands' agenda, KPIs, wins, roadmap, org change, synergies, ask and Q&A; a
+   keynote's opening, one idea, reveal, features, demo, price, one more thing and closing line), each with its
+   recipes. Plan their slides in that order, each with a recipe of its part, and write the `title` and
+   `presenter_job` as their references say (a pitch's title names its made-up startup; an academic talk's job is an
+   affiliation; an all-hands' title is the quarter and a slogan; a keynote's names its made-up product).
    `talkgenerator formats --details --format <format>` prints the same for the version that's installed, and
    `talkgenerator schema plan` the plan's JSON Schema.
 3. **Write the plan** as a JSON file, like [references/example-plan.json](references/example-plan.json), say

@@ -1,0 +1,49 @@
+{
+  "ask_statement": [
+    "We need every one of you to give 110%. Starting Monday.",
+    "Our ask is simple: do more with less, and with {seed.generic}.",
+    "This quarter, we ask you to think like {seed.generic}.",
+    "Fill in the engagement survey. It's anonymous, and we'll know.",
+    "Please come back to the office five days a week. The {seed.bare} room is ready.",
+    "We don't need more meetings. We need better meetings, and more of them.",
+    "Be the {seed.bare} you want to see in the company.",
+    "Own it. Whatever it is, own it.",
+    "Bring your whole self to work. And your laptop.",
+    "Every one of you is now part of the {seed.bare} strategy, whether you like it or not."
+  ],
+  "ask_title": [
+    "Our ask",
+    "What we need from you",
+    "The ask",
+    "Your part",
+    "Next quarter's ask",
+    "One small favour"
+  ],
+  "ask_number": [
+    "110%",
+    "120%",
+    "150%",
+    "200%",
+    "100%",
+    "105%",
+    "+15%",
+    "+30%"
+  ],
+  "ask_label": [
+    "of you, every day, until further notice",
+    "of your best, plus a little extra",
+    "commitment, from everyone, from Monday",
+    "more output on {seed.generic}, with the same budget",
+    "of your time, in the office",
+    "effort, now with fewer people",
+    "of your energy, on {seed.generic}"
+  ],
+  "ask_source": [
+    "Effective immediately",
+    "Starting Monday",
+    "Mandatory, but optional",
+    "Details to follow",
+    "As agreed at the leadership offsite",
+    "Until further notice"
+  ]
+}

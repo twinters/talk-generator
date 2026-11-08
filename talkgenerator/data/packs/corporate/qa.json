@@ -1,0 +1,20 @@
+{
+  "qa_title": [
+    "Questions?",
+    "Q&A",
+    "Any questions?",
+    "Ask me anything",
+    "Over to you",
+    "Open floor",
+    "Your questions"
+  ],
+  "qa_subtitle": [
+    "Please hold them until the next all-hands",
+    "Questions go to the anonymous survey (it isn't)",
+    "Pre-approved questions only, please",
+    "Answers may vary by department",
+    "We'll take one question, then lunch",
+    "Or email them to the shared inbox, which nobody reads",
+    "Any question, as long as it's about {seed.generic}"
+  ]
+}

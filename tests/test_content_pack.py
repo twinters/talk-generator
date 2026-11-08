@@ -53,10 +53,12 @@ LONG: dict[str, tuple[str, ...]] = {
     "percent": ("97%",),
     "year": ("2003",),
     "acronym": ("SPARKS",),
-    # (the made-up names of a pitch's startup and of an academic talk's method, at their longest: see
-    # talkgenerator.schema.formats.startup and method)
+    # (the made-up names of a pitch's startup, an academic talk's method, an all-hands' company and a keynote's
+    # product, at their longest: see talkgenerator.schema.formats.startup, method, company and product)
     "startup": ("Overinterpreting Labs",),
     "method": ("OverinterpretingFormer",),
+    "company": ("Overinterpreting Holdings",),
+    "product": ("Overinterpreting Studio",),
     # (a real dad joke and a real piece of advice, at the longest talkgenerator.facts takes them)
     "joke": ("Why did the scarecrow win an award at the big harvest fair? He was outstanding in it.",),
     "advice": ("Always double check you actually attached the file to emails",),
@@ -88,6 +90,8 @@ COMMON = {
     "acronym": "PEN",
     "startup": "Penguinly",
     "method": "PenguinNet",
+    "company": "Penguin Corp",
+    "product": "Penguin Pro",
     "joke": "What do you call a penguin in the desert? Lost.",
     "advice": "Don't eat non-snow-coloured snow.",
 }

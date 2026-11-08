@@ -25,6 +25,8 @@ from talkgenerator.models.deck import Deck
 from talkgenerator.models.plan import TalkPlan
 from talkgenerator.plan import external
 from talkgenerator.plan.prompt import SPINE
+from talkgenerator.schema import presentation_schema_types
+from talkgenerator.util import random_util
 from tests.test_llm_talks import FakeModel
 from tests.test_llm_talks import images as images  # the fake image sources (an autouse fixture)
 from tests.test_plans import CHART, STATEMENT, TWO_COLUMNS, _plan
@@ -115,6 +117,7 @@ def test_the_server_has_tools_to_look_things_up_and_to_make_talks(server):
         "seed",
         "license_policy",
         "persona",
+        "personas",
     }
     # A plan's JSON Schema is in render_plan's input too, so a client knows it without asking
     assert "SlidePlan" in json.dumps(tools["render_plan"].input_schema)
@@ -256,6 +259,23 @@ def test_a_talk_has_the_persona_it_asks_for(schema, server, model_in_the_setting
     (request,) = model_in_the_settings.requests
     assert "The presenter: a time traveller trying not to give too much away" in request.messages[0].content
     assert "persona" not in _answer(_call(server, "generate_talk", {"topic": "cats", "slides": 4, "persona": "none"}))
+
+
+@needs_mcp
+def test_a_talk_can_leave_its_format_to_its_seed_and_its_persona_to_some(schema, server, model_in_the_settings):
+    # (decision D61: the seed picks the persona among those the talk allows, then a format that persona favours)
+    asked = {"topic": "cats", "slides": 4, "seed": 2, "format": "random", "personas": ["disgraced_professor"]}
+    report = _answer(_call(server, "generate_talk", asked))
+    professor = personas.persona("disgraced_professor")
+    assert report["persona"]["name"] == _deck(report).persona.name == "disgraced_professor"
+    expected = presentation_schema_types.pick_format("random", random_util.Rng(2), professor)
+    assert report["format"] == _deck(report).schema_name == expected
+    two = {"topic": "cats", "slides": 4, "personas": ["influencer", "consultant"]}
+    assert _answer(_call(server, "generate_talk", two))["persona"]["name"] in two["personas"]
+    assert "there's no persona 'pirate'" in _error(
+        _call(server, "generate_talk", {"topic": "cats", "personas": ["consultant", "pirate"]})
+    )
+    assert "at least one persona" in _error(_call(server, "generate_talk", {"topic": "cats", "personas": []}))
 
 
 @needs_mcp

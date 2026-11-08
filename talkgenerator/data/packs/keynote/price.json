@@ -1,0 +1,115 @@
+{
+  "price_title": [
+    "Pricing",
+    "How much?",
+    "Price",
+    "Available today",
+    "Starting at",
+    "The best part"
+  ],
+  "amount": [
+    "$999",
+    "$1,999",
+    "$9.99",
+    "€49",
+    "$0.99",
+    "$12,000",
+    "$4.99/month",
+    "€799"
+  ],
+  "price_label": [
+    "or three easy payments of {seed.generic}",
+    "and worth every penny",
+    "with a two-year subscription to {seed.generic}",
+    "per month, forever",
+    "plus tax, plus the case, plus the charger",
+    "for the base model, which nobody buys",
+    "about the price of {seed.one} a day"
+  ],
+  "price_source": [
+    "Available in silver, grey and {seed.bare}",
+    "Pre-orders open tonight",
+    "Taxes not included",
+    "Charger sold separately",
+    "In stores Friday",
+    "Terms and conditions apply, many of them"
+  ],
+  "models_title": [
+    "Choose yours",
+    "The lineup",
+    "Which one is for you?",
+    "Models and prices",
+    "Pick your {product}",
+    "Something for everyone"
+  ],
+  "model": [
+    "for most people",
+    "for professionals",
+    "with twice the {seed.bare}",
+    "for people who travel",
+    "in a bigger size",
+    "for the whole family",
+    "with a second button",
+    "for students, slightly smaller"
+  ],
+  "model_price": [
+    "$499",
+    "$699",
+    "$999",
+    "$1,299",
+    "$1,999",
+    "$2,499"
+  ],
+  "punchline_price": [
+    "$9,999",
+    "$49,999",
+    "Your house",
+    "Ask us",
+    "$1M",
+    "Everything"
+  ],
+  "model_punchline": [
+    "for people who have everything",
+    "the one we use ourselves",
+    "with a stand, sold separately",
+    "for professionals, and their accountants",
+    "the one in the photos",
+    "with a gold-plated button"
+  ],
+  "when_title": [
+    "Availability",
+    "When can you get it?",
+    "Coming soon",
+    "How to get yours",
+    "Mark your calendars",
+    "Release dates"
+  ],
+  "when": [
+    "Today",
+    "Tonight",
+    "Friday",
+    "Next month",
+    "This spring",
+    "Next year",
+    "2031",
+    "Eventually"
+  ],
+  "available": [
+    "Pre-orders open",
+    "In stores",
+    "Ships worldwide",
+    "Available in more countries",
+    "Software update",
+    "Reviews come out",
+    "The case ships",
+    "Developers get access"
+  ],
+  "available_punchline": [
+    "Actually in stock",
+    "It works as shown",
+    "The charger ships",
+    "We fix the demo",
+    "Available in colour",
+    "The price goes down"
+  ]
+}

@@ -317,6 +317,8 @@ def test_copyright_free_formats_only_get_copyright_free_defaults():
         ("ted", "slides-ted.md"),
         ("pitch", "slides-pitch.md"),
         ("academic", "slides-academic.md"),
+        ("corporate", "slides-corporate.md"),
+        ("keynote", "slides-keynote.md"),
     ],
 )
 def test_the_skills_slide_references_are_up_to_date(format_name, file_name):

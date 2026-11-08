@@ -1,0 +1,98 @@
+{
+  "roadmap_title": [
+    "Roadmap",
+    "The road ahead",
+    "Our {seed.bare} roadmap",
+    "Next quarters",
+    "Where we're going",
+    "The plan, by quarter",
+    "Roadmap (indicative)"
+  ],
+  "when": [
+    "Q1",
+    "Q2",
+    "Q3",
+    "Q4",
+    "Next year",
+    "FY28",
+    "2030",
+    "Eventually"
+  ],
+  "milestone": [
+    "Launch {seed.bare} 3.0",
+    "Align on the roadmap",
+    "Hire a {seed.bare} lead",
+    "Open a second office",
+    "Migrate to the new system",
+    "Pilot with two customers",
+    "Roll out the new values",
+    "Expand to a second floor",
+    "Re-platform everything",
+    "Finish the last migration"
+  ],
+  "roadmap_punchline": [
+    "Profit",
+    "Figure out what we do",
+    "Start the roadmap",
+    "Another reorg",
+    "Revisit this roadmap",
+    "Become a {seed.bare} company",
+    "World domination, phase one"
+  ],
+  "process_title": [
+    "Our new process",
+    "How we work now",
+    "The {company} way",
+    "Our operating model",
+    "From idea to impact",
+    "The new way of working"
+  ],
+  "process_first": [
+    "Plan",
+    "Gather requirements",
+    "Align with stakeholders",
+    "Book a meeting",
+    "Write a proposal",
+    "Brainstorm"
+  ],
+  "process_step": [
+    "Align",
+    "Re-align",
+    "Get sign-off",
+    "Pilot it",
+    "Socialise it",
+    "Escalate",
+    "Form a task force",
+    "Review the review",
+    "Build a dashboard"
+  ],
+  "process_last": [
+    "Re-org",
+    "Start over",
+    "Blame the process",
+    "Rename it",
+    "Celebrate anyway",
+    "Hire consultants",
+    "Back to step one"
+  ],
+  "cycle_title": [
+    "Our planning cycle",
+    "How we plan",
+    "The strategy cycle",
+    "Continuous improvement",
+    "The {company} flywheel",
+    "Our annual rhythm"
+  ],
+  "cycle_step": [
+    "Set targets",
+    "Miss targets",
+    "Offsite",
+    "New strategy",
+    "Re-forecast",
+    "Lower targets",
+    "Plan again",
+    "Kickoff",
+    "Celebrate",
+    "Re-org"
+  ]
+}

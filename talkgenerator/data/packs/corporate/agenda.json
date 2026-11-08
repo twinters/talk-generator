@@ -1,0 +1,59 @@
+{
+  "agenda_title": [
+    "Agenda",
+    "Today's agenda",
+    "What we'll cover",
+    "The plan for today",
+    "Agenda (subject to change)",
+    "Our time together",
+    "Running order",
+    "Today, in five parts"
+  ],
+  "agenda_first": [
+    "Welcome",
+    "Welcome and housekeeping",
+    "A warm welcome from leadership",
+    "Welcome (five minutes, ideally)",
+    "Opening remarks",
+    "Icebreaker (mandatory)",
+    "Housekeeping",
+    "Welcome, and where the exits are"
+  ],
+  "agenda_item": [
+    "The quarter in numbers",
+    "KPIs against target",
+    "Wins of the quarter",
+    "Our {seed.bare} roadmap",
+    "The new structure",
+    "Synergies",
+    "Our values, revisited",
+    "An update on {seed.generic}",
+    "The {seed.bare} task force",
+    "A word from Finance",
+    "Our {seed.bare} heroes",
+    "Five minutes on the coffee machine",
+    "The ask",
+    "Where we're going"
+  ],
+  "agenda_last": [
+    "Q&A",
+    "Q&A (if time allows)",
+    "Questions, time permitting",
+    "Open floor",
+    "Q&A and closing remarks",
+    "Q&A (written questions only)",
+    "Wrap-up and Q&A",
+    "Q&A, then cake"
+  ],
+  "summary_title": [
+    "Executive summary",
+    "The quarter at a glance",
+    "Key takeaways",
+    "{company} in one slide",
+    "Summary for leadership",
+    "TL;DR (please read)",
+    "The one-pager",
+    "Summary of the summary",
+    "Where we stand on {seed.generic}"
+  ]
+}

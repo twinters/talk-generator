@@ -7,6 +7,7 @@ answers) gives the same talk, in parallel or one by one.
 
 import io
 import json
+import logging
 import re
 
 import anthropic
@@ -553,6 +554,57 @@ def test_a_talk_claude_declines_halfway_is_classic(schema):
     assert not any(_planned(deck))
     assert len(deck.slides) == NUM_SLIDES
     assert deck.usage.requests == 1
+
+
+def _slides_moved(into):
+    """A change to the fake model's answer that moves its slides into another object: the spine's, or one of its own."""
+
+    def change(answer):
+        slides = {key: answer.pop(key) for key in list(answer) if key != prompt.SPINE}
+        (answer[prompt.SPINE] if into == prompt.SPINE else answer.setdefault(into, {})).update(slides)
+
+    return change
+
+
+def test_slides_inside_the_spine_or_another_object_still_make_the_talk(schema):
+    # (Claude Haiku, given the talk's schema as text when Anthropic found it too large a grammar, wrote every slide into
+    # the spine's object, "about": the talk read none of them, and came out classic but for its title; 2026-11-08)
+    whole = _planned(_talk(FakeModel()))
+    for into in (prompt.SPINE, "slides"):
+        deck = _talk(FakeModel(change=_slides_moved(into)))
+        assert deck.title == "The title" and _planned(deck) == whole and all(whole), into
+
+
+def test_an_answer_without_a_slide_to_read_says_what_it_brought(schema, caplog, monkeypatch):
+    # (Before slides inside the spine counted, Claude Haiku's answer to one talk of 2026-11-08 came out classic but
+    # for its title, without a word of why)
+    monkeypatch.setattr(logging.getLogger("talkgenerator"), "propagate", True)  # (the command line turns it off)
+
+    def listed(answer):
+        answer["slides"] = [answer.pop(key) for key in list(answer) if key != prompt.SPINE]
+
+    def texts(answer):
+        for key in list(answer):
+            if key != prompt.SPINE:
+                answer[key] = "Some slide"
+
+    for change, brought in ((listed, "slides (a list of {})"), (texts, "{} (a text)")):
+        caplog.clear()
+        model = FakeModel(change=change)
+        with caplog.at_level("WARNING", logger="talkgenerator"):
+            deck = _talk(model)
+        assert deck.title == "The title" and not any(_planned(deck))  # (the spine is read, the slides are classic)
+        keys = [key for key in model.requests[0].json_schema["properties"] if key != prompt.SPINE]
+        warned = [
+            record.getMessage() for record in caplog.records if "no slide that could be read" in record.getMessage()
+        ]
+        expected = brought.format(len(keys)) if change is listed else brought.format(keys[0])
+        assert len(warned) == 1 and expected in warned[0] and "fake:model" in warned[0], warned
+        assert f"{prompt.SPINE} (an object of " in warned[0] and "of slide 2" not in warned[0]  # (keys, never texts)
+    caplog.clear()
+    with caplog.at_level("WARNING", logger="talkgenerator"):
+        _talk(FakeModel())
+    assert not [record for record in caplog.records if "no slide that could be read" in record.getMessage()]
 
 
 # THE REQUEST

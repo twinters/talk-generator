@@ -6,6 +6,7 @@ become ProviderErrors (without keys in their messages).
 """
 
 import json
+import logging
 import sys
 
 import anthropic
@@ -134,15 +135,21 @@ def test_claude_writes_with_structured_outputs_low_effort_and_fallbacks():
     assert response.cost_usd == pytest.approx((1000 * 4.00 + 300 * 20.00) / 1e6)
 
 
-def test_claude_gets_the_schema_as_text_when_anthropic_finds_its_grammar_too_large():
+def test_claude_gets_the_schema_as_text_when_anthropic_finds_its_grammar_too_large(caplog, monkeypatch):
     # (Anthropic's answer to a talk of many kinds of slides, Claude Haiku 5.5, 2026-11-08)
+    monkeypatch.setattr(logging.getLogger("talkgenerator"), "propagate", True)  # (the command line turns it off)
     too_large = (
         "The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or "
         "reduce the number of strict tools."
     )
     api = Api(_error(400, too_large), _claude_answer(*ANSWER))
     pieces = []
-    response = _claude(api).stream(REQUEST, pieces.append)
+    with caplog.at_level("INFO", logger="talkgenerator"):
+        response = _claude(api).stream(REQUEST, pieces.append)
+    # (said in the log: nothing then holds the answer to the schema's shape)
+    assert [record.getMessage() for record in caplog.records if "too large a grammar" in record.getMessage()] == [
+        "Anthropic found the answer's schema too large a grammar: anthropic:claude-opus-5-5 gets it as text"
+    ]
 
     held, written = (json.loads(request.content) for request in api.requests)
     assert held["output_config"]["format"] == {"type": "json_schema", "schema": SCHEMA}

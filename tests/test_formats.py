@@ -1,5 +1,6 @@
-"""Offline tests of the talk formats beyond TED-like talks (docs/v5-plan.md, section 7; decision D56): the startup
-pitch and the academic conference talk (talkgenerator.schema.formats).
+"""Offline tests of the talk formats beyond TED-like talks (docs/v5-plan.md, section 7; decisions D56 and D59): the
+startup pitch, the academic conference talk, the corporate all-hands and the product keynote
+(talkgenerator.schema.formats).
 
 A format's talks go through its arc, the same for every persona, classic or planned; a short talk keeps its most
 important parts and a long one gets free slides between them. Its classic slides come from its content pack, its
@@ -27,8 +28,8 @@ from talkgenerator.plan import external, prompt, realize
 from talkgenerator.plan.kinds import KINDS
 from talkgenerator.render import preview
 from talkgenerator.render.powerpoint import render_pptx
-from talkgenerator.schema import formats, presentation_schema
-from talkgenerator.schema.formats import academic, pitch
+from talkgenerator.schema import formats, presentation_schema, presentation_schema_types
+from talkgenerator.schema.formats import academic, corporate, keynote, pitch
 from talkgenerator.schema.formats.arcs import PART_WEIGHT, STAND_IN, Arc, Free, InPart, Part
 from talkgenerator.schema.presentation_schema_types import get_schema, schemas
 from talkgenerator.slide import slides
@@ -37,7 +38,7 @@ from talkgenerator.util import image_util, random_util
 from tests.test_deck import _jpeg
 from tests.test_slide_types import _clicks, _deck, _longest, _theme
 
-FORMATS = {"pitch": pitch, "academic": academic}
+FORMATS = {"pitch": pitch, "academic": academic, "corporate": corporate, "keynote": keynote}
 FAMILIES = list(themes.FAMILIES)
 
 
@@ -98,6 +99,38 @@ def test_ten_and_five_slide_talks_have_the_arcs_the_formats_promise():
         "questions",
     )
     assert academic.ARC.kept(5) == ("outline", "method", "results", "questions")
+
+
+def test_an_all_hands_and_a_keynote_have_the_arcs_they_promise():
+    # (D59: an all-hands goes from its agenda to Q&A, its KPIs two slides from ten on; a keynote from its opening to
+    # its closing line, its features two slides)
+    assert corporate.ARC.layout(10) == (
+        None,
+        "agenda",
+        "kpis",
+        "kpis",
+        "wins",
+        "roadmap",
+        "org_change",
+        "synergies",
+        "ask",
+        "qa",
+    )
+    assert corporate.ARC.kept(5) == ("kpis", "wins", "roadmap", "qa")
+    assert keynote.ARC.layout(10) == (
+        None,
+        "opening",
+        "idea",
+        "reveal",
+        "features",
+        "features",
+        "demo",
+        "price",
+        "one_more_thing",
+        "closing",
+    )
+    assert keynote.ARC.kept(5) == ("opening", "reveal", "features", "one_more_thing")
+    assert keynote.ARC.kept(3) == ("reveal", "one_more_thing")  # (the reveal and one more thing stay longest)
 
 
 def test_a_long_talk_gives_its_parts_more_slides_and_then_free_ones():
@@ -184,6 +217,10 @@ def test_a_formats_favourite_personas_present_it_more_often():
     assert pitches["startup_founder"] > 0.24 > 2.5 * plain["startup_founder"]
     assert talks["disgraced_professor"] > 0.24 > 2.5 * plain["disgraced_professor"]
     assert all(talks.get(name, 0) > 0 for name in personas.PERSONAS)  # (every persona still presents some)
+    all_hands, keynotes = shares(corporate.CORPORATE.personas), shares(keynote.KEYNOTE.personas)
+    assert all_hands["consultant"] > 0.24 > 2.5 * plain["consultant"]
+    assert keynotes["startup_founder"] > 0.2 and keynotes["motivational_speaker"] > 1.5 * plain["motivational_speaker"]
+    assert all(all_hands.get(name, 0) > 0 and keynotes.get(name, 0) > 0 for name in personas.PERSONAS)
     # A TED-like talk's persona is the one its seed picked before
     for seed in range(50):
         assert personas.pick(None, random_util.Rng(seed), None) == personas.pick(None, random_util.Rng(seed), {})
@@ -197,6 +234,8 @@ def test_a_formats_talks_are_in_its_favourite_theme_families_more_often():
 
     assert share("startup", pitch.PITCH.themes) > 2.5 * share("startup", None)
     assert share("academic", academic.ACADEMIC.themes) > 2.5 * share("academic", None)
+    assert share("corporate", corporate.CORPORATE.themes) > 2.5 * share("corporate", None)
+    assert share("dark minimal", keynote.KEYNOTE.themes) > 2.5 * share("dark minimal", None)
     founder = personas.persona("startup_founder").themes
     assert (
         formats.multiplied(founder, pitch.PITCH.themes)["startup"] == founder["startup"] * pitch.PITCH.themes["startup"]
@@ -217,6 +256,16 @@ def test_a_pitch_s_startup_and_a_talk_s_method_are_named_after_the_topic():
     assert len(names) > 3  # (topics get startups of several kinds)
     for topic in ("conference interpreters", "a plant that won't die", "the French Revolution", "x", ""):
         assert 0 < len(formats.startup(topic)) <= 21 and 0 < len(formats.method(topic)) <= 22
+        # (no longer than the pack lint's longest company and product: see tests/test_content_pack.LONG)
+        assert 0 < len(formats.company(topic)) <= 25 and 0 < len(formats.product(topic)) <= 23
+
+
+def test_an_all_hands_company_and_a_keynotes_product_are_named_after_the_topic():
+    assert formats.company("penguins") == formats.company("penguins") and "Penguin" in formats.company("penguins")
+    assert "Penguin" in formats.product("penguins") and "Penguins" not in formats.product("penguins")
+    topics = ("cat", "coffee", "the moon", "Belgium", "socks", "jazz", "bread", "penguins")
+    assert len({formats.company(topic).replace(formats._name_word(topic), "") for topic in topics}) > 3
+    assert len({formats.product(topic).replace(formats._name_word(topic), "") for topic in topics}) > 3
 
 
 # CLASSIC SLIDES AND TALKS, OFFLINE
@@ -273,7 +322,7 @@ def _talk(name, seed=1, parallel=True, llm="none", **options):
     _, slide_deck, _ = generator._generate_presentation(
         schema=name, slides=10, topic="penguins", int_seed=seed, parallel=parallel, save_ppt=False, llm=llm, **options
     )
-    return slide_deck.to_deck(schema_name=name)
+    return slide_deck.to_deck()  # (with the format its seed picked, for schema random)
 
 
 @pytest.mark.parametrize("name", FORMATS)
@@ -286,6 +335,22 @@ def test_a_classic_talk_of_each_format_follows_its_arc_and_passes_the_checks(off
     assert _talk(name, 4, parallel=True).to_json() == _talk(name, 4, parallel=False).to_json()
 
 
+def test_a_talk_that_leaves_its_format_to_its_seed_is_the_talk_of_the_format_it_picked(offline):
+    # (decision D61: the seed's format stream moves nothing else, so with the persona it names, a talk of schema random
+    # is the talk of the format its seed picked)
+    founder = personas.persona("startup_founder")
+    picked = set()
+    for seed in (1, 3, 4, 9):  # (a pitch, an academic talk, a keynote and a TED-like talk, as it happens)
+        deck = _talk(presentation_schema_types.RANDOM, seed, persona="startup_founder", theme="random")
+        assert deck.schema_name == presentation_schema_types.pick_format("random", random_util.Rng(seed), founder)
+        assert deck.to_json() == _talk(deck.schema_name, seed, persona="startup_founder", theme="random").to_json()
+        assert [finding for finding in check_deck(deck, 10) if finding.severity == "error"] == [], seed
+        if deck.schema_name in FORMATS:
+            assert check_arc(deck, 10) == []
+        picked.add(deck.schema_name)
+    assert picked == {"pitch", "academic", "keynote", "default"}
+
+
 def test_a_classic_pitch_names_its_startup_and_an_academic_talk_its_affiliation(offline):
     deck = _talk("pitch", 5, persona="none")
     texts = " ".join(element.text for slide in deck.slides for element in slide.elements if hasattr(element, "text"))
@@ -293,6 +358,15 @@ def test_a_classic_pitch_names_its_startup_and_an_academic_talk_its_affiliation(
     talk = _talk("academic", 5, persona="none")
     subtitle = talk.slides[0].element("subtitle")
     assert subtitle is not None and talk.presenter in subtitle.text  # type: ignore[union-attr, operator]
+
+
+def _texts(deck):
+    return " ".join(element.text for slide in deck.slides for element in slide.elements if hasattr(element, "text"))
+
+
+def test_a_classic_all_hands_names_its_company_and_a_keynote_its_product(offline):
+    assert formats.company("penguins") in _texts(_talk("corporate", 5, persona="none"))
+    assert formats.product("penguins") in _texts(_talk("keynote", 5, persona="none"))
 
 
 # PLANNED TALKS
@@ -315,8 +389,10 @@ def _plausible(schema):
             for name, field in value["properties"].items():
                 if "enum" in field:
                     slide[name] = next(option for option in field["enum"] if option)
-                elif name in ("bars", "categories", "items"):
+                elif name in ("bars", "categories", "items", "buttons"):
                     slide[name] = "Alpha | Beta | Gamma | Delta"
+                elif name == "points":  # (a wall of text's: five points or more)
+                    slide[name] = " | ".join(f"Point {letter} of the plan, said at length" for letter in "ABCDEFG")
                 elif name.startswith("number"):
                     slide[name] = f"{number}%"
                 else:
@@ -345,7 +421,8 @@ class PlausibleModel(TextProvider):
 @pytest.mark.parametrize("name", FORMATS)
 def test_a_planned_talk_of_each_format_follows_its_arc_as_the_model_wrote_it(offline, name):
     model = PlausibleModel()
-    deck = _talk(name, 2, llm=model, persona="startup_founder" if name == "pitch" else "disgraced_professor")
+    favourites = FORMATS[name].__dict__[name.upper()].personas  # (its favourite persona presents it)
+    deck = _talk(name, 2, llm=model, persona=max(favourites, key=favourites.get))
     planned = sum(1 for slide in deck.slides if "Planned:" in slide.notes)
     assert planned >= 8, [slide.notes.splitlines()[:2] for slide in deck.slides]
     assert [finding for finding in check_deck(deck, 10) if finding.severity == "error"] == []
@@ -384,7 +461,7 @@ def test_a_ted_like_talks_request_says_nothing_of_a_format():
 
 
 def test_the_formats_are_listed_with_what_they_are_and_their_slides():
-    assert {"pitch", "academic"} <= set(schemas.names()) and {"pitch", "academic"} <= set(external.FORMATS)
+    assert set(FORMATS) <= set(schemas.names()) and set(FORMATS) <= set(external.FORMATS)
     for name, module in FORMATS.items():
         catalog = external.catalog(name)
         assert catalog["description"] == external.FORMATS[name]
@@ -494,6 +571,15 @@ def test_a_cut_ends_after_a_comma_or_before_a_bracket_it_would_leave_open():
     )
 
 
+def test_a_cut_at_a_comma_or_a_clause_leaves_no_bracket_open_either():
+    # (a free model's initiative in an all-hands' 2×2 matrix, too long for its quadrant: "Arctic Expansion (High Impact")
+    assert realize._cut("Arctic Expansion (High Impact, Low Urgency)", 30, "en") == "Arctic Expansion"
+    assert realize._cut("Project Ice (phase two; maybe three) is next", 25, "en") == "Project Ice"
+    # A closed bracket stays, and a bracket that would keep too little before it stays open
+    assert realize._cut("Kaito Tanaka (CTO), the founder of everything here", 30, "en") == "Kaito Tanaka (CTO)"
+    assert realize._cut("Q3 (the quarter we prefer not to discuss, at all)", 45, "en").startswith("Q3 (")
+
+
 def test_a_title_slide_names_its_presenter_once():
     # (a free model wrote the presenter's name into their job: "By Dr. Chronos Vance, Dr. Chronos Vance, Founder...")
     _, texts = presentation_schema._title_slide(
@@ -510,6 +596,15 @@ def test_a_title_slide_names_its_presenter_once():
     assert plain[1].endswith("Ann Wells, Founder of Annly")
     _, prefix = presentation_schema._title_slide("T", "Ann", "Annual Report Analyst", None, random_util.Rng(1))
     assert prefix[1].endswith("Ann, Annual Report Analyst")
+    # (Claude Haiku wrote a title before the name: "By Harold Beanmore, Dr. Harold Beanmore, Chief Chrono-Roaster")
+    _, titled = presentation_schema._title_slide(
+        "T", "Harold Beanmore", "Dr. Harold Beanmore, Chief Chrono-Roaster", None, random_util.Rng(1)
+    )
+    assert titled[1].count("Beanmore") == 1 and titled[1].endswith("Harold Beanmore, Chief Chrono-Roaster")
+    _, doctor = presentation_schema._title_slide(
+        "T", "Dr. Arabica Bean", "Dr. of Temporal Aromatics", None, random_util.Rng(1)
+    )
+    assert doctor[1].endswith("Dr. Arabica Bean, Dr. of Temporal Aromatics")  # (a job that only starts with a title)
 
 
 def test_the_arc_check_reads_a_rendered_plans_recipes_too():

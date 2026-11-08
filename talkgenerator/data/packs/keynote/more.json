@@ -1,0 +1,21 @@
+{
+  "one_more_thing": [
+    "One more thing...",
+    "Oh, and one more thing.",
+    "But wait. There's one more thing.",
+    "Before you go, there's just one more thing.",
+    "And there's one more thing.",
+    "We have one more thing to show you.",
+    "Actually, there's one more thing.",
+    "Just one more thing. It's about {seed.generic}."
+  ],
+  "thing_title": [
+    "One more thing: {product} Mini",
+    "One more thing: {product} for dogs",
+    "One more thing: {product}, but tiny",
+    "One more thing: the {seed.bare} edition",
+    "One more thing: {product} for cats",
+    "One more thing: it also comes in {seed.bare}",
+    "One more thing: {product} Kids"
+  ]
+}

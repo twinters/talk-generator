@@ -30,7 +30,8 @@ from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
 from pydantic import Field
 
-from talkgenerator import __version__, names, personas, settings
+from talkgenerator import __version__, names, settings
+from talkgenerator import personas as talk_personas
 from talkgenerator.checks.deck import check_deck, deck_metrics
 from talkgenerator.design import themes
 from talkgenerator.images import licenses, profiles
@@ -38,7 +39,7 @@ from talkgenerator.llm import providers
 from talkgenerator.llm.base import TextProvider
 from talkgenerator.models.plan import TalkPlan
 from talkgenerator.plan import external, languages
-from talkgenerator.schema.presentation_schema_types import schemas
+from talkgenerator.schema.presentation_schema_types import RANDOM, schemas
 from talkgenerator.util import os_util
 
 logger = logging.getLogger("talkgenerator")
@@ -139,7 +140,7 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
             "themes": themes.catalog(),
             "languages": [{"code": code, "name": language.name} for code, language in languages.LANGUAGES.items()],
             "name_styles": names.catalog(),
-            "personas": personas.catalog(),
+            "personas": talk_personas.catalog(),
             "license_policies": licenses.catalog(),
             "image_looks": profiles.catalog(),
         }
@@ -216,7 +217,14 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
             ),
         ] = None,
         slides: Annotated[int, Field(ge=2, le=MAX_SLIDES, description="How many slides, the title slide too")] = 10,
-        format: Annotated[str, Field(description="The talk format (see list_formats)")] = "default",
+        format: Annotated[
+            str,
+            Field(
+                description="The talk format (see list_formats), or 'random' for one the talk's seed picks after its "
+                "persona, who favours some (a startup founder mostly pitches, a disgraced professor mostly gives "
+                "academic talks); license_policy 'open' gives copyright-free images with any format"
+            ),
+        ] = "default",
         language: Annotated[
             str,
             Field(
@@ -252,7 +260,15 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
             Field(
                 description="Who presents the talk, such as 'startup_founder' or 'kindergarten_teacher' (see "
                 "list_formats): they shape its kinds of slides, its title, the style of the presenter's name and the "
-                "language model's voice; 'none' for none (without one, the talk's seed picks one)"
+                "language model's voice, and with format 'random' the format; 'none' for none (without one, the talk's "
+                "seed picks one)"
+            ),
+        ] = None,
+        personas: Annotated[
+            list[str] | None,
+            Field(
+                description="Without a persona, the personas the talk's seed picks from, such as ['startup_founder', "
+                "'consultant'] (see list_formats; without them, all of them)"
             ),
         ] = None,
     ) -> dict[str, Any]:
@@ -265,14 +281,19 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
             raise ToolError("give topic_or_title instead of a topic and a title, not with them")
         if topic is None and title is None and topic_or_title is None:
             raise ToolError("give a topic, a title or a topic_or_title")
-        _check("format", format, schemas.names())
+        _check("format", format, (RANDOM, *schemas.names()))
         if theme is not None:
             _check("theme", theme, themes.choices())
         _check("language", language, list(languages.LANGUAGES))
         for style in name_styles or ():
             _check("name style", style, list(names.STYLES))
         if persona is not None:
-            _check("persona", persona, personas.choices())
+            _check("persona", persona, talk_personas.choices())
+        if personas is not None:
+            for name in personas:
+                _check("persona", name, list(talk_personas.PERSONAS))
+            if not personas:
+                raise ToolError("personas names at least one persona to pick from (persona 'none' has none)")
         _check_policy(license_policy)
         try:
             model = providers.from_settings()  # never from the tool's arguments: only the user picks a paid model
@@ -295,6 +316,7 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
                 topic_or_title,
                 license_policy,
                 persona,
+                personas,
             )
 
         return await _in_a_thread(ctx, "Making the talk", generate, one_at_a_time, progress_every, folder)
@@ -331,6 +353,7 @@ def _generate(
     topic_or_title: str | None = None,
     license_policy: str | None = None,
     persona: str | None = None,
+    personas: Sequence[str] | None = None,
 ) -> dict[str, Any]:
     """A talk on a topic (or with a title, or on a topic_or_title), saved in the folder with its deck's JSON and
     contact sheet, and the report on it."""
@@ -352,11 +375,12 @@ def _generate(
         name_styles=name_styles,
         license_policy=license_policy or None,
         persona=persona or None,
+        personas=personas or None,
     )
     if saved is None:
         raise ToolError(f"couldn't save the PowerPoint in {folder}")
     pptx = Path(saved)
-    deck = slide_deck.to_deck(schema_name=schema_name)
+    deck = slide_deck.to_deck()  # (with the format its seed picked, for format random)
     deck_json = pptx.with_name(pptx.stem + ".deck.json")
     deck_json.write_text(deck.to_json(), encoding="utf-8")
     sheet = pptx.with_name(pptx.stem + ".images.png")
@@ -371,7 +395,7 @@ def _generate(
         "title": deck.title,
         "presenter": deck.presenter,
         "topics": list(deck.topics),
-        "format": schema_name,
+        "format": deck.schema_name,
         "language": deck.language,
         "theme": deck.theme,
         "license_policy": deck.license_policy,

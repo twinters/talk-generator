@@ -288,6 +288,16 @@ name (particular generators, or nudge)". The talk's seed picks one of thirteen p
   and their neutral ones `liminal`, a teacher's weird ones `wholesome`, a time traveller's `retro-futurism` and
   `space-science`. Only those slots change, so it's a nudge rather than a takeover; the license policy and a slot's own
   sources still decide what may be shown, and whether a slide can be made at all is decided by its own looks, as before.
+- **Its formats** (2026-11-08, D61, the user's "shouldn't the format also be tied to persona's (...) although all of
+  them should have some chance for all possibilities, albeit much lower than their preferred"): multipliers on the
+  formats' weights, for a talk that leaves its format to its seed (`schema="random"`; section 7 has the odds). A
+  startup founder has ×12 for `pitch`, a disgraced professor ×12 for `academic`, an over-passionate expert ×3 for
+  `academic`; a kindergarten teacher's and a lighthouse keeper's are under 1, so their talks are TED-like more often.
+
+A talk can also say which personas its seed picks from (`personas=`, `--personas`; talkgenerator.com's settings switch
+some off, D61): the seed picks among all of them first, and only when that one isn't allowed, again among those that
+are. So a talk whose persona is allowed keeps it, whichever others aren't, and each allowed one still comes up as
+often as the weights say among them. A persona named goes first, as a presenter's name goes before the name styles.
 
 The request stays one per talk, with the persona in its dynamic part, and the presenter's own name still never
 reaches a provider. The deck and `talk.started` have the persona (`persona`: `name`, `label`, `voice`, and the `angle`
@@ -569,7 +579,7 @@ its seed picks among the switched-on ones (`name_styles=` on `generate_presentat
 | --- | --- | --- |
 | `pun` | yes | "Prof. Anna Tomy" for a talk on medicine, "Dr. Matthew Mathics" for maths |
 | `fun_surname` | yes | an ordinary first name with a surname that fits too well: "Linda Hivesworth" for bees |
-| `famous_pun` | yes (D33) | a historical figure's name bent to fit: "Albert Einstone" for geology, "Vincent van Goat" for goats |
+| `famous_pun` | yes (D33) | a historical figure's name (of someone who died long ago) bent to fit: "Albert Einstone" for geology, "Vincent van Goat" for goats |
 | `classic` | no | tracery's random first and last name, as in 2019 |
 
 - **A given name goes first** (`presenter=`, the site's "custom name"), and never reaches the model: the request
@@ -582,9 +592,20 @@ its seed picks among the switched-on ones (`name_styles=` on `generate_presentat
   examples.
 - **Checked like the other fields.** A name is turned down when it's longer than 45 characters (a name isn't cut:
   half a name is no name), holds template code or what no name has (digits, brackets, commas), is a placeholder
-  ("Presenter Name", in the talks' languages), names a dictator or one of the living people models reach for
-  most (a short blocklist, which word beginnings match too: "Donald Trumpet"), or is the real name of a famous person
-  whose name the pack bends ("Marie Curie"). Then the talk gets the name a talk without a model gets.
+  ("Presenter Name", in the talks' languages), names a dictator (a short blocklist, which word beginnings match
+  too: "Pol Potter") or a famous living person, or is the real name of a famous person whose name the pack bends
+  ("Marie Curie"). Then the talk gets the name a talk without a model gets.
+- **Famous living people** (`names._LIVING_PEOPLE`, since 2026-11-08, when a free model named a keynote's presenter
+  "Umbrella Chomsky"): 175 that models reach for, from presidents to chefs. A name that's theirs alone counts on its
+  own ("Chomsky", "Oprah", "Zuckerberg"); their ordinary names only together, the first name before the surname, as
+  they are or with one of them bent into what no classic name is (`names._bent`: starting with the name's first five
+  letters, or a letter off it, two off a long one): "Taylor Swiftly", "Gordon Hamsay", "Ryan Goosling", "Tailor
+  Swift" and "Bread Pitt" go, "Dr. Emma Swift", "Tim Cookson" (a classic surname) and "Greta Gosling" (a young
+  goose) stay. A test holds every classic surname (18,839) and first name (2,297) to that: only Trump, which the
+  blocklist had, and Mao go. What it misses, a name of theirs alone bent ("Gnome Chompsky", "Beeyoncé") and
+  both of an ordinary name bent ("Justin Beaver"), the request asks the model not to write: a famous-name pun is on
+  "one famous historical figure who died long ago", never "anyone alive today (however old or famous)". The same
+  list keeps generated pictures from naming them (`names.real_person`).
 - **The talk's language.** The model writes the name in it, with wordplay that works in that language.
 - **Without a model** (none configured, the quota used up, a refusal, or a name that won't do), the name comes
   from talkgenerator's own pack (`data/text-templates/presenter_names.json`, D34): 279 names by style and topic,
@@ -617,6 +638,12 @@ Live on 2026-11-07, with OpenRouter's free router (3-slide talks, seed 1, one re
   Aquinas; "Dr. Marco Pillarate" for pirates, on Marco Polo). Puns stay hit and miss with the free models ("Dr.
   Rail Thane" for trains, "Dr. Chayze" for cheese).
 - The seed's dice gave every talk the same persona (a medieval historian), which shows in the names ("Bede").
+
+Live on 2026-11-08, after "Umbrella Chomsky" and with the famous living people turned down: ten famous-name puns
+(eight by the free models, two by Claude Haiku 5.5, on topics that tempt puns on the living: linguistics, geese,
+cooking, rockets, tennis, pop music, umbrellas, tidying up): nine bent someone who died long ago ("Dr. Leonardo da
+Goose", "Nikola TeslARocket", "Dr. Beethovpop", "Prof. Sinta-crates", on Socrates) or no one ("Dr. Umbra the
+Scholastic"), and tennis got "Serena Serve", an ordinary first name and a word, which stays. None had to go.
 
 ### 5.11 Topic or title
 
@@ -661,10 +688,15 @@ the model's, as "The French Revolution" deserves better than itself.
   title of its own, and else what was typed, with the slips fixed that talkgenerator can fix itself
   (`titles.polished`: misspellings, a capital start for a title typed in lower case). Its topic is its rarest word.
 - **Anything shorter is the topic, or a premise** ("Cats are liquid"): the request says `Topic: "<typed>" (as the
-  user typed it: the talk's topic, or a premise for it)` and `Title: come up with one, funnier and more specific
-  than what the user typed`, and the model's title goes (its own_title rather than an echo of what was typed). The
-  topics are what was typed. A misspelled input comes with what it means (`"pengiuns" (as the user typed it,
-  meaning "penguins": ...)`), as the model otherwise kept the typo in its title now and then.
+  user typed it: the talk's topic, or a premise for it)`, and its spine asks for `a title of your own for the talk,
+  in English: funnier and more specific than what the user typed, building on it`, and the model's title goes (its
+  own_title rather than an echo of what was typed). The request has no line on the title since 2026-11-08: Claude
+  Haiku took its `Title: come up with one, ...` for the title ("Come Up With One: Retrocausal Roasting in Arabica
+  Beans", in 3 of 12 talks), and so a talk on a topic given as such has none either (its spine asks for a title of
+  the model's own), where a title given as such is the request's `Title:`. `talkgenerator check` warns about a title
+  with the request's words about a title in it (the `title` check). The topics are what was typed. A misspelled
+  input comes with what it means (`"pengiuns" (as the user typed it, meaning "penguins": ...)`), as the model
+  otherwise kept the typo in its title now and then.
 - **Misspellings** are fixed before the topics are taken (`word_frequency.fix_spelling`): a rare word becomes the
   likest word one edit away that's a hundred times more frequent ("waht": "what", "joind": "joined"), a word no
   language knows the closest frequent word ("airplain": "airplane"); made-up words stay ("Zorblaxia").
@@ -804,8 +836,9 @@ format too. Every format also works in classic mode through its content pack
 ([section 11](#11-text-sources-and-content-packs)), so formats cost nothing without an LLM.
 
 **The first two formats** (2026-11-08, D56): the startup pitch (`pitch`) and the academic conference talk
-(`academic`), which set the pattern that the corporate all-hands and the product keynote will follow (Pecha Kucha's
-timing is out, at the user's word). A format is a presentation schema with a `Format` (`talkgenerator.schema.formats`, a module per format):
+(`academic`), which set the pattern that the corporate all-hands and the product keynote followed the same day (D59,
+below; Pecha Kucha's timing is out, at the user's word). A format is a presentation schema with a `Format`
+(`talkgenerator.schema.formats`, a module per format):
 
 - **A brief for the language model**, on a line of the request of its own ("The format: a startup pitch to investors,
   as at a demo day: the problem, the solution, the market (TAM, SAM and SOM)..."; the TED-like formats have none, and
@@ -870,6 +903,87 @@ it keeps half the text, and before a bracket it would leave open. The second rou
 of Delayed Productivity", "Chair of Subterranean Dynamics") and its references were short ("Doe et al. (2022) Journal
 of Delay"); what it still had, a big number without its unit ("50000"), and matrices whose quadrants restated their
 axes, the hints now ask for too.
+
+**The last two formats** (2026-11-08, D59): the corporate all-hands, or quarterly business review (`corporate`), and
+the product keynote (`keynote`), on the same pattern and with no new slide type. An all-hands is a company whose
+business is the topic, as its leadership presents the quarter to everyone: its arc goes from the agenda (or an
+executive summary nobody can read, the TED pack's wall of corporate jargon) through the KPIs against their targets
+(figures on tiles; the target's line climbing and the actual results, on a click, falling away from it; the results by
+region, which an unlikely team wins by far; one headline number; or the sales pipeline, a funnel down to "1 deal (my
+uncle)"), the quarter's wins (three office photos, the CEO's post, or customers' reviews, a one-star one last), the
+roadmap (a timeline, the new process, or the planning cycle), an org change (the new org chart under "The coffee
+machine", the new hierarchy as a pyramid, or the company before and after: "12 teams", then "12 teams, new names") and
+the synergies (a Venn diagram, or a 2×2 matrix of priorities) to the ask of everyone (a bold statement, or "110%") and
+Q&A. A five-slide all-hands keeps its KPIs, its wins, its roadmap and Q&A; from ten slides on the KPIs get a second
+slide, and from eleven the wins. A keynote launches a product made of the topic: a big opening statement (over a
+photo, one huge number, or a greeting over a full-bleed photo), the one idea (a bold question, or a Venn diagram with
+the product where it all meets), the reveal (the product in one photo, a picture that prefers to be generated, or
+full-bleed), its features (three photos, specs on tiles, or a chart it wins by far against "A very fast horse"), a live
+demo (that crashes, as a fake error message whose last button is "Blame the Wi-Fi"; how it works; or an odd photo to
+present as the demo), the price (one big number, the models' prices, or when it ships), the "one more thing" (said over
+a photo, or a second product, full-bleed: "One more thing: Penguin Neo for dogs") and a closing line. A five-slide
+keynote keeps its opening, the reveal, a feature and the one more thing, and the reveal and the one more thing stay
+longest. The management consultant presents an all-hands most often (×6; the startup founder and the motivational
+speaker ×1.5, the life coach ×1.2), the startup founder and the motivational speaker a keynote (×5 and ×3.5; the
+influencer ×1.5, the time traveller ×1.2); their themes are `corporate` (×5) and `clip-art corporate` (×2.5), and `dark
+minimal` (×5) and `clean keynote` (×2.5), more often. An all-hands' photos are office stock photos (`corporate-stock`,
+else plain ones). Their classic texts are content packs (section 11), with a made-up company and product named after
+the topic ("Penguin Holdings", "Penguin Neo"). Two things the arcs needed: an all-hands' ask has no tags of its kinds,
+as a long talk's free quotes and its headline number took the statements' and the big numbers' caps before it came
+(as an academic talk's references keep clear of its outline's agenda); and a keynote's classic title launches the
+product in words of its own, since its reveal introduces it.
+
+Checked on 2026-11-08, without GIPHY and Unsplash and in random themes: 60 classic talks (both formats, twelve topics,
+seeds 1 to 7, of 5, 10, 15 and 20 slides, four with the `open` license policy) had 0 errors and 5 warnings, all of
+calm backdrops (too light, or with detail where the text goes); 20 by OpenRouter's free models (198 of 200 slides by
+the model, one request a talk, $0) had 0 errors and 2 such warnings, and 4 by Claude Haiku 5.5 (40 of 40, $0.006 in
+all) 0 errors and 2; every talk came out the same made again. The models' all-hands read as all-hands ("Q3 Review:
+Moving Forward by Looking Backward", "The Council of Birds" at the top of the new hierarchy, the ask "Everyone please
+avoid meeting your past self this quarter", a CEO who "watched a seal eat lunch today"), and their keynotes as keynotes
+(BrewLine, whose demo "has achieved sentience and refuses to serve you", with buttons "Abort Timeline", "Recall Bean"
+and "Sip Anyway"). What they needed: three of four product shots said "It's here." and every CEO's post began "Humbled
+and grateful", both copied from their hints, which no longer have them; a bar named "Emperor Elite (Punchline)"; an
+initiative in a quadrant cut to "Arctic Expansion (High Impact", as a cut at a comma or a clause's end didn't keep
+brackets closed (it does now); and Claude Haiku's job "Dr. Harold Beanmore, Chief Chrono-Roaster" under the name
+Harold Beanmore, which the title slide now drops the name from, title and all. One sample deck by Claude Haiku came out
+classic but for its title (its answer was paid for, and none of its slides was read), while the same talk made again
+came out whole: Anthropic sometimes refuses that talk's schema as too large a grammar, Claude then gets it as text, and
+given it so, Haiku wrote every slide inside the spine's object rather than beside it. Slides inside another object of
+the answer count now (the recorded answer, replayed, makes 10 of 10 planned slides), and a talk whose answer has no
+slide to read says what the answer brought in a warning.
+
+**The format from the persona** (2026-11-08, D61). A talk can leave its format to its seed: `schema="random"`
+(`--schema random`, the MCP server's `format="random"`; talkgenerator.com's talks do). The seed picks the persona
+first, as for a TED-like talk (uniformly, among the personas the talk allows), and then the format, from a stream of its
+own (`format`), so the persona, the theme and the slides draw what they drew before, and a talk of schema random with
+the persona it names is the very talk of the format its seed picked. The odds are `FORMAT_WEIGHTS` (in
+`presentation_schema_types`: the TED-like talk 6, the pitch, the academic talk, the corporate all-hands and the
+product keynote 1 each) times the persona's multipliers (`Persona.formats`, 5.2); without a persona, 60% of the
+talks are TED-like:
+
+| Persona | TED-like | Pitch | Academic | All-hands | Keynote |
+| --- | --- | --- | --- | --- | --- |
+| startup founder | 27% | **55%** | 5% | 5% | 9% |
+| disgraced professor | 29% | 5% | **57%** | 5% | 5% |
+| management consultant | 27% | 9% | 5% | **55%** | 5% |
+| motivational speaker | 28% | 7% | 5% | 5% | **56%** |
+| over-passionate expert | **50%** | 8% | 25% | 8% | 8% |
+| influencer, time traveller, former athlete | **52% to 55%** | 9% to 17% | 4% to 13% | 9% to 14% | 17% to 18% |
+| the other five | **57% to 79%** | 4% to 10% | 5% to 19% | 4% to 11% | 7% to 20% |
+| over all thirteen | 51% | 11% | 13% | 11% | 15% |
+
+Every format keeps at least 4% with every persona, as the user asked, and over all the personas about half the talks
+stay TED-like (7 in 10 while there were three formats). Only the formats for talks take part. `ted` doesn't: it's the TED-like talk with copyright-free images
+only, a choice of license rather than of format, which a talk makes with `license_policy="open"` whatever format its
+seed picks (the arcs need no image that's fair use, and the TED-like talk drops the slides whose images the policy has
+no source for, as `ted` does); nor do `interview` and `test`. A format named goes as before, its persona weighted by the
+format's `personas` (D56): the two directions differ, and both are deliberate, as a caller who names the format wants its
+favourite presenters, and one who leaves it wants the presenter's favourite format. The deck's `schema_name`, the
+MCP server's report and `talkgenerator check`'s metrics name the format the talk got. The corporate all-hands and the
+product keynote joined `FORMAT_WEIGHTS` (×1 each) as they came in (merged together), with the consultant's ×12
+for `corporate`, the motivational speaker's ×12 for `keynote`, ×2 keynotes from the founder, the athlete, the life
+coach, the influencer and the time traveller, and fewer all-hands and keynotes from the kindergarten teacher and the
+lighthouse keeper.
 
 ## 8. Slide types and variety
 
@@ -1670,7 +1784,9 @@ As built (2026-11-07, `talkgenerator.images.generation` and `talkgenerator.image
   "Discussion" as a slide's title, "Conclusion 1" as a caption, and the conclusions' six titles. The formats beyond
   TED-like talks came next (section 7, D56): `pitch` (687 templates in 67 slots) and `academic` (591 in 60), a grammar
   per part of their arcs rather than per kind of slide, with the slots' variables for the startup's and the method's
-  made-up names (`startup`, `method`), linted by the same tests.
+  made-up names (`startup`, `method`), linted by the same tests; and then (D59) `corporate` (596 in 74) and `keynote`
+  (391 in 52), with the company's and the product's (`company`, `product`). An all-hands' executive summary borrows
+  the TED pack's walls of corporate jargon rather than having its own.
 
 ## 12. Determinism, seeds, tests and the paper baseline
 
@@ -1803,7 +1919,7 @@ the formats × 3 seeds, in classic mode with replay and, at every milestone, liv
 | Area | Check | Proposed bar |
 | --- | --- | --- |
 | Completeness | no missing slides, every required element present, no empty placeholders | 100% |
-| Text | no template leftovers (`{seed}`, `#tag#`, `None`); fits its box at the minimum font size or above; within its length limits | 100% |
+| Text | no template leftovers (`{seed}`, `#tag#`, `None`); fits its box at the minimum font size or above; within its length limits; a title without the request's words about it ("Come Up With One: ...", a warning since 2026-11-08) | 100% |
 | Contrast | text against its background, or against the photo behind it after dimming | at least 4.5:1 for body text, 3:1 for titles |
 | Images | loads; not enlarged beyond 1.3×; no near-duplicates within a talk; credited with its license; license policy respected; its look's preference (black and white or sepia for `vintage`, little detail behind the text for `calm-backdrop`) | 100% (the near-duplicates, licenses, policy and looks checked since 2026-11-07) |
 | Variety | distinct slide types and layouts per talk, no layout twice in a row; across seeds, the share of distinct titles and images | targets per format, set from milestone 1's measurements |
@@ -1852,7 +1968,7 @@ before the new formats. A milestone is a checkpoint on `v5`, not a release; only
 | 4 (under way: `stream_talk()`, probe validation, display policies, presenter names in styles (5.10, for the site's settings) and what's typed read as a topic or a title (5.11, `topic_or_title=`, for the site's Automatic choice) are in; since 2026-11-07, talkgenerator.com runs v5 from GitHub (D31): talks stream into the browser, the .pptx is made on download, Pixabay's images are copied, and classic and LLM talks meet the speed and memory bars on the VPS (section 14), but for the first talk after a restart; left: deploying the streamed-titles fix (`be09a7e`: on the site, a free model that writes its answer's fields in alphabetical order put `slide_10` before `slide_2`, so slides 2 to 9 fell back to classic ones, or were left out of a Dutch copyright-free talk), the new settings with 5.10's and 5.11's options, and loading the library before the first talk) | Streaming and the web view | `stream_talk()`, display policies, probe validation; in talk-generator-web: the SSE endpoint, the Angular renderer, LLM talks by default with the classic switch, a language choice, Connect OpenRouter and pasted keys, .pptx on download, an Automatic topic-or-title choice (5.11), the site running `v5` from git (D31) | first slide on screen within the calibrated target on the VPS; a 20-slide talk under the memory bar; the downloaded .pptx matches the web view |
 | 5 (under way: image slots and the finder, license classes and policies, aesthetic profiles with local analysis, and the first flavour packs are in, 2026-11-07; generated images too, on the user's own key or server, credited "AI-generated with <model>" in the `generated` class (10.5, D38, D39); and new sources (10.4): the Met, Cleveland, the Wellcome Collection, NASA, Flagpedia's flags, Imgflip's templates and the Smithsonian (with the user's api.data.gov key), with the museums' type and date filters and more subreddits; talkgenerator.com draws them on a visitor's own OpenRouter account or OpenAI key since 2026-11-08 (in the site's `master`, deployed with its next push); and the vision pick, off by default (10.3, D58: a vision model picks each picture among the finder's and three runners-up, in one request a talk, by OpenRouter's free models or the talk's own; 2026-11-08); left: the Library of Congress, Flickr and Iconify, which need an exception, a paid key or a new dependency) | Images | slots, aesthetic profiles and flavour packs, local analysis, license classes; new open and weird sources; AI image generation with the user's own keys; the optional vision pick | license policies enforced; profile checks pass (such as the grayscale share for `vintage`); generated images credited |
 | 6 (under way: fourteen slide types are in, drawn as texts on shapes (D37, section 8); on 2026-11-07, benchmark talks over seeds that bring each of them up had no design, completeness, leftover or language findings: 63 classic talks, and 63 by OpenRouter's free models (620 of 630 slides by the model, at $0), plus 20 classic `ted` talks and 8 Dutch ones, where a long Dutch compound overflowed a narrow box (since, every new layout takes a 20-letter word in every theme, a Venn diagram's labels beside its circles when they don't fit in them); the only other findings were InspiroBot's and Reddit's live answers differing between a talk's two runs. talk-generator-web draws them all unchanged, and needs a small change to hold back what appears on a click in its presentations (merged into the site's master, not deployed yet). Memes with live captions came in later that day (D40); on 2026-11-08 they came to about half of all talks (D48, "I really love the generated memes"), and five slide types from real PowerPoint karaoke decks came in (D49: a fun fact, an acronym, a dare, a flowchart, a tier list), with no findings on them in 36 benchmark talks, 18 classic and 18 by OpenRouter's free models (179 of 180 slides by the model, $0, every talk the same made again), over six seeds and random themes; the same day, so did the user's other two ideas of 2026-11-07: personas that shape a talk (5.2, D47), and bolder themes with subtler, rarer image filters (section 9, D43 to D46). Then the TED content pack (section 11, D54): the classic texts of TED-like talks as data, per kind of slide, grown from 909 templates to 2,872 in a TED talk's voice and linted by tests, with no errors in 184 classic benchmark talks (130 `ted`, the last 30 made twice and the same, and 54 `default`), and a text seen again in a talk on the same topic half as often (9% before, 4% to 5% after). Then five more from the karaoke catalogue (section 8, D57: a wall of text with one point highlighted, an alignment chart, red flags, reviews with stars and a fake error message), with no errors in 62 benchmark talks over seeds that bring each of them up: 39 by OpenRouter's free models in four runs, as the prompt was sharpened between them (longer points for a wall, a one-star review last, buttons and cells of the talk's own, within their lengths, and playful errors, worded as computers word them), 389 of 390 slides by the model, $0, every talk the same made again; and 23 classic ones, 15 `default` and 8 `ted`, every one the same made again. Then real facts (section 11, D60, 2026-11-08): a talk a language model writes gives up to three of its slides of history, fun facts, quizzes and big numbers a real fact each from Wikipedia (the lead of the topic's article, and the day's events), none naming a living person and none of death, war, disasters, crime, politics, race or faiths, which the model twists, and classic talks get half of their fun facts and quizzes real (Wikipedia's with a twist, Open Trivia DB's), credited, and flavour texts (useless facts, dad jokes, advice slips: the user's yes of 2026-11-08); in 49 live talks with them (24 by OpenRouter's free models, $0; 7 by Claude Haiku; 18 classic) no error but one classic talk whose picture came out differently when made again (as the same talk did before the facts), and in the last ones the free models built on 9 of their 12 facts, Claude Haiku on 4 of 4. Left: section 8's other candidates and the karaoke catalogue's) | More slide types for TED-like talks | native diagrams, big numbers, quiz, memes with live captions, social posts and more; a much larger, curated TED content pack; memes more often; what real PowerPoint karaoke decks do; personas that shape a talk; bolder themes; real facts to build on (section 11) | every new slide type passes the checks in classic and LLM mode |
-| 7 (under way: the startup pitch and the academic conference talk came in on 2026-11-08, each with its arc, its recipes, its content pack and its favourite personas and themes, and the process slide type (section 7, D56); 42 classic talks and 20 by OpenRouter's free models (199 of 200 slides by the model, $0) had no errors, every talk the same made again. Left: the corporate all-hands and the product keynote; Pecha Kucha's timing is out, at the user's word) | New talk formats | pitch, academic, corporate and keynote, with their content packs (or in 5.1 if the TED work takes longer) | every format works in classic and LLM mode and passes the checks |
+| 7 (done, 2026-11-08: the startup pitch and the academic conference talk, each with its arc, its recipes, its content pack and its favourite personas and themes, and the process slide type (section 7, D56): 42 classic talks and 20 by OpenRouter's free models (199 of 200 slides by the model, $0) had no errors, every talk the same made again; then the corporate all-hands and the product keynote, the same way and with no new slide type (D59): 60 classic talks, 20 by the free models (198 of 200 slides by the model, $0) and 4 by Claude Haiku 5.5 ($0.006) had no errors, every talk the same made again. Pecha Kucha's timing is out, at the user's word) | New talk formats | pitch, academic, corporate and keynote, with their content packs (or in 5.1 if the TED work takes longer) | every format works in classic and LLM mode and passes the checks |
 | 8 | Integration | the site runs `v5` on the preview, then in production behind a switch; Sign in with ChatGPT on the site, if OpenAI has admitted it; docs and deprecation warnings | the site runs `v5` for a week without quota or memory incidents |
 | 5.0.0 | The release | freeze and fix; merge `v5` into `master`; release 5.0.0 with the release script; the site pins `talkgenerator==5.0.0`; 4.x ends | |
 
@@ -1923,9 +2039,11 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D56 | A talk format beyond the TED-like talks is a presentation schema with a `Format`: a brief for the language model, on a line of the request of its own, what its titles and its presenter's job are like (with the persona's), weights over the personas and multipliers on the theme families (with the persona's), and an arc: its parts in order, each with the fewest and the most slides it has and a rank, which lays out a talk of any length from its length alone (a short talk keeps the parts of the lowest ranks, a long one gives them more slides and has free slides between them). A part's slide generators weigh in on its slides only, so every persona keeps the arc; the format's other slides fill the free slides, and stand in for a part's slide that can't be made. A format reuses the slide types there are, with recipes and a content pack of its own, and gets a new type only where none draws what it needs (the process, for an academic talk's method). |
 | D57 | The next karaoke types (section 8) are picked from the catalogue's next ones for laughs first: a wall of text, an alignment chart, red flags, reviews and a fake error message. A wall of text is fine print on purpose, at the one size that fills its slide, which the design checks hold to a floor of its own (9 points, as the credits have theirs); its one click highlights its punchline. A review's stars are drawn and written ("4/5"), so they read in every renderer and font, and an error message comes up whole, as a fun fact or a dare does. Words talkgenerator adds (an alignment chart's axes, "Continued on next slide") are in the talk's language. |
 | D58 | A vision model can pick a talk's pictures (the vision pick, 10.3), off by default (`vision_pick=`, `--vision_pick`), for the pictures of planned slides only, in one request a talk once its last slide is settled: each picture among the finder's own and up to three runners-up, which the finder keeps in order, without a draw of the talk's dice (so a talk finds the same pictures with it or without it, before the pick), its own source's first; on one contact sheet, a row a picture, with what it asks for beside it, the candidates in an order the seed shuffles. The model says what each row's candidates show, then picks one or none; a pick takes the finder's picture's place once it passes the finder's checks, and "none", a failure, an answer later than 30 seconds or a budget that doesn't allow the request keep the finder's. `on` asks the talk's own model when it reads pictures, else OpenRouter's free vision models without thinking (not the free router). The request is the talk's (its ledger and budget), never names the presenter it was given, and replays from a cassette, which keys the sheet by its candidates and never keeps its bytes. talkgenerator.com may turn it on for the free models' talks once it hands over `slide.updated`: one more free request a talk. |
+| D59 | The corporate all-hands, or quarterly business review (`corporate`), and the product keynote (`keynote`) are formats as D56 has them, with no new slide type: an all-hands goes from its agenda through the KPIs against their targets, the quarter's wins, the roadmap, an org change and the synergies to the ask of everyone and Q&A, a keynote from a big opening statement through the one idea, the reveal, the features, a live demo and the price to the "one more thing" and a closing line. A management consultant presents more of the all-hands, a startup founder or a motivational speaker more of the keynotes; their themes are the corporate families, and dark minimal and clean keynote, more often. A part's slide whose kind's cap the format's free slides or an earlier part would take first goes without that kind's tag (an all-hands' ask), so that a talk of any length keeps every part. Pecha Kucha's timing is out (the user's call), so these four are milestone 7's formats. |
 | D60 | Talks a language model writes get real facts (`talkgenerator.facts`): up to three of a talk's slides of history (a historical figure's quote, two old photos, a timeline), fun facts, quizzes and big numbers get one each, on their lines of the talk's request, with what to do with it (a fun fact keeps it true and twists it); slides of history get one of the day's events first (Wikipedia's "On this day", of the day the talk is made on), a big number a sentence with a figure, a fun fact one that says how special something is, rather than what the topic is. They're sentences of the lead of the topic's English Wikipedia article (a topic in another language followed there from its language's Wikipedia), and the day's events; none for a topic that's a living person (English Wikipedia's "Category:Living people"), none that names one (of the articles its lead or its event links to), none with a word a slide shouldn't make light of, or of death, war, disasters, crime and accusations, politics or race (but a word of the topic's), none about real-world politics; when Wikipedia can't tell who's living, none that names someone. They're looked up while the talk's seeds are, from the cache of API responses (a week; a day's events a month) or within 8 seconds of the talk's start, after which the talk goes without them (a talk that's late may be a busy computer's: the next one asks again); a talk made again in a block of `same_answers` (a check) gets the facts the first one got (`http_util.keep`). A slide that builds on its fact (two of its telling words are in the slide's texts) credits its article ("Wikipedia: Penguin (CC BY-SA 4.0)", in a credit line that then starts with "Sources:" rather than "Image sources:"); the deck records every fact with its page, license and slide (`Deck.facts`, none for a talk without). Classic talks get them where they fit: half of their fun facts are a real sentence of the lead of the slide's seed's article, with a twist of the TED pack's (its version 4), and half of their quizzes a real question of Open Trivia DB's, of the topic's category by its Wikipedia description (animals for penguins; never celebrities, politics, entertainment, sports or mythology), each credited on its slide. `DISABLE_FACTS`, `DISABLE_WIKIPEDIA` and `DISABLE_OPENTDB` switch them off. Wikidata and REST Countries aren't used (section 11). Flavour texts too, which the user allowed on the public site on 2026-11-08 (`talkgenerator.sources.flavour`): a fun fact may build on a random useless fact (uselessfacts.jsph.pl), a dare dares the presenter to tell a real dad joke (icanhazdadjoke, about the topic's word in the singular if there are any, else of a random page), and the closing slide's line under its title is a real piece of advice (the Advice Slip); classic talks get them in half of their dares and two in five of their closing lines, in framings of the TED pack's version 5. They pass the facts' checks and their own (no insults, drink or faiths), name no living person (their capitalised words, as Wikipedia's articles), and are credited without a license (their sites state none); `DISABLE_USELESS_FACTS`, `DISABLE_DAD_JOKES` and `DISABLE_ADVICE_SLIPS` switch them off. |
+| D61 | A talk can leave its format to its seed (`schema="random"`): the seed picks the persona first, then the format from a stream of its own, by `FORMAT_WEIGHTS` (the TED-like talk 6, the formats beyond it 1 each) times the persona's multipliers (`Persona.formats`: a startup founder ×12 for a pitch, a disgraced professor ×12 for an academic talk, a management consultant ×12 for an all-hands, a motivational speaker ×12 for a keynote), so each persona's favourite dominates and every format keeps a few talks in a hundred with every persona. Only the formats for talks take part: not `ted`, whose copyright-free images are a license policy (`open`) that goes with any format, nor `interview` and `test`. A format named weights the persona as before (D56). A talk can also say which personas its seed picks from (`personas=`): the seed picks among all of them first and again among those allowed only when that one isn't, so a talk keeps its persona whenever it's allowed. talkgenerator.com's talks leave their format to the seed, with the personas its visitor didn't switch off. |
 
-D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, and D43 to D58 on 2026-11-08; the
+D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, and D43 to D61 on 2026-11-08; the
 others follow from the design.
 
 ### Open questions

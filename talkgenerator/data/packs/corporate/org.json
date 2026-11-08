@@ -1,0 +1,93 @@
+{
+  "org_title": [
+    "Our new structure",
+    "The new org chart",
+    "Effective Monday",
+    "Org update",
+    "Who reports to whom (for now)",
+    "Leadership changes",
+    "Meet the new structure"
+  ],
+  "boss": [
+    "The coffee machine",
+    "A consultant we met once",
+    "{seed.generic.cap}",
+    "The intern",
+    "An algorithm",
+    "Whoever booked the room",
+    "The steering committee",
+    "A shared inbox",
+    "The CEO's dog"
+  ],
+  "team": [
+    "Sales",
+    "Marketing",
+    "Finance",
+    "Operations",
+    "Team {seed.bare.title}",
+    "Strategy (interim)",
+    "People and Culture",
+    "Synergy Office",
+    "IT (when it works)",
+    "Legal"
+  ],
+  "pyramid_title": [
+    "The new hierarchy",
+    "Who decides what",
+    "Our leadership pyramid",
+    "Decision rights",
+    "How it really works",
+    "The pecking order"
+  ],
+  "pyramid_top": [
+    "The CEO's dog",
+    "Whoever has the remote",
+    "{seed.generic.cap}",
+    "The coffee machine",
+    "The office plant",
+    "One very calm intern",
+    "The group chat"
+  ],
+  "pyramid_upper": [
+    "Leadership",
+    "The board",
+    "Senior leadership",
+    "Executives",
+    "The C-suite",
+    "Steering committee"
+  ],
+  "pyramid_middle": [
+    "Middle management",
+    "Team leads",
+    "Project managers",
+    "Directors",
+    "Heads of department",
+    "Consultants"
+  ],
+  "pyramid_base": [
+    "Everyone else",
+    "The people doing the work",
+    "Interns",
+    "All of us",
+    "The rest of the company",
+    "You"
+  ],
+  "before_after_title": [
+    "Before and after the reorg",
+    "Our transformation",
+    "The new us",
+    "What changes",
+    "Then and now",
+    "One company, transformed"
+  ],
+  "before_after": [
+    "Before: 12 teams|After: 12 teams, new names",
+    "Before: one boss|After: one boss, new title",
+    "Before: silos|After: silos, but aligned",
+    "Before: chaos|After: structured chaos",
+    "Before: the old office|After: the old office, renamed",
+    "Before: {seed.generic}|After: {seed.generic}, at scale",
+    "Before: too many meetings|After: one long meeting",
+    "Before: three layers|After: four layers"
+  ]
+}

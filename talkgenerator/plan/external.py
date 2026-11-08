@@ -64,6 +64,12 @@ FORMATS: Final = {
     "academic": "A talk at an academic conference, with affiliations on its title slide: the outline, related work, "
     "the method, the results (with p-values), the limitations, future work, the acknowledgements, the references and "
     "questions, each a part of its arc, in that order",
+    "corporate": "A company's all-hands meeting or quarterly business review: the agenda, the KPIs against their "
+    "targets, the quarter's wins, the roadmap, an org change, the synergies, the ask of everyone and Q&A, each a part "
+    "of its arc, in that order",
+    "keynote": "A product keynote on a big stage: a big opening statement, the one idea, the reveal of the product, "
+    "its features, a live demo, the price, the 'one more thing' and a closing line, each a part of its arc, in that "
+    "order",
 }
 
 # The recipe a kind of slide gets when its plan doesn't name one, the first of these the format has: plain photos,

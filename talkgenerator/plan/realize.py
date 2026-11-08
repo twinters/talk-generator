@@ -119,8 +119,9 @@ def _cut(text: str, length: int, language: str) -> str:
     English before a word that opens the next clause ("The mountain breathes", of "The mountain breathes when prayers
     are whispered"), or else after a comma ("Professor of Serenity Studies", of a long affiliation), or else between
     words, without the little words and punctuation that a cut leaves hanging at its end (as in "Cats were the true
-    scholars of the"), and before a bracket it would leave open, if that keeps a third of it ("Kaito Tanaka", of
-    "Kaito Tanaka (Head of Temporal Planning)")."""
+    scholars of the"); and each of them before a bracket it would leave open, if that keeps a third of it ("Kaito
+    Tanaka", of "Kaito Tanaka (Head of Temporal Planning)"; "Arctic Expansion", of "Arctic Expansion (High Impact,
+    Low Urgency)")."""
     head = text[: length + 1]
     little = _little_words(language)
     ends = [end.start() + (1 if end.group(0) in ".!?" else 0) for end in _CLAUSE_END.finditer(head)]
@@ -130,17 +131,22 @@ def _cut(text: str, length: int, language: str) -> str:
         clause = head[:at].rstrip(_DANGLING)
         last = clause.rsplit(" ", 1)[-1].strip(_DANGLING + _QUOTE_MARKS + ".!?").lower()
         if len(clause) >= length // 2 and last not in little:
-            return clause
+            return _closed(clause, length)
     if " " not in head:  # one long word
         return text[:length]
     words = head.rsplit(" ", 1)[0].split()
     while len(words) > 1 and words[-1].strip(_DANGLING + _QUOTE_MARKS + ".!?").lower() in little | {""}:
         words.pop()
     cut = " ".join(words).rstrip(_DANGLING)
+    return _closed(cut, length) or text[:length]
+
+
+def _closed(cut: str, length: int) -> str:
+    """A cut text before a bracket it leaves open, if that keeps a third of the length it was cut to (else as it is)."""
     opened = _OPEN_BRACKET.search(cut)
     if opened is not None and len(cut[: opened.start()].rstrip(_DANGLING)) >= length // 3:
-        cut = cut[: opened.start()].rstrip(_DANGLING)
-    return cut or text[:length]
+        return cut[: opened.start()].rstrip(_DANGLING)
+    return cut
 
 
 def _little_words(language: str) -> frozenset[str]:

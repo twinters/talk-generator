@@ -348,6 +348,37 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   each part, the Skill has references for both, and `talkgenerator check` warns of a talk that misses a part of its
   format's arc.
 
+### Talk formats: all-hands meetings and product keynotes
+
+- `--schema corporate`: a company whose business is the topic, at its all-hands meeting or quarterly business review.
+  Its slides go through its arc, in order: the agenda (or an executive summary nobody can read), the KPIs against
+  their targets (figures on tiles, the actual results falling away from the target's line on a click, the results by
+  region, one headline number, or the sales pipeline as a funnel), the quarter's wins (three photos, the CEO's post,
+  or customers' reviews), the roadmap (a timeline, the new process, or the planning cycle), an org change (the new org
+  chart whose boss is the punchline, the new hierarchy as a pyramid, or the company before and after), the synergies
+  (a Venn diagram, or a 2×2 matrix of priorities), the ask of everyone (a bold statement, or "110%") and Q&A. Its
+  other slides are inspirational quotes, InspiroBot's posters, the company's values as an acronym, the news and the
+  like.
+- `--schema keynote`: a product made of the topic, launched on a big stage: a big opening statement (over a photo, as
+  one huge number, or a full-bleed photo with a greeting), the one idea (a bold question, or a Venn diagram with the
+  product where it all meets), the reveal (the product in one photo, a picture that prefers to be generated), its
+  features (three photos, specs on tiles, or a chart it wins by far), a live demo (that crashes, as a fake error
+  message, how it works, or a photo to present as the demo), the price (a big number, the models' prices, or when it
+  ships), the "one more thing" and a closing line. Its other slides are deep questions over photos, gifs, the press
+  and early reviews.
+- A five-slide all-hands has the KPIs, the wins, the roadmap and Q&A; a five-slide keynote its opening, the reveal, a
+  feature and the "one more thing". A management consultant gives more of the all-hands, a startup founder or a
+  motivational speaker more of the keynotes, and their themes are the `corporate` and `clip-art corporate` families,
+  and `dark minimal` and `clean keynote`, more often.
+- A language model is told the format, and what its titles and its presenter's job are like (an all-hands' title is
+  the quarter and a slogan; a keynote's the product's made-up name and a grand promise), with the persona's. Without
+  one, both have content packs of their own (`talkgenerator/data/packs/corporate` and `keynote`, a grammar per part of
+  the arc, 596 and 391 templates), and a made-up company or product named after the topic ("Penguin Holdings",
+  "Penguin Neo") on every slide.
+- No new slide type: an all-hands' office photos are corporate stock photos, and its executive summary is the wall of
+  text's corporate jargon. `talkgenerator formats --details --format corporate` (and `keynote`) lists the arc, and the
+  Skill has references for both.
+
 ### Titles and presenter names
 
 - What someone types can be the topic or the title (`--topic_or_title`, `topic_or_title=`): "penguins" as well as
@@ -360,9 +391,9 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
 - Made-up presenter names in styles (`--name_styles`): `pun` ("Prof. Anna Tomy" for medicine), `fun_surname`
   ("Linda Hivesworth" for bees) and `famous_pun` ("Albert Einstone" for geology) by default, and `classic`, the
   random first and last name of 2019. The language model writes the name in the same request, and a name that won't
-  do (too long, a placeholder, a real famous name, one on a short blocklist) is turned down. Without a model,
-  talkgenerator has names of its own for 642 of the 736 topics in its topic list. A plan can name its presenter
-  (`presenter_name`).
+  do (too long, a placeholder, a real famous name, a dictator's or a famous living person's) is turned down. Without a
+  model, talkgenerator has names of its own for 642 of the 736 topics in its topic list. A plan can name its
+  presenter (`presenter_name`).
 
 ### Personas
 
@@ -384,6 +415,17 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
     pictures are weird medieval art, a founder's photos office stock), with the slide's own look after them.
 - The deck and `talk.started` say which persona a talk had (`persona`: its name, label and voice, and the angle the
   model was given). `--persona none` makes the format's own talk.
+- A talk can leave its format to its seed (`--schema random`, `schema="random"`, the MCP server's `format="random"`),
+  which picks the persona first and then a format that persona favours: a startup founder pitches in more than half
+  of their talks, a disgraced professor gives an academic talk, a management consultant an all-hands and a
+  motivational speaker a keynote, and most of the others give TED-like talks. Every format keeps a few talks in a
+  hundred with every persona, and over all the personas about half are TED-like
+  (`Persona.formats`, multipliers on `presentation_schema_types.FORMAT_WEIGHTS`; `format_odds()` says the odds). The
+  TED-like talk with copyright-free images only (`ted`) is a license choice there: `--license_policy open` goes with
+  any format. The deck's `schema_name`, and `talkgenerator check`'s report, say which format a talk got.
+- A talk can say which personas its seed picks from (`--personas startup_founder,consultant`, `personas=`, the MCP
+  server's `generate_talk`): a talk whose seed picks one of them keeps it, and the others get one of them.
+  `talkgenerator check` takes `--persona` and `--personas` too.
 
 ### Talks that stream, and decks
 
@@ -591,6 +633,18 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   any gives way to another. A how-to with a word on a faith, violence, hate, death or hard drugs is left out ("Live
   a Good Christian Life", "Apply a Fentanyl Patch"); crude ones about the seed stay, as much of a classic talk's
   humour is ("Clean Your Penis" for cleaning). The words that slides leave out have fentanyl too.
+- A language model's title doesn't repeat the request anymore. Claude Haiku took the request's line "Title: come up
+  with one" for the title ("Come Up With One: Retrocausal Roasting in Arabica Beans", in 3 of 12 talks): a talk
+  whose title the model makes up has no such line now, and the answer's title field asks for a title of the model's
+  own. `talkgenerator check` warns about a title with words of its request in it.
+- A presenter's name that puns on a famous living person goes, and the talk gets one of talkgenerator's own instead:
+  a free model named a keynote's presenter "Umbrella Chomsky". The blocklist knows 175 living people that models
+  reach for: a name that's theirs alone counts on its own ("Chomsky", "Oprah"), and their ordinary names only
+  together, the first name before the surname, as they are or with one of them bent ("Taylor Swiftly", "Gordon
+  Hamsay", "Tailor Swift"). An ordinary name stays ("Dr. Emma Swift", "Tim Cookson", "Greta Gosling"): of
+  talkgenerator's 18,839 classic surnames and 2,297 first names, only Trump's and a dictator's go. The model is
+  asked for a historical figure who died long ago, never anyone alive today, however old or famous, and a generated
+  picture's prompt that names one of them isn't sent either.
 - A slide's key in the language model's answer never goes on a slide. A free model's conclusion called back to an
   earlier slide by its key: "Huddling scales trust (from slide_03)". The request now asks for callbacks by what the
   earlier slide said, never by its key or number; brackets that name a slide by its key are dropped from a text
@@ -607,11 +661,18 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   keeps half of it, and before a bracket the cut would leave open: free models' affiliations lost a dangling word
   ("Professor of Serenity Studies, Department" is "Professor of Serenity Studies" now), and their roles their open
   brackets ("Kaito Tanaka (Head of Temporal" is "Kaito Tanaka"). A title slide names its presenter once, where a
-  model wrote the name into the presenter's job too.
+  model wrote the name into the presenter's job too, with a title before it as well ("Harold Beanmore, Dr. Harold
+  Beanmore, Chief Chrono-Roaster" is "Harold Beanmore, Chief Chrono-Roaster"). A cut at a comma or at a clause's end
+  leaves no bracket open either ("Arctic Expansion (High Impact", of an initiative in a 2×2 matrix, is "Arctic
+  Expansion").
 - Claude writes talks of many kinds of slides too. Anthropic refuses to hold an answer to a JSON schema that compiles
   to too large a grammar ("The compiled grammar is too large"), which a talk with the newest slide types can have,
   and such a talk came out classic (two of four in a check with Claude Haiku 5.5). Now Claude gets the schema as
   text then, at the end of the request, and writes the JSON by itself; the talk checks every slide's texts anyway.
+  Given the schema so, Claude Haiku once wrote every slide inside the spine's object, and the talk read none of them
+  (classic but for its title): slides inside another object of the answer count now. A talk whose answer has no
+  slide it can read says so in a warning, with what the answer brought (its keys and kinds, never its texts), and
+  Claude's switch to the schema as text is logged.
 
 ## [4.0.1] - 2026-11-05
 

@@ -1,0 +1,89 @@
+{
+  "features_title": [
+    "Three things you'll love",
+    "What's new",
+    "Features",
+    "Better in every way",
+    "Designed around you",
+    "All new, inside and out",
+    "What makes it special"
+  ],
+  "feature": [
+    "Twice as fast",
+    "Waterproof (mostly)",
+    "All-day battery",
+    "Lighter than ever",
+    "Made of recycled {seed.bare}",
+    "A brighter display",
+    "Works offline",
+    "Smarter than you",
+    "Fits in your pocket",
+    "One button"
+  ],
+  "feature_punchline": [
+    "Smells of {seed.generic}",
+    "Comes in beige",
+    "Now with a lid",
+    "It also makes toast",
+    "Can't be turned off",
+    "Judges you quietly",
+    "Has feelings now",
+    "Needs a second charger"
+  ],
+  "specs_title": [
+    "Specs",
+    "Tech specs",
+    "By the numbers",
+    "Under the hood",
+    "What's inside",
+    "Performance"
+  ],
+  "spec": [
+    "2×|faster than the last one",
+    "40%|lighter",
+    "18 h|of battery life",
+    "0.3 mm|thinner than before",
+    "120 Hz|of pure smoothness",
+    "1 TB|of storage for {seed.generic}",
+    "3|colours, all of them grey",
+    "12|new sensors",
+    "99.9%|uptime, on a good day",
+    "5×|more {seed.bare} power"
+  ],
+  "spec_punchline": [
+    "1|button, which does nothing",
+    "0|ports",
+    "3|minutes of battery, in airplane mode",
+    "1|colour: beige",
+    "2|days to charge",
+    "0|idea what it does",
+    "5|subscriptions required"
+  ],
+  "bars_title": [
+    "Faster than ever",
+    "Compared to the competition",
+    "The fastest {seed.bare} ever",
+    "How it stacks up",
+    "Performance, compared",
+    "Not even close"
+  ],
+  "rival": [
+    "The old model",
+    "The competition",
+    "A very fast horse",
+    "Last year's model",
+    "Doing nothing",
+    "A potato",
+    "Our biggest rival",
+    "Pen and paper",
+    "A carrier pigeon"
+  ],
+  "bars_axis": [
+    "Speed",
+    "Joy",
+    "Performance (relative)",
+    "Vibes",
+    "Wow per second",
+    "Speed, roughly"
+  ]
+}
