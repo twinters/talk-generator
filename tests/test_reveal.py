@@ -85,7 +85,7 @@ def test_every_list_shows_its_things_one_by_one_with_their_shapes(images):
     theme = _theme("clean keynote")
     made = [*every_new_type(_image("wide")), *every_karaoke_type(_image("wide"))]
     lists = ("kpi", "quiz", "agenda", "timeline", "pyramid", "funnel", "cycle", "org_chart", "iceberg")
-    lists += ("acronym", "flowchart", "tier_list")
+    lists += ("acronym", "flowchart", "tier_list", "alignment_chart", "red_flags", "reviews")
     for slide in made:
         if slide.type_name not in lists:
             continue

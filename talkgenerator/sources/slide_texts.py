@@ -17,6 +17,7 @@ from collections.abc import Callable
 from functools import cache
 from typing import Any, Final, TypeVar
 
+from talkgenerator.models import classic
 from talkgenerator.plan.languages import ENGLISH
 from talkgenerator.sources import conceptnet, memes, packs, text_generator
 from talkgenerator.util import language_util, random_util
@@ -530,6 +531,99 @@ def generate_tier_list(presentation_context: dict[str, Any]) -> tuple[Any, ...] 
         return None
     best = _capitalised(language_util.generic(seed))
     return title, best, *(" | ".join(tier[:3]) or None for tier in tiers), random_util.choice(loved)
+
+
+# THE NEXT ONES FROM THE KARAOKE CATALOGUE: a wall of text, an alignment chart, red flags, reviews and a fake error
+# message (their templates are the TED pack's karaoke.wall_title... karaoke.error_buttons)
+
+_WALL_POINTS: Final = (
+    12,
+    15,
+)  # how many points of jargon a classic wall of text has (at random, from one to the other)
+
+
+@_unless_sensitive
+def generate_wall_of_text(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
+    """A wall of text about the seed: a title, its highlighted point (something absurd), "Continued on next slide",
+    and twelve to fifteen points of jargon about the seed and words related to it, each from a template of its own."""
+    related = related_words(presentation_context["seed"])
+    title = _template("karaoke.wall_title")(_context(presentation_context))
+    highlight = _template("karaoke.wall_highlight")(_context(presentation_context, related))
+    points = _different("karaoke.wall_point", presentation_context, related, random_util.randint(*_WALL_POINTS))
+    if not title or not highlight or len(points) < _WALL_POINTS[0]:
+        return None
+    return title, highlight, ENGLISH.continued, *points
+
+
+@_unless_sensitive
+def generate_alignment_chart(presentation_context: dict[str, Any]) -> tuple[Any, ...] | None:
+    """An alignment chart of things to do with the seed: a title, the axes' words, and a thing for each of its nine
+    cells, from lawful good to chaotic evil, from templates of its own (some about a word related to the seed)."""
+    related = related_words(presentation_context["seed"])
+    title = _template("karaoke.alignment_title")(_context(presentation_context))
+    cells = [
+        _template(f"karaoke.aligned_{alignment}")(_context(presentation_context, related))
+        for alignment in classic.ALIGNMENTS
+    ]
+    if not title or not all(cells) or len(set(cells)) < len(cells):
+        return None
+    return title, ENGLISH.lawful_to_chaotic, ENGLISH.good_to_evil, *cells
+
+
+@_unless_sensitive
+def generate_red_flags(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
+    """Red flags about the seed: a title, two to four warning signs about it and words related to it, and a last one,
+    the punchline."""
+    related = related_words(presentation_context["seed"])
+    title = _template("karaoke.red_flags_title")(_context(presentation_context))
+    flags = _different("karaoke.red_flag", presentation_context, related, random_util.randint(2, 4))
+    last = _template("karaoke.red_flag_last")(_context(presentation_context, related))
+    if not title or len(flags) < 2 or not last:
+        return None
+    return title, *flags, last
+
+
+_first_names = (
+    text_generator.TraceryTextGenerator("data/text-templates/name.json", "male_name").generate,
+    text_generator.TraceryTextGenerator("data/text-templates/name.json", "female_name").generate,
+)
+
+
+def _reviewer() -> str | None:
+    """A made-up reviewer: a first name, and a detail ("Karen, verified buyer")."""
+    name = random_util.choice(_first_names)({})
+    detail = _template("karaoke.reviewer_detail")({})
+    return f"{name}, {detail}" if name and detail else name
+
+
+@_unless_sensitive
+def generate_reviews(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
+    """Made-up reviews of the seed: a title, then one or two glowing reviews (five stars or four) and a one-star one
+    last, the punchline, each its stars, what it says and who wrote it."""
+    related = related_words(presentation_context["seed"])
+    title = _template("karaoke.reviews_title")(_context(presentation_context))
+    glowing = _different("karaoke.review_glowing", presentation_context, related, random_util.randint(1, 2))
+    bad = _template("karaoke.review_one_star")(_context(presentation_context, related))
+    if not title or not glowing or not bad:
+        return None
+    reviews: list[str | None] = []
+    for review in glowing:
+        reviews += [random_util.choice(("5", "5", "4")), review, _reviewer()]
+    return title, *reviews, "1", bad, _reviewer()
+
+
+@_unless_sensitive
+def generate_error_message(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
+    """A fake error message about the seed: its title, the message (about the seed, or a word related to it), an error
+    code three times in four, and three buttons, the last one the punchline."""
+    related = related_words(presentation_context["seed"])
+    title = _template("karaoke.error_title")(_context(presentation_context))
+    message = _template("karaoke.error_message")(_context(presentation_context, related))
+    code = _maybe(0.75, _template("karaoke.error_code")({}))
+    buttons = _template("karaoke.error_buttons")({})
+    if not message or not buttons:
+        return None
+    return title, message, code, *buttons.split("|")
 
 
 def _capitalised(text: str) -> str:

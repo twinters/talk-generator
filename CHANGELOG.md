@@ -241,6 +241,19 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   lead to the same end, each way and the end on a click of its own; and a **tier list** from S to F, its tiers filled
   a click each, from the worst up to S. A talk has
   at most one of each, in its middle; a dare is rarer, as organisers put one such slide in a deck at most.
+- Five more from the same catalogue, the funniest of its next ones, drawn as texts on shapes in every theme and in the
+  2019 template, classic (from the TED content pack's version 3) and by the language model: a **wall of text**, an
+  executive summary of dense jargon in fine print that fills its slide (in two columns, or on a page of a report),
+  with one absurd point hidden among the rest, which a marker highlights on its one click, and "Continued on next
+  slide" under it in the talk's language (the design checks give fine print a floor of its own, 9 points); an
+  **alignment chart**, nine things in Dungeons & Dragons' grid from lawful good to chaotic evil (its axes in the
+  talk's language), a cell a click, chaotic evil last; **red flags**, three to five, each beside a red flag on its
+  pole, a flag a click; **reviews** with stars, two or three made-up reviewers' ratings ("4/5" beside the stars) and
+  words, a review a click, the one-star one last; and a **fake error message**, a generic dialog (a title bar, a
+  warning sign, the message and an error code) whose last button is the punchline ("Retry, Ignore, Panic"), all at
+  once. A talk has at most one of each, in its middle; a wall of text and an error message are rarer, as organisers
+  warn against text-heavy decks, and an error breaks the illusion, as a dare does. Personas weigh them too (a
+  consultant's walls of text, a life coach's red flags, a startup founder's reviews, a time traveller's errors).
 - A real chart from the internet (Reddit's) now comes under a confident conclusion that it supposedly proves, two
   times in three, or bare, as karaoke decks have them.
 

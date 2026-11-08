@@ -1,15 +1,16 @@
 """Offline tests of the slide types that came from real PowerPoint karaoke decks (docs/v5-plan.md, section 8): a fun
 fact, an acronym for a made-up method, a dare for the presenter, a flowchart whose every path leads to the same end,
-and a tier list. They're texts (and a photo) on shapes that the layouts draw, in every theme and in the classic
-template's look, as milestone 6's types are (see test_slide_types.py); and a recipe variant of a real chart from the
-internet, under a confident conclusion."""
+and a tier list; and the next ones from the catalogue, a wall of text with one point highlighted, an alignment chart,
+red flags, reviews with stars and a fake error message. They're texts (and a photo) on shapes that the layouts draw,
+in every theme and in the classic template's look, as milestone 6's types are (see test_slide_types.py); and a recipe
+variant of a real chart from the internet, under a confident conclusion."""
 
 import pytest
 from lxml import etree
 from pptx.oxml.ns import qn
 
 from talkgenerator.checks.deck import check_completeness, check_deck, check_leftovers
-from talkgenerator.checks.design import check_design
+from talkgenerator.checks.design import SMALLEST_FINE_PRINT, SMALLEST_TEXT, check_design
 from talkgenerator.datastructures.slide_generator_data import SlideGeneratorData
 from talkgenerator.design import engine, themes
 from talkgenerator.models import classic
@@ -33,6 +34,13 @@ from tests.test_slide_types import related as related  # fake ConceptNet (a fixt
 FAMILIES = list(themes.FAMILIES)
 KARAOKE = tuple(sorted(classic.KARAOKE_TYPES))
 ENGLISH = languages.ENGLISH
+# Points of jargon for a wall of text, and an alignment chart's things (long ones, and short ones for its side layout)
+POINTS = [
+    f"Leverage cross-functional cat synergies to drive scalable, best-in-class outcomes across verticals, part {index}"
+    for index in range(1, 15)
+]
+LONG_CELLS = [f"Feeding the cat at exactly {index} o'clock" for index in range(1, 10)]
+SHORT_CELLS = ["Sharing", "Purring", "Zoomies", "Naps", "Just a cat", "Boxes", "Taxes", "Hoarding", "3 a.m. zoomies"]
 
 
 def every_karaoke_type(image):
@@ -51,6 +59,20 @@ def every_karaoke_type(image):
         slides.FlowchartSlide("Should you get a cat?", "Do you like cats?", "Get a cat", "Get a cat anyway", "A cat"),
         slides.TierListSlide(None, "Naps", "Tuna | Sun", "Yarn", "Water | Baths | Vets", "Dogs"),
         slides.TierListSlide("Cat toys, ranked", "A box", "Yarn | Laser", "Mouse", None, "The expensive bed"),
+        slides.WallOfTextSlide("Executive summary", "Replace cats with pigeons", "Continued on next slide", *POINTS),
+        slides.WallOfTextSlide("Key takeaways", "Ask the cat", "Continued on next slide", *POINTS[:6]),
+        slides.AlignmentChartSlide("The cat alignment chart", *_axes(), *LONG_CELLS),
+        slides.AlignmentChartSlide("Cats", *_axes(), *SHORT_CELLS),
+        slides.RedFlagsSlide("Red flags", "Hates naps", "Owns a dog", "Says 'meow' wrong", "Is a dog", "Two dogs"),
+        slides.RedFlagsSlide("Red flags in a cat person", "Hates naps", "Owns a dog", "Is a dog"),
+        slides.ReviewsSlide(
+            "What people are saying", "5", "Purrfect.", "Ann, 34", "4", "Fine.", "Bo", "1", "Bit me.", "Cy"
+        ),
+        slides.ReviewsSlide(None, "5", "Changed my life.", None, "1", "It stared at me.", "Dee, verified buyer"),
+        slides.ErrorMessageSlide(
+            "Cat.exe", "This talk has stopped believing in cats.", "Error 0xCAT", "Retry", "Ignore", "Panic"
+        ),
+        slides.ErrorMessageSlide(None, "Cats not found.", None, "OK", "Cry"),
     ]
     for slide in made:
         slide.add_source("Ann (via Pexels)", "https://www.pexels.com/photo/cat-123/")
@@ -65,7 +87,16 @@ def shortest_karaoke_types(image):
         slides.DareSlide("!", "Go"),
         slides.FlowchartSlide(None, "?", "A", "B", "C"),
         slides.TierListSlide(None, "A", "B"),
+        slides.WallOfTextSlide("W", "H", "…", "A", "B", "C", "D", "E"),
+        slides.AlignmentChartSlide(None, *_axes(), *"ABCDEFGHI"),
+        slides.RedFlagsSlide(None, "A", "B", "C"),
+        slides.ReviewsSlide(None, "1", "A", None, "5", "B", None),
+        slides.ErrorMessageSlide(None, "A", None, "OK", "No"),
     ]
+
+
+def _axes(language=ENGLISH):
+    return language.lawful_to_chaotic, language.good_to_evil
 
 
 def _longest(kind, word="Expectation"):
@@ -74,6 +105,11 @@ def _longest(kind, word="Expectation"):
     texts = _longest_texts(kind, word)
     if kind == "acronym":
         texts["acronym"] = word[0] * slides.ACRONYM_LETTERS
+    if kind == "wall_of_text":  # (as many points as a wall takes, each 140 characters)
+        point = " ".join([word] * 14)[:140].strip()
+        texts["points"] = " | ".join([point] * slides.WALL_POINTS)
+    if kind == "error_message":  # (three buttons)
+        texts["buttons"] = " | ".join([word[:14]] * 3)
     if kind == "tier_list":
         for name in ("a_tier", "b_tier", "c_tier", "f_tier"):
             limit = length_limit(next(text for text in KINDS[kind].texts if text.name == name))
@@ -132,6 +168,19 @@ def test_every_layout_comes_up_and_needs_what_it_says(images):
     assert fitting(slides.AcronymSlide("C", *"ABCDEF")) == ["v5/acronym"]  # (six letters)
     assert fitting(slides.FlowchartSlide(None, "?", "A", "B", "C")) == ["v5/flowchart"]
     assert fitting(slides.TierListSlide("Ranked", "A", "B")) == ["v5/tier-list", "v5/tier-list-side"]
+    assert fitting(slides.WallOfTextSlide("W", "H", "…", *POINTS)) == ["v5/wall-of-text", "v5/wall-of-text-page"]
+    assert fitting(slides.AlignmentChartSlide("Cats", *_axes(), *LONG_CELLS)) == ["v5/alignment-chart"]
+    assert fitting(slides.AlignmentChartSlide("Cats", *_axes(), *SHORT_CELLS)) == [
+        "v5/alignment-chart",
+        "v5/alignment-chart-side",
+    ]
+    assert fitting(slides.RedFlagsSlide("R", *"ABCDE")) == ["v5/red-flags"]  # (five flags: too many for cards)
+    assert fitting(slides.RedFlagsSlide("R", *"ABCD")) == ["v5/red-flags", "v5/red-flags-cards"]
+    assert fitting(slides.ReviewsSlide(None, "5", "A", None, "1", "B", None)) == ["v5/reviews", "v5/reviews-rows"]
+    assert fitting(slides.ErrorMessageSlide(None, "A", None, "OK", "No")) == [
+        "v5/error-message",
+        "v5/error-message-stacked",
+    ]
 
 
 def test_texts_on_shapes_read_on_them(images):
@@ -212,6 +261,117 @@ def _clicks(ppt_slide):
     return [sorted({names[spid] for spid in targets(step)}) for step in steps]
 
 
+# WHAT A WALL OF TEXT, AN ALIGNMENT CHART, RED FLAGS, REVIEWS AND A FAKE ERROR MESSAGE SHOW
+
+
+def test_a_wall_hides_its_highlighted_point_past_the_middle_and_marks_it_on_its_one_click(images):
+    wall = slides.WallOfTextSlide("Executive summary", "• Replace cats with pigeons", "Continued", *POINTS[:10])
+    content = wall.to_deck_slide()
+    points = [content.element(f"point_{index}").text for index in range(1, 11)]
+    assert all(point.startswith((classic.TOP_BULLET, classic.SUB_BULLET)) for point in points)
+    assert points[0].startswith(classic.TOP_BULLET) and any(point.startswith(classic.SUB_BULLET) for point in points)
+    assert content.element("highlight").text.endswith("Replace cats with pigeons")
+    assert not any(element.appears_on_click for element in content.elements)  # (it's all there from the start)
+    for family in FAMILIES:
+        deck = _deck([wall], _theme(family))
+        (slide,) = deck.slides
+        flow = [element for element in slide.elements if element.role.startswith(("point_", "highlight"))]
+        assert len({element.style.size for element in flow}) == 1, family  # (one size of fine print)
+        lefts = sorted({element.box.x for element in flow if element.text.startswith(classic.TOP_BULLET)})
+        in_order = sorted(flow, key=lambda element: (_column(element, lefts), element.box.y))
+        roles = [element.role for element in in_order]
+        assert roles.index("highlight") == classic.highlighted_at(10) == 6, (family, roles)
+        markers = [element for element in slide.elements if element.role == "marker"]
+        highlight = slide.element("highlight")
+        assert markers and all(marker.appears_on_click == 1 for marker in markers)
+        assert all(highlight.box.y <= marker.box.y < highlight.box.y + highlight.box.h for marker in markers)
+        assert check_design(deck) == [], family
+
+
+def _column(element, lefts):
+    """The column a wall's point is in: the one whose left edge is the nearest left of it (a point under another goes
+    a little further in)."""
+    return max(left for left in lefts if left <= element.box.x)
+
+
+def test_a_walls_fine_print_has_a_floor_of_its_own(images):
+    long_points = [" ".join(["Expectation"] * 12)[:140]] * slides.WALL_POINTS
+    for family in FAMILIES:
+        wall = slides.WallOfTextSlide("W", "Highlighted", "Continued on next slide", *long_points)
+        deck = _deck([wall], _theme(family))
+        (slide,) = deck.slides
+        sizes = {element.style.size for element in slide.elements if element.role.startswith("point_")}
+        assert min(sizes) >= SMALLEST_FINE_PRINT and slide.element("highlight") is not None, family
+        assert check_design(deck) == [], family
+    assert SMALLEST_FINE_PRINT < SMALLEST_TEXT
+    # (and a text that's no fine print, as small, is too small)
+    deck = _deck([slides.RedFlagsSlide("R", "A", "B", "C")], _theme())
+    (slide,) = deck.slides
+    flag = slide.element("flag_1")
+    smaller = flag.model_copy(update={"style": flag.style.model_copy(update={"size": SMALLEST_FINE_PRINT})})
+    small = slide.model_copy(
+        update={"elements": tuple(smaller if element is flag else element for element in slide.elements)}
+    )
+    findings = check_design(deck.model_copy(update={"slides": (small,)}))
+    assert [finding.check for finding in findings] == ["text size"]
+
+
+def test_an_alignment_charts_axes_speak_the_talks_language_and_its_cells_come_in_reading_order(images):
+    dutch = languages.language("nl")
+    texts = {"title": "Katten", **dict(zip(slides.ALIGNMENTS, SHORT_CELLS, strict=True))}
+    content = KINDS["alignment_chart"].build(texts, {}, dutch).to_deck_slide()
+    assert [content.element(f"column_{index}").text for index in (1, 2, 3)] == ["Wettig", "Neutraal", "Chaotisch"]
+    assert [content.element(f"row_{index}").text for index in (1, 2, 3)] == ["Goed", "Neutraal", "Kwaad"]
+    assert [content.element(alignment).appears_on_click for alignment in slides.ALIGNMENTS] == list(range(1, 10))
+    for code in languages.LANGUAGES:  # (every language has its words: three across, three down, and "continued")
+        language = languages.language(code)
+        assert len(set(language.lawful_to_chaotic)) == 3 == len(set(language.good_to_evil)), code
+        assert language.continued.strip() and (code == "en" or language.continued != ENGLISH.continued), code
+    theme = _theme("neon")
+    (slide,) = _deck([slides.AlignmentChartSlide("Cats", *_axes(), *SHORT_CELLS)], theme).slides
+    tiles = {element.role: element for element in slide.elements if element.role.endswith(" box")}
+    assert tiles["chaotic_evil box"].color == theme.palette.accent_2
+    assert [tiles[f"{alignment} box"].appears_on_click for alignment in slides.ALIGNMENTS] == list(range(1, 10))
+
+
+def test_red_flags_and_reviews_come_one_by_one_with_their_flags_and_stars(images):
+    flags = slides.RedFlagsSlide("Red flags", "Hates naps", "Owns a dog", "Is a dog")
+    reviews = slides.ReviewsSlide("Reviews", "5", "Purrfect.", "Ann", "4", "Fine.", "Bo", "1", "Bit me.", "Cy")
+    for seed in range(4):  # (both layouts of each)
+        flagged, reviewed = _deck([flags, reviews], _theme(seed=seed), seed).slides
+        for index in (1, 2, 3):
+            shapes = [element for element in flagged.elements if element.role.startswith(f"flag {index} ")]
+            assert {"pole", "cloth"} <= {shape.role.split()[-1] for shape in shapes}
+            click = flagged.element(f"flag_{index}").appears_on_click
+            assert {shape.appears_on_click for shape in shapes} == {index} == {click}
+            stars = [element for element in reviewed.elements if element.role == f"review {index} star"]
+            assert len(stars) == 5 and {star.appears_on_click for star in stars} == {index}
+            golden = [star for star in stars if star.color == stars[0].color]
+            assert len(golden) == {1: 5, 2: 4, 3: 1}[index], (index, [star.color for star in stars])
+            assert reviewed.element(f"stars_{index}").text == f"{len(golden)}/5"
+            assert reviewed.element(f"reviewer_{index}").text.startswith("— ")
+
+
+def test_reviews_take_their_stars_as_models_write_them():
+    assert [slides.stars(rating) for rating in ("4", "4/5", "4 stars", "★★★★☆", "4.4", "1")] == [4, 4, 4, 4, 4, 1]
+    assert [slides.stars(rating) for rating in ("six", "0", "9", "", None)] == [None] * 5
+    # (a review without stars is left out, and the others move up)
+    content = slides.ReviewsSlide(None, "many", "Lovely.", "Ann", "2", "Meh.", "Bo", "1", "No.", None).to_deck_slide()
+    assert [content.element(f"review_{index}").text for index in (1, 2)] == ["Meh.", "No."]
+    assert content.element("review_3") is None and content.element("reviewer_2") is None
+
+
+def test_an_error_message_comes_up_whole_with_its_last_button_the_default(images):
+    error = slides.ErrorMessageSlide("Cat.exe", "Cats not found.", "Error 404", "Retry", "Ignore", "Panic")
+    assert not any(element.appears_on_click for element in error.to_deck_slide().elements)
+    theme = _theme("corporate")
+    for seed in range(4):
+        (slide,) = _deck([error], theme, seed).slides
+        boxes = {element.role: element for element in slide.elements if element.role.startswith("button_")}
+        assert boxes["button_3 box"].color == theme.palette.accent != boxes["button_1 box"].color
+        assert slide.element("icon").text == "!" and slide.element("code").text == "Error 404"
+
+
 # THE CLASSIC TEMPLATE AND PREVIEWS
 
 
@@ -286,6 +446,23 @@ def test_planned_slides_come_out_as_planned(images):
     problems = []
     assert _realized("tier_list", {**tiers, "a_tier": " | "}, problems=problems) is None
     assert problems == ["a tier list needs things in its S and A tiers"]
+    # (a wall's points as a model writes them, with bullets or numbers of its own, and its highlighted one)
+    written = " | ".join(f"{index}. Point {index}" for index in range(1, 9))
+    slide, _ = _realized("wall_of_text", {"title": "Summary", "points": written, "highlight": "• Ask the cat"})
+    content = slide.to_deck_slide()
+    expected = [f"Point {index}" for index in range(1, 9)]
+    assert [content.element(f"point_{index}").text[2:] for index in range(1, 9)] == expected
+    assert content.element("highlight").text[2:] == "Ask the cat" and content.element("continued").text
+    problems = []
+    assert _realized("wall_of_text", {"title": "S", "points": "A | B", "highlight": "C"}, problems=problems) is None
+    assert problems == ["a wall of text needs 5 points or more"]
+    buttons = "Retry|Ignore|Panic and leave the building"  # (a button too long: cut, with no "the" left hanging)
+    slide, _ = _realized("error_message", {"message": "Cats not found.", "buttons": buttons})
+    content = slide.to_deck_slide()
+    assert [content.element(f"button_{index}").text for index in (1, 2, 3)] == ["Retry", "Ignore", "Panic and leave"]
+    reviews = {"stars_1": "5", "review_1": "Lovely.", "reviewer_1": "Ann", "stars_2": "1", "review_2": "Bit me."}
+    slide, _ = _realized("reviews", reviews)
+    assert slide.to_deck_slide().element("stars_2").text == "1/5"
 
 
 @pytest.mark.parametrize("code", sorted(languages.LANGUAGES))
@@ -311,6 +488,11 @@ CLASSIC = {
     "dare": (slide_texts.generate_dare, slides.DareSlide),
     "flowchart": (slide_texts.generate_flowchart, slides.FlowchartSlide),
     "tier_list": (slide_texts.generate_tier_list, slides.TierListSlide),
+    "wall_of_text": (slide_texts.generate_wall_of_text, slides.WallOfTextSlide),
+    "alignment_chart": (slide_texts.generate_alignment_chart, slides.AlignmentChartSlide),
+    "red_flags": (slide_texts.generate_red_flags, slides.RedFlagsSlide),
+    "reviews": (slide_texts.generate_reviews, slides.ReviewsSlide),
+    "error_message": (slide_texts.generate_error_message, slides.ErrorMessageSlide),
 }
 
 
@@ -341,6 +523,34 @@ def test_a_classic_acronym_spells_the_seed_and_ends_on_something_absurd(related)
     assert 3 <= len(words) <= 6 and all(word[:1].isupper() or word[:1] == "e" for word in words)
 
 
+def test_the_next_classic_ones_are_what_their_slides_need(related):
+    with random_util.use(random_util.Rng(5)):
+        title, highlight, continued, *points = slide_texts.generate_wall_of_text({"seed": "cat", "topic": "cats"})
+    assert title and highlight and continued == ENGLISH.continued and 12 <= len(points) <= 15
+    assert len(set(points)) == len(points) and highlight not in points
+    with random_util.use(random_util.Rng(5)):
+        _, across, down, *cells = slide_texts.generate_alignment_chart({"seed": "cat", "topic": "cats"})
+    assert (across, down) == _axes() and len(set(cells)) == 9
+    last_flags = {_spoken(template) for template in packs.pack().rule("karaoke.red_flag_last")}
+    for seed in range(6):
+        with random_util.use(random_util.Rng(seed)):
+            _, *reviews = slide_texts.generate_reviews({"seed": "cat", "topic": "cats"})
+        ratings = reviews[::3]
+        assert len(reviews) in (6, 9) and ratings[-1] == "1" and set(ratings[:-1]) <= {"4", "5"}
+        assert all(", " in reviewer for reviewer in reviews[2::3])
+        with random_util.use(random_util.Rng(seed)):
+            _, message, code, *buttons = slide_texts.generate_error_message({"seed": "cat", "topic": "cats"})
+        assert message and len(buttons) == 3 and all(len(button) <= 14 for button in buttons)
+        with random_util.use(random_util.Rng(seed)):
+            _, *flags = slide_texts.generate_red_flags({"seed": "cat", "topic": "cats"})
+        assert 3 <= len(flags) <= 5 and flags[-1] in last_flags  # (the punchline last)
+
+
+def _spoken(template):
+    """A template about a cat, as a classic slide says it."""
+    return slide_texts.text_generator.apply_variables_to_template(template, {"seed": "cat", "related": "dog"})
+
+
 def test_a_classic_tier_list_ranks_the_seed_first_and_something_loved_last(related):
     with random_util.use(random_util.Rng(2)):
         title, best, *tiers, worst = slide_texts.generate_tier_list({"seed": "cat", "topic": "cats"})
@@ -360,6 +570,10 @@ def test_classic_templates_speak_of_the_seed_as_english_does(seed, said, never):
     grammar = packs.pack().grammar("karaoke")
     names = ("fun_fact", "acronym_title", "dare", "flowchart_title", "flowchart_question", "flowchart_end")
     names += ("flowchart_yes", "flowchart_no", "tier_list_title")
+    names += ("wall_title", "wall_point", "wall_highlight", "alignment_title")
+    names += tuple(f"aligned_{alignment}" for alignment in slides.ALIGNMENTS)
+    names += ("red_flags_title", "red_flag", "red_flag_last", "reviews_title", "review_glowing", "review_one_star")
+    names += ("error_title", "error_message")
     variables = {"seed": seed, "related": "bean", "number": "12", "percent": "40%", "year": "1823", "acronym": "PEN"}
     filled = [
         slide_texts.text_generator.apply_variables_to_template(template, variables)

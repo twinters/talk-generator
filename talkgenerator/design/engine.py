@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 from typing import Final, Literal
 
 from talkgenerator.design import color, fit, fonts, geometry, layers, themes, treatments
+from talkgenerator.models import classic
 from talkgenerator.models.deck import (
     DECORATION,
     Box,
@@ -67,6 +68,12 @@ LIGHT_TEXT: Final = "#ffffff"
 DIAGRAM_OPACITY: Final = {"venn": 0.45, "matrix": 0.2}
 # Lines, such as a matrix's axes, need less contrast than texts to be seen (WCAG's 3 for graphics)
 LINE_CONTRAST: Final = 3.0
+# A wall of text is unreadable on purpose (docs/v5-plan.md, section 8): its points are fine print, at the largest of
+# these sizes at which they fill its slide, and the design checks hold its fine print to a floor of its own
+FINE_PRINT_SIZES: Final = tuple(range(18, 36, 2))
+FINE_PRINT: Final[dict[str, frozenset[str]]] = {
+    "wall_of_text": frozenset({*(f"point_{number}" for number in range(1, 17)), "highlight", "continued"})
+}
 
 
 @dataclass(frozen=True)
@@ -178,6 +185,26 @@ SPECS: Final[dict[str, TextSpec]] = {
     "flow label": TextSpec("body", 40, 24, align="left", bold=True),
     "flow label right": TextSpec("body", 40, 24, align="right", bold=True),
     "tier item": TextSpec("body", 52, 26, align="center", on_fill=True),
+    # (the next ones from the karaoke catalogue: a wall of text's fine print, at the one size that fills its slide, and
+    # its title on a page; an alignment chart's axes and cells; red flags; reviews; a fake error message's dialog)
+    **{f"fine print {size}": TextSpec("body", size, size, align="left", anchor="top") for size in FINE_PRINT_SIZES},
+    "fine print note": TextSpec("body", 24, 18, color="muted", align="right", italic=True),
+    "page title": TextSpec("heading", 64, 36, align="left", heading=True, on_fill=True),
+    "axis": TextSpec("heading", 44, 26, align="center", anchor="bottom", heading=True, effect=False),
+    "side axis": TextSpec("heading", 36, 24, align="right", heading=True, effect=False),
+    "cell": TextSpec("body", 44, 24, align="center", on_fill=True),
+    "flag": TextSpec("body", 60, 28, align="left"),
+    "card flag": TextSpec("body", 52, 26, align="center", anchor="top", on_fill=True),
+    "review": TextSpec("body", 48, 26, align="left", anchor="top", italic=True, on_fill=True),
+    "reviewer": TextSpec("body", 36, 24, align="left", on_fill=True, bold=True),
+    "rating": TextSpec("body", 40, 24, align="left", on_fill=True, bold=True),
+    "window title": TextSpec("body", 36, 24, align="left", on_fill=True, bold=True),
+    "error icon": TextSpec("heading", 140, 60, align="center", heading=True, on_fill=True, effect=False),
+    "error message": TextSpec("body", 60, 30, align="left", on_fill=True),
+    "centred error message": TextSpec("body", 60, 30, align="center", on_fill=True),
+    "error code": TextSpec("body", 32, 24, align="left", italic=True, on_fill=True),
+    "centred error code": TextSpec("body", 32, 24, align="center", italic=True, on_fill=True),
+    "button": TextSpec("body", 40, 24, align="center", on_fill=True, bold=True),
     # (native diagrams)
     "date": TextSpec("body", 72, 28, align="center", anchor="bottom", bold=True),  # (not in capitals: too wide)
     "row date": TextSpec("body", 64, 28, align="right", bold=True),
@@ -2245,6 +2272,531 @@ def _tier_list(side: bool) -> Callable[[dict[str, Content], Theme], Placement]:
     return tier_list
 
 
+# THE NEXT ONES FROM THE KARAOKE CATALOGUE: a wall of text, an alignment chart, red flags, reviews and a fake error
+# message (docs/v5-plan.md, section 8)
+
+_WALL_GAP: Final = 0.4  # the room between a wall's points, as a share of their size
+_WALL_INDENT: Final = 1.5  # how far in a point under another goes, as a share of the size
+_NOTE_HEIGHT: Final = 44.0  # the line under a wall: "Continued on next slide"
+_WALL_COLUMNS_GAP: Final = 96.0  # (wider than other columns': so many lines side by side need it)
+
+
+def _wall_flow(roles: dict[str, Content]) -> list[str]:
+    """A wall of text's points in order, its highlighted one where the slide hid it (classic.highlighted_at)."""
+    points = [f"point_{number}" for number in _numbered(roles, "point", 16)]
+    if "highlight" not in roles:
+        return points
+    at = classic.highlighted_at(len(points))
+    return [*points[:at], "highlight", *points[at:]]
+
+
+def _flowed(
+    flow: Sequence[str], roles: dict[str, Content], columns: Sequence[Box], font: str, size: float
+) -> list[tuple[str, Box]] | None:
+    """Where a wall's points go at a size: down its one or two columns (of one width), in order, a point under
+    another a little further in, each point's box as tall as its lines, and two columns as even as the points allow;
+    None if they don't all fit (or a word is wider than its column)."""
+    gap, line = round(size * _WALL_GAP), size * fit.LINE_HEIGHT
+    measured: list[tuple[str, float, float]] = []  # (each point's role, indent and height)
+    for role in flow:
+        element = roles[role]
+        text = element.text if isinstance(element, TextElement) else ""
+        indent = round(size * _WALL_INDENT) if text.startswith(classic.SUB_BULLET) else 0
+        width = columns[0].w - indent
+        lines = fit.wrap(text, width, font, size)
+        if any(fonts.text_width(part, font, size) > width for part in lines):
+            return None
+        measured.append((role, indent, len(lines) * line + 2))  # (room to spare: it fits at this size, no larger)
+
+    def height(points: Sequence[tuple[str, float, float]]) -> float:
+        return sum(tall for _, _, tall in points) + gap * max(0, len(points) - 1)
+
+    splits = [len(measured)] if len(columns) == 1 else range(len(measured) + 1)
+    fitting = [
+        split
+        for split in splits
+        if all(height(part) <= column.h for part, column in zip(_parts(measured, split), columns, strict=False))
+    ]
+    if not fitting:
+        return None
+    best = min(fitting, key=lambda split: max(height(part) for part in _parts(measured, split)))
+    placed: list[tuple[str, Box]] = []
+    for part, column in zip(_parts(measured, best), columns, strict=False):
+        y = column.y
+        for point, inset, tall in part:
+            placed.append((point, Box(x=column.x + inset, y=y, w=column.w - inset, h=tall)))
+            y += tall + gap
+    return placed
+
+
+def _parts(points: Sequence[tuple[str, float, float]], split: int) -> list[Sequence[tuple[str, float, float]]]:
+    """A wall's points in its first column and in its second (the first split of them, and the rest)."""
+    return [points[:split], points[split:]]
+
+
+def _wall(
+    placement: Placement,
+    roles: dict[str, Content],
+    theme: Theme,
+    columns: Sequence[Box],
+    under: list[str],
+    ink: str,
+) -> None:
+    """A wall's points in its columns, at the largest fine print size at which they all fit (at the smallest, the
+    points that fit, from the first, and the highlighted one always), in the ink's colour (which reads on what's under
+    them); and a marker over the highlighted point's lines (as wide as its words), in a colour that it reads on, on
+    the slide's one click."""
+    flow, font = _wall_flow(roles), theme.fonts.body
+    found, size = None, min(FINE_PRINT_SIZES)
+    for largest in sorted(FINE_PRINT_SIZES, reverse=True):
+        found = _flowed(flow, roles, columns, font, largest)
+        if found is not None:
+            size = largest
+            break
+    while found is None and len(flow) > 1:  # (leave points out from the end, but never the highlighted one)
+        flow.remove(next(role for role in reversed(flow) if role != "highlight"))
+        found = _flowed(flow, roles, columns, font, size)
+    spec = f"fine print {size}"
+    for role, box in found or []:
+        placement.boxes[role] = (box, spec)
+        placement.colors[role] = ink
+    highlight = roles.get("highlight")
+    if "highlight" not in placement.boxes or not isinstance(highlight, TextElement):
+        return
+    colour, opacity = _marker(theme, under, ink)
+    marked = [color.mix(colour_under, colour, opacity) for colour_under in under]
+    placement.colors["highlight"] = color.readable_on(ink, [*under, *marked], _FINE_CONTRAST)  # (and after its click)
+    _, lines = text_lines(highlight.text, placement.boxes["highlight"][0], spec, theme)
+    for line in lines:
+        band = Box(x=line.x - 0.3 * size, y=line.y, w=line.w + 0.6 * size, h=line.h)
+        placement.shapes.append(
+            ShapeElement(role="marker", box=band, color=colour, opacity=opacity, appears_on_click=1)
+        )
+
+
+def _marker(theme: Theme, under: Sequence[str], ink: str) -> tuple[str, float]:
+    """The colour and opacity of a marker over a text (a highlighter's): the theme's second accent (or, where that
+    would take the text's contrast away, a shade of it that the text reads on), as see-through as it takes for the
+    text to read on it over what's under it; else that shade, solid (a background on which a text only just reads
+    leaves no room for a see-through colour over it: mixed in, most colours make it darker)."""
+    accent = theme.palette.accent_2
+    shaded = color.readable_on(accent, [ink], _FINE_CONTRAST)
+    for opacity in (0.45, 0.38, 0.3, 0.22, 0.15):
+        for fill in (accent, shaded):
+            if color.worst_contrast(ink, [color.mix(colour, fill, opacity) for colour in under]) >= _FINE_CONTRAST:
+                return fill, opacity
+    return shaded, 1.0
+
+
+# A marked text's contrast, a little over WCAG's 4.5 (its colour is picked for the colours behind it that the theme
+# says, and a design check that finds the same ones may round them a hair differently)
+_FINE_CONTRAST: Final = color.BODY_CONTRAST + 0.1
+
+
+def _slide_colours(theme: Theme) -> list[str]:
+    """The colours of a slide's background in the theme: its own (or both ends of its gradient), and its pattern's
+    lines or dots over it."""
+    colours = _backgrounds(theme)
+    pattern = theme.pattern
+    if pattern is not None:
+        colours += [color.mix(colour, pattern.color, pattern.opacity) for colour in colours]
+    return colours
+
+
+def _wall_columns(left: float, right: float, top: float, bottom: float) -> list[Box]:
+    width = (right - left - _WALL_COLUMNS_GAP) / 2
+    return [Box(x=left + index * (width + _WALL_COLUMNS_GAP), y=top, w=width, h=bottom - top) for index in range(2)]
+
+
+def _wall_of_text(roles: dict[str, Content], theme: Theme) -> Placement:
+    """A wall of text: its title on top and its points under it in two columns of fine print, as large as fills them,
+    a marker over the highlighted one on the slide's click, and "Continued on next slide" under it all."""
+    placement = Placement("v5/wall-of-text")
+    top = (_with_title(placement, roles, theme) if "title" in roles else MARGIN) + 8
+    bottom = _CONTENT_BOTTOM - _NOTE_HEIGHT
+    columns = _wall_columns(MARGIN, WIDTH - MARGIN, top, bottom)
+    _wall(placement, roles, theme, columns, _slide_colours(theme), theme.palette.text)
+    placement.boxes["continued"] = (
+        Box(x=MARGIN, y=bottom + 4, w=WIDTH - 2 * MARGIN, h=_NOTE_HEIGHT - 4),
+        "fine print note",
+    )
+    return placement
+
+
+def _wall_of_text_page(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The wall as a page of a report on the slide: a sheet in the theme's surface colour, with a shadow, its title
+    at the top of the page over a rule in its accent, and its points under it in two columns of fine print."""
+    palette = theme.palette
+    page = Box(x=250, y=40, w=WIDTH - 500, h=946)
+    shadow = Box(x=page.x + 18, y=page.y + 18, w=page.w, h=page.h)
+    placement = Placement(
+        "v5/wall-of-text-page",
+        shapes=[
+            ShapeElement(role="page shadow", box=shadow, color=color.mix(palette.background, palette.text, 0.25)),
+            ShapeElement(role="page", box=page, color=palette.surface),
+        ],
+    )
+    inner = _inset(page, 64)
+    ink = _on([palette.surface], theme)
+    top = inner.y
+    if "title" in roles:
+        placement.boxes["title"] = (Box(x=inner.x, y=inner.y, w=inner.w, h=104), "page title")
+        placement.colors["title"] = ink
+        rule = color.readable_on(palette.accent, [palette.surface], LINE_CONTRAST)
+        placement.shapes.append(
+            ShapeElement(role="page rule", box=Box(x=inner.x, y=inner.y + 112, w=inner.w, h=4), color=rule)
+        )
+        top = inner.y + 140
+    bottom = inner.y + inner.h - _NOTE_HEIGHT
+    columns = _wall_columns(inner.x, inner.x + inner.w, top, bottom)
+    _wall(placement, roles, theme, columns, [palette.surface], ink)
+    placement.boxes["continued"] = (Box(x=inner.x, y=bottom + 4, w=inner.w, h=_NOTE_HEIGHT - 4), "fine print note")
+    placement.colors["continued"] = color.readable_on(palette.muted, [palette.surface])
+    return placement
+
+
+def _alignment_chart(side: bool) -> Callable[[dict[str, Content], Theme], Placement]:
+    """An alignment chart: its nine things on tiles in a grid of three by three, the tiles a little deeper in the
+    theme's accent row by row (from good down to evil), chaotic evil's in its second accent; the axes' words in the
+    accent, lawful to chaotic over the columns and good to evil beside the rows. Each tile appears with its thing."""
+
+    def alignment_chart(roles: dict[str, Content], theme: Theme) -> Placement:
+        palette = theme.palette
+        placement = Placement("v5/alignment-chart-side" if side else "v5/alignment-chart")
+        left, right, top = _area(placement, roles, theme, side)
+        gap, header = 14.0, 64.0
+        label = 190.0 if side else 220.0
+        grid_x, grid_y = left + label + gap, top + 16 + header + gap
+        cell_w = (right - grid_x - 2 * gap) / 3
+        cell_h = (_CONTENT_BOTTOM - grid_y - 2 * gap) / 3
+        axis = color.readable_on(palette.accent, _slide_colours(theme))
+        for index in range(1, 4):
+            column = Box(x=grid_x + (index - 1) * (cell_w + gap), y=top + 16, w=cell_w, h=header)
+            placement.boxes[f"column_{index}"] = (column, "axis")
+            row = Box(x=left, y=grid_y + (index - 1) * (cell_h + gap), w=label, h=cell_h)
+            placement.boxes[f"row_{index}"] = (row, "side axis")
+            placement.colors[f"column_{index}"] = placement.colors[f"row_{index}"] = axis
+        for position, alignment in enumerate(classic.ALIGNMENTS):
+            down, across = divmod(position, 3)
+            tile = Box(x=grid_x + across * (cell_w + gap), y=grid_y + down * (cell_h + gap), w=cell_w, h=cell_h)
+            punchline = alignment == classic.ALIGNMENTS[-1]
+            fill = palette.accent_2 if punchline else color.mix(palette.surface, palette.accent, 0.1 * down)
+            click = _click(roles, alignment)
+            placement.shapes.append(ShapeElement(role=f"{alignment} box", box=tile, color=fill, appears_on_click=click))
+            placement.boxes[alignment] = (_inset(tile, 14), "cell")
+            placement.colors[alignment] = _on([fill], theme)
+        return placement
+
+    return alignment_chart
+
+
+def _short_cells(most: int) -> Callable[[dict[str, Content]], bool]:
+    """Whether an alignment chart's title fits beside it and its things are at most this long (for its narrower
+    cells there)."""
+
+    def short(roles: dict[str, Content]) -> bool:
+        cells = [roles.get(alignment) for alignment in classic.ALIGNMENTS]
+        return _beside_title(roles) and all(
+            not isinstance(cell, TextElement) or len(cell.text) <= most for cell in cells
+        )
+
+    return short
+
+
+# A red flag's red, and its shape: a flag with a swallowtail, on a pole
+_RED: Final = "#e53935"
+_SWALLOWTAIL: Final = ((0.0, 0.0), (1.0, 0.0), (0.78, 0.5), (1.0, 1.0), (0.0, 1.0))
+
+
+def _flag(placement: Placement, role: str, box: Box, theme: Theme, under: Sequence[str], click: int | None) -> None:
+    """A red flag in the box, on its pole (both appearing with its text, on its click), in colours that show on what's
+    under them."""
+    pole = max(6.0, box.w * 0.09)
+    name = role.replace("_", " ")  # ("flag 1")
+    placement.shapes += [
+        ShapeElement(
+            role=f"{name} pole",
+            box=Box(x=box.x, y=box.y, w=pole, h=box.h),
+            color=color.readable_on(theme.palette.text, under, LINE_CONTRAST),
+            appears_on_click=click,
+        ),
+        ShapeElement(
+            role=f"{name} cloth",
+            shape="polygon",
+            points=_SWALLOWTAIL,
+            box=Box(x=box.x + pole, y=box.y, w=box.w - pole, h=box.h * 0.62),
+            color=color.readable_on(_RED, under, LINE_CONTRAST),
+            appears_on_click=click,
+        ),
+    ]
+
+
+def _red_flags(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The red flags one under the other, each beside a red flag on its pole."""
+    placement = Placement("v5/red-flags")
+    top = (_with_title(placement, roles, theme) if "title" in roles else MARGIN) + 16
+    flags = _numbered(roles, "flag", 5)
+    y, height = _spread(top, _CONTENT_BOTTOM, len(flags), 20, 150)
+    icon_h = min(110.0, height - 16)
+    for index in flags:
+        role = f"flag_{index}"
+        icon = Box(x=MARGIN + 24, y=y + (height - icon_h) / 2, w=0.85 * icon_h, h=icon_h)
+        _flag(placement, role, icon, theme, _slide_colours(theme), _click(roles, role))
+        x = icon.x + icon.w + 48
+        placement.boxes[role] = (Box(x=x, y=y, w=WIDTH - MARGIN - x, h=height), "flag")
+        y += height + 20
+    return placement
+
+
+def _red_flags_cards(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The red flags side by side on cards in the theme's surface colour, each card with its red flag on top."""
+    palette = theme.palette
+    placement = Placement("v5/red-flags-cards")
+    top = (_with_title(placement, roles, theme) if "title" in roles else MARGIN) + 24
+    flags = _numbered(roles, "flag", 5)
+    gap = 40.0
+    width = (WIDTH - 2 * MARGIN - gap * (len(flags) - 1)) / len(flags)
+    height = min(600.0, _CONTENT_BOTTOM - top)
+    y = top + (_CONTENT_BOTTOM - top - height) / 2
+    for position, index in enumerate(flags):
+        role, click = f"flag_{index}", _click(roles, f"flag_{index}")
+        x = MARGIN + position * (width + gap)
+        card = Box(x=x, y=y, w=width, h=height)
+        placement.shapes.append(
+            ShapeElement(role=f"flag {index} card", box=card, color=palette.surface, appears_on_click=click)
+        )
+        icon = Box(x=x + (width - 128) / 2, y=y + 40, w=128, h=150)
+        _flag(placement, role, icon, theme, [palette.surface], click)
+        text_top = icon.y + icon.h + 32
+        placement.boxes[role] = (Box(x=x + 28, y=text_top, w=width - 56, h=y + height - 28 - text_top), "card flag")
+        placement.colors[role] = _on([palette.surface], theme)
+    return placement
+
+
+def _at_most(prefix: str, most: int) -> Callable[[dict[str, Content]], bool]:
+    """Whether the slide has at most so many of its things (red flags on cards side by side, say)."""
+
+    def few(roles: dict[str, Content]) -> bool:
+        return f"{prefix}_{most + 1}" not in roles
+
+    return few
+
+
+# A review's stars: gold, and grey where it falls short of five
+_GOLD: Final = "#f5b301"
+
+
+def _rating(roles: dict[str, Content], index: int) -> int:
+    """How many stars a review gives (its stars' text says, as "4/5")."""
+    element = roles.get(f"stars_{index}")
+    text = element.text if isinstance(element, TextElement) else ""
+    return int(text[:1]) if text[:1].isdigit() else 0
+
+
+def _stars(placement: Placement, roles: dict[str, Content], index: int, at: Box, theme: Theme, under: str) -> None:
+    """A review's five stars, in a row along the top of the box (each as wide as it's tall): as many in gold as it
+    gives, the rest grey, all appearing with the review, on its click."""
+    gold = color.readable_on(_GOLD, [under], 2.0)
+    grey = color.mix(under, theme.palette.text, 0.18)
+    rating, click, size = _rating(roles, index), _click(roles, f"review_{index}"), at.h
+    for number in range(5):
+        box = Box(x=at.x + number * 1.12 * size, y=at.y, w=size, h=size)
+        placement.shapes.append(
+            ShapeElement(
+                role=f"review {index} star",
+                shape="polygon",
+                points=geometry.star(),
+                box=box,
+                color=gold if number < rating else grey,
+                appears_on_click=click,
+            )
+        )
+
+
+def _stars_width(size: float) -> float:
+    return 5 * 1.12 * size - 0.12 * size
+
+
+def _review_texts(placement: Placement, index: int, rating: Box, text: Box, reviewer: Box, ink: str) -> None:
+    for role, box, spec in (
+        (f"stars_{index}", rating, "rating"),
+        (f"review_{index}", text, "review"),
+        (f"reviewer_{index}", reviewer, "reviewer"),
+    ):
+        placement.boxes[role] = (box, spec)
+        placement.colors[role] = ink
+
+
+def _reviews(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The reviews side by side on cards in the theme's surface colour: each card's stars across its top, with the
+    rating beside them ("4/5"), what the reviewer wrote under them, and who they are at the card's foot."""
+    palette = theme.palette
+    placement = Placement("v5/reviews")
+    top = (_with_title(placement, roles, theme) if "title" in roles else MARGIN) + 24
+    reviews = _numbered(roles, "review", 3)
+    gap, padding = 40.0, 36.0
+    width = (WIDTH - 2 * MARGIN - gap * (len(reviews) - 1)) / len(reviews)
+    height = min(620.0, _CONTENT_BOTTOM - top)
+    y = top + (_CONTENT_BOTTOM - top - height) / 2
+    ink = _on([palette.surface], theme)
+    for position, index in enumerate(reviews):
+        x = MARGIN + position * (width + gap)
+        card = Box(x=x, y=y, w=width, h=height)
+        click = _click(roles, f"review_{index}")
+        placement.shapes.append(
+            ShapeElement(role=f"review {index} card", box=card, color=palette.surface, appears_on_click=click)
+        )
+        size = min(56.0, (width - 2 * padding - 110) / 5.48)
+        stars = Box(x=x + padding, y=y + padding + 4, w=_stars_width(size), h=size)
+        _stars(placement, roles, index, stars, theme, palette.surface)
+        rating = Box(
+            x=stars.x + stars.w + 16, y=stars.y - 6, w=x + width - padding - stars.x - stars.w - 16, h=size + 12
+        )
+        text_top = stars.y + size + 32
+        foot = y + height - padding - 64
+        text = Box(x=x + padding, y=text_top, w=width - 2 * padding, h=foot - 8 - text_top)
+        reviewer = Box(x=x + padding, y=foot, w=width - 2 * padding, h=64)
+        _review_texts(placement, index, rating, text, reviewer, ink)
+    return placement
+
+
+def _reviews_rows(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The reviews one under the other, on bands in the theme's surface colour: the stars on the left, the rating
+    under them, and what the reviewer wrote beside them, over who they are."""
+    palette = theme.palette
+    placement = Placement("v5/reviews-rows")
+    top = (_with_title(placement, roles, theme) if "title" in roles else MARGIN) + 16
+    reviews = _numbered(roles, "review", 3)
+    y, height = _spread(top, _CONTENT_BOTTOM, len(reviews), 24, 260)
+    ink = _on([palette.surface], theme)
+    size, padding = 52.0, 32.0
+    for index in reviews:
+        band = Box(x=MARGIN, y=y, w=WIDTH - 2 * MARGIN, h=height)
+        click = _click(roles, f"review_{index}")
+        placement.shapes.append(
+            ShapeElement(role=f"review {index} card", box=band, color=palette.surface, appears_on_click=click)
+        )
+        stars = Box(x=band.x + padding, y=y + (height - size - 56) / 2, w=_stars_width(size), h=size)
+        _stars(placement, roles, index, stars, theme, palette.surface)
+        rating = Box(x=stars.x, y=stars.y + size + 8, w=stars.w, h=48)
+        x = stars.x + stars.w + 48
+        text = Box(x=x, y=y + 20, w=band.x + band.w - padding - x, h=height - 20 - 64 - 12)
+        reviewer = Box(x=x, y=y + height - 64 - 8, w=text.w, h=64)
+        _review_texts(placement, index, rating, text, reviewer, ink)
+        y += height + 24
+    return placement
+
+
+_BUTTON_HEIGHT: Final = 88.0
+_BUTTON_GAP: Final = 28.0
+_BUTTON_PADDING: Final = 36.0  # (on either side of a button's label)
+_SHORTEST_BUTTON: Final = 180.0
+
+
+def _button_widths(labels: Sequence[str], theme: Theme, room: float) -> tuple[float, list[float]]:
+    """The size of a dialog's buttons' labels, one for them all (the largest at which the buttons, each as wide as its
+    label with some room on either side, fit side by side), and every button's width; at the smallest size, buttons
+    that still don't fit share the room (and their labels wrap)."""
+    spec, font = SPECS["button"], theme.fonts.body
+    largest = max(spec.smallest, round(spec.largest * theme.text_scale / fit.STEP) * fit.STEP)
+
+    def widths(size: float) -> list[float]:
+        return [
+            max(_SHORTEST_BUTTON, fonts.text_width(label, font, size, True) + 2 * _BUTTON_PADDING) for label in labels
+        ]
+
+    size = largest
+    while size > spec.smallest and sum(widths(size)) + _BUTTON_GAP * (len(labels) - 1) > room:
+        size -= fit.STEP
+    found = widths(size)
+    total = sum(found) + _BUTTON_GAP * (len(labels) - 1)
+    if total > room:  # (at the smallest size: each a share of the room)
+        found = [width * (room - _BUTTON_GAP * (len(labels) - 1)) / sum(found) for width in found]
+    return size, found
+
+
+def _error_message(stacked: bool) -> Callable[[dict[str, Content], Theme], Placement]:
+    """A fake error message: a dialog in the middle of the slide, with a shadow, its title on a bar in the theme's
+    accent (and a ×), a warning sign on a disc in its second accent, the message and its code, and its buttons along
+    its foot (the last one, the punchline, the dialog's default, in the accent): the sign beside the message, the
+    buttons on the right, or (stacked) everything in the middle, one under the other."""
+
+    def error_message(roles: dict[str, Content], theme: Theme) -> Placement:
+        palette = theme.palette
+        placement = Placement("v5/error-message-stacked" if stacked else "v5/error-message")
+        width, height = (1180.0, 760.0) if stacked else (1360.0, 600.0)
+        window = Box(x=(WIDTH - width) / 2, y=(HEIGHT - height) / 2 - 10, w=width, h=height)
+        bar = Box(x=window.x, y=window.y, w=width, h=80)
+        shadow = Box(x=window.x + 20, y=window.y + 24, w=width, h=height)
+        placement.shapes += [
+            ShapeElement(role="window shadow", box=shadow, color=color.mix(palette.background, palette.text, 0.3)),
+            ShapeElement(role="window", box=window, color=palette.surface),
+            ShapeElement(role="title bar", box=bar, color=palette.accent),
+        ]
+        on_bar = _on([palette.accent], theme)
+        if "window_title" in roles:
+            title = Box(x=bar.x + 32, y=bar.y + 10, w=bar.w - 150, h=bar.h - 20)
+            placement.boxes["window_title"] = (title, "window title")
+            placement.colors["window_title"] = on_bar
+        placement.texts.append(
+            ("×", Box(x=bar.x + bar.w - 92, y=bar.y + 8, w=68, h=bar.h - 16), "button", on_bar, None)
+        )
+        body = bar.y + bar.h
+        ink = _on([palette.surface], theme)
+        if stacked:
+            disc = Box(x=WIDTH / 2 - 80, y=body + 44, w=160, h=160)
+            message = Box(x=window.x + 72, y=disc.y + disc.h + 28, w=width - 144, h=200)
+        else:
+            disc = Box(x=window.x + 72, y=body + 64, w=170, h=170)
+            text_x = disc.x + disc.w + 56
+            message = Box(x=text_x, y=body + 48, w=window.x + width - 64 - text_x, h=220)
+        code = Box(x=message.x, y=message.y + message.h + 8, w=message.w, h=52)
+        placement.shapes.append(ShapeElement(role="icon disc", shape="ellipse", box=disc, color=palette.accent_2))
+        placement.boxes["icon"] = (_inset(disc, disc.w * 0.15), "error icon")
+        placement.colors["icon"] = _on([palette.accent_2], theme, color.LARGE_TEXT_CONTRAST)
+        placement.boxes["message"] = (message, "centred error message" if stacked else "error message")
+        placement.colors["message"] = ink
+        if "code" in roles:
+            placement.boxes["code"] = (code, "centred error code" if stacked else "error code")
+            placement.colors["code"] = color.readable_on(palette.muted, [palette.surface])
+        written = [(index, roles[f"button_{index}"]) for index in _numbered(roles, "button", 3)]
+        labelled = [(index, element.text) for index, element in written if isinstance(element, TextElement)]
+        buttons, labels = [index for index, _ in labelled], [label for _, label in labelled]
+        size, widths = _button_widths(labels, theme, width - 128)
+        total = sum(widths) + _BUTTON_GAP * (len(widths) - 1)
+        x = window.x + (width - total) / 2 if stacked else window.x + width - 64 - total
+        y = window.y + height - 56 - _BUTTON_HEIGHT
+        plain = color.mix(palette.surface, palette.text, 0.1)
+        edge = color.readable_on(palette.muted, [palette.surface], LINE_CONTRAST)
+        for index, label, button_w in zip(buttons, labels, widths, strict=True):
+            default = index == buttons[-1]
+            fill = palette.accent if default else plain
+            box = Box(x=x, y=y, w=button_w, h=_BUTTON_HEIGHT)
+            placement.shapes.append(
+                ShapeElement(
+                    role=f"button_{index} box",
+                    box=box,
+                    color=fill,
+                    corner=12,
+                    outline=None if default else edge,
+                    outline_width=0 if default else 3,
+                )
+            )
+            # (its label's box just as wide as the label at the buttons' one size, so that it gets that size, and no
+            # larger: in a dialog, every button's label is as large as the others')
+            inner = _inset(box, 12)
+            tight = min(inner.w, fonts.text_width(label, theme.fonts.body, size, True) + 2)
+            placement.boxes[f"button_{index}"] = (
+                Box(x=inner.x + (inner.w - tight) / 2, y=inner.y, w=tight, h=inner.h),
+                "button",
+            )
+            placement.colors[f"button_{index}"] = _on([fill], theme)
+            x += button_w + _BUTTON_GAP
+        return placement
+
+    return error_message
+
+
 @dataclass(frozen=True)
 class _Layout:
     """One of a slide type's layouts: its name, what places its elements, how likely it's picked (against the type's
@@ -2389,5 +2941,25 @@ _LAYOUTS: Final[dict[str, tuple[_Layout, ...]]] = {
     "tier_list": (
         _Layout("v5/tier-list", _tier_list(side=False)),
         _Layout("v5/tier-list-side", _tier_list(side=True), 0.7, _beside_title),
+    ),
+    "wall_of_text": (
+        _Layout("v5/wall-of-text", _wall_of_text),
+        _Layout("v5/wall-of-text-page", _wall_of_text_page, 0.8),
+    ),
+    "alignment_chart": (
+        _Layout("v5/alignment-chart", _alignment_chart(side=False)),
+        _Layout("v5/alignment-chart-side", _alignment_chart(side=True), 0.6, _short_cells(28)),
+    ),
+    "red_flags": (
+        _Layout("v5/red-flags", _red_flags),
+        _Layout("v5/red-flags-cards", _red_flags_cards, 0.9, _at_most("flag", 4)),
+    ),
+    "reviews": (
+        _Layout("v5/reviews", _reviews),
+        _Layout("v5/reviews-rows", _reviews_rows, 0.8),
+    ),
+    "error_message": (
+        _Layout("v5/error-message", _error_message(stacked=False)),
+        _Layout("v5/error-message-stacked", _error_message(stacked=True), 0.9),
     ),
 }
