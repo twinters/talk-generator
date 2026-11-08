@@ -317,6 +317,37 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   each part, the Skill has references for both, and `talkgenerator check` warns of a talk that misses a part of its
   format's arc.
 
+### Talk formats: all-hands meetings and product keynotes
+
+- `--schema corporate`: a company whose business is the topic, at its all-hands meeting or quarterly business review.
+  Its slides go through its arc, in order: the agenda (or an executive summary nobody can read), the KPIs against
+  their targets (figures on tiles, the actual results falling away from the target's line on a click, the results by
+  region, one headline number, or the sales pipeline as a funnel), the quarter's wins (three photos, the CEO's post,
+  or customers' reviews), the roadmap (a timeline, the new process, or the planning cycle), an org change (the new org
+  chart whose boss is the punchline, the new hierarchy as a pyramid, or the company before and after), the synergies
+  (a Venn diagram, or a 2×2 matrix of priorities), the ask of everyone (a bold statement, or "110%") and Q&A. Its
+  other slides are inspirational quotes, InspiroBot's posters, the company's values as an acronym, the news and the
+  like.
+- `--schema keynote`: a product made of the topic, launched on a big stage: a big opening statement (over a photo, as
+  one huge number, or a full-bleed photo with a greeting), the one idea (a bold question, or a Venn diagram with the
+  product where it all meets), the reveal (the product in one photo, a picture that prefers to be generated), its
+  features (three photos, specs on tiles, or a chart it wins by far), a live demo (that crashes, as a fake error
+  message, how it works, or a photo to present as the demo), the price (a big number, the models' prices, or when it
+  ships), the "one more thing" and a closing line. Its other slides are deep questions over photos, gifs, the press
+  and early reviews.
+- A five-slide all-hands has the KPIs, the wins, the roadmap and Q&A; a five-slide keynote its opening, the reveal, a
+  feature and the "one more thing". A management consultant gives more of the all-hands, a startup founder or a
+  motivational speaker more of the keynotes, and their themes are the `corporate` and `clip-art corporate` families,
+  and `dark minimal` and `clean keynote`, more often.
+- A language model is told the format, and what its titles and its presenter's job are like (an all-hands' title is
+  the quarter and a slogan; a keynote's the product's made-up name and a grand promise), with the persona's. Without
+  one, both have content packs of their own (`talkgenerator/data/packs/corporate` and `keynote`, a grammar per part of
+  the arc, 596 and 391 templates), and a made-up company or product named after the topic ("Penguin Holdings",
+  "Penguin Neo") on every slide.
+- No new slide type: an all-hands' office photos are corporate stock photos, and its executive summary is the wall of
+  text's corporate jargon. `talkgenerator formats --details --format corporate` (and `keynote`) lists the arc, and the
+  Skill has references for both.
+
 ### Titles and presenter names
 
 - What someone types can be the topic or the title (`--topic_or_title`, `topic_or_title=`): "penguins" as well as
@@ -576,7 +607,10 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   keeps half of it, and before a bracket the cut would leave open: free models' affiliations lost a dangling word
   ("Professor of Serenity Studies, Department" is "Professor of Serenity Studies" now), and their roles their open
   brackets ("Kaito Tanaka (Head of Temporal" is "Kaito Tanaka"). A title slide names its presenter once, where a
-  model wrote the name into the presenter's job too.
+  model wrote the name into the presenter's job too, with a title before it as well ("Harold Beanmore, Dr. Harold
+  Beanmore, Chief Chrono-Roaster" is "Harold Beanmore, Chief Chrono-Roaster"). A cut at a comma or at a clause's end
+  leaves no bracket open either ("Arctic Expansion (High Impact", of an initiative in a 2×2 matrix, is "Arctic
+  Expansion").
 - Claude writes talks of many kinds of slides too. Anthropic refuses to hold an answer to a JSON schema that compiles
   to too large a grammar ("The compiled grammar is too large"), which a talk with the newest slide types can have,
   and such a talk came out classic (two of four in a check with Claude Haiku 5.5). Now Claude gets the schema as

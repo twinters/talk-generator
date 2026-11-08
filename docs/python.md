@@ -34,8 +34,8 @@ as long as the deck (`copy`, for Pixabay), or as a file of talkgenerator's own (
 pixels, its license class, its license (with a link), the look it was found for, and what a look at its thumbnail
 found.
 
-The options, after the format (`"default"`, `"ted"`, `"interview"`, `"pitch"`, `"academic"` or `"test"`) and the
-number of slides:
+The options, after the format (`"default"`, `"ted"`, `"interview"`, `"pitch"`, `"academic"`, `"corporate"`,
+`"keynote"` or `"test"`) and the number of slides:
 
 | Option | What it is |
 | --- | --- |
