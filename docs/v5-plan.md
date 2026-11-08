@@ -1653,17 +1653,14 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D47 | A talk's persona, which its seed picks (or the talk names; `none` for none), shapes the talk with a language model or without: multipliers on the format's slide weights by the generators' tags (none under 0.2, and about 1 on average over the personas, so the formats' mix holds), its kind of title (a hint for the model, and half of a classic talk's titles from the persona's templates), and weights over the default name styles with how the presenter goes by (an explicit `name_styles` goes alone), besides the model's voice and an angle of the persona's, the presenter's kind of job, multipliers on the theme families' weights for a random theme (an explicit theme goes alone), and favourite looks for some of the looks slides ask for, searched before the slide's own. The deck and `talk.started` record it. |
 | D48 | Memes with live captions are what a TED-like talk that allows fair use has most often in its middle: four times the weight of the other slides there, two a talk at most (and two memes of any kind in ten slides), never of one template twice. Classic captions speak of a talk's topic as English does ("coffee", "penguins"), never with a verb that has to agree with it. |
 | D49 | New slide types come from what real PowerPoint karaoke and battle decks, TED parodies and bad-PowerPoint humour have (a catalogue with its sources), drawn from the deck's texts, shapes and pictures (D37): one of each a talk, in its middle. Kinds that need a new element (diagonal lines) or text under the design checks' floor wait. |
-| D50 | A format's tag caps hold from a talk's first slide: an absolute cap is a number of slides (0: none at all, as the `interview` format's about-me slides), and a relative one a share of the talk's slides, rounded down but at least one, so that short talks keep every kind of slide. A kind that only longer talks have says so by its weight: a section divider, in talks of ten slides or more. |
+| D50 | A format's tag caps hold from a talk's first slide: an absolute cap is a number of slides (0: none at all, as the `interview` format's about-me slides), and a relative one a share of the talk's slides, rounded down but at least one, so that short talks keep every kind of slide (a strict rounding would leave talks of 3 and 4 slides without memes, diagrams, quotes and captioned pictures). A kind that only longer talks have says so by its weight: a section divider, in talks of ten slides or more. |
 
-D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, and D43 to D49 on 2026-11-08; the
-others follow from the design. D50 was proposed on 2026-11-08, with the open question below.
+D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, and D43 to D50 on 2026-11-08; the
+others follow from the design.
 
 ### Open questions
 
-- Should a relative cap that rounds to none forbid its kind of slide (strict), instead of allowing one (D50)? Strict
-  takes memes, diagrams, quotes, statements and captioned pictures out of talks of 3 and 4 slides, which then have
-  an about-me slide in 74% and 57% of talks, and a chart in 44% of 4-slide ones; from 5 slides on, the two rules
-  give the same talks (talkgenerator.com's have 7 slides by default). Either way, a cap of 0 means none.
+None right now; new ones go here.
 
 ## 18. Sources
 
