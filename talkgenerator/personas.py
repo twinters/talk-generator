@@ -221,7 +221,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             ),
             {"famous_pun": 2.5},
             "with Dr. or Prof. before the name",
-            "a chair in medieval studies, as grand and specific as it gets",
+            "a professorship in medieval studies, as grand and specific as it gets",
             themes={"vintage paper": 5, "newspaper": 2, "neon": 0.3, "hacker terminal": 0.3, "startup": 0.5},
             looks={"weird": "medieval", "neutral": "museum"},
         ),

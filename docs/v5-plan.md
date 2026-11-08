@@ -327,6 +327,15 @@ whose hourly quotas other runs share):
   Trust to a Billion Users", "Penguins in the Monks' Bestiary", "Pyroclastic Strategy: A Synergy Roadmap for Volcanic
   Disruption", "The Sprinter Who Lost to Tomorrow"), the teacher's the plainest ("Penguins and Growing Up"). Each seed
   picked the same slides as in round one.
+- Round three, with themes and looks by persona: the teacher, the historian and the blogger on penguins with seed 36
+  and a random theme, each in its own signature family (`kids`, `vintage paper`, `hacker terminal`; the seed gives all
+  three the same member, 88). The pictures came from the persona's favourite looks where it has them: the teacher's
+  from Pixabay's illustrations and r/aww's wholesome cats, the historian's from museums (the Art Institute of Chicago,
+  the Met) and r/Medievalart, a medieval painting under its news headline, the blogger's from r/LiminalSpace and
+  r/Pareidolia ("Gentoo are not birds, they are hardware" over an empty road at night). The blogger's first try ran
+  to its free model's output cap (11,700 tokens) and came out classic, as designed, still in `hacker terminal` with
+  liminal pictures; its second was the model's. The historian's job hint said "a chair", which gave "Dr. Chair of
+  Medieval Penguin Studies": it says a professorship now.
 
 ### 5.3 One streamed call per talk
 
