@@ -51,9 +51,11 @@ NEAR_DUPLICATE: Final = 10  # the most bits in which the hashes of two near-dupl
 _MAX_LOOKS: Final = 2048
 _looks: OrderedDict[tuple[str, Area | None], ImageAnalysis | None] = OrderedDict()
 # The thumbnails downloaded last (their bytes, or None for one that couldn't be had), for a vision pick's contact
-# sheet to show the same pictures that were looked at (see talkgenerator.images.vision), without asking again
-_MAX_THUMBNAILS: Final = 256
+# sheet to show the same pictures that were looked at (see talkgenerator.images.vision), without asking again: 16 MB
+# of them at most (a few hundred: most are 10 to 50 KB)
+_MAX_THUMBNAIL_BYTES: Final = 16 * 1024 * 1024
 _thumbnails: OrderedDict[str, bytes | None] = OrderedDict()
+_thumbnail_bytes = 0
 _lock = threading.Lock()
 
 
@@ -103,15 +105,19 @@ def look_at(url: str, area: Area | None = None) -> ImageAnalysis | None:
 
 def thumbnail(url: str) -> bytes | None:
     """The thumbnail at the URL (at most a megabyte), remembered for a while: None if it can't be had."""
+    global _thumbnail_bytes
     with _lock:
         if url in _thumbnails:
             _thumbnails.move_to_end(url)
             return _thumbnails[url]
     data = _download(url)
     with _lock:
-        _thumbnails[url] = data
-        while len(_thumbnails) > _MAX_THUMBNAILS:
-            _thumbnails.popitem(last=False)
+        if url not in _thumbnails:
+            _thumbnails[url] = data
+            _thumbnail_bytes += len(data or b"")
+        while _thumbnail_bytes > _MAX_THUMBNAIL_BYTES and _thumbnails:
+            _, forgotten = _thumbnails.popitem(last=False)
+            _thumbnail_bytes -= len(forgotten or b"")
     return data
 
 
@@ -266,6 +272,8 @@ def _distance(first: str, second: str) -> float:
 
 def forget() -> None:
     """Forget the looks taken and the thumbnails downloaded (for tests, say)."""
+    global _thumbnail_bytes
     with _lock:
         _looks.clear()
         _thumbnails.clear()
+        _thumbnail_bytes = 0

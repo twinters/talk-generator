@@ -688,6 +688,28 @@ def test_a_cassette_answers_the_same_sheet_whatever_its_bytes(tmp_path):
     assert ReplayProvider(cassette).complete(TextRequest.ask("vision pick", "Which?", images=(second,))) == recorded
 
 
+def test_thumbnails_are_remembered_up_to_a_number_of_bytes(monkeypatch):
+    downloads = []
+
+    def download(url):
+        downloads.append(url)
+        return b"x" * 400 if "missing" not in url else None
+
+    monkeypatch.setattr(analysis, "_download", download)
+    monkeypatch.setattr(analysis, "_MAX_THUMBNAIL_BYTES", 1000)
+    analysis.forget()
+    for name in ("a", "b", "missing"):
+        analysis.thumbnail(f"https://thumbs/{name}")
+    assert analysis.thumbnail("https://thumbs/a") == b"x" * 400 and analysis.thumbnail("https://thumbs/missing") is None
+    assert len(downloads) == 3  # (remembered: none asked again, a missing one neither)
+    analysis.thumbnail("https://thumbs/c")  # (1,200 bytes: the oldest, b, goes)
+    analysis.thumbnail("https://thumbs/b")
+    assert downloads == ["https://thumbs/a", "https://thumbs/b", "https://thumbs/missing", "https://thumbs/c"] + [
+        "https://thumbs/b"
+    ]
+    analysis.forget()
+
+
 def test_a_request_without_pictures_keeps_the_cassette_key_it_had_before_requests_could_show_any():
     request = TextRequest.ask("talk plan", "Write a talk", system="Be funny", max_output_tokens=900)
     before = request.model_dump(mode="json")

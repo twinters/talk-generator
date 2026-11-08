@@ -1223,7 +1223,7 @@ a picture is to show:
 **Measured** (2026-11-08, OpenRouter's free models at $0, GIPHY and Unsplash off, random themes, 10 slides; each talk
 written once by the free router and made from that same answer without the pick and with it, so only the pick
 differs; scripts and reports in the session's scratchpad `live/`, sample decks in the comparison folder's
-`27-v5-…-vision-pick`):
+`27-v5-cff9bc4-vision-pick`):
 
 - **Pictures that show what they were searched for.** `talkgenerator check`'s `images_matching_their_query` (a
   picture's description shares a word with its query): 24 of 54 without the pick and 28 with it (6 talks), 20 and 23 of
