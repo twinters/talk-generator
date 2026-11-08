@@ -914,8 +914,11 @@ and grateful", both copied from their hints, which no longer have them; a bar na
 initiative in a quadrant cut to "Arctic Expansion (High Impact", as a cut at a comma or a clause's end didn't keep
 brackets closed (it does now); and Claude Haiku's job "Dr. Harold Beanmore, Chief Chrono-Roaster" under the name
 Harold Beanmore, which the title slide now drops the name from, title and all. One sample deck by Claude Haiku came out
-classic but for its title (its answer was paid for, and none of its slides was read); the same talk, made again three
-times, came out whole, and the cause wasn't found.
+classic but for its title (its answer was paid for, and none of its slides was read), while the same talk made again
+came out whole: Anthropic sometimes refuses that talk's schema as too large a grammar, Claude then gets it as text, and
+given it so, Haiku wrote every slide inside the spine's object rather than beside it. Slides inside another object of
+the answer count now (the recorded answer, replayed, makes 10 of 10 planned slides), and a talk whose answer has no
+slide to read says what the answer brought in a warning.
 
 ## 8. Slide types and variety
 

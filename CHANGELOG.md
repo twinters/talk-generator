@@ -615,6 +615,10 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   to too large a grammar ("The compiled grammar is too large"), which a talk with the newest slide types can have,
   and such a talk came out classic (two of four in a check with Claude Haiku 5.5). Now Claude gets the schema as
   text then, at the end of the request, and writes the JSON by itself; the talk checks every slide's texts anyway.
+  Given the schema so, Claude Haiku once wrote every slide inside the spine's object, and the talk read none of them
+  (classic but for its title): slides inside another object of the answer count now. A talk whose answer has no
+  slide it can read says so in a warning, with what the answer brought (its keys and kinds, never its texts), and
+  Claude's switch to the schema as text is logged.
 
 ## [4.0.1] - 2026-11-05
 
