@@ -254,6 +254,9 @@ def test_planned_slides_come_out_as_planned(images):
     assert slide.to_deck_slide().element("title").text == "The S.P.E.K. method"
     slide, _ = _realized("acronym", {"title": "The Pirates way", "acronym": "PIRATES", **words})
     assert slide.to_deck_slide().element("title").text == "The SPEK way"
+    six = {f"word_{index}": word for index, word in enumerate(("Clip", "Aerate", "Lock", "Eat", "Nap", "Dance"), 1)}
+    eight = {"title": "The C.A.L.E.N.D.A.R. Method", "acronym": "CALENDAR", **six}  # (eight letters, six words)
+    assert _built("acronym", eight).to_deck_slide().element("title").text == "The C.A.L.E.N.D. Method"
     tiers = {"title": "Ranked", "s_tier": "Naps", "a_tier": "Tuna | Sun | Yarn | Laser", "f_tier": ""}
     slide, _ = _realized("tier_list", tiers)
     assert [element.text for element in slide.to_deck_slide().elements if element.role.startswith("item_a")] == [

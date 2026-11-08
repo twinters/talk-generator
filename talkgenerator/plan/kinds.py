@@ -408,16 +408,19 @@ def _acronym(texts: Mapping[str, str | None], images: Mapping[str, Any], languag
 
 def _respelled(title: str, acronym: str, initials: str) -> str:
     """The title with the acronym it names spelled as its words' initials, where a model's acronym isn't (its
-    "PIRATES" over the words "Public Invoicing, Reimbursement..."): the letters on the slide are the words', so the
-    title says them too, with dots between them if the model wrote it so ("S.P.A.R.K.")."""
-    written = acronym.strip()
-    dotted = "." in written
-    respelled = "".join(f"{letter}." for letter in initials) if dotted else initials
-    if written and written in title:
-        return title.replace(written, respelled)
-    plain = written.replace(".", "")
-    pattern = re.compile(rf"\b{re.escape(plain)}\b", re.IGNORECASE) if plain else None
-    return pattern.sub(respelled, title) if pattern is not None and pattern.search(title) else title
+    "PIRATES" over the words "Public Invoicing, Reimbursement...", or an eight-letter one over six words): the letters
+    on the slide are the words', so the title says them too, with dots between them where the title has them
+    ("S.P.A.R.K."). A title that doesn't name the acronym, dotted or not, stays as it is."""
+    letters = _plain_letters(acronym)
+    if not letters:
+        return title
+    # (its letters, each maybe followed by a dot or a space, as a word of its own)
+    pattern = re.compile(r"\b" + r"[.\s]?".join(map(re.escape, letters)) + r"\.?(?![A-Za-z])", re.IGNORECASE)
+
+    def respell(match: re.Match[str]) -> str:
+        return "".join(f"{letter}." for letter in initials) if "." in match.group(0) else initials
+
+    return pattern.sub(respell, title, count=1)
 
 
 def _dare(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
