@@ -159,6 +159,7 @@ module = [
     "talkgenerator.sources.met",
     "talkgenerator.sources.nasa",
     "talkgenerator.sources.openverse",
+    "talkgenerator.sources.packs",
     "talkgenerator.sources.pexels",
     "talkgenerator.sources.pixabay",
     "talkgenerator.sources.reddit",

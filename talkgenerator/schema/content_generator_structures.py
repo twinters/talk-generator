@@ -2,7 +2,7 @@
 This file contains structures that are helpful for certain content generators, but not general enough for generator_util
 """
 
-from talkgenerator.sources import conceptnet, goodreads, reddit, text_generator, wikihow, wikiquote
+from talkgenerator.sources import conceptnet, goodreads, packs, reddit, text_generator, wikihow, wikiquote
 from talkgenerator.util import os_util, random_util
 from talkgenerator.util.generator_util import (
     BackupGenerator,
@@ -88,15 +88,14 @@ class RedditImageGenerator:
 
 # ABOUT ME
 
-_about_me_facts_grammar = "data/text-templates/about_me_facts.json"
-job_description_generator = create_tracery_generator(_about_me_facts_grammar, "job_description")
-country_description_generator = create_tracery_generator(_about_me_facts_grammar, "country_description")
+job_description_generator = packs.pack(packs.TED).tracery("about_me.job_description")
+country_description_generator = packs.pack(packs.TED).tracery("about_me.country_description")
 
 
 def _apply_country_prefix(country_name):
     if random_util.uniform(0, 1) < 0.55:
         return country_name
-    return country_description_generator() + country_name
+    return f"{country_description_generator()} {country_name}"
 
 
 class CountryPrefixApplier:
@@ -136,8 +135,7 @@ class SplitCaptionsGenerator:
 
 # BOLD STATEMENT
 
-bold_statement_templated_file = os_util.to_actual_file("data/text-templates/bold_statements.txt")
-bold_statement_templated_generator = create_templated_text_generator(bold_statement_templated_file)
+bold_statement_templated_generator = packs.pack(packs.TED).templates("statements.bold_statement")
 
 
 def generate_wikihow_bold_statement(presentation_context):

@@ -371,9 +371,7 @@ def test_an_object_the_met_lists_but_doesnt_give_is_no_warning(answers, caplog):
 def test_the_countries_of_classic_about_me_slides_have_flags(answers):
     answers[flags.CODES_URL] = fixture("flagcdn_codes.json")  # (all of flagcdn.com's names)
     names = json.loads(
-        (Path(__file__).parents[1] / "talkgenerator/data/text-templates/about_me_facts.json").read_text(
-            encoding="utf-8"
-        )
+        (Path(__file__).parents[1] / "talkgenerator/data/packs/ted/about_me.json").read_text(encoding="utf-8")
     )
     without = [name for name in names["country"] if flags.code(name) is None]
     # (the two that no one flag stands for)

@@ -52,7 +52,7 @@ _ALIASES: Final = {
     "cabo verde": "cv",
     "vatican": "va",
     "turkiye": "tr",
-    # (and the names talkgenerator's own list of countries gives them: data/text-templates/about_me_facts.json)
+    # (and the names talkgenerator's own list of countries gives them: the TED content pack's about_me.country)
     "brunei darussalam": "bn",
     "congo": "cg",
     "kyrgyz republic": "kg",

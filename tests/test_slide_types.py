@@ -480,6 +480,7 @@ def test_the_classic_generators_leave_sensitive_words_out(monkeypatch, related):
     with random_util.use(random_util.Rng(1)):
         assert all(content({"seed": "islam", "topic": "cats"}) is None for content, _ in CLASSIC.values())
     assert slide_texts.sensitive("The Islam cycle") and not slide_texts.sensitive("Godzilla")
+    assert slide_texts.sensitive("breasts")  # (a word related to "the Titanic", once a flowchart's seed)
 
 
 def test_a_classic_slides_texts_come_from_templates_of_their_own(related):

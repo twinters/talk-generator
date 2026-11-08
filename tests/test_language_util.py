@@ -42,6 +42,8 @@ class LanguageUtilTest(unittest.TestCase):
             "happiness": "happiness",
             "running": "running",
             "music": "music",
+            "time": "time",  # (whose plural is common, in another sense)
+            "art": "art",
             "ice cream": "ice cream",
             "physics": "physics",
             "data": "data",
@@ -50,6 +52,11 @@ class LanguageUtilTest(unittest.TestCase):
             "glasses": "glasses",
             "the French Revolution": "the French Revolution",
             "Belgium": "Belgium",
+            "a plant that won't die": "a plant that won't die",  # (a clause about its noun: as it is)
+            "a message in a bottle": "a message in a bottle",  # (an "a" and words about its noun after it: as it is)
+            "a cup of tea": "a cup of tea",
+            "an apple in the box": "an apple in the box",
+            "game of thrones": "game of thrones",
             "": "",
         }
         self.assertEqual(cases, {phrase: language_util.generic(phrase) for phrase in cases})
@@ -63,6 +70,9 @@ class LanguageUtilTest(unittest.TestCase):
             "coffee": "coffee",
             "penguins": "penguins",
             "the moon": "the moon",
+            "a sofa that eats remotes": "a sofa that eats remotes",
+            "a cup of tea": "a cup of tea",  # (not "cup of tea", for its last word, "tea")
+            "a day at the beach": "a day at the beach",
         }
         self.assertEqual(cases, {phrase: language_util.one(phrase) for phrase in cases})
 
@@ -71,6 +81,25 @@ class LanguageUtilTest(unittest.TestCase):
         self.assertFalse(language_util.is_countable("coffee") or language_util.is_countable("penguins"))
         self.assertTrue(language_util.is_plural_noun("penguins") and language_util.is_plural_noun("glasses"))
         self.assertFalse(language_util.is_plural_noun("bus") or language_util.is_plural_noun("physics"))
+
+    def test_bare(self):
+        cases = {
+            "penguins": "penguin",
+            "the moon": "moon",
+            "a cat": "cat",
+            "coffee": "coffee",
+            "physics": "physics",
+            "the French Revolution": "French Revolution",
+            "a sofa that eats remotes": "sofa that eats remotes",  # (its clause's words stay)
+            "a cup of tea": "cup of tea",
+            "game of thrones": "game of thrones",  # (not "game of throne": its noun is "game")
+        }
+        self.assertEqual(cases, {phrase: language_util.bare(phrase) for phrase in cases})
+
+    def test_title_case(self):
+        self.assertEqual("A Plant That Won't Die", language_util.title_case("a plant that won't die"))
+        self.assertEqual("The Rise Of AI", language_util.title_case("the rise of AI"))
+        self.assertEqual("Penguins", language_util.title_case("penguins"))
 
     def test_capitalised(self):
         self.assertEqual("French fries", language_util.capitalised("french fries"))

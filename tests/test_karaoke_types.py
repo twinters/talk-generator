@@ -23,7 +23,7 @@ from talkgenerator.render.powerpoint import render_pptx
 from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema.presentation_schema_types import get_schema
 from talkgenerator.slide import slide_generator_types, slides
-from talkgenerator.sources import slide_texts
+from talkgenerator.sources import packs, slide_texts
 from talkgenerator.util import random_util
 from tests.test_deck import _image
 from tests.test_deck import images as images  # the fake image downloads (a fixture)
@@ -335,7 +335,7 @@ def test_a_classic_acronym_spells_the_seed_and_ends_on_something_absurd(related)
     with random_util.use(random_util.Rng(4)):
         title, *words = slide_texts.generate_acronym({"seed": "cat", "topic": "cats"})
     assert "".join(word[0].upper() for word in words) == "CAT" and "CAT" in title
-    assert words[-1] in slide_texts._ABSURD["T"]
+    assert words[-1] in packs.pack().rule("karaoke.absurd_t")
     with random_util.use(random_util.Rng(4)):  # (a seed that's no word to spell: a related word, or a known one)
         _, *words = slide_texts.generate_acronym({"seed": "the French Revolution", "topic": "history"})
     assert 3 <= len(words) <= 6 and all(word[:1].isupper() or word[:1] == "e" for word in words)
@@ -344,7 +344,7 @@ def test_a_classic_acronym_spells_the_seed_and_ends_on_something_absurd(related)
 def test_a_classic_tier_list_ranks_the_seed_first_and_something_loved_last(related):
     with random_util.use(random_util.Rng(2)):
         title, best, *tiers, worst = slide_texts.generate_tier_list({"seed": "cat", "topic": "cats"})
-    assert best == "Cats" and worst in slide_texts._grammar()["tier_list_worst"]
+    assert best == "Cats" and worst in packs.pack().rule("karaoke.tier_list_worst")
     assert tiers[0] and all(len(slides.tier_items(tier)) <= 3 for tier in tiers) and title
 
 
@@ -357,7 +357,7 @@ def test_a_classic_tier_list_ranks_the_seed_first_and_something_loved_last(relat
     ],
 )
 def test_classic_templates_speak_of_the_seed_as_english_does(seed, said, never):
-    grammar = slide_texts._grammar()
+    grammar = packs.pack().grammar("karaoke")
     names = ("fun_fact", "acronym_title", "dare", "flowchart_title", "flowchart_question", "flowchart_end")
     names += ("flowchart_yes", "flowchart_no", "tier_list_title")
     variables = {"seed": seed, "related": "bean", "number": "12", "percent": "40%", "year": "1823", "acronym": "PEN"}
@@ -427,7 +427,7 @@ def test_a_real_chart_comes_under_a_confident_conclusion_or_bare():
 
 
 def test_a_classic_chart_comes_under_a_conclusion_two_times_in_three(images):
-    titles = slide_texts.text_generator.read_lines("data/text-templates/chart_conclusion.txt")
+    titles = packs.pack().rule("charts.chart_conclusion")
     generator = SlideGeneratorData(
         slide_generator_types.FullImageSlideGenerator.of(
             _reddit_chart()._generator._slide_content_generator._generators[0], lambda context: _image("wide")
@@ -448,6 +448,6 @@ def test_a_classic_chart_comes_under_a_conclusion_two_times_in_three(images):
 
 @pytest.mark.parametrize("seed", ["coffee", "penguin", "the french revolution"])
 def test_classic_chart_conclusions_speak_of_the_seed_as_english_does(seed):
-    for template in slide_texts.text_generator.read_lines("data/text-templates/chart_conclusion.txt"):
+    for template in packs.pack().rule("charts.chart_conclusion"):
         text = slide_texts.text_generator.apply_variables_to_template(template, {"seed": seed})
         assert text and "{" not in text and "coffees" not in text and "the the" not in text, text
