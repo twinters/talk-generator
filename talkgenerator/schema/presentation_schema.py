@@ -453,6 +453,7 @@ class PresentationSchema:
         name_styles: Sequence[str] | None = None,
         topic_or_title: str | None = None,
         persona: Persona | None = None,
+        theme_families: Sequence[str] | None = None,
     ) -> tuple[Presentation | None, SlideDeck]:
         """Generate a presentation about a certain topic with a certain number of slides.
 
@@ -553,6 +554,8 @@ class PresentationSchema:
                 language=talk_language,
             )
             slide_deck.theme, slide_deck.style_chaos, slide_deck.extreme_themes = theme, style_chaos, extreme_themes
+            # (the families a chaos deck's slides get their own themes of: see talkgenerator.design.themes.allowed)
+            slide_deck.theme_families = tuple(theme_families) if theme_families is not None else None
             slide_deck.language_model = llm.id if planned and llm is not None else None
             slide_deck.topic_or_title = reading
             if persona is not None:  # (with the angle the language model was given, for a talk it writes)

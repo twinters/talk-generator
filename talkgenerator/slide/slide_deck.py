@@ -48,6 +48,8 @@ class SlideDeck:
         self.theme: Theme | None = None
         self.style_chaos = 0.0
         self.extreme_themes = True
+        # The families the slides' own themes can be of (None: all of them; see talkgenerator.design.themes.allowed)
+        self.theme_families: tuple[str, ...] | None = None
         # The language model that writes the talk ("provider:model"), or None: a classic talk
         self.language_model: str | None = None
         # The vision model that picked its pictures among their candidates, if it had a vision pick that did (see
@@ -143,7 +145,7 @@ class SlideDeck:
             usage=self.usage,
         )
         if self.theme is not None:  # every element in its box, in the theme's style
-            return engine.lay_out(deck, self.theme, self.style_chaos, self.extreme_themes)
+            return engine.lay_out(deck, self.theme, self.style_chaos, self.extreme_themes, self.theme_families)
         return deck
 
     def image_store(self) -> dict[str, ImageData]:

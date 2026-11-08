@@ -257,10 +257,17 @@ class Placement:
     framed: set[str] = field(default_factory=set)
 
 
-def lay_out(deck: Deck, theme: Theme, style_chaos: float = 0.0, extremes: bool = True) -> Deck:
+def lay_out(
+    deck: Deck,
+    theme: Theme,
+    style_chaos: float = 0.0,
+    extremes: bool = True,
+    families: Sequence[str] | None = None,
+) -> Deck:
     """The deck with its elements placed and styled in the theme; with style_chaos, some slides (that share of
-    them, picked by the seed) in themes of their own."""
-    layout = DeckLayout(deck.seed, theme, style_chaos, extremes)
+    them, picked by the seed) in themes of their own, of the families the talk allows (see
+    talkgenerator.design.themes.allowed; None, all of them)."""
+    layout = DeckLayout(deck.seed, theme, style_chaos, extremes, families)
     slides = tuple(layout.next(slide) for slide in deck.slides)
     return deck.model_copy(update={"theme": theme.name, "style": theme, "slides": slides})
 
@@ -270,8 +277,17 @@ class DeckLayout:
     deck's seed, the slide's place, and the layouts of the slides before it, so slides can be laid out as they come
     in (talkgenerator.generator.stream_talk)."""
 
-    def __init__(self, seed: int | None, theme: Theme, style_chaos: float = 0.0, extremes: bool = True) -> None:
+    def __init__(
+        self,
+        seed: int | None,
+        theme: Theme,
+        style_chaos: float = 0.0,
+        extremes: bool = True,
+        families: Sequence[str] | None = None,
+    ) -> None:
         self.theme, self.style_chaos, self.extremes = theme, style_chaos, extremes
+        # (the families a slide's own theme can be of, in a chaos deck: None, all of them)
+        self.families = tuple(families) if families is not None else None
         self._rng = random_util.Rng(seed if seed is not None else 0).child("layout")
         self._used: Counter[str] = Counter()  # how often the deck has had each layout so far
         self._previous: str | None = None
@@ -303,7 +319,7 @@ class DeckLayout:
             with random_util.use(slide_rng.child("chaos")):
                 chaotic = random_util.random() < self.style_chaos
             if chaotic:
-                own = themes.pick(themes.RANDOM, slide_rng.child("theme"), self.extremes)
+                own = themes.pick(themes.RANDOM, slide_rng.child("theme"), self.extremes, among=self.families)
         return lay_out_slide(
             slide, own or self.theme, slide_rng, own_style=own is not None, previous=previous, used=used, number=number
         )

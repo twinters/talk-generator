@@ -239,6 +239,13 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
                 "list_formats; without one, the user's settings', or else random)"
             ),
         ] = None,
+        theme_families: Annotated[
+            list[str] | None,
+            Field(
+                description="With a random theme (or chaos), the theme families it can be of, such as ['dark "
+                "minimal', 'Swiss poster'] (see list_formats; without them, all of them)"
+            ),
+        ] = None,
         title: Annotated[str | None, Field(description="The talk's title (without one, it gets one)")] = None,
         presenter: Annotated[
             str | None,
@@ -284,6 +291,11 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
         _check("format", format, (RANDOM, *schemas.names()))
         if theme is not None:
             _check("theme", theme, themes.choices())
+        if theme_families is not None:
+            try:
+                themes.allowed(theme_families)
+            except ValueError as error:
+                raise ToolError(str(error)) from error
         _check("language", language, list(languages.LANGUAGES))
         for style in name_styles or ():
             _check("name style", style, list(names.STYLES))
@@ -317,6 +329,7 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
                 license_policy,
                 persona,
                 personas,
+                theme_families,
             )
 
         return await _in_a_thread(ctx, "Making the talk", generate, one_at_a_time, progress_every, folder)
@@ -354,6 +367,7 @@ def _generate(
     license_policy: str | None = None,
     persona: str | None = None,
     personas: Sequence[str] | None = None,
+    theme_families: Sequence[str] | None = None,
 ) -> dict[str, Any]:
     """A talk on a topic (or with a title, or on a topic_or_title), saved in the folder with its deck's JSON and
     contact sheet, and the report on it."""
@@ -376,6 +390,7 @@ def _generate(
         license_policy=license_policy or None,
         persona=persona or None,
         personas=personas or None,
+        theme_families=theme_families or None,
     )
     if saved is None:
         raise ToolError(f"couldn't save the PowerPoint in {folder}")

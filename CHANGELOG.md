@@ -71,6 +71,10 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   is the default, `--no_extreme_themes` leaves the ones for laughs out of it, `--theme chaos` gives every slide a
   theme of its own (`--style_chaos`: some of them), and `TALKGENERATOR_THEME` sets another default. A plan can have
   a `theme` too.
+- A talk can say which families a random theme can be of (`--theme_families "dark minimal,Swiss poster"`,
+  `theme_families=`, the MCP server's `generate_talk`), and with `--theme chaos` every slide's: a talk whose seed picks
+  one of them keeps its theme, and the others get a theme of one of them, as often as the families' weights and the
+  persona's favourites say among them.
 - Every kind of slide has its layouts (61 in all, some of them a family's own title or section slide), which put
   every text and picture in its box, give every text the largest size at which it fits, and never repeat the layout
   of the slide before when another fits.
