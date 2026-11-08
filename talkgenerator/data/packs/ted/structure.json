@@ -199,5 +199,17 @@
     "Answers in order of difficulty",
     "Feel free to disagree, quietly",
     "Questions about {seed.generic} welcome"
+  ],
+  "advice_line": [
+    "Remember: {advice}",
+    "One last thing: {advice}",
+    "Take this home: {advice}",
+    "My advice: {advice}",
+    "Rule number one: {advice}",
+    "And remember: {advice}",
+    "Life tip: {advice}",
+    "Never forget: {advice}",
+    "Final thought: {advice}",
+    "Above all: {advice}"
   ]
 }

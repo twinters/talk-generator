@@ -453,8 +453,10 @@ class PresentationSchema:
         writes = llm is not None and self.writes_with(llm)
         picks = self._pick_generators(num_slides, rng, language, persona) if writes else None
         gathering = None
-        if picks is not None and facts.on() and any(_fact_use(pick) for pick in picks):
-            gathering = facts.gather(topics[0], language)
+        uses = {use for pick in picks or () if (use := _fact_use(pick)) is not None}
+        if uses and facts.on():
+            # (only what its slides use: a talk without a fun fact asks for no useless fact, and so on)
+            gathering = facts.gather(topics[0], language, uses=uses, rng=rng.child("facts"))
         # Create the topic-for-each-slide generator, and every slide's topic
         with random_util.use(rng.child("topics")):
             seed_generator = self._seed_generator(topics, num_slides)

@@ -157,6 +157,7 @@ module = [
     "talkgenerator.sources.datamuse",
     "talkgenerator.sources.diagram",
     "talkgenerator.sources.flags",
+    "talkgenerator.sources.flavour",
     "talkgenerator.sources.giphy",
     "talkgenerator.sources.goodreads",
     "talkgenerator.sources.imgflip",

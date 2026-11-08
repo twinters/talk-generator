@@ -57,6 +57,9 @@ LONG: dict[str, tuple[str, ...]] = {
     # talkgenerator.schema.formats.startup and method)
     "startup": ("Overinterpreting Labs",),
     "method": ("OverinterpretingFormer",),
+    # (a real dad joke and a real piece of advice, at the longest talkgenerator.facts takes them)
+    "joke": ("Why did the scarecrow win an award at the big harvest fair? He was outstanding in it.",),
+    "advice": ("Always double check you actually attached the file to emails",),
 }
 # Topics of every kind, to check that every template reads right with each: a countable noun, a mass noun, a plural, a
 # name, a phrase with an article, two words, a premise with a clause of its own, and a phrase with words about its
@@ -85,6 +88,8 @@ COMMON = {
     "acronym": "PEN",
     "startup": "Penguinly",
     "method": "PenguinNet",
+    "joke": "What do you call a penguin in the desert? Lost.",
+    "advice": "Don't eat non-snow-coloured snow.",
 }
 # What the functions that ask the internet give, in these tests: a long wikiHow action, and for the moon a short one,
 # which a template that makes one word of an action takes (a longer one gives way, see text_generator.LONGEST_WORD)

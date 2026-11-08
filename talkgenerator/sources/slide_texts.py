@@ -353,11 +353,18 @@ def generate_section(presentation_context: dict[str, Any]) -> tuple[str, str | N
 
 @_unless_sensitive
 def generate_questions(presentation_context: dict[str, Any]) -> tuple[str, str | None] | None:
-    """The closing slide: a question to the audience, and a subtitle (if any)."""
+    """The closing slide: a question to the audience, and a subtitle (if any). Some of the time (with the advice slips
+    on: see talkgenerator.facts.real_advice), the subtitle is a real piece of advice instead ("Remember: ..."),
+    credited."""
     variables = _context(presentation_context)
     title = _template("structure.questions_title")(variables)
     if not title:
         return None
+    if facts.flavour_on("ADVICE_SLIPS") and random_util.random() < facts.ADVICE_SHARE:
+        advice = facts.real_advice(facts.ADVICE_LONGEST)
+        line = _template("structure.advice_line")({"advice": advice.text}) if advice is not None else None
+        if advice is not None and line and len(line) <= _CLOSING_LINE:
+            return title, facts.CreditedText(line, advice.fact(use="slide"))
     return title, _maybe(0.6, _template("structure.questions_subtitle")(variables))
 
 
@@ -474,7 +481,11 @@ def fun_fact(image: ImageSource) -> Callable[[dict[str, Any]], tuple[Any, ...] |
 
     @_unless_sensitive
     def generate(presentation_context: dict[str, Any]) -> tuple[Any, ...] | None:
-        real = _real_fun_fact(presentation_context["seed"]) if facts.classic_on() else None
+        real = (
+            _real_fun_fact(presentation_context["seed"])
+            if facts.classic_on() or facts.flavour_on("USELESS_FACTS")
+            else None
+        )
         fact: str | None
         source: str | None
         if real is not None:
@@ -497,16 +508,24 @@ _TWIST: Final = 40  # how long its twist may be (the pack's karaoke.fun_fact_twi
 
 
 def _real_fun_fact(seed: str) -> tuple[str, str] | None:
-    """Half the time: a real fun fact about the seed, and its source (see talkgenerator.facts.real_sentence), with
-    one of the content pack's twists after it ("Coincidence? I think not."), credited; else None."""
-    if random_util.random() >= facts.REAL_SHARE:
+    """Half the time: a real fun fact and its source, with one of the content pack's twists after it ("Coincidence? I
+    think not."), credited; else None. Half of those (with the useless facts on) are a useless fact (see
+    talkgenerator.facts.real_useless_fact), the others a real sentence about the seed (real_sentence), each the other
+    when it has none."""
+    chance = random_util.random()
+    if chance >= facts.REAL_SHARE:
         return None
-    found = facts.real_sentence(seed, _FACT - _TWIST - 1)
+    longest = _FACT - _TWIST - 1
+    finders = [lambda: facts.real_sentence(seed, longest)]
+    if facts.flavour_on("USELESS_FACTS"):
+        useless = [lambda: facts.real_useless_fact(longest)]
+        finders = useless + finders if chance < facts.REAL_SHARE / 2 else finders + useless
+    found = next((candidate for finder in finders if (candidate := finder()) is not None), None)
     if found is None:
         return None
     twist = _template("karaoke.fun_fact_twist")({}) or ""
     text = f"{found.text} {twist}" if twist and len(found.text) + 1 + len(twist) <= _FACT else found.text
-    return facts.CreditedText(text, found.fact(use="slide")), "Wikipedia"
+    return facts.CreditedText(text, found.fact(use="slide")), found.source
 
 
 # An acronym's words: corporate buzzwords for its letters (when no word related to the seed starts with one), and
@@ -547,9 +566,20 @@ def generate_acronym(presentation_context: dict[str, Any]) -> tuple[str | None, 
 
 @_unless_sensitive
 def generate_dare(presentation_context: dict[str, Any]) -> tuple[str, str] | None:
-    """A dare for the presenter (from a list of playful ones, some about the seed): its heading and the dare."""
+    """A dare for the presenter (from a list of playful ones, some about the seed): its heading and the dare. Half the
+    time (with the dad jokes on: see talkgenerator.facts.real_joke), a dare to tell a real dad joke instead, about the
+    seed if there's one, credited: a groan the presenter has to deliver."""
+    if facts.flavour_on("DAD_JOKES") and random_util.random() < facts.REAL_SHARE:
+        joke = facts.real_joke(str(presentation_context["seed"]), facts.JOKE_LONGEST)
+        dare = _template("karaoke.joke_dare")({"joke": joke.text}) if joke is not None else None
+        if joke is not None and dare and len(dare) <= _DARE:
+            return ENGLISH.dare, facts.CreditedText(dare, joke.fact(use="slide"))
     dare = _template("karaoke.dare")(_context(presentation_context, related_words(presentation_context["seed"])))
     return (ENGLISH.dare, dare) if dare else None
+
+
+_DARE: Final = 130  # how long a dare may be (the dare kind's length)
+_CLOSING_LINE: Final = 80  # how long the line under the closing slide's title may be (the questions kind's subtitle)
 
 
 @_unless_sensitive

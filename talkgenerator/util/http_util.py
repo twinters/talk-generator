@@ -73,6 +73,11 @@ CACHE_EXPIRY: ExpirationPatterns = {
     "*.wikipedia.org/w/api.php": timedelta(days=7),
     "en.wikipedia.org/api/rest_v1/feed/onthisday": timedelta(days=30),
     "opentdb.com/api.php": timedelta(days=7),
+    # Flavour texts (see talkgenerator.sources.flavour): a useless fact by its number in the week's pool (the API
+    # answers at random), dad jokes by their search or page, an advice slip by its number (they don't change)
+    "uselessfacts.jsph.pl/api/v2/facts/random": timedelta(days=7),
+    "icanhazdadjoke.com/search": timedelta(days=7),
+    "api.adviceslip.com/advice": timedelta(days=30),
 }
 
 # Extra headers some hosts ask for. The Art Institute of Chicago wants API clients to identify
