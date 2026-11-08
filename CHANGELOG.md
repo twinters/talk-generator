@@ -99,6 +99,24 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   outline, bent into a wave or an arch; neon's glow; brutalist's hard shadow), as text effects, so texts stay text.
 - Themed slides animate as the 2019 template's do: two or three columns appear click by click, the one before
   dimming, and a video plays as its column appears.
+- Calmer slides, after a look at the themed decks (docs/v5-plan.md, D51 to D53):
+  - Image credits are small (7 points), aligned right and quiet: in the colour nearest the slide's background that
+    reads at a contrast of 2.5 (the theme's muted colour, mixed into the background), with their links in that colour
+    too (PowerPoint's own colour for links no longer shows), and no band behind them anywhere; over a photo they're
+    light, with a dark halo around their letters. The design checks hold them to floors of their own: that contrast,
+    and 6 points.
+  - What belongs to a picture comes in with it: a theme's frame, shadow, tape or window around it (and a rule between
+    columns) names the picture in the deck (`part_of`), so PowerPoint and the browser show it on the picture's click,
+    and dim it with it. The split two-column layout lost the panel behind its first half; a thin rule between the
+    halves comes in with the second.
+  - A list of things comes one thing a click, the punchline last: a KPI slide's figures, a quiz's options (its answer
+    on the click after them), an agenda's items, a timeline's moments, a pyramid's levels from its base up, a funnel's
+    stages, a cycle's steps, an org chart's people (who's in charge last), an iceberg's hidden things, an acronym's
+    words, a flowchart's two ways and its end, a tier list's tiers from the worst up to S, and a meme's captions. What
+    a thing is drawn on (a tile, a badge, a band, an oval, a box, a dot) comes with it; the title and the list's frame
+    (a timeline's line, the iceberg, the tier list's letters) are there from the start.
+  - The previewer draws a slide as it shows after so many clicks (`slide_image(..., step=)`), and a sheet of a deck's
+    slides click by click (`steps_sheet`); `talkgenerator.render.reveal` says what appears when, for every renderer.
 - `talkgenerator.render.preview` draws decks as pictures, with a contact sheet of a whole deck, and
   `talkgenerator.design.themes.catalog()` lists the themes with a label and a description, for a settings menu.
 - Open fonts in themes: every family but the three for laughs has two pairings of open fonts with more personality,
@@ -185,10 +203,10 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
 ### New kinds of slides
 
 - Fourteen kinds drawn as texts on shapes, so that they need no image source (but for a post's and a headline's
-  photo): a **big number** with what it counts and a made-up source, **KPI tiles**, a **quiz** (the answer on a
-  click), a **social media post**, a **news headline**, an **agenda**, a **section** divider, **Questions?**, and
-  native diagrams: a **timeline**, a **pyramid**, a **funnel**, a **cycle**, a small **org chart** and an **iceberg**,
-  with their punchlines on a click. They come out the classic way too, in every theme and in the 2019 template, and
+  photo): a **big number** with what it counts and a made-up source, **KPI tiles**, a **quiz** (its options a click
+  each, and the answer on the click after them), a **social media post**, a **news headline**, an **agenda**, a
+  **section** divider, **Questions?**, and native diagrams: a **timeline**, a **pyramid**, a **funnel**, a **cycle**, a
+  small **org chart** and an **iceberg**, their things a click each, the punchline last. They come out the classic way too, in every theme and in the 2019 template, and
   a talk has at most one of each.
 - **Venn diagrams** and **2×2 matrices**, with the punchline where the circles overlap or as one named dot, on a
   click.
@@ -218,9 +236,10 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   section 8), drawn as texts on shapes in every theme and in the 2019 template, classic and by the language model:
   a **fun fact** ("Did you know?" or "Fun fact" in the talk's language, on a sticker over the fact, with a made-up
   source and a photo, or on a sticky note); an **acronym** for a made-up method (the S.P.A.R.K. method), its letters
-  on tiles with their words, the last one, the punchline, on a click; a **dare** for the presenter ("Challenge":
+  on tiles with their words, a word a click, the last one the punchline; a **dare** for the presenter ("Challenge":
   present the next slide as a haiku), on a card or between bands of warning tape; a **flowchart** whose Yes and No
-  lead to the same end, which appears on a click; and a **tier list** from S to F, its S tier on a click. A talk has
+  lead to the same end, each way and the end on a click of its own; and a **tier list** from S to F, its tiers filled
+  a click each, from the worst up to S. A talk has
   at most one of each, in its middle; a dare is rarer, as organisers put one such slide in a deck at most.
 - A real chart from the internet (Reddit's) now comes under a confident conclusion that it supposedly proves, two
   times in three, or bare, as karaoke decks have them.

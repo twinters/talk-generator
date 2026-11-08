@@ -262,7 +262,7 @@ Images: none
 
 ## `kpi`
 
-Three or four made-up figures on tiles, as on a dashboard, each a number and what it measures; the last one, the punchline, appears on a click.
+Three or four made-up figures on tiles, as on a dashboard, each a number and what it measures; they appear one by one, a click each, the last one the punchline.
 
 | Text | At most | What to write |
 | --- | --- | --- |
@@ -284,7 +284,7 @@ Images: none
 
 ## `quiz`
 
-A quiz question for the audience, with three or four options (A to D); the answer, and why, appear on a click.
+A quiz question for the audience, with three or four options (A to D), which appear one by one, a click each; the answer, and why, appear on the click after them.
 
 | Text | At most | What to write |
 | --- | --- | --- |
@@ -337,7 +337,7 @@ Images: `photo`
 
 ## `agenda`
 
-The talk's agenda: three to five items it will cover, numbered.
+The talk's agenda: three to five items it will cover, numbered, which appear one by one, a click each.
 
 | Text | At most | What to write |
 | --- | --- | --- |
@@ -382,7 +382,7 @@ Images: none
 
 ## `timeline`
 
-A timeline of three to five moments, oldest first, each a date and what happened; the last one, the punchline, appears on a click.
+A timeline of three to five moments, oldest first, each a date and what happened; they appear one by one, a click each, the last one the punchline.
 
 | Text | At most | What to write |
 | --- | --- | --- |
@@ -406,7 +406,7 @@ Images: none
 
 ## `pyramid`
 
-A pyramid of three or four levels, from its top (the rarest, the punchline, which appears on a click) down to its base.
+A pyramid of three or four levels, from its top (the rarest, the punchline) down to its base; they appear one by one, a click each, from the base up.
 
 | Text | At most | What to write |
 | --- | --- | --- |
@@ -424,7 +424,7 @@ Images: none
 
 ## `funnel`
 
-A funnel of three to five stages, from its widest at the top to its narrowest at the bottom, the punchline, which appears on a click.
+A funnel of three to five stages, from its widest at the top to its narrowest at the bottom, the punchline; they appear one by one, a click each.
 
 | Text | At most | What to write |
 | --- | --- | --- |
@@ -443,7 +443,7 @@ Images: none
 
 ## `cycle`
 
-A cycle of three to five steps around a circle, each leading to the next, and the last back to the first.
+A cycle of three to five steps around a circle, each leading to the next, and the last back to the first; they appear one by one, a click each.
 
 | Text | At most | What to write |
 | --- | --- | --- |
@@ -462,7 +462,7 @@ Images: none
 
 ## `org_chart`
 
-A small org chart: who's in charge (the punchline, which appears on a click), over two to four people or things.
+A small org chart: who's in charge (the punchline), over two to four people or things, who appear one by one, a click each, and who's in charge on the click after them.
 
 | Text | At most | What to write |
 | --- | --- | --- |
@@ -481,7 +481,7 @@ Images: none
 
 ## `iceberg`
 
-An iceberg: what everyone sees, on its tip above the water, and two or three things under the water that nobody sees, which appear on a click.
+An iceberg: what everyone sees, on its tip above the water, and two or three things under the water that nobody sees, which appear one by one, a click each.
 
 | Text | At most | What to write |
 | --- | --- | --- |
@@ -499,7 +499,7 @@ Images: none
 
 ## `meme`
 
-A meme: a well-known template's picture, with its captions in the template's boxes. Its template_query names the template, one of those `talkgenerator formats --memes` lists (with what each caption says), such as 'Drake Hotline Bling'.
+A meme: a well-known template's picture, with its captions in the template's boxes. Its template_query names the template, one of those `talkgenerator formats --memes` lists (with what each caption says), such as 'Drake Hotline Bling'. Two captions or more appear one by one, a click each, the last one the punchline.
 
 | Text | At most | What to write |
 | --- | --- | --- |
@@ -531,7 +531,7 @@ Images: `photo`
 
 ## `acronym`
 
-A made-up method, as an acronym: its letters down the slide, each with the word it stands for; the last word, the punchline, appears on a click.
+A made-up method, as an acronym: its letters down the slide, each with the word it stands for; the words appear one by one, a click each, the last one the punchline.
 
 | Text | At most | What to write |
 | --- | --- | --- |
@@ -566,7 +566,7 @@ Images: none
 
 ## `flowchart`
 
-A flowchart that pretends to help decide: a yes-or-no question at the top, where each answer leads, and the end both lead to, the punchline, which appears on a click (talkgenerator adds the Yes and the No).
+A flowchart that pretends to help decide: a yes-or-no question at the top, where each answer leads, and the end both lead to, the punchline; each appears on a click of its own (talkgenerator adds the Yes and the No).
 
 | Text | At most | What to write |
 | --- | --- | --- |
@@ -584,7 +584,7 @@ Images: none
 
 ## `tier_list`
 
-A tier list: things ranked in tiers from S (the best) to F (the worst), one to three in a tier; the S tier, the punchline, appears on a click.
+A tier list: things ranked in tiers from S (the best) to F (the worst), one to three in a tier; the tiers fill one by one, a click each, from the worst up to the S tier, the punchline.
 
 | Text | At most | What to write |
 | --- | --- | --- |

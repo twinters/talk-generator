@@ -143,6 +143,7 @@ module = [
     "talkgenerator.render.animation",
     "talkgenerator.render.diagrams",
     "talkgenerator.render.powerpoint",
+    "talkgenerator.render.reveal",
     "talkgenerator.schema.registry",
     "talkgenerator.settings",
     "talkgenerator.sources.art_institute",

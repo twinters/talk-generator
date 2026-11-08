@@ -862,6 +862,74 @@ def test_a_text_on_a_photo_needs_its_shade(images):
     assert [finding.check for finding in findings] == ["contrast"]  # white text on a picture: not always
 
 
+# CREDITS: small, quiet and aligned right, without a band (D51)
+
+
+@pytest.mark.parametrize("family", FAMILIES)
+def test_credits_are_small_quiet_and_right_aligned_without_a_band(images, family):
+    deck = _runs(theme=_theme(family)).to_deck()
+    credited = [slide for slide in deck.slides if slide.credits]
+    assert credited and not any(element.role == "credits band" for slide in deck.slides for element in slide.elements)
+    for slide in credited:
+        style = slide.credits_style
+        assert style is not None and style.size == engine.CREDITS_SIZE and style.align == "right"
+        over_a_picture = engine.credits_over_picture(engine.credit_line(slide.credits), style, slide.elements)
+        # (light with a halo over a picture, and where no colour reads: across a neon grid floor, say, which this
+        # deck's credits on every slide have and a talk's don't: its slides without pictures have no credits)
+        if over_a_picture or style.effect is not None:
+            assert (style.color, style.effect) == (engine.CREDITS_ON_PICTURES, engine.CREDITS_HALO), slide.layout
+            assert over_a_picture or not slide.images(), slide.layout
+            continue
+        # (quieter than any of the slide's texts: as far from what's behind it as it takes to read, and no further)
+        behind = engine.credits_behind(engine.credit_line(slide.credits), style, slide.background, slide.elements)
+        contrast = color.worst_contrast(style.color, behind)
+        assert engine.CREDITS_CONTRAST <= contrast < color.BODY_CONTRAST, (slide.layout, contrast)
+
+
+def test_credits_on_a_photo_read_by_their_halo(images):
+    deck = _runs(theme=_theme()).to_deck()
+    photo = next(
+        slide
+        for slide in deck.slides
+        if slide.layout.startswith("v5/full-image") and slide.credits_style.effect is not None
+    )
+    assert engine.credits_over_picture(engine.credit_line(photo.credits), photo.credits_style, photo.elements)
+    assert photo.credits_style.effect == engine.CREDITS_HALO
+    bare = photo.model_copy(update={"credits_style": photo.credits_style.model_copy(update={"effect": None})})
+    findings = check_design(deck.model_copy(update={"slides": (bare,)}))
+    assert [finding.check for finding in findings if "credits" in finding.message] == ["contrast"]  # (a grey photo)
+
+
+def test_the_credits_have_floors_of_their_own(images):
+    deck = _deck(theme=_theme()).to_deck()
+    slide = next(slide for slide in deck.slides if slide.credits and slide.credits_style.effect is None)
+
+    def checks(**changes):
+        style = slide.credits_style.model_copy(update=changes)
+        changed = deck.model_copy(update={"slides": (slide.model_copy(update={"credits_style": style}),)})
+        return [(finding.check, finding.severity) for finding in check_design(changed) if "credits" in finding.message]
+
+    assert checks() == []  # (7 points, and a contrast of 2.5: quiet, and fine for credits)
+    assert checks(color=slide.background.color) == [("contrast", "error")]
+    assert checks(size=10) == [("text size", "warning")]
+
+
+@pytest.mark.parametrize("family", [None, "clean keynote"], ids=["classic", "themed"])
+def test_the_credits_links_keep_the_credits_colour_in_powerpoint(images, family):
+    slide_deck = _deck(theme=_theme(family) if family else None)
+    presentation = render_pptx(slide_deck.to_deck(), images=slide_deck.image_store())
+    clicks = [
+        click
+        for ppt_slide in presentation.slides
+        for click in ppt_slide.element.iter(qn("a:hlinkClick"))
+        if click.getparent().getparent().getparent().tag == qn("a:p")  # (a run's)
+    ]
+    assert clicks
+    for click in clicks:
+        colour = click.find(f"{qn('a:extLst')}/{qn('a:ext')}/*")
+        assert colour is not None and colour.tag.endswith("}hlinkClr") and colour.get("val") == "tx"
+
+
 # WORDART-STYLE HEADING EFFECTS
 
 
