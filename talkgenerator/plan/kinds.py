@@ -715,8 +715,8 @@ KINDS: Final[dict[str, Kind]] = {
         ),
         Kind(
             "kpi",
-            "Three or four made-up figures on tiles, as on a dashboard, each a number and what it measures; the last "
-            "one, the punchline, appears on a click.",
+            "Three or four made-up figures on tiles, as on a dashboard, each a number and what it measures; they "
+            "appear one by one, a click each, the last one the punchline.",
             (
                 TextField("title", "the dashboard's title", 60),
                 *_figure(1, "first"),
@@ -729,8 +729,8 @@ KINDS: Final[dict[str, Kind]] = {
         ),
         Kind(
             "quiz",
-            "A quiz question for the audience, with three or four options (A to D); the answer, and why, appear on a "
-            "click.",
+            "A quiz question for the audience, with three or four options (A to D), which appear one by one, a click "
+            "each; the answer, and why, appear on the click after them.",
             (
                 TextField("question", "the quiz question", 90),
                 TextField("option_a", "option A (without its letter)", 50),
@@ -769,7 +769,7 @@ KINDS: Final[dict[str, Kind]] = {
         ),
         Kind(
             "agenda",
-            "The talk's agenda: three to five items it will cover, numbered.",
+            "The talk's agenda: three to five items it will cover, numbered, which appear one by one, a click each.",
             (
                 TextField("title", "the agenda's title", 40),
                 TextField("items", f"three to five items, separated by |, each at most {AGENDA_ITEM} characters", 200),
@@ -800,8 +800,8 @@ KINDS: Final[dict[str, Kind]] = {
         # Native diagrams, drawn as texts on shapes
         Kind(
             "timeline",
-            "A timeline of three to five moments, oldest first, each a date and what happened; the last one, the "
-            "punchline, appears on a click.",
+            "A timeline of three to five moments, oldest first, each a date and what happened; they appear one by "
+            "one, a click each, the last one the punchline.",
             (
                 TextField("title", "the timeline's title", 60),
                 *_moment(1, "first"),
@@ -815,8 +815,8 @@ KINDS: Final[dict[str, Kind]] = {
         ),
         Kind(
             "pyramid",
-            "A pyramid of three or four levels, from its top (the rarest, the punchline, which appears on a click) "
-            "down to its base.",
+            "A pyramid of three or four levels, from its top (the rarest, the punchline) down to its base; they "
+            "appear one by one, a click each, from the base up.",
             (
                 TextField("title", "the pyramid's title", 60),
                 *_items(
@@ -834,7 +834,7 @@ KINDS: Final[dict[str, Kind]] = {
         Kind(
             "funnel",
             "A funnel of three to five stages, from its widest at the top to its narrowest at the bottom, the "
-            "punchline, which appears on a click.",
+            "punchline; they appear one by one, a click each.",
             (
                 TextField("title", "the funnel's title", 60),
                 *_items(
@@ -852,7 +852,8 @@ KINDS: Final[dict[str, Kind]] = {
         ),
         Kind(
             "cycle",
-            "A cycle of three to five steps around a circle, each leading to the next, and the last back to the first.",
+            "A cycle of three to five steps around a circle, each leading to the next, and the last back to the first; "
+            "they appear one by one, a click each.",
             (
                 TextField("title", "the cycle's title", 60),
                 *_items(
@@ -864,8 +865,8 @@ KINDS: Final[dict[str, Kind]] = {
         ),
         Kind(
             "org_chart",
-            "A small org chart: who's in charge (the punchline, which appears on a click), over two to four people "
-            "or things.",
+            "A small org chart: who's in charge (the punchline), over two to four people or things, who appear one "
+            "by one, a click each, and who's in charge on the click after them.",
             (
                 TextField("title", "the org chart's title", 60),
                 TextField("boss", "who's in charge: the punchline", 30),
@@ -885,7 +886,7 @@ KINDS: Final[dict[str, Kind]] = {
         Kind(
             "iceberg",
             "An iceberg: what everyone sees, on its tip above the water, and two or three things under the water that "
-            "nobody sees, which appear on a click.",
+            "nobody sees, which appear one by one, a click each.",
             (
                 TextField("title", "the iceberg's title", 60),
                 TextField("tip", "what everyone sees, on the tip", 30),
@@ -906,7 +907,8 @@ KINDS: Final[dict[str, Kind]] = {
             "meme",
             "A meme: a well-known template's picture, with its captions in the template's boxes. Its template_query "
             "names the template, one of those `talkgenerator formats --memes` lists (with what each caption says), "
-            "such as 'Drake Hotline Bling'.",
+            "such as 'Drake Hotline Bling'. Two captions or more appear one by one, a click each, the last one the "
+            "punchline.",
             (
                 TextField("text_1", "the meme's first caption", 70),
                 TextField("text_2", "its second caption", 70, optional=True),
@@ -930,8 +932,8 @@ KINDS: Final[dict[str, Kind]] = {
         ),
         Kind(
             "acronym",
-            "A made-up method, as an acronym: its letters down the slide, each with the word it stands for; the last "
-            "word, the punchline, appears on a click.",
+            "A made-up method, as an acronym: its letters down the slide, each with the word it stands for; the words "
+            "appear one by one, a click each, the last one the punchline.",
             (
                 TextField("title", "the method's title, which names the acronym", 60),
                 TextField(
@@ -969,7 +971,8 @@ KINDS: Final[dict[str, Kind]] = {
         Kind(
             "flowchart",
             "A flowchart that pretends to help decide: a yes-or-no question at the top, where each answer leads, and "
-            "the end both lead to, the punchline, which appears on a click (talkgenerator adds the Yes and the No).",
+            "the end both lead to, the punchline; each appears on a click of its own (talkgenerator adds the Yes and "
+            "the No).",
             (
                 _OPTIONAL_TITLE,
                 TextField("question", "the yes-or-no question at the top", 70),
@@ -982,8 +985,8 @@ KINDS: Final[dict[str, Kind]] = {
         ),
         Kind(
             "tier_list",
-            "A tier list: things ranked in tiers from S (the best) to F (the worst), one to three in a tier; the S "
-            "tier, the punchline, appears on a click.",
+            "A tier list: things ranked in tiers from S (the best) to F (the worst), one to three in a tier; the tiers "
+            "fill one by one, a click each, from the worst up to the S tier, the punchline.",
             (
                 TextField("title", "the tier list's title", 60),
                 TextField("s_tier", "the S tier, the very best: one surprising thing, the punchline", 70),

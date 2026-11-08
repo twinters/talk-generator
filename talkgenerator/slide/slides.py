@@ -380,7 +380,9 @@ LETTERS = "ABCD"
 class DrawnSlide(Slide):
     """A slide of a type that the 2019 template has no layout for (milestone 6's: big numbers, quizzes, posts...):
     its texts (and photo) by role, which the layout engine places on shapes in a theme's colours, and a classic deck
-    in the template's (talkgenerator.models.classic.DRAWN_TYPES). Some of its elements may appear on a click."""
+    in the template's (talkgenerator.models.classic.DRAWN_TYPES). Some of its elements may appear on a click: a
+    slide of a list of things (figures, levels, steps...) shows its title (and the list's frame: a timeline's line,
+    an iceberg) from the start, and its things one by one, a click each, the punchline last (docs/v5-plan.md, D53)."""
 
     def to_deck_slide(self) -> model.DeckSlide:
         clicks = self.clicks()
@@ -399,6 +401,15 @@ class DrawnSlide(Slide):
         """The roles of the elements that appear on a click, and on which (the first is 1)."""
         return {}
 
+    def _there(self, *roles: str) -> bool:
+        return any(self._arguments.get(role) for role in roles)
+
+    def _one_by_one(self, *groups: Sequence[str]) -> dict[str, int]:
+        """The groups of roles that the slide has (a figure's number and label, say), each on a click of its own, in
+        order: the first on the slide's first click."""
+        there = [group for group in groups if self._there(*group)]
+        return {role: click for click, group in enumerate(there, 1) for role in group}
+
 
 class BigNumberSlide(DrawnSlide):
     """A big number, with what it counts under it, and a title and a (made-up) source, if any."""
@@ -410,8 +421,8 @@ class BigNumberSlide(DrawnSlide):
 
 
 class KpiSlide(DrawnSlide):
-    """Three or four figures under a title, each a number and what it measures: the last one, the punchline,
-    appears on a click."""
+    """Three or four figures under a title, each a number and what it measures, appearing one by one, a click each:
+    the last one is the punchline."""
 
     required_arguments = ("number_1", "label_1", "number_2", "label_2", "number_3", "label_3")
 
@@ -436,13 +447,12 @@ class KpiSlide(DrawnSlide):
         super().__init__("kpi", None, arguments)
 
     def clicks(self) -> dict[str, int]:
-        last = 4 if self._arguments.get("number_4") else 3
-        return {f"number_{last}": 1, f"label_{last}": 1}
+        return self._one_by_one(*((f"number_{index}", f"label_{index}") for index in range(1, 5)))
 
 
 class QuizSlide(DrawnSlide):
-    """A quiz: a question, and three or four options (A to D); on a click, the answer (the letter of the right
-    option) and its explanation, if any."""
+    """A quiz: a question, and three or four options (A to D), appearing one by one, a click each; on the click
+    after them, the answer (the letter of the right option) and its explanation, if any."""
 
     required_arguments = ("question", "option_1", "option_2", "option_3", "answer")
 
@@ -469,7 +479,8 @@ class QuizSlide(DrawnSlide):
         super().__init__("quiz", None, arguments)
 
     def clicks(self) -> dict[str, int]:
-        return {"answer": 1, "explanation": 1}
+        options = [(f"letter_{index}", f"option_{index}") for index in range(1, 5)]
+        return self._one_by_one(*options, ("answer", "explanation"))
 
 
 def initials(name: str | None) -> str | None:
@@ -546,7 +557,7 @@ class NewsHeadlineSlide(DrawnSlide):
 
 
 class AgendaSlide(DrawnSlide):
-    """The talk's agenda: three to five items, numbered, under a title."""
+    """The talk's agenda: three to five items, numbered, under a title, appearing one by one, a click each."""
 
     required_arguments = ("item_1", "item_2", "item_3")
 
@@ -558,6 +569,9 @@ class AgendaSlide(DrawnSlide):
             arguments[f"number_{index}"] = str(index) if item else None
             arguments[f"item_{index}"] = item
         super().__init__("agenda", None, arguments)
+
+    def clicks(self) -> dict[str, int]:
+        return self._one_by_one(*((f"number_{index}", f"item_{index}") for index in range(1, 6)))
 
 
 class SectionSlide(DrawnSlide):
@@ -593,8 +607,8 @@ def _listed(prefix: str, most: int, items: Sequence[str | None]) -> dict[str, st
 
 
 class TimelineSlide(DrawnSlide):
-    """Three to five moments along a line, oldest first, each a date and what happened: the last one, the
-    punchline, appears on a click."""
+    """Three to five moments along a line, oldest first, each a date and what happened, appearing one by one, a
+    click each: the last one is the punchline."""
 
     required_arguments = ("date_1", "event_1", "date_2", "event_2", "date_3", "event_3")
 
@@ -611,13 +625,12 @@ class TimelineSlide(DrawnSlide):
         super().__init__("timeline", None, arguments)
 
     def clicks(self) -> dict[str, int]:
-        last = max(index for index in range(1, 6) if self._arguments.get(f"event_{index}") or index == 1)
-        return {f"date_{last}": 1, f"event_{last}": 1}
+        return self._one_by_one(*((f"date_{index}", f"event_{index}") for index in range(1, 6)))
 
 
 class PyramidSlide(DrawnSlide):
-    """Three or four levels of a pyramid, from its top (the rarest, the punchline, which appears on a click) down to
-    its base."""
+    """Three or four levels of a pyramid, from its top (the rarest, the punchline) down to its base, appearing one
+    by one, a click each, from the base up."""
 
     required_arguments = ("level_1", "level_2", "level_3")
 
@@ -625,12 +638,12 @@ class PyramidSlide(DrawnSlide):
         super().__init__("pyramid", None, {"title": title, **_listed("level", 4, levels)})
 
     def clicks(self) -> dict[str, int]:
-        return {"level_1": 1}
+        return self._one_by_one(*((f"level_{index}",) for index in range(4, 0, -1)))
 
 
 class FunnelSlide(DrawnSlide):
-    """Three to five stages of a funnel, from its widest at the top to its narrowest at the bottom: the last one, the
-    punchline, appears on a click."""
+    """Three to five stages of a funnel, from its widest at the top to its narrowest at the bottom, the punchline,
+    appearing one by one, a click each."""
 
     required_arguments = ("stage_1", "stage_2", "stage_3")
 
@@ -638,21 +651,25 @@ class FunnelSlide(DrawnSlide):
         super().__init__("funnel", None, {"title": title, **_listed("stage", 5, stages)})
 
     def clicks(self) -> dict[str, int]:
-        last = max(index for index in range(1, 6) if self._arguments.get(f"stage_{index}") or index == 1)
-        return {f"stage_{last}": 1}
+        return self._one_by_one(*((f"stage_{index}",) for index in range(1, 6)))
 
 
 class CycleSlide(DrawnSlide):
-    """Three to five steps around a circle, each leading to the next, and the last back to the first."""
+    """Three to five steps around a circle, each leading to the next, and the last back to the first, appearing one
+    by one, a click each."""
 
     required_arguments = ("step_1", "step_2", "step_3")
 
     def __init__(self, title: str | None, *steps: str | None):
         super().__init__("cycle", None, {"title": title, **_listed("step", 5, steps)})
 
+    def clicks(self) -> dict[str, int]:
+        return self._one_by_one(*((f"step_{index}",) for index in range(1, 6)))
+
 
 class OrgChartSlide(DrawnSlide):
-    """A small org chart: who's in charge (the punchline, which appears on a click) over two to four people."""
+    """A small org chart: who's in charge (the punchline) over two to four people, who appear one by one, a click
+    each, and who's in charge on the click after them."""
 
     required_arguments = ("boss", "report_1", "report_2")
 
@@ -660,11 +677,12 @@ class OrgChartSlide(DrawnSlide):
         super().__init__("org_chart", None, {"title": title, "boss": boss, **_listed("report", 4, reports)})
 
     def clicks(self) -> dict[str, int]:
-        return {"boss": 1}
+        return self._one_by_one(*((f"report_{index}",) for index in range(1, 5)), ("boss",))
 
 
 class IcebergSlide(DrawnSlide):
-    """An iceberg: what everyone sees, above the water, and two or three things under it, which appear on a click."""
+    """An iceberg: what everyone sees, above the water, and two or three things under it, which appear one by one,
+    a click each."""
 
     required_arguments = ("tip", "hidden_1", "hidden_2")
 
@@ -672,7 +690,7 @@ class IcebergSlide(DrawnSlide):
         super().__init__("iceberg", None, {"title": title, "tip": tip, **_listed("hidden", 3, hidden)})
 
     def clicks(self) -> dict[str, int]:
-        return {f"hidden_{index}": 1 for index in range(1, 4)}
+        return self._one_by_one(*((f"hidden_{index}",) for index in range(1, 4)))
 
 
 class FunFactSlide(DrawnSlide):
@@ -693,7 +711,7 @@ TIER_ITEMS = 3  # the most things in a tier
 
 class AcronymSlide(DrawnSlide):
     """A made-up method, as an acronym: its letters, each with the word it stands for (three to six), under a title;
-    the last word, the punchline, appears on a click."""
+    the words appear one by one, a click each, the last one the punchline."""
 
     required_arguments = ("letter_1", "word_1", "letter_2", "word_2", "letter_3", "word_3")
 
@@ -707,10 +725,7 @@ class AcronymSlide(DrawnSlide):
         super().__init__("acronym", None, arguments)
 
     def clicks(self) -> dict[str, int]:
-        last = max(
-            index for index in range(1, ACRONYM_LETTERS + 1) if self._arguments.get(f"word_{index}") or index == 1
-        )
-        return {f"word_{last}": 1}
+        return self._one_by_one(*((f"word_{index}",) for index in range(1, ACRONYM_LETTERS + 1)))
 
 
 class DareSlide(DrawnSlide):
@@ -725,7 +740,8 @@ class DareSlide(DrawnSlide):
 
 class FlowchartSlide(DrawnSlide):
     """A flowchart that pretends to help decide: a yes-or-no question, where each answer leads (labelled with the
-    talk's words for yes and no), and the end both lead to, the punchline, which appears on a click."""
+    talk's words for yes and no), and the end both lead to, the punchline: Yes's way on a click, No's on the next,
+    and the end on the one after."""
 
     required_arguments = ("question", "yes_step", "no_step", "end")
 
@@ -751,7 +767,7 @@ class FlowchartSlide(DrawnSlide):
         super().__init__("flowchart", None, arguments)
 
     def clicks(self) -> dict[str, int]:
-        return {"end": 1}
+        return self._one_by_one(("yes", "yes_step"), ("no", "no_step"), ("end",))
 
 
 def tier_items(text: str | None) -> list[str]:
@@ -761,8 +777,9 @@ def tier_items(text: str | None) -> list[str]:
 
 class TierListSlide(DrawnSlide):
     """A tier list: things ranked in tiers, from S (the best) to F (the worst), each tier a row of one to three things
-    under its letter (each tier as written: its things separated by |); the S tier's things, the punchline, appear on
-    a click. A tier without things is left out."""
+    under its letter (each tier as written: its things separated by |). The tiers' letters are there from the start,
+    and each tier's things appear on a click of their own, from the worst tier up to the S tier, the punchline. A tier
+    without things is left out."""
 
     required_arguments = ("tier_s", "item_s_1", "tier_a", "item_a_1")
 
@@ -777,12 +794,15 @@ class TierListSlide(DrawnSlide):
         super().__init__("tier_list", None, arguments)
 
     def clicks(self) -> dict[str, int]:
-        return {f"item_s_{index}": 1 for index in range(1, TIER_ITEMS + 1)}
+        tiers = [tier.lower() for tier in reversed(TIERS)]  # (the worst first)
+        groups = (tuple(f"item_{tier}_{index}" for index in range(1, TIER_ITEMS + 1)) for tier in tiers)
+        return self._one_by_one(*groups)
 
 
 class MemeSlide(DrawnSlide):
     """A meme: a template's picture (one of Imgflip's, see talkgenerator.sources.memes), with its captions as texts on
-    it, each in the box the template has for it (a box that repeats another's caption gets it too)."""
+    it, each in the box the template has for it (a box that repeats another's caption gets it too). Of two captions
+    or more, each appears on a click of its own, in the template's order, the last one the punchline."""
 
     required_arguments = ("template", "text_1")
 
@@ -790,3 +810,7 @@ class MemeSlide(DrawnSlide):
         # (in the template's order: a caption belongs to its box, even next to an empty one)
         captions = {f"text_{index}": texts[index - 1] if index <= len(texts) else None for index in range(1, 5)}
         super().__init__("meme", None, {"template": template, **captions})
+
+    def clicks(self) -> dict[str, int]:
+        clicks = self._one_by_one(*((f"text_{index}",) for index in range(1, 5)))
+        return clicks if len(clicks) > 1 else {}

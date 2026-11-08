@@ -9,7 +9,8 @@ and picks with the talk's seed: the same seed finds the same images, whichever s
 
 Credits on the slides link to the photographer's or the image's page, and name the license of openly licensed and
 public domain images (such as "CC BY 2.0", linking to it). Stock photos are credited to their photographer and
-platform, as the platforms ask. [Keys and settings](configuration.md#image-sources) lists the sources, and the keys
+platform, as the platforms ask. In a theme, the credits are small and quiet, in the bottom right corner: for whoever
+wants to know where a picture came from, without drawing the eye from the slide. [Keys and settings](configuration.md#image-sources) lists the sources, and the keys
 some of them need.
 
 ### Licenses
@@ -161,9 +162,11 @@ two pairings of open fonts with more personality, from Google Fonts, which a the
 come with talkgenerator and travel inside every .pptx that uses them, and each has a stand-in that nearly every
 computer has, at a size at which the texts fit in either.
 
-Slides animate as the 2019 template's do: two or three columns appear click by click, the one before dimming, and
-what a slide holds back, such as a quiz's answer or a diagram's punchline, appears on a click. A renderer that plays
-no clicks shows it all from the start.
+Slides animate as the 2019 template's do: two or three columns appear click by click, the one before dimming, a
+picture's frame with it. A slide of a list of things (figures, a quiz's options, levels, steps, an org chart's people,
+a tier list's tiers...) shows its things one by one, a click each, the punchline last, and a diagram's punchline
+appears on a click. A renderer that plays no clicks shows it all from the start;
+`talkgenerator.render.preview.steps_sheet(deck)` draws a deck's slides click by click.
 
 `talkgenerator check --theme random` checks themed talks, and also that their texts read on their backgrounds, fit
 their boxes and stay on the slide. For a settings menu, `talkgenerator.design.themes.catalog()` lists every theme with

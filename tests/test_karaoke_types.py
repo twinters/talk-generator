@@ -149,11 +149,12 @@ def test_texts_on_shapes_read_on_them(images):
 # WHAT AN ACRONYM, A DARE, A FLOWCHART AND A TIER LIST SHOW
 
 
-def test_an_acronym_is_its_words_initials_and_its_last_word_comes_on_a_click():
+def test_an_acronym_is_its_words_initials_and_its_words_come_one_by_one():
     deck_slide = slides.AcronymSlide("The SPARK method", "synergy", "Passion", "agility", "Resilience", "kazoos")
     deck_slide = deck_slide.to_deck_slide()
     assert [deck_slide.element(f"letter_{index}").text for index in range(1, 6)] == list("SPARK")
-    assert [element.role for element in deck_slide.elements if element.appears_on_click] == ["word_5"]
+    clicks = [(element.role, element.appears_on_click) for element in deck_slide.elements if element.appears_on_click]
+    assert clicks == [(f"word_{index}", index) for index in range(1, 6)]  # (its letters are there from the start)
     assert deck_slide.element("letter_6") is None and deck_slide.element("word_6") is None
 
 
@@ -164,22 +165,35 @@ def test_a_dares_heading_and_a_flowcharts_answers_speak_the_talks_language():
     texts = {"title": None, "question": "Is het dinsdag?", "yes_step": "Ja", "no_step": "Nee", "end": "Koffie"}
     flowchart = KINDS["flowchart"].build(texts, {}, dutch).to_deck_slide()
     assert (flowchart.element("yes").text, flowchart.element("no").text) == ("Ja", "Nee")
-    assert [element.role for element in flowchart.elements if element.appears_on_click] == ["end"]
+    clicks = {element.role: element.appears_on_click for element in flowchart.elements if element.appears_on_click}
+    assert clicks == {"yes": 1, "yes_step": 1, "no": 2, "no_step": 2, "end": 3}
 
 
-def test_a_flowcharts_end_appears_with_its_box_on_a_click(images):
+def test_a_flowcharts_ways_and_its_end_appear_with_their_boxes_and_lines(images):
     deck = _deck([slides.FlowchartSlide("F", "Q?", "A", "B", "The end")], _theme())
     end_box = next(element for element in deck.slides[0].elements if element.role == "end box")
-    assert end_box.appears_on_click == 1 == deck.slides[0].element("end").appears_on_click
-    (shown,) = _clicks(render_pptx(deck).slides[0])
-    assert set(shown) == {"end", "end box"}
+    assert end_box.appears_on_click == 3 == deck.slides[0].element("end").appears_on_click
+    yes, no, end = _clicks(render_pptx(deck).slides[0])
+    assert set(yes) == {"yes", "yes_step", "yes_step box", "line"} and set(no) == {
+        "no",
+        "no_step",
+        "no_step box",
+        "line",
+    }
+    assert set(end) == {"end", "end box", "line"}
 
 
-def test_a_tier_list_leaves_out_empty_tiers_and_shows_its_s_tier_on_a_click(images):
+def test_a_tier_list_leaves_out_empty_tiers_and_fills_its_tiers_from_the_worst_up(images):
     deck_slide = slides.TierListSlide("Ranked", "Naps", "Tuna | Sun", " | ", "Baths", None).to_deck_slide()
     roles = [element.role for element in deck_slide.elements]
     assert "tier_b" not in roles and "tier_f" not in roles and {"tier_s", "tier_a", "tier_c"} <= set(roles)
-    assert [element.role for element in deck_slide.elements if element.appears_on_click] == ["item_s_1"]
+    clicks = [(element.role, element.appears_on_click) for element in deck_slide.elements if element.appears_on_click]
+    assert sorted(clicks, key=lambda click: click[1]) == [
+        ("item_c_1", 1),
+        ("item_a_1", 2),
+        ("item_a_2", 2),
+        ("item_s_1", 3),
+    ]
     placed = _deck([slides.TierListSlide("Ranked", "Naps", "Tuna | Sun", None, "Baths")], _theme()).slides[0]
     tiles = [element for element in placed.elements if element.role.endswith(" tile")]
     assert [tile.role for tile in tiles] == ["tier s tile", "tier a tile", "tier c tile"]

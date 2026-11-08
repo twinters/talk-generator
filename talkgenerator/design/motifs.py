@@ -163,30 +163,34 @@ class Scene:
             colours += [color.mix(colour, theme.pattern.color, theme.pattern.opacity) for colour in colours]
         return colours
 
-    # Adding decoration
+    # Adding decoration (of the slide, or belonging to one of its elements, part_of: a frame around a picture, which
+    # appears with the picture)
 
-    def under(self, *shapes: ShapeElement) -> None:
+    def under(self, *shapes: ShapeElement, part_of: str | None = None) -> None:
         """Shapes behind everything: scenery, a frame around the slide, a grid."""
-        self.placement.under.extend(shapes)
+        self.placement.under.extend(_belonging(shapes, part_of))
 
-    def add(self, *shapes: ShapeElement) -> None:
+    def add(self, *shapes: ShapeElement, part_of: str | None = None) -> None:
         """Shapes over the layout's own (its panels and bands), behind the content."""
-        self.placement.decor.extend(shapes)
+        self.placement.decor.extend(_belonging(shapes, part_of))
 
-    def over(self, *shapes: ShapeElement) -> None:
+    def over(self, *shapes: ShapeElement, part_of: str | None = None) -> None:
         """Shapes over the content (pictures), under the texts: tape on a photo, a frame's edge."""
-        self.placement.overlays.extend(shapes)
+        self.placement.overlays.extend(_belonging(shapes, part_of))
 
-    def write(self, text: str, box: Box, spec: str | TextSpec, colour: str) -> None:
-        self.placement.texts.append((text, box, spec, colour))
+    def write(self, text: str, box: Box, spec: str | TextSpec, colour: str, part_of: str | None = None) -> None:
+        self.placement.texts.append((text, box, spec, colour, part_of))
 
-    def write_on(self, text: str, box: Box, spec: str | TextSpec, preferred: str | None = None) -> None:
+    def write_on(
+        self, text: str, box: Box, spec: str | TextSpec, preferred: str | None = None, part_of: str | None = None
+    ) -> None:
         """A text of the decoration's, in the preferred colour (or the theme's text or background colour), made
         lighter or darker until it reads on what's behind its letters (see behind): so it's written after what it's
         on."""
         style, lines = text_lines(text, box, spec, self.theme)
         background, elements = self._drawn()
-        self.write(text, box, spec, self.on(layers.behind_letters(background, elements, lines, style.size), preferred))
+        colour = self.on(layers.behind_letters(background, elements, lines, style.size), preferred)
+        self.write(text, box, spec, colour, part_of)
 
     def behind(self, box: Box) -> list[str]:
         """The colours that may be behind a box, as the slide is drawn so far: its background (and pattern), a photo
@@ -326,6 +330,17 @@ def _line(points: Sequence[geometry.Point], width: float, colour: str, opacity: 
 
 def _grown(box: Box, by: float) -> Box:
     return Box(x=box.x - by, y=box.y - by, w=box.w + 2 * by, h=box.h + 2 * by)
+
+
+def _moved(shape: ShapeElement, down: float) -> ShapeElement:
+    return shape.model_copy(update={"box": shape.box.model_copy(update={"y": shape.box.y + down})})
+
+
+def _belonging(shapes: Sequence[ShapeElement], part_of: str | None) -> list[ShapeElement]:
+    """The shapes, as part of the element of that role (if any)."""
+    if part_of is None:
+        return list(shapes)
+    return [shape.model_copy(update={"part_of": part_of}) for shape in shapes]
 
 
 def _overlaps(box: Box, other: Box) -> bool:
@@ -581,6 +596,7 @@ def _crayon(scene: Scene) -> None:
             _rect(border.x + 8, border.y + 8, border.w, border.h, palette.text, corner=corner),
             _rect(border.x, border.y, border.w, border.h, "#ffffff", corner=corner),
             _frame(border, palette.text, 3, corner=corner),
+            part_of=role,
         )
     if scene.slide_type == "section" or scene.slide_type == "questions":
         _sun(scene, Box(x=WIDTH - 330, y=40, w=280, h=280))
@@ -702,7 +718,7 @@ def _brutal(scene: Scene) -> None:
         scene.placement.plain.add(title)
     for role in scene.pictures() if scene.slide_type in _FRAMED_TYPES else []:
         shown = scene.shown(role, _grown(scene.box(role), -16))
-        scene.add(_rect(shown.x + 16, shown.y + 16, shown.w, shown.h, palette.text))
+        scene.add(_rect(shown.x + 16, shown.y + 16, shown.w, shown.h, palette.text), part_of=role)
     if not scene.placement.photo:
         tag = Box(x=0, y=0, w=136, h=52)
         scene.add(_rect(tag.x, tag.y, tag.w, tag.h, palette.text))
@@ -873,11 +889,12 @@ def _terminal(scene: Scene) -> None:
         box = scene.box(role)
         shown = scene.shown(role, Box(x=box.x, y=box.y + 40, w=box.w, h=box.h - 40))
         window = Box(x=shown.x, y=shown.y - 40, w=shown.w, h=shown.h + 40)
-        scene.add(_rect(window.x, window.y, window.w, 40, bar))
-        scene.over(_frame(window, palette.muted, 2, 0.8))
+        scene.add(_rect(window.x, window.y, window.w, 40, bar), part_of=role)
+        scene.over(_frame(window, palette.muted, 2, 0.8), part_of=role)
         name = Box(x=window.x + 14, y=window.y + 4, w=window.w - 28, h=32)
         if window.w > 300:
-            scene.write_on(f"./evidence_{scene.number + 1:02d}{index}.jpg", name, "decoration", palette.muted)
+            evidence = f"./evidence_{scene.number + 1:02d}{index}.jpg"
+            scene.write_on(evidence, name, "decoration", palette.muted, part_of=role)
     if not scene.placement.photo:  # (the status line, with the slide's number on a tag at its start)
         scene.add(_rect(0, 1032, WIDTH, 48, bar), _rect(0, 1032, 112, 48, palette.accent))
         scene.write_on(f"[{_number(scene)}]", Box(x=16, y=1034, w=88, h=30), "decoration centre")
@@ -928,14 +945,15 @@ def _blueprint(scene: Scene) -> None:
     for role in scene.pictures() if scene.slide_type in _FRAMED_TYPES else []:
         shown = scene.shown(role, _grown(scene.box(role), -12))
         plate = _grown(shown, 8)
-        scene.add(_frame(plate, line, 1.5))
+        scene.add(_frame(plate, line, 1.5), part_of=role)
         for x, y in (
             (plate.x, plate.y),
             (plate.x + plate.w, plate.y),
             (plate.x, plate.y + plate.h),
             (plate.x + plate.w, plate.y + plate.h),
         ):
-            scene.add(_rect(x - 10, y - 1, 20, 2, palette.text), _rect(x - 1, y - 10, 2, 20, palette.text))
+            tick = (_rect(x - 10, y - 1, 20, 2, palette.text), _rect(x - 1, y - 10, 2, 20, palette.text))
+            scene.add(*tick, part_of=role)
     block = Box(x=WIDTH - 440, y=1034, w=400, h=30)
     if not scene.placement.photo and scene.free(block, pad=2):
         scene.add(_rect(block.x, block.y, block.w, block.h, palette.background), _frame(block, palette.text, 2))
@@ -998,16 +1016,23 @@ def _chalkboard(scene: Scene) -> None:
             else:
                 scene.under(_ring(spot.x + 60, spot.y + 60, 110, 90, colour, 6, 0.85))
     letters = [_grown(line, 8) for role in scene.texts() for line in scene.lines(role)]
+    floor = CREDITS_BOX.y - 4 if scene.credits else HEIGHT  # (tape stays off the credit line)
     for role in scene.pictures() if scene.slide_type in _FRAMED_TYPES else []:
         shown = scene.shown(role, _grown(scene.box(role), -10))
-        # (tape across its top corners, or else its bottom ones: where it's clear of the texts' letters)
+        # (tape across its top corners, or else its bottom ones, a little higher up them if they'd reach the credit
+        # line: where it's clear of the texts' letters)
         for y, turns in ((shown.y, (-35.0, 35.0)), (shown.y + shown.h, (35.0, -35.0))):
             tapes = [
                 _rect(corner - 55, y - 17, 110, 34, "#e8dcc0", 0.75, rotation=turn)
                 for corner, turn in zip((shown.x, shown.x + shown.w), turns, strict=True)
             ]
+            lift = max(geometry.bounds(tape).y + geometry.bounds(tape).h for tape in tapes) - floor
+            if lift > 40:
+                continue
+            if lift > 0:
+                tapes = [_moved(tape, -lift) for tape in tapes]
             if not any(_overlaps(geometry.bounds(tape), area) for tape in tapes for area in letters):
-                scene.over(*tapes)
+                scene.over(*tapes, part_of=role)
                 break
 
 
@@ -1029,16 +1054,18 @@ def _newsprint(scene: Scene) -> None:
         box = scene.box(title)
         scene.add(_rect(MARGIN, box.y + box.h + 14, WIDTH - 2 * MARGIN, 1, ink))
     columns = sorted(
-        (scene.box(role) for role in scene.placement.boxes if role.startswith("content_") and role in scene.roles),
-        key=lambda box: box.x,
+        (role for role in scene.placement.boxes if role.startswith("content_") and role in scene.roles),
+        key=lambda role: scene.box(role).x,
     )
+    divided = any(shape.role == "divider" for shape in scene.placement.shapes)  # (a layout's own rule between them)
     for left, right in zip(columns, columns[1:], strict=False):
-        if right.x > left.x + left.w and abs(right.y - left.y) < 40:
-            middle = (left.x + left.w + right.x) / 2
-            scene.add(_rect(middle - 0.5, left.y, 1, 980 - left.y, ink))
+        first, second = scene.box(left), scene.box(right)
+        if second.x > first.x + first.w and abs(second.y - first.y) < 40 and not divided:
+            middle = (first.x + first.w + second.x) / 2  # (a rule between them, which comes in with the second)
+            scene.add(_rect(middle - 0.5, first.y, 1, 980 - first.y, ink), part_of=right)
     for role in scene.pictures() if scene.slide_type in _FRAMED_TYPES else []:
         shown = scene.shown(role)
-        scene.add(_frame(_grown(shown, 2), ink, 2))
+        scene.add(_frame(_grown(shown, 2), ink, 2), part_of=role)
 
 
 def _swiss(scene: Scene) -> None:

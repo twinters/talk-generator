@@ -4,7 +4,9 @@ Every text has to read on what's behind it (WCAG contrast: 4.5 for body text, 3 
 size, be big enough to read from the back of the room, stay within the slide's safe area, and not be covered by
 what's drawn after it. What's behind a text is the slide's background (both ends of a gradient), and the shapes and
 images drawn before it: an image could be anything, so for one the check takes the worst of black and white, as
-shaded by what's drawn over it. And a slide doesn't repeat the layout of the slide before it, if another one fits.
+shaded by what's drawn over it. The credit line is meant to be quiet (D51): it has floors of its own, a lower
+contrast (on a picture, which could be any grey too, by its halo) and a smaller size. And a slide doesn't repeat the
+layout of the slide before it, if another one fits.
 """
 
 from __future__ import annotations
@@ -34,7 +36,8 @@ COVERING_OPACITY: Final = 0.5
 LARGE_TEXT: Final = 36
 LARGE_BOLD_TEXT: Final = 28
 SMALLEST_TEXT: Final = 24  # 12 points, for anything but the credits
-SMALLEST_CREDITS: Final = 16
+SMALLEST_CREDITS: Final = 12  # 6 points (they're 7: engine.CREDITS_SIZE)
+CREDITS_CONTRAST: Final = engine.CREDITS_CONTRAST  # (WCAG asks no contrast of them: they're no content of the slide's)
 SAFE_AREA: Final = Box(x=16, y=16, w=1888, h=1048)
 
 
@@ -50,13 +53,23 @@ def check_design(deck: Deck) -> list[Finding]:
             elif isinstance(element, DiagramElement) and element.box is not None and element.style is not None:
                 findings += _diagram_findings(slide, index, element, number)
         if slide.credits and slide.credits_box is not None and slide.credits_style is not None:
-            behind = _behind(slide, len(slide.elements), slide.credits_box)
-            worst = color.worst_contrast(slide.credits_style.color, behind)
-            if worst < color.BODY_CONTRAST:
-                findings.append(Finding("contrast", "error", f"the credits read badly (contrast {worst:.1f})", number))
-            if slide.credits_style.size < SMALLEST_CREDITS:
-                findings.append(Finding("text size", "warning", "the credits are too small to read", number))
+            findings += _credits_findings(slide, slide.credits_box, slide.credits_style, number)
     return [*findings, *check_variety(deck)]
+
+
+def _credits_findings(slide: DeckSlide, box: Box, style: TextStyle, number: int) -> list[Finding]:
+    """The credit line reads at its own floor on what's behind its letters (a picture under them could be any grey
+    too, where only a halo makes it read), and isn't smaller than its own smallest size."""
+    findings = []
+    line = engine.credit_line(slide.credits)
+    lines = engine.line_boxes(line, box, style)
+    behind = layers.behind_letters(slide.background, slide.elements, lines, style.size, anything=engine.ANY_PICTURE)
+    worst = engine.credits_legibility(style, behind)
+    if worst < CREDITS_CONTRAST:
+        findings.append(Finding("contrast", "error", f"the credits read badly (contrast {worst:.1f})", number))
+    if style.size < SMALLEST_CREDITS:
+        findings.append(Finding("text size", "warning", "the credits are too small to read", number))
+    return findings
 
 
 def check_variety(deck: Deck) -> list[Finding]:

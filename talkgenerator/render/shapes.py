@@ -30,7 +30,7 @@ from pptx.presentation import Presentation
 from pptx.slide import Slide
 from pptx.util import Emu, Pt
 
-from talkgenerator.design import color, treatments
+from talkgenerator.design import color, engine, treatments
 from talkgenerator.design.engine import HEIGHT, WIDTH
 from talkgenerator.models.deck import (
     Box,
@@ -46,7 +46,7 @@ from talkgenerator.models.deck import (
     TextStyle,
 )
 from talkgenerator.models.theme import TextEffect, Theme
-from talkgenerator.render import animation, backgrounds, charts, diagrams, embedding
+from talkgenerator.render import animation, backgrounds, charts, diagrams, embedding, reveal
 from talkgenerator.render.powerpoint import ImageStore, image_data
 from talkgenerator.slide import powerpoint_slide_creator as creator
 from talkgenerator.util import http_util, image_util
@@ -57,9 +57,6 @@ EMU_PER_PIXEL: Final = 6350  # 12192000 EMU (13.333 inches) across 1920 pixels
 _BLANK_LAYOUT: Final = 6  # in python-pptx's default template
 _ALIGN: Final = {"left": PP_ALIGN.LEFT, "center": PP_ALIGN.CENTER, "right": PP_ALIGN.RIGHT}
 _ANCHOR: Final = {"top": MSO_ANCHOR.TOP, "middle": MSO_ANCHOR.MIDDLE, "bottom": MSO_ANCHOR.BOTTOM}
-# The slide types whose columns appear click by click, as in the 2019 template (animation.reveal_columns), and how
-# many columns they have
-_COLUMNS: Final = {"two_column_image": 2, "three_column_image": 3}
 
 
 def new_presentation() -> Presentation:
@@ -95,7 +92,7 @@ def draw_slide(
     _background(ppt_slide, slide, theme)
     draw_elements(ppt_slide, slide, theme, images=images)
     if slide.credits and slide.credits_box is not None and slide.credits_style is not None:
-        parts: list[tuple[str, str | None]] = [("Image sources: ", None)]
+        parts: list[tuple[str, str | None]] = [(engine.CREDITS_PREFIX, None)]
         for index, credit in enumerate(slide.credits):
             if index:
                 parts.append((", ", None))
@@ -110,9 +107,10 @@ def draw_slide(
 
 def draw_elements(ppt_slide: Slide, slide: DeckSlide, theme: Theme, *, images: ImageStore | None = None) -> None:
     """Draw the slide's elements on the PowerPoint slide, each in its box, and animate them: the columns of a column
-    slide click by click, and the elements that appear on a click on theirs. (A classic deck draws the slide types
-    that the 2019 template has no layouts for with this too, on the template's blank slide.)"""
-    drawn: dict[str, list[Any]] = {}  # the shapes each element is drawn with, by its role
+    slide click by click, and the elements that appear on a click on theirs; what belongs to an element (a frame
+    around a picture: part_of) with it. (A classic deck draws the slide types that the 2019 template has no layouts
+    for with this too, on the template's blank slide.)"""
+    drawn: dict[str, list[Any]] = {}  # the shapes each element is drawn with (and what belongs to it), by its role
     clicks: dict[int, list[Any]] = {}  # the shapes that appear on each click
     for element in slide.elements:
         before = {shape.shape_id for shape in ppt_slide.shapes}
@@ -130,11 +128,11 @@ def draw_elements(ppt_slide: Slide, slide: DeckSlide, theme: Theme, *, images: I
         except (ValueError, KeyError, AttributeError, OSError) as error:  # one element that won't draw stays out
             logger.error("Could not draw a %s on a %s slide: %s", element.kind, slide.type, error)
         shapes = [shape for shape in ppt_slide.shapes if shape.shape_id not in before]
-        drawn[element.role] = shapes
-        click = getattr(element, "appears_on_click", None)
+        drawn.setdefault(getattr(element, "part_of", None) or element.role, []).extend(shapes)
+        click = reveal.click_of(slide, element)
         if click:
             clicks.setdefault(click, []).extend(shapes)
-    columns = _COLUMNS.get(slide.type, 0)
+    columns = reveal.COLUMNS.get(slide.type, 0)  # (click by click, as in the 2019 template: animation.reveal_columns)
     if columns:  # (each its picture or text, with what the picture's treatment lays on it, and its caption)
         animation.reveal_columns(
             ppt_slide,
@@ -287,8 +285,8 @@ def _text_box(
             run._r.get_or_add_rPr().set("cap", "all")  # shown in capitals, written as it is
         if style.effect is not None:
             _text_effect(run, style.effect)
-        if url:
-            run.hyperlink.address = url
+        if url:  # (in the text's colour, as the rest of a credit line)
+            creator.link(run, url)
     if style.effect is not None and style.effect.warp:
         frame._bodyPr.insert(
             0, parse_xml(f'<a:prstTxWarp {nsdecls("a")} prst="{_WARPS[style.effect.warp]}"><a:avLst/></a:prstTxWarp>')

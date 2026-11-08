@@ -878,6 +878,20 @@ starter pack, a conspiracy board), and cheap recipe variants ("Pick One:" over t
 "In conclusion...", a demotivational frame for InspiroBot, the planet for no reason, charts without numbers, "Not on
 Agenda!", a spurious correlation).
 
+Then the pacing, after the user's look at the decks (2026-11-08, D53): with a list shown at once and only its
+punchline on a click, it was unclear when to expect the next thing, and presenter and audience both had to read ahead.
+Now a list of things comes a click a thing, the punchline last: a KPI slide's figures, a quiz's options (its answer on
+the click after them), an agenda's items, a timeline's moments, a pyramid's levels from its base up, a funnel's stages,
+a cycle's steps, an org chart's people (who's in charge after them), an iceberg's hidden things, an acronym's words (its
+letters are there from the start), a flowchart's Yes and No ways and then its end, a tier list's tiers from the worst up
+to S (its letters there from the start), and a meme's captions, of two or more. The slide's title and its list's frame
+(a timeline's line, the iceberg and its tip, a cycle's ring, the line over an org chart's people, the question at the
+top of a flowchart) are there from the start; what a thing is drawn on (a tile, a badge, a band, an oval, a box, a dot,
+a line to it) comes with it, and the punchline keeps its colour. The slides set their clicks (`DrawnSlide.clicks()`),
+the layouts give a thing's shapes its click, and the engine numbers a slide's clicks in turn (an empty click goes).
+`talkgenerator.render.reveal` says what appears when, for PowerPoint, the previewer's steps (`slide_image(step=)`,
+`steps_sheet`) and talk-generator-web alike. Venn diagrams and matrices keep their one punchline click.
+
 Variety per slide type comes from four axes, each sampled per slide with the talk's random generator:
 
 1. layout: image left or right, full-bleed, framed, split, grid;
@@ -981,12 +995,36 @@ fixed place for its texts; and the sources treat pictures as a family's property
 - **Checks** (D46): a text has to read on what's behind its letters, its lines as the engine breaks them, as tall as
   their letters (not its whole box: a cursor after its last word doesn't count), where a shape over part of them
   counts, and a background's pattern too; diagrams are coloured for the decoration that reaches under them; and the
-  band behind credits that need one hugs the credit line, clear of a status line under it.
+  credit line keeps clear of a status line under it (a band behind it hugged it then; since D51 it has none).
 - **Measured:** 17 saved talks (the site's live ones, the free models' cat, peanuts and time travel in English and
   Swedish, the lighthouse talks with every slide type, the memes) laid out again in all 17 families over 4 seeds:
   15,708 slides, no design finding (the first run found 5, a Swiss poster's diagram labels over its grid lines on red:
   fixed). In the browser, talk-generator-web's dev server drew a deck of the new families as the previewer
   does (kids' title, terminal, blueprint, chalkboard, newspaper, Swiss). Not checked in PowerPoint itself yet.
+
+Then calmer slides, from the user's look at the themed decks (2026-11-08, D51 and D52; the pacing of lists, D53, is in
+section 8):
+
+- **Credits** (D51): image credits had a band behind them over photos and across panels, at 9 points in the muted
+  colour, links in PowerPoint's own blue. They're for whoever wants to know where a picture came from, and for its
+  license, so now they're 7 points, aligned right, in the colour nearest the slide's background that reads at a
+  contrast of 2.5 on what's behind their letters (the muted colour mixed into the background, as if see-through: 2.5 to
+  3.3 in every family, higher only where a gradient's two ends both need it), their links in the same colour
+  (PowerPoint's `hlinkClr` of the text), and no band anywhere. Over a picture, which could be any grey as well as black
+  or white, no colour reads, so they're light with a dark halo (a glow of 1.5 points), which PowerPoint, the previewer
+  and the browser all draw. The design checks hold them to floors of their own: a contrast of 2.5 (by their halo on a
+  picture, which counts as black, white or grey) and 6 points. A chalkboard's tape on a picture's bottom corners moves
+  up off the credit line.
+- **Frames with their pictures** (D52): a column slide's second column (and every column of three) comes on a click,
+  but a family's frame around its picture (kids' sticker border and shadow, brutalist's hard shadow, a terminal's
+  window and its name, a blueprint's figure plate, a chalkboard's tape, a newspaper's outline and the rule between its
+  columns) was there from the start, around nothing. The deck's shapes and texts gained `part_of`, the role of the
+  element they belong to: the motifs set it, and the renderers show and dim them with it. And the split two-column
+  layout's panel behind its first half, which looked like a stray background before the second came, is gone: a thin
+  rule between the halves comes in with the second.
+- **Found** by laying the saved talks out in all 17 families over 6 seeds (scratchpad scripts in the hand-over notes):
+  the split layout's panel was the only shape behind one column alone, and the six framing motifs the only decoration
+  that showed before its picture.
 
 ## 10. Images: sources, aesthetics and generation
 
@@ -1632,8 +1670,11 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D47 | A talk's persona, which its seed picks (or the talk names; `none` for none), shapes the talk with a language model or without: multipliers on the format's slide weights by the generators' tags (none under 0.2, and about 1 on average over the personas, so the formats' mix holds), its kind of title (a hint for the model, and half of a classic talk's titles from the persona's templates), and weights over the default name styles with how the presenter goes by (an explicit `name_styles` goes alone), besides the model's voice and an angle of the persona's, the presenter's kind of job, multipliers on the theme families' weights for a random theme (an explicit theme goes alone), and favourite looks for some of the looks slides ask for, searched before the slide's own. The deck and `talk.started` record it. |
 | D48 | Memes with live captions are what a TED-like talk that allows fair use has most often in its middle: four times the weight of the other slides there, two a talk at most (and two memes of any kind in ten slides), never of one template twice. Classic captions speak of a talk's topic as English does ("coffee", "penguins"), never with a verb that has to agree with it. |
 | D49 | New slide types come from what real PowerPoint karaoke and battle decks, TED parodies and bad-PowerPoint humour have (a catalogue with its sources), drawn from the deck's texts, shapes and pictures (D37): one of each a talk, in its middle. Kinds that need a new element (diagonal lines) or text under the design checks' floor wait. |
+| D51 | Image credits are quiet: 7 points, aligned right, in the colour nearest the slide's background that reads at a contrast of 2.5 on what's behind their letters, their links in the same colour, and no band behind them anywhere; over a picture (any colour, grey too), light with a dark halo. They're for whoever wants to know a picture's source, and for its license: the design checks hold them to floors of their own (that contrast, by their halo on a picture; 6 points), not to the 4.5 and 12 points of a slide's texts. |
+| D52 | What belongs to a picture comes in with it: a theme's frame, shadow, tape, window or rule around it names the element it belongs to (`part_of`), and every renderer that plays clicks shows and dims it with that element. No layout puts a panel behind one column of a slide. |
+| D53 | A slide of a list of things shows its title and the list's frame from the start, and its things one by one, a click each, the punchline last (a pyramid from its base up, a tier list from its worst tier up, a quiz's answer after its options, an org chart's boss after its people); the shapes a thing is drawn on come with it. A slide of one thing (a big number, a post, a fun fact, a meme with one caption) shows at once. |
 
-D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, and D43 to D49 on 2026-11-08; the
+D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, and D43 to D53 on 2026-11-08; the
 others follow from the design.
 
 ### Open questions

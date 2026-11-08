@@ -171,21 +171,30 @@ def test_texts_on_shapes_read_on_them(images):
     assert answer.text == "D" and answer.style.color != stamp.color
     # the right option's band: as see-through as it takes for the theme's text to read on it
     band = next(element for element in quiz.elements if element.role == "right answer")
-    assert band.appears_on_click == 1 == stamp.appears_on_click == answer.appears_on_click
+    assert band.appears_on_click == 5 == stamp.appears_on_click == answer.appears_on_click  # (after four options)
 
 
 # CLICKS
 
 
-def test_a_quizs_answer_and_a_kpis_punchline_appear_on_a_click():
+def test_a_lists_things_appear_one_by_one_and_a_quizs_answer_after_its_options():
     quiz = slides.QuizSlide("Why?", "A thing", "Another", "A third", None, "b", "Because").to_deck_slide()
     clicks = {element.role: element.appears_on_click for element in quiz.elements}
-    assert clicks["answer"] == clicks["explanation"] == 1
-    assert clicks["option_2"] is None and clicks["title"] is None
+    assert [clicks[f"option_{index}"] for index in (1, 2, 3)] == [1, 2, 3] == [clicks[f"letter_{i}"] for i in (1, 2, 3)]
+    assert clicks["answer"] == clicks["explanation"] == 4 and clicks["title"] is None
     kpi = slides.KpiSlide("KPIs", "1", "A", "2", "B", "3", "C").to_deck_slide()
-    assert [element.role for element in kpi.elements if element.appears_on_click] == ["number_3", "label_3"]
+    assert [(element.role, element.appears_on_click) for element in kpi.elements if element.appears_on_click] == [
+        ("number_1", 1),
+        ("label_1", 1),
+        ("number_2", 2),
+        ("label_2", 2),
+        ("number_3", 3),
+        ("label_3", 3),
+    ]
     four = slides.KpiSlide("KPIs", "1", "A", "2", "B", "3", "C", "4", "D").to_deck_slide()
-    assert [element.role for element in four.elements if element.appears_on_click] == ["number_4", "label_4"]
+    assert four.element("number_4").appears_on_click == 4 and four.element("title").appears_on_click is None
+    agenda = slides.AgendaSlide("Menu", "Soup", "Fish", "Cake").to_deck_slide()
+    assert [agenda.element(f"item_{index}").appears_on_click for index in (1, 2, 3)] == [1, 2, 3]
     assert Deck.from_json(Deck(generator="test", slides=(quiz,)).to_json()).slides[0] == quiz
 
 
@@ -202,11 +211,18 @@ def _clicks(ppt_slide):
 
 
 @pytest.mark.parametrize("theme", [None, "clean keynote"], ids=["classic", "themed"])
-def test_powerpoint_shows_the_answer_on_a_click(images, theme):
+def test_powerpoint_shows_the_options_one_by_one_and_then_the_answer(images, theme):
     quiz = slides.QuizSlide("Which came first?", "The chicken", "The egg", "The rooster", "Breakfast", "C", "Duh")
     deck = _deck([quiz], _theme(theme) if theme else None)
     (ppt_slide,) = render_pptx(deck).slides
-    (shown,) = _clicks(ppt_slide)
+    *options, shown = _clicks(ppt_slide)
+    assert [set(option) & {"option_1", "option_2", "option_3", "option_4"} for option in options] == [
+        {"option_1"},
+        {"option_2"},
+        {"option_3"},
+        {"option_4"},
+    ]
+    assert all({f"letter_{index}", f"letter_{index} badge"} <= set(option) for index, option in enumerate(options, 1))
     assert {"answer", "explanation", "stamp", "right answer"} <= set(shown)
     assert not {"option_1", "option_3", "title"} & set(shown)
     texts = {shape.name: shape.text_frame.text for shape in ppt_slide.shapes if shape.has_text_frame}
@@ -214,29 +230,55 @@ def test_powerpoint_shows_the_answer_on_a_click(images, theme):
 
 
 @pytest.mark.parametrize(
-    ("slide", "on_the_click"),
+    ("slide", "clicks"),
     [
-        (slides.TimelineSlide("T", "1", "A", "2", "B", "3", "C"), {"date_3", "event_3", "dot_3"}),
-        (slides.PyramidSlide("P", "Top", "Middle", "Base"), {"level_1", "level 1 band"}),
-        (slides.FunnelSlide("F", "Wide", "Middle", "Narrow"), {"stage_3", "stage 3 band"}),
-        (slides.OrgChartSlide("O", "Boss", "One", "Two"), {"boss", "boss box"}),
-        (slides.IcebergSlide("I", "Tip", "Under", "Deeper"), {"hidden_1", "hidden_2"}),
+        (
+            slides.TimelineSlide("T", "1", "A", "2", "B", "3", "C"),
+            [{"date_1", "event_1", "dot_1"}, {"date_2", "event_2", "dot_2"}, {"date_3", "event_3", "dot_3"}],
+        ),
+        (  # (from the base up: the top, the punchline, last)
+            slides.PyramidSlide("P", "Top", "Middle", "Base"),
+            [{"level_3", "level 3 band"}, {"level_2", "level 2 band"}, {"level_1", "level 1 band"}],
+        ),
+        (
+            slides.FunnelSlide("F", "Wide", "Middle", "Narrow"),
+            [{"stage_1", "stage 1 band"}, {"stage_2", "stage 2 band"}, {"stage_3", "stage 3 band"}],
+        ),
+        (  # (each with its line from the line over them; who's in charge last)
+            slides.OrgChartSlide("O", "Boss", "One", "Two"),
+            [{"report_1", "report 1 box", "line"}, {"report_2", "report 2 box", "line"}, {"boss", "boss box"}],
+        ),
+        (slides.IcebergSlide("I", "Tip", "Under", "Deeper"), [{"hidden_1"}, {"hidden_2"}]),
+        (
+            slides.CycleSlide("C", "A", "B", "C"),
+            [{"step_1", "step 1 oval"}, {"step_2", "step 2 oval"}, {"step_3", "step 3 oval"}],
+        ),
     ],
-    ids=["timeline", "pyramid", "funnel", "org chart", "iceberg"],
+    ids=["timeline", "pyramid", "funnel", "org chart", "iceberg", "cycle"],
 )
-def test_a_diagrams_punchline_appears_on_a_click(images, slide, on_the_click):
-    (shown,) = _clicks(render_pptx(_deck([slide], _theme())).slides[0])
-    assert set(shown) == on_the_click
+def test_a_diagrams_things_appear_one_by_one_with_their_shapes(images, slide, clicks):
+    assert [set(shown) for shown in _clicks(render_pptx(_deck([slide], _theme())).slides[0])] == clicks
 
 
-def test_a_cycle_shows_everything_at_once(images):
-    assert _clicks(render_pptx(_deck([slides.CycleSlide("C", "A", "B", "C")], _theme())).slides[0]) == []
+def test_a_lists_punchline_keeps_its_colour_whatever_appears_on_a_click(images):
+    theme = _theme()
+    made = [slides.TimelineSlide("T", "1", "A", "2", "B", "3", "C"), slides.PyramidSlide("P", "Top", "Mid", "Base")]
+    timeline, pyramid = _deck(made, theme).slides
+    dots = [element.color for element in timeline.elements if element.role.startswith("dot_")]
+    assert dots == [theme.palette.accent, theme.palette.accent, theme.palette.accent_2]
+    bands = {element.role: element.color for element in pyramid.elements if element.role.endswith(" band")}
+    assert bands["level 1 band"] == theme.palette.accent_2 and theme.palette.accent_2 not in (
+        bands["level 2 band"],
+        bands["level 3 band"],
+    )
 
 
-def test_powerpoint_shows_the_last_figure_with_its_tile_on_a_click(images):
+def test_powerpoint_shows_the_figures_one_by_one_with_their_tiles(images):
     deck = _deck([slides.KpiSlide("KPIs", "1", "A", "2", "B", "3", "C")], _theme())
-    (shown,) = _clicks(render_pptx(deck).slides[0])
-    assert {"number_3", "label_3", "figure_3"} <= set(shown) and "number_2" not in shown
+    shown = _clicks(render_pptx(deck).slides[0])
+    assert len(shown) == 3
+    for index, figure in enumerate(shown, 1):
+        assert {f"number_{index}", f"label_{index}", f"figure_{index}", f"figure_{index} strip"} == set(figure)
 
 
 # THE CLASSIC TEMPLATE

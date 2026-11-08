@@ -3,7 +3,9 @@
 A preview uses the boxes, fonts, sizes and line breaks that the layout engine picked, so it shows where texts break
 and whether they fit; charts are sketched (their kind, colours and labels), and diagrams are drawn from the same
 geometry and labels as in PowerPoint (`talkgenerator.render.diagrams`). A contact sheet shows a whole deck at a
-glance. Classic decks have no positions (the 2019 template places their elements), so they have no previews.
+glance. A preview shows everything on a slide, as an editor does, or a step of it as it's presented: what shows
+after so many clicks (`talkgenerator.render.reveal`; a chart and a diagram whole); a sheet of steps shows them side
+by side. Classic decks have no positions (the 2019 template places their elements), so they have no previews.
 """
 
 from __future__ import annotations
@@ -17,11 +19,12 @@ from pathlib import Path
 from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 
 from talkgenerator.datastructures.image_data import ImageData
-from talkgenerator.design import fit, fonts, geometry, treatments
+from talkgenerator.design import engine, fit, fonts, geometry, treatments
 from talkgenerator.design.engine import HEIGHT, WIDTH
 from talkgenerator.models.deck import (
     Box,
     ChartElement,
+    Content,
     Deck,
     DeckSlide,
     DiagramElement,
@@ -33,7 +36,7 @@ from talkgenerator.models.deck import (
     VennDiagram,
 )
 from talkgenerator.models.theme import TextEffect, Theme
-from talkgenerator.render import backgrounds, diagrams
+from talkgenerator.render import backgrounds, diagrams, reveal
 from talkgenerator.util import image_util
 
 logger = logging.getLogger("talkgenerator")
@@ -42,28 +45,42 @@ ImageStore = Mapping[str, ImageData]
 _Font = ImageFont.FreeTypeFont | ImageFont.ImageFont
 
 
-def slide_image(slide: DeckSlide, theme: Theme, images: ImageStore | None = None, width: int = 960) -> Image.Image:
-    """A picture of the slide, width pixels wide."""
+def slide_image(
+    slide: DeckSlide, theme: Theme, images: ImageStore | None = None, width: int = 960, step: int | None = None
+) -> Image.Image:
+    """A picture of the slide, width pixels wide: with everything on it, or (with a step) as it shows after that
+    many clicks (0: as it comes up), with what hasn't appeared yet left out and a column that has had its turn
+    dimmed."""
     scale = width / WIDTH
     canvas = Image.new("RGBA", (width, round(HEIGHT * scale)), theme.palette.background)
     if slide.background is not None:
         background = slide.background
         backgrounds.paint(canvas, background.color, background.color_2, background.pattern, scale)
     for element in slide.elements:
-        if isinstance(element, ShapeElement):
-            _shape(canvas, element, scale)
-        elif isinstance(element, ImageElement) and element.box is not None:
-            _image(canvas, element, scale, images)
-        elif isinstance(element, ChartElement) and element.box is not None:
-            _chart(canvas, element, scale, slide.style or theme)
-        elif isinstance(element, DiagramElement) and element.box is not None and element.style is not None:
-            _diagram(canvas, element, scale)
-        elif isinstance(element, TextElement) and element.box is not None and element.style is not None:
-            _text(canvas, element.text, element.box, element.style, scale)
+        shown = 1.0 if step is None else reveal.opacity(slide, element, step)
+        if shown <= 0:
+            continue
+        layer = canvas if shown >= 1 else Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+        _element(layer, element, scale, images, slide.style or theme)
+        if layer is not canvas:  # (dimmed)
+            layer.putalpha(layer.getchannel("A").point([round(value * shown) for value in range(256)]))
+            canvas.alpha_composite(layer)
     if slide.credits and slide.credits_box is not None and slide.credits_style is not None:
-        credit = ", ".join("".join(part.text for part in parts) for parts in slide.credits)
-        _text(canvas, f"Image sources: {credit}", slide.credits_box, slide.credits_style, scale, wrap_lines=False)
+        _text(canvas, engine.credit_line(slide.credits), slide.credits_box, slide.credits_style, scale)
     return canvas.convert("RGB")
+
+
+def _element(canvas: Image.Image, element: Content, scale: float, images: ImageStore | None, theme: Theme) -> None:
+    if isinstance(element, ShapeElement):
+        _shape(canvas, element, scale)
+    elif isinstance(element, ImageElement) and element.box is not None:
+        _image(canvas, element, scale, images)
+    elif isinstance(element, ChartElement) and element.box is not None:
+        _chart(canvas, element, scale, theme)
+    elif isinstance(element, DiagramElement) and element.box is not None and element.style is not None:
+        _diagram(canvas, element, scale)
+    elif isinstance(element, TextElement) and element.box is not None and element.style is not None:
+        _text(canvas, element.text, element.box, element.style, scale)
 
 
 def contact_sheet(deck: Deck, images: ImageStore | None = None, columns: int = 3, width: int = 480) -> Image.Image:
@@ -83,6 +100,29 @@ def contact_sheet(deck: Deck, images: ImageStore | None = None, columns: int = 3
         y = gutter + (index // columns) * (height + label + gutter)
         draw.text((x, y), f"{index + 1}. {deck.slides[index].layout}", fill="#333333", font=_font("Arial", 16))
         sheet.paste(picture, (x, y + label))
+    return sheet
+
+
+def steps_sheet(deck: Deck, images: ImageStore | None = None, width: int = 320) -> Image.Image:
+    """The slides that take clicks, a row each: the slide as it comes up, then after each of its clicks (numbered
+    by the slide's place in the deck, and its step)."""
+    if deck.style is None:
+        raise ValueError("A classic deck has no previews: the 2019 template places its elements")
+    rows = [(number, slide) for number, slide in enumerate(deck.slides, 1) if reveal.clicks(slide)]
+    gutter, label = 16, 28
+    height = round(HEIGHT * width / WIDTH)
+    most = max((reveal.clicks(slide) + 1 for _, slide in rows), default=1)
+    sheet = Image.new(
+        "RGB", (most * (width + gutter) + gutter, max(1, len(rows)) * (height + label + gutter) + gutter), "#f2f2f2"
+    )
+    draw = ImageDraw.Draw(sheet)
+    for row, (number, slide) in enumerate(rows):
+        y = gutter + row * (height + label + gutter)
+        for step in range(reveal.clicks(slide) + 1):
+            x = gutter + step * (width + gutter)
+            caption = f"{number}. {slide.layout}" if step == 0 else f"click {step}"
+            draw.text((x, y), caption, fill="#333333", font=_font("Arial", 16))
+            sheet.paste(slide_image(slide, slide.style or deck.style, images, width, step), (x, y + label))
     return sheet
 
 
@@ -223,9 +263,9 @@ def _polaroid(
     canvas.paste(turned, (round(middle_x - turned.width / 2), round(middle_y - turned.height / 2)), turned)
 
 
-def _text(canvas: Image.Image, text: str, box: Box, style: TextStyle, scale: float, wrap_lines: bool = True) -> None:
+def _text(canvas: Image.Image, text: str, box: Box, style: TextStyle, scale: float) -> None:
     shown = text.upper() if style.uppercase else text
-    lines = fit.wrap(shown, box.w, style.font, style.size, style.bold) if wrap_lines else [shown]
+    lines = fit.wrap(shown, box.w, style.font, style.size, style.bold)
     font = _font(style.font, style.size * scale, style.bold)
     draw = ImageDraw.Draw(canvas)
     line_height = style.size * fit.LINE_HEIGHT * scale

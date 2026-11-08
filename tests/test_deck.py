@@ -506,7 +506,11 @@ def _role(shape, deck_slide):
 
 def test_themed_columns_appear_click_by_click_too(images):
     """In every layout for columns, and every theme family (some frame their pictures as polaroids, with grain on
-    them, say), the columns appear as the 2019 template's do, each with all it's drawn with."""
+    them, say), the columns appear as the 2019 template's do, each with all it's drawn with, and what belongs to its
+    picture (a theme's frame around it, its shadow, its tape: part_of)."""
+    # (a frame whose middle isn't in its column's box, such as the rule between two columns or a plate's corner ticks,
+    # goes by its name)
+    frames = {DECORATION, "divider"}
     families = list(themes.FAMILIES)
     layouts = set()
     for seed in range(12):
@@ -527,7 +531,10 @@ def test_themed_columns_appear_click_by_click_too(images):
         for deck_slide, ppt_slide in ((deck.slides[0], three), (deck.slides[1], two)):
             layouts.add(deck_slide.layout)
             clicks = [
-                ({role for what, role in step if what == "appear"}, {role for what, role in step if what == "dim"})
+                (
+                    {role for what, role in step if what == "appear"} - frames,
+                    {role for what, role in step if what == "dim"} - frames,
+                )
                 for step in _steps(ppt_slide, lambda shape, deck_slide=deck_slide: _role(shape, deck_slide))
             ]
             first, second, third = ({f"content_{index}", f"caption_{index}"} for index in (1, 2, 3))
@@ -536,13 +543,14 @@ def test_themed_columns_appear_click_by_click_too(images):
             else:  # the first from the start, the second on the click, as the first dims
                 assert clicks == [(second, first)], deck_slide.layout
             # Everything but the title, the credits and the theme's own shapes and texts (its decoration, a band, a
-            # panel, a slide's number)
+            # slide's number), but what belongs to a picture, which comes and dims with it
             animated = {target.get("spid") for target in ppt_slide.element.iter(_P + "spTgt")}
             still = [shape for shape in ppt_slide.shapes if str(shape.shape_id) not in animated]
             shapes = sum(
                 isinstance(element, ShapeElement) or element.role == DECORATION for element in deck_slide.elements
             )
-            assert len(still) == shapes + 2, (deck_slide.layout, [shape.name for shape in still])
+            belonging = sum(bool(getattr(element, "part_of", None)) for element in deck_slide.elements)
+            assert len(still) == shapes - belonging + 2, (deck_slide.layout, [shape.name for shape in still])
             entrances = ppt_slide.element.xpath(".//p:timing//p:cTn[@presetClass='entr']/@presetID")
             assert set(entrances) == {"10"}  # (fading in)
     assert layouts == {name for name in engine.layout_names() if name.startswith("v5/columns-")}
