@@ -206,6 +206,19 @@ class Progress(Protocol):
     def updated(self, slide_deck: SlideDeck, slide_nr: int, slide: Any) -> None: ...
 
 
+def _shape(key: str, value: Any) -> str:
+    """A part of a model's answer, by its key and the kind of its value, without its texts: "slide_02 (an object of
+    concept, title, ...)", "slides (a list of 9)", "slide_03 (a text)"."""
+    if isinstance(value, dict):
+        keys = [str(name) for name in value]
+        shown = ", ".join(keys[:4]) + (", ..." if len(keys) > 4 else "")
+        return f"{key} (an object of {shown})" if keys else f"{key} (an empty object)"
+    if isinstance(value, list):
+        return f"{key} (a list of {len(value)})"
+    kinds = {str: "a text", int: "a number", float: "a number", bool: "true or false"}
+    return f"{key} ({kinds.get(type(value), 'null' if value is None else 'something else')})"
+
+
 @dataclass(eq=False)
 class _PlannedTalk:
     """A talk as the language model plans it: every slide's generator, the model's answer so far, and the first
@@ -233,6 +246,13 @@ class _PlannedTalk:
         self._spine_in = False  # whether all of the spine came in
         self._reached = -1  # the last slide whose part of the answer came in
         self._finished = False
+        self._shapes: list[str] = []  # what came in, by its keys and kinds (see answer_shape)
+
+    def answer_shape(self) -> str:
+        """What the model's answer brought, in order, by its parts' keys and the kinds of their values (never their
+        texts): "about (an object of unsafe_topic, thesis, title, ...), slides (an object of slide_02, ...)", say."""
+        with self._changed:
+            return ", ".join(self._shapes) or "nothing"
 
     @property
     def title(self) -> str | None:
@@ -246,25 +266,40 @@ class _PlannedTalk:
 
     def take(self, key: str, value: Any) -> None:
         """A part of the model's answer: the spine (one object, or else one of its fields), or a slide (whose first
-        attempt then starts, in parallel)."""
+        attempt then starts, in parallel). Slides inside another object of the answer count too, after it: Claude
+        Haiku, given the schema as text, wrote every slide into the spine's object."""
         with self._changed:
+            self._shapes.append(_shape(key, value))
             slide_nr = self._slide_numbers.get(key)
+            inside: dict[str, Any] = {}
+            if slide_nr is None and isinstance(value, dict):
+                inside = {name: part for name, part in value.items() if name in self._slide_numbers}
+                value = {name: part for name, part in value.items() if name not in inside}
             if key == SPINE:
                 if isinstance(value, dict):
                     self.spine.update(value)
                     self._spine_in = True
             elif slide_nr is None:
-                self.spine[key] = value
+                if value or not inside:  # (not an object that only held slides, such as "slides")
+                    self.spine[key] = value
                 self._spine_in = self._spine_in or self.spine_fields <= self.spine.keys()
-            elif self.spine.get("unsafe_topic") is not True:  # it comes first: then no slide is looked for
-                self._reached = max(self._reached, slide_nr)
-                plan = slide_plan(self.planned[slide_nr], value)
-                if plan is not None:
-                    self.plans[slide_nr] = plan
-                    if self.pool is not None:
-                        realize_it = image_util.carry(self._realize)  # (checking images as the talk does)
-                        self.first_attempts[slide_nr] = self.pool.apply_async(realize_it, (slide_nr, 0))
+            else:
+                self._take_slide(slide_nr, value)
+            for name, part in inside.items():
+                self._take_slide(self._slide_numbers[name], part)
             self._changed.notify_all()
+
+    def _take_slide(self, slide_nr: int, value: Any) -> None:
+        """A slide's part of the answer (with the lock held): its plan, and its first attempt, started in parallel."""
+        if self.spine.get("unsafe_topic") is True:  # (it comes first: then no slide is looked for)
+            return
+        self._reached = max(self._reached, slide_nr)
+        plan = slide_plan(self.planned[slide_nr], value)
+        if plan is not None:
+            self.plans[slide_nr] = plan
+            if self.pool is not None:
+                realize_it = image_util.carry(self._realize)  # (checking images as the talk does)
+                self.first_attempts[slide_nr] = self.pool.apply_async(realize_it, (slide_nr, 0))
 
     def wait_for_spine(self) -> None:
         """Wait for the spine of the answer (its title, the presenter's job and name, its thesis), all of it, or the
@@ -333,6 +368,7 @@ class _PlannedTalk:
             self.spine.clear()
             self._spine_in = False
             self._reached = -1
+            self._shapes.clear()
             self._changed.notify_all()
 
     def close(self) -> None:
@@ -705,6 +741,15 @@ class PresentationSchema:
             elif response.finish != "complete":
                 logger.warning(
                     "The language model's answer was %s: slides it didn't write are classic", response.finish
+                )
+            elif not talk.plans and talk.spine.get("unsafe_topic") is not True:
+                # (Claude Haiku's answer to one talk of 2026-11-08 brought its title and no slide that could be read,
+                # and the talk came out classic without a word of why: this says what came in instead)
+                logger.warning(
+                    "The language model's answer had no slide that could be read, so the talk is classic (from %s, "
+                    "its answer brought %s)",
+                    response.model or llm.id,
+                    talk.answer_shape(),
                 )
         except TalkCancelled:
             return

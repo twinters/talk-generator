@@ -14,6 +14,7 @@ the talk is classic.
 from __future__ import annotations
 
 import json
+import logging
 from collections.abc import Callable, Sequence
 from typing import Any, Final
 
@@ -29,6 +30,8 @@ from talkgenerator.llm.base import (
     TextResponse,
 )
 from talkgenerator.llm.sdk import MAX_RETRIES, TIMEOUT_SECONDS, import_sdk, parse_json, provider_error
+
+logger = logging.getLogger("talkgenerator")
 
 DEFAULT_MODEL: Final = "claude-opus-5-5"
 DEFAULT_EFFORT: Final = "low"
@@ -75,7 +78,9 @@ class ClaudeProvider(TextProvider):
                     raise
                 # Anthropic compiles a structured output's schema into a grammar, and refuses one that's too large
                 # (a talk with many kinds of slides can have one) before it writes anything. Then Claude gets the
-                # schema as text and writes the JSON by itself: the talk checks every slide's texts anyway
+                # schema as text and writes the JSON by itself: the talk checks every slide's texts anyway. (Said in
+                # the log, as nothing then holds the answer to the schema's shape)
+                logger.info("Anthropic found the answer's schema too large a grammar: %s gets it as text", self.id)
                 message = _message(client, self.arguments(request, schema_as_text=True), on_text)
         except sdk.AnthropicError as error:  # also an error in the middle of the stream
             raise provider_error(error, sdk, "Anthropic") from error
