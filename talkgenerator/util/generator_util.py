@@ -78,6 +78,10 @@ class PrefixedPresentationContextGenerator(Generator):
 
 
 class CombinedGenerator(Generator):
+    """One of its generators, picked by weight, and when that one gives nothing (a source that failed, say), another
+    one of the rest. A NoneGenerator among them gives none on purpose: when it's picked, there's none (a slide
+    without a title, say), rather than another generator's."""
+
     def __init__(self, *weighted_generators: tuple[float, Callable[[Any], Any]]):
         self._weighted_generators = weighted_generators
 
@@ -87,7 +91,7 @@ class CombinedGenerator(Generator):
         logger.debug("current_weighted_generators: {}".format(current_weighted_generators))
         while len(current_weighted_generators) > 0:
             generator = random_util.weighted_random(current_weighted_generators)
-            if generator is None:
+            if generator is None or isinstance(generator, NoneGenerator):
                 return None
             logger.debug("current generator: {}".format(generator))
             logger.debug("generator seed: {}".format(seed))

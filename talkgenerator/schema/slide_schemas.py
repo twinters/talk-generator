@@ -37,8 +37,12 @@ _CONTRAST = "Two captioned images that contrast or compare: two sides, two eras,
 _SEQUENCE = "Three captioned images that build up, like 'Good, Better, Best' or three steps of a plan"
 _CONCLUSIONS_TITLE = "a title for the conclusions, in a few words of your own"
 # (Asked for "a lesson from the talk, calling back to an earlier slide", a free model wrote "Huddling scales trust
-# (from slide_03)": the slide's key in its answer)
-_CALLBACK = "a lesson from the talk, calling back to an earlier slide by what it said (not by its number or key)"
+# (from slide_03)": the slide's key in its answer; and lessons as whole sentences, which a caption's 40 characters cut,
+# as in "Your plants are not decorations—they")
+_CALLBACK = (
+    "a lesson from the talk in six words at most, calling back to an earlier slide by what it said (not by its number "
+    "or key)"
+)
 
 
 def _conclusions(number: int) -> dict[str, str]:
@@ -994,7 +998,8 @@ structure_slide_generators = _register(
         _drawn(
             slide_texts.generate_section,
             slides.SectionSlide,
-            BetweenWeight(0.8, after=3, before=2),
+            # (one per ten slides, by its cap: and none in a shorter talk, where a part would be a slide or two)
+            BetweenWeight(0.8, after=3, before=2, shortest=10),
             ["section"],
             "Section Divider",
             Recipe(
@@ -1188,6 +1193,8 @@ all_slide_generators = (
     + conclusion_slide_generators
 )
 
+# How many slides of a tag a talk may have, from its first slide on (see presentation_schema.most_slides): an absolute
+# maximum is a number of slides (0: none), a relative one a share of the talk's slides, rounded down but at least one
 default_max_allowed_tags = {
     # Absolute maxima
     "title": 1,
@@ -1219,7 +1226,7 @@ default_max_allowed_tags = {
     "org_chart": 1,
     "iceberg": 1,
     # Relative (procentual) maxima
-    "section": 0.1,  # (none in a talk of fewer than ten slides)
+    "section": 0.1,  # (and none in a talk of fewer than ten slides, by its weight)
     "diagram": 0.2,
     "two_captions": 0.2,
     "three_captions": 0.2,

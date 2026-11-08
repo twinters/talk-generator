@@ -413,6 +413,33 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   earlier slide said, never by its key or number; brackets that name a slide by its key are dropped from a text
   ("Huddling scales trust"), a key anywhere else in it makes the slide the classic generator's, as template code
   does, and `talkgenerator check` reports a key on a slide as an error.
+- A format's cap of none on a kind of slide holds from a talk's first slide: `interview` talks, which have no about-me
+  slide, got one in two talks in five, as caps only counted once a talk had a slide of their kind. A cap that's a
+  share of a talk's slides still allows one, so short talks keep their memes, diagrams and quotes, and a section
+  divider needs a talk of ten slides (about one 9-slide talk in ten had one).
+- "A title or none" gives none half the time: classic two and three captioned pictures, and full-screen photos,
+  always had a title, as a generator that gives none on purpose gave way to the title's.
+- A historical figure's title makes one word only of a short wikiHow action ("First Olympic "Removing-Rust"
+  Champion"): a 61-letter one ran out of its box in brutalist themes. A template's `dashes` gives nothing for a word
+  of more than 20 letters, and its template gives way to another.
+- The classic texts of milestone 6's slides speak of the topic as English does: "of experts call penguins
+  overrated", "the penguin pyramid" and "Which of these is secretly a penguin?", not "penguins is overrated", "The
+  penguins pyramid" or "The The French Revolution Gazette". They use the memes' `{seed.generic}` and `{seed.one}`,
+  and a new `{seed.adjunct}` for a noun before another (in the singular, and none for a phrase with an article of
+  its own).
+- A text cut to its length ends where a sentence or a clause in it does, when that keeps half of it, or in English
+  before a word that opens the next clause ("when", "but", "because"...): free models' conclusions read "Your plants
+  are not decorations—they" and "The mountain breathes when prayers", and are "Your plants are not decorations" and
+  "The mountain breathes" now. The language model is asked for conclusions of six words at most.
+- A quiz's answer agrees with its explanation: a free model marked one option and explained why another one was
+  right. When the explanation names one other option, by its words or its letter, that one is the answer, and
+  `talkgenerator check` warns of an explanation that names other options than the answer.
+- A text about real-world politics stays out of a talk that isn't about it: a free model wrote "Japan needs to
+  earnestly reflect on its history of aggression, respect the security concerns of Asian neighbors..." as a
+  lighthouse talk's quote. The request asks for none, a model's text with a phrase that only statements on politics
+  have, or with a real country or people and politics' words, is left out (its slide comes out the classic way when
+  it can't do without it), and `talkgenerator check` warns of one. Absurd humour about places stays ("There are
+  more penguins in Belgium than people").
 
 ## [4.0.1] - 2026-11-05
 

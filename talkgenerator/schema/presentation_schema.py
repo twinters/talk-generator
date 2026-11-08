@@ -1125,22 +1125,12 @@ class PresentationSchema:
         return weighted_generators
 
     def _calculate_prohibited_generators(self, used_tags: dict[str, int], num_slides: int):
-        prohibited_tags = set()
-        for key, value in used_tags.items():
-            if key in self._max_allowed_tags:
-                max_tag = self._max_allowed_tags[key]
-
-                # Assumes integer maximum
-                max_number_of_slides = max_tag
-
-                # If Procentua/Double ratio:
-                if 0 < max_tag < 1:
-                    max_number_of_slides = int(max_tag * num_slides)
-
-                # Check if currently over the max allowed slides of this tag
-                if value >= max_number_of_slides:
-                    prohibited_tags.add(key)
-
+        """The slide generators that the next slide can't have: those with a tag that the slides so far used as often
+        as its cap allows (see most_slides), from the talk's first slide on, so that a cap of none holds too, and
+        those whose images the talk's license policy allows no source for."""
+        prohibited_tags = {
+            tag for tag, cap in self._max_allowed_tags.items() if used_tags.get(tag, 0) >= most_slides(cap, num_slides)
+        }
         prohibited_generators = set(self.unservable())
         for generator in self._slide_generators:
             if set(generator.get_tags()) & prohibited_tags:
@@ -1171,6 +1161,16 @@ class PresentationSchema:
 
 
 # Helper functions
+def most_slides(cap: float, num_slides: int) -> float:
+    """How many slides with a tag a talk of num_slides slides may have, by the tag's cap: an absolute cap is a number of
+    slides (0: none at all, as the interview format's about-me slides), and a relative one (between 0 and 1) a share
+    of the talk's slides, rounded down, but at least one, so that short talks keep every kind of slide (D50). (A kind
+    of slide that only longer talks have says so by its weight, as the section divider does.)"""
+    if 0 < cap < 1:
+        return max(1, int(cap * num_slides))
+    return cap
+
+
 def create_slide_presentation_context(main_presentation_context, seed):
     presentation_context = dict(main_presentation_context)
     presentation_context["seed"] = seed

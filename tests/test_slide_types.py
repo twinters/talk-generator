@@ -445,7 +445,7 @@ def test_a_classic_slides_texts_come_from_templates_of_their_own(related):
         with random_util.use(random_util.Rng(seed)):
             title, *moments = slide_texts.generate_timeline({"seed": "cat", "topic": "cats"})
         events = moments[1::2][:-1]  # (the last one is the punchline)
-        banned = [event for event in events if event.endswith(" is banned")]
+        banned = [event for event in events if event.endswith(" banned")]
         assert len(banned) <= 1 and len(set(events)) == len(events), events
 
 

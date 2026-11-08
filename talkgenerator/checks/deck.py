@@ -9,10 +9,13 @@ vintage photo in colour). Checks of contrast and overflowing text are in talkgen
 from __future__ import annotations
 
 import itertools
+import json
 import re
 from collections import Counter
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Any, Literal
+from functools import cache
+from typing import Any, Final, Literal
 
 from talkgenerator.models import classic
 from talkgenerator.models.deck import (
@@ -66,6 +69,105 @@ def leftovers_in(text: str) -> list[str]:
     return [f"{what}: {found.group(0)!r}" for pattern, what in _LEFTOVERS if (found := pattern.search(text))]
 
 
+# REAL-WORLD POLITICS, which a talk shouldn't hold unless it's about it: a free model wrote "Japan needs to earnestly
+# reflect on its history of aggression, respect the security concerns of Asian neighbors, act prudently in the field"
+# as a lighthouse talk's quote (2026-11-08), words its training had from statements on politics. Phrases that only such
+# statements have give a text away...
+_POLITICAL_PHRASES: Final = (
+    "history of aggression",
+    "territorial integrity",
+    "hegemonism",
+    "war crimes",
+    "ethnic cleansing",
+    "genocide",
+    "apartheid",
+    "communist party",
+    "separatist forces",
+    "independence forces",
+    "cold war mentality",
+    "people's republic",
+)
+# ...and so do these words, with a real country, people or political body: but not words that absurd humour has too
+# ("The French president collects lighthouses", "the Great Seagull War", "a strict Japanese skincare regime", "the
+# internal affairs of the lighthouse", "There are more penguins in Belgium than people")
+_POLITICAL_WORDS: Final = (
+    "aggression",
+    "sovereignty",
+    "hegemony",
+    "imperialism",
+    "colonialism",
+    "militarism",
+    "annexation",
+    "dictatorship",
+    "separatism",
+    "separatist",
+    "separatists",
+    "reunification",
+    "atrocities",
+    "massacre",
+    "massacres",
+)
+# The peoples, regions and political bodies that statements on politics name, besides the countries (whose names are
+# in data/text-templates/about_me_facts.json)
+_PEOPLES: Final = (
+    ("American", "Americans", "Asian", "Asians", "African", "Arab", "Arabs", "British", "Chinese", "European")
+    + ("French", "German", "Indian", "Iranian", "Iraqi", "Israeli", "Israelis", "Japanese", "Korean", "Koreans")
+    + ("Kurdish", "Palestinian", "Palestinians", "Pakistani", "Russian", "Russians", "Soviet", "Syrian", "Taiwanese")
+    + ("Tibetan", "Turkish", "Ukrainian", "Ukrainians", "Uyghur", "Uyghurs", "Western", "the West", "NATO", "EU")
+    + ("United Nations", "UN", "CCP", "CPC", "Kremlin", "Beijing", "Moscow", "Washington", "Tokyo", "Taipei")
+    + ("Pyongyang", "Tehran", "Kyiv", "Kiev", "Jerusalem", "Gaza", "West Bank", "Taiwan", "Tibet", "Xinjiang")
+    + ("Hong Kong", "Crimea", "Donbas", "Kashmir", "Russia", "America", "USA", "UK", "Britain", "Korea")
+)
+# Countries' names that are people's names or things too ("Chad's dictatorship over the office fridge")
+_NOT_ONLY_COUNTRIES: Final = frozenset({"Chad", "Jordan", "Georgia", "Turkey", "Guinea"})
+
+
+@cache
+def _political() -> tuple[re.Pattern[str], re.Pattern[str], re.Pattern[str]]:
+    """Patterns of the political phrases, the political words, and the peoples and countries (in capitals)."""
+    from talkgenerator.util import os_util  # (here: the checks don't need it otherwise)
+
+    with open(os_util.to_actual_file("data/text-templates/about_me_facts.json"), encoding="utf-8") as file:
+        countries: list[str] = json.load(file)["country"]
+    # (as "Bosnia & Herzegovina" and "Israel and the Occupied Territories" name two)
+    names = {part.strip() for country in countries for part in re.split(r" & | and the | and ", country)}
+    names = (names - _NOT_ONLY_COUNTRIES) | set(_PEOPLES)
+
+    def words(terms: Iterable[str], flags: int = 0) -> re.Pattern[str]:
+        alternatives = "|".join(re.escape(term) for term in sorted(set(terms), key=len, reverse=True))
+        return re.compile(rf"(?<![\w-])(?:{alternatives})(?![\w-])", flags)
+
+    return words(_POLITICAL_PHRASES, re.IGNORECASE), words(_POLITICAL_WORDS, re.IGNORECASE), words(names)
+
+
+def real_politics(text: str, topic: str = "") -> str | None:
+    """What makes a text about real-world politics (see _POLITICAL_PHRASES): one of the phrases that only statements on
+    politics have, or a country, people or political body with one of politics' words, unless the talk's topic is
+    about that too (it has the phrase's words, or names a country the text names). None for a text that isn't, as
+    absurd humour isn't. (English only.)"""
+    phrases, political, peoples = _political()
+    text = text.replace("’", "'")
+    about = topic.lower()
+    topic_words = [word for word in re.findall(r"[a-z]+", about) if len(word) > 3]
+
+    def in_topic(found: str) -> bool:
+        words = [word for word in re.findall(r"[a-z]+", found.lower()) if len(word) > 3]
+        return bool(words) and all(word in about for word in words)
+
+    def people_in_topic(found: str) -> bool:  # (a talk on "Japanese gardens" may speak of Japan)
+        name = found.lower()
+        return name in about or any(word in name for word in topic_words)
+
+    if any(people_in_topic(found.group(0)) for found in peoples.finditer(text)):
+        return None  # (a talk on a country, or its history, may speak of its politics)
+    phrase = next((found.group(0) for found in phrases.finditer(text) if not in_topic(found.group(0))), None)
+    if phrase is not None:
+        return phrase
+    word = next((found.group(0) for found in political.finditer(text) if not in_topic(found.group(0))), None)
+    people = next((found.group(0) for found in peoples.finditer(text) if not people_in_topic(found.group(0))), None)
+    return f"{people} ... {word}" if word is not None and people is not None else None
+
+
 def without_key_references(text: str) -> str:
     """The text without the brackets in it that name a slide by its key in the language model's answer: "Huddling
     scales trust (from slide_03)" becomes "Huddling scales trust". (A key elsewhere in a text is a leftover, as in "As
@@ -80,6 +182,8 @@ def check_deck(deck: Deck, expected_slides: int | None = None) -> list[Finding]:
     return [
         *check_completeness(deck, expected_slides),
         *check_leftovers(deck),
+        *check_quizzes(deck),
+        *check_politics(deck),
         *check_images(deck),
         *check_licenses(deck),
         *check_looks(deck),
@@ -180,6 +284,49 @@ def check_leftovers(deck: Deck) -> list[Finding]:
                     findings.append(Finding("leftovers", "error", f"{what} in its {role}: {found.group(0)!r}", number))
             if _NONE.search(text):
                 findings.append(Finding("leftovers", "warning", f"'None' in its {role}: {text!r}", number))
+    return findings
+
+
+def check_quizzes(deck: Deck) -> list[Finding]:
+    """A quiz's explanation agrees with its answer: a warning when it names other options and not the answer (as a
+    free model's did). Talks repair the clear cases, where it names one other option (see plan.kinds), so this finds
+    the ones that can't be told."""
+    from talkgenerator.plan import languages  # (here: the checks don't need them otherwise)
+
+    findings = []
+    for number, slide in enumerate(deck.slides, 1):
+        explanation, answer = slide.element("explanation"), slide.element("answer")
+        if slide.type != "quiz" or not isinstance(explanation, TextElement) or not isinstance(answer, TextElement):
+            continue
+        options = [_text_of(slide.element(f"option_{index}")) for index in range(1, 5)]
+        named = language_util.named_options(explanation.text, options, languages.language(deck.language).stopwords)
+        marked = "ABCD".find(answer.text)
+        if named and marked not in named:
+            others = " and ".join("ABCD"[index] for index in named)
+            findings.append(
+                Finding(
+                    "quiz", "warning", f"its explanation names option {others}, not its answer {answer.text}", number
+                )
+            )
+    return findings
+
+
+def _text_of(element: Content | None) -> str | None:
+    return element.text if isinstance(element, TextElement) else None
+
+
+def check_politics(deck: Deck) -> list[Finding]:
+    """No text is about real-world politics that the talk isn't about, such as the statement on a country's history
+    of aggression that a free model wrote as a lighthouse talk's quote (see real_politics): a warning, as talks that
+    a language model writes leave such texts out already (see plan.realize)."""
+    if deck.language != "en":
+        return []
+    findings = []
+    for number, slide in enumerate(deck.slides, 1):
+        for role, text in _texts(slide.elements):
+            found = real_politics(text, " ".join(deck.topics))
+            if found:
+                findings.append(Finding("politics", "warning", f"real-world politics in its {role}: {found!r}", number))
     return findings
 
 

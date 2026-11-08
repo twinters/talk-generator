@@ -9,11 +9,26 @@ from tracery.modifiers import base_english
 from talkgenerator.sources import conceptnet, wikihow, word_frequency
 from talkgenerator.util import language_util, os_util, random_util
 
+# The longest word that a title fits in every theme (the design tests' 20-letter word)
+LONGEST_WORD = 20
+
+
+def short_wikihow_action(seed: str) -> str | None:
+    """A related wikiHow action that a title can make one word of, in its -ing form with dashes ("Removing-Bees"): one
+    of at most LONGEST_WORD letters, which every theme fits (where one of 61 letters overflowed a historical figure's
+    title)."""
+    actions = wikihow.get_related_wikihow_actions(seed)
+    return random_util.choice_optional(
+        [action for action in actions if len(language_util.to_present_participle(action)) <= LONGEST_WORD]
+    )
+
+
 known_functions = {
     "title": str.title,
     "lower": str.lower,
     "upper": str.upper,
-    "dashes": lambda words: words.replace(" ", "-"),
+    # The words as one word ("Removing-Bees"), unless that's too long a word for a title (then the template gives way)
+    "dashes": lambda words: dashed if len(dashed := words.replace(" ", "-")) <= LONGEST_WORD else None,
     "first_letter": lambda words: words[0],
     "last_letter_is_vowel": lambda word: word if language_util.is_vowel(word[-1]) else None,
     "last_letter_is_consonant": lambda word: word if language_util.is_consonant(word[-1]) else None,
@@ -21,14 +36,17 @@ known_functions = {
     "ing": language_util.to_present_participle,
     "plural": language_util.to_plural,
     "singular": language_util.to_singular,
-    # How English speaks of the thing in general ("penguins", but "coffee"), one of it ("a penguin", but "coffee"), and
-    # a first letter in capitals (see language_util.generic)
+    # How English speaks of the thing in general ("penguins", but "coffee"), one of it ("a penguin", but "coffee"), the
+    # thing before another noun ("the penguin pyramid", and none for "the French Revolution"), and a first letter in
+    # capitals (see language_util.generic)
     "generic": language_util.generic,
     "one": language_util.one,
+    "adjunct": language_util.adjunct,
     "cap": language_util.capitalised,
     # "synonym": generator_util.FromListGenerator(language_util.get_synonyms),
     "2_to_1_pronouns": language_util.second_to_first_pronouns,
     "wikihow_action": lambda seed: random_util.choice_optional(wikihow.get_related_wikihow_actions(seed)),
+    "short_wikihow_action": short_wikihow_action,
     "get_last_noun_and_article": language_util.get_last_noun_and_article,
     # Conceptnet
     "conceptnet_location": conceptnet.weighted_location_generator,

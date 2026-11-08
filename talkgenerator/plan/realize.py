@@ -7,11 +7,12 @@ never on the other slides: so slides can be realized in parallel, in any order, 
 
 from __future__ import annotations
 
+import logging
 import re
 from pathlib import Path
 from typing import Any, Final
 
-from talkgenerator.checks.deck import leftovers_in, without_key_references
+from talkgenerator.checks.deck import leftovers_in, real_politics, without_key_references
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.images import context as image_context
 from talkgenerator.images.generation import FALLBACK, FIRST, Wish
@@ -22,6 +23,8 @@ from talkgenerator.plan.kinds import KINDS, ContentSource, Recipe, TextField
 from talkgenerator.slide.slides import Slide
 from talkgenerator.util import generator_util, language_util, os_util, random_util
 
+logger = logging.getLogger("talkgenerator")
+
 # The first attempt searches with the plan's queries, the second tries other images for them, and the last searches
 # for the slide's concept for the images whose queries find nothing
 ATTEMPTS: Final = 3
@@ -29,6 +32,15 @@ ATTEMPTS: Final = 3
 _QUOTE_MARKS: Final = "\"'“”‘’«»"
 # What a cut may leave at the end of a text, besides little words: punctuation that leads on to more
 _DANGLING: Final = ",;:-–—([{/&+ "
+# Where a sentence or a clause ends, for a cut to end there: a full stop, question or exclamation mark, a semicolon or
+# a colon before a space, or a dash ("decorations—they're", "lost – adaptation"). (Not a comma: "Cats, as it turns
+# out" is no clause; nor a range, as in "1890–1920")
+_CLAUSE_END: Final = re.compile(r"[.!?;:](?=\s)|\s*—\s*|\s+[–-]\s+")
+# And in English, where the next clause starts with a word that opens one: "The mountain breathes", of "The mountain
+# breathes when prayers are whispered" (not "and" or "or", which join things as often: "salt and pepper")
+_CLAUSE_START: Final = re.compile(
+    r",?\s+(?=(?:but|yet|when|whenever|while|because|if|unless|until|although|though|since|whereas)\b)", re.IGNORECASE
+)
 # A backslash before a quote mark, as some models escape one where their JSON needn't (what\'s)
 _STRAY_ESCAPE: Final = re.compile(r"\\(?=['\"’])")
 
@@ -95,13 +107,23 @@ def _unquoted(text: str) -> str:
 
 
 def _cut(text: str, length: int, language: str) -> str:
-    """The text cut to its length between words, without the little words and punctuation that a cut leaves
-    hanging at its end (as in "Cats were the true scholars of the")."""
+    """The text cut to its length: where a sentence or a clause in it ends, if that keeps at least half of it ("Your
+    plants are not decorations", of "Your plants are not decorations—they're coworkers who need feedback"), or in
+    English before a word that opens the next clause ("The mountain breathes", of "The mountain breathes when prayers
+    are whispered"), or else between words, without the little words and punctuation that a cut leaves hanging at its
+    end (as in "Cats were the true scholars of the")."""
     head = text[: length + 1]
+    little = _little_words(language)
+    ends = [end.start() + (1 if end.group(0) in ".!?" else 0) for end in _CLAUSE_END.finditer(head)]
+    starts = [start.start() for start in _CLAUSE_START.finditer(head)] if language == "en" else []
+    for at in (*reversed(ends), *reversed(starts)):
+        clause = head[:at].rstrip(_DANGLING)
+        last = clause.rsplit(" ", 1)[-1].strip(_DANGLING + _QUOTE_MARKS + ".!?").lower()
+        if len(clause) >= length // 2 and last not in little:
+            return clause
     if " " not in head:  # one long word
         return text[:length]
     words = head.rsplit(" ", 1)[0].split()
-    little = _little_words(language)
     while len(words) > 1 and words[-1].strip(_DANGLING + _QUOTE_MARKS + ".!?").lower() in little | {""}:
         words.pop()
     cut = " ".join(words).rstrip(_DANGLING)
@@ -142,6 +164,7 @@ def realize(
     kind = KINDS[recipe.kind]
     concept = plan.concept.strip() or str(presentation_context.get("seed") or "")
     language = presentation_context.get("language", "en")
+    topic = " ".join(presentation_context.get("topics") or [str(presentation_context.get("topic") or "")])
     with random_util.use(rng.child("attempt", attempt)):
         texts: dict[str, str | None] = {}
         for text_field in map(recipe.text_field, kind.texts):  # (as long as each may be on this slide)
@@ -159,6 +182,12 @@ def realize(
                 written = isinstance(value, str) and value.strip()
                 held = ", ".join(leftovers_in(value)) if isinstance(value, str) else ""
                 why = f"{name}: holds {held or 'template code'} ({value!r})" if written else f"{name}: not written"
+                # (a free model wrote a statement on a country's history of aggression as a lighthouse talk's quote)
+                politics = real_politics(str(value), topic) if texts[name] and language == "en" else None
+                if politics:
+                    logger.warning("Left out a planned text about real-world politics (%r): %r", politics, value)
+                    texts[name], why = None, f"{name}: about real-world politics ({politics!r}): {value!r}"
+                    _note(problems, why)
             if texts[name] is None and not text_field.optional:
                 _note(problems, why)
                 return None

@@ -62,8 +62,7 @@ chart_conclusion_generator = create_templated_text_generator("data/text-template
 
 
 def chart_conclusion_or_none_generator(presentation_context):
-    """A real chart's confident conclusion two times in three, and else none, for a bare chart. (Not a
-    CombinedGenerator with a NoneGenerator, which tries its other generators when one gives None.)"""
+    """A real chart's confident conclusion two times in three, and else none, for a bare chart."""
     if random_util.random() < 2 / 3:
         return chart_conclusion_generator(presentation_context)
     return None

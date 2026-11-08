@@ -3,7 +3,7 @@
 import logging
 import re
 import string
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from functools import cache, lru_cache
 from pathlib import Path
 from typing import Final
@@ -309,6 +309,72 @@ def one(phrase: str) -> str:
     if not text or _has_article(text) or is_plural_noun(text) or not is_countable(text):
         return text
     return str(inflect_engine.a(text))
+
+
+def adjunct(phrase: str) -> str | None:
+    """The phrase as English puts it before another noun ("the penguin pyramid", "coffee prices"), or after a word that
+    counts one of it ("its first penguin"): a plural noun in the singular ("penguins": "penguin", but "physics" and
+    "news" stay), and the others as they are. None for a phrase with an article of its own ("the French Revolution"),
+    which can't go there: a template that asks for it then gives way to another."""
+    text = _without_a(phrase.strip())
+    if not text or _has_article(text):
+        return None
+    if not is_plural_noun(text):
+        return text
+    *before, last = text.split()
+    return " ".join([*before, str(inflect_engine.singular_noun(last))])
+
+
+# WHICH OF SEVERAL OPTIONS A TEXT NAMES, as a quiz's explanation names its answer
+
+# Words just before an option's words that turn naming it into dismissing it ("not the moon", "unlike Belgium")
+_DISMISSING: Final = frozenset(
+    ("not", "never", "no", "nor", "neither", "unlike", "instead", "rather", "except", "isn't", "wasn't", "aren't")
+)
+# A letter that names an option ("Option C", "the answer is (B)", or "B)" opening the text), but not "A" as an article
+_LETTER: Final = re.compile(r"\b(?:[Oo]ption|[Aa]nswer(?: is)?|[Cc]hoice)\s+\(?([A-D])\b(?! [a-z])|^\(?([A-D])[).:,]")
+_WORDS: Final = re.compile(r"[^\W_]+(?:'[^\W_]+)?")
+
+
+def _stem(word: str) -> str:
+    """The word without the endings English puts on it, roughly: "guides", "guided", "guiding" and "guide" all give
+    "guid"."""
+    for ending in ("ing", "ed", "es", "s", "e"):
+        if len(word) > len(ending) + 2 and word.endswith(ending):
+            return word[: -len(ending)]
+    return word
+
+
+def named_options(text: str, options: Sequence[str | None], stopwords_of: str = "english") -> list[int]:
+    """Which of the options the text names (their places in the list): the one whose letter it names ("Option C",
+    "C) Because..."), and those whose words that say something, and that set them apart from the other options, are
+    nearly all in it (two in three, in any form: "guides" for "guiding"), unless a word just before them dismisses
+    them ("not the moon"). Options that are None are no options."""
+    words = _WORDS.findall(text.lower())
+    stems = [_stem(word) for word in words]
+    try:
+        little = stopwords(stopwords_of)
+    except (LookupError, OSError, ValueError):  # (NLTK's lists can't be had: every word says something)
+        little = frozenset()
+    letters = {letter for found in _LETTER.findall(text.strip()) for letter in found if letter}
+    contents: dict[int, list[str]] = {}
+    for index, option in enumerate(options):
+        own = _WORDS.findall(option.lower()) if option else []
+        contents[index] = [_stem(word) for word in own if word not in little] or [_stem(word) for word in own]
+    named = []
+    for index, content in contents.items():
+        if not options[index]:
+            continue
+        others = {stem for other, stems_of in contents.items() if other != index for stem in stems_of}
+        telling = [stem for stem in content if stem not in others] or content  # ("ships" in two options tells none)
+        found = [stems.index(stem) for stem in telling if stem in stems]
+        if "ABCD"[index] in letters:
+            named.append(index)
+        elif telling and 3 * len(found) >= 2 * len(telling):
+            first = min(found)
+            if not any(word in _DISMISSING for word in words[max(0, first - 3) : first]):
+                named.append(index)
+    return named
 
 
 def capitalised(text: str) -> str:

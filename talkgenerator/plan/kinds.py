@@ -23,7 +23,7 @@ from talkgenerator.models.deck import MatrixDiagram, VennDiagram
 from talkgenerator.plan.languages import Language
 from talkgenerator.slide import slides
 from talkgenerator.sources import chart, diagram, memes
-from talkgenerator.util import random_util
+from talkgenerator.util import language_util, random_util
 
 if TYPE_CHECKING:
     from talkgenerator.images.slots import ImageSlot
@@ -297,8 +297,13 @@ def _quiz(texts: Mapping[str, str | None], images: Mapping[str, Any], language: 
     answer = texts["answer"] or ""
     if answer not in slides.LETTERS or not options[slides.LETTERS.index(answer)]:
         raise ValueError(f"the quiz's answer, {answer!r}, isn't one of its options")
+    explanation = texts.get("explanation")
+    if explanation:  # (a free model marked one option and explained why another was right: the explanation wins)
+        named = language_util.named_options(explanation, options, language.stopwords)
+        if len(named) == 1 and named[0] != slides.LETTERS.index(answer):
+            answer = slides.LETTERS[named[0]]
     first, second, third, fourth = options
-    return slides.QuizSlide(texts["question"], first, second, third, fourth, answer, texts.get("explanation"))
+    return slides.QuizSlide(texts["question"], first, second, third, fourth, answer, explanation)
 
 
 def _social_post(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
