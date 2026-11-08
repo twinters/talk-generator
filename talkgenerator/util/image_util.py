@@ -21,12 +21,14 @@ import os
 import struct
 import threading
 from collections import OrderedDict
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterable, Iterator, Mapping
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from functools import lru_cache
+from functools import lru_cache, partial
 from pathlib import Path
 from typing import Any, TypeVar
 
+import requests
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 from talkgenerator.datastructures.image_data import ImageData
@@ -60,6 +62,19 @@ _CACHE_MAX_BYTES = 96 * 1024 * 1024
 _cache: OrderedDict[str, bytes | None] = OrderedDict()
 _cache_bytes = 0
 _cache_lock = threading.Lock()
+
+# How long a request for an image may go without an answer (seconds, and it's asked once: see http_util._Retry): a
+# download's for a PowerPoint, which can wait; a probe's while a talk streams, as the slide waits for it (another
+# candidate takes the place of one that won't answer)
+DOWNLOAD_TIMEOUT = 15
+PROBE_TIMEOUT = 8
+# The pictures prepared at the same time (see prepare_image_bytes): a big photo takes tens of MB while it's decoded,
+# turned and checked, so two downloads that end together wait for each other there, and only there (a small server's
+# one core gains nothing from decoding two at once)
+_preparing = threading.BoundedSemaphore(1)
+# The downloads a PowerPoint's pictures are fetched in at the same time (see fetch_all)
+FETCHES_AT_ONCE = 4
+_fetching: ThreadPoolExecutor | None = None
 
 # How images are checked while slides are made: downloaded whole, or probed (see probing)
 _checks: contextvars.ContextVar[str] = contextvars.ContextVar("image_checks", default="download")
@@ -114,6 +129,35 @@ def forget_downloads() -> None:
     with _cache_lock:
         _cache.clear()
         _cache_bytes = 0
+
+
+def fetch_all(images: Iterable[str] | Mapping[str, int | None], videos: Iterable[str] = ()) -> None:
+    """Download the images and videos at the URLs (as fetch_image and fetch_video do, into the same cache), a few at a
+    time (FETCHES_AT_ONCE), and return once they're all in: for a PowerPoint about to be drawn, whose pictures then come
+    from the cache. They overlap; the work on their pixels doesn't (see prepare_image_bytes).
+
+    images can say, for every URL, the longest side its picture needs (in pixels, or None: as large as a slide), which a
+    picture that's scaled down anyway is scaled down to (see prepare_image_bytes): a photo of 4000 pixels on a quarter
+    of a slide is then decoded at a fraction of its size, and takes as little room in the PowerPoint."""
+    global _fetching
+    sizes = images if isinstance(images, Mapping) else dict.fromkeys(images)
+    tasks = [partial(_fetch_sized, url, longest_side) for url, longest_side in sizes.items() if url]
+    tasks += [partial(fetch_video, url) for url in dict.fromkeys(videos) if url]
+    if len(tasks) < 2:
+        for task in tasks:
+            task()
+        return
+    with _cache_lock:
+        if _fetching is None:  # (threads that stay: their connections to the image hosts stay open for the next deck)
+            _fetching = ThreadPoolExecutor(max_workers=FETCHES_AT_ONCE, thread_name_prefix="image fetch")
+        pool = _fetching
+    for future in [pool.submit(task) for task in tasks]:
+        future.result()
+
+
+def _fetch_sized(url: str, longest_side: int | None) -> bytes | None:
+    """fetch_image, scaling a picture that's scaled down anyway to the longest side given (see fetch_all)."""
+    return _cached(url, lambda: _load(url, longest_side))
 
 
 def is_usable_image(url: str) -> bool:
@@ -268,7 +312,7 @@ def _probe_image(image: ImageData) -> bool:
 def _probe(url: str) -> bool:
     if not url.startswith(("http://", "https://")):
         return fetch_image(url) is not None  # (a file of our own: read as it is)
-    response = http_util.get(url, timeout=15, stream=True)
+    response = http_util.get(url, timeout=PROBE_TIMEOUT, stream=True)
     if response is None:
         return False
     description = http_util.describe_url(url)
@@ -277,16 +321,19 @@ def _probe(url: str) -> bool:
             return False
         declared = _declared_size(response)
         head = b""
-        for chunk in response.iter_content(chunk_size=PROBE_BYTES):
-            head += chunk
-            seen = _identify(head)
-            if seen != _MORE or len(head) >= MAX_PROBE_BYTES:
-                break
-        else:  # the whole file is in: check it as a download is checked
-            usable = prepare_image_bytes(head, description) is not None
-            if usable:
-                _remember_size(url, _size_of(head))
-            return usable
+        try:
+            for chunk in response.iter_content(chunk_size=PROBE_BYTES):
+                head += chunk
+                seen = _identify(head)
+                if seen != _MORE or len(head) >= MAX_PROBE_BYTES:
+                    break
+            else:  # the whole file is in: check it as a download is checked
+                usable = prepare_image_bytes(head, description) is not None
+                if usable:
+                    _remember_size(url, _size_of(head))
+                return usable
+        except requests.RequestException as e:
+            return _broken_off("Image", description, e)
     if isinstance(seen, str):
         if seen == _NOT_AN_IMAGE:
             logger.info("Image %s can't be used: it isn't an image of an accepted format", description)
@@ -311,7 +358,7 @@ def _probe_video(url: str) -> bool:
     if not url.startswith(("http://", "https://")):
         logger.warning("Video %s is not on the web", url)
         return False
-    response = http_util.get(url, timeout=15, stream=True)
+    response = http_util.get(url, timeout=PROBE_TIMEOUT, stream=True)
     if response is None:
         return False
     description = http_util.describe_url(url)
@@ -320,10 +367,13 @@ def _probe_video(url: str) -> bool:
             return False
         declared = _declared_size(response)
         head = b""
-        for chunk in response.iter_content(chunk_size=64):
-            head += chunk
-            if len(head) >= 8:
-                break
+        try:
+            for chunk in response.iter_content(chunk_size=64):
+                head += chunk
+                if len(head) >= 8:
+                    break
+        except requests.RequestException as e:
+            return _broken_off("Video", description, e)
     if not video_util.is_mp4(head):
         logger.info("Video %s is not an mp4", description)
         return False
@@ -391,7 +441,7 @@ def _placeholder_shapes() -> tuple[tuple[float, int], ...]:
     return tuple(shapes)
 
 
-def _load(url: str) -> bytes | None:
+def _load(url: str, longest_side: int | None = None) -> bytes | None:
     if not url:
         return None
     if not url.startswith(("http://", "https://")):
@@ -406,7 +456,7 @@ def _load(url: str) -> bytes | None:
     data = _download(url)
     if data is None:
         return None
-    prepared = prepare_image_bytes(data, http_util.describe_url(url))
+    prepared = prepare_image_bytes(data, http_util.describe_url(url), longest_side)
     if prepared is not None:
         _remember_size(url, _size_of(data))  # (the original's, before scaling down)
     return prepared
@@ -425,7 +475,7 @@ def _load_video(url: str) -> bytes | None:
 
 def _download(url: str, limit: int = MAX_DOWNLOAD_BYTES, kind: str = "Image") -> bytes | None:
     """The bytes at the URL, unless there are more than the limit (or than MAX_GIF_BYTES, for a gif)."""
-    response = http_util.get(url, timeout=15, stream=True)
+    response = http_util.get(url, timeout=DOWNLOAD_TIMEOUT, stream=True)
     if response is None:
         return None
     description = http_util.describe_url(url)
@@ -437,15 +487,26 @@ def _download(url: str, limit: int = MAX_DOWNLOAD_BYTES, kind: str = "Image") ->
         declared = _declared_size(response)
         chunks: list[bytes] = []
         size = 0
-        for chunk in response.iter_content(chunk_size=256 * 1024):
-            if not chunks and chunk.startswith(b"GIF8"):  # gifs are used as they are, up to their own limit
-                limit = min(limit, MAX_GIF_BYTES)
-            size += len(chunk)
-            if size > limit or (declared is not None and declared > limit):
-                logger.info("%s %s is too large to use", kind, description)
-                return None
-            chunks.append(chunk)
+        try:
+            for chunk in response.iter_content(chunk_size=256 * 1024):
+                if not chunks and chunk.startswith(b"GIF8"):  # gifs are used as they are, up to their own limit
+                    limit = min(limit, MAX_GIF_BYTES)
+                size += len(chunk)
+                if size > limit or (declared is not None and declared > limit):
+                    logger.info("%s %s is too large to use", kind, description)
+                    return None
+                chunks.append(chunk)
+        except requests.RequestException as e:
+            _broken_off(kind, description, e)
+            return None
         return b"".join(chunks)
+
+
+def _broken_off(kind: str, description: str, error: Exception) -> bool:
+    """False, for a file whose transfer broke off (the host stopped sending, or hung): it can't be used, and the slide
+    tries another (it isn't the slide's failure)."""
+    logger.info("%s %s broke off while it came in: %s", kind, description, http_util.redact(error))
+    return False
 
 
 def _answer_holds(kind: str, response: Any, description: str) -> bool:
@@ -477,13 +538,23 @@ def accepted_formats() -> tuple[str, ...]:
     return tuple(name for name in _ACCEPTED_FORMATS if name in Image.OPEN)
 
 
-def prepare_image_bytes(data: bytes, description: str = "image") -> bytes | None:
+def prepare_image_bytes(data: bytes, description: str = "image", longest_side: int | None = None) -> bytes | None:
     """Check that the bytes are a real, allowed image and convert them into something PowerPoint can show.
 
     A photo to convert is scaled down before anything else is done with it, and a big JPEG is even decoded at a
     half, a quarter or an eighth of its size, as long as its long side stays as large as a slide is wide (or as it
     would come out, if that's smaller): a 24-megapixel original took about 240 MB when it was decoded, turned and
-    checked whole, which pushed talkgenerator.com's small server to its limit."""
+    checked whole, which pushed talkgenerator.com's small server to its limit. One picture is prepared at a time, in
+    the whole process (images downloaded at the same time wait for each other here), which keeps that bounded too.
+
+    With a longest side (in pixels: what the picture's place on a slide needs), a picture that's converted anyway comes
+    out that large at most, instead of a slide's width: a 12-megapixel photo for a quarter of a slide is decoded at a
+    quarter of its size, and scaled down to that (pictures that aren't converted stay as they are)."""
+    with _preparing:
+        return _prepare(data, description, longest_side)
+
+
+def _prepare(data: bytes, description: str, longest_side: int | None = None) -> bytes | None:
     try:
         with Image.open(io.BytesIO(data), formats=accepted_formats()) as image:
             image_format = image.format
@@ -499,10 +570,12 @@ def prepare_image_bytes(data: bytes, description: str = "image") -> bytes | None
                 and len(data) <= MAX_UNCONVERTED_BYTES
             )
             if converting:
-                scale = min(MAX_DIMENSION / width, MAX_DIMENSION / height, 1.0)
-                scale *= min(1.0, _SLIDE_WIDTH / (max(width, height) * scale))  # (a slide's width is enough)
+                largest = MAX_DIMENSION if longest_side is None else max(1, min(MAX_DIMENSION, longest_side))
+                scale = min(largest / width, largest / height, 1.0)
+                if longest_side is None:
+                    scale *= min(1.0, _SLIDE_WIDTH / (max(width, height) * scale))  # (a slide's width is enough)
                 image.draft(None, (max(1, round(width * scale)), max(1, round(height * scale))))
-                image.thumbnail((MAX_DIMENSION, MAX_DIMENSION), Image.Resampling.LANCZOS)
+                image.thumbnail((largest, largest), Image.Resampling.LANCZOS)
             if is_prohibited(image):
                 logger.info("Image %s is a known 'image not available' placeholder", description)
                 return None
@@ -513,12 +586,14 @@ def prepare_image_bytes(data: bytes, description: str = "image") -> bytes | None
                 return data
             if not converting:
                 return data
-            converted = ImageOps.exif_transpose(image)  # (turned as its camera says: now that it's small)
+            # Turned as its camera says, now that it's small: in place, as the copy it would make otherwise (also when
+            # it's turned already, as most photos are) took as much memory as the picture once more
+            ImageOps.exif_transpose(image, in_place=True)
             output = io.BytesIO()
-            if converted.mode in ("RGBA", "LA") or (converted.mode == "P" and "transparency" in converted.info):
-                converted.save(output, "PNG", optimize=True)
-            else:
-                converted.convert("RGB").save(output, "JPEG", quality=85, optimize=True)
+            if image.mode in ("RGBA", "LA") or (image.mode == "P" and "transparency" in image.info):
+                image.save(output, "PNG", optimize=True)
+            else:  # (converted only when it isn't RGB: convert makes a copy even then)
+                (image if image.mode == "RGB" else image.convert("RGB")).save(output, "JPEG", quality=85, optimize=True)
             return output.getvalue()
     except (UnidentifiedImageError, Image.DecompressionBombError, OSError, ValueError, SyntaxError) as e:
         logger.info("Image %s can't be used: %s", description, e)

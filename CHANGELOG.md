@@ -373,6 +373,25 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   comes again, at its index and laid out as before (`DeckLayout.again`), once a generated picture takes its stock
   photo's place; `talk.finished` comes once every picture is in.
 
+### Lighter and faster
+
+- What talkgenerator asks WordNet (whether a noun's most common meaning is a place, whether a word is an adjective)
+  it reads from WordNet's own files, with the answers NLTK's reader gives, in 8 MB: NLTK's reader kept an index of
+  every lemma, about 150 MB, more than half of what talkgenerator.com used at rest.
+- `parallel` can be a number: at most that many slides are made at the same time (talkgenerator.com makes three at a
+  time, on a small server), and the talk is the one made one by one.
+- A PowerPoint's pictures are downloaded four at a time before its slides are drawn, and one picture at a time is
+  prepared (decoded, scaled, turned), without the copies of it that Pillow made before. A picture that's scaled down
+  anyway comes out as large as its place on the slide needs (twice its box, at most 2400 pixels), so a photo of 12
+  megapixels on a quarter of a slide is decoded at a fraction of its size: a talk's .pptx takes up to 60 MB less
+  memory to make, and comes out up to a third smaller.
+- A host that lets a request time out isn't asked again (urllib3 asked three times, so a hung image host held a slide
+  for 25 s), thumbnails get 5 s to answer and probes 8 s, a transfer that breaks off makes a picture unusable rather
+  than failing its slide, and a search service that takes more than 8 s to answer is skipped for 5 minutes, as one
+  that fails is (the Met's object API took 15 s an object). `http_util.close_idle_connections()` closes the
+  connections that every thread's session keeps open, as a server may after a talk: the threads that live on kept one
+  to every host they asked, with its TLS state, which took a server's memory up by 3 to 4 MB a talk.
+
 ### Checks
 
 - `talkgenerator check` makes talks on a set of topics (10 by default, `--quick` for 3, `--all` for 30, `--random N`

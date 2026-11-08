@@ -102,7 +102,7 @@ def generate_presentation(
     topic: str | list[str] | None = None,
     title: str | None = None,
     presenter: str | None = None,
-    parallel: bool = True,
+    parallel: bool | int = True,
     int_seed: int | None = None,
     save_ppt: bool = True,
     output_folder: str = DEFAULT_OUTPUT_FOLDER,
@@ -173,7 +173,7 @@ def _generate_presentation(
     topic: str | list[str] | None = None,
     title: str | None = None,
     presenter: str | None = None,
-    parallel: bool = True,
+    parallel: bool | int = True,
     int_seed: int | None = None,
     save_ppt: bool = True,
     output_folder: str = DEFAULT_OUTPUT_FOLDER,
@@ -259,6 +259,10 @@ def _generate_presentation(
     nothing but a request of the free tier's); or a model's spec, such as "anthropic:claude-haiku-5-5", or a
     provider. Off by default (None, False or "none"). The picks are in the deck (each picture's `vision`), its usage
     counts the request, and the talk's budget holds it too. See talkgenerator.images.vision.
+
+    parallel makes the slides at the same time (searching their images takes most of the time): True, all of them (a
+    language model's eight at a time); a number, at most that many at once (a small server's few: each slide being
+    made holds what it found until it's settled); False, one by one. The talk comes out the same either way.
 
     progress follows the talk while it's made (see stream_talk, which hands it over in events)."""
     theme = theme or settings.theme()
@@ -430,7 +434,7 @@ def stream_talk(
     topic: str | list[str] | None = None,
     title: str | None = None,
     presenter: str | None = None,
-    parallel: bool = True,
+    parallel: bool | int = True,
     int_seed: int | None = None,
     llm: TextProvider | str | None = None,
     language: str = "en",

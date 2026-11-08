@@ -12,6 +12,8 @@ import inflect
 import nltk
 from wordfreq import zipf_frequency
 
+from talkgenerator.util import wordnet
+
 logger = logging.getLogger("talkgenerator")
 
 # (resource path, downloadable package name). NLTK 3.9 replaced the pickled `punkt` and
@@ -406,51 +408,27 @@ def is_verb(word: str) -> bool:
     return "VB" in get_pos_tags(word)
 
 
-# Places (WordNet)
-
-# WordNet categories whose members make sense as an answer to "where can you find X?".
-# Countries and regions are left out on purpose: they're rarely related to the topic.
-_PLACE_CATEGORIES = frozenset(
-    {
-        "structure.n.01",  # buildings, bridges, pens, ...
-        "room.n.01",
-        "container.n.01",  # boxes, bags, bottles, tins, ...
-        "furniture.n.01",
-        "body_of_water.n.01",
-        "geological_formation.n.01",
-        "establishment.n.04",  # shops, hotels, ...
-        "facility.n.01",
-        "tract.n.01",  # fields, gardens, parks, forests, ...
-        "way.n.06",  # roads, paths, streets, ...
-    }
-)
+# Places (WordNet: see talkgenerator.util.wordnet, which answers as NLTK's reader does, in a fraction of its memory)
 
 
 @lru_cache(maxsize=2048)
 def is_place(word: str) -> bool:
-    """Whether the most common meaning of a noun is a place or a container, according to WordNet."""
-    from nltk.corpus import wordnet
-
+    """Whether the most common meaning of a noun is a place or a container, according to WordNet (one of
+    wordnet.PLACE_CATEGORIES). Only the most common meaning: rarer ones give false positives, such as "glass" (a
+    container, but first of all a material)."""
     try:
-        synsets = wordnet.synsets(word.strip().replace(" ", "_"), pos=wordnet.NOUN)
+        return wordnet.is_place(word)
     except LookupError:
         logger.warning("WordNet is not available; can't recognise places")
         return False
-    if not synsets:
-        return False
-    # Only the first (most common) sense: rarer senses give false positives such as "amphibian" (a vehicle)
-    categories = {hypernym.name() for path in synsets[0].hypernym_paths() for hypernym in path}
-    return bool(categories & _PLACE_CATEGORIES)
 
 
 @lru_cache(maxsize=2048)
 def is_adjective(word: str) -> bool:
     """Whether WordNet knows the word (or phrase) as an adjective, such as "fluffy" or "salted" (and not "day"). True
     when WordNet isn't available, as it can't tell."""
-    from nltk.corpus import wordnet
-
     try:
-        return bool(wordnet.synsets(word.strip().replace(" ", "_"), pos=wordnet.ADJ))
+        return wordnet.is_adjective(word)
     except LookupError:
         logger.warning("WordNet is not available; can't recognise adjectives")
         return True

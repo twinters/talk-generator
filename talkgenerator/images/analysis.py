@@ -24,6 +24,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Final, cast
 
+import requests
 from PIL import Image, ImageFilter, ImageOps, ImageStat, UnidentifiedImageError
 
 from talkgenerator.design import color
@@ -34,6 +35,7 @@ logger = logging.getLogger("talkgenerator")
 
 SIZE: Final = 96  # the longest side a look is taken at, in pixels
 MAX_THUMBNAIL_BYTES: Final = 1024 * 1024
+THUMBNAIL_TIMEOUT: Final = 5  # seconds a thumbnail's host may take to answer (once: see http_util._Retry)
 # A pixel is without colour when its channels are this close (of 255): what JPEG noise leaves in a gray photo
 GRAY_CHROMA: Final = 24
 # A picture in black and white (or gray) has this share of pixels without colour, or a little less and next to no
@@ -122,7 +124,9 @@ def thumbnail(url: str) -> bytes | None:
 
 
 def _download(url: str) -> bytes | None:
-    response = http_util.get(url, timeout=8, stream=True)
+    # (a candidate goes without a look rather than hold up its slide: the finder waits for all of a sample's thumbnails,
+    # and a host that hung kept a slide waiting 25 s, when its thumbnails had 8 s and three tries)
+    response = http_util.get(url, timeout=THUMBNAIL_TIMEOUT, stream=True)
     if response is None:
         return None
     with response:
@@ -133,12 +137,16 @@ def _download(url: str) -> bytes | None:
             return None
         chunks: list[bytes] = []
         size = 0
-        for chunk in response.iter_content(chunk_size=64 * 1024):
-            size += len(chunk)
-            if size > MAX_THUMBNAIL_BYTES:
-                logger.debug("The thumbnail at %s is too large to look at", http_util.describe_url(url))
-                return None
-            chunks.append(chunk)
+        try:
+            for chunk in response.iter_content(chunk_size=64 * 1024):
+                size += len(chunk)
+                if size > MAX_THUMBNAIL_BYTES:
+                    logger.debug("The thumbnail at %s is too large to look at", http_util.describe_url(url))
+                    return None
+                chunks.append(chunk)
+        except requests.RequestException as error:
+            logger.debug("The thumbnail at %s broke off: %s", http_util.describe_url(url), http_util.redact(error))
+            return None
     return b"".join(chunks)
 
 

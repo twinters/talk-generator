@@ -18,17 +18,22 @@ import logging
 import re
 import threading
 import time
+import weakref
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import timedelta
 from pathlib import Path
-from typing import Any
+from types import TracebackType
+from typing import Any, Self, cast
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import requests
 import requests_cache
 from requests.adapters import HTTPAdapter
 from requests_cache.policy.expiration import ExpirationPatterns, get_url_expiration
+from urllib3.connectionpool import ConnectionPool
+from urllib3.exceptions import ConnectTimeoutError, MaxRetryError, NewConnectionError, ReadTimeoutError
+from urllib3.response import BaseHTTPResponse
 from urllib3.util.retry import Retry
 
 from talkgenerator import __version__, settings
@@ -38,6 +43,10 @@ logger = logging.getLogger("talkgenerator")
 USER_AGENT = f"talkgenerator/{__version__} (+https://github.com/twinters/talk-generator)"
 DEFAULT_TIMEOUT = 10  # seconds
 OUTAGE_COOLDOWN_SECONDS = 5 * 60
+# A search that takes longer than this to answer is too slow for a talk that streams (each of its slides waits for its
+# searches): its service is skipped as after an outage. (The Met's object API took 15 s an object on 2026-11-08, four
+# at a time, and Openverse 16 s for a search: a slide waited 24 s for them.)
+SLOW_SECONDS = 8.0
 
 # How long successful responses are reused, per URL prefix. Anything else is never cached, such as GIPHY's
 # searches: "Do not cache API responses or media URLs" (https://developers.giphy.com/docs/api).
@@ -91,6 +100,7 @@ _SECRET_TOKENS = re.compile(
 )
 _thread_local = threading.local()
 _cache_lock = threading.Lock()
+_sessions: weakref.WeakSet[requests.Session] = weakref.WeakSet()  # (every thread's: see close_idle_connections)
 _cache_backend: requests_cache.SQLiteCache | None = None
 _cache_unavailable = False
 
@@ -122,11 +132,34 @@ def _get_cache_backend() -> requests_cache.SQLiteCache | None:
         return _cache_backend
 
 
+class _Retry(Retry):
+    """Retries as urllib3's do (after a connection that was refused or a name that wasn't found, which fail at once, or
+    after a server error), but never after a timeout: a host that let the whole timeout go by without answering, or
+    without taking the connection, is hanging, and every try would wait the whole timeout again. (One image host that
+    hung held a slide for 25 s: three tries at a thumbnail, of 8 s each.)"""
+
+    def increment(
+        self,
+        method: str | None = None,
+        url: str | None = None,
+        response: BaseHTTPResponse | None = None,
+        error: Exception | None = None,
+        _pool: ConnectionPool | None = None,
+        _stacktrace: TracebackType | None = None,
+    ) -> Self:
+        if isinstance(error, ReadTimeoutError):
+            raise error  # (as urllib3 does when it may not retry: requests makes it a ReadTimeout)
+        if isinstance(error, ConnectTimeoutError) and not isinstance(error, NewConnectionError):
+            # (as urllib3 does once the tries are used up: requests makes it a ConnectTimeout)
+            raise MaxRetryError(cast(ConnectionPool, _pool), url or "", error) from error
+        return super().increment(method, url, response, error, _pool, _stacktrace)
+
+
 def get_session() -> requests.Session:
     """One session per thread: requests sessions aren't guaranteed to be thread-safe."""
     session = getattr(_thread_local, "session", None)
     if session is None:
-        retry = Retry(
+        retry = _Retry(
             total=2,
             backoff_factor=0.5,
             status_forcelist=(500, 502, 503, 504),
@@ -152,7 +185,22 @@ def get_session() -> requests.Session:
         session.mount("http://", adapter)
         session.headers["User-Agent"] = USER_AGENT
         _thread_local.session = session
+        with _cache_lock:
+            _sessions.add(session)
     return session
+
+
+def close_idle_connections() -> None:
+    """Close the connections that every thread's session keeps open for its next request, as a server may once it has
+    made a talk or a PowerPoint. Each holds the TLS state of its handshake (the host's certificate chain, parsed, among
+    it: tens of KB in C memory), and the threads that live on (the image finder's, some sources' own) keep one to every
+    host they asked, which the host mostly drops long before the next talk asks again: on talkgenerator.com, they took
+    its memory up by 3 to 4 MB a talk. Requests under way finish as they would; the next ones open new connections."""
+    with _cache_lock:
+        sessions = list(_sessions)
+    for session in sessions:
+        for adapter in set(session.adapters.values()):  # (one adapter serves both http and https)
+            adapter.close()  # (closes its idle connections: the adapter itself goes on working)
 
 
 # Headers that an answer the cache keeps may not vary on: requests_cache wouldn't read it back. One that varies on a
@@ -345,14 +393,19 @@ def search_json(
     missing_ok: bool = False,
 ) -> Any | None:
     """GET a search API's JSON answer, keeping a service that can't answer now out for a while (its cooldown): no
-    answer or a server error (5 minutes), a rate limit (15 minutes, or as long as it asks), a refusal (an hour: a
-    rejected key, or a network it won't serve). None on any failure. While the cooldown lasts, only an answer that's
-    kept will do (see get's cached_only): the searches made before still get their answers, and new ones none. With
-    missing_ok, a 404 is an answer too (nothing there), not worth a warning."""
+    answer or a server error (5 minutes), an answer that took longer than SLOW_SECONDS (5 minutes too: the answer
+    still counts), a rate limit (15 minutes, or as long as it asks), a refusal (an hour: a rejected key, or a network
+    it won't serve). None on any failure. While the cooldown lasts, only an answer that's kept will do (see get's
+    cached_only): the searches made before still get their answers, and new ones none. With missing_ok, a 404 is an
+    answer too (nothing there), not worth a warning."""
     cooling = cooldown.active
+    started = time.monotonic()
     response = get(url, params=params, headers=headers, timeout=timeout, cached_only=cooling)
+    took = time.monotonic() - started
     if response is None and cooling:  # (none kept: not an outage, so the cooldown doesn't get longer)
         return None
+    if response is not None and not cooling and took > SLOW_SECONDS:
+        cooldown.trigger(OUTAGE_COOLDOWN_SECONDS, f"it took {took:.0f} s to answer")
     if response is None or response.status_code >= 500:
         cooldown.trigger_outage(response)
         return None
