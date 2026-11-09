@@ -1149,6 +1149,20 @@ that pitches and academic talks open on most of the time, and some TED-like talk
   questions) and the TED pack's version 7 (a `problem` grammar, in a TED speaker's voice); linted as every pack is, and
   each line under a problem 80 characters at most.
 
+Checked on 2026-11-09, without GIPHY and Unsplash: the quick set (1,914 passed); `tests/test_problem_slides.py` (74,
+its slow ones too: the longest problems and long words in every family and in every open font pairing, every layout);
+the family-wide sweeps of `test_design` (long words in every family and pairing, no layout twice in a row, random
+themes) and `test_motifs`, which found two things, both fixed: a long heading on the sticker needs body contrast (1997
+WordArt), and a problem beside a photo that fills the slide's side gets no decoration or slide number in most
+families, as a big number beside its picture doesn't (photo slides' motifs keep off them, D65), which the test now
+counts as it counts full-screen pictures. `talkgenerator check --quick --seeds 1,2,3` of classic pitches (9 talks: 0
+errors, 0 warnings, deterministic 9 of 9; six open on a problem slide) and academic talks (9 talks: one statement's
+backdrop with detail where its text goes, a free slide's; one talk whose fun fact's photo changed between its two runs
+while Pexels was in a cooldown, deterministic when made again; all nine open on a problem slide). Five sample decks,
+three by the free models ($0), and a free model's pigeons pitch whose problem slide got "How to Repel and Keep Pigeons
+Away Naturally" to start from. No OpenAI image generation: the generated picture beside a problem is tested with a fake
+generator only.
+
 ## 8. Slide types and variety
 
 v4's slide types stay: title, about me, history, full-screen gif, meme or photo, image with title, large quote over

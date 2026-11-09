@@ -90,9 +90,15 @@ def test_every_family_decorates_its_slides_and_passes_the_design_checks(images, 
         deck = _runs(seed, _theme(family, seed)).to_deck()
         assert check_design(deck) == [], (family, seed)
         decorated = [slide for slide in deck.slides if any(element.role == DECORATION for element in slide.elements)]
-        # (every slide but those a photo covers has the family's fixture, or its decoration's shapes or texts)
-        covered = [slide for slide in deck.slides if slide.type == "full_image"]
+        # (every slide but those a photo covers, or a side of, to its edges, has the family's fixture, or its
+        # decoration's shapes or texts: a photo slide's motifs keep off it, D63's big number beside its picture and
+        # D66's problem beside its photo too)
+        covered = [slide for slide in deck.slides if slide.type == "full_image" or slide.layout in _SIDE_PHOTOS]
         assert len(decorated) >= len(deck.slides) - len(covered) - 2, (family, seed)
+
+
+# The layouts whose photo fills a side of the slide, to its edges
+_SIDE_PHOTOS = frozenset({"v5/big-number-side", "v5/problem-split"})
 
 
 @pytest.mark.parametrize("family", FAMILIES)
