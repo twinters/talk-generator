@@ -24,7 +24,7 @@ from talkgenerator.llm.base import TextProvider
 from talkgenerator.llm.ledger import Budget, Ledger, MeteredProvider
 from talkgenerator.llm.providers import NoneProvider, from_settings, provider_from_spec
 from talkgenerator.models.deck import Deck
-from talkgenerator.models.events import SlideReady, SlideUpdated, TalkEvent, TalkFinished, TalkStarted
+from talkgenerator.models.events import SlideReady, SlideSpare, SlideUpdated, TalkEvent, TalkFinished, TalkStarted
 from talkgenerator.models.theme import Theme
 from talkgenerator.plan import languages
 from talkgenerator.schema import formats
@@ -501,12 +501,34 @@ def stream_talk(
     personas: str | Iterable[str] | None = None,
     vision_pick: bool | str | TextProvider | None = None,
     theme_families: str | Iterable[str] | None = None,
+    spares: int = 0,
+    slide_seconds: float | None = None,
 ) -> Iterator[TalkEvent]:
     """Make a talk as generate_presentation does (the same deck, for the same options, seed and answers), handing
     over what's ready while it's made (see talkgenerator.models.events): talk.started once its title is known (the
     one it settles on, and for a topic_or_title, how that was read), a slide.ready for every slide as soon as it's
     settled, in order and laid out in the talk's theme, and talk.finished with the whole deck. Meanwhile, the slides
     after it are being made: a language model's while it writes them.
+
+    With spares, it also makes that many spare slides, for a presenter who goes on before the next slide is in: as
+    soon as the talk has started, on a thread of their own, each a slide that takes a fraction of a second and hardly
+    ever fails (a quiz, a tier list, red flags, an acronym... from the TED pack's templates, without pictures), about
+    the talk's topic, as the talk's persona favours them; in a talk in another language than English, whose classic
+    slides would be English, a picture of the topic without text. Each comes as a slide.spare once it's made, laid
+    out in the talk's theme without a slide number, until the talk's slides are all in: a spare that isn't made by
+    then is left out. Spares are none of the talk's slides: the deck (and so its PowerPoint) leaves them out, and as
+    they have random streams of their own, the talk's slides come out the same with spares or without. A spare can't
+    be made for a talk on a topic its slides wouldn't make light of (see talkgenerator.sources.slide_texts.sensitive).
+
+    With slide_seconds, every slide but the title slide has that long, at most, from when it could come (once the
+    slide before it came, and its text, for a slide a language model writes): one that isn't made by then (its pictures
+    still being looked for, say) comes at once with what's quick instead. A slide the model wrote keeps its texts: it
+    comes without the pictures it can do without, and with spare pictures of the talk's topic, found early, for the
+    ones it can't. Else a stand-in takes its place, a slide of the spare slides' kinds about the slide's own seed, made
+    in a hundredth of a second (in a talk in another language, a spare picture of the topic, without text). It's the
+    talk's slide, in the deck and its PowerPoint; what the slide waited for goes on by itself, and nothing waits for it
+    (talk.finished neither). Off by default (None): the same seed gives the same talk as long as no slide runs out of
+    time, as it then depends on how long the sources take.
 
     In a talk that generates pictures (image_generator: see generate_presentation), a slide comes with its stock photo
     where a generated picture is to go, and comes again (slide.updated, at the same index, laid out the same way) once
@@ -521,7 +543,7 @@ def stream_talk(
     Stopping the iteration (closing the iterator, or leaving a for loop over it) stops the talk, and an error that
     stopped it comes out of the iterator."""
     events: queue.SimpleQueue[TalkEvent | None] = queue.SimpleQueue()  # (None: the end)
-    following = _Following(events.put)
+    following = _Following(events.put, spares=max(0, spares), slide_seconds=slide_seconds)
     failures: list[BaseException] = []
 
     def make() -> None:
@@ -572,10 +594,16 @@ def stream_talk(
 
 
 class _Following:
-    """Turns a talk's progress into events (see stream_talk), and stops the talk once they're not wanted anymore."""
+    """Turns a talk's progress into events (see stream_talk), and stops the talk once they're not wanted anymore. It
+    wants that many spare slides, and gives every slide that long at most (spares and slide_seconds: see
+    talkgenerator.schema.presentation_schema.Progress)."""
 
-    def __init__(self, hand_over: Callable[[TalkEvent], None]) -> None:
+    def __init__(
+        self, hand_over: Callable[[TalkEvent], None], spares: int = 0, slide_seconds: float | None = None
+    ) -> None:
         self.hand_over = hand_over
+        self.spares = spares
+        self.slide_seconds = slide_seconds
         self.cancelled = threading.Event()
         self._layout: engine.DeckLayout | None = None
         self._handed_over = 0
@@ -640,6 +668,17 @@ class _Following:
             self.hand_over(SlideUpdated(index=index, slide=deck_slide))
         for image in slide.image_store().values():  # (a picture shown is a picture used, as in settled)
             image.mark_used()
+
+    def spare(self, slide_deck: SlideDeck, number: int, slide: Any) -> None:
+        """A spare slide (the number-th, from 0), made: hand it over, laid out in the talk's theme as its slides are,
+        but without a slide number, and without changing how they're laid out (see engine.DeckLayout.spare). Its
+        pictures, if any, aren't marked used: a spare is only shown when a presenter catches up with the making."""
+        if self.cancelled.is_set():
+            return
+        deck_slide = slide.to_deck_slide()
+        if self._layout is not None:
+            deck_slide = self._layout.spare(number, deck_slide)
+        self.hand_over(SlideSpare(index=number, slide=deck_slide))
 
     def _go_on(self) -> None:
         if self.cancelled.is_set():

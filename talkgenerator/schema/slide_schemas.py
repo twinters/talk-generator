@@ -1,4 +1,5 @@
 import dataclasses
+from typing import Final
 
 from talkgenerator.datastructures.slide_generator_data import (
     BetweenWeight,
@@ -1361,6 +1362,32 @@ all_slide_generators = (
     + native_diagram_slide_generators
     + conclusion_slide_generators
 )
+
+# SPARE SLIDES: what a streamed talk shows while its next slide isn't in yet, when a presenter catches up with the
+# making (see talkgenerator.generator.stream_talk's spares): slide types drawn without pictures, from the TED pack's
+# templates and the words ConceptNet (or Datamuse) relates to the topic. Timed on 26 topics (docs/v5-plan.md, D66, has
+# the numbers), each took a hundredth of a second once those words were in (one lookup a topic, 0.1 to 0.5 s from
+# Datamuse), a second at most (a dare's real dad joke), and never failed but on a topic they won't make light of
+# (death): where a slide with a picture took 1 to 14 seconds. A quiz takes up to 3 s for a real trivia question, and a
+# wall of text 0.8 s to lay out (its fine print), so they come less often; so do the ones that break the illusion (a
+# fake error message, a dare), as in a talk. Not the diagrams that look a picture up for a box now and then (3 to 6 s),
+# nor the property chart (it failed on 8 of 26 topics), nor the talk's structure (an agenda, a section's divider)
+SPARE_WEIGHTS: Final[dict[str, float]] = {
+    "Tier List": 1,
+    "Alignment Chart": 1,
+    "Red Flags": 1,
+    "Reviews": 1,
+    "Acronym": 1,
+    "Quiz": 0.8,
+    "Yes/No/Funny Chart": 0.8,
+    "Org Chart": 0.6,
+    "Timeline": 0.6,
+    "Bar Ranking": 0.6,
+    "Dare": 0.6,
+    "Error Message": 0.5,
+    "Wall of Text": 0.4,
+}
+SPARE_GENERATORS: Final = tuple((slide_generators.get(name), weight) for name, weight in SPARE_WEIGHTS.items())
 
 # How many slides of a tag a talk may have, from its first slide on (see presentation_schema.most_slides): an absolute
 # maximum is a number of slides (0: none), a relative one a share of the talk's slides, rounded down but at least one

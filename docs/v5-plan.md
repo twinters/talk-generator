@@ -2026,7 +2026,8 @@ As built (2026-11-07, `talkgenerator.images.generation` and `talkgenerator.image
   offline. Golden deck files per format; renderer tests on normalized pptx XML; PNG thumbnails through headless
   LibreOffice for the contact sheet.
 - **What stays non-deterministic:** live APIs and live LLM calls. A saved deck JSON is the reproducible artifact:
-  rendering it again gives the same .pptx.
+  rendering it again gives the same .pptx. And, by choice, a streamed talk with a time limit per slide (D67) once a
+  slide runs out of time: that slide then depends on how long its sources took (spares, D66, never change a talk).
 - **Test layers:** offline unit tests (as now), offline end-to-end tests with replay, and the existing weekly
   network canary, extended with an OpenRouter free-model smoke test (at $0). That test also reports which free
   models still exist and still write valid plans, so the site's model list can change without a release.
@@ -2069,6 +2070,44 @@ As built (2026-11-07, `talkgenerator.images.generation` and `talkgenerator.image
   where the model had written its own ("The Quantum Alchemy of Medieval Coffee"), no title slide had its thesis,
   and the slides came in from `slide_10` on; they were the model's all the same, as dots wrote the rest within
   5 s, faster than slides settle.
+- **Spare slides** (2026-11-09, D66), the user's idea: a presenter can catch up with a talk that's still being made,
+  and then waits for the next slide (talkgenerator.com first held the curtain until a few slides were in). So
+  `stream_talk(spares=N)` sends N spare slides early, for a presentation to show instead of waiting, marked as a
+  spare, until the next slide is in. To pick their kinds, every classic slide generator of the default and ted
+  schemas was timed on its own, as a talk runs it (its images probed), with the topic as its seed and an empty cache:
+  all 70 on 6 topics, and 33 candidates on 20 more, odd ones among them ("my grandmother's cat", "death"); wikiHow
+  off (its robots.txt), and Unsplash, GIPHY and Pexels too (hourly quotas the site may share). ConceptNet answered
+  502 throughout, so the words came from Datamuse (0.13 s a request, one lookup a topic). The slides drawn without
+  pictures took 0.00 to 0.01 s at the median and 1.1 s at most (a dare's real dad joke), a quiz up to 2.7 s (a real
+  trivia question), and failed on "death" alone, which they won't make light of; the yes/no pie and the bar ranking
+  never failed; the property chart failed on 8 topics of 26. A slide with pictures took 0.7 to 5.9 s at the median and
+  up to 14.4 s (three captioned pictures): finding an image takes 0.4 to 3.2 s at the median by its look and up to
+  11.3 s (a backdrop from the Met), of which Reddit's searches take 1.4 to 1.9 s each, ShitpostBot's 1 s, the Met's
+  0.75 s (3 s at the 90th percentile), and checking a picture (a probe) 0.38 s; Openverse didn't answer within 8 s
+  and was skipped. Laying a slide out in a theme takes 0.003 to 0.06 s, but a wall of text 0.8 s (its fine print). A
+  picture of the topic without text took 2.3 s at the median, 3.9 s at most, and never failed. So a spare is one of
+  13 kinds drawn without pictures (`SPARE_WEIGHTS`: a tier list, an alignment chart, red flags, reviews and an
+  acronym most often; a quiz, a yes/no pie, an org chart, a timeline, a bar ranking, a dare, an error message and a
+  wall of text less often), or in a talk in another language, whose classic slides would be English, a picture of
+  the topic without text. Live, a 6-slide classic talk with `spares=3` had its three spares 0.8 to 1.6 s after
+  `talk.started`, where its slides 3 to 6 came after 20 to 38 s.
+- **A time limit per slide** (2026-11-09, D67), the user's idea after the spares: spare content within a slide puts a
+  ceiling on how long a slide takes. Slides settle in order, so one slow slide (its pictures still being looked for:
+  the timings above, a slide with pictures 1.9 s at the median, 5.6 s at p90, 8.1 s at p95, 14.4 s at most) holds back
+  every slide after it, ready or not. With `stream_talk(slide_seconds=S)`, every slide but the title slide has S
+  seconds at most from when it could settle (the slide before it settled, and for a planned slide, its text came in:
+  the model's writing doesn't count). Out of time, a planned slide comes at once as the model wrote it, without the
+  pictures it can do without and with spare pictures of the talk's topic for the ones it can't (three, found early
+  by the "neutral" look; a slot of a kind of its own, a meme's template, a chart, a book's cover, takes none):
+  `realize(spare_pictures=)` looks nothing up. Otherwise a stand-in, of the spare kinds, about the slide's own seed
+  (in another language, a spare picture of the topic without text), which the talk's tag caps allow. What the slide
+  waited for goes on by itself on its daemon thread, and nothing waits for it (neither the round's end nor
+  `talk.finished`, which would hold talkgenerator.com's one generation slot); with nothing to stand in, the slide is
+  waited for after all. A slide whose work hasn't started when it's due (the threads busy, with slides that ran out of
+  time) starts it then, apart from them: the first live run, without that, made every slide after a slow one a
+  stand-in, a quiz of 0.01 s among them, as it timed out in the queue. 8 s, which 5% of those slides took more than, is
+  talkgenerator.com's. Live, a 10-slide classic talk that had gaps of up to 10.3 s between its slides (34 s in all)
+  had none over 8.1 s with it (30 s, two stand-ins), and a talk a free model wrote had one slide of nine run out.
 - **talk-generator-web**, on a branch of its own: `POST /api/talks` returns an id; `GET /api/talks/<id>/events`
   streams Server-Sent Events (with nginx's buffering off); `GET /api/talks/<id>` returns the deck JSON as a
   permalink, kept for 7 days like today's outputs; `GET /api/talks/<id>.pptx` renders the .pptx on demand.
@@ -2269,9 +2308,11 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D63 | Most talks are TED-like, and slides of text get pictures (the user's review of 35 talks, 2026-11-09; section 7). `FORMAT_WEIGHTS`: the TED-like talk 20, pitch and academic 1, all-hands and keynote 1.5; specialists ×15 or ×10: 70% of the talks over all the personas are TED-like (it was 57%), a specialist's favourite comes second to them in about two of five of their talks, pitches and academic talks are the rarest, every format keeps 2% or more with every persona. A format's arc keeps a share of its slides free first (`Arc.free`: a quarter for a pitch, an academic talk and an all-hands, 0.15 for a keynote), whose text-heavy parts wait for longer talks; free slides have more memes, gifs, Reddit's weird pictures and the format's own provocations (a picture filling the slide under a word or two in its voice). Big numbers and KPI tiles have an optional picture behind them or beside it, from a look of many sources (`backdrop`), three big numbers in four and half the dashboards, in every format; a slide whose optional picture isn't found goes without it. Statements' backdrops mix calm photos and the backdrop look. Reddit's weird pictures outweigh ShitpostBot's, memes weigh more. A pitch's product (and a keynote's) is searched as a gadget and, in a talk that generates pictures, drawn as an advertisement's product shot. |
 | D64 | Diagrams and charts get livelier (section 8): a matrix has short, everyday names and comes out named, of dots (things where they belong, the deck's `MatrixDiagram.dots`) or bare; a scatter plot has clouds of eleven shapes, a fitted line now and then (`ChartSeries.trendline`, PowerPoint's own trendline) or named clusters in colours the layout engine picks apart (`ChartSeries.color`, a trend's lines' too); a diagram has a weird but related picture in one or two of its boxes 35% of the time, an image element with a box that appears with its box's text (optional image slots: a box without a picture still makes the slide); and a trend's named moment gets a picture by its point, on a click, where every renderer has the point: talk-generator-web's plot, which a PowerPoint chart with a picture is pinned to. The site draws the new deck fields on a branch of its own. |
 | D65 | From the user's look at 35 sample talks (2026-11-09): a dare is a real challenge for the presenter to keep up, or something the whole audience does ("Audience participation"), a dad joke one kind among them; a closing slide ends its talk on a funny picture, a last tip or a callback to an earlier slide's picture, which the deck gives it (realizing a slide still knows no other slide); an academic talk's references are a slide type of their own, with a picture of one of the works (a book's cover or a paper's figure) most of the time; emoji come in front of a list's things now and then, only where a variant asks for them, measured 1.4 ems wide and drawn in an emoji font; and every slide is numbered of the deck's ("7/12"), small and in its family's style, the 2019 template's too. A recipe's variant can say that its slide takes no real fact or flavour text (`Variant.facts`). |
+| D66 | A streamed talk can have spare slides (`stream_talk(spares=N)`, the user's idea, 13.1): N slides made as soon as the talk has started, one after another on a thread of their own and from random streams of their own (so the talk's slides come out the same with spares or without), each of another of 13 kinds drawn without pictures (`SPARE_WEIGHTS`, by weight times the persona's: a hundredth of a second, timed on 26 topics), about the talk's topic, or in a talk in another language a picture of the topic without text. Each comes as `slide.spare` (which spare, and the slide laid out in the talk's theme without a slide number: `DeckLayout.spare`) until the talk's last slide is settled; none after that, and none in the deck or its PowerPoint. talkgenerator.com shows one when a presentation goes on before the next slide is in, marked "spare" where the slide's number goes, and the next slide once the presenter goes on and it's in. |
+| D67 | A streamed talk can give every slide but the title slide a time limit (`stream_talk(slide_seconds=S)`, the user's idea, 13.1), from when it could settle (the slide before it settled, and a planned slide's text came in). Out of time, it settles at once with what's quick: a planned slide as the model wrote it, without the pictures it can do without and with spare pictures of the talk's topic (three, found early) for the others; else a stand-in of the spare kinds about the slide's own seed (in another language, a spare picture without text). It's the talk's slide, in the deck and its PowerPoint, its notes saying it ran out of time; what it waited for goes on by itself, and nothing waits for it. With nothing to stand in, it's waited for. Off by default: the same seed gives the same talk as long as no slide runs out of time. talkgenerator.com gives its streamed talks 8 s (5% of the slides with pictures timed for D66 took longer). |
 
 D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, D43 to D62 on 2026-11-08, and D63
-to D65 on 2026-11-09; the others follow from the design.
+to D67 on 2026-11-09; the others follow from the design.
 
 ### Open questions
 

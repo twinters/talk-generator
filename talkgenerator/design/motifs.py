@@ -62,7 +62,9 @@ _ANYTHING: Final = ImageElement(role="background", image=ImageAsset(url="photo")
 class Scene:
     """A slide being laid out, as a motif decorates it: its placement, its elements by role, its type and theme, its
     place in the deck (from 0), whether it has a credit line and a photo behind everything, and how many slides its
-    deck has (None when that isn't known: a slide laid out by itself)."""
+    deck has (None when that isn't known: a slide laid out by itself). A slide that's not numbered (a spare, which is
+    none of the deck's slides) gets no slide number, nor what a number is on (a pill, a sticker, a tag), nor what
+    counts the deck's slides (a lecture's dots): the rest of its decoration is as a numbered slide's."""
 
     placement: Placement
     roles: dict[str, Content]
@@ -72,6 +74,7 @@ class Scene:
     credits: bool
     backdrop: bool
     total: int | None = None
+    numbered: bool = True
     # Where the decoration put a piece that its later pieces keep clear of (a slide's number, which confetti avoids)
     kept: list[Box] = dataclasses.field(default_factory=list)
 
@@ -473,7 +476,9 @@ def _slide_number(
     """The slide's number of the deck's ("7/12") in the first of the boxes (corners, in the family's order) that's
     free and where it reads on what's behind its letters (not across a theme's frame, say), small, in the muted colour
     (or the colour), made lighter or darker as it needs; the decoration put after it keeps clear of it. Whether it
-    found a place."""
+    found a place (never, on a slide that's not numbered)."""
+    if not scene.numbered:
+        return False
     text = _count(scene, padded)
     for box in boxes:
         if not scene.free(box, pad=4):
@@ -542,7 +547,7 @@ def _corporate(scene: Scene) -> None:
         scene.add(_rect(0, 0, WIDTH, 12, palette.accent), _rect(0, 12, WIDTH, 4, palette.accent_2))
         width = 72 if scene.total is None else 112
         tile = Box(x=WIDTH - 16 - width, y=1034, w=width, h=30)
-        if scene.free(tile, pad=2):
+        if scene.numbered and scene.free(tile, pad=2):
             scene.add(_rect(tile.x, tile.y, tile.w, tile.h, palette.accent))
             scene.write_on(_count(scene), tile, "decoration centre")
 
@@ -562,7 +567,7 @@ def _lecture(scene: Scene) -> None:
     if not scene.placement.photo:
         fitting = int((WIDTH / 2 - MARGIN) // 26) + 1  # (as many dots as fit in the slide's left half)
         dots = scene.total if scene.total is not None and scene.total <= fitting else scene.number + 1
-        for index in range(min(dots, fitting)):
+        for index in range(min(dots, fitting) if scene.numbered else 0):
             x = MARGIN + index * 26
             if index == scene.number:
                 scene.add(_ellipse(x + 7, 22, 14, 14, palette.accent))
@@ -570,7 +575,8 @@ def _lecture(scene: Scene) -> None:
                 scene.add(_ring(x + 7, 22, 14, 14, palette.accent, 2, 1.0 if index < scene.number else 0.45))
         scene.add(_rect(0, 1036, WIDTH, 44, palette.surface))
         number = Box(x=WIDTH - MARGIN - 160, y=1034, w=160, h=30)
-        scene.write_on(_count(scene, gap=" "), number, "decoration right", palette.muted)
+        if scene.numbered:
+            scene.write_on(_count(scene, gap=" "), number, "decoration right", palette.muted)
 
 
 def _blobs(scene: Scene) -> None:
@@ -587,7 +593,7 @@ def _blobs(scene: Scene) -> None:
         if opacity >= 0.04:
             scene.under(_ellipse(x + size / 2, y + size / 2, width, width, colour, opacity))
     pill, number = _plate(WIDTH - MARGIN - 112, 112)
-    if not scene.placement.photo and scene.free(number, pad=4):
+    if scene.numbered and not scene.placement.photo and scene.free(number, pad=4):
         opacity = _faint(scene, palette.accent, 0.16)
         if opacity >= 0.04:
             scene.add(_rect(pill.x, pill.y, pill.w, pill.h, palette.accent, opacity, corner=pill.h / 2))
@@ -624,7 +630,8 @@ def _ornate(scene: Scene) -> None:
     for cx, cy in ((27, 27), (WIDTH - 27, 27), (27, HEIGHT - 27), (WIDTH - 27, HEIGHT - 27)):
         scene.over(_polygon(geometry.diamond(), cx - 14, cy - 14, 28, 28, ink))
     cartouche, number = _plate(WIDTH / 2 - 80, 160)
-    if scene.free(number, pad=2):  # (the paper over the frame's lines there, edged in the ink, a diamond each side)
+    # (the paper over the frame's lines there, edged in the ink, a diamond each side)
+    if scene.numbered and scene.free(number, pad=2):
         middle = cartouche.y + cartouche.h / 2
         scene.over(
             _rect(cartouche.x, cartouche.y, cartouche.w, cartouche.h, palette.background, corner=cartouche.h / 2),
@@ -667,7 +674,8 @@ def _crayon(scene: Scene) -> None:
     elif (span := _beside_side_photo(scene)) is not None:  # (a picture filling one side: bunting across the other)
         _bunting(scene, crayons, *span, 2, 12, 34, 42)
     sticker, number = _plate(WIDTH - 44 - 116, 116)
-    if not scene.placement.photo and scene.free(number, pad=4):  # (before the confetti, which keeps clear of it)
+    # (before the confetti, which keeps clear of it)
+    if scene.numbered and not scene.placement.photo and scene.free(number, pad=4):
         corner = sticker.h / 2
         scene.add(
             _rect(sticker.x + 4, sticker.y + 4, sticker.w, sticker.h, palette.text, corner=corner),
@@ -824,7 +832,7 @@ def _brutal(scene: Scene) -> None:
     for role in scene.pictures() if scene.slide_type in _FRAMED_TYPES else []:
         shown = scene.shown(role, _grown(scene.box(role), -16))
         scene.add(_rect(shown.x + 16, shown.y + 16, shown.w, shown.h, palette.text), part_of=role)
-    if not scene.placement.photo:
+    if scene.numbered and not scene.placement.photo:
         width = 136 if scene.total is None else 176
         tag = Box(x=0, y=0, w=width, h=52)
         scene.add(_rect(tag.x, tag.y, tag.w, tag.h, palette.text))
@@ -899,7 +907,7 @@ def _starburst(scene: Scene) -> None:
     leaves that corner be)."""
     palette = scene.palette
     sticker, number = _plate(WIDTH - MARGIN - 112, 112)
-    if not scene.placement.photo and scene.free(number, pad=4):
+    if scene.numbered and not scene.placement.photo and scene.free(number, pad=4):
         corner = sticker.h / 2
         scene.add(
             _rect(sticker.x, sticker.y, sticker.w, sticker.h, "#ffe600", corner=corner),
@@ -931,7 +939,8 @@ def _comic(scene: Scene) -> None:
     on the panel's border, in its bottom right corner."""
     scene.over(_frame(Box(x=14, y=14, w=WIDTH - 28, h=HEIGHT - 28), "#111111", 9))
     caption, number = _plate(WIDTH - 60 - 124, 124)
-    if scene.free(number, pad=2):  # (yellow, edged in ink, over the border: as a comic's narration box)
+    # (yellow, edged in ink, over the border: as a comic's narration box)
+    if scene.numbered and scene.free(number, pad=2):
         scene.over(_rect(caption.x, caption.y, caption.w, caption.h, "#ffe14d"), _frame(caption, "#111111", 3))
         _slide_number(scene, number, spec=_sized("decoration centre", 25, 24, bold=True), colour="#111111")
     title = scene.title()
@@ -1021,8 +1030,11 @@ def _terminal(scene: Scene) -> None:
             scene.write_on(evidence, name, "decoration", palette.muted, part_of=role)
     if not scene.placement.photo:  # (the status line, with the slide's number, "[07/12]", on a tag at its start)
         width = 112 if scene.total is None else 168
-        scene.add(_rect(0, 1032, WIDTH, 48, bar), _rect(0, 1032, width, 48, palette.accent))
-        scene.write_on(f"[{_count(scene, padded=True)}]", Box(x=16, y=1034, w=width - 32, h=30), "decoration centre")
+        scene.add(_rect(0, 1032, WIDTH, 48, bar))
+        if scene.numbered:
+            scene.add(_rect(0, 1032, width, 48, palette.accent))
+            number = Box(x=16, y=1034, w=width - 32, h=30)
+            scene.write_on(f"[{_count(scene, padded=True)}]", number, "decoration centre")
 
 
 def _prompt(scene: Scene, role: str, prompt: str) -> None:
@@ -1080,7 +1092,7 @@ def _blueprint(scene: Scene) -> None:
             tick = (_rect(x - 10, y - 1, 20, 2, palette.text), _rect(x - 1, y - 10, 2, 20, palette.text))
             scene.add(*tick, part_of=role)
     block = Box(x=WIDTH - 440, y=1034, w=400, h=30)
-    if not scene.placement.photo and scene.free(block, pad=2):
+    if scene.numbered and not scene.placement.photo and scene.free(block, pad=2):
         scene.add(_rect(block.x, block.y, block.w, block.h, palette.background), _frame(block, palette.text, 2))
         scene.add(_rect(block.x + 150, block.y, 2, block.h, palette.text))
         scene.write_on("1:1", Box(x=block.x + 10, y=block.y, w=130, h=30), "decoration centre", palette.text)
@@ -1114,7 +1126,7 @@ def _chalkboard(scene: Scene) -> None:
     for index, colour in enumerate(chalk[:2]):
         scene.over(_rect(WIDTH - 360 + index * 110, HEIGHT - 26, 84, 14, colour, corner=6, rotation=-2 + index * 3))
     label, number = _plate(64, 120)
-    if scene.free(number, pad=2):  # (a strip of masking tape on the ledge, the number on it in pencil)
+    if scene.numbered and scene.free(number, pad=2):  # (a strip of masking tape on the ledge, the number in pencil)
         scene.over(_rect(label.x, label.y, label.w, label.h, "#e8dcc0", 0.92, corner=3))
         _slide_number(scene, number, spec="decoration centre", colour="#3d3d3d")
     scene.over(
@@ -1174,10 +1186,11 @@ def _newsprint(scene: Scene) -> None:
     ink = palette.text
     if not scene.placement.photo:
         scene.add(_rect(MARGIN, 47, WIDTH - 2 * MARGIN, 3, ink), _rect(MARGIN, 53, WIDTH - 2 * MARGIN, 1, ink))
-        scene.write_on(_roman(scene.number + 1), Box(x=MARGIN, y=16, w=300, h=30), "decoration", palette.muted)
-        page = Box(x=WIDTH - MARGIN - 300, y=16, w=300, h=30)
-        folio = _count(scene) if scene.total is not None else f"A{scene.number + 1}"
-        scene.write_on(folio, page, "decoration right", palette.muted)
+        if scene.numbered:
+            scene.write_on(_roman(scene.number + 1), Box(x=MARGIN, y=16, w=300, h=30), "decoration", palette.muted)
+            page = Box(x=WIDTH - MARGIN - 300, y=16, w=300, h=30)
+            folio = _count(scene) if scene.total is not None else f"A{scene.number + 1}"
+            scene.write_on(folio, page, "decoration right", palette.muted)
         for index in range(3):
             scene.add(_star(WIDTH / 2 - 30 + index * 30, 30, 20, ink))
     title = scene.title()

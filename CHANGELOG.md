@@ -516,6 +516,18 @@ From the user's look at 35 sample talks (docs/v5-plan.md, D65):
 - `slide.updated` (`talkgenerator.models.events.SlideUpdated`): in a talk that streams, a slide handed over before
   comes again, at its index and laid out as before (`DeckLayout.again`), once a generated picture takes its stock
   photo's place; `talk.finished` comes once every picture is in.
+- Spare slides: `stream_talk(..., spares=3)` sends three spare slides early on (`slide.spare`,
+  `talkgenerator.models.events.SlideSpare`), for a presentation to show when it catches up with the making, instead of
+  waiting for the next slide. They're about the talk's topic, of kinds that take a hundredth of a second and hardly
+  ever fail (a tier list, red flags, a quiz, a chart...: no pictures to find; in a talk in another language, a
+  picture of the topic without text), laid out in the talk's theme without a slide number (`DeckLayout.spare`). They
+  stay out of the deck and its PowerPoint, and the talk's slides come out the same with spares or without.
+- A time limit per slide: with `stream_talk(..., slide_seconds=8)`, a slide that isn't made within 8 seconds of when
+  it could come (the slide before it, and its text) comes at once with what's quick, so one slow slide no longer holds
+  back the rest. A slide a language model wrote keeps its texts, without the pictures it can do without and with spare
+  pictures of the talk's topic, found early, for the others (`realize(..., spare_pictures=)` looks nothing up); else a
+  stand-in of the spare slides' kinds, about the slide's own topic, takes its place. What it waited for goes on by
+  itself, and nothing waits for it.
 
 ### Lighter and faster
 

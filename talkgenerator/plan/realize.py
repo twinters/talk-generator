@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 import re
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Final
 
@@ -210,12 +211,17 @@ def realize(
     *,
     problems: list[str] | None = None,
     local_images: Path | None = None,
+    spare_pictures: Callable[[Any, list[ImageData]], ImageData | None] | None = None,
 ) -> tuple[Slide, list[Any]] | None:
     """A planned slide as a slide, with what it's made of (to check for repeats). None if anything it needs is
     missing: a text, or an image the sources couldn't find; problems then gets why.
 
     With local_images (a folder), an image "query" that names an image file (relative to that folder, or absolute)
-    puts that file on the slide: for plans that people or agents write, never for what a language model wrote."""
+    puts that file on the slide: for plans that people or agents write, never for what a language model wrote.
+
+    With spare_pictures, nothing is looked up, for a slide out of time (see PresentationSchema._in_time): it goes without
+    the images it can do without, and the ones it needs come from spare_pictures (given an image's source and the slide's
+    other images: a picture found earlier, or None, and then the slide doesn't come out)."""
     kind = KINDS[recipe.kind]
     concept = plan.concept.strip() or str(presentation_context.get("seed") or "")
     language = presentation_context.get("language", "en")
@@ -269,9 +275,16 @@ def realize(
             queries[slot] = query or concept
             # (not one of the slide's other images, nor nearly)
             others = [image for image in images.values() if isinstance(image, ImageData)]
+            behind = slot in kind.optional_images
+            if spare_pictures is not None:  # (out of time: no lookups)
+                found = None if behind or slot in optional else spare_pictures(source, others)
+                if found is None and not (behind or slot in optional):
+                    _note(problems, f"{slot}: no time to look for an image of {queries[slot]!r}, and no spare one")
+                    return None
+                images[slot] = found
+                continue
             with generator_util.as_planned():  # searched as written, among the best results
                 found = _find(source, queries[slot], presentation_context, others)
-            behind = slot in kind.optional_images
             if found is None and behind:
                 # (a picture the slide can do without, such as one behind its big number: searched for its concept at
                 # once, and else left out, on any try, so the slide comes without it rather than not at all)

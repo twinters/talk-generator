@@ -78,6 +78,10 @@ class Slide:
         """Debug information about how the slide was generated."""
         self._note = note
 
+    def add_note(self, note: str) -> None:
+        """A line more of debug information (what a slide that ran out of time became, say)."""
+        self._note = f"{self._note}\n{note}" if self._note else note
+
     def missing_content(self) -> list[str]:
         """The required arguments that are empty, hold an image that can't be downloaded or used, or repeat an
         image shown elsewhere on the slide (or nearly: see talkgenerator.images.analysis.near_duplicates).
