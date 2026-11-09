@@ -18,7 +18,7 @@ from typing import Any, Final
 
 from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
-from talkgenerator.plan.kinds import Recipe, Variant, matrix_landscape
+from talkgenerator.plan.kinds import Recipe, Variant, closing_variants, matrix_landscape
 from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema.formats import (
     Format,
@@ -811,8 +811,10 @@ _GENERATORS: Final = [
         "Closing",
         Recipe(
             "questions",
+            (cg.closing_picture_generator,),
             brief="The closing slide, after the ask: inviting the investors' questions (and their money)",
             hints={"subtitle": "a line under it, about investing"},
+            variants=closing_variants("a line under it, about investing"),
         ),
         repeats=3,
     ),

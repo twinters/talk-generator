@@ -29,6 +29,7 @@ from talkgenerator.llm.replay import ReplayProvider
 from talkgenerator.models.deck import Deck, Fact
 from talkgenerator.plan import prompt
 from talkgenerator.plan.kinds import Recipe
+from talkgenerator.plan.languages import ENGLISH
 from talkgenerator.schema.presentation_schema import PresentationSchema
 from talkgenerator.schema.slide_topic_generators import IdentityTopicGenerator
 from talkgenerator.slide import powerpoint_slide_creator, slide_generator_types, slides
@@ -524,6 +525,10 @@ def test_a_facts_credit_names_its_article_and_its_license():
 TOPIC = "penguins"
 
 
+# A closing slide's recipe without its picture (the kind has one: docs/v5-plan.md, D65), as these talks were
+_NO_PICTURE = {"images": (lambda context: None,), "omit": frozenset({"photo", "callback"})}
+
+
 def _drawn(kind, content, slide_class, weight, **recipe):
     return SlideGeneratorData(
         slide_generator_types.DrawnSlideGenerator(content, slide_class),
@@ -545,7 +550,9 @@ def fact_schema(with_facts: bool = True) -> PresentationSchema:
         name="Fake title",
         llm=Recipe("title"),
     )
-    closing = _drawn("questions", lambda c: ("Questions?", None), slides.QuestionsSlide, ConstantWeightFunction(1))
+    closing = _drawn(
+        "questions", lambda c: ("Questions?", None), slides.QuestionsSlide, ConstantWeightFunction(1), **_NO_PICTURE
+    )
     builders = [
         _drawn(
             "fun_fact",
@@ -1024,7 +1031,13 @@ def dare_schema() -> PresentationSchema:
         slide_generators=[
             title,
             _drawn("dare", lambda c: ("Challenge", "A classic dare"), slides.DareSlide, PeakedWeight((1,), 1000, 0)),
-            _drawn("questions", lambda c: ("Questions?", None), slides.QuestionsSlide, PeakedWeight((-1,), 1000, 0)),
+            _drawn(
+                "questions",
+                lambda c: ("Questions?", None),
+                slides.QuestionsSlide,
+                PeakedWeight((-1,), 1000, 0),
+                **_NO_PICTURE,
+            ),
         ],
         max_allowed_tags={"title": 1, "dare": 1, "questions": 1},
     )
@@ -1045,17 +1058,21 @@ def test_a_talk_s_dare_dares_its_presenter_to_tell_a_real_dad_joke(web, monkeypa
     assert dare.text_credits and closing.text_credits  # (their credit lines say "Sources:")
 
 
-def test_half_of_the_classic_dares_dare_the_presenter_to_tell_a_real_dad_joke(web, related):
+def test_a_fifth_of_the_classic_dares_dare_the_presenter_to_tell_a_real_dad_joke(web, related):
     framings = packs.pack(packs.TED).rule("karaoke.joke_dare")
     jokes = 0
-    for seed in range(20):
+    headings = set()
+    for seed in range(40):
         with random_util.use(random_util.Rng(seed)):
-            _, dare = slide_texts.generate_dare({"seed": "cat", "topic": "cats"})
+            heading, dare = slide_texts.generate_dare({"seed": "cat", "topic": "cats"})
+        headings.add(heading)
         if isinstance(dare, facts.CreditedText):
             jokes += 1
+            assert heading == ENGLISH.dare  # (a dare for the presenter)
             assert (dare.fact.source, dare.fact.text) == ("icanhazdadjoke", JOKES["cat"][0][1])
             assert dare in [framing.replace("{joke}", dare.fact.text) for framing in framings] and len(dare) <= 130
-    assert 3 < jokes < 17
+    assert 2 < jokes < 16  # (one kind among the challenges and the audience's dares: D65)
+    assert headings == {ENGLISH.dare, ENGLISH.audience}
 
 
 def test_some_classic_closing_slides_end_on_a_real_piece_of_advice(web, related):
@@ -1063,7 +1080,7 @@ def test_some_classic_closing_slides_end_on_a_real_piece_of_advice(web, related)
     advised = 0
     for seed in range(30):
         with random_util.use(random_util.Rng(seed)):
-            _, line = slide_texts.generate_questions({"seed": "cat", "topic": "cats"})
+            _, line, *_ = slide_texts.questions(lambda context: None)({"seed": "cat", "topic": "cats"})
         if isinstance(line, facts.CreditedText):
             advised += 1
             assert line.fact.source == "Advice Slip" and "bleach" not in line
@@ -1081,7 +1098,10 @@ def test_classic_flavour_texts_switched_off_leave_the_slides_as_they_were(web, r
         for seed in range(10):
             with random_util.use(random_util.Rng(seed)):
                 texts.append(
-                    (slide_texts.generate_dare({"seed": "cat"}), slide_texts.generate_questions({"seed": "cat"}))
+                    (
+                        slide_texts.generate_dare({"seed": "cat"}),
+                        slide_texts.questions(lambda context: None)({"seed": "cat"}),
+                    )
                 )
         return texts
 

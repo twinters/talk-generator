@@ -18,7 +18,7 @@ import dataclasses
 import functools
 import re
 import unicodedata
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Final
 
@@ -54,7 +54,10 @@ class Variant:
     """A way a recipe's slide can come out, which the talk's dice pick by weight: the text fields and image slots it
     does without (a slot left out isn't searched, and its builder gets None for it), a note for the language model
     (added to the slide's brief), what to write in some of its fields (hints, over the recipe's) and how long that may
-    be (limits), and what some of its slots search for, instead of the model's query (a meme's template)."""
+    be (limits), what some of its slots search for, instead of the model's query (a meme's template), whether its
+    slide may build on a real fact or a flavour text, as its kind's do (a dare on a dad joke: not a dare for the
+    audience), and the fields whose things get an emoji in front, of a mood (where the model wrote none: see
+    talkgenerator.sources.emoji)."""
 
     weight: float
     omit: frozenset[str] = frozenset()
@@ -62,6 +65,8 @@ class Variant:
     hints: Mapping[str, str] = field(default_factory=dict)
     limits: Mapping[str, int] = field(default_factory=dict)
     queries: Mapping[str, str] = field(default_factory=dict)
+    facts: bool = True
+    emoji: Mapping[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -132,6 +137,10 @@ class Recipe:
     queries: Mapping[str, str] = field(default_factory=dict)
     # The boxes of a diagram that have a picture on this slide (see BoxPictures): none, but where the dice put some
     pictures: tuple[str, ...] = ()
+    # Whether its slide may build on a real fact or a flavour text, as its kind's do (see talkgenerator.facts.use_of)
+    facts: bool = True
+    # Per text field: the mood of the emoji its things get in front, where the model wrote none (a tier list's tiers)
+    emoji: Mapping[str, str] = field(default_factory=dict)
 
     def text_field(self, text: TextField) -> TextField:
         """A text field of the kind as this slide has it: as long as its limit here allows."""
@@ -189,6 +198,8 @@ class Recipe:
                     hints={**self.hints, **variant.hints},
                     limits={**self.limits, **variant.limits},
                     queries={**self.queries, **variant.queries},
+                    facts=self.facts and variant.facts,
+                    emoji={**self.emoji, **variant.emoji},
                     variants=(),
                 )
         if kind.pictures is None:
@@ -413,7 +424,15 @@ def _section(texts: Mapping[str, str | None], images: Mapping[str, Any], languag
 
 
 def _questions(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
-    return slides.QuestionsSlide(texts["title"], texts.get("subtitle"))
+    # (a callback's picture is an earlier slide's, which the deck gives it: see talkgenerator.slide.slide_deck)
+    callback = texts.get("callback")
+    return slides.QuestionsSlide(
+        texts["title"],
+        texts.get("subtitle"),
+        images.get("photo"),
+        callback=callback,
+        pick=random_util.random() if callback is not None else 0.0,
+    )
 
 
 def _numbered(texts: Mapping[str, str | None], prefix: str, most: int) -> list[str | None]:
@@ -448,6 +467,16 @@ def _iceberg(texts: Mapping[str, str | None], images: Mapping[str, Any], languag
 
 def _process(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
     return slides.ProcessSlide(texts["title"], *_numbered(texts, "step", 5), pictures=_box_pictures(images))
+
+
+def _references(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    # (a picture of one of the works, a book's cover or a paper's figure, as its recipe searches for it)
+    works = [_shortened(part.strip(), AGENDA_ITEM) for part in (texts["items"] or "").split("|") if part.strip()]
+    if len(works) < 3:
+        raise ValueError("references need three works or more")
+    return slides.ReferencesSlide(
+        texts.get("title"), *works[: slides.REFERENCES], figure=images.get("figure"), caption=texts.get("caption")
+    )
 
 
 def _meme(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
@@ -519,7 +548,12 @@ def _respelled(title: str, acronym: str, initials: str) -> str:
 
 
 def _dare(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
-    return slides.DareSlide(language.dare, texts["dare"])  # (its heading is talkgenerator's: "Challenge")
+    # (its heading is talkgenerator's: "Challenge" over a dare for the presenter, "Audience participation" over one
+    # for everyone; a variant leaves one of the two out)
+    dare, everyone = texts.get("dare"), texts.get("audience")
+    if not dare and not everyone:
+        raise ValueError("the dare has no task, for the presenter or for the audience")
+    return slides.DareSlide(language.dare, dare) if dare else slides.DareSlide(language.audience, everyone)
 
 
 def _flowchart(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
@@ -705,6 +739,8 @@ def _moment(index: int, which: str, optional: bool = False) -> tuple[TextField, 
 
 
 WALL_TEXT: Final = 2600  # how long a wall of text's points may be, together (they're written as one text)
+DARE: Final = 130  # how long a dare may be, for the presenter or for the audience
+CALLBACK: Final = 60  # how long the closing slide's note of which earlier picture it calls back to may be
 ERROR_BUTTON: Final = 20  # how long a fake error message's button may be (they're written as one text)
 # What an alignment chart's description of its cells says of the punchline's
 _PUNCHLINE: Final = {"chaotic_evil": ": the punchline"}
@@ -1039,12 +1075,20 @@ KINDS: Final[dict[str, Kind]] = {
         ),
         Kind(
             "questions",
-            "The closing slide, inviting the audience's questions.",
+            "The closing slide, inviting the audience's questions: a question, a line under it (a last tip, say), and "
+            "a picture to end on, if it has one (a funny one, or an earlier slide's, called back).",
             (
                 TextField("title", "a question that invites the audience's questions", 30),
                 TextField("subtitle", "a line under it", 80, optional=True),
+                TextField(
+                    "callback",
+                    "the earlier slide whose picture this one shows again, as a callback: what that picture showed, "
+                    "as its image search query said it",
+                    CALLBACK,
+                    optional=True,
+                ),
             ),
-            (),
+            ("photo",),
             _questions,
         ),
         # Native diagrams, drawn as texts on shapes
@@ -1191,6 +1235,29 @@ KINDS: Final[dict[str, Kind]] = {
             _process,
             pictures=BoxPictures(_STEPS),
         ),
+        Kind(
+            "references",
+            "A talk's references, as an academic talk ends with them: three to five made-up works it cites, numbered, "
+            "which appear one by one, a click each; and a picture of one of them, if it has one (a book's cover, or a "
+            "figure from a paper), with a caption that says which, on the click after them.",
+            (
+                TextField("title", "the slide's title", 40),
+                TextField(
+                    "items",
+                    f"three to five made-up works the talk cites, separated by |, each at most {AGENDA_ITEM} "
+                    "characters",
+                    260,
+                ),
+                TextField(
+                    "caption",
+                    "which of the works the picture is of, by its number in the list, such as 'Cover of [2]'",
+                    30,
+                    optional=True,
+                ),
+            ),
+            ("figure",),
+            _references,
+        ),
         # Media
         Kind(
             "meme",
@@ -1244,14 +1311,25 @@ KINDS: Final[dict[str, Kind]] = {
         ),
         Kind(
             "dare",
-            "A dare for the presenter, on a card: a playful task for the next slide or the rest of the talk, which the "
-            "audience then watches them do (talkgenerator adds its heading).",
+            "A dare, on a card: a real challenge for the presenter for the rest of the talk (or the next few slides), "
+            "which the audience then watches them keep up, or something the presenter has the whole audience do "
+            "(talkgenerator adds its heading).",
             (
                 TextField(
                     "dare",
-                    "the task, said to the presenter: a way of speaking, a word to work in, a voice; for the presenter "
-                    "alone, and nothing physical",
-                    130,
+                    "the challenge, said to the presenter, for the rest of the talk or the next few slides: an accent "
+                    "or a voice, a gesture on every slide, a word to work into every slide, a rule such as speaking "
+                    "only in questions; hard to keep up, harmless, and for the presenter alone",
+                    DARE,
+                    optional=True,
+                ),
+                TextField(
+                    "audience",
+                    "what the presenter has the whole audience do, said to them: a show of hands, a call and response "
+                    "(when the presenter says a word, everyone answers with another), the front row standing up, a "
+                    "sound everyone makes; harmless, fun to join in, and singling nobody out",
+                    DARE,
+                    optional=True,
                 ),
             ),
             (),
@@ -1386,3 +1464,42 @@ KINDS: Final[dict[str, Kind]] = {
         ),
     )
 }
+
+
+# EMOJI (docs/v5-plan.md, D65): some lists have them now and then, one in front of each thing, where a variant of
+# their recipe asks for them (the system prompt asks for none anywhere else)
+EMOJI_NOTE: Final = "with an emoji in front of every thing on it, one that fits the thing"
+
+
+def with_emoji(
+    kind: str, fields: Iterable[str], hints: Mapping[str, str] | None = None, each: bool = False
+) -> dict[str, str]:
+    """Hints for a variant whose list has an emoji in front of its things: each field's own hint (the recipe's, or
+    else the kind's description), asking for one (in front of each of its things, for a field of several)."""
+    descriptions = {text.name: text.description for text in KINDS[kind].texts}
+    asked = ", each with an emoji in front that fits it" if each else ", with an emoji in front that fits it"
+    return {name: f"{(hints or {}).get(name, descriptions[name])}{asked}" for name in fields}
+
+
+# THE CLOSING SLIDE (docs/v5-plan.md, D65): it ends the talk on something, as many of each: a funny picture, a last
+# tip, or a callback to an earlier slide's picture
+LAST_TIP: Final = "a last tip for the audience: one short piece of advice about the talk's topic, in the talk's voice"
+CALLBACK_LINE: Final = "a line under it that calls back to that earlier picture, as the talk's last joke"
+
+
+def closing_variants(line: str) -> tuple[Variant, ...]:
+    """The ways a closing slide (of kind questions) ends a talk, as many of each: a funny picture to end on, with the
+    recipe's line under it; a last tip for the audience as its line (in an English talk, now and then a real piece of
+    advice: see talkgenerator.facts); or a callback to an earlier slide's picture, which the deck shows again (see
+    talkgenerator.slide.slides.QuestionsSlide), with a line that calls back to it."""
+    return (
+        Variant(1, frozenset({"callback"}), "with a funny picture to end the talk on", {"subtitle": line}, facts=False),
+        Variant(1, frozenset({"photo", "callback"}), "with a last tip for the audience", {"subtitle": LAST_TIP}),
+        Variant(
+            1,
+            frozenset({"photo"}),
+            "calling back to an earlier slide's picture, which it shows again",
+            {"subtitle": CALLBACK_LINE},
+            facts=False,
+        ),
+    )

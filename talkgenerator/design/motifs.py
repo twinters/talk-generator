@@ -6,7 +6,9 @@ status line; a blueprint's border, title block and dimension lines; a chalkboard
 newspaper's masthead and rules; a Swiss poster's grid, rule and one red block; a kindergarten's crayon squiggles,
 confetti and sticker pictures. Strong themes put a fixture on every slide and save their big motif for the title and
 section slides; they ration their accent and count their decoration (a few pieces a slide, never behind a text); and
-handmade families tilt things a little, where grid families keep everything square.
+handmade families tilt things a little, where grid families keep everything square. Every family numbers its slides
+of the deck's ("7/12", D65), small and in its own style (in a status line, on a sticker, on a tape), so that presenter
+and audience see how far the talk is.
 
 A motif draws with the deck's own elements (rectangles, ellipses and polygons, turned or not, with or without an
 outline, and texts), so every renderer draws it. It decorates a slide's placement (talkgenerator.design.engine) before
@@ -43,8 +45,9 @@ from talkgenerator.util import random_util
 # The text specs of the titles that sit across the top of a slide, and of those that sit beside its content
 _TOP_TITLES: Final = frozenset({"title", "centred title"})
 _LEFT_TITLES: Final = frozenset({"title", "talk title", "side title", "section side title", "left title"})
-# Slide types whose pictures a motif may frame (pictures in their own boxes; not a post's, a page's or a meme's)
-_FRAMED_TYPES: Final = frozenset({"image", "two_column_image", "three_column_image"})
+# Slide types whose pictures a motif may frame (pictures in their own boxes; not a post's, a page's or a meme's): and
+# the closing slide's picture to end on, and the picture of one of an academic talk's references (D65)
+_FRAMED_TYPES: Final = frozenset({"image", "two_column_image", "three_column_image", "questions", "references"})
 # The slides a motif saves its big pieces for
 _BIG_TYPES: Final = frozenset({"title", "section", "questions"})
 # Crayon colours (the kindergarten's): red, yellow, teal, blue, green, purple, orange
@@ -58,7 +61,8 @@ _ANYTHING: Final = ImageElement(role="background", image=ImageAsset(url="photo")
 @dataclass
 class Scene:
     """A slide being laid out, as a motif decorates it: its placement, its elements by role, its type and theme, its
-    place in the deck (from 0), and whether it has a credit line and a photo behind everything."""
+    place in the deck (from 0), whether it has a credit line and a photo behind everything, and how many slides its
+    deck has (None when that isn't known: a slide laid out by itself)."""
 
     placement: Placement
     roles: dict[str, Content]
@@ -67,6 +71,9 @@ class Scene:
     number: int
     credits: bool
     backdrop: bool
+    total: int | None = None
+    # Where the decoration put a piece that its later pieces keep clear of (a slide's number, which confetti avoids)
+    kept: list[Box] = dataclasses.field(default_factory=list)
 
     @property
     def palette(self) -> Palette:
@@ -151,6 +158,8 @@ class Scene:
             return False
         if self.credits and _overlaps(_grown(CREDITS_BOX, 2), box):
             return False
+        if any(_overlaps(_grown(other, pad), box) for other in self.kept):
+            return False
         return not any(_overlaps(_grown(other, pad), box) for other in self.occupied(letters))
 
     def backgrounds(self) -> list[str]:
@@ -191,6 +200,15 @@ class Scene:
         background, elements = self._drawn()
         colour = self.on(layers.behind_letters(background, elements, lines, style.size), preferred)
         self.write(text, box, spec, colour, part_of)
+
+    def reading(self, text: str, box: Box, spec: str | TextSpec, preferred: str | None = None) -> str | None:
+        """The colour a text of the decoration's gets there, as write_on gives it, if that reads on what's behind its
+        letters; None where no colour does (across a theme's frame and its background, say)."""
+        style, lines = text_lines(text, box, spec, self.theme)
+        background, elements = self._drawn()
+        fills = layers.behind_letters(background, elements, lines, style.size)
+        colour = self.on(fills, preferred)
+        return colour if color.worst_contrast(colour, fills) >= color.BODY_CONTRAST else None
 
     def behind(self, box: Box) -> list[str]:
         """The colours that may be behind a box, as the slide is drawn so far: its background (and pattern), a photo
@@ -357,6 +375,15 @@ def _number(scene: Scene) -> str:
     return f"{scene.number + 1:02d}"
 
 
+def _count(scene: Scene, padded: bool = False, gap: str = "") -> str:
+    """The slide's number of its deck's slides, as "7/12" (padded, as "07/12"; with a gap, as "7 / 12"), so that
+    presenter and audience see how far the talk is; or its number alone ("07"), when the deck's size isn't known."""
+    if scene.total is None:
+        return _number(scene)
+    digits = max(2, len(str(scene.total))) if padded else 1
+    return f"{scene.number + 1:0{digits}d}{gap}/{gap}{scene.total}"
+
+
 def _roman(number: int) -> str:
     """A number in Roman numerals (a newspaper's volume)."""
     numerals = [(1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"), (50, "L"), (40, "XL")]
@@ -436,17 +463,49 @@ def _confetti(
             scene.under(_ring(x, y, size * 0.8, size * 0.8, colour, max(4.0, size / 7)))
 
 
-def _slide_number(scene: Scene, box: Box, spec: str = "decoration right", colour: str | None = None) -> None:
-    """The slide's number in a free box (a corner), in the muted colour (or the colour), where it reads."""
-    if scene.free(box, pad=4):
-        scene.write_on(_number(scene), box, spec, colour or scene.palette.muted)
+def _slide_number(
+    scene: Scene,
+    *boxes: Box,
+    spec: str | TextSpec = "decoration right",
+    colour: str | None = None,
+    padded: bool = False,
+) -> bool:
+    """The slide's number of the deck's ("7/12") in the first of the boxes (corners, in the family's order) that's
+    free and where it reads on what's behind its letters (not across a theme's frame, say), small, in the muted colour
+    (or the colour), made lighter or darker as it needs; the decoration put after it keeps clear of it. Whether it
+    found a place."""
+    text = _count(scene, padded)
+    for box in boxes:
+        if not scene.free(box, pad=4):
+            continue
+        reading = scene.reading(text, box, spec, colour or scene.palette.muted)
+        if reading is not None:
+            scene.write(text, box, spec, reading)
+            scene.kept.append(box)
+            return True
+    return False
+
+
+# Where a slide's number goes when its family has no fixture for it: in the bottom right corner, under the credit
+# line (or in the top right corner, along the top); and the band along the bottom that a number (and what it's on)
+# has, between the credit line and the slide's safe area (the design checks', which ends 16 pixels from its edge)
+_BOTTOM_RIGHT: Final = Box(x=WIDTH - MARGIN - 120, y=1034, w=120, h=30)
+_TOP_RIGHT: Final = Box(x=WIDTH - MARGIN - 120, y=16, w=120, h=32)
+_FOOT: Final = (1034.0, 30.0)
+
+
+def _plate(x: float, width: float) -> tuple[Box, Box]:
+    """Where a slide's number goes in the band along the bottom, and what it's on there (a pill, a sticker, a tape),
+    a little taller than the number's box, below the credit line's letters: as large a box for both."""
+    top, height = _FOOT
+    return Box(x=x, y=top - 2, w=width, h=height + 4), Box(x=x, y=top, w=width, h=height)
 
 
 # THE MOTIFS
 
 
 def _keynote(scene: Scene) -> None:
-    """Calm: a short accent bar over the title, and the slide's number, small, in the bottom right corner."""
+    """Calm: a short accent bar over the title, and the slide's number ("7/12"), small, in the bottom right corner."""
     palette = scene.palette
     title = scene.title()
     if title is not None:
@@ -460,36 +519,38 @@ def _keynote(scene: Scene) -> None:
         if opacity >= 0.03:
             scene.under(_ellipse(x + 350, -60, 700, 700, palette.accent, opacity))
     if not scene.placement.photo:
-        _slide_number(scene, Box(x=WIDTH - MARGIN - 120, y=1034, w=120, h=30))
+        _slide_number(scene, _BOTTOM_RIGHT, _TOP_RIGHT)
 
 
 def _minimal(scene: Scene) -> None:
-    """Almost nothing: a thin accent line along the left edge by the title, and the slide's number at the top
-    right."""
+    """Almost nothing: a thin accent line along the left edge by the title, and the slide's number ("7/12") at the
+    top right."""
     palette = scene.palette
     title = scene.title()
     if title is not None:
         ink = scene.ink(title)
         scene.add(_rect(40, ink.y + 8, 4, max(40.0, ink.h - 16), palette.accent))
     if not scene.placement.photo:
-        _slide_number(scene, Box(x=WIDTH - MARGIN - 120, y=16, w=120, h=32))
+        _slide_number(scene, _TOP_RIGHT, _BOTTOM_RIGHT)
 
 
 def _corporate(scene: Scene) -> None:
-    """A band in the accent along the top, a thin one in the second accent under it, and the slide's number on a
-    small tile in the bottom right corner."""
+    """A band in the accent along the top, a thin one in the second accent under it, and the slide's number ("7/12")
+    on a small tile in the bottom right corner."""
     palette = scene.palette
     if not scene.placement.photo:
         scene.add(_rect(0, 0, WIDTH, 12, palette.accent), _rect(0, 12, WIDTH, 4, palette.accent_2))
-        tile = Box(x=WIDTH - 88, y=1034, w=72, h=30)
+        width = 72 if scene.total is None else 112
+        tile = Box(x=WIDTH - 16 - width, y=1034, w=width, h=30)
         if scene.free(tile, pad=2):
             scene.add(_rect(tile.x, tile.y, tile.w, tile.h, palette.accent))
-            scene.write_on(_number(scene), tile, "decoration centre")
+            scene.write_on(_count(scene), tile, "decoration centre")
 
 
 def _lecture(scene: Scene) -> None:
-    """A lecture's slides, after LaTeX's Beamer: the title on a band in the accent across the top; a row of dots
-    counting the slides so far (the last one filled); a thin band along the bottom with the slide's number."""
+    """A lecture's slides, after LaTeX's Beamer: the title on a band in the accent across the top; a row of dots, one
+    a slide of the deck, the slide's own filled (the ones after it fainter: or, when they don't all fit, the slides so
+    far); a thin band along the bottom with the slide's number ("7 / 12")."""
     palette = scene.palette
     title = scene.title()
     if title is not None:
@@ -499,24 +560,23 @@ def _lecture(scene: Scene) -> None:
         scene.placement.colors[title] = scene.on([palette.accent], minimum=color.LARGE_TEXT_CONTRAST)
         scene.placement.on_fill.add(title)
     if not scene.placement.photo:
-        dots = scene.number + 1
-        for index in range(dots):
+        fitting = int((WIDTH / 2 - MARGIN) // 26) + 1  # (as many dots as fit in the slide's left half)
+        dots = scene.total if scene.total is not None and scene.total <= fitting else scene.number + 1
+        for index in range(min(dots, fitting)):
             x = MARGIN + index * 26
-            if x > WIDTH / 2:
-                break
-            filled = index == dots - 1
-            shape = (
-                _ellipse(x + 7, 22, 14, 14, palette.accent) if filled else _ring(x + 7, 22, 14, 14, palette.accent, 2)
-            )
-            scene.add(shape)
+            if index == scene.number:
+                scene.add(_ellipse(x + 7, 22, 14, 14, palette.accent))
+            else:
+                scene.add(_ring(x + 7, 22, 14, 14, palette.accent, 2, 1.0 if index < scene.number else 0.45))
         scene.add(_rect(0, 1036, WIDTH, 44, palette.surface))
-        number = Box(x=WIDTH - MARGIN - 120, y=1034, w=120, h=30)
-        scene.write_on(_number(scene), number, "decoration right", palette.muted)
+        number = Box(x=WIDTH - MARGIN - 160, y=1034, w=160, h=30)
+        scene.write_on(_count(scene, gap=" "), number, "decoration right", palette.muted)
 
 
 def _blobs(scene: Scene) -> None:
     """A startup's soft blobs: two big circles of its accents, see-through, in opposite corners, off the slide's
-    edges; bigger on its title and section slides."""
+    edges (bigger on its title and section slides); and the slide's number ("7/12"), small, in the bottom right
+    corner, on a pill of its accent, see-through as the blobs are."""
     palette = scene.palette
     size = 900 if scene.big else 640
     flip = scene.theme.motif_variant % 2
@@ -526,6 +586,12 @@ def _blobs(scene: Scene) -> None:
         opacity = _faint(scene, colour, 0.12)
         if opacity >= 0.04:
             scene.under(_ellipse(x + size / 2, y + size / 2, width, width, colour, opacity))
+    pill, number = _plate(WIDTH - MARGIN - 112, 112)
+    if not scene.placement.photo and scene.free(number, pad=4):
+        opacity = _faint(scene, palette.accent, 0.16)
+        if opacity >= 0.04:
+            scene.add(_rect(pill.x, pill.y, pill.w, pill.h, palette.accent, opacity, corner=pill.h / 2))
+        _slide_number(scene, number, spec="decoration centre")
 
 
 def _faint(scene: Scene, colour: str, most: float, stacked: int = 1) -> float:
@@ -547,8 +613,8 @@ def _faint(scene: Scene, colour: str, most: float, stacked: int = 1) -> float:
 
 
 def _ornate(scene: Scene) -> None:
-    """Vintage paper's double frame, with a diamond in each corner, and a rule with a diamond in its middle under the
-    title (a fleuron's place)."""
+    """Vintage paper's double frame, with a diamond in each corner, a rule with a diamond in its middle under the
+    title (a fleuron's place), and the slide's number ("7/12") on a cartouche in the middle of the frame's foot."""
     palette = scene.palette
     ink = palette.accent
     scene.over(
@@ -557,6 +623,16 @@ def _ornate(scene: Scene) -> None:
     )
     for cx, cy in ((27, 27), (WIDTH - 27, 27), (27, HEIGHT - 27), (WIDTH - 27, HEIGHT - 27)):
         scene.over(_polygon(geometry.diamond(), cx - 14, cy - 14, 28, 28, ink))
+    cartouche, number = _plate(WIDTH / 2 - 80, 160)
+    if scene.free(number, pad=2):  # (the paper over the frame's lines there, edged in the ink, a diamond each side)
+        middle = cartouche.y + cartouche.h / 2
+        scene.over(
+            _rect(cartouche.x, cartouche.y, cartouche.w, cartouche.h, palette.background, corner=cartouche.h / 2),
+            _frame(cartouche, ink, 1.5, corner=cartouche.h / 2),
+            _polygon(geometry.diamond(), cartouche.x - 16, middle - 9, 18, 18, ink),
+            _polygon(geometry.diamond(), cartouche.x + cartouche.w - 2, middle - 9, 18, 18, ink),
+        )
+        _slide_number(scene, number, spec="decoration centre", colour=ink)
     title = scene.title()
     if title is not None:
         ink_box = scene.ink(title)
@@ -571,7 +647,8 @@ def _ornate(scene: Scene) -> None:
 
 def _crayon(scene: Scene) -> None:
     """A kindergarten's: a crayon squiggle under the title, confetti along the edges (never behind a text),
-    pictures as stickers (a white border, an ink outline and a hard shadow), and on its big slides, scenery."""
+    pictures as stickers (a white border, an ink outline and a hard shadow), on its big slides, scenery; and the
+    slide's number ("7/12") on a little sticker of its own in the bottom right corner."""
     palette = scene.palette
     crayons = [colour for colour in CRAYONS if color.contrast(colour, palette.background) > 1.4]
     title = scene.title()
@@ -587,6 +664,16 @@ def _crayon(scene: Scene) -> None:
             _scenery(scene, crayons)
         else:
             _bunting(scene, crayons, -10, WIDTH + 10, 2, 16, 34, 42)
+    sticker, number = _plate(WIDTH - 44 - 116, 116)
+    if not scene.placement.photo and scene.free(number, pad=4):  # (before the confetti, which keeps clear of it)
+        corner = sticker.h / 2
+        scene.add(
+            _rect(sticker.x + 4, sticker.y + 4, sticker.w, sticker.h, palette.text, corner=corner),
+            _rect(sticker.x, sticker.y, sticker.w, sticker.h, "#ffffff", corner=corner),
+            _frame(sticker, palette.text, 2.5, corner=corner),
+        )
+        _slide_number(scene, number, spec="decoration centre", colour=palette.text)
+        scene.kept.append(sticker)
     _confetti(scene, crayons, 6 if scene.big else 4, (30, 56), top=scene.photo)
     for role in scene.pictures() if scene.slide_type in _FRAMED_TYPES else []:
         shown = scene.shown(role, _grown(scene.box(role), -14))
@@ -702,8 +789,8 @@ def _scenery(scene: Scene, crayons: Sequence[str]) -> None:
 
 
 def _brutal(scene: Scene) -> None:
-    """Brutalist: the title on a solid block of the accent, hard shadows behind pictures, and the slide's number on a
-    black tag in the top left corner."""
+    """Brutalist: the title on a solid block of the accent, hard shadows behind pictures, and the slide's number
+    ("07/12") on a black tag in the top left corner."""
     palette = scene.palette
     title = scene.title()
     if title is not None and len(scene.lines(title)) <= 2:
@@ -720,19 +807,22 @@ def _brutal(scene: Scene) -> None:
         shown = scene.shown(role, _grown(scene.box(role), -16))
         scene.add(_rect(shown.x + 16, shown.y + 16, shown.w, shown.h, palette.text), part_of=role)
     if not scene.placement.photo:
-        tag = Box(x=0, y=0, w=136, h=52)
+        width = 136 if scene.total is None else 176
+        tag = Box(x=0, y=0, w=width, h=52)
         scene.add(_rect(tag.x, tag.y, tag.w, tag.h, palette.text))
-        scene.write_on(_number(scene), Box(x=16, y=16, w=104, h=32), "decoration centre")
+        scene.write_on(_count(scene, padded=True), Box(x=16, y=16, w=width - 32, h=32), "decoration centre")
 
 
 def _synthwave(scene: Scene) -> None:
-    """Neon's: a thin line of its accent along the bottom; on its big slides, a striped sun sinking behind a grid
-    floor, where there's room."""
+    """Neon's: a thin line of its accent along the bottom, with the slide's number ("7/12") over its right end; on
+    its big slides, a striped sun sinking behind a grid floor, where there's room."""
     palette = scene.palette
     if scene.big and not scene.photo:
         _retro_sun(scene)
     elif not scene.placement.photo:
         scene.add(_rect(0, HEIGHT - 6, WIDTH, 6, palette.accent))
+    if not scene.placement.photo:
+        _slide_number(scene, _BOTTOM_RIGHT, _TOP_RIGHT, spec=_sized("decoration heading", 26, 24, align="right"))
 
 
 def _retro_sun(scene: Scene) -> None:
@@ -785,9 +875,20 @@ def _disc_band(top: float, bottom: float, steps: int = 24) -> geometry.Points:
 
 
 def _starburst(scene: Scene) -> None:
-    """1997 WordArt's: a starburst sticker, turned, with three exclamation marks on it, in a free corner; and a row
-    of little stars along the top."""
+    """1997 WordArt's: a starburst sticker, turned, with three exclamation marks on it, in a free corner; a row of
+    little stars along the top; and the slide's number ("7/12"), in bold italics on a little yellow sticker edged in
+    red, in the bottom right corner (over the frame some of its members draw around the slide; the big sticker then
+    leaves that corner be)."""
     palette = scene.palette
+    sticker, number = _plate(WIDTH - MARGIN - 112, 112)
+    if not scene.placement.photo and scene.free(number, pad=4):
+        corner = sticker.h / 2
+        scene.add(
+            _rect(sticker.x, sticker.y, sticker.w, sticker.h, "#ffe600", corner=corner),
+            _frame(sticker, "#e3001b", 2.5, corner=corner),
+        )
+        _slide_number(scene, number, spec=_sized("decoration centre", 25, 24, italic=True, bold=True), colour="#e3001b")
+        scene.kept.append(sticker)
     spots = _corner_spots(scene, 210, 30, letters=True)
     if spots:
         spot = spots[scene.number % len(spots)]
@@ -808,8 +909,13 @@ def _starburst(scene: Scene) -> None:
 
 def _comic(scene: Scene) -> None:
     """A comic's: every slide a panel (a thick ink border), the title in a speech balloon (white, outlined in ink,
-    with a tail), and on its big slides a POW burst in a free corner."""
+    with a tail), on its big slides a POW burst in a free corner, and the slide's number ("7/12") in a caption box
+    on the panel's border, in its bottom right corner."""
     scene.over(_frame(Box(x=14, y=14, w=WIDTH - 28, h=HEIGHT - 28), "#111111", 9))
+    caption, number = _plate(WIDTH - 60 - 124, 124)
+    if scene.free(number, pad=2):  # (yellow, edged in ink, over the border: as a comic's narration box)
+        scene.over(_rect(caption.x, caption.y, caption.w, caption.h, "#ffe14d"), _frame(caption, "#111111", 3))
+        _slide_number(scene, number, spec=_sized("decoration centre", 25, 24, bold=True), colour="#111111")
     title = scene.title()
     if title is not None:
         ink = scene.ink(title)
@@ -848,19 +954,19 @@ def _comic(scene: Scene) -> None:
 
 def _swoosh(scene: Scene) -> None:
     """A 1990s office deck's swoosh along the bottom: two waves in its accents (below the credit line, on slides
-    with one)."""
+    with one); and the slide's number ("7/12") in bold in the top right corner, clear of the swoosh."""
     palette = scene.palette
     if scene.placement.photo:
         return
     lowest = max((box.y + box.h for box in scene.occupied()), default=0.0)
     top = max(lowest + 12, 1036.0 if scene.credits else 900.0)
     height = HEIGHT - top
-    if height < 30:
-        return
-    scene.under(
-        _polygon(geometry.wave(1.2, 0.5), 0, top, WIDTH, height, palette.accent_2, 0.55),
-        _polygon(geometry.wave(1.6, 0.45), 0, top + height * 0.25, WIDTH, height * 0.75, palette.accent, 0.8),
-    )
+    if height >= 30:
+        scene.under(
+            _polygon(geometry.wave(1.2, 0.5), 0, top, WIDTH, height, palette.accent_2, 0.55),
+            _polygon(geometry.wave(1.6, 0.45), 0, top + height * 0.25, WIDTH, height * 0.75, palette.accent, 0.8),
+        )
+    _slide_number(scene, _TOP_RIGHT, _BOTTOM_RIGHT, spec=_sized("decoration right", 26, 24, bold=True))
 
 
 def _terminal(scene: Scene) -> None:
@@ -895,9 +1001,10 @@ def _terminal(scene: Scene) -> None:
         if window.w > 300:
             evidence = f"./evidence_{scene.number + 1:02d}{index}.jpg"
             scene.write_on(evidence, name, "decoration", palette.muted, part_of=role)
-    if not scene.placement.photo:  # (the status line, with the slide's number on a tag at its start)
-        scene.add(_rect(0, 1032, WIDTH, 48, bar), _rect(0, 1032, 112, 48, palette.accent))
-        scene.write_on(f"[{_number(scene)}]", Box(x=16, y=1034, w=88, h=30), "decoration centre")
+    if not scene.placement.photo:  # (the status line, with the slide's number, "[07/12]", on a tag at its start)
+        width = 112 if scene.total is None else 168
+        scene.add(_rect(0, 1032, WIDTH, 48, bar), _rect(0, 1032, width, 48, palette.accent))
+        scene.write_on(f"[{_count(scene, padded=True)}]", Box(x=16, y=1034, w=width - 32, h=30), "decoration centre")
 
 
 def _prompt(scene: Scene, role: str, prompt: str) -> None:
@@ -959,13 +1066,14 @@ def _blueprint(scene: Scene) -> None:
         scene.add(_rect(block.x, block.y, block.w, block.h, palette.background), _frame(block, palette.text, 2))
         scene.add(_rect(block.x + 150, block.y, 2, block.h, palette.text))
         scene.write_on("1:1", Box(x=block.x + 10, y=block.y, w=130, h=30), "decoration centre", palette.text)
-        number = Box(x=block.x + 162, y=block.y, w=226, h=30)
-        scene.write_on(f"# {_number(scene)}", number, "decoration centre", palette.text)
+        number = Box(x=block.x + 162, y=block.y, w=226, h=30)  # (the sheet's number of the set's: "# 07/12")
+        scene.write_on(f"# {_count(scene, padded=True)}", number, "decoration centre", palette.text)
 
 
 def _chalkboard(scene: Scene) -> None:
-    """A chalkboard's: a wooden frame with a ledge along the bottom (chalk and an eraser on it), eraser smudges, a
-    dashed chalk underline under the title, doodles on the big slides, and tape holding pictures up."""
+    """A chalkboard's: a wooden frame with a ledge along the bottom (chalk and an eraser on it, and the slide's
+    number, "7/12", on a strip of tape at its left end), eraser smudges, a dashed chalk underline under the title,
+    doodles on the big slides, and tape holding pictures up."""
     palette = scene.palette
     wood, dark = "#8b6b4a", "#5e4630"
     for _ in range(3):  # (smudges, where the board was wiped: long, thin strokes of an eraser)
@@ -987,6 +1095,10 @@ def _chalkboard(scene: Scene) -> None:
     chalk = [palette.text, palette.accent, palette.accent_2]
     for index, colour in enumerate(chalk[:2]):
         scene.over(_rect(WIDTH - 360 + index * 110, HEIGHT - 26, 84, 14, colour, corner=6, rotation=-2 + index * 3))
+    label, number = _plate(64, 120)
+    if scene.free(number, pad=2):  # (a strip of masking tape on the ledge, the number on it in pencil)
+        scene.over(_rect(label.x, label.y, label.w, label.h, "#e8dcc0", 0.92, corner=3))
+        _slide_number(scene, number, spec="decoration centre", colour="#3d3d3d")
     scene.over(
         _rect(WIDTH - 600, HEIGHT - 30, 150, 20, "#c7a27a", corner=3),
         _rect(WIDTH - 600, HEIGHT - 16, 150, 10, "#3d3d3d", corner=2),
@@ -1038,15 +1150,16 @@ def _chalkboard(scene: Scene) -> None:
 
 def _newsprint(scene: Scene) -> None:
     """A newspaper's: a masthead's rules across the top, with the edition's numbers over them (the volume in Roman
-    numerals, three stars, the page); a thin rule under the title; rules between columns; thin outlines around its
-    (grayscale) photos."""
+    numerals, three stars, the page of the paper's pages: "7/12"); a thin rule under the title; rules between
+    columns; thin outlines around its (grayscale) photos."""
     palette = scene.palette
     ink = palette.text
     if not scene.placement.photo:
         scene.add(_rect(MARGIN, 47, WIDTH - 2 * MARGIN, 3, ink), _rect(MARGIN, 53, WIDTH - 2 * MARGIN, 1, ink))
         scene.write_on(_roman(scene.number + 1), Box(x=MARGIN, y=16, w=300, h=30), "decoration", palette.muted)
         page = Box(x=WIDTH - MARGIN - 300, y=16, w=300, h=30)
-        scene.write_on(f"A{scene.number + 1}", page, "decoration right", palette.muted)
+        folio = _count(scene) if scene.total is not None else f"A{scene.number + 1}"
+        scene.write_on(folio, page, "decoration right", palette.muted)
         for index in range(3):
             scene.add(_star(WIDTH / 2 - 30 + index * 30, 30, 20, ink))
     title = scene.title()
@@ -1070,8 +1183,8 @@ def _newsprint(scene: Scene) -> None:
 
 def _swiss(scene: Scene) -> None:
     """A Swiss poster's: a three-column grid of thin lines behind everything, a heavy black rule across the top with
-    the slide's number over its right end, and one red block per slide (a square at the rule's left end; on its big
-    slides, a big circle where there's room)."""
+    the slide's number ("07/12") over its right end, and one red block per slide (a square at the rule's left end; on
+    its big slides, a big circle where there's room)."""
     palette = scene.palette
     ink, red = palette.text, palette.accent_2
     grid = _faint(scene, ink, 0.12, stacked=2)  # (as strong as the texts over its lines allow: on red, none)
@@ -1080,7 +1193,7 @@ def _swiss(scene: Scene) -> None:
             x = MARGIN + column * (WIDTH - 2 * MARGIN) / 3
             scene.under(_rect(x, 48, 1.5, HEIGHT - 96, ink, grid))
         scene.add(_rect(MARGIN, 48, WIDTH - 2 * MARGIN, 4, ink))
-        _slide_number(scene, Box(x=WIDTH - MARGIN - 160, y=16, w=160, h=30), "decoration right", ink)
+        _slide_number(scene, Box(x=WIDTH - MARGIN - 160, y=16, w=160, h=30), colour=ink, padded=True)
         if not scene.big:
             scene.add(_rect(MARGIN, 18, 26, 26, red))
     if scene.big and not scene.photo:

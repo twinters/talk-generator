@@ -23,7 +23,8 @@ from talkgenerator.models.plan import SlidePlan
 from talkgenerator.plan import languages
 from talkgenerator.plan.kinds import KINDS, ContentSource, Recipe, TextField
 from talkgenerator.slide.slides import Slide
-from talkgenerator.util import generator_util, language_util, os_util, random_util
+from talkgenerator.sources import emoji
+from talkgenerator.util import emoji_util, generator_util, language_util, os_util, random_util
 
 logger = logging.getLogger("talkgenerator")
 
@@ -32,6 +33,8 @@ logger = logging.getLogger("talkgenerator")
 ATTEMPTS: Final = 3
 
 _QUOTE_MARKS: Final = "\"'“”‘’«»"
+# Bars that look like the | that separates a list's things, which a free model wrote instead of it (a box drawing's)
+_BARS: Final = str.maketrans(dict.fromkeys("│┃｜¦∣", "|"))
 # What a cut may leave at the end of a text, besides little words: punctuation that leads on to more
 _DANGLING: Final = ",;:-–—([{/&+ "
 # Where a sentence or a clause ends, for a cut to end there: a full stop, question or exclamation mark, a semicolon or
@@ -62,20 +65,53 @@ def length_limit(text_field: TextField) -> int:
 def clean_text(value: Any, text_field: TextField, language: str = "en") -> str | None:
     """The text as it goes on a slide: on one line, without wrapping quote marks or brackets that name a slide by its
     key in the model's answer ("(from slide_03)"), and cut to the field's length when it's longer than its
-    length_limit (between words, and not after a little word of its language, such as "the"), or the option it names
-    when the field is a choice. None when it's empty, names no option, or holds bits of templates or code (a slide's
-    key elsewhere in it too: see talkgenerator.checks.deck)."""
+    length_limit (between words, and not after a little word of its language, such as "the"; a list, between its
+    things), or the option it names when the field is a choice. Its emoji count as two characters each, however many
+    characters they're written with (a joined one, "🕵️‍♂️", is five). None when it's empty, names no option, or holds
+    bits of templates or code (a slide's key elsewhere in it too: see talkgenerator.checks.deck)."""
     if not isinstance(value, str):
         return None
     value = without_key_references(value)  # (a callback that names its slide by its key keeps the rest of it)
     if text_field.options:
         return option_of(value, text_field)
-    text = _unquoted(" ".join(_STRAY_ESCAPE.sub("", value).split()))
+    text = _unquoted(" ".join(_STRAY_ESCAPE.sub("", value).split()).translate(_BARS))
     if not text or leftovers_in(text):
         return None
-    if len(text) > length_limit(text_field):
-        text = _cut(text, text_field.max_length, language)
+    if "|" in text:
+        text = _folded(text)
+    extra = len(text) - emoji_util.room(text)  # (the characters its emoji are written with, beyond their room)
+    if len(text) > length_limit(text_field) + extra:
+        cut = _cut_list if "|" in text else _cut
+        text = cut(text, text_field.max_length + extra, language)
     return text
+
+
+def _folded(text: str) -> str:
+    """A list written as one text (its things separated by |), each of its emoji that a model wrote as a thing of its
+    own ("🔥 | Roasting | 🔥", as a free model wrote a tier) in front of the thing after it (one at its end goes)."""
+    things: list[str] = []
+    waiting = ""
+    for thing in (part.strip() for part in text.split("|")):
+        if not thing:
+            continue
+        if not emoji_util.plain(thing).strip():
+            waiting = waiting or thing
+            continue
+        things.append(f"{waiting} {thing}" if waiting else thing)
+        waiting = ""
+    return " | ".join(things) if things else text
+
+
+def _cut_list(text: str, length: int, language: str) -> str:
+    """A list written as one text (its things separated by |) cut to its length between its things, keeping as many
+    of them as fit whole (or else its first thing, cut as a text is)."""
+    things = [thing.strip() for thing in text.split("|") if thing.strip()]
+    kept: list[str] = []
+    for thing in things:
+        if len(" | ".join([*kept, thing])) > length:
+            break
+        kept.append(thing)
+    return " | ".join(kept) if kept else _cut(things[0] if things else text, length, language)
 
 
 # Each quote mark that opens a quote, with the mark that closes it (Swedish and Danish close with what opens)
@@ -210,6 +246,9 @@ def realize(
             if texts[name] is None and not text_field.optional:
                 _note(problems, why)
                 return None
+            mood = recipe.emoji.get(name)
+            if mood is not None and texts[name]:  # (a list its variant asks emoji for: the model's, or else ours)
+                texts[name] = emoji.listed(texts[name], mood, own=language == languages.ENGLISH.code)
 
         images: dict[str, Any] = dict.fromkeys(slot for slot in kind.images if slot in recipe.omit)
         queries: dict[str, str] = {}

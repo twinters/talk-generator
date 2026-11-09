@@ -19,7 +19,7 @@ from typing import Any, Final
 
 from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
-from talkgenerator.plan.kinds import AGENDA_ITEM, Recipe, Variant, matrix_landscape
+from talkgenerator.plan.kinds import AGENDA_ITEM, Recipe, Variant, closing_variants, matrix_landscape
 from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema.formats import (
     Format,
@@ -100,10 +100,21 @@ def _subtitle(context: dict[str, Any]) -> str | None:
     return text(PACK, "title.subtitle", _variables(context))
 
 
-# Images: a calm backdrop behind a statement, an odd photo of the experimental setup, and whoever is thanked
+# Images: a calm backdrop behind a statement, an odd photo of the experimental setup, whoever is thanked, and a
+# picture of one of the references (D65): a book's cover (generated, in a talk that generates pictures), or a figure
+# from a paper, a real chart from the internet; old prints and plates from museums, or illustrations, without Reddit
 _BACKDROP = cg.generate_horizontal_pixabay_image
 _SETUP = ImageSlot("a photo of the experiment's setup", aesthetic="weird-stock", generate=True)
 _THANKED = cg.copyright_free_generator
+_COVER = ImageSlot(
+    "the cover of one of the works the talk cites, as a book",
+    aesthetic="book-covers",
+    generate=True,
+    backups=("museum", "illustration"),
+)
+_FIGURE = ImageSlot(
+    "a figure from one of the works the talk cites: a chart", aesthetic="bad-charts", backups=("museum", "illustration")
+)
 
 
 def _items(prefix: str, texts: list[str]) -> dict[str, str | None]:
@@ -331,13 +342,30 @@ def _thanks_list(context: dict[str, Any]) -> Made | None:
     return {"title": title, "items": " | ".join(thanked)}, {}
 
 
-def _references(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    references = different(PACK, "references.reference", variables, random_util.randint(3, 5))
-    title = text(PACK, "references.references_title", variables)
-    if not title or len(references) < 3:
-        return None
-    return {"title": title, "items": " | ".join(references)}, {}
+def _references(picture: Any, caption: str) -> Any:
+    """Classic references, and four times in five a picture of one of them from the image source (when one can be
+    found: a book's cover, or a paper's figure), with a caption of the rule that says which."""
+
+    def references(context: dict[str, Any]) -> Made | None:
+        variables = _variables(context)
+        references = different(PACK, "references.reference", variables, random_util.randint(3, 5))
+        title = text(PACK, "references.references_title", variables)
+        if not title or len(references) < 3:
+            return None
+        texts: dict[str, str | None] = {"title": title, "items": " | ".join(references)}
+        if random_util.random() >= _PICTURED:
+            return texts, {}
+        found = picture(context)
+        if found is None:
+            return texts, {}
+        cited = {"number": str(random_util.randint(1, len(references))), "figure": str(random_util.randint(1, 9))}
+        cited["page"] = str(random_util.randint(2, 400))
+        return {**texts, "caption": text(PACK, caption, cited)}, {"figure": found}
+
+    return references
+
+
+_PICTURED: Final = 0.8  # of the references that show a picture of one of the works (when one can be found)
 
 
 def _questions(context: dict[str, Any]) -> Made | None:
@@ -378,6 +406,27 @@ _TITLE_HINT = "the slide's title, as a conference talk's slide has it"
 _FEW_WORDS = "in two to four words"
 _P_VALUE = "with a suspicious p-value, just under 0.05"
 _LIST = f"separated by |, each at most {AGENDA_ITEM} characters"
+
+
+def _references_recipe(picture: ImageSlot, note: str, caption: str) -> Recipe:
+    """The references' recipe, with a picture of one of the works four times in five (of the slot's look), whose
+    caption says which."""
+    return Recipe(
+        "references",
+        (picture,),
+        brief="The references: three to five made-up works that the talk cites, in a citation style",
+        hints={
+            "title": _TITLE_HINT + ", such as 'References'",
+            "items": "three to five short made-up references, each an author 'et al.', a year in brackets and a "
+            f"journal of two or three words (no paper's title), {_LIST}",
+            "caption": caption,
+        },
+        variants=(
+            Variant(4, note=note),
+            Variant(1, frozenset({"figure", "caption"}), "without a picture"),
+        ),
+    )
+
 
 _GENERATORS: Final = [
     SlideGeneratorData(
@@ -696,21 +745,32 @@ _GENERATORS: Final = [
         ),
         repeats=3,
     ),
+    # (a picture of one of them, most of the time: the user found plain references boring, 2026-11-09, D65)
     _part(
         "references",
-        1,
-        "agenda",
-        _references,
+        1.2,
+        "references",
+        _references(_COVER, "references.cover_caption"),
         [],
         "References",
-        Recipe(
-            "agenda",
-            brief="The references: three to five made-up papers that the talk cites, in a citation style",
-            hints={
-                "title": _TITLE_HINT + ", such as 'References'",
-                "items": "three to five short made-up references, each an author 'et al.', a year in brackets and a "
-                f"journal of two or three words (no paper's title), {_LIST}",
-            },
+        _references_recipe(
+            _COVER,
+            "with the cover of one of the works, as if it were a book",
+            "which work it's the cover of, by its number in the list, such as 'Cover of [2]'",
+        ),
+        repeats=3,
+    ),
+    _part(
+        "references",
+        0.8,
+        "references",
+        _references(_FIGURE, "references.figure_caption"),
+        [],
+        "References Figure",
+        _references_recipe(
+            _FIGURE,
+            "with a figure from one of the works: a chart",
+            "which work the figure is from, by its number in the list, such as '[3], Fig. 2'",
         ),
         repeats=3,
     ),
@@ -723,8 +783,10 @@ _GENERATORS: Final = [
         "Questions",
         Recipe(
             "questions",
+            (cg.closing_picture_generator,),
             brief="The closing slide, inviting the audience's questions, as at a conference",
             hints={"subtitle": "a line under it, such as a plea to the audience"},
+            variants=closing_variants("a line under it, such as a plea to the audience"),
         ),
         repeats=3,
     ),

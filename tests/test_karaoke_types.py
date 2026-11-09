@@ -25,7 +25,7 @@ from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema.presentation_schema_types import get_schema
 from talkgenerator.slide import slide_generator_types, slides
 from talkgenerator.sources import packs, slide_texts
-from talkgenerator.util import random_util
+from talkgenerator.util import emoji_util, random_util
 from tests.test_deck import _image
 from tests.test_deck import images as images  # the fake image downloads (a fixture)
 from tests.test_slide_types import _built, _deck, _longest_texts, _theme
@@ -558,6 +558,7 @@ def _spoken(template):
 def test_a_classic_tier_list_ranks_the_seed_first_and_something_loved_last(related):
     with random_util.use(random_util.Rng(2)):
         title, best, *tiers, worst = slide_texts.generate_tier_list({"seed": "cat", "topic": "cats"})
+    best, worst = emoji_util.plain(best).strip(), emoji_util.plain(worst).strip()  # (a third have emoji: D65)
     assert best == "Cats" and worst in packs.pack().rule("karaoke.tier_list_worst")
     assert tiers[0] and all(len(slides.tier_items(tier)) <= 3 for tier in tiers) and title
 

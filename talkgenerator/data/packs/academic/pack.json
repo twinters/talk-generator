@@ -1,9 +1,10 @@
 {
   "format": "academic",
   "about": "The classic texts of academic conference talks (the academic schema): a grammar per part of its arc, whose rules are lists of templates (see talkgenerator.sources.packs and talkgenerator.schema.formats.academic)",
-  "version": 1,
+  "version": 2,
   "versions": {
-    "1": "2026-11-08: the first texts of academic conference talks, a part of the arc a grammar: the title with its affiliations, the outline, related work, the method, the results, the limitations, future work, the acknowledgements, the references and the questions (D56)"
+    "1": "2026-11-08: the first texts of academic conference talks, a part of the arc a grammar: the title with its affiliations, the outline, related work, the method, the results, the limitations, future work, the acknowledgements, the references and the questions (D56)",
+    "2": "2026-11-09: a picture of one of the references, a book's cover or a paper's figure, with a caption that says which (D65)"
   },
   "slots": {
     "title.talk_title": {"variables": ["seed", "method"], "field": "title.title"},
@@ -62,7 +63,9 @@
     "thanks.thanks_title": {"variables": ["seed", "topic", "presenter", "title", "method"], "field": "agenda.title"},
     "thanks.three_thanks": {"variables": ["seed", "topic", "presenter", "title", "method"], "field": "three_columns.caption_1", "parts": 3},
     "thanks.thanks_item": {"variables": ["seed", "topic", "presenter", "title", "method"], "limit": 45},
-    "references.references_title": {"variables": ["seed", "topic", "presenter", "title", "method"], "field": "agenda.title"},
+    "references.references_title": {"variables": ["seed", "topic", "presenter", "title", "method"], "field": "references.title"},
+    "references.cover_caption": {"variables": ["number"], "field": "references.caption"},
+    "references.figure_caption": {"variables": ["number", "figure", "page"], "field": "references.caption"},
     "references.reference": {"variables": ["seed", "topic", "presenter", "title", "method"], "limit": 45},
     "questions.questions_title": {"variables": ["seed", "topic", "presenter", "title", "method"], "field": "questions.title"},
     "questions.questions_subtitle": {"variables": ["seed", "topic", "presenter", "title", "method"], "field": "questions.subtitle"}

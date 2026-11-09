@@ -37,7 +37,7 @@ from talkgenerator.models.deck import (
 )
 from talkgenerator.models.theme import TextEffect, Theme
 from talkgenerator.render import backgrounds, charts, diagrams, reveal
-from talkgenerator.util import image_util
+from talkgenerator.util import emoji_util, image_util
 
 logger = logging.getLogger("talkgenerator")
 
@@ -275,14 +275,47 @@ def _text(canvas: Image.Image, text: str, box: Box, style: TextStyle, scale: flo
     top = {"top": y0, "middle": y0 + (y1 - y0 - total) / 2, "bottom": y1 - total}[style.anchor]
     placed = []
     for index, line in enumerate(lines):
-        length = draw.textlength(line, font=font)
+        length = _line_length(draw, line, font, style.size * scale)
         left = {"left": x0, "center": x0 + (x1 - x0 - length) / 2, "right": x1 - length}[style.align]
         placed.append((left, top + index * line_height + (line_height - style.size * scale) / 2, line))
     if style.effect is None:
         for left, y, line in placed:
-            draw.text((left, y), line, fill=style.color, font=font)
+            _draw_line(draw, (left, y), line, style.color, font, style.size * scale)
         return
     _with_effect(canvas, placed, font, style.color, style.effect, scale, (x0, y0, x1, y1))
+
+
+def _line_length(draw: ImageDraw.ImageDraw, line: str, font: _Font, size: float) -> float:
+    """How long a line is drawn: its emoji as wide as they're measured (talkgenerator.util.emoji_util)."""
+    return sum(
+        emoji_util.count(part) * emoji_util.WIDTH * size if emoji else draw.textlength(part, font=font)
+        for part, emoji in emoji_util.runs(line)
+    )
+
+
+def _draw_line(
+    draw: ImageDraw.ImageDraw, at: tuple[float, float], line: str, colour: str, font: _Font, size: float
+) -> None:
+    """A line of text, its emoji in colour in an emoji font (each by itself, where this computer has one), as
+    PowerPoint and browsers draw them."""
+    x, y = at
+    for part, emoji in emoji_util.runs(line):
+        if not emoji:
+            draw.text((x, y), part, fill=colour, font=font)
+            x += draw.textlength(part, font=font)
+            continue
+        emoji_font = _emoji_font(size)
+        for index, character in enumerate(part):
+            selected = index + 1 < len(part) and part[index + 1] == "️"
+            if emoji_util.count(character) or selected:
+                if emoji_font is not None:
+                    draw.text((x, y), character, font=emoji_font, embedded_color=True)
+                x += emoji_util.WIDTH * size
+
+
+def _emoji_font(size: float) -> ImageFont.FreeTypeFont | None:
+    path = fonts.emoji_font_file()
+    return ImageFont.truetype(str(path), max(1, round(size))) if path is not None else None
 
 
 def _with_effect(

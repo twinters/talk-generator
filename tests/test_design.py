@@ -16,7 +16,7 @@ from talkgenerator import generator, settings
 from talkgenerator.checks.deck import deck_metrics
 from talkgenerator.checks.design import check_design, check_variety
 from talkgenerator.design import color, engine, fit, fonts, themes, treatments
-from talkgenerator.models.deck import Deck, ImageElement, ShapeElement, TextElement
+from talkgenerator.models.deck import DECORATION, Deck, ImageElement, ShapeElement, TextElement
 from talkgenerator.plan import languages
 from talkgenerator.plan.kinds import KINDS
 from talkgenerator.render import embedding, preview
@@ -359,6 +359,17 @@ def _runs(seed=1, theme=None):
         *(every_karaoke_type(wide) * 3),
         # (and the talk formats' process, whose words are short enough to go across, or one under the other)
         *(slides.ProcessSlide("Method", "Collect cats", "Clean data", "???", "Profit") for _ in range(3)),
+        # (and, from D65, closing slides with a picture to end on, and an academic talk's references, with a picture of
+        # one of its works and without)
+        *(slides.QuestionsSlide("Questions?", "Remember this one?", wide) for _ in range(3)),
+        # (the one without a picture first: it fits one layout, which its neighbours avoid then)
+        slides.ReferencesSlide("References", "Purr et al. (2021)", "Meow (2019)", "Whiskers et al. (2001)"),
+        *(
+            slides.ReferencesSlide(
+                "References", "Purr et al. (2021)", "Meow (2019)", "Whiskers et al. (2001)", figure=tall, caption="[2]"
+            )
+            for _ in range(3)
+        ),
     ]
     slide_deck = SlideDeck(len(runs), title="Cats", topics=["cats"], seed=seed)
     for index, slide in enumerate(runs):
@@ -426,9 +437,9 @@ _OLDER_KINDS = [kind for kind in KINDS if kind not in EVERY_KIND and kind not in
 
 def _with_long_words(kind):
     """A slide of the kind with a 20-letter word in every text, as long as the slide takes it (and in every answer of
-    a pie chart and every bar of a ranking), and a picture in every slot."""
+    a pie chart, every bar of a ranking and every work of references), and a picture in every slot."""
     texts = _longest_texts(kind, _LONG_WORD)
-    for name, count in (("categories", 5), ("bars", 6)):
+    for name, count in (("categories", 5), ("bars", 6), ("items", 5)):
         if name in texts:
             texts[name] = " | ".join([_LONG_WORD] * count)
     return _built(kind, texts, {slot: _image("wide") for slot in KINDS[kind].images})
@@ -776,9 +787,10 @@ def test_the_generator_makes_themed_talks(monkeypatch, images):
     _, classic, _ = generator._generate_presentation(
         schema="fake", slides=test_seeds.NUM_SLIDES, topic="cats", int_seed=2, save_ppt=False
     )
-    # The theme doesn't change what's on the slides
+    # The theme doesn't change what's on the slides (but its decoration's own texts: a slide's number, say)
     texts = [[e.text for e in s.elements if isinstance(e, TextElement)] for s in classic.to_deck().slides]
-    assert texts == [[e.text for e in s.elements if isinstance(e, TextElement)] for s in deck.slides]
+    themed = [[e.text for e in s.elements if isinstance(e, TextElement) and e.role != DECORATION] for s in deck.slides]
+    assert texts == themed
     _, chaos, _ = generator._generate_presentation(
         schema="fake", slides=test_seeds.NUM_SLIDES, topic="cats", int_seed=2, save_ppt=False, theme="chaos"
     )
