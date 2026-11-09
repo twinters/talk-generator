@@ -1152,45 +1152,44 @@ the spaghetti diagram (thin turned rectangles could draw its links now), the oni
 pack, "Exhibit A", a museum label, a text-message conversation and buzzword bingo.
 
 **Livelier dares, closing slides and references, and emoji** (2026-11-09, D65), from the user's look at 35 sample talks
-("shouldn't they be more challenging or an audience interaction?", "the 'any questions' slides are also pretty
-boring", "references slides are pretty boring"). A **dare** is now a real challenge for the presenter to keep up from
-then on (an accent, a gesture on every slide, a word to work into every slide, a word they may no longer say, only
-questions for three slides), or something the presenter has the whole audience do, under "Audience participation" in
-the talk's language (a show of hands, a call and response, the front row standing up, a sound everyone makes); a dad
-joke to tell stays, as one kind among them. The dare kind has a field for each, and a recipe's variant leaves one out:
-the language model's dares are 40% for the audience, 35% challenges and 25% for the presenter as before, which in an
-English talk may build on a real dad joke (a variant says whether its slide takes a real fact or a flavour text:
-`Variant.facts`); the classic ones (the TED pack's version 6: 45 challenges, 35 audience dares) are a fifth dad jokes,
-when there's one, and else as many challenges as audience dares. The **closing slide** ("Questions?") ends a talk on
-one of three things, as many of each, in every format that has it (TED-like talks now and then; academic talks,
-all-hands and pitches always): a funny picture beside or above the question (a weird stock photo, generated in a talk
-that generates pictures), a last tip for the audience as its line (in an English talk, a real piece of advice some of
-the time), or a callback, an earlier slide's picture shown again with a line that calls back to it ("Remember this
-one?"). The deck gives a callback its picture once the slides before it are in (`QuestionsSlide.call_back`, as it
-numbers a section), since realizing a slide knows nothing of the others: the picture whose search query and
-description share the most words with what the model says it showed, or else the dice's pick, never a meme's
-template (no joke without its captions), credited as on its slide. An academic talk's **references** are a slide type
-of their own (`references`, a format type as D56's process is): the works numbered as cited ("[1]"), a click each,
-and most of the time a picture of one of them on the click after them, beside the list, as large as it fits whole,
-with a caption that says which ("Cover of [2]", "[3], Fig. 2"): a book's cover (Reddit's book covers, generated in a
-talk that generates pictures; 48% of the model's references) or a figure from a paper (a real chart from the
-internet: 32%), and old prints from museums or illustrations where Reddit can't be had. They're two recipes of the
-references part, each with one picture slot (so that a plan written elsewhere, which gets a recipe as it is, searches
-one picture), and each with its list alone a fifth of the time. **Emoji** come in front of a
-list's things now and then, as karaoke decks have them: in a third of the tier lists and alignment charts and a
-quarter of the TED-like agendas, a variant whose hints ask for one a thing (the system prompt asks for none anywhere
+("shouldn't they be more challenging or an audience interaction?", "the 'any questions' slides are also pretty boring",
+"references slides are pretty boring"). A **dare** is now a real challenge for the presenter to keep up from then on (an
+accent, a gesture on every slide, a word to work into every slide, a word they may no longer say, only questions for
+three slides), or something the presenter has the whole audience do, under "Audience participation" in the talk's
+language (a show of hands, a call and response, the front row standing up, a sound everyone makes); a dad joke to tell
+stays, as one kind among them. The dare kind has a field for each, and a recipe's variant leaves one out: the language
+model's dares are 40% for the audience, 35% challenges and 25% for the presenter as before, which in an English talk may
+build on a real dad joke (a variant says whether its slide takes a real fact or a flavour text: `Variant.facts`); the
+classic ones (the TED pack's version 6: 45 challenges, 35 audience dares) are a fifth dad jokes, when there's one, and
+else as many challenges as audience dares. The **closing slide** ("Questions?") ends a talk on one of three things, as
+many of each, in every format that has it (TED-like talks now and then; academic talks, all-hands and pitches always): a
+funny picture beside or above the question (a weird stock photo, generated in a talk that generates pictures), a last
+tip for the audience as its line (in an English talk, a real piece of advice some of the time), or a callback, an
+earlier slide's picture shown again with a line that calls back to it ("Remember this one?"). The deck gives a callback
+its picture once the slides before it are in (`QuestionsSlide.call_back`, as it numbers a section), since realizing a
+slide knows nothing of the others: the picture whose search query and description share the most words with what the
+model says it showed, or else the dice's pick, never a meme's template (no joke without its captions), credited as on
+its slide. An academic talk's **references** are a slide type of their own (`references`, a format type as D56's process
+is): the works numbered as cited ("[1]"), a click each, and most of the time a picture of one of them on the click after
+them, beside the list, as large as it fits whole, with a caption that says which ("Cover of [2]", "[3], Fig. 2"): a
+book's cover (Reddit's book covers, generated in a talk that generates pictures; 48% of the model's references) or a
+figure from a paper (a real chart from the internet: 32%), and old prints from museums or illustrations where Reddit
+can't be had. They're two recipes of the references part, each with one picture slot (so that a plan written elsewhere,
+which gets a recipe as it is, searches one picture), and each with its list alone a fifth of the time. **Emoji** come in
+front of a list's things now and then, as karaoke decks have them: in a third of the tier lists and alignment charts and
+a quarter of the TED-like agendas, a variant whose hints ask for one a thing (the system prompt asks for none anywhere
 else) and that talkgenerator fills in where the model wrote none (a free model ignored the hints in a sample talk:
 `Variant.emoji`, by the thing's own word in an English talk, else by its place's mood), and in a third of the classic
-ones, from a list of their own (`data/emoji.json`: a thing's own emoji by a word
-of it, of 559 words, or else its place's mood, a crown for the S tier, a devil for chaotic evil; none for faiths,
-drink, weapons or death, and no joined sequences). No theme font has emoji: they're measured 1.4 ems wide (Segoe UI
-Emoji draws them 1.37), drawn in runs of their own in Segoe UI Emoji in a .pptx (where it's missing, PowerPoint and
-browsers fall back to their system's colour emoji), and in colour by the previewer where it has the font. A list a
-model writes is read more kindly too, after the free models' emoji lists: bars that look like its | (a box drawing's)
-count as it, an emoji written as a thing of its own goes in front of the thing after it, an emoji takes two
-characters' room however many it's written with, and a list too long is cut between its things, never in one (a cut
-had left a bare emoji). Over 500 seeds of 10-slide `default` talks, a dare comes up in 9.6% of the language model's talks (7.2% of classic ones), a
-closing slide in 10.4% (9.6%), a tier list in 15%, an alignment chart in 11% and an agenda in 7%.
+ones, from a list of their own (`data/emoji.json`: a thing's own emoji by a word of it, of 559 words, or else its
+place's mood, a crown for the S tier, a devil for chaotic evil; none for faiths, drink, weapons or death, and no joined
+sequences). No theme font has emoji: they're measured 1.4 ems wide (Segoe UI Emoji draws them 1.37), drawn in runs of
+their own in Segoe UI Emoji in a .pptx (where it's missing, PowerPoint and browsers fall back to their system's colour
+emoji), and in colour by the previewer where it has the font. A list a model writes is read more kindly too, after the
+free models' emoji lists: bars that look like its | (a box drawing's) count as it, an emoji written as a thing of its
+own goes in front of the thing after it, an emoji takes two characters' room however many it's written with, and a list
+too long is cut between its things, never in one (a cut had left a bare emoji). Over 500 seeds of 10-slide `default`
+talks, a dare comes up in 9.6% of the language model's talks (7.2% of classic ones), a closing slide in 10.4% (9.6%), a
+tier list in 15%, an alignment chart in 11% and an agenda in 7%.
 
 Variety per slide type comes from four axes, each sampled per slide with the talk's random generator:
 
