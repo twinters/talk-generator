@@ -3,7 +3,8 @@
 The talk's dice pick a persona, such as a disgraced professor, a startup founder or a kindergarten teacher (or the
 talk names one: generate_presentation's persona), which shapes more of the talk than how the language model writes:
 
-- its voice, in which the model writes, and the kinds of talk it gives (its angles, of which the dice pick one);
+- its voice, in which the model writes, and the kinds of talk it gives (its angles, of which the dice pick one); a
+  persona may have pasts too, of which the dice pick one for the talk (a retiree's old job: see Persona.lived);
 - how often each kind of slide comes up: multipliers on the format's own weights, by the slide generators' tags (see
   weight), so a medieval historian shows more history and timelines, and a startup founder more KPI tiles and funnels
   and less history. They never take a kind of slide away, and the format's caps still hold;
@@ -36,7 +37,7 @@ to a talk of 2019.
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from functools import cache
 from typing import Any, Final
 
@@ -50,6 +51,9 @@ NONE: Final = "none"  # (no persona: the format's own talk)
 TITLE_SHARE: Final = 0.5
 # Tags a persona never weights: every talk has its title slide, its presenter's introduction and its conclusions
 UNWEIGHTED_TAGS: Final = frozenset({"title", "about_me", "conclusion"})
+
+# Where a persona's past goes in its voice, angles and job hint (see Persona.lived)
+PAST: Final = "{past}"
 
 # A classic title generator: a presentation context (with the "seed" to make a title about) in, a title (or None) out
 TitleGenerator = Callable[[dict[str, Any]], Any]
@@ -81,6 +85,9 @@ class Persona:
     # talkgenerator.schema.presentation_schema_types.FORMAT_WEIGHTS): a startup founder mostly pitches (1 for the formats
     # it doesn't name)
     formats: Mapping[str, float] = field(default_factory=dict)
+    # What the presenter may have been, of which the talk's dice pick one, for {past} in the voice, the angles and the
+    # job hint (see lived): a retiree worked as a mail carrier, or as a lighthouse keeper. None for most personas.
+    pasts: tuple[str, ...] = ()
 
     def weight(self, tags: Iterable[str]) -> float:
         """How many times as often a slide generator with these tags comes up in the persona's talks: the product of
@@ -94,6 +101,28 @@ class Persona:
         """The angle the talk's dice pick (rng: the talk's), for the language model."""
         with random_util.use(rng.child("persona", "angle")):
             return random_util.choice(self.angles)
+
+    def lived(self, rng: random_util.Rng) -> Persona:
+        """The persona as the talk has it (rng: the talk's): with the past its dice pick (its "persona", "past" stream,
+        which no other choice uses) in the voice, the angles and the job hint. The same persona for one without pasts.
+        A persona whose voice was always the same job made every talk of it about that job: a retired lighthouse
+        keeper's two talks of the review set of 2026-11-08 had the lighthouse in their titles and on half of their
+        slides."""
+        if not self.pasts:
+            return self
+        with random_util.use(rng.child("persona", "past")):
+            past = random_util.choice(self.pasts)
+        return replace(
+            self,
+            voice=self.voice.replace(PAST, past),
+            angles=tuple(angle.replace(PAST, past) for angle in self.angles),
+            job_hint=self.job_hint.replace(PAST, past),
+        )
+
+    @property
+    def description(self) -> str:
+        """Who presents, for a menu: the voice, with a word for whichever past the dice pick."""
+        return self.voice.replace(PAST, "the same odd job")
 
     @property
     def nudge(self) -> Nudge:
@@ -540,14 +569,16 @@ PERSONAS: Final[dict[str, Persona]] = {
             looks={"weird": "wholesome", "neutral": "places"},
             formats={"academic": 0.5, "keynote": 2, "corporate": 0.5},
         ),
+        # (a retired lighthouse keeper until 2026-11-09, whose every talk was about the lighthouse: the user's "why not
+        # retired person?" Its old job is one of its pasts now, which the dice pick)
         Persona(
-            "lighthouse_keeper",
-            "Retired lighthouse keeper",
-            "a retired lighthouse keeper with strong opinions",
+            "retiree",
+            "Retiree",
+            "a retiree with strong opinions, who spent forty years working {past} (which comes up on a slide or two)",
             (
-                "what forty years in a lighthouse taught the presenter about the topic",
                 "why the topic was better in the old days",
-                "a storm, a shipwreck and the topic",
+                "what forty years working {past} taught the presenter about the topic",
+                "the topic, as the presenter's grandchildren tried to explain it to them",
             ),
             {
                 "anecdote": 3,
@@ -568,19 +599,37 @@ PERSONAS: Final[dict[str, Persona]] = {
                 "alignment_chart": 0.6,
                 "reviews": 0.8,
             },
-            "like an old sailor's yarn",
+            "like an old-timer's yarn, about the topic rather than the old job (the title slide has that)",
             (
-                "{seed.title}: What the Sea Taught Me",
+                "{seed.title}: What Forty Years Taught Me",
                 "Back in My Day, {seed.title} Meant Something",
-                "Storms, Shipwrecks and {seed.title}",
-                "A Lighthouse Keeper's Guide to {seed.title}",
+                "Kids These Days and {seed.title}",
+                "An Old-Timer's Guide to {seed.title}",
             ),
             {"fun_surname": 2.5},
             "a weathered first name and surname, without Dr. or Prof.",
-            "their old post at the lighthouse",
+            "retired, after forty years working {past}",
             themes={"vintage paper": 4, "newspaper": 3, "neon": 0.3, "startup": 0.3},
             looks={"weird": "old-photos", "neutral": "places"},
             formats={"pitch": 0.3, "academic": 0.5, "corporate": 0.3, "keynote": 0.5},
+            pasts=(
+                "as a lighthouse keeper",
+                "as a mail carrier",
+                "as a zookeeper",
+                "as a ferry captain",
+                "as a school janitor",
+                "as a piano tuner",
+                "as a night guard",
+                "as a bus driver",
+                "as a museum guard",
+                "as an ice-cream seller",
+                "as a crossing guard",
+                "as a forest ranger",
+                "as a circus clown",
+                "as a weather presenter",
+                "as a submarine cook",
+                "as a hotel concierge",
+            ),
         ),
         Persona(
             "former_athlete",
@@ -675,7 +724,8 @@ def catalog() -> list[dict[str, str]]:
     """The personas, for a menu (or a site that shows a talk's): each with its name (what generate_presentation's
     persona takes), a label, and who presents (its voice)."""
     return [
-        {"name": persona.name, "label": persona.label, "description": persona.voice} for persona in PERSONAS.values()
+        {"name": persona.name, "label": persona.label, "description": persona.description}
+        for persona in PERSONAS.values()
     ]
 
 
@@ -726,13 +776,13 @@ def pick(
     if wanted == NONE:
         return None
     if wanted != RANDOM:
-        return persona(wanted)
+        return persona(wanted).lived(rng)
     names = allowed(among)
     with random_util.use(rng.child("persona")):
         picked = _draw(tuple(PERSONAS.values()), weights)
         if picked.name not in names:
             picked = _draw(tuple(PERSONAS[name] for name in names), weights)
-    return picked
+    return picked.lived(rng)
 
 
 def _draw(pool: tuple[Persona, ...], weights: Mapping[str, float] | None) -> Persona:

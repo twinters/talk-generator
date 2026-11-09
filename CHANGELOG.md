@@ -408,7 +408,8 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
 - Every talk has a presenter persona, which its seed picks: a disgraced professor, a startup founder, a medieval
   historian, a conspiracy blogger, a kindergarten teacher and eight more (`--persona`, `persona=`, the MCP server's
   `generate_talk`; `talkgenerator.personas.catalog()` lists them). The persona is more than the voice the language
-  model writes in and the kind of talk they give. With a model or without, it shapes the talk:
+  model writes in and the kind of talk they give. A retiree's old job is one of sixteen, which the talk's seed picks
+  (a lighthouse keeper, a mail carrier, a piano tuner, ...). With a model or without, it shapes the talk:
   - the kinds of slides it favours: a historian's timelines and history, a founder's KPI tiles and funnels, a
     teacher's quizzes. No kind of slide is left out, and the format's caps still hold;
   - its title: the persona's kind of title from the model, and half of a classic talk's titles from the persona's

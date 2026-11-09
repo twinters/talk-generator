@@ -127,7 +127,28 @@ def test_the_talk_s_seed_picks_its_persona():
 def test_the_catalog_lists_every_persona():
     assert [entry["name"] for entry in personas.catalog()] == list(personas.PERSONAS)
     assert all(entry["label"] and entry["description"] for entry in personas.catalog())
+    assert not any(personas.PAST in entry["description"] for entry in personas.catalog())
     assert personas.choices() == ("random", "none", *personas.PERSONAS)
+
+
+def test_a_retiree_s_old_job_is_one_the_talk_s_dice_pick():
+    # (a retired lighthouse keeper's talks were all about the lighthouse: the user, 2026-11-09, "why not retired person?")
+    retiree = personas.PERSONAS["retiree"]
+    lived = [personas.pick("retiree", random_util.Rng(seed)) for seed in range(200)]
+    assert lived == [
+        personas.pick("retiree", random_util.Rng(seed)) for seed in range(200)
+    ]  # (the same seed, the same)
+    pasts = collections.Counter(next(past for past in retiree.pasts if past in each.voice) for each in lived)
+    assert set(pasts) == set(retiree.pasts)
+    assert min(pasts.values()) > len(lived) / len(retiree.pasts) / 3  # (none of them rare: about 12 each of 200)
+    for each in lived:
+        (past,) = [past for past in retiree.pasts if past in each.voice]
+        assert past in each.job_hint and personas.PAST not in each.voice + each.job_hint + "".join(each.angles)
+        assert any(past in angle for angle in each.angles) and not all(past in angle for angle in each.angles)
+    # (picked at random as well, with the stream of its own: the other personas are the same objects as before)
+    drawn = [personas.pick(None, random_util.Rng(seed)) for seed in range(300)]
+    assert any(each.name == "retiree" and personas.PAST not in each.voice for each in drawn)
+    assert all(each is personas.PERSONAS[each.name] for each in drawn if each.name != "retiree")
 
 
 # THE SLIDES THEY FAVOUR
@@ -491,13 +512,13 @@ def test_a_talk_says_which_personas_its_seed_picks_from():
 
 
 def test_the_seed_picks_only_among_the_personas_a_talk_allows():
-    two = ("startup_founder", "lighthouse_keeper")
+    two = ("startup_founder", "retiree")
     picked = collections.Counter(_picks(among=two))
     assert set(picked) == set(two) and min(picked.values()) > 150  # (each about as often: 200 of 400)
     assert set(_picks(among=["time_traveller"])) == {"time_traveller"}
-    # By a format's weights too, among the allowed: a startup founder pitches more often than a lighthouse keeper
+    # By a format's weights too, among the allowed: a startup founder pitches more often than a retiree
     pitches = collections.Counter(_picks(weights=pitch.PITCH.personas, among=two))
-    assert pitches["startup_founder"] > 3 * pitches["lighthouse_keeper"] > 0
+    assert pitches["startup_founder"] > 3 * pitches["retiree"] > 0
     # Allowing all of them is allowing any: the same persona as before there was a choice of them
     assert _picks() == _picks(among=personas.PERSONAS) == _picks(among=",".join(personas.PERSONAS))
     assert _picks(weights=pitch.PITCH.personas) == _picks(weights=pitch.PITCH.personas, among=personas.PERSONAS)

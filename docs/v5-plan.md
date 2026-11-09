@@ -292,7 +292,19 @@ name (particular generators, or nudge)". The talk's seed picks one of thirteen p
   them should have some chance for all possibilities, albeit much lower than their preferred"): multipliers on the
   formats' weights, for a talk that leaves its format to its seed (`schema="random"`; section 7 has the odds). A
   startup founder has ×12 for `pitch`, a disgraced professor ×12 for `academic`, an over-passionate expert ×3 for
-  `academic`; a kindergarten teacher's and a lighthouse keeper's are under 1, so their talks are TED-like more often.
+  `academic`; a kindergarten teacher's and a retiree's are under 1, so their talks are TED-like more often.
+- **A past, for the retiree** (2026-11-09): the retired lighthouse keeper's every talk was about the lighthouse (both
+  of the review set's had it in the title and on 5 and 6 of their 10 slides; the user: "why not retired person? Won't
+  it nudge too much to lighthouses?"). The persona is a retiree now, "a retiree with strong opinions, who spent forty
+  years working {past} (which comes up on a slide or two)", and the talk's dice pick the past among 16 (as a lighthouse
+  keeper, a mail carrier, a zookeeper, a piano tuner, a submarine cook, ...: `Persona.pasts`, `Persona.lived`, on a
+  random stream of its own, so other talks stay as they were). One of its three angles is about the old job, the
+  others "why the topic was better in the old days" and the topic as the grandchildren explained it; its classic
+  titles are an old-timer's ("Back in My Day, Cheese Meant Something"), and the model's are to be "about the topic
+  rather than the old job (the title slide has that)". In three talks by OpenRouter's free models ($0), a zookeeper's,
+  a forest ranger's and a submarine cook's, the old job was on the title slide's job line and one or two other slides
+  (with "now and then" in the voice and no word on titles, on two to four, and in every title): "Curdled Wisdom:
+  What My Grandkids Taught Me About Cheese", "When Umbrellas Had Soul: A Ranger's Lament", "Patience Beneath the Hull".
 
 A talk can also say which personas its seed picks from (`personas=`, `--personas`; talkgenerator.com's settings switch
 some off, D61): the seed picks among all of them first, and only when that one isn't allowed, again among those that
@@ -1007,7 +1019,7 @@ MCP server's report and `talkgenerator check`'s metrics name the format the talk
 product keynote joined `FORMAT_WEIGHTS` (×1 each) as they came in (merged together), with the consultant's ×12
 for `corporate`, the motivational speaker's ×12 for `keynote`, ×2 keynotes from the founder, the athlete, the life
 coach, the influencer and the time traveller, and fewer all-hands and keynotes from the kindergarten teacher and the
-lighthouse keeper.
+lighthouse keeper (a retiree since 2026-11-09).
 
 ## 8. Slide types and variety
 
