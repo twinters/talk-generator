@@ -48,12 +48,6 @@ logger = logging.getLogger("talkgenerator")
 BASIC: Final = "basic"
 ADVANCED: Final = "advanced"
 LEVELS: Final = (BASIC, ADVANCED)
-# What each level does, for the command line, the MCP server and the docs
-DESCRIPTIONS: Final = {
-    BASIC: "one request a talk: the model writes every slide from the word the talk's dice give it",
-    ADVANCED: "two requests a talk: the model first plans it (a thesis, a running gag, and every slide's word and "
-    "idea: what its joke is, what a chart measures or a diagram compares), then writes it",
-}
 
 PURPOSE: Final = "talk outline"  # (its ledger entries' purpose)
 # How long a riff and an idea may be: a word or a few, and a short sentence
