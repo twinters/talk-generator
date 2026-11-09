@@ -321,7 +321,10 @@ class ChartSlide(Slide):
         point_labels: Sequence[tuple[int, int, str]] = (),
         trendlines: Sequence[tuple[int, model.Trendline]] = (),
         point_picture: ImageData | None = None,
+        pictures: Mapping[str, ImageData | None] | None = None,
     ):
+        # (a classic trend's picture by its named moment comes as the picture of its "event": see slides.Pictures)
+        point_picture = point_picture or (pictures or {}).get("event")
         super().__init__(
             type_name="chart",
             ppt_slide_creator=powerpoint_slide_creator.create_chart_slide,

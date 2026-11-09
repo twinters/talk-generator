@@ -501,6 +501,13 @@ def generate_trend_chart(presentation_context: dict[str, Any]) -> tuple[Any, ...
     return title, XL_CHART_TYPE.LINE, trend_chart_data([("", values)]), None, x_title, y_title, "all", labels
 
 
+def trend_boxes(generated: tuple[Any, ...]) -> dict[str, str]:
+    """A classic trend's "box" that can have a picture: its named moment (as its point labels have it, after its
+    title, type, data, style, axis titles and how it appears), by the point (docs/v5-plan.md, D64)."""
+    labels = generated[7] if len(generated) > 7 else ()
+    return {"event": str(label)} if (label := next((name for _, _, name in labels if name), None)) else {}
+
+
 # RANKINGS: bars, the last of which, the punchline, wins by far
 
 

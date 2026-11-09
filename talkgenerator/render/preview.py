@@ -456,7 +456,7 @@ def _chart(canvas: Image.Image, element: ChartElement, scale: float, theme: Them
             for index, (px, py) in enumerate(series.points):
                 x, y = place(px, py)
                 radius = (12 if index < len(series.labels) and series.labels[index] else 5) * scale
-                draw.ellipse((x - radius, y - radius, x + radius, y + radius), fill=colors[number % 4])
+                draw.ellipse((x - radius, y - radius, x + radius, y + radius), fill=series.color or colors[number % 4])
             fitted = charts.fitted_line(series.points, series.trendline) if series.trendline else []
             if len(fitted) > 1:  # (a line fitted through it, as a sketch: whole, where the dashes are)
                 draw.line([place(px, py) for px, py in fitted], fill=palette.text, width=max(1, round(5 * scale)))
@@ -470,7 +470,7 @@ def _chart(canvas: Image.Image, element: ChartElement, scale: float, theme: Them
             series = spec.series[number]
             line = [(x0 + x * canvas_scale, y0 + y * canvas_scale) for x, y in placed]
             if len(line) > 1:
-                draw.line(line, fill=colors[number % 4], width=max(1, round(10 * scale)))
+                draw.line(line, fill=series.color or colors[number % 4], width=max(1, round(10 * scale)))
             for index, name in enumerate(series.labels):
                 if name and index < len(line):
                     x, y = line[index]

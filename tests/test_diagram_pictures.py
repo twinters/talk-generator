@@ -427,3 +427,26 @@ def test_a_trends_plot_leaves_room_as_the_site_does():
     points = charts.trend_points(spec, plot)
     span = (plot.right - plot.left) / len(spec.series[0].values)
     assert points[0][0][0] == pytest.approx(plot.left + span / 2)
+
+
+def test_a_classic_trend_has_a_picture_by_its_moment_now_and_then(monkeypatch, picture):
+    from talkgenerator.sources import chart
+
+    monkeypatch.setattr(chart, "correlation_title_generator", lambda context: "Naps over time")
+    monkeypatch.setattr(chart, "trend_event_generator", lambda context: "I got a cat")
+    asked = []
+
+    def source(context):
+        asked.append(context["seed"])
+        return picture()
+
+    generate = slide_texts.pictured(chart.generate_trend_chart, source, chart.trend_boxes, 1, kinds.TREND_PICTURE_ODDS)
+    made = _classic(generate, 200)
+    with_event = [generated for generated in made if any(name for _, _, name in generated[7])]
+    pictured = [generated for generated in with_event if isinstance(generated[-1], slides.Pictures)]
+    assert 0.35 <= len(pictured) / len(with_event) <= 0.65 and set(asked) == {"I got a cat"}
+    assert not any(isinstance(generated[-1], slides.Pictures) for generated in made if generated not in with_event)
+    generator = slide_generator_types.ChartSlideGenerator(lambda context: pictured[0])
+    slide, generated = generator.generate_slide({"seed": "cats"}, (set(), 0))
+    shown = slide.to_deck_slide().element("point_picture")
+    assert isinstance(shown, ImageElement) and shown.appears_on_click == 1

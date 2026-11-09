@@ -1029,6 +1029,7 @@ def _chart_side(roles: dict[str, Content], theme: Theme) -> Placement:
 _PIN_GAP: Final = 28.0
 _PIN_SHARE: Final = 0.46
 _PIN_WIDTH: Final = 0.3  # (of the plot's width, at most)
+_PIN_SIZES: Final = (1.0, 0.8, 0.62)  # (as large as it may be, or smaller where that keeps it clear of the lines)
 _PIN_LARGEST: Final = 320.0
 POINT_PICTURE: Final = "point_picture"  # (its role: see talkgenerator.slide.slides.POINT_PICTURE)
 
@@ -1070,39 +1071,43 @@ def point_picture(spec: ChartSpec, box: Box, font: str) -> tuple[Box, ShapeEleme
         w=name_width,
         h=2.4 * charts.LABEL_SIZE,
     )
-    width = min(_PIN_LARGEST * _PICTURE_SHAPE, _PIN_SHARE * (plot.bottom - plot.top) * _PICTURE_SHAPE)
-    width = min(width, _PIN_WIDTH * (plot.right - plot.left))
-    height = width / _PICTURE_SHAPE
+    largest = min(_PIN_LARGEST * _PICTURE_SHAPE, _PIN_SHARE * (plot.bottom - plot.top) * _PICTURE_SHAPE)
+    largest = min(largest, _PIN_WIDTH * (plot.right - plot.left))
     samples = [point for line in lines for point in _along(line)]
-    # (the places it can go: by the point on every side, and anywhere in the plot, on a grid; the best keeps clear of
-    # the point and its name, crosses the fewest of the lines' points, and is the nearest to the point)
-    places = [
-        (
-            x + _PIN_GAP if dx > 0 else x - _PIN_GAP - width if dx < 0 else x - width / 2,
-            y + _PIN_GAP if dy > 0 else y - _PIN_GAP - height if dy < 0 else y - height / 2,
-        )
-        for dx, dy in ((1, -1), (-1, -1), (1, 1), (-1, 1), (1, 0), (-1, 0), (0, -1), (0, 1))
-    ]
-    places += [
-        (
-            plot.left + (plot.right - plot.left - width) * across / 11,
-            plot.top + (plot.bottom - plot.top - height) * down / 7,
-        )
-        for across in range(12)
-        for down in range(8)
-    ]
+    # (the places it can go, as large as it is or a little smaller: by the point on every side, and anywhere in the
+    # plot, on a grid; the best keeps clear of the point and its name, crosses the fewest of the lines' points, is the
+    # nearest to the point, and the largest)
     best: tuple[float, Box] | None = None
-    for left, top in places:
-        left = min(max(left, plot.left), plot.right - width)  # (within the plot)
-        top = min(max(top, plot.top - charts.NAMED_DOT), plot.bottom - height)
-        candidate = Box(x=left, y=top, w=width, h=height)
-        crossing = sum(1 for point in samples if _holds(_inset(candidate, -8), point))
-        covering = _shared_area(_inset(candidate, -8), label) > 0 or _holds(
-            _inset(candidate, -charts.NAMED_DOT / 2 - 8), (x, y)
-        )
-        score = (10000 if covering else 0) + crossing * 10 + _distance(candidate, (x, y))
-        if best is None or score < best[0]:
-            best = (score, candidate)
+    for size in _PIN_SIZES:
+        width = largest * size
+        height = width / _PICTURE_SHAPE
+        places = [
+            (
+                x + _PIN_GAP if dx > 0 else x - _PIN_GAP - width if dx < 0 else x - width / 2,
+                y + _PIN_GAP if dy > 0 else y - _PIN_GAP - height if dy < 0 else y - height / 2,
+            )
+            for dx, dy in ((1, -1), (-1, -1), (1, 1), (-1, 1), (1, 0), (-1, 0), (0, -1), (0, 1))
+        ]
+        places += [
+            (
+                plot.left + (plot.right - plot.left - width) * across / 11,
+                plot.top + (plot.bottom - plot.top - height) * down / 7,
+            )
+            for across in range(12)
+            for down in range(8)
+        ]
+        for left, top in places:
+            left = min(max(left, plot.left), plot.right - width)  # (within the plot)
+            top = min(max(top, plot.top - charts.NAMED_DOT), plot.bottom - height)
+            candidate = Box(x=left, y=top, w=width, h=height)
+            crossing = sum(1 for point in samples if _holds(_inset(candidate, -8), point))
+            covering = _shared_area(_inset(candidate, -8), label) > 0 or _holds(
+                _inset(candidate, -charts.NAMED_DOT / 2 - 8), (x, y)
+            )
+            smaller = (1 - size) * 400  # (a smaller picture only where it crosses fewer of the lines)
+            score = (10000 if covering else 0) + crossing * 10 + _distance(candidate, (x, y)) + smaller
+            if best is None or score < best[0]:
+                best = (score, candidate)
     assert best is not None
     picture = best[1].model_copy(update={"x": box.x + best[1].x, "y": box.y + best[1].y})
     return picture, _line_to(picture, (box.x + x, box.y + y))

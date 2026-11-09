@@ -375,7 +375,11 @@ Generator = Callable[[dict[str, Any]], tuple[Any, ...] | None]
 
 
 def pictured(
-    generate: Generator, picture: ImageSource, boxes: Callable[[tuple[Any, ...]], dict[str, str]], most: int = 2
+    generate: Generator,
+    picture: ImageSource,
+    boxes: Callable[[tuple[Any, ...]], dict[str, str]],
+    most: int = 2,
+    odds: float = slides.PICTURE_ODDS,
 ) -> Generator:
     """The generator of a diagram's arguments, with pictures in some of its boxes now and then, as a planned diagram
     has them (docs/v5-plan.md, D64): of the boxes that can have one (by the role of their text, with their text: what
@@ -389,7 +393,7 @@ def pictured(
             return None
         texts = {box: text for box, text in boxes(generated).items() if text}
         found = []
-        for box in slides.picked_boxes(list(texts), most):
+        for box in slides.picked_boxes(list(texts), most, odds):
             image = picture({**presentation_context, "seed": texts[box]})
             if image is not None:
                 found.append((box, image))

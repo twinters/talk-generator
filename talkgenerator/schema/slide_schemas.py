@@ -6,7 +6,7 @@ from talkgenerator.datastructures.slide_generator_data import (
     PeakedWeight,
     SlideGeneratorData,
 )
-from talkgenerator.plan.kinds import CLUSTERED, Recipe, Variant, box_picture_slot
+from talkgenerator.plan.kinds import CLUSTERED, TREND_PICTURE_ODDS, Recipe, Variant, box_picture_slot
 from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema.registry import Registry
 from talkgenerator.slide import slide_generator_types, slides
@@ -626,7 +626,11 @@ own_chart_generators = _register(
             ),
         ),
         SlideGeneratorData(
-            slide_generator_types.ChartSlideGenerator(chart.generate_trend_chart),
+            slide_generator_types.ChartSlideGenerator(
+                slide_texts.pictured(
+                    chart.generate_trend_chart, box_picture_slot(), chart.trend_boxes, 1, TREND_PICTURE_ODDS
+                )
+            ),
             allowed_repeated_elements=4,
             retries=1,
             weight_function=ConstantWeightFunction(1.5),
