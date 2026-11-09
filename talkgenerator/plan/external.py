@@ -61,9 +61,9 @@ FORMATS: Final = {
     "test": "For testing talkgenerator itself",
     "pitch": "A startup pitch to investors: the problem, the solution, the market (TAM, SAM and SOM), the business "
     "model, the traction, the competition, the team, the roadmap and the ask, each a part of its arc, in that order",
-    "academic": "A talk at an academic conference, with affiliations on its title slide: the outline, related work, "
-    "the method, the results (with p-values), the limitations, future work, the acknowledgements, the references and "
-    "questions, each a part of its arc, in that order",
+    "academic": "A talk at an academic conference, with affiliations on its title slide: the motivation (the problem "
+    "the research is about), the outline, related work, the method, the results (with p-values), the limitations, "
+    "future work, the acknowledgements, the references and questions, each a part of its arc, in that order",
     "corporate": "A company's all-hands meeting or quarterly business review: the agenda, the KPIs against their "
     "targets, the quarter's wins, the roadmap, an org change, the synergies, the ask of everyone and Q&A, each a part "
     "of its arc, in that order",

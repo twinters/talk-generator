@@ -550,7 +550,13 @@ def test_the_ted_formats_mockups_get_copyright_free_photos():
 
 def test_the_new_types_are_drawn_types():
     # (memes: see test_memes.py; the types from PowerPoint karaoke decks: test_karaoke_types.py)
-    assert classic.DRAWN_TYPES == {*EVERY_KIND, "meme", *classic.KARAOKE_TYPES, *classic.FORMAT_TYPES}
+    assert classic.DRAWN_TYPES == {
+        *EVERY_KIND,
+        "meme",
+        *classic.KARAOKE_TYPES,
+        *classic.FORMAT_TYPES,
+        *classic.PROBLEM_TYPES,
+    }
     for kind in EVERY_KIND:
         slide = _built(kind, _longest_texts(kind), {"photo": ImageData("https://example.com/wide.jpg")})
         assert slide.type_name in classic.DRAWN_TYPES

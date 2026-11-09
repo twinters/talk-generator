@@ -26,11 +26,11 @@ import zlib
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from functools import cache
-from typing import Any
+from typing import Any, Final
 
 from talkgenerator.datastructures.slide_generator_data import SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
-from talkgenerator.plan.kinds import KINDS, Recipe, box_picture_slot
+from talkgenerator.plan.kinds import KINDS, PROBLEM_ANGLES, PROBLEM_BEHIND, Recipe, box_picture_slot
 from talkgenerator.plan.languages import ENGLISH
 from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema.formats.arcs import Arc, Free
@@ -230,6 +230,48 @@ def provocation(
 def maybe(chance: float, value: str | None) -> str | None:
     """The value, that share of the time (from the current random stream)."""
     return value if random_util.random() < chance else None
+
+
+# THE PROBLEM SLIDE (docs/v5-plan.md, D66): a classic one, from a pack's rules of problems (a pitch's in its "problem"
+# grammar, an academic talk's in "motivation", a TED-like talk's in the TED pack's "problem"): an angle the slide's
+# dice pick, as a planned slide's variant does (talkgenerator.plan.kinds.PROBLEM_ANGLES), whose rule's templates are
+# the problem and the line under it ("...|..."), under a heading of the pack's, with a picture of it behind the
+# problem, or one beside it that shows it. A real problem is a wikiHow how-to about the seed ("{seed.wikihow_action}"),
+# when there's one
+PROBLEM_LINES: Final = 0.8  # of the classic problem slides with a line under the problem
+
+
+def problem(
+    format_name: str,
+    rules: Mapping[str, str],
+    variables: Mapping[str, Any],
+    context: Mapping[str, Any],
+    pictures: tuple[Callable[[dict[str, Any]], Any], Callable[[dict[str, Any]], Any]],
+    weights: Mapping[str, float] | None = None,
+) -> Made | None:
+    """A classic problem slide's texts and picture, from the pack's rules (by name: the heading's, "kicker", and the
+    problems' of every angle), with the variables: the angle the slide's dice pick by weight (PROBLEM_ANGLES' weights
+    times these; another, when none of its templates fills in), and a picture from the first source (behind the
+    problem, PROBLEM_BEHIND of the time) or from the second (beside it). The slide goes without a picture when its
+    source finds none."""
+    left = {
+        name: weight * (weights or {}).get(name, 1.0)
+        for name, (weight, _, _) in PROBLEM_ANGLES.items()
+        if weight * (weights or {}).get(name, 1.0) > 0
+    }
+    filled = None
+    while left and not filled:
+        angle = random_util.weighted_random([(weight, name) for name, weight in left.items()]) or next(iter(left))
+        del left[angle]
+        filled = text(format_name, rules[angle], variables)
+    kicker = text(format_name, rules["kicker"], variables)
+    if not filled or not kicker:
+        return None
+    stated, _, line = filled.partition("|")
+    texts = {"kicker": kicker, "problem": stated.strip(), "detail": maybe(PROBLEM_LINES, line.strip() or None)}
+    behind = random_util.random() < PROBLEM_BEHIND
+    picture = pictures[0 if behind else 1](dict(context))
+    return texts, {"background" if behind else "photo": picture}
 
 
 def _stable(text: str, choices: Sequence[str]) -> str:

@@ -1,14 +1,14 @@
 """The startup pitch (docs/v5-plan.md, section 7; D56): a startup about the talk's topic, pitched to investors as at a
 demo day.
 
-Its arc goes from the problem to the solution, the market (TAM, SAM and SOM, as a funnel), the business model, the
-traction (a hockey stick), the competition (a 2×2 matrix with the startup alone in its best corner), the team and the
-roadmap to the ask (a big number) and the closing "Questions?". A short pitch keeps the problem, the solution, the
-traction and the ask; a quarter of a pitch's slides are free (D63), for memes, gifs, Reddit's weird pictures, its own
-provocations ("Disrupt.", over a full-screen picture), press and the like, and its market and business model come in
-pitches of eleven slides or more; a long one gives the problem, the solution and the traction a second slide. The
-startup's made-up name comes from the topic (see talkgenerator.schema.formats.startup), so that a classic pitch's
-slides name the same startup as its title.
+Its arc goes from the problem (a problem slide in three pitches in four, its why: D66) to the solution, the market
+(TAM, SAM and SOM, as a funnel), the business model, the traction (a hockey stick), the competition (a 2×2 matrix with
+the startup alone in its best corner), the team and the roadmap to the ask (a big number) and the closing
+"Questions?". A short pitch keeps the problem, the solution, the traction and the ask; a quarter of a pitch's
+slides are free (D63), for memes, gifs, Reddit's weird pictures, its own provocations ("Disrupt.", over a full-screen
+picture), press and the like, and its market and business model come in pitches of eleven slides or more; a long one
+gives the problem, the solution and the traction a second slide. The startup's made-up name comes from the topic (see
+talkgenerator.schema.formats.startup), so that a classic pitch's slides name the same startup as its title.
 
 A startup founder presents a pitch more often than the other personas, and a consultant, an influencer and a
 motivational speaker a little more often; its themes are the startup family's more often.
@@ -20,7 +20,7 @@ from typing import Any, Final
 
 from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
-from talkgenerator.plan.kinds import Recipe, Variant, closing_variants, matrix_landscape, pictured
+from talkgenerator.plan.kinds import Recipe, Variant, closing_variants, matrix_landscape, pictured, problem_variants
 from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema.formats import (
     BIG_NUMBER_PICTURES,
@@ -32,6 +32,7 @@ from talkgenerator.schema.formats import (
     different,
     maybe,
     photos,
+    problem,
     provocation,
     startup,
     text,
@@ -111,6 +112,11 @@ def _subtitle(context: dict[str, Any]) -> str | None:
 
 # Images: a calm backdrop behind a statement, the product, life before and after it, and the team's people
 _BACKDROP = cg.statement_backdrop_generator
+# (D66: the problem slide's picture beside the problem, which shows it as it happens; generated, in a talk that
+# generates pictures)
+_PAIN = ImageSlot(
+    "a picture that shows the problem the startup solves, as it happens", aesthetic="weird-stock", generate=True
+)
 # (D63: the main product slide's picture shows off an absurd invention: searched as a gadget, an invention or a
 # machine, and in a talk that generates pictures, drawn from the model's prompt as an advertisement's product shot)
 _PRODUCT = ImageSlot(
@@ -137,7 +143,23 @@ def _figure(kind: str) -> str:
     )
 
 
-# THE PROBLEM
+# THE PROBLEM: the problem slide most of the time (D66), a bold statement over a photo, or an alarming number
+
+
+# (a pain: everyday and real ones a little more often than the other angles)
+_ANGLES: Final = {"everyday": 1.3, "real": 1.2}
+_PROBLEMS: Final = {
+    "kicker": "problem.kicker",
+    "weird": "problem.weird",
+    "everyday": "problem.everyday",
+    "crossed": "problem.crossed",
+    "typical": "problem.typical",
+    "real": "problem.real",
+}
+
+
+def _problem(context: dict[str, Any]) -> Made | None:
+    return problem(PACK, _PROBLEMS, _variables(context), context, (_BACKDROP, _PAIN), _ANGLES)
 
 
 def _problem_statement(context: dict[str, Any]) -> Made | None:
@@ -476,6 +498,29 @@ _GENERATORS: Final = [
         llm=Recipe("title"),
     ),
     # The problem
+    # (D66: the problem slide, the pitch's why, three in four pitches' first; a long pitch's second problem slide is
+    # one of the others)
+    _part(
+        "problem",
+        6,
+        "problem",
+        _problem,
+        ["problem_slide"],
+        "Problem",
+        Recipe(
+            "problem",
+            (_BACKDROP, _PAIN),
+            brief="The problem the startup solves, right after the title, to hook the investors: a pain everyone in "
+            "the room has, or should have, with the concept",
+            hints={
+                "kicker": "a short heading over the problem, as a pitch deck has it, such as 'The problem' or 'The "
+                "pain'",
+                "detail": "a short line under it that makes the pain hit home: how often it happens, to how many "
+                "people, or what it costs them; it appears on a click",
+            },
+            variants=problem_variants(_ANGLES),
+        ),
+    ),
     _part(
         "problem",
         1,

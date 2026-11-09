@@ -102,20 +102,22 @@ def test_ten_and_five_slide_talks_have_the_arcs_the_formats_promise():
         "ask",
         "closing",
     )
+    # (D66: an academic talk's motivation first, its why, so a ten-slide talk goes without future work, and a five-slide
+    # one without its limitations)
     assert academic.ARC.layout(10) == (
         None,
+        "motivation",
         "related_work",
-        "method",
         None,
+        "method",
         "results",
         "limitations",
-        "future_work",
         None,
         "references",
         "questions",
     )
-    assert academic.ARC.kept(5) == ("method", "results", "limitations", "questions")
-    assert {"outline", "acknowledgements"} <= set(academic.ARC.kept(12))
+    assert academic.ARC.kept(5) == ("motivation", "method", "results", "questions")
+    assert "outline" in academic.ARC.kept(12) and "acknowledgements" in academic.ARC.kept(13)
 
 
 def test_an_all_hands_and_a_keynote_have_the_arcs_they_promise():

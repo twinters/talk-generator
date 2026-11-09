@@ -370,6 +370,17 @@ def _runs(seed=1, theme=None):
             )
             for _ in range(3)
         ),
+        # (and, from D66, problem slides: without a picture first, as it fits one layout, then over a picture and
+        # beside one)
+        slides.ProblemSlide("The problem", "Cats keep sitting on keyboards.", "Every single day."),
+        *(
+            slides.ProblemSlide("The problem", "Cats keep sitting on keyboards.", "Every single day.", background=wide)
+            for _ in range(3)
+        ),
+        *(
+            slides.ProblemSlide("Sound familiar?", "Cats keep sitting on keyboards.", "Every single day.", photo=tall)
+            for _ in range(3)
+        ),
     ]
     slide_deck = SlideDeck(len(runs), title="Cats", topics=["cats"], seed=seed)
     for index, slide in enumerate(runs):

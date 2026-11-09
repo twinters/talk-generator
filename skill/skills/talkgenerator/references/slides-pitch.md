@@ -14,7 +14,7 @@ A talk of this format goes through these parts, in this order, each with the sli
 
 | Part | Slides | Recipes |
 | --- | --- | --- |
-| `problem` | 1 to 2 | `problem-number-pitch`, `problem-statement-pitch` |
+| `problem` | 1 to 2 | `problem-number-pitch`, `problem-pitch`, `problem-statement-pitch` |
 | `solution` | 1 to 2 | `before-and-after-pitch`, `how-it-works-pitch`, `solution-pitch` |
 | `market` | 1 | `market-number-pitch`, `market-size-pitch` |
 | `business_model` | 1 | `flywheel-pitch`, `pricing-pitch`, `revenue-streams-pitch` |
@@ -446,3 +446,19 @@ Images: none
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
 | `acronym-pitch` | A made-up method for the concept, as an acronym sold as the key to it all: its words get less plausible letter by letter, and the last one is the punchline | the default; tags: acronym |
+
+## `problem`
+
+The problem the talk is about, early on, to hook the audience: a short heading on a sticker, the problem in big words, and a line under it that makes it hit home, which appears on a click; over a picture of it, or beside a picture that shows it.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `kicker` | 28 | a short heading over the problem, in two or three words |
+| `problem` | 130 | the problem, in one or two short sentences: a hook that the audience either recognises at once or can't believe |
+| `detail` | 80 | a short line under it that makes it hit home (how often it happens, to whom, or what it costs); it appears on a click (or empty, for none) |
+
+Images: `background`, `photo`
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `problem-pitch` | The problem the startup solves, right after the title, to hook the investors: a pain everyone in the room has, or should have, with the concept | the default; `kicker`: a short heading over the problem, as a pitch deck has it, such as 'The problem' or 'The pain'; `detail`: a short line under it that makes the pain hit home: how often it happens, to how many people, or what it costs them; it appears on a click; images: `background` calm-backdrop or backdrop, `photo` weird-stock (or generated, from its prompt, with an image generator set up); tags: problem, problem_slide |

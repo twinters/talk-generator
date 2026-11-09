@@ -1,15 +1,22 @@
 {
   "format": "pitch",
   "about": "The classic texts of startup pitches (the pitch schema): a grammar per part of its arc, whose rules are lists of templates (see talkgenerator.sources.packs and talkgenerator.schema.formats.pitch)",
-  "version": 2,
+  "version": 3,
   "versions": {
     "1": "2026-11-08: the first texts of startup pitches, a part of the arc a grammar: the title, the problem, the solution, the market, the business model, the traction, the competition, the team, the roadmap, the ask and the closing (D56)",
-    "2": "2026-11-09: the free slides' own provocations: a word or two over a full-screen picture, in the format's voice (D63)"
+    "2": "2026-11-09: the free slides' own provocations: a word or two over a full-screen picture, in the format's voice (D63)",
+    "3": "2026-11-09: the problem slide, the pitch's why: its headings, and problems on five angles (weird, everyday, crossed with something else, typical, and a real how-to), each with a line under it (D66)"
   },
   "slots": {
     "title.talk_title": {"variables": ["seed", "startup"], "field": "title.title"},
     "title.subtitle": {"variables": ["seed", "topic", "presenter", "title", "startup"], "field": "title.subtitle"},
     "free.provocation": {"variables": ["seed", "topic", "presenter", "title", "startup"], "field": "full_image.title"},
+    "problem.kicker": {"variables": ["seed", "topic", "presenter", "title", "startup"], "field": "problem.kicker"},
+    "problem.weird": {"variables": ["seed", "topic", "presenter", "title", "startup"], "field": "problem.problem", "parts": 2},
+    "problem.everyday": {"variables": ["seed", "topic", "presenter", "title", "startup"], "field": "problem.problem", "parts": 2},
+    "problem.crossed": {"variables": ["seed", "topic", "presenter", "title", "startup"], "field": "problem.problem", "parts": 2},
+    "problem.typical": {"variables": ["seed", "topic", "presenter", "title", "startup"], "field": "problem.problem", "parts": 2},
+    "problem.real": {"variables": ["seed", "topic", "presenter", "title", "startup"], "field": "problem.problem", "parts": 2},
     "problem.problem_statement": {"variables": ["seed", "topic", "presenter", "title", "startup"], "field": "statement.text"},
     "problem.problem_title": {"variables": ["seed", "topic", "presenter", "title", "startup"], "field": "big_number.title"},
     "problem.problem_share": {"variables": ["seed", "topic", "presenter", "title", "startup"], "field": "big_number.label"},

@@ -189,6 +189,18 @@ SPECS: Final[dict[str, TextSpec]] = {
     "side fact": TextSpec("body", 88, 36, align="left", bold=True),
     "card fact": TextSpec("body", 88, 34, align="left", bold=True, on_fill=True),
     "card source": TextSpec("body", 36, 24, align="left", italic=True, on_fill=True),
+    # (a problem slide's problem, under its heading on a sticker, and the line under it: D66; over a shaded picture, the
+    # problem is a statement's, light)
+    "problem": TextSpec("heading", 104, 44, align="center", heading=True),
+    "side problem": TextSpec("heading", 88, 40, align="left", heading=True),
+    "problem detail": TextSpec("body", 52, 26, align="center", anchor="top", italic=True),
+    "side problem detail": TextSpec("body", 52, 26, align="left", anchor="top", italic=True),
+    "photo problem detail": TextSpec(
+        "body", 52, 26, color="light", align="left", anchor="top", italic=True, on_photo=True
+    ),
+    "band problem detail": TextSpec(
+        "body", 52, 26, color="light", align="center", anchor="top", italic=True, on_photo=True
+    ),
     # (an acronym's letters on tiles and its words; a dare; a flowchart's labels and its end; a tier list's rows)
     "tile letter": TextSpec("heading", 120, 40, align="center", heading=True, on_fill=True, effect=False),
     "acronym word": TextSpec("heading", 96, 32, align="left", heading=True),
@@ -2794,6 +2806,107 @@ def _without(role: str) -> Callable[[dict[str, Content]], bool]:
     return without
 
 
+# THE PROBLEM SLIDE (docs/v5-plan.md, D66): a talk's why, early on, its heading on a sticker in the theme's accent, as
+# a fun fact's is, the problem big under it, and the line under that which makes it hit home (on a click): the three
+# one under the other, as tall as they come out, in the middle of the slide's height; or the problem on a band across
+# its picture
+_STICKER: Final = 116  # a sticker's height
+_PROBLEM_GAP: Final = 40  # between the sticker and the problem
+_DETAIL_GAP: Final = 28  # between the problem and the line under it
+_PROBLEM_DETAIL: Final = 128  # how tall the line under the problem may be
+_PROBLEM_PHOTO: Final = 760  # a photo beside the problem, framed
+_PROBLEM_SPLIT: Final = 860  # a photo that fills the slide's left side
+
+
+def _problem_beside(roles: dict[str, Content]) -> bool:
+    """Whether a problem slide has a photo to put beside the problem (and no picture to put behind it)."""
+    return "photo" in roles and "background" not in roles
+
+
+def _fitted_height(roles: dict[str, Content], role: str, box: Box, spec: str, theme: Theme) -> float:
+    """How tall the slide's text of the role comes out in the box, as the engine fits it there (none, without it)."""
+    element = roles.get(role)
+    if not isinstance(element, TextElement):
+        return 0.0
+    style, lines = text_lines(element.text, box, spec, theme)
+    return min(box.h, fit.text_height(len(lines), style.size) + 8)
+
+
+def _problem_stack(
+    placement: Placement,
+    roles: dict[str, Content],
+    theme: Theme,
+    x: float,
+    width: float,
+    specs: tuple[str, str],
+    centred: bool = False,
+) -> None:
+    """The problem's heading on a sticker, the problem under it and the line under that (if it has one), between x
+    and x + width, in the specs given (the problem's and the line's): one under the other, each as tall as it comes
+    out, the three together in the middle of the slide's height; the sticker in the middle, if centred."""
+    detail = _fitted_height(roles, "detail", Box(x=x, y=0, w=width, h=_PROBLEM_DETAIL), specs[1], theme)
+    below = _DETAIL_GAP + detail if detail else 0.0
+    room = _CONTENT_BOTTOM - MARGIN - _STICKER - _PROBLEM_GAP - below
+    problem = _fitted_height(roles, "problem", Box(x=x, y=0, w=width, h=room), specs[0], theme) or room
+    y = MARGIN + (_CONTENT_BOTTOM - MARGIN - (_STICKER + _PROBLEM_GAP + problem + below)) / 2
+    sticker_width = min(600.0, width)
+    _sticker(
+        placement, theme, Box(x=x + (width - sticker_width) / 2 if centred else x, y=y, w=sticker_width, h=_STICKER)
+    )
+    y += _STICKER + _PROBLEM_GAP
+    placement.boxes["problem"] = (Box(x=x, y=y, w=width, h=problem), specs[0])
+    if detail:
+        placement.boxes["detail"] = (Box(x=x, y=y + problem + _DETAIL_GAP, w=width, h=detail), specs[1])
+
+
+def _problem(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The problem under its heading on a sticker, and the line under it below: over its picture, shaded, aligned
+    left in light colours, as a statement over a photo is; beside its photo (on the right), aligned left; or without
+    a picture, in the middle."""
+    placement = Placement("v5/problem")
+    behind = _backdrop(placement, roles)
+    beside = not behind and "photo" in roles
+    if beside:
+        photo = Box(x=WIDTH - MARGIN - _PROBLEM_PHOTO, y=MARGIN, w=_PROBLEM_PHOTO, h=_CONTENT_BOTTOM - MARGIN)
+        placement.boxes["photo"] = (photo, "quote")
+    width = WIDTH - 2 * MARGIN - (_PROBLEM_PHOTO + _GAP if beside else 0)
+    if behind:
+        specs = ("left statement", "photo problem detail")
+    elif beside:
+        specs = ("side problem", "side problem detail")
+    else:
+        specs = ("problem", "problem detail")
+    _problem_stack(placement, roles, theme, MARGIN, width, specs, centred=not behind and not beside)
+    return placement
+
+
+def _problem_band(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The problem on a band across its shaded picture, in the theme's colours, as a statement's band has it: its
+    heading on a sticker over the band's top edge, and the line under it below the band, light."""
+    surface = theme.palette.surface
+    band_box = Box(x=0, y=300, w=WIDTH, h=470)
+    band = ShapeElement(role="problem band", box=band_box, color=surface, opacity=BAND_OPACITY)
+    placement = Placement("v5/problem-band", shapes=[_shade()], overlays=[band])
+    _sticker(placement, theme, Box(x=MARGIN + 48, y=band_box.y - _STICKER / 2, w=600, h=_STICKER))
+    problem = Box(x=200, y=band_box.y + 82, w=WIDTH - 400, h=band_box.h - 112)
+    placement.boxes["problem"] = (problem, "band statement")
+    placement.colors["problem"] = _on([color.mix(shaded, surface, BAND_OPACITY) for shaded in _SHADED], theme)
+    if "detail" in roles:
+        detail = Box(x=MARGIN + 120, y=band_box.y + band_box.h + 40, w=WIDTH - 2 * MARGIN - 240, h=_PROBLEM_DETAIL)
+        placement.boxes["detail"] = (detail, "band problem detail")
+    return placement
+
+
+def _problem_split(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The photo filling the slide's left side, and beside it, on the theme's background, the problem under its
+    heading on a sticker, aligned left, with the line under it below."""
+    placement = Placement("v5/problem-split", photo=True)  # (a picture to the slide's edges: none of a box's frame)
+    placement.boxes["photo"] = (Box(x=0, y=0, w=_PROBLEM_SPLIT, h=HEIGHT), "quote")
+    x = _PROBLEM_SPLIT + 80
+    _problem_stack(placement, roles, theme, x, WIDTH - MARGIN - x, ("side problem", "side problem detail"))
+    return placement
+
+
 def _acronym_rows(roles: dict[str, Content], theme: Theme) -> Placement:
     """The acronym down the slide: every letter on a tile in the theme's accent, the word it stands for beside it."""
     accent = theme.palette.accent
@@ -3640,6 +3753,12 @@ _LAYOUTS: Final[dict[str, tuple[_Layout, ...]]] = {
     "references": (
         _Layout("v5/references", _references(left=False)),
         _Layout("v5/references-left", _references(left=True), 0.8, _has("figure")),
+    ),
+    # (the talk's why, early on: D66)
+    "problem": (
+        _Layout("v5/problem", _problem),
+        _Layout("v5/problem-band", _problem_band, 0.8, _has("background")),
+        _Layout("v5/problem-split", _problem_split, 0.9, _problem_beside),
     ),
     "meme": (_Layout("v5/meme", _meme),),
     # (slide types from PowerPoint karaoke decks)

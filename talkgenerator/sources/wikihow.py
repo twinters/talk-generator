@@ -14,6 +14,7 @@ import re
 from functools import cache, lru_cache
 from itertools import chain
 from typing import Final
+from urllib.parse import quote
 
 import inflect
 from bs4 import BeautifulSoup
@@ -58,6 +59,12 @@ def action_of(wikihow_title: str) -> str | None:
     if match is None:
         return None
     return clean_wikihow_action(match.group("action").split(": ")[0]) or None
+
+
+def page_of(action: str) -> str:
+    """The page of a wikiHow how-to, by its action ("Stop a Goose Attack": https://www.wikihow.com/Stop-a-Goose-Attack),
+    as wikiHow names its pages."""
+    return "https://www.wikihow.com/" + quote("-".join(action.split()), safe="-")
 
 
 def clean_wikihow_action(action: str) -> str:

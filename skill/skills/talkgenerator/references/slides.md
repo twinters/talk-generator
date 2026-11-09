@@ -708,3 +708,19 @@ Images: none
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
 | `error-message` | A fake error message about the concept, as if the talk itself just crashed: a dialog with a playful, absurd message about the concept, worded as computers word them, and buttons, the last one the punchline | the default; tags: error_message |
+
+## `problem`
+
+The problem the talk is about, early on, to hook the audience: a short heading on a sticker, the problem in big words, and a line under it that makes it hit home, which appears on a click; over a picture of it, or beside a picture that shows it.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `kicker` | 28 | a short heading over the problem, in two or three words |
+| `problem` | 130 | the problem, in one or two short sentences: a hook that the audience either recognises at once or can't believe |
+| `detail` | 80 | a short line under it that makes it hit home (how often it happens, to whom, or what it costs); it appears on a click (or empty, for none) |
+
+Images: `background`, `photo`
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `problem` | The problem the talk is about, early on, as a TED speaker opens with one to hook the audience: a problem with the concept that the talk's thesis will answer | the default; `kicker`: a short heading over the problem, as a TED speaker would open with it, such as 'Picture this' or 'Sound familiar?'; images: `background` calm-backdrop or backdrop, `photo` weird-stock (or generated, from its prompt, with an image generator set up); tags: problem_slide |

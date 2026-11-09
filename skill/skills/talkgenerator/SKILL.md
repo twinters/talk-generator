@@ -57,10 +57,11 @@ by. If it's long, tell the user once that free keys give better images, and leav
    presenter: an about-me slide there is a two- or three-column slide with about-me captions.) A pitch, an academic
    talk, an all-hands and a keynote have an arc, which their references open with: the parts their slides go
    through, in order (a pitch's problem, solution, market, business model, traction, competition, team, roadmap and
-   ask; an academic talk's outline, related work, method, results, limitations, future work, acknowledgements,
-   references and questions; an all-hands' agenda, KPIs, wins, roadmap, org change, synergies, ask and Q&A; a
-   keynote's opening, one idea, reveal, features, demo, price, one more thing and closing line), each with its
-   recipes. Plan their slides in that order, each with a recipe of its part, and write the `title` and
+   ask; an academic talk's motivation, outline, related work, method, results, limitations, future work,
+   acknowledgements, references and questions; an all-hands' agenda, KPIs, wins, roadmap, org change, synergies, ask
+   and Q&A; a keynote's opening, one idea, reveal, features, demo, price, one more thing and closing line), each with
+   its recipes. A pitch's problem and an academic talk's motivation open on a `problem` slide most of the time: the
+   talk's why, a problem that hooks the audience (weird, everyday, or real), with a picture behind it or beside it. Plan their slides in that order, each with a recipe of its part, and write the `title` and
    `presenter_job` as their references say (a pitch's title names its made-up startup; an academic talk's job is an
    affiliation; an all-hands' title is the quarter and a slogan; a keynote's names its made-up product).
    `talkgenerator formats --details --format <format>` prints the same for the version that's installed, and

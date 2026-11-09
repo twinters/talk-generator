@@ -6,6 +6,7 @@ from talkgenerator.datastructures.slide_generator_data import (
     PeakedWeight,
     SlideGeneratorData,
 )
+from talkgenerator.images.slots import ImageSlot
 from talkgenerator.plan.kinds import (
     CLUSTERED,
     EMOJI_NOTE,
@@ -15,12 +16,16 @@ from talkgenerator.plan.kinds import (
     box_picture_slot,
     closing_variants,
     pictured,
+    problem_variants,
     with_emoji,
 )
 from talkgenerator.schema import content_generators as cg
+from talkgenerator.schema import formats
+from talkgenerator.schema.formats import Made
 from talkgenerator.schema.registry import Registry
 from talkgenerator.slide import slide_generator_types, slides
-from talkgenerator.sources import chart, diagram, memes, slide_texts
+from talkgenerator.sources import chart, diagram, memes, packs, slide_texts
+from talkgenerator.util import random_util
 from talkgenerator.util.generator_util import CombinedGenerator, NoneGenerator
 
 # ==============================
@@ -952,6 +957,65 @@ fun_fact_slide_generators_copyright_free = _register(
     "fun_fact_copyright_free", _fun_fact(cg.copyright_free_generator, " (CRF)")
 )
 
+# THE PROBLEM (docs/v5-plan.md, D66): some TED-like talks open on their why too, as a pitch and an academic talk do: as
+# their third slide (after the presenter's), the problem the talk is about, on an angle the talk's dice pick (see
+# talkgenerator.plan.kinds.PROBLEM_ANGLES), over a picture of it or beside one that shows it (generated, in a talk that
+# generates pictures); a classic one from the TED pack's problems
+PROBLEM_WEIGHT = 26  # (at the third slide: a quarter to a third of TED-like talks open on their problem)
+_PROBLEM_PICTURE = ImageSlot(
+    "a picture that shows the problem the talk is about, as it happens", aesthetic="weird-stock", generate=True
+)
+# (the TED speaker's: everyday and weird ones a little more often than the other angles)
+_PROBLEM_ANGLES = {"everyday": 1.3, "weird": 1.2}
+_TED_PROBLEMS = {
+    "kicker": "problem.kicker",
+    "weird": "problem.weird",
+    "everyday": "problem.everyday",
+    "crossed": "problem.crossed",
+    "typical": "problem.typical",
+    "real": "problem.real",
+}
+
+
+def _ted_problem(context: dict) -> Made | None:
+    seed = str(context["seed"])
+    if slide_texts.sensitive(seed):
+        return None
+    variables = {
+        "seed": seed,
+        "number": str(random_util.randint(3, 40)),
+        "percent": f"{random_util.randint(12, 97)}%",
+        "year": str(random_util.randint(1950, 2019)),
+    }
+    pictures = (cg.statement_backdrop_generator, _PROBLEM_PICTURE)
+    return formats.problem(packs.TED, _TED_PROBLEMS, variables, context, pictures, _PROBLEM_ANGLES)
+
+
+problem_slide_generators = _register(
+    "problem",
+    [
+        SlideGeneratorData(
+            formats.KindSlideGenerator("problem", _ted_problem),
+            weight_function=PeakedWeight((2,), PROBLEM_WEIGHT, 0),
+            retries=3,
+            allowed_repeated_elements=2,
+            tags=["problem_slide"],
+            name="Problem",
+            llm=Recipe(
+                "problem",
+                (cg.statement_backdrop_generator, _PROBLEM_PICTURE),
+                brief="The problem the talk is about, early on, as a TED speaker opens with one to hook the audience: "
+                "a problem with the concept that the talk's thesis will answer",
+                hints={
+                    "kicker": "a short heading over the problem, as a TED speaker would open with it, such as 'Picture "
+                    "this' or 'Sound familiar?'",
+                },
+                variants=problem_variants(_PROBLEM_ANGLES),
+            ),
+        )
+    ],
+)
+
 # The ones without pictures, in every format: an acronym for a made-up method, a dare for the presenter (organisers put
 # one such slide in a deck, at most: so it's rarer), a flowchart whose every path leads to the same end, and a tier list.
 # A third of the tier lists and alignment charts have an emoji in front of every thing (docs/v5-plan.md, D65)
@@ -1356,6 +1420,7 @@ all_slide_generators = (
     + mockup_slide_generators
     + meme_slide_generators
     + fun_fact_slide_generators
+    + problem_slide_generators
     + karaoke_slide_generators
     + structure_slide_generators
     + native_diagram_slide_generators
@@ -1382,6 +1447,7 @@ default_max_allowed_tags = {
     "news": 1,
     "caption_meme": 2,  # (memes with live captions; and every meme, from Reddit too, two in ten slides: "meme")
     "fun_fact": 1,
+    "problem_slide": 1,  # (D66: one problem slide a talk, in every format: a pitch's problem part may have two slides)
     "acronym": 1,
     "dare": 1,
     "flowchart": 1,
