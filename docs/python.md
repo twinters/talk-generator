@@ -56,6 +56,7 @@ The options, after the format (`"default"`, `"ted"`, `"interview"`, `"pitch"`, `
 | `vision_pick` | A vision model that picks the pictures of the slides a language model writes, each among a few candidates (see [The vision pick](images-and-themes.md#the-vision-pick)): `True` (the talk's own model when it reads pictures, else OpenRouter's free models that do), a spec such as `"anthropic:claude-haiku-5-5"`, a provider object, or `None` (off, the default). In `stream_talk`, a slide whose picture it changed comes again, as `slide.updated`, before `talk.finished` |
 | `int_seed`, `parallel` | The seed (the same seed gives the same talk, in parallel or not) and whether slides are made at the same time: `True` (all of them; a language model's eight at a time), a number (at most that many at once, as a small server does: each slide being made holds what it found until it's settled), or `False` (one by one) |
 | `spares` | `stream_talk` only: how many spare slides to send, for a presenter who goes on before the next slide is in (see [Spare slides](#spare-slides)); 0, the default, for none |
+| `slide_seconds` | `stream_talk` only: how long a slide may take at most, after which it comes at once with what's quick (see [A time limit per slide](#a-time-limit-per-slide)); `None`, the default, for no limit |
 
 ### Spare slides
 
@@ -84,6 +85,25 @@ after `talk.finished`. A talk on a topic its slides won't make light of (death, 
 Spares are none of the talk's slides: they have no place in the deck, the finished deck (and so its PowerPoint)
 leaves them out, and as they're made from random streams of their own, the talk's slides come out the same with spares
 or without.
+
+### A time limit per slide
+
+Slides come in order, so one slow slide (its pictures still being looked for) holds back every slide after it. With
+`stream_talk(..., slide_seconds=8)`, every slide but the title slide has 8 seconds at most, counted from when it could
+come: once the slide before it came, and its text, for a slide a language model writes (the model's writing doesn't
+count). A slide that isn't made by then comes at once with what's quick instead:
+
+- A slide the model wrote keeps its texts. It comes without the pictures it can do without (a picture behind a big
+  number, say), and with spare pictures of the talk's topic for the ones it can't: the talk finds three of those
+  early, while the model writes.
+- Otherwise, a stand-in takes its place: a slide of the spare slides' kinds, about the slide's own topic, made in a
+  hundredth of a second (in a talk in another language, a spare picture of the topic, without text).
+
+That slide is the talk's: it's in the deck, at its place, numbered, and its notes say it ran out of time. What it waited
+for goes on by itself, and nothing waits for it, `talk.finished` neither. With nothing to stand in (a topic the spare
+kinds won't make light of), the slide is waited for after all. Of the slides with pictures timed for D66, 5% took more
+than 8 s. The same seed gives the same talk as long as no slide runs out of time; one that does makes the talk depend
+on how long its sources took.
 
 ## A PowerPoint: `render_pptx`
 

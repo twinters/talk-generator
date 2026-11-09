@@ -246,6 +246,13 @@ def _candidates(
     return candidates
 
 
+def fits(image: ImageData, slot: ImageSlot) -> bool:
+    """Whether an image found for something else (a spare picture of a talk's topic, say) has the orientation and the
+    pixels the slot asks for (or its look does), as far as its source says its size."""
+    orientation = slot.orientation or profiles.profile(context.current().look(slot.aesthetic)).orientation
+    return _fits(image.declared_size, orientation, slot.min_pixels)
+
+
 def _fits(size: tuple[int, int] | None, orientation: str | None, min_pixels: int) -> bool:
     """Whether an image of the size (as its source says it, if it does) has the orientation and the pixels asked for."""
     if size is None:

@@ -502,6 +502,7 @@ def stream_talk(
     vision_pick: bool | str | TextProvider | None = None,
     theme_families: str | Iterable[str] | None = None,
     spares: int = 0,
+    slide_seconds: float | None = None,
 ) -> Iterator[TalkEvent]:
     """Make a talk as generate_presentation does (the same deck, for the same options, seed and answers), handing
     over what's ready while it's made (see talkgenerator.models.events): talk.started once its title is known (the
@@ -519,6 +520,16 @@ def stream_talk(
     they have random streams of their own, the talk's slides come out the same with spares or without. A spare can't
     be made for a talk on a topic its slides wouldn't make light of (see talkgenerator.sources.slide_texts.sensitive).
 
+    With slide_seconds, every slide but the title slide has that long, at most, from when it could come (once the
+    slide before it came, and its text, for a slide a language model writes): one that isn't made by then (its pictures
+    still being looked for, say) comes at once with what's quick instead. A slide the model wrote keeps its texts: it
+    comes without the pictures it can do without, and with spare pictures of the talk's topic, found early, for the
+    ones it can't. Else a stand-in takes its place, a slide of the spare slides' kinds about the slide's own seed, made
+    in a hundredth of a second (in a talk in another language, a spare picture of the topic, without text). It's the
+    talk's slide, in the deck and its PowerPoint; what the slide waited for goes on by itself, and nothing waits for it
+    (talk.finished neither). Off by default (None): the same seed gives the same talk as long as no slide runs out of
+    time, as it then depends on how long the sources take.
+
     In a talk that generates pictures (image_generator: see generate_presentation), a slide comes with its stock photo
     where a generated picture is to go, and comes again (slide.updated, at the same index, laid out the same way) once
     that's in; talk.finished comes once all of them are in. In a talk with a vision pick (vision_pick: see
@@ -532,7 +543,7 @@ def stream_talk(
     Stopping the iteration (closing the iterator, or leaving a for loop over it) stops the talk, and an error that
     stopped it comes out of the iterator."""
     events: queue.SimpleQueue[TalkEvent | None] = queue.SimpleQueue()  # (None: the end)
-    following = _Following(events.put, spares=max(0, spares))
+    following = _Following(events.put, spares=max(0, spares), slide_seconds=slide_seconds)
     failures: list[BaseException] = []
 
     def make() -> None:
@@ -584,11 +595,15 @@ def stream_talk(
 
 class _Following:
     """Turns a talk's progress into events (see stream_talk), and stops the talk once they're not wanted anymore. It
-    wants that many spare slides (spares: see talkgenerator.schema.presentation_schema.Progress)."""
+    wants that many spare slides, and gives every slide that long at most (spares and slide_seconds: see
+    talkgenerator.schema.presentation_schema.Progress)."""
 
-    def __init__(self, hand_over: Callable[[TalkEvent], None], spares: int = 0) -> None:
+    def __init__(
+        self, hand_over: Callable[[TalkEvent], None], spares: int = 0, slide_seconds: float | None = None
+    ) -> None:
         self.hand_over = hand_over
         self.spares = spares
+        self.slide_seconds = slide_seconds
         self.cancelled = threading.Event()
         self._layout: engine.DeckLayout | None = None
         self._handed_over = 0
