@@ -10,7 +10,7 @@ authors:
     family-names: Winters
   - given-names: Kory W.
     family-names: Mathewson
-version: 4.0.1
+version: 5.0.0
 date-released: "2026-11-05"
 license: MIT
 repository-code: "https://github.com/twinters/talk-generator"

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "talkgenerator"
-version = "4.0.1"
+version = "5.0.0"
 description = "Automatically generates presentation slide decks about any topic, for improvised presentations"
 readme = "README.md"
 license = "MIT"

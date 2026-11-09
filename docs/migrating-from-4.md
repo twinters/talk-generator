@@ -30,19 +30,21 @@ model with `--llm`. [Language models](language-models.md) has the details.
 
 ## What a talk looks like
 
-Four things changed, and three of them can be set back, to come as close to 4.x's talks as talkgenerator 5 gets:
+Six things changed, and four of them can be set back, to come as close to 4.x's talks as talkgenerator 5 gets:
 
 | | talkgenerator 4 | talkgenerator 5 | To keep 4.x's |
 | --- | --- | --- | --- |
 | The look | the 2019 template | a theme the talk's seed picks (`--theme random`) | `--theme classic`, or `TALKGENERATOR_THEME=classic` |
 | The presenter's made-up name | a random first and last name | a pun on the topic, a fun surname or a famous-name pun: the language model's, or else one of talkgenerator's own, which cover 642 of the 736 topics of its topic list (other topics get a random name) | `--name_styles classic` |
 | Who presents it | nobody in particular | a persona the talk's seed picks (a startup founder, a medieval historian...), whose kinds of slides come up more often, and whose own titles half of the classic titles are | `--persona none` |
-| The slides | v4's slide types | fourteen more (big numbers, quizzes, timelines, social media posts, news headlines, agendas...), trend and ranking charts, Venn diagrams and 2×2 matrices | |
+| Real facts | none | half of a classic talk's fun facts and quizzes are real (Wikipedia's, Open Trivia DB's), and some of its dares and closing lines a real dad joke or piece of advice, credited on the slide | `DISABLE_FACTS=1` |
+| Slide numbers | none | slides are numbered ("7/12"), small, in a corner | |
+| The slides | v4's slide types | more than thirty more (big numbers, quizzes, timelines, memes with live captions, tier lists, fake error messages...), and texts from the TED content pack, in a TED talk's voice and about four times as many as 4.x had | |
 
 Classic slides look as they did, and their images come from about the same sources, with a few changes: history
-slides prefer old photographs in black and white or sepia, statements' backdrops come from Pixabay, Unsplash and
-Pexels, and charts are quieter (no gridlines or made-up numbers along their axes). Charts' own texts now show on the
-2019 template's black, where PowerPoint drew them in black.
+slides prefer old photographs (from museums too) in black and white or sepia, statements' backdrops come from
+Pixabay, Unsplash and Pexels, and charts are quieter (no gridlines or made-up numbers along their axes). Charts' own
+texts now show on the 2019 template's black, where PowerPoint drew them in black.
 
 ## Seeds are reproducible
 
@@ -71,7 +73,7 @@ talk, `--license_policy`:
 with their policies (`--list` still lists their slide generators). The new commands for plans, `render` and
 `formats`, call the choice `--format`. Four formats are new: `pitch` (a startup pitch), `academic` (a talk at an
 academic conference), `corporate` (a company's all-hands or quarterly business review) and `keynote` (a product
-keynote).
+keynote). `--schema random` leaves the format to the talk's seed, which picks one that its persona favours.
 
 ## `generate_presentation()` gives way to `stream_talk()`
 
@@ -136,6 +138,10 @@ for slide in deck.slides:
   still work).
 - Every slide is drawn from its deck form, so a PowerPoint and its deck JSON always match.
 - GIPHY's searches aren't cached any more, as GIPHY's API rules forbid it; the other search APIs still are.
+- InspiroBot's posters come from its older posters, drawn with the talk's seed, so no request goes to its API any
+  more.
+- The new image sources need no key (the Met, the Cleveland Museum of Art, the Wellcome Collection, NASA, Flagpedia,
+  Imgflip), except the Smithsonian, which takes a free `DATA_GOV_API_KEY`.
 - `--save_json true` saves a talk's deck next to its PowerPoint.
 - Talks can be in Dutch, French, German, Spanish, Italian, Portuguese and Swedish, with a language model
   (`--language`).
