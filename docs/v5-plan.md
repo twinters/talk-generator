@@ -1185,8 +1185,11 @@ ones, from a list of their own (`data/emoji.json`: a thing's own emoji by a word
 of it, of 559 words, or else its place's mood, a crown for the S tier, a devil for chaotic evil; none for faiths,
 drink, weapons or death, and no joined sequences). No theme font has emoji: they're measured 1.4 ems wide (Segoe UI
 Emoji draws them 1.37), drawn in runs of their own in Segoe UI Emoji in a .pptx (where it's missing, PowerPoint and
-browsers fall back to their system's colour emoji), and in colour by the previewer where it has the font. Over 500
-seeds of 10-slide `default` talks, a dare comes up in 9.6% of the language model's talks (7.2% of classic ones), a
+browsers fall back to their system's colour emoji), and in colour by the previewer where it has the font. A list a
+model writes is read more kindly too, after the free models' emoji lists: bars that look like its | (a box drawing's)
+count as it, an emoji written as a thing of its own goes in front of the thing after it, an emoji takes two
+characters' room however many it's written with, and a list too long is cut between its things, never in one (a cut
+had left a bare emoji). Over 500 seeds of 10-slide `default` talks, a dare comes up in 9.6% of the language model's talks (7.2% of classic ones), a
 closing slide in 10.4% (9.6%), a tier list in 15%, an alignment chart in 11% and an agenda in 7%.
 
 Variety per slide type comes from four axes, each sampled per slide with the talk's random generator:
