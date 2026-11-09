@@ -83,7 +83,7 @@ The seed also picks who presents it, a persona such as a startup founder or a me
 The same seed gives the same talk.
 Besides TED-like talks, there are startup pitches (`--schema pitch`), academic conference talks (`--schema academic`), all-hands meetings (`--schema corporate`) and product keynotes (`--schema keynote`), whose slides go through their arcs: from the problem to the market, the traction and the ask; from the outline to the method, the results with their p-values and the questions; from the agenda to the KPIs against their targets, the new org chart and Q&A; or from a big opening statement to the reveal, a demo that crashes and one more thing.
 
-- **A language model** can write what goes on those slides: the whole talk in one request, with a thesis, callbacks to earlier slides, and a made-up name and job for the presenter; or, at the Advanced level (`--llm_level advanced`), in two, as it plans the talk first, for cleverer talks. OpenRouter's free models do so whenever there's an OpenRouter key, at no cost, and so do your ChatGPT plan's once you've signed in with ChatGPT; a paid model only when you ask for it ([Language models](https://github.com/twinters/talk-generator/blob/master/docs/language-models.md)).
+- **A language model** can write what goes on those slides: the whole talk in one request, with a thesis, callbacks to earlier slides, and a made-up name and job for the presenter; or, at the Advanced level (the default on a model that costs), as it plans the talk first and then writes its slides in parallel, for cleverer talks that come as quickly. OpenRouter's free models do so whenever there's an OpenRouter key, at no cost, and so do your ChatGPT plan's once you've signed in with ChatGPT; a paid model only when you ask for it ([Language models](https://github.com/twinters/talk-generator/blob/master/docs/language-models.md)).
 - **The classic generator** writes them otherwise, and every slide the model gets wrong: templates and grammars, words related to the topic, quotes, how-tos and pictures from many sources. It's the method of the [EvoMUSART 2019 paper](#credits), with more kinds of slides since: `--llm none --theme classic --name_styles classic --persona none` (the classic generator, the 2019 template, random names and no persona) comes closest to a talk of 2019.
 - **Claude** can write the talk too, as a plan that talkgenerator renders, through the Skill or the MCP server ([Use it with Claude](https://github.com/twinters/talk-generator/blob/master/docs/use-with-claude.md)).
 
@@ -103,7 +103,7 @@ Copy [`.env.example`](https://github.com/twinters/talk-generator/blob/master/.en
 | --- | --- |
 | Classic, or OpenRouter's free models (50 talks a day, or 1,000 once the account has bought $10 of credits) | $0 |
 | Your ChatGPT plan (`talkgenerator login chatgpt`), or Claude through the Skill | part of your plan's usage |
-| Claude Haiku 5.5, Sonnet 5.5 or Opus 5.5, with your own key | about $0.002, $0.03 or $0.06 (Advanced: $0.003, $0.04 or $0.09) |
+| Claude Haiku 5.5, Sonnet 5.5 or Opus 5.5, with your own key | about $0.003, $0.06 or $0.12 (Advanced, the default; Basic: about half) |
 
 ## Use it with Claude
 

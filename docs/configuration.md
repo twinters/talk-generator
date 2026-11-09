@@ -47,7 +47,7 @@ WordNet.
 | `OPENAI_API_KEY` | An OpenAI key, for `--llm openai:<model>`. It doesn't make OpenAI's models write talks on its own |
 | `TALKGENERATOR_LLM` | The language model that writes talks that don't name one, as `--llm` takes it, such as `openrouter`, `anthropic:claude-haiku-5-5` or `none` |
 | `TALKGENERATOR_LLM_EFFORT` | How hard the model thinks before it writes: `none`, `minimal`, `low`, `medium` or `high`, for the models that take it |
-| `TALKGENERATOR_LLM_LEVEL` | How much the model does, as `--llm_level` takes it: `basic` (one request a talk) or `advanced` (two: it plans the talk first, for cleverer talks); *default: `basic`* |
+| `TALKGENERATOR_LLM_LEVEL` | How much the model does, as `--llm_level` takes it: `basic` (one request a talk) or `advanced` (it plans the talk first and writes its slides in parallel, for cleverer talks); *default: `advanced` on a model of your own that costs, `basic` on free models* |
 | `DISABLE_LLM` | `1` makes talks classic, unless `--llm` names a model |
 
 [Language models](language-models.md) says which model writes a talk when, and what it costs. A sign-in with
