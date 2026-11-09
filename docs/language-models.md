@@ -24,9 +24,10 @@ How much the model does is the talk's level: `--llm_level`, `llm_level=` in Pyth
 - **Advanced**: two requests. The model first plans the talk, in a small request of its own: a thesis, a running gag,
   and for every slide the word it riffs on (one of the words talkgenerator found for it, or a sharper one) and its
   idea, the point it makes: for a chart, what it measures against what; for a diagram, what its parts are. Then it
-  writes the talk with that plan in its request. Its talks keep one thread and come out cleverer, for about half as
-  much again (see [Costs](#costs)) and 8 to 13 seconds more before the first slide. When the plan fails (an error, a
-  refusal, or a budget that can't afford both requests), the talk is written as a Basic one.
+  writes the talk with that plan in its request, and on a quote slide a saying of its own (a Basic talk's quote
+  slides have a real quote, which talkgenerator searches for). Its talks keep one thread and come out cleverer, for
+  about half as much again (see [Costs](#costs)) and 8 to 18 seconds more before the first slide. When the plan
+  fails (an error, a refusal, or a budget that can't afford both requests), the talk is written as a Basic one.
 
 On talkgenerator.com, talks on your own API key, or on a paid model of your OpenRouter account, are Advanced; the
 site's free models (Basic AI) and your OpenRouter account's free models, whose free quotas count requests, write Basic

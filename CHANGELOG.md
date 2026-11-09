@@ -455,10 +455,11 @@ From the user's look at 35 sample talks (docs/v5-plan.md, D65):
   from the word talkgenerator gives it; or `advanced`, two, as the model first plans the talk, in a small request of
   its own: a thesis, a running gag, and for every slide the word it riffs on (one of the words talkgenerator found
   for it, or a sharper one) and its idea, the point it makes (for a chart, what it measures against what; for a
-  diagram, what its parts are). Then it writes the talk with that plan in its request. Advanced talks keep one thread
-  and come out cleverer, for about half as much again (about $0.003 a talk with Claude Haiku 5.5, $0.04 with Sonnet
-  5.5) and 8 to 13 seconds more before the first slide; a plan that fails, or that the talk's budget can't afford
-  with the talk after it, leaves the talk Basic. The deck says which level its slides were written at (`llm_level`).
+  diagram, what its parts are). Then it writes the talk with that plan in its request, and a quote slide's saying of
+  its own, where a Basic talk searches a real quote for the slide. Advanced talks keep one thread and come out
+  cleverer, for about half as much again (about $0.003 a talk with Claude Haiku 5.5, $0.04 with Sonnet 5.5) and 8 to
+  18 seconds more before the first slide; a plan that fails, or that the talk's budget can't afford with the talk
+  after it, leaves the talk Basic. The deck says which level its slides were written at (`llm_level`).
 - The words slides start from are things: Datamuse's related words, which it now tags with their parts of speech, are
   nouns first of all (no "Volcanoes vs. eruptive" on a scatter plot, no "Do you want glacial?" on a flowchart),
   familiar ones (no "scoria"), no names (no "etna", which a slide would write in small letters), and each of a
