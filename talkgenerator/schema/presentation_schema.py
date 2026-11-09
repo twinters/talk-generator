@@ -1373,6 +1373,23 @@ class PresentationSchema:
         reader = ObjectReader()
         read_anything = False
 
+        def plan(slide_nr: int, value: Any) -> None:
+            """A slide's part of the outline: its word and idea (if they're in), and its batch, once that's full."""
+            if not talk.spine_in or slide_nr in submitted or slide_nr in pending:
+                return
+            idea = read_idea(value)
+            if idea is not None:
+                with planning:
+                    slide = talk.planned[slide_nr] = dataclasses.replace(
+                        talk.planned[slide_nr], seed=idea.riff, idea=idea.idea
+                    )
+                    talk.contexts[slide_nr]["seed"] = idea.riff  # (for its notes)
+                ideas[slide.number] = idea
+            pending.append(slide_nr)
+            if len(pending) >= batch_size(len(writing)):
+                submit(pending[:])
+                pending.clear()
+
         def read(text: str) -> None:
             nonlocal read_anything
             if talk.cancelled.is_set():
@@ -1380,27 +1397,23 @@ class PresentationSchema:
             read_anything = True
             for key, value in reader.feed(text):
                 slide_nr = slide_numbers.get(key)
-                if slide_nr is None:
-                    talk.take(key, value)  # (the spine, with its running gag, which the slides' requests tell)
-                    if talk.spine.get("unsafe_topic") is True or talk.in_english:
-                        raise _NotPlanned()
-                    if talk.spine_in:
-                        talk.level = ADVANCED  # (before the first slide: the deck says so)
+                if slide_nr is not None:
+                    plan(slide_nr, value)
                     continue
-                if not talk.spine_in:
-                    continue
-                idea = read_idea(value)
-                if idea is not None:
-                    with planning:
-                        slide = talk.planned[slide_nr] = dataclasses.replace(
-                            talk.planned[slide_nr], seed=idea.riff, idea=idea.idea
-                        )
-                        talk.contexts[slide_nr]["seed"] = idea.riff  # (for its notes)
-                    ideas[slide.number] = idea
-                pending.append(slide_nr)
-                if len(pending) >= batch_size(len(writing)):
-                    submit(pending[:])
-                    pending.clear()
+                # (the spine, with its running gag, which the batches' requests tell; slides' ideas that a model put
+                # inside it, or in an object of their own, are ideas, not slides)
+                inside = (
+                    {name: part for name, part in value.items() if name in slide_numbers}
+                    if isinstance(value, dict)
+                    else {}
+                )
+                talk.take(key, {name: part for name, part in value.items() if name not in inside} if inside else value)
+                if talk.spine.get("unsafe_topic") is True or talk.in_english:
+                    raise _NotPlanned()
+                if talk.spine_in:
+                    talk.level = ADVANCED  # (before the first slide: the deck says so)
+                for name, part in inside.items():
+                    plan(slide_numbers[name], part)
 
         try:
             response = llm.stream(request, read)

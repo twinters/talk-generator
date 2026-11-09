@@ -117,6 +117,19 @@ def test_the_outline_asks_for_the_spine_and_a_word_and_an_idea_for_every_slide(s
     assert model.requests[0].system == outline.OUTLINE_SYSTEM_PROMPT
 
 
+def test_ideas_inside_the_outline_s_spine_are_ideas_still(seeds):
+    # (as Claude Haiku put a talk's slides inside its spine, when it had the schema as text: 2026-11-08)
+    def nested(answer):
+        if prompt.SPINE in answer and "slide_2" in answer and "riff" in answer["slide_2"]:
+            answer[prompt.SPINE].update({key: answer.pop(key) for key in list(answer) if key != prompt.SPINE})
+
+    model = FakeModel(change=nested)
+    deck = _talk(model, llm_level=ADVANCED)
+    assert deck.llm_level == ADVANCED and all(_planned(deck))
+    assert "The idea: idea of slide 2" in _slide_request(model, "slide_2").messages[0].content
+    assert deck.slides[1].notes.startswith("Seed: riff of slide 2")
+
+
 def test_slides_the_outline_leaves_out_keep_the_dice_s_words(seeds):
     def forget(answer):
         if prompt.SPINE in answer and "slide_3" in answer and "riff" in answer["slide_3"]:
