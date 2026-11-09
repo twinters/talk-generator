@@ -1163,6 +1163,49 @@ talks (11% to 17% in `ted`), about one of the ten karaoke kinds a talk; memes st
 the spaghetti diagram (thin turned rectangles could draw its links now), the onion, a tournament bracket, a starter
 pack, "Exhibit A", a museum label, a text-message conversation and buzzword bingo.
 
+**Livelier diagrams and charts** (2026-11-09, D64), after the user's review of 35 sample talks: the 2×2 matrices were
+"weird: overly complex names", the scatter plots had "boring distribution", the flowcharts, processes, cycles and the
+rest were boring without pictures, and a chart could show a weird picture at a point of its line. Now a **matrix** has
+everyday opposites at the ends of its axes (a word or two: at most 24 letters, where they had 30) and short names in
+its quadrants (a word or two, as the language model is asked; still 30 letters at most, for a format's made-up
+citations), and comes out one of three ways, which the talk's dice pick (a recipe of its own can say otherwise): a name
+in every quadrant (two in five), no names but familiar things as **dots** where they belong (two to four of them, two in
+a quadrant at most, each name in its half of the quadrant; two in five), or bare, with only the axes and the
+punchline's dot (one in five). The language model writes a quadrant's things as `top_left_things` ("Cats | Sloths"); the
+deck's `MatrixDiagram` has them as `dots`, each with its name and place, drawn from the start in the labels' colour (the
+punchline's dot stays on its click), and quadrants without labels draw none; classic matrices take the same three shapes
+from ConceptNet's related words. The formats' matrices of things in three quadrants (a pitch's competitors, an
+all-hands' initiatives, a paper's earlier work) have them as the quadrants' names or, half the time, as dots where they
+belong, one a quadrant, with a name only in the best one (`kinds.matrix_landscape`). A **scatter plot** is a cloud of one of eleven shapes (rising, falling, exponential,
+saturating, U-shaped, hill, wave, step, no correlation at all, a ring, a smile: a plan can name one, `shape`), as tight
+or as loose as the dice say, of a dozen to 150 points on axes of their own size; a line is fitted through a cloud a third
+of the time (`ChartSeries.trendline`: PowerPoint's own trendline, linear or a parabola, dashed, which talk-generator-web
+fits by the same least squares; a straight line through a U is a joke of its own); and three times in ten (the recipe's
+variant) it's two or three **named clusters** instead (`cluster_1`...), each a cloud of its own, in a legend. Nearly half
+the themes (293 of 680) have two accents of about one hue, so the layout engine gives a chart's clusters, and a trend's
+lines, colours of their own (`ChartSeries.color`): the accent, then the second accent, the text colour or the accent's
+hue turned, whichever is far enough from the colours before it, in hue or in lightness, and shows on what's behind the
+chart. **Pictures in boxes**: a pyramid, a funnel, a cycle, an iceberg, a process, a flowchart, a Venn diagram and a
+matrix have a weird but related picture in one or two of their boxes 35% of the time (a box's picture is an image slot
+of its own, `<box>_picture`, of the kind's `BoxPictures`, rolled when the recipe's variant is, on a stream of its own,
+and told to the language model, who writes its query), searched for in the `weird-stock` look, or generated in a talk
+that generates pictures; a box whose picture isn't found goes without (an optional slot), and the picture appears with
+its box's text. The layouts put it beside a pyramid's or a funnel's band where the stack leaves room (in it, at its end,
+where it doesn't), beside a process's band or in the top half of its box, in the middle of a cycle's ring (the
+title-beside layout has no room there), beside an iceberg's tip and things, at the end of a flowchart's boxes, beside a
+Venn diagram's first two circles (none when its labels are beside them) and in a matrix's named quadrants without a dot,
+under or over the label as it's drawn; a picture the layout has no room for stays out, and its credit with it. Classic
+diagrams get them by the same odds, about their boxes' texts, and so do the formats' classic diagrams and classic trends
+(a picture of their named moment). And a **trend's
+named moment** gets a picture by its point half the time (`point_picture`), on a click of its own, after the second
+line's when it has one: the layout engine puts it where its plot is in talk-generator-web (`charts.trend_plot`, which
+mirrors the site's `points()`: change them together), and a PowerPoint chart with such a picture has its plot pinned
+there by hand, its value axis from 0 to the same round number, so the picture is by the point in both, clear of the
+point's name and of the lines, with a line from the dot to it. Over 500 seeds of 10-slide talks a language model
+writes: a diagram with pictures in 18% of `default` talks and 25% of `ted` ones (30% of diagram slides), a trend's picture
+in 6% (29% of trends), a matrix of dots in 7% to 8%; a scatter plot is in 3% of talks, as before (its weight is the
+formats'). Previews draw a matrix's dots, fitted lines, and trends where their renderers have them.
+
 Variety per slide type comes from four axes, each sampled per slide with the talk's random generator:
 
 1. layout: image left or right, full-bleed, framed, split, grid;
@@ -2087,6 +2130,7 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D60 | Talks a language model writes get real facts (`talkgenerator.facts`): up to three of a talk's slides of history (a historical figure's quote, two old photos, a timeline), fun facts, quizzes and big numbers get one each, on their lines of the talk's request, with what to do with it (a fun fact keeps it true and twists it); slides of history get one of the day's events first (Wikipedia's "On this day", of the day the talk is made on), a big number a sentence with a figure, a fun fact one that says how special something is, rather than what the topic is. They're sentences of the lead of the topic's English Wikipedia article (a topic in another language followed there from its language's Wikipedia), and the day's events; none for a topic that's a living person (English Wikipedia's "Category:Living people"), none that names one (of the articles its lead or its event links to), none with a word a slide shouldn't make light of, or of death, war, disasters, crime and accusations, politics or race (but a word of the topic's), none about real-world politics; when Wikipedia can't tell who's living, none that names someone. They're looked up while the talk's seeds are, from the cache of API responses (a week; a day's events a month) or within 8 seconds of the talk's start, after which the talk goes without them (a talk that's late may be a busy computer's: the next one asks again); a talk made again in a block of `same_answers` (a check) gets the facts the first one got (`http_util.keep`). A slide that builds on its fact (two of its telling words are in the slide's texts) credits its article ("Wikipedia: Penguin (CC BY-SA 4.0)", in a credit line that then starts with "Sources:" rather than "Image sources:"); the deck records every fact with its page, license and slide (`Deck.facts`, none for a talk without). Classic talks get them where they fit: half of their fun facts are a real sentence of the lead of the slide's seed's article, with a twist of the TED pack's (its version 4), and half of their quizzes a real question of Open Trivia DB's, of the topic's category by its Wikipedia description (animals for penguins; never celebrities, politics, entertainment, sports or mythology), each credited on its slide. `DISABLE_FACTS`, `DISABLE_WIKIPEDIA` and `DISABLE_OPENTDB` switch them off. Wikidata and REST Countries aren't used (section 11). Flavour texts too, which the user allowed on the public site on 2026-11-08 (`talkgenerator.sources.flavour`): a fun fact may build on a random useless fact (uselessfacts.jsph.pl), a dare dares the presenter to tell a real dad joke (icanhazdadjoke, about the topic's word in the singular if there are any, else of a random page), and the closing slide's line under its title is a real piece of advice (the Advice Slip); classic talks get them in half of their dares and two in five of their closing lines, in framings of the TED pack's version 5. They pass the facts' checks and their own (no insults, drink or faiths), name no living person (their capitalised words, as Wikipedia's articles), and are credited without a license (their sites state none); `DISABLE_USELESS_FACTS`, `DISABLE_DAD_JOKES` and `DISABLE_ADVICE_SLIPS` switch them off. A talk in another language than English gets no dad jokes or advice slips, which a slide says word for word (2026-11-09, section 5.9). |
 | D61 | A talk can leave its format to its seed (`schema="random"`): the seed picks the persona first, then the format from a stream of its own, by `FORMAT_WEIGHTS` (the TED-like talk 8, the formats beyond it 1 each) times the persona's multipliers (`Persona.formats`: a startup founder ×12 for a pitch, a disgraced professor ×12 for an academic talk, a management consultant ×12 for an all-hands, a motivational speaker ×12 for a keynote), so each persona's favourite dominates and every format keeps a few talks in a hundred with every persona. Only the formats for talks take part: not `ted`, whose copyright-free images are a license policy (`open`) that goes with any format, nor `interview` and `test`. A format named weights the persona as before (D56). A talk can also say which personas its seed picks from (`personas=`): the seed picks among all of them first and again among those allowed only when that one isn't, so a talk keeps its persona whenever it's allowed. talkgenerator.com's talks leave their format to the seed, with the personas its visitor didn't switch off. |
 | D62 | A talk can say which families a random theme can be of (`theme_families=`): the seed picks among all the families first, and again among the allowed ones only when that one isn't, by the same weights (the family's own times the persona's and the format's multipliers), so a talk keeps its theme whenever its family is allowed; a chaos deck's slides get themes of the allowed families too. A family named as the theme goes first. talkgenerator.com's settings let a visitor switch families off for "Surprise me". |
+| D64 | Diagrams and charts get livelier (section 8): a matrix has short, everyday names and comes out named, of dots (things where they belong, the deck's `MatrixDiagram.dots`) or bare; a scatter plot has clouds of eleven shapes, a fitted line now and then (`ChartSeries.trendline`, PowerPoint's own trendline) or named clusters in colours the layout engine picks apart (`ChartSeries.color`, a trend's lines' too); a diagram has a weird but related picture in one or two of its boxes 35% of the time, an image element with a box that appears with its box's text (optional image slots: a box without a picture still makes the slide); and a trend's named moment gets a picture by its point, on a click, where every renderer has the point: talk-generator-web's plot, which a PowerPoint chart with a picture is pinned to. The site draws the new deck fields on a branch of its own. |
 
 D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, and D43 to D62 on 2026-11-08; the
 others follow from the design.

@@ -2,8 +2,10 @@
 and the punchline where they overlap) and 2×2 matrices (two axes, four quadrants and one named dot, the punchline).
 """
 
+import itertools
 import json
 import math
+from collections import Counter
 
 import pytest
 from pptx.enum.shapes import MSO_SHAPE_TYPE
@@ -466,7 +468,12 @@ def test_diagrams_are_strict():
 
 
 def test_the_diagram_layout_is_a_classic_layout():
-    assert classic.CLASSIC_ROLES["diagram"] == {"title": "title", "diagram": "diagram"}
+    pictures = ("circle_1", "circle_2", "top_left", "top_right", "bottom_left", "bottom_right")
+    assert classic.CLASSIC_ROLES["diagram"] == {
+        "title": "title",
+        "diagram": "diagram",
+        **{f"{box}_picture": f"{box}_picture" for box in pictures},  # (now and then: docs/v5-plan.md, D64)
+    }
     assert classic.REQUIRED_ROLES["diagram"] == ("diagram",)
     assert slides.DiagramSlide.required_arguments == ("diagram",)
 
@@ -503,14 +510,15 @@ def test_the_completeness_check_finds_diagrams_with_gaps():
         VennDiagram(circles=("Things I love",), overlap="Cheese"),
         VennDiagram(circles=("Things I love", " "), overlap=""),
         MatrixDiagram(x_left="Cheap", x_right="Expensive", y_bottom="Boring", y_top="Fun", top_left="A", top_right="B"),
+        MatrixDiagram(x_left="", x_right="Expensive", y_bottom="Boring", y_top="Fun", dot="Me"),
     )
+    # (a matrix's quadrants may go without names: docs/v5-plan.md, D64)
     assert _errors(check_completeness(deck)) == [
         (1, "a Venn diagram of 1 circle (it takes two or three)"),
         (2, "a Venn diagram with an empty circle 2"),
         (2, "a Venn diagram with an empty overlap"),
-        (3, "a 2×2 matrix with an empty bottom left quadrant"),
-        (3, "a 2×2 matrix with an empty bottom right quadrant"),
         (3, "a 2×2 matrix with an empty dot"),
+        (4, "a 2×2 matrix with an empty left end"),
     ]
 
     without = Deck(generator="test", slides=(DeckSlide(type="diagram", layout="classic/diagram"),))
@@ -608,16 +616,33 @@ def test_a_classic_diagram_needs_words_to_be_made(words):
 
 
 def test_the_classic_matrix(words):
-    with random_util.use(random_util.Rng(2)):
-        title, matrix = diagram.generate_matrix({"seed": "cat", "topic": "pets"})
-    assert title == "The cat matrix"
-    ends = {(matrix.x_left, matrix.x_right), (matrix.y_bottom, matrix.y_top)}
-    # Two of the words that describe the seed, from their opposite (or from "Not") to themselves (or "Very")
-    assert ends <= {("Bald", "Fluffy"), ("Not evil", "Very evil"), ("Not lazy", "Very lazy")} and len(ends) == 2
-    quadrants = {matrix.top_left, matrix.top_right, matrix.bottom_left, matrix.bottom_right}
-    assert quadrants == {"Dog", "Mouse", "Yarn", "Milk"}  # related, but not the seed, nor what describes it
-    assert matrix.dot == "Cat" and matrix.reveal == "punchline"
-    assert abs(matrix.dot_x - 0.5) >= 0.3 and 0.1 <= abs(matrix.dot_y - 0.5) <= 0.2
+    shapes = set()
+    for seed in range(30):
+        with random_util.use(random_util.Rng(seed)):
+            title, matrix = diagram.generate_matrix({"seed": "cat", "topic": "pets"})
+        assert title == "The cat matrix"
+        ends = {(matrix.x_left, matrix.x_right), (matrix.y_bottom, matrix.y_top)}
+        # Two of the words that describe the seed, from their opposite (or from "Not") to themselves (or "Very")
+        assert ends <= {("Bald", "Fluffy"), ("Not evil", "Very evil"), ("Not lazy", "Very lazy")} and len(ends) == 2
+        assert matrix.dot == "Cat" and matrix.reveal == "punchline"
+        quadrants = {matrix.top_left, matrix.top_right, matrix.bottom_left, matrix.bottom_right}
+        related = {"Dog", "Mouse", "Yarn", "Milk"}  # related, but not the seed, nor what describes it
+        if quadrants != {""}:  # words related to the seed as its quadrants' labels, and the seed's dot alone
+            assert quadrants == related and not matrix.dots
+            assert abs(matrix.dot_x - 0.5) >= 0.3 and 0.1 <= abs(matrix.dot_y - 0.5) <= 0.2
+            shapes.add("labels")
+        elif matrix.dots:  # or as dots, two to four, two in a quadrant at most (the seed's counted)
+            assert 2 <= len(matrix.dots) <= 4 and {dot.name for dot in matrix.dots} <= related
+            corners = Counter(diagrams.quadrant_of(x, y) for x, y in _dot_places(matrix))
+            assert max(corners.values()) <= 2
+            shapes.add("dots")
+        else:  # or bare: only the seed's dot
+            shapes.add("bare")
+    assert shapes == {"labels", "dots", "bare"}
+
+
+def _dot_places(matrix):
+    return [(matrix.dot_x, matrix.dot_y), *((dot.x, dot.y) for dot in matrix.dots)]
 
 
 @pytest.mark.parametrize("generate", [diagram.generate_venn, diagram.generate_matrix], ids=["venn", "matrix"])
@@ -833,3 +858,90 @@ def test_a_themed_diagrams_preview_draws_its_circles_beside_its_labels():
     assert close(pixel(x, y - 0.6 * radius), tinted)  # the smaller circle's own part
     (x, y), radius = inside.centres[0], inside.radius
     assert close(pixel(x, y - 0.95 * radius), slide.background.color)  # where the larger circle would have been
+
+
+# MATRICES OF DOTS, AND WITHOUT NAMES IN THEIR QUADRANTS (docs/v5-plan.md, D64)
+
+DOTTED = {
+    **{corner: "" for corner in ("top_left", "top_right", "bottom_left", "bottom_right")},
+    "top_left_things": "Cats | Sloths | Koalas",
+    "top_right_things": "Dogs",
+    "bottom_right_things": "Bees",
+}
+
+
+def test_a_matrix_can_have_dots_where_things_belong():
+    matrix = _diagram(_matrix(**DOTTED))
+    assert (matrix.top_left, matrix.top_right, matrix.bottom_left, matrix.bottom_right) == ("", "", "", "")
+    places = {dot.name: diagrams.quadrant_of(dot.x, dot.y) for dot in matrix.dots}
+    # (two in a quadrant at most: the third cat-like thing stays out; the punchline's quadrant is its own)
+    assert places == {"Cats": 0, "Sloths": 0, "Dogs": 1, "Bees": 3}
+    assert diagrams.quadrant_of(matrix.dot_x, matrix.dot_y) == 3  # (bottom right, as planned)
+    labels = [label for label, text in matrix.labels() if text]
+    assert {"dot 2", "dot 3", "dot 4", "dot 5"} <= set(labels)
+
+
+def test_a_matrix_with_names_in_its_quadrants_has_one_dot_in_a_quadrant():
+    matrix = _diagram(_matrix(top_left_things="Cats | Sloths", top_right_things="Dogs"))
+    assert [dot.name for dot in matrix.dots] == ["Cats", "Dogs"]  # (one a quadrant: their names stay clear of labels)
+    for dot in matrix.dots:
+        assert abs(dot.x - 0.5) >= 0.3 and 0.1 <= abs(dot.y - 0.5) <= 0.2
+
+
+@pytest.mark.parametrize("seed", range(6))
+def test_a_matrix_of_dots_keeps_their_names_apart_and_in_their_quadrants(seed):
+    slide = _matrix(seed, **{**DOTTED, "top_left_things": "A grumpy old parrot | A very old sloth"})
+    ppt_slide, shapes, presentation = _drawn(slide)
+    names = [shape for name, shape in shapes.items() if name.startswith("Dot") and ": " in name]
+    dots = [shape for name, shape in shapes.items() if name.startswith("Dot") and ": " not in name]
+    assert len(names) == len(dots) == 5
+    for one, other in itertools.combinations(names, 2):
+        assert (
+            one.left + one.width <= other.left
+            or other.left + other.width <= one.left
+            or one.top + one.height <= other.top
+            or other.top + other.height <= one.top
+        ), (one.name, other.name)
+    for name in names:  # (and clear of the other dots)
+        for dot in dots:
+            if dot.name == name.name.split(":")[0]:
+                continue
+            centre = _centre(dot)
+            assert not (
+                name.left < centre[0] < name.left + name.width and name.top < centre[1] < name.top + name.height
+            )
+    others = [shapes[f"Dot {number}"] for number in range(2, 6)]
+    assert {str(dot.fill.fore_color.rgb) for dot in others} == {"FFFFFF"} and str(
+        shapes["Dot"].fill.fore_color.rgb
+    ) == "E03C31"
+    assert _on_the_slide(ppt_slide, presentation)
+
+
+def test_a_matrix_without_names_or_dots_is_bare():
+    bare = _diagram(_matrix(top_left="", top_right="", bottom_left="", bottom_right=""))
+    assert not bare.dots and not any((bare.top_left, bare.top_right, bare.bottom_left, bare.bottom_right))
+    _, shapes, _ = _drawn(_matrix(top_left="", top_right="", bottom_left="", bottom_right=""))
+    assert not [name for name in shapes if " quadrant: " in name]  # (no empty labels drawn)
+
+
+def test_a_matrix_comes_out_named_with_dots_or_bare():
+    varied = [Recipe("matrix").varied(random_util.Rng(seed)) for seed in range(300)]
+    things = {f"{corner}_things" for corner in ("top_left", "top_right", "bottom_left", "bottom_right")}
+    corners = {"top_left", "top_right", "bottom_left", "bottom_right"}
+    named = [version for version in varied if things <= version.omit and not corners & version.omit]
+    dotted = [version for version in varied if corners <= version.omit and not things & version.omit]
+    bare = [version for version in varied if (corners | things) <= version.omit]
+    assert len(named) + len(dotted) + len(bare) == len(varied)
+    assert 0.3 <= len(named) / len(varied) <= 0.5 and 0.3 <= len(dotted) / len(varied) <= 0.5 and bare
+    properties = prompt.slide_schema(dotted[0])["properties"]
+    assert "top_left_things" in properties and "top_left" not in properties
+    assert "familiar things as dots" in dotted[0].brief
+
+
+def test_a_matrix_of_dots_survives_json_and_its_preview_draws_its_dots():
+    slide = _matrix(**DOTTED).to_deck_slide()
+    deck = Deck(generator="test", slides=(slide,))
+    assert Deck.from_json(deck.to_json()) == deck
+    themed = engine.lay_out(deck, themes.pick("clean keynote", random_util.Rng(1)))
+    assert [finding for finding in check_design(themed) if finding.severity == "error"] == []
+    assert preview.slide_image(themed.slides[0], themed.style).size[0] > 0

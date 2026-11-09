@@ -21,12 +21,15 @@ from talkgenerator.models.deck import (
     DECORATION,
     Box,
     ChartElement,
+    ChartSpec,
     Content,
     Credit,
+    CreditPart,
     Deck,
     DeckSlide,
     DiagramElement,
     DiagramStyle,
+    ImageAsset,
     ImageElement,
     MatrixDiagram,
     ShapeElement,
@@ -37,7 +40,7 @@ from talkgenerator.models.deck import (
     VennDiagram,
 )
 from talkgenerator.models.theme import TextEffect, Theme
-from talkgenerator.render import diagrams  # (where a diagram's labels go: in its shapes, or beside them)
+from talkgenerator.render import charts, diagrams  # (where a diagram's labels go, and a trend's points)
 from talkgenerator.sources import memes
 from talkgenerator.util import random_util
 
@@ -426,7 +429,10 @@ def lay_out_slide(
                 update["fit"] = "cover"
             content.append(element.model_copy(update=update))
         elif isinstance(element, ChartElement):
-            content.append(element.model_copy(update={"box": box}))
+            under = layers.behind(slide_background, backdrop, box)
+            content.append(
+                element.model_copy(update={"box": box, "chart": cluster_colours(element.chart, theme, under)})
+            )
         elif isinstance(element, DiagramElement):
             under = layers.behind(slide_background, backdrop, box)  # (the background, and decoration reaching under it)
             diagram_look = diagram_style(element.diagram, theme, box, under)
@@ -436,33 +442,112 @@ def lay_out_slide(
         style = _style(text, place, own, theme, colour, True)
         texts.append(TextElement(role=DECORATION, text=text, box=place, style=style, part_of=part_of))
     elements = _in_turn([*backdrop, *content, *placement.overlays, *texts])
+    # (a picture the layout had no room for, such as a diagram's box's, stays out, and its credit with it)
+    left_out = [
+        element.image
+        for element in slide.elements
+        if isinstance(element, ImageElement) and element is not background and element.role not in placement.boxes
+    ]
+    credits = _without_credits_of(slide.credits, left_out)
     return slide.model_copy(
         update={
             "layout": placement.layout,
             "elements": tuple(elements),
+            "credits": credits,
             "background": slide_background,
             "style": theme if own_style else None,
             "credits_box": CREDITS_BOX,
             "credits_style": credits_style(
-                credit_line(slide.credits, credits_prefix(slide)), theme, slide_background, elements
+                credit_line(credits, credits_prefix(slide)), theme, slide_background, elements
             ),
         }
     )
 
 
+def _without_credits_of(credits: tuple[Credit, ...], images: Sequence[ImageAsset]) -> tuple[Credit, ...]:
+    """The credits, without one for each of the images (those that are left out of a slide)."""
+    kept = list(credits)
+    for image in images:
+        own = image.credit or ((CreditPart(text=image.source, url=image.source_url),) if image.source else ())
+        if own in kept:
+            kept.remove(own)
+    return tuple(kept)
+
+
 def _in_turn(elements: list[Content]) -> list[Content]:
     """The elements, with the clicks they appear on numbered 1, 2, 3... in turn: a click whose elements the layout
-    left out (a meme's caption without a box, say) shows nothing, so it goes, in every renderer alike."""
+    left out (a meme's caption without a box, say) shows nothing, so it goes, in every renderer alike. On a slide
+    whose chart or diagram takes clicks of its own first (a trend's second line, a matrix's punchline), the elements'
+    clicks come after those (a picture by a trend's named point, after the second line)."""
+    own = max((_own_clicks(element) for element in elements), default=0)
     used = sorted({click for element in elements if (click := getattr(element, "appears_on_click", None))})
-    if used == list(range(1, len(used) + 1)):
+    if used == list(range(own + 1, own + len(used) + 1)):
         return elements
-    turn = {click: number for number, click in enumerate(used, 1)}
+    turn = {click: number for number, click in enumerate(used, own + 1)}
     return [
         element.model_copy(update={"appears_on_click": turn[click]})
         if (click := getattr(element, "appears_on_click", None))
         else element
         for element in elements
     ]
+
+
+def cluster_colours(spec: ChartSpec, theme: Theme, backgrounds: Sequence[str]) -> ChartSpec:
+    """A scatter chart's clusters (its named clouds: see talkgenerator.render.charts.clusters, of two or more), and a
+    trend's lines (two or more: its second, the punchline), in colours of their own that tell them apart and show on
+    what's behind the chart: the theme's accent, then its second accent or its text colour, or the accent's hue
+    turned, whichever is far enough from the colours before it, in hue or in lightness (in a theme whose two accents
+    are alike, as nearly half of them are). Other charts stay as they are, in their renderers' colours."""
+    if spec.chart_type == "scatter":
+        shown = charts.clusters([(series.name, len(series.points)) for series in spec.series])
+    elif spec.chart_type == "line":
+        shown = list(range(len(spec.series)))
+    else:
+        return spec
+    if len(shown) < 2:
+        return spec
+    palette = theme.palette
+    hue, saturation, lightness = color.to_hsl(palette.accent)
+    # (a hue turned round from the accent's, in colour and neither dark nor light, even for a black or a grey accent)
+    turned = [
+        color.hsl(hue + turn, max(saturation, 0.55), min(max(lightness, 0.35), 0.6)) for turn in (150, 240, 60, 300)
+    ]
+    candidates = [palette.accent, palette.accent_2, *turned, palette.text, palette.muted]
+    chosen: list[str] = []
+    for candidate in candidates:
+        shade = color.readable_on(candidate, backgrounds or _backgrounds(theme), LINE_CONTRAST)
+        if all(_far_apart(shade, other) for other in chosen):
+            chosen.append(shade)
+        if len(chosen) == len(shown):
+            break
+    chosen += [palette.muted] * (len(shown) - len(chosen))  # (no more far enough apart: the legend names them)
+    series = list(spec.series)
+    for index, colour in zip(shown, chosen, strict=True):
+        series[index] = series[index].model_copy(update={"color": colour})
+    return spec.model_copy(update={"series": tuple(series)})
+
+
+def _far_apart(colour: str, other: str) -> bool:
+    """Whether two colours tell apart at a glance: by their hues, when both have one; by one having a hue and the
+    other none (a red and a black); or by their lightness."""
+    hue, saturation, lightness = color.to_hsl(colour)
+    other_hue, other_saturation, other_lightness = color.to_hsl(other)
+    turn = min(abs(hue - other_hue), 360 - abs(hue - other_hue))
+    if min(saturation, other_saturation) >= 0.25:
+        return turn >= 50 or abs(lightness - other_lightness) >= 0.3
+    if max(saturation, other_saturation) >= 0.4:  # (one in colour, the other grey)
+        return True
+    return abs(lightness - other_lightness) >= 0.3
+
+
+def _own_clicks(element: Content) -> int:
+    """The clicks a chart or a diagram takes for itself: a chart's series after the first, one each, when they appear
+    on clicks; a diagram's punchline, when it does."""
+    if isinstance(element, ChartElement) and element.chart.reveal == "series":
+        return max(0, len(element.chart.series) - 1)
+    if isinstance(element, DiagramElement) and element.diagram.reveal == "punchline":
+        return 1
+    return 0
 
 
 def credit_line(credits: Sequence[Credit], prefix: str = CREDITS_PREFIX) -> str:
@@ -920,7 +1005,9 @@ def _split(roles: dict[str, Content], theme: Theme) -> Placement:
 def _chart(roles: dict[str, Content], theme: Theme) -> Placement:
     placement = Placement("v5/chart")
     top = _with_title(placement, roles, theme) if "title" in roles else MARGIN
-    placement.boxes["chart"] = (Box(x=MARGIN, y=top, w=WIDTH - 2 * MARGIN, h=_CONTENT_BOTTOM - top), "caption")
+    box = Box(x=MARGIN, y=top, w=WIDTH - 2 * MARGIN, h=_CONTENT_BOTTOM - top)
+    placement.boxes["chart"] = (box, "caption")
+    _pin_picture(placement, roles, box, theme)
     return placement
 
 
@@ -930,16 +1017,217 @@ def _chart_side(roles: dict[str, Content], theme: Theme) -> Placement:
     placement = Placement("v5/chart-side")
     placement.boxes["title"] = (title, "side title")
     x = MARGIN + _SIDE_TITLE_WIDTH + _SIDE_GAP
-    placement.boxes["chart"] = (Box(x=x, y=MARGIN, w=WIDTH - MARGIN - x, h=_CONTENT_BOTTOM - MARGIN), "caption")
+    box = Box(x=x, y=MARGIN, w=WIDTH - MARGIN - x, h=_CONTENT_BOTTOM - MARGIN)
+    placement.boxes["chart"] = (box, "caption")
     placement.shapes += _decoration(theme.model_copy(update={"title_align": "left"}), title, gap=12)
+    _pin_picture(placement, roles, box, theme)
     return placement
+
+
+# A picture by a trend's named point (docs/v5-plan.md, D64): how far from the point, and how much of the plot's height
+# it takes at most (and how tall it is at most, in canvas pixels)
+_PIN_GAP: Final = 28.0
+_PIN_SHARE: Final = 0.46
+_PIN_WIDTH: Final = 0.3  # (of the plot's width, at most)
+_PIN_SIZES: Final = (1.0, 0.8, 0.62)  # (as large as it may be, or smaller where that keeps it clear of the lines)
+_PIN_LARGEST: Final = 320.0
+POINT_PICTURE: Final = "point_picture"  # (its role: see talkgenerator.slide.slides.POINT_PICTURE)
+
+
+def _pin_picture(placement: Placement, roles: dict[str, Content], box: Box, theme: Theme) -> None:
+    """The picture by the chart's named point, if the slide has one, by the point, with a line from the point to
+    it, in the colour of the point's dot (which comes in with it)."""
+    chart = roles.get("chart")
+    if not isinstance(roles.get(POINT_PICTURE), ImageElement) or not isinstance(chart, ChartElement):
+        return
+    pinned = point_picture(chart.chart, box, theme.fonts.body)
+    if pinned is None:
+        return
+    picture, line = pinned
+    placement.boxes[POINT_PICTURE] = (picture, "caption")
+    if line is not None:
+        placement.overlays.append(line.model_copy(update={"color": theme.palette.accent_2}))
+
+
+def point_picture(spec: ChartSpec, box: Box, font: str) -> tuple[Box, ShapeElement | None] | None:
+    """Where the picture by a trend's named point goes, in a chart in the box (on the canvas), whose texts are in
+    the font: by the point (see talkgenerator.render.charts.trend_plot, where every renderer has it), on whichever
+    side keeps it clearest of the chart's lines and of the point's name, within the plot; and a line from the point
+    to the picture, where it's away from it (none, where it's close). None for a chart without a named point."""
+    pinned = charts.named_point(spec)
+    if pinned is None:
+        return None
+    plot = charts.trend_plot(spec, box.w, box.h)
+    lines = charts.trend_points(spec, plot)
+    series, index = pinned
+    x, y = lines[series][index]
+    name = spec.series[series].labels[index]
+    name_width = fonts.text_width(name, font, 2 * charts.LABEL_SIZE, True)
+    side = charts.free_side(spec.series[series].values, index)
+    middle = min(max(x + side * (12 + name_width / 2), plot.left + name_width / 2), plot.right - name_width / 2)
+    label = Box(
+        x=middle - name_width / 2,
+        y=y - charts.NAMED_DOT / 2 - 6 - 2.4 * charts.LABEL_SIZE,
+        w=name_width,
+        h=2.4 * charts.LABEL_SIZE,
+    )
+    largest = min(_PIN_LARGEST * _PICTURE_SHAPE, _PIN_SHARE * (plot.bottom - plot.top) * _PICTURE_SHAPE)
+    largest = min(largest, _PIN_WIDTH * (plot.right - plot.left))
+    samples = [point for line in lines for point in _along(line)]
+    # (the places it can go, as large as it is or a little smaller: by the point on every side, and anywhere in the
+    # plot, on a grid; the best keeps clear of the point and its name, crosses the fewest of the lines' points, is the
+    # nearest to the point, and the largest)
+    best: tuple[float, Box] | None = None
+    for size in _PIN_SIZES:
+        width = largest * size
+        height = width / _PICTURE_SHAPE
+        places = [
+            (
+                x + _PIN_GAP if dx > 0 else x - _PIN_GAP - width if dx < 0 else x - width / 2,
+                y + _PIN_GAP if dy > 0 else y - _PIN_GAP - height if dy < 0 else y - height / 2,
+            )
+            for dx, dy in ((1, -1), (-1, -1), (1, 1), (-1, 1), (1, 0), (-1, 0), (0, -1), (0, 1))
+        ]
+        places += [
+            (
+                plot.left + (plot.right - plot.left - width) * across / 11,
+                plot.top + (plot.bottom - plot.top - height) * down / 7,
+            )
+            for across in range(12)
+            for down in range(8)
+        ]
+        for left, top in places:
+            left = min(max(left, plot.left), plot.right - width)  # (within the plot)
+            top = min(max(top, plot.top - charts.NAMED_DOT), plot.bottom - height)
+            candidate = Box(x=left, y=top, w=width, h=height)
+            crossing = sum(1 for point in samples if _holds(_inset(candidate, -8), point))
+            covering = _shared_area(_inset(candidate, -8), label) > 0 or _holds(
+                _inset(candidate, -charts.NAMED_DOT / 2 - 8), (x, y)
+            )
+            smaller = (1 - size) * 400  # (a smaller picture only where it crosses fewer of the lines)
+            score = (10000 if covering else 0) + crossing * 10 + _distance(candidate, (x, y)) + smaller
+            if best is None or score < best[0]:
+                best = (score, candidate)
+    assert best is not None
+    picture = best[1].model_copy(update={"x": box.x + best[1].x, "y": box.y + best[1].y})
+    return picture, _line_to(picture, (box.x + x, box.y + y))
+
+
+def _along(line: Sequence[tuple[float, float]], step: float = 10.0) -> list[tuple[float, float]]:
+    """Points along a line through the points, about a step apart."""
+    found = list(line[:1])
+    for (x0, y0), (x1, y1) in itertools.pairwise(line):
+        parts = max(1, math.ceil(math.hypot(x1 - x0, y1 - y0) / step))
+        found += [(x0 + (x1 - x0) * part / parts, y0 + (y1 - y0) * part / parts) for part in range(1, parts + 1)]
+    return found
+
+
+def _holds(box: Box, point: tuple[float, float]) -> bool:
+    return box.x <= point[0] <= box.x + box.w and box.y <= point[1] <= box.y + box.h
+
+
+def _shared_area(box: Box, other: Box) -> float:
+    across = min(box.x + box.w, other.x + other.w) - max(box.x, other.x)
+    down = min(box.y + box.h, other.y + other.h) - max(box.y, other.y)
+    return max(0.0, across) * max(0.0, down)
+
+
+def _nearest(box: Box, point: tuple[float, float]) -> tuple[float, float]:
+    """The point of the box nearest the point."""
+    return min(max(point[0], box.x), box.x + box.w), min(max(point[1], box.y), box.y + box.h)
+
+
+def _distance(box: Box, point: tuple[float, float]) -> float:
+    return math.dist(_nearest(box, point), point)
+
+
+def _line_to(picture: Box, point: tuple[float, float], width: float = 6.0) -> ShapeElement | None:
+    """A line from the point (a named point's dot) to the nearest point of the picture, which belongs to the picture
+    (a thin, turned rectangle: the deck has no lines), if the picture is far enough from it to need one."""
+    end = _nearest(picture, point)
+    length = math.dist(end, point) - charts.NAMED_DOT / 2  # (from the dot's edge)
+    if length < 12:
+        return None
+    angle = math.atan2(end[1] - point[1], end[0] - point[0])
+    start = (point[0] + math.cos(angle) * charts.NAMED_DOT / 2, point[1] + math.sin(angle) * charts.NAMED_DOT / 2)
+    middle = ((start[0] + end[0]) / 2, (start[1] + end[1]) / 2)
+    box = Box(x=middle[0] - length / 2, y=middle[1] - width / 2, w=length, h=width)
+    return ShapeElement(role="pin", box=box, color="#000000", rotation=math.degrees(angle), part_of=POINT_PICTURE)
 
 
 def _diagram(roles: dict[str, Content], theme: Theme) -> Placement:
     placement = Placement("v5/diagram")
     top = _with_title(placement, roles, theme) if "title" in roles else MARGIN
-    placement.boxes["diagram"] = (Box(x=MARGIN, y=top, w=WIDTH - 2 * MARGIN, h=_CONTENT_BOTTOM - top), "caption")
+    box = Box(x=MARGIN, y=top, w=WIDTH - 2 * MARGIN, h=_CONTENT_BOTTOM - top)
+    placement.boxes["diagram"] = (box, "caption")
+    element = roles.get("diagram")
+    if isinstance(element, DiagramElement):
+        for role, area in diagram_pictures(element.diagram, box, theme.fonts.body, roles).items():
+            placement.boxes[role] = (area, "caption")
     return placement
+
+
+# How tall a picture by a Venn diagram's circle, or in a matrix's quadrant, is at most (in canvas pixels)
+_DIAGRAM_PICTURE: Final = 300.0
+MATRIX_CORNERS: Final = ("top_left", "top_right", "bottom_left", "bottom_right")  # (its quadrants, by role)
+
+
+def diagram_pictures(
+    diagram: VennDiagram | MatrixDiagram, box: Box, font: str | None, roles: Mapping[str, Content]
+) -> dict[str, Box]:
+    """Where the pictures of a Venn diagram's circles or a matrix's quadrants go, by their roles, for those the slide
+    has (docs/v5-plan.md, D64), when the diagram is in the box (with its labels in the font): a circle's beside it,
+    on its outer side (none when the labels are beside the circles: their place); a quadrant's in the part of it that
+    its label leaves (none in a quadrant with a dot). The diagram draws its own labels, so a picture keeps clear of
+    them; one that has no room stays out."""
+    frame = diagrams.Box.on_canvas(box)
+    pixel = diagrams.EMU_PER_PIXEL
+    found: dict[str, Box] = {}
+    if isinstance(diagram, VennDiagram):
+        layout = diagrams.venn_layout_for(frame, diagram, font)
+        if layout.beside:
+            return found
+        for number, ((x, y), side) in enumerate(zip(layout.centres[:2], (-1, 1), strict=False), 1):
+            if not isinstance(roles.get(f"circle_{number}_picture"), ImageElement):
+                continue
+            x, y, radius = x / pixel, y / pixel, layout.radius / pixel
+            height = min(_DIAGRAM_PICTURE, 0.9 * radius)
+            edge = x + side * (radius + _PICTURE_GAP)  # (the circle's outer side, and a gap)
+            room = edge - box.x if side < 0 else box.x + box.w - edge
+            width = min(room, height * _PICTURE_SHAPE)
+            area = Box(x=edge - width if side < 0 else edge, y=y - height / 2, w=width, h=height)
+            picture = _picture_box(area)
+            if picture is not None:
+                found[f"circle_{number}_picture"] = picture.model_copy(
+                    update={"x": edge - picture.w if side < 0 else edge}
+                )
+        return found
+    matrix = diagrams.matrix_layout(frame)
+    taken = {diagrams.quadrant_of(dot.x, dot.y) for dot in diagrams.matrix_dots(diagram)}
+    # (a quadrant's label, as it's drawn: its lines at its size, at the top of its box in a top quadrant, at the
+    # bottom of it in a bottom one)
+    named = {
+        label.name.split(" quadrant: ")[0]: label
+        for label in diagrams.labels(frame, diagram, font)
+        if " quadrant: " in label.name
+    }
+    for index, (corner, name) in enumerate(zip(MATRIX_CORNERS, diagrams.QUADRANT_NAMES, strict=True)):
+        if not isinstance(roles.get(f"{corner}_picture"), ImageElement) or index in taken:
+            continue
+        quadrant = matrix.quadrants[index]
+        top, bottom = quadrant.top / pixel, quadrant.bottom / pixel
+        label = named.get(name)
+        if label is not None:  # (the part its label leaves: under it in a top quadrant, above it in a bottom one)
+            area = diagrams.text_area(label.box)
+            lines = fit.wrap(label.text, area.w, font or diagrams.TEMPLATE_FONT, 2 * label.size, label.bold)
+            tall = fit.text_height(len(lines), 2 * label.size)
+            top, bottom = (area.y + tall, bottom) if index < 2 else (top, area.y + area.h - tall)
+        area = Box(x=quadrant.left / pixel, y=top, w=quadrant.width / pixel, h=bottom - top)
+        area = _inset(area, _PICTURE_GAP)
+        picture = _picture_box(area.model_copy(update={"h": min(area.h, _DIAGRAM_PICTURE)}))
+        if picture is not None:  # (in the middle of the part, across and down)
+            found[f"{corner}_picture"] = picture.model_copy(update={"y": area.y + (area.h - picture.h) / 2})
+    return found
 
 
 def _with_title(placement: Placement, roles: dict[str, Content], theme: Theme) -> float:
@@ -996,12 +1284,14 @@ def _beside_title(roles: dict[str, Content]) -> bool:
     return isinstance(title, TextElement) and all(len(word) <= 15 for word in title.text.split())
 
 
-def _beside_title_with_room(prefix: str, most: int) -> Callable[[dict[str, Content]], bool]:
+def _beside_title_with_room(prefix: str, most: int, pictures: bool = True) -> Callable[[dict[str, Content]], bool]:
     """Whether the slide has a title that fits beside a diagram, and at most so many of the items (an org chart's
-    people, a cycle's steps), for whose boxes there's room beside the title."""
+    people, a cycle's steps), for whose boxes there's room beside the title (and, unless pictures, none of them with a
+    picture: docs/v5-plan.md, D64)."""
 
     def fits(roles: dict[str, Content]) -> bool:
-        return _beside_title(roles) and f"{prefix}_{most + 1}" not in roles
+        pictured = any(role.startswith(f"{prefix}_") and role.endswith("_picture") for role in roles)
+        return _beside_title(roles) and f"{prefix}_{most + 1}" not in roles and (pictures or not pictured)
 
     return fits
 
@@ -1594,7 +1884,56 @@ def _questions_mark(roles: dict[str, Content], theme: Theme) -> Placement:
     return placement
 
 
-# Native diagrams: a timeline, a pyramid and a funnel, a cycle, a small org chart and an iceberg
+# Native diagrams: a timeline, a pyramid and a funnel, a cycle, a small org chart and an iceberg; and the pictures some
+# of their boxes have now and then (docs/v5-plan.md, D64), cropped to fill a box of their own beside the box's text
+# (or in it), which appear with the text
+
+_PICTURE_GAP: Final = 16.0
+_PICTURE_SHAPE: Final = 4 / 3  # (a picture's box, as wide as it's tall times this, where it can be)
+_SMALLEST_PICTURE: Final = 96.0  # (a picture's box is at least this tall and wide, or the picture stays out)
+
+
+def _picture_role(box: str) -> str:
+    """The role of the picture of a diagram's box (see talkgenerator.slide.slides.picture_role)."""
+    return f"{box}_picture"
+
+
+def _has_picture(roles: dict[str, Content], box: str) -> bool:
+    return isinstance(roles.get(_picture_role(box)), ImageElement)
+
+
+def _picture_box(area: Box, shape: float = _PICTURE_SHAPE) -> Box | None:
+    """The largest box of the shape (its width over its height) in the middle of the area, if it's large enough."""
+    width = min(area.w, area.h * shape)
+    height = width / shape
+    if min(width, height) < _SMALLEST_PICTURE:
+        return None
+    return Box(x=area.x + (area.w - width) / 2, y=area.y + (area.h - height) / 2, w=width, h=height)
+
+
+def _place_picture(placement: Placement, box: str, area: Box | None) -> bool:
+    """Put the picture of the box (if the slide has one, and the area is large enough for it) in the area."""
+    if area is None:
+        return False
+    placement.boxes[_picture_role(box)] = (area, "caption")
+    return True
+
+
+def _picture_inside(placement: Placement, roles: dict[str, Content], box: str, text: Box, side: str) -> Box:
+    """The box's picture, if it has one, at one end of its text's box (left or right, in a box as tall as it), and
+    where the text goes then: the rest of the box."""
+    if not _has_picture(roles, box):
+        return text
+    picture = _picture_box(Box(x=text.x, y=text.y, w=min(text.w * 0.45, text.h * _PICTURE_SHAPE), h=text.h))
+    if picture is None:
+        return text
+    if side == "right":
+        picture = picture.model_copy(update={"x": text.x + text.w - picture.w})
+    else:
+        picture = picture.model_copy(update={"x": text.x})
+    _place_picture(placement, box, picture)
+    rest = text.w - picture.w - _PICTURE_GAP
+    return Box(x=text.x if side == "right" else text.x + picture.w + _PICTURE_GAP, y=text.y, w=rest, h=text.h)
 
 
 def _dot(
@@ -1692,12 +2031,26 @@ def _stack(
             placement.shapes.append(
                 ShapeElement(role=f"{prefix} {index} band", box=band, color=fill, appears_on_click=click)
             )
-            placement.boxes[f"{prefix}_{index}"] = (Box(x=band.x + 24, y=y + 8, w=width - 48, h=height - 16), "level")
+            text = Box(x=band.x + 24, y=y + 8, w=width - 48, h=height - 16)
+            # (a band's picture beside it, where the stack leaves room on its right; else in it, at its right end)
+            beside = Box(x=band.x + band.w + _PICTURE_GAP, y=y, w=right - band.x - band.w - _PICTURE_GAP, h=height)
+            if _has_picture(roles, f"{prefix}_{index}") and not _place_picture(
+                placement, f"{prefix}_{index}", _beside_picture(beside)
+            ):
+                text = _picture_inside(placement, roles, f"{prefix}_{index}", text, "right")
+            placement.boxes[f"{prefix}_{index}"] = (text, "level")
             placement.colors[f"{prefix}_{index}"] = _on([fill], theme)
             y += height + gap
         return placement
 
     return stack
+
+
+def _beside_picture(area: Box) -> Box | None:
+    """A picture's box at the left end of the area (as tall as it, and as wide as that allows), if it's large
+    enough."""
+    picture = _picture_box(area.model_copy(update={"w": min(area.w, area.h * _PICTURE_SHAPE)}))
+    return picture.model_copy(update={"x": area.x}) if picture is not None else None
 
 
 def _cycle(side: bool) -> Callable[[dict[str, Content], Theme], Placement]:
@@ -1720,9 +2073,11 @@ def _cycle(side: bool) -> Callable[[dict[str, Content], Theme], Placement]:
 
         for step in range(48):  # (the ring, under the ovals)
             placement.shapes.append(_dot("ring", on_ring(2 * math.pi * step / 48), 16, accent))
+        ovals = []
         for position, index in enumerate(steps):
             x, y = on_ring(2 * math.pi * position / len(steps))
             oval = Box(x=x - width / 2, y=y - height / 2, w=width, h=height)
+            ovals.append(oval)
             click = _click(roles, f"step_{index}")
             placement.shapes.append(
                 ShapeElement(role=f"step {index} oval", shape="ellipse", box=oval, color=accent, appears_on_click=click)
@@ -1730,9 +2085,27 @@ def _cycle(side: bool) -> Callable[[dict[str, Content], Theme], Placement]:
             text = Box(x=x - 0.4 * width, y=y - 0.27 * height, w=0.8 * width, h=0.54 * height)
             placement.boxes[f"step_{index}"] = (text, "disc")
             placement.colors[f"step_{index}"] = _on([accent], theme)
+        # (a step's picture in the middle of the ring, as large as it is clear of the ovals)
+        for index in steps:
+            if _has_picture(roles, f"step_{index}"):
+                _place_picture(placement, f"step_{index}", _clear_of(middle, ovals))
+                break
         return placement
 
     return cycle
+
+
+def _clear_of(middle: tuple[float, float], boxes: Sequence[Box], largest: float = 300.0) -> Box | None:
+    """The largest picture's box (at most so tall) around the point that keeps clear of the boxes (by a gap), if
+    it's large enough."""
+    height = largest
+    while height >= _SMALLEST_PICTURE:
+        width = height * _PICTURE_SHAPE
+        picture = Box(x=middle[0] - width / 2, y=middle[1] - height / 2, w=width, h=height)
+        if not any(_overlap(_inset(picture, -_PICTURE_GAP), box) for box in boxes):
+            return picture
+        height *= 0.9
+    return None
 
 
 def _org_chart(side: bool) -> Callable[[dict[str, Content], Theme], Placement]:
@@ -1802,15 +2175,28 @@ def _iceberg(side: bool) -> Callable[[dict[str, Content], Theme], Placement]:
             ShapeElement(role="ice", shape="ellipse", box=ice, color=palette.surface),
             ShapeElement(role="water", box=sea, color=palette.accent, opacity=opacity),
         ]
-        placement.boxes["tip"] = (Box(x=centre - 240, y=water - 200, w=480, h=160), "box")
+        tip = Box(x=centre - 240, y=water - 200, w=480, h=160)
+        placement.boxes["tip"] = (tip, "box")
         placement.colors["tip"] = _on([palette.surface], theme)
+        # (the tip's picture beside it, on its right; a hidden thing's beside it too, on the ice under the water)
+        beside = Box(x=tip.x + tip.w + _PICTURE_GAP, y=tip.y, w=right - tip.x - tip.w - _PICTURE_GAP, h=tip.h)
+        _place_picture(placement, "tip", _beside_picture(beside) if _has_picture(roles, "tip") else None)
         hidden = _numbered(roles, "hidden", 3)
         y, height = _spread(water + 48, _CONTENT_BOTTOM, len(hidden), 16, 130)
         under = color.mix(palette.surface, palette.accent, opacity)
         label = min(720.0, 0.66 * width)
         for index in hidden:
-            placement.boxes[f"hidden_{index}"] = (Box(x=centre - label / 2, y=y, w=label, h=height), "box")
+            text = Box(x=centre - label / 2, y=y, w=label, h=height)
+            placement.boxes[f"hidden_{index}"] = (text, "box")
             placement.colors[f"hidden_{index}"] = _on([under], theme)
+            if _has_picture(roles, f"hidden_{index}"):
+                room = Box(
+                    x=text.x + text.w + _PICTURE_GAP,
+                    y=y,
+                    w=ice.x + ice.w - text.x - text.w - 2 * _PICTURE_GAP,
+                    h=height,
+                )
+                _place_picture(placement, f"hidden_{index}", _beside_picture(room))
             y += height + 16
         return placement
 
@@ -1856,7 +2242,14 @@ def _process_down(roles: dict[str, Content], theme: Theme) -> Placement:
             head = Box(x=WIDTH / 2 - 32, y=y - gap + 8, w=64, h=gap - 16)
             placement.shapes.append(_arrow(f"step {index} arrow", head, True, ink, click))
         placement.shapes.append(ShapeElement(role=f"step {index} band", box=band, color=colour, appears_on_click=click))
-        placement.boxes[f"step_{index}"] = (Box(x=band.x + 24, y=y + 8, w=width - 48, h=height - 16), "level")
+        text = Box(x=band.x + 24, y=y + 8, w=width - 48, h=height - 16)
+        # (a step's picture beside its band, on its right, where there's room; else in it, at its right end)
+        beside = Box(x=band.x + band.w + _PICTURE_GAP, y=y, w=WIDTH - MARGIN - band.x - band.w - _PICTURE_GAP, h=height)
+        if _has_picture(roles, f"step_{index}") and not _place_picture(
+            placement, f"step_{index}", _beside_picture(beside)
+        ):
+            text = _picture_inside(placement, roles, f"step_{index}", text, "right")
+        placement.boxes[f"step_{index}"] = (text, "level")
         placement.colors[f"step_{index}"] = _on([colour], theme)
         y += height + gap
     return placement
@@ -1881,7 +2274,12 @@ def _process_across(roles: dict[str, Content], theme: Theme) -> Placement:
             placement.shapes.append(_arrow(f"step {index} arrow", head, False, ink, click))
         box = Box(x=x, y=y, w=width, h=height)
         placement.shapes.append(ShapeElement(role=f"step {index} box", box=box, color=colour, appears_on_click=click))
-        placement.boxes[f"step_{index}"] = (_inset(box, 18), "box")
+        text = _inset(box, 18)
+        if _has_picture(roles, f"step_{index}"):  # (a step's picture in the top half of its box, its text under it)
+            upper = Box(x=text.x, y=text.y, w=text.w, h=(text.h - _PICTURE_GAP) / 2)
+            if _place_picture(placement, f"step_{index}", _picture_box(upper)):
+                text = Box(x=text.x, y=upper.y + upper.h + _PICTURE_GAP, w=text.w, h=upper.h)
+        placement.boxes[f"step_{index}"] = (text, "box")
         placement.colors[f"step_{index}"] = _on([colour], theme)
     return placement
 
@@ -2323,7 +2721,9 @@ def _flowchart(side: bool) -> Callable[[dict[str, Content], Theme], Placement]:
             placement.shapes.append(
                 ShapeElement(role=f"{role} box", box=box, color=palette.surface, appears_on_click=click)
             )
-            placement.boxes[role] = (_inset(box, 16), "flow step")
+            # (a step's picture in its box, at its outer end: Yes's on the left, No's on the right)
+            outer = "left" if role == "yes_step" else "right"
+            placement.boxes[role] = (_picture_inside(placement, roles, role, _inset(box, 16), outer), "flow step")
             placement.colors[role] = _on([palette.surface], theme)
             label_x = x + 20 if spec == "flow label" else x - 20 - 200
             placement.boxes[label] = (Box(x=label_x, y=split + 12, w=200, h=steps - split - 18), spec)
@@ -2331,7 +2731,7 @@ def _flowchart(side: bool) -> Callable[[dict[str, Content], Theme], Placement]:
         end = Box(x=centre - end_width / 2, y=end_top, w=end_width, h=end_height)
         click = _click(roles, "end")
         placement.shapes.append(ShapeElement(role="end box", box=end, color=palette.accent_2, appears_on_click=click))
-        placement.boxes["end"] = (_inset(end, 18), "boss")
+        placement.boxes["end"] = (_picture_inside(placement, roles, "end", _inset(end, 18), "right"), "boss")
         placement.colors["end"] = _on([palette.accent_2], theme)  # (a long end is no large text)
         return placement
 
@@ -3012,7 +3412,8 @@ _LAYOUTS: Final[dict[str, tuple[_Layout, ...]]] = {
     ),
     "cycle": (
         _Layout("v5/cycle", _cycle(side=False)),
-        _Layout("v5/cycle-side", _cycle(side=True), 0.7, _beside_title_with_room("step", 4)),
+        # (beside a title, the ring has no room in its middle for a step's picture)
+        _Layout("v5/cycle-side", _cycle(side=True), 0.7, _beside_title_with_room("step", 4, pictures=False)),
     ),
     "org_chart": (
         _Layout("v5/org-chart", _org_chart(side=False)),

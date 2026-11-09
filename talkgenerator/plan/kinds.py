@@ -5,21 +5,27 @@ image slots, and builds one of v4's Slide classes from them. A Recipe ties a kin
 presentation schema: what its slots ask for (image slots, see talkgenerator.images.slots: which look, from which
 sources), what this particular slide is about (its brief and hints), which fields and slots it leaves out, and which
 texts come from classic sources instead (real quotes, for instance).
+
+A diagram's kind can have pictures in some of its boxes now and then (a process's steps, a pyramid's levels, a
+matrix's quadrants: `BoxPictures`): the talk's dice pick which, if any, when they pick the recipe's variant, and the
+picture of a box is searched for (or generated) like a slide's other pictures, but a box goes without one when none
+is found (docs/v5-plan.md, D64).
 """
 
 from __future__ import annotations
 
 import dataclasses
+import functools
 import re
 import unicodedata
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Final
 
-from pptx.chart.data import ChartData, XyChartData
+from pptx.chart.data import ChartData
 from pptx.enum.chart import XL_CHART_TYPE
 
-from talkgenerator.models.deck import MatrixDiagram, VennDiagram
+from talkgenerator.models.deck import VennDiagram
 from talkgenerator.plan.languages import Language
 from talkgenerator.slide import slides
 from talkgenerator.sources import chart, diagram, memes
@@ -44,15 +50,6 @@ Builder = Callable[[Mapping[str, str | None], Mapping[str, Any], Language], slid
 
 
 @dataclass(frozen=True)
-class Kind:
-    name: str
-    description: str
-    texts: tuple[TextField, ...]
-    images: tuple[str, ...]
-    build: Builder
-
-
-@dataclass(frozen=True)
 class Variant:
     """A way a recipe's slide can come out, which the talk's dice pick by weight: the text fields and image slots it
     does without (a slot left out isn't searched, and its builder gets None for it), a note for the language model
@@ -65,6 +62,52 @@ class Variant:
     hints: Mapping[str, str] = field(default_factory=dict)
     limits: Mapping[str, int] = field(default_factory=dict)
     queries: Mapping[str, str] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class BoxPictures:
+    """Pictures in some of a diagram's boxes, now and then: a weird but related picture in a box, beside its text
+    (docs/v5-plan.md, D64). The boxes are the text fields that can have one (a box's picture is its own image slot,
+    "<box>_picture", which every recipe of the kind has: see box_picture_slot), each described for the language
+    model; a slide has pictures that share of the time (odds: slides.PICTURE_ODDS, as classic diagrams have them),
+    in one box or, at most, in so many."""
+
+    boxes: Mapping[str, str]  # text field: what its box is, for the model ("the second step")
+    odds: float = slides.PICTURE_ODDS
+    most: int = 2
+    aside: str = ""  # what else the model is told of a slide with pictures (a matrix's: where its dot goes)
+
+    @staticmethod
+    def slot(box: str) -> str:
+        """The image slot of a box's picture (named as the slide's role for it: "step_2_picture")."""
+        return slides.picture_role(box)
+
+    def pick(self, rng: random_util.Rng) -> list[str]:
+        """The boxes that get a picture, by the dice: none most of the time."""
+        with random_util.use(rng):
+            return slides.picked_boxes(list(self.boxes), self.most, self.odds)
+
+
+@functools.cache
+def box_picture_slot() -> ImageSlot:
+    """What a diagram's box asks of its picture: a stock photo of something weird, or a generated picture in a talk
+    that generates them (its stock photo stands in until it's in)."""
+    from talkgenerator.images.slots import ImageSlot  # (here, as at the top for type checking: its sources are many)
+
+    return ImageSlot("a weird but related picture in a diagram's box", aesthetic="weird-stock", generate=True)
+
+
+@dataclass(frozen=True)
+class Kind:
+    name: str
+    description: str
+    texts: tuple[TextField, ...]
+    images: tuple[str, ...]
+    build: Builder
+    # The ways its slides come out where a recipe of it has no variants of its own (a matrix with names in its
+    # quadrants, with dots instead, or bare), and the pictures some of its boxes can have
+    variants: tuple[Variant, ...] = ()
+    pictures: BoxPictures | None = None
 
 
 # A v4 content generator: a presentation context (with the "seed" to search for) in, an image (or None) out
@@ -87,6 +130,8 @@ class Recipe:
     limits: Mapping[str, int] = field(default_factory=dict)
     # Per image slot: what it searches for, instead of a query the model writes (a meme's template, the dice's pick)
     queries: Mapping[str, str] = field(default_factory=dict)
+    # The boxes of a diagram that have a picture on this slide (see BoxPictures): none, but where the dice put some
+    pictures: tuple[str, ...] = ()
 
     def text_field(self, text: TextField) -> TextField:
         """A text field of the kind as this slide has it: as long as its limit here allows."""
@@ -105,38 +150,60 @@ class Recipe:
         """The image slots the language model writes a search query for."""
         return [
             slot
-            for slot in KINDS[self.kind].images
+            for slot in [*KINDS[self.kind].images, *self.optional_slots()]
             if f"{slot}_query" not in self.omit and slot not in self.omit and slot not in self.queries
         ]
 
     def slots(self) -> list[tuple[str, ImageSlot | ContentSource]]:
-        """The image slots this slide has, by name, with what they ask for (not the ones it leaves out)."""
-        return [
+        """The image slots this slide has, by name, with what they ask for (not the ones it leaves out): the kind's,
+        then the pictures of its boxes that it has."""
+        own = [
             (name, source)
             for name, source in zip(KINDS[self.kind].images, self.images, strict=True)
             if name not in self.omit
         ]
+        return own + [(slot, box_picture_slot()) for slot in self.optional_slots() if slot not in self.omit]
+
+    def optional_slots(self) -> list[str]:
+        """The image slots that may stay empty when nothing is found for them: the pictures of its boxes."""
+        return [BoxPictures.slot(box) for box in self.pictures]
 
     def varied(self, rng: random_util.Rng, avoid: frozenset[str] = frozenset()) -> Recipe:
-        """The recipe as one of its variants, picked by weight with the random stream (itself, without variants): not
-        one whose queries are in avoid, while there are others (a meme's template that the talk has already)."""
-        if not self.variants:
-            return self
-        fresh = [variant for variant in self.variants if not set(variant.queries.values()) & avoid] or self.variants
-        with random_util.use(rng):
-            variant = random_util.weighted_random([(variant.weight, variant) for variant in fresh])
-        if variant is None:
-            return self
-        brief = (self.brief or KINDS[self.kind].description).rstrip(".")
-        return dataclasses.replace(
-            self,
-            omit=self.omit | variant.omit,
-            brief=f"{brief}, {variant.note}" if variant.note else brief,
-            hints={**self.hints, **variant.hints},
-            limits={**self.limits, **variant.limits},
-            queries={**self.queries, **variant.queries},
-            variants=(),
+        """The recipe as one of its variants, picked by weight with the random stream (itself, without variants; its
+        kind's, if it has none of its own): not one whose queries are in avoid, while there are others (a meme's
+        template that the talk has already). And, for a diagram whose kind has pictures in its boxes, the boxes that
+        get one, from a stream of their own (none, most of the time)."""
+        kind = KINDS[self.kind]
+        variants = self.variants or kind.variants
+        varied = self
+        if variants:
+            fresh = [variant for variant in variants if not set(variant.queries.values()) & avoid] or variants
+            with random_util.use(rng):
+                variant = random_util.weighted_random([(variant.weight, variant) for variant in fresh])
+            if variant is not None:
+                brief = (self.brief or kind.description).rstrip(".")
+                varied = dataclasses.replace(
+                    self,
+                    omit=self.omit | variant.omit,
+                    brief=f"{brief}, {variant.note}" if variant.note else brief,
+                    hints={**self.hints, **variant.hints},
+                    limits={**self.limits, **variant.limits},
+                    queries={**self.queries, **variant.queries},
+                    variants=(),
+                )
+        if kind.pictures is None:
+            return varied
+        boxes = [box for box in kind.pictures.pick(rng.child("pictures")) if box not in varied.omit]
+        if not boxes:
+            return varied
+        brief = (varied.brief or kind.description).rstrip(".")
+        which = " and ".join(kind.pictures.boxes[box] for box in boxes)
+        note = (
+            f"with a weird but related picture in the box of {which}: the {'queries' if len(boxes) > 1 else 'query'}"
+            f" for {'them' if len(boxes) > 1 else 'it'}, something odd that the box's words make one think of"
+            + (f"; {kind.pictures.aside}" if kind.pictures.aside else "")
         )
+        return dataclasses.replace(varied, brief=f"{brief}, {note}", pictures=tuple(boxes), variants=())
 
 
 def _title(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
@@ -215,6 +282,8 @@ def _chart_trend(texts: Mapping[str, str | None], images: Mapping[str, Any], lan
         y_title=texts.get("y_axis"),
         reveal="series" if second else "all",
         point_labels=((0, chart.trend_turn(shape), event),) if event else (),
+        # (a weird picture of the moment by its point, now and then, on a click: see BoxPictures)
+        point_picture=images.get(BoxPictures.slot("event")) if event else None,
     )
 
 
@@ -230,18 +299,10 @@ def _chart_bars(texts: Mapping[str, str | None], images: Mapping[str, Any], lang
 
 
 def _chart_correlation(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
-    # The made-up data of v4's correlation curves, under the plan's claim
-    data = XyChartData()
-    series = data.add_series("Model")
-    xs = chart.generate_random_x(0, 2 ** random_util.uniform(1, 10), int(2 ** random_util.uniform(3, 8)))
-    points = chart.generate_y(xs, chart.create_interesting_curve_function())
-    points = chart.add_gaussian_noise_to_multidim_points(1.5 * random_util.uniform(0, max(xs) / 10), points)
-    points = [(abs(x), abs(y)) for x, y in points]
-    chart.add_data_to_series(series, points)
-    outlier = texts.get("outlier")
-    if outlier:  # one point far above the others
-        highest = max(y for _, y in points)
-        data.add_series(outlier).add_data_point(max(xs) * random_util.uniform(0.4, 0.8), highest * 1.4 or 1)
+    # Made-up data under the plan's claim: a cloud in the shape the plan says (or a random one), now and then with a
+    # line fitted through it; or two or three named clouds, each in its colour; and maybe an outlier
+    clusters = [texts.get(f"cluster_{index}") or "" for index in range(1, chart.MOST_CLUSTERS + 1)]
+    data, trendlines, labels = chart.correlation_data(texts.get("shape"), clusters, texts.get("outlier"))
     return slides.ChartSlide(
         texts["title"],
         XL_CHART_TYPE.XY_SCATTER,
@@ -249,36 +310,49 @@ def _chart_correlation(texts: Mapping[str, str | None], images: Mapping[str, Any
         chart.create_set_scatter_properties("", ""),
         x_title=texts.get("x_axis"),
         y_title=texts.get("y_axis"),
-        point_labels=((1, 0, outlier),) if outlier else (),
+        point_labels=labels,
+        trendlines=trendlines,
     )
+
+
+def _box_pictures(images: Mapping[str, Any]) -> dict[str, Any]:
+    """The pictures the slide's boxes got (see BoxPictures), by the box: the role of its text."""
+    suffix = BoxPictures.slot("")
+    return {
+        slot[: -len(suffix)]: image for slot, image in images.items() if slot.endswith(suffix) and image is not None
+    }
 
 
 def _venn(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
     circles = tuple(text for text in (texts["circle_1"], texts["circle_2"], texts.get("circle_3")) if text)
     return slides.DiagramSlide(
-        texts["title"], VennDiagram(circles=circles, overlap=texts["overlap"] or "", reveal="punchline")
+        texts["title"],
+        VennDiagram(circles=circles, overlap=texts["overlap"] or "", reveal="punchline"),
+        pictures=_box_pictures(images),
     )
 
 
 def _matrix(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
-    # The dot goes in the quadrant the plan says (or a random one)
-    dot_x, dot_y = diagram.dot_position(texts.get("dot_quadrant"))
+    # The dot goes in the quadrant the plan says (or a random one), the other things where they belong; the quadrants
+    # have labels, or none (in a matrix of dots, or a bare one), and some may have a picture
+    labels = [texts.get(corner) or "" for corner in MATRIX_CORNERS]
+    things = [
+        (thing, quadrant)
+        for corner, quadrant in zip(MATRIX_CORNERS, diagram.QUADRANTS, strict=True)
+        for thing in slides.listed_items(texts.get(f"{corner}_things"), diagram.DOTS_IN_A_QUADRANT)
+    ]
+    matrix = diagram.matrix(
+        texts["x_left"] or "",
+        texts["x_right"] or "",
+        texts["y_bottom"] or "",
+        texts["y_top"] or "",
+        labels,
+        texts["dot"] or "",
+        texts.get("dot_quadrant"),
+        things,
+    )
     return slides.DiagramSlide(
-        texts["title"],
-        MatrixDiagram(
-            x_left=texts["x_left"] or "",
-            x_right=texts["x_right"] or "",
-            y_bottom=texts["y_bottom"] or "",
-            y_top=texts["y_top"] or "",
-            top_left=texts["top_left"] or "",
-            top_right=texts["top_right"] or "",
-            bottom_left=texts["bottom_left"] or "",
-            bottom_right=texts["bottom_right"] or "",
-            dot=texts["dot"] or "",
-            dot_x=dot_x,
-            dot_y=dot_y,
-            reveal="punchline",
-        ),
+        texts["title"], matrix, pictures=diagram.pictured_quadrants(matrix, _box_pictures(images))
     )
 
 
@@ -352,15 +426,15 @@ def _timeline(texts: Mapping[str, str | None], images: Mapping[str, Any], langua
 
 
 def _pyramid(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
-    return slides.PyramidSlide(texts["title"], *_numbered(texts, "level", 4))
+    return slides.PyramidSlide(texts["title"], *_numbered(texts, "level", 4), pictures=_box_pictures(images))
 
 
 def _funnel(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
-    return slides.FunnelSlide(texts["title"], *_numbered(texts, "stage", 5))
+    return slides.FunnelSlide(texts["title"], *_numbered(texts, "stage", 5), pictures=_box_pictures(images))
 
 
 def _cycle(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
-    return slides.CycleSlide(texts["title"], *_numbered(texts, "step", 5))
+    return slides.CycleSlide(texts["title"], *_numbered(texts, "step", 5), pictures=_box_pictures(images))
 
 
 def _org_chart(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
@@ -368,11 +442,12 @@ def _org_chart(texts: Mapping[str, str | None], images: Mapping[str, Any], langu
 
 
 def _iceberg(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
-    return slides.IcebergSlide(texts["title"], texts["tip"], *_numbered(texts, "hidden", 3))
+    hidden = _numbered(texts, "hidden", 3)
+    return slides.IcebergSlide(texts["title"], texts["tip"], *hidden, pictures=_box_pictures(images))
 
 
 def _process(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
-    return slides.ProcessSlide(texts["title"], *_numbered(texts, "step", 5))
+    return slides.ProcessSlide(texts["title"], *_numbered(texts, "step", 5), pictures=_box_pictures(images))
 
 
 def _meme(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
@@ -456,6 +531,7 @@ def _flowchart(texts: Mapping[str, str | None], images: Mapping[str, Any], langu
         texts["end"],
         yes=language.yes,
         no=language.no,
+        pictures=_box_pictures(images),
     )
 
 
@@ -524,7 +600,79 @@ def _shortened(text: str, length: int) -> str:
 
 
 def _quadrant(corner: str, ends: str) -> TextField:
-    return TextField(corner.replace(" ", "_"), f"the label of the {corner} quadrant: what is {ends}", 30)
+    # (at most 30 letters, for a format's names such as a made-up citation, "Kowalski and Kowalski (2019)")
+    return TextField(
+        corner.replace(" ", "_"), f"a short name for the {corner} quadrant, a word or two: what is {ends}", 30, True
+    )
+
+
+def _things(corner: str, ends: str) -> TextField:
+    return TextField(
+        f"{corner.replace(' ', '_')}_things",
+        f"one or two familiar things that belong in the {corner} quadrant ({ends}), separated by |",
+        50,
+        optional=True,
+    )
+
+
+# The first three steps of a process or a cycle, which every one of them has: the boxes that can have a picture
+_STEPS: Final = {"step_1": "the first step", "step_2": "the second step", "step_3": "the third step"}
+
+
+def matrix_landscape(thing: str, things: str) -> tuple[Variant, Variant]:
+    """The ways a format's matrix of things in three of its quadrants (a pitch's competitors, a review's
+    initiatives, a paper's earlier work) and the dot alone in the best one (top right) comes out: with the things as
+    the three quadrants' names, as it was; or as dots where they belong, one in each of those quadrants, and a name
+    only in the best one (docs/v5-plan.md, D64). thing says what to write for one of them, things what they are."""
+    others = ("top_left", "bottom_left", "bottom_right")
+    return (
+        Variant(1, _MATRIX_THINGS),
+        Variant(
+            1,
+            frozenset(others) | {"top_right_things"},
+            f"with {things} as dots where they belong, one in each of the three other quadrants (their fields of "
+            "things), and a name only in the best quadrant, where the dot is",
+            hints={f"{corner}_things": f"{thing}: one" for corner in others},
+        ),
+    )
+
+
+# How a correlation comes out, where its recipe has no variants of its own (docs/v5-plan.md, D64): one cloud of points,
+# or two or three named groups of them (clusters)
+_CLUSTERS: Final = frozenset(f"cluster_{index}" for index in range(1, chart.MOST_CLUSTERS + 1))
+CLUSTERED: Final = Variant(
+    1,
+    frozenset({"shape"}),
+    "with two or three groups of points, each in its own colour and named in the legend (the clusters' fields): "
+    "things of a kind that the claim compares",
+)
+CORRELATION_VARIANTS: Final = (Variant(2.3, _CLUSTERS), CLUSTERED)
+# How often a trend whose moment is marked has a picture of the moment by its point
+TREND_PICTURE_ODDS: Final = 0.5
+# A matrix's quadrants, as its fields name them (in diagram.QUADRANTS' order), and what is in each
+MATRIX_CORNERS: Final = ("top_left", "top_right", "bottom_left", "bottom_right")
+_QUADRANT_ENDS: Final = (
+    "both like the top end and like the left end",
+    "both like the top end and like the right end",
+    "both like the bottom end and like the left end",
+    "both like the bottom end and like the right end",
+)
+_MATRIX_THINGS: Final = frozenset(f"{corner}_things" for corner in MATRIX_CORNERS)
+_MATRIX_LABELS: Final = frozenset(MATRIX_CORNERS)
+# The ways a matrix comes out, where its recipe has none of its own (docs/v5-plan.md, D64): a name in every quadrant;
+# no names, but familiar things as dots where they belong, around the punchline's; or bare, with only the axes and
+# the punchline's dot
+MATRIX_VARIANTS: Final = (
+    Variant(2, _MATRIX_THINGS, "with a short name in every quadrant"),
+    Variant(
+        2,
+        _MATRIX_LABELS,
+        "without names in its quadrants: instead, two to four familiar things as dots where they belong (in the "
+        "quadrants' fields of things: one or two in a quadrant, some quadrants may have none), around the "
+        "punchline's dot",
+    ),
+    Variant(1, _MATRIX_LABELS | _MATRIX_THINGS, "bare: no names in its quadrants, only the axes and the dot"),
+)
 
 
 _NUMBER: Final = re.compile(r"[-+]?\d+(?:[.,]\d+)?\s*%?")
@@ -665,11 +813,23 @@ KINDS: Final[dict[str, Kind]] = {
         ),
         Kind(
             "chart_correlation",
-            "A scatter plot of made-up data, under a claim of a correlation.",
+            "A scatter plot of made-up data, under a claim of a correlation: one cloud of points in a shape (now and "
+            "then with a line fitted through it), or two or three named groups of points, each in its own colour.",
             (
                 TextField("title", "a made-up correlation between two things, as a claim", 90),
                 TextField("x_axis", "the axis along the bottom: the first of the two things", 40, optional=True),
                 TextField("y_axis", "the axis going up: the second thing", 40, optional=True),
+                TextField(
+                    "shape",
+                    "the shape of the cloud of points, the funniest one for the claim",
+                    12,
+                    optional=True,
+                    options=tuple(chart.CORRELATION_SHAPES),
+                ),
+                *(
+                    TextField(f"cluster_{index}", f"the name of the {which} group of points, in the legend", 24, True)
+                    for index, which in enumerate(("first", "second", "third"), 1)
+                ),
                 TextField(
                     "outlier",
                     "one point far above the others, named after someone or something that doesn't belong there",
@@ -679,6 +839,7 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             (),
             _chart_correlation,
+            CORRELATION_VARIANTS,
         ),
         Kind(
             "chart_trend",
@@ -710,6 +871,12 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             (),
             _chart_trend,
+            pictures=BoxPictures(
+                {"event": "the moment marked on the line"},
+                odds=TREND_PICTURE_ODDS,
+                most=1,
+                aside="it appears on a click, by the moment's point, so the moment has to be there",
+            ),
         ),
         Kind(
             "chart_bars",
@@ -742,21 +909,21 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             (),
             _venn,
+            pictures=BoxPictures({"circle_1": "the first circle", "circle_2": "the second circle"}),
         ),
         Kind(
             "matrix",
-            "A 2×2 matrix: two axes that cross in the middle, with a title at each end, a label in each quadrant, and "
-            "one dot with a name, the punchline, which appears on a click.",
+            "A 2×2 matrix: two axes of everyday opposites that cross in the middle, with a word or two at each end, "
+            "a short name in each quadrant (or familiar things as dots where they belong, or neither), and one dot "
+            "with a name, the punchline, which appears on a click.",
             (
                 TextField("title", "the matrix's title", 60),
-                TextField("x_left", "the title at the left end of the axis along the bottom", 30),
-                TextField("x_right", "the title at the right end of that axis: the opposite of the left end", 30),
-                TextField("y_bottom", "the title at the bottom end of the axis going up", 30),
-                TextField("y_top", "the title at the top end of that axis: the opposite of the bottom end", 30),
-                _quadrant("top left", "both like the top end and like the left end"),
-                _quadrant("top right", "both like the top end and like the right end"),
-                _quadrant("bottom left", "both like the bottom end and like the left end"),
-                _quadrant("bottom right", "both like the bottom end and like the right end"),
+                TextField("x_left", "the left end of the axis along the bottom: a word or two", 24),
+                TextField("x_right", "the right end of that axis, a word or two: the opposite of the left end", 24),
+                TextField("y_bottom", "the bottom end of the axis going up: a word or two", 24),
+                TextField("y_top", "the top end of that axis, a word or two: the opposite of the bottom end", 24),
+                *(_quadrant(corner, ends) for corner, ends in zip(diagram.QUADRANTS, _QUADRANT_ENDS, strict=True)),
+                *(_things(corner, ends) for corner, ends in zip(diagram.QUADRANTS, _QUADRANT_ENDS, strict=True)),
                 TextField(
                     "dot",
                     "the name of a dot in one of the quadrants: someone or something surprising there, the punchline",
@@ -772,6 +939,14 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             (),
             _matrix,
+            MATRIX_VARIANTS,
+            BoxPictures(
+                {
+                    corner: f"the {quadrant} quadrant"
+                    for corner, quadrant in zip(MATRIX_CORNERS, diagram.QUADRANTS, strict=True)
+                },
+                aside="the dot goes in another quadrant",
+            ),
         ),
         # Milestone 6's slide types (docs/v5-plan.md, section 8), drawn as texts on shapes
         Kind(
@@ -905,6 +1080,13 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             (),
             _pyramid,
+            pictures=BoxPictures(
+                {
+                    "level_1": "the top of the pyramid",
+                    "level_2": "the level under the top",
+                    "level_3": "the level under that",
+                }
+            ),
         ),
         Kind(
             "funnel",
@@ -924,6 +1106,9 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             (),
             _funnel,
+            pictures=BoxPictures(
+                {"stage_1": "the widest stage, at the top", "stage_2": "the second stage", "stage_3": "the third stage"}
+            ),
         ),
         Kind(
             "cycle",
@@ -937,6 +1122,7 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             (),
             _cycle,
+            pictures=BoxPictures(_STEPS, most=1),
         ),
         Kind(
             "org_chart",
@@ -976,6 +1162,13 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             (),
             _iceberg,
+            pictures=BoxPictures(
+                {
+                    "tip": "the tip, above the water",
+                    "hidden_1": "the first thing under the water",
+                    "hidden_2": "the second thing under the water",
+                }
+            ),
         ),
         # The talk formats' (docs/v5-plan.md, section 7): a method, or how a product works
         Kind(
@@ -996,6 +1189,7 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             (),
             _process,
+            pictures=BoxPictures(_STEPS),
         ),
         # Media
         Kind(
@@ -1077,6 +1271,9 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             (),
             _flowchart,
+            pictures=BoxPictures(
+                {"yes_step": "where Yes leads", "no_step": "where No leads", "end": "the end both lead to"}
+            ),
         ),
         Kind(
             "tier_list",

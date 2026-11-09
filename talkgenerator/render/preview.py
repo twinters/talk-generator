@@ -36,7 +36,7 @@ from talkgenerator.models.deck import (
     VennDiagram,
 )
 from talkgenerator.models.theme import TextEffect, Theme
-from talkgenerator.render import backgrounds, diagrams, reveal
+from talkgenerator.render import backgrounds, charts, diagrams, reveal
 from talkgenerator.util import image_util
 
 logger = logging.getLogger("talkgenerator")
@@ -433,6 +433,10 @@ def _chart(canvas: Image.Image, element: ChartElement, scale: float, theme: Them
     left, bottom = x0 + 60 * scale, y1 - 60 * scale
     axes = {"column": [(left, bottom), (x1, bottom)], "bar": [(left, y0), (left, bottom)]}  # (only what's drawn)
     axis = axes.get(spec.chart_type, [(left, y0), (left, bottom), (x1, bottom)])
+    if spec.chart_type == "line":  # (a trend's axes where its plot is: see below)
+        plot = charts.trend_plot(spec, element.box.w, element.box.h)
+        at = (x1 - x0) / element.box.w
+        axis = [(x0 + plot.left * at, y0), (x0 + plot.left * at, y0 + plot.bottom * at), (x1, y0 + plot.bottom * at)]
     draw.line(axis, fill=palette.muted, width=max(1, round(3 * scale)))
     if spec.x_title:
         draw.text(((left + x1) / 2, y1 - 20 * scale), spec.x_title, fill=palette.text, font=label, anchor="mm")
@@ -444,24 +448,29 @@ def _chart(canvas: Image.Image, element: ChartElement, scale: float, theme: Them
             return
         top_x = max(x for x, _ in points) or 1
         top_y = max(y for _, y in points) or 1
+
+        def place(px: float, py: float) -> tuple[float, float]:
+            return left + (x1 - left) * px / top_x * 0.95, bottom - (bottom - y0) * py / top_y * 0.95
+
         for number, series in enumerate(spec.series):
             for index, (px, py) in enumerate(series.points):
-                x = left + (x1 - left) * px / top_x * 0.95
-                y = bottom - (bottom - y0) * py / top_y * 0.95
+                x, y = place(px, py)
                 radius = (12 if index < len(series.labels) and series.labels[index] else 5) * scale
-                draw.ellipse((x - radius, y - radius, x + radius, y + radius), fill=colors[number % 4])
+                draw.ellipse((x - radius, y - radius, x + radius, y + radius), fill=series.color or colors[number % 4])
+            fitted = charts.fitted_line(series.points, series.trendline) if series.trendline else []
+            if len(fitted) > 1:  # (a line fitted through it, as a sketch: whole, where the dashes are)
+                draw.line([place(px, py) for px, py in fitted], fill=palette.text, width=max(1, round(5 * scale)))
         return
     every_value = [value for series in spec.series for value in series.values]
     top_value = max(every_value, default=1) or 1
-    if spec.chart_type == "line":
-        for number, series in enumerate(spec.series):
-            count = max(1, len(series.values) - 1)
-            line = [
-                (left + (x1 - left) * index / count, bottom - (bottom - y0) * value / top_value * 0.9)
-                for index, value in enumerate(series.values)
-            ]
+    if spec.chart_type == "line":  # (where talk-generator-web draws it, and a pinned PowerPoint chart: trend_plot)
+        canvas_scale = (x1 - x0) / element.box.w
+        plot = charts.trend_plot(spec, element.box.w, element.box.h)
+        for number, placed in enumerate(charts.trend_points(spec, plot)):
+            series = spec.series[number]
+            line = [(x0 + x * canvas_scale, y0 + y * canvas_scale) for x, y in placed]
             if len(line) > 1:
-                draw.line(line, fill=colors[number % 4], width=max(1, round(10 * scale)))
+                draw.line(line, fill=series.color or colors[number % 4], width=max(1, round(10 * scale)))
             for index, name in enumerate(series.labels):
                 if name and index < len(line):
                     x, y = line[index]
@@ -534,13 +543,14 @@ def _diagram(canvas: Image.Image, element: DiagramElement, scale: float) -> None
         draw = ImageDraw.Draw(canvas)
         for _, (x0, y0), (x1, y1) in matrix.axes():
             draw.line([(at(x0), at(y0)), (at(x1), at(y1))], fill=style.lines, width=max(1, round(5 * scale)))
-        dot = matrix.dot(diagram.dot_x, diagram.dot_y)
-        draw.ellipse(
-            (at(dot.left), at(dot.top), at(dot.right), at(dot.bottom)),
-            fill=style.punchline,
-            outline=style.outline,
-            width=line,
-        )
+        for each in diagrams.matrix_dots(diagram):  # (its other dots in its labels' colour, the punchline's last)
+            dot = matrix.dot(each.x, each.y)
+            draw.ellipse(
+                (at(dot.left), at(dot.top), at(dot.right), at(dot.bottom)),
+                fill=style.punchline if each.punchline else style.text,
+                outline=style.outline,
+                width=line,
+            )
     for label in diagrams.labels(frame, diagram, style.font):
         look = TextStyle(
             font=style.font,

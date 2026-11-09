@@ -29,7 +29,7 @@ from pptx.text.text import Font
 from pptx.util import Pt
 
 from talkgenerator.design import fonts
-from talkgenerator.models.deck import ChartReveal, ChartSeries, ChartSpec, ChartType
+from talkgenerator.models.deck import ChartReveal, ChartSeries, ChartSpec, ChartType, Trendline
 
 PPTX_CHART_TYPES: dict[ChartType, XL_CHART_TYPE] = {
     "pie": XL_CHART_TYPE.PIE,
@@ -107,6 +107,29 @@ def with_point_labels(spec: ChartSpec, labels: Iterable[tuple[int, int, str]]) -
             names.pop()
         series[series_index] = current.model_copy(update={"labels": tuple(names)})
     return spec.model_copy(update={"series": tuple(series)})
+
+
+def with_trendlines(spec: ChartSpec, trendlines: Iterable[tuple[int, Trendline]]) -> ChartSpec:
+    """The chart (a scatter chart) with lines fitted through some of its series: (series, kind) each, counted from
+    0. Those of series it doesn't have are left out, and so are those of a chart of another type."""
+    if spec.chart_type != "scatter":
+        return spec
+    series = list(spec.series)
+    for index, kind in trendlines:
+        if 0 <= index < len(series):
+            series[index] = series[index].model_copy(update={"trendline": kind})
+    return spec.model_copy(update={"series": tuple(series)})
+
+
+def named_point(spec: ChartSpec) -> tuple[int, int] | None:
+    """A trend's first named point, as (series, point), if it has one (a line chart's: a moment on it)."""
+    if spec.chart_type != "line":
+        return None
+    for series_index, series in enumerate(spec.series):
+        for point_index, label in enumerate(series.labels):
+            if label and point_index < len(series.values):
+                return series_index, point_index
+    return None
 
 
 def _finite(values: Iterable[Any]) -> tuple[float, ...]:
@@ -239,7 +262,8 @@ def set_doughnut_properties(chart, chart_data):
 
 def set_scatter_properties(chart, chart_data):
     """A correlation: round dots, without gridlines or numbers along the axes (the numbers are made up; the axes'
-    titles say what they measure)."""
+    titles say what they measure), and a legend at the bottom when it has two clouds or more that have names (its
+    clusters: see clusters)."""
     chart.has_legend = False
     for axis in (chart.category_axis, chart.value_axis):
         axis.has_major_gridlines = False
@@ -249,6 +273,48 @@ def set_scatter_properties(chart, chart_data):
     for series in chart.plots[0].series:
         series.marker.style = XL_MARKER_STYLE.CIRCLE
         series.marker.size = 11
+    named = clusters([(series.name or "", len(series.y_values)) for series in chart_data])
+    if len(named) >= 2:
+        _legend_for_named_series(chart, named)
+
+
+def clusters(series: Sequence[tuple[str, int]]) -> list[int]:
+    """The series of a scatter chart that are named clouds (clusters, each in its colour), by their indexes, of the
+    (name, number of points) of its series: those with a name and more than one point (a named point far above the
+    others, an outlier, is a series of one). A chart of two or more of them names them in a legend."""
+    return [index for index, (name, count) in enumerate(series) if name and count > 1]
+
+
+# A fitted line's width, in points, and how PowerPoint's trendlines name their kinds
+TRENDLINE_WIDTH: Final = 3.5
+_TRENDLINE_TYPES: Final = {
+    "linear": '<c:trendlineType val="linear"/>',
+    "quadratic": '<c:trendlineType val="poly"/><c:order val="2"/>',
+}
+
+
+def add_trendlines(chart, spec: ChartSpec, colour: RGBColor) -> None:
+    """The lines fitted through the scatter chart's series that the spec asks for (PowerPoint's trendlines, which it
+    fits by least squares, as talk-generator-web does), dashed, in the colour; none in the legend."""
+    if spec.chart_type != "scatter":
+        return
+    for series, spec_series in zip(chart.plots[0].series, spec.series, strict=False):
+        if spec_series.trendline is None:
+            continue
+        width = round(TRENDLINE_WIDTH * _EMU_PER_POINT)
+        line = (
+            f'<c:trendline {nsdecls("c", "a")}><c:spPr><a:ln w="{width}" cap="rnd"><a:solidFill>'
+            f'<a:srgbClr val="{colour}"/></a:solidFill><a:prstDash val="dash"/></a:ln></c:spPr>'
+            f"{_TRENDLINE_TYPES[spec_series.trendline]}</c:trendline>"
+        )
+        series._element.find(qn("c:xVal")).addprevious(parse_xml(line))
+    legend = chart.legend if chart.has_legend else None
+    if legend is not None:  # (a trendline's legend entry comes after every series': PowerPoint numbers them so)
+        count = len(chart.plots[0].series)
+        fitted = sum(1 for series in spec.series if series.trendline is not None)
+        for index in range(count, count + fitted):
+            entry = f'<c:legendEntry {nsdecls("c")}><c:idx val="{index}"/><c:delete val="1"/></c:legendEntry>'
+            legend._element.find(qn("c:legendPos")).addnext(parse_xml(entry))
 
 
 def set_line_properties(chart, chart_data):
@@ -292,9 +358,12 @@ def set_bar_properties(chart, chart_data):
         punchline.fore_color.rgb = PUNCHLINE_COLOUR
 
 
-def _legend_for_named_series(chart) -> None:
-    """A legend at the bottom for the series that have a name (and none if no series has one)."""
+def _legend_for_named_series(chart, shown: Sequence[int] | None = None) -> None:
+    """A legend at the bottom for the series that have a name (and none if no series has one), or for those shown
+    (by their indexes: a scatter chart's clusters)."""
     names = [series.name for series in chart.plots[0].series]
+    if shown is not None:
+        names = [name if index in shown else "" for index, name in enumerate(names)]
     chart.has_legend = any(names)
     if not any(names):
         return
@@ -368,13 +437,13 @@ def _name_shift(values: Sequence[float], index: int, name: float, gap: float) ->
     line's points are in the middle of their categories)."""
     left, right = _PLOT_SPAN
     dot = left + (index + 0.5) / max(1, len(values)) * (right - left)
-    middle = dot + _free_side(values, index) * (gap + name / 2)
+    middle = dot + free_side(values, index) * (gap + name / 2)
     if name >= right - left:
         return (left + right) / 2 - dot
     return min(max(middle, left + name / 2), right - name / 2) - dot
 
 
-def _free_side(values: Sequence[float], index: int) -> int:
+def free_side(values: Sequence[float], index: int) -> int:
     """The side of a trend's point that its line leaves free for the point's name: -1, the left, when the line climbs
     on after the point (as a hockey stick does); 1, the right, when the line comes down to it; and 0 otherwise (at a
     peak, say), for above it."""
@@ -427,6 +496,143 @@ def _axes(chart) -> list[Any]:
         except ValueError:
             pass
     return axes
+
+
+# A TREND'S PLOT, WHERE A PICTURE IS PINNED TO IT
+#
+# A picture by a trend's named point (docs/v5-plan.md, D64) is an element of its own, which every renderer places by
+# its box: so the point has to be where the layout engine reckons it is, in PowerPoint and in talk-generator-web
+# alike. The plot is where talk-generator-web draws it (chart.component.ts: the room its axes' titles, its legend and
+# a named point's name take), and a pinned chart has PowerPoint's plot there too, by a manual layout, and its value
+# axis from 0 to the same round number above its largest value; its points are in the middle of their categories.
+
+# In canvas pixels (twice the points): the chart's margin, the room for an axis's title, for the legend, and for a
+# named point's name above the plot; and the named point's dot, which a picture keeps clear of
+_PLOT_MARGIN: Final = 8.0
+_TITLE_ROOM: Final = 2 * LABEL_SIZE * 1.6
+_LEGEND_ROOM: Final = 2 * TEXT_SIZE * 1.8
+_NAME_ROOM: Final = 2 * LABEL_SIZE * 1.6
+NAMED_DOT: Final = 36.0
+
+
+@dataclass(frozen=True)
+class Plot:
+    """Where a trend's plot is in its chart, in canvas pixels from the chart's top left corner."""
+
+    left: float
+    top: float
+    right: float
+    bottom: float
+
+
+def axis_top(largest: float) -> float:
+    """A value axis's top: a round number above the largest value, as PowerPoint picks it (and talk-generator-web)."""
+    if not largest > 0:
+        return 1.0
+    rough = largest / 5
+    power = 10 ** math.floor(math.log10(rough))
+    step = next((factor * power for factor in (1, 2, 5, 10) if factor * power >= rough), 10 * power)
+    top = math.ceil(largest / step) * step
+    if top - largest < 0.05 * top:
+        top += step
+    return float(top)
+
+
+def trend_plot(spec: ChartSpec, width: float, height: float) -> Plot:
+    """Where a trend's plot is in a chart of this size (in canvas pixels): inside the chart's margin, with room for
+    its axes' titles (the bottom one's below it, the other's on its left), for its legend (under it all, when a line
+    has a name) and for a named point's name above it."""
+    left, top, right, bottom = _PLOT_MARGIN, _PLOT_MARGIN, width - _PLOT_MARGIN, height - _PLOT_MARGIN
+    if spec.x_title:
+        bottom -= _TITLE_ROOM
+    if spec.y_title:
+        left += _TITLE_ROOM
+    if any(series.name for series in spec.series):
+        bottom -= _LEGEND_ROOM
+    return Plot(left, top + _NAME_ROOM, right, bottom)
+
+
+def trend_points(spec: ChartSpec, plot: Plot) -> list[list[tuple[float, float]]]:
+    """Where a trend's points are on its plot (in canvas pixels from the chart's top left corner), by series: in the
+    middle of their categories, from 0 up to the value axis's top (see axis_top)."""
+    count = max(1, len(spec.categories), *(len(series.values) for series in spec.series))
+    scale = axis_top(max((value for series in spec.series for value in series.values), default=0))
+    span = (plot.right - plot.left) / count
+    return [
+        [
+            (plot.left + (index + 0.5) * span, plot.bottom - max(0.0, value) / scale * (plot.bottom - plot.top))
+            for index, value in enumerate(series.values)
+        ]
+        for series in spec.series
+    ]
+
+
+def fitted_line(points: Sequence[tuple[float, float]], kind: Trendline, steps: int = 40) -> list[tuple[float, float]]:
+    """The line fitted through the points by least squares, as PowerPoint fits a trendline (and talk-generator-web):
+    a straight line, or a parabola; as points along it, from the leftmost point's x to the rightmost's. None for
+    fewer than three points, or points that all share an x."""
+    if len(points) < 3:
+        return []
+    order = 2 if kind == "quadratic" else 1
+    xs = [x for x, _ in points]
+    low, high = min(xs), max(xs)
+    if high - low <= 0:
+        return []
+    # The normal equations, solved by Gaussian elimination: sums of x to the powers 0 to 2 * order, and of x^k * y
+    size = order + 1
+    matrix = [[sum(x ** (row + column) for x in xs) for column in range(size)] for row in range(size)]
+    vector = [sum(x**row * y for x, y in points) for row in range(size)]
+    for pivot in range(size):
+        best = max(range(pivot, size), key=lambda row: abs(matrix[row][pivot]))
+        matrix[pivot], matrix[best] = matrix[best], matrix[pivot]
+        vector[pivot], vector[best] = vector[best], vector[pivot]
+        if abs(matrix[pivot][pivot]) < 1e-12:
+            return []
+        for row in range(pivot + 1, size):
+            factor = matrix[row][pivot] / matrix[pivot][pivot]
+            for column in range(pivot, size):
+                matrix[row][column] -= factor * matrix[pivot][column]
+            vector[row] -= factor * vector[pivot]
+    coefficients = [0.0] * size
+    for row in reversed(range(size)):
+        known = sum(matrix[row][column] * coefficients[column] for column in range(row + 1, size))
+        coefficients[row] = (vector[row] - known) / matrix[row][row]
+    along = [low + (high - low) * step / steps for step in range(steps + 1)]
+    return [(x, sum(coefficient * x**power for power, coefficient in enumerate(coefficients))) for x in along]
+
+
+def pin_plot(chart, spec: ChartSpec, width: float, height: float) -> None:
+    """Put a trend's plot where trend_plot reckons it is, in a chart of this size (in canvas pixels): its inner
+    layout, by hand, its value axis from 0 to axis_top, and its points in the middle of their categories."""
+    plot = trend_plot(spec, width, height)
+    shares = (plot.left / width, plot.top / height, (plot.right - plot.left) / width, (plot.bottom - plot.top) / height)
+    manual = "".join(f'<c:{name} val="{value:.5f}"/>' for name, value in zip(("x", "y", "w", "h"), shares, strict=True))
+    area = chart._chartSpace.find(f"{qn('c:chart')}/{qn('c:plotArea')}")
+    layout = area.find(qn("c:layout"))
+    if layout is None:  # (a plot area's layout comes first in it)
+        layout = parse_xml(f"<c:layout {nsdecls('c')}/>")
+        area.insert(0, layout)
+    for child in list(layout):
+        layout.remove(child)
+    layout.append(
+        parse_xml(
+            f'<c:manualLayout {nsdecls("c")}><c:layoutTarget val="inner"/><c:xMode val="edge"/>'
+            f'<c:yMode val="edge"/>{manual}</c:manualLayout>'
+        )
+    )
+    value_axis = chart.value_axis
+    value_axis.minimum_scale = 0
+    value_axis.maximum_scale = axis_top(max((value for series in spec.series for value in series.values), default=0))
+    axis = value_axis._element
+    if axis.find(qn("c:crossBetween")) is None:
+        crosses = axis.find(qn("c:crosses"))
+        if crosses is None:
+            crosses = axis.find(qn("c:crossesAt"))
+        between = parse_xml(f'<c:crossBetween {nsdecls("c")} val="between"/>')
+        if crosses is not None:
+            crosses.addnext(between)
+        else:
+            axis.find(qn("c:crossAx")).addnext(between)
 
 
 CHART_STYLES: dict[ChartType, Callable[[Any, Any], Any]] = {

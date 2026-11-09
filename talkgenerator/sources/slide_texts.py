@@ -20,6 +20,7 @@ from typing import Any, Final, TypeVar
 from talkgenerator import facts
 from talkgenerator.models import classic
 from talkgenerator.plan.languages import ENGLISH
+from talkgenerator.slide import slides
 from talkgenerator.sources import conceptnet, memes, packs, text_generator
 from talkgenerator.util import language_util, random_util
 
@@ -369,6 +370,57 @@ def generate_questions(presentation_context: dict[str, Any]) -> tuple[str, str |
 
 
 # NATIVE DIAGRAMS
+
+Generator = Callable[[dict[str, Any]], tuple[Any, ...] | None]
+
+
+def pictured(
+    generate: Generator,
+    picture: ImageSource,
+    boxes: Callable[[tuple[Any, ...]], dict[str, str]],
+    most: int = 2,
+    odds: float = slides.PICTURE_ODDS,
+) -> Generator:
+    """The generator of a diagram's arguments, with pictures in some of its boxes now and then, as a planned diagram
+    has them (docs/v5-plan.md, D64): of the boxes that can have one (by the role of their text, with their text: what
+    boxes finds in the arguments), those the dice pick (slides.picked_boxes) get a picture from the image source
+    about their text, if it finds one, after the slide's other arguments (as slides.Pictures)."""
+
+    @functools.wraps(generate)
+    def generator(presentation_context: dict[str, Any]) -> tuple[Any, ...] | None:
+        generated = generate(presentation_context)
+        if generated is None:
+            return None
+        texts = {box: text for box, text in boxes(generated).items() if text}
+        found = []
+        for box in slides.picked_boxes(list(texts), most, odds):
+            image = picture({**presentation_context, "seed": texts[box]})
+            if image is not None:
+                found.append((box, image))
+        return (*generated, slides.Pictures(tuple(found))) if found else generated
+
+    return generator
+
+
+def numbered_boxes(prefix: str, first: int = 1, count: int = 3) -> Callable[[tuple[Any, ...]], dict[str, str]]:
+    """The boxes of a diagram whose generator gives its title and then its items (a pyramid's levels, a process's
+    steps): its first so many items, named prefix_1, prefix_2... (the items start at the argument first)."""
+
+    def boxes(generated: tuple[Any, ...]) -> dict[str, str]:
+        items = generated[first : first + count]
+        return {f"{prefix}_{number}": str(item) for number, item in enumerate(items, 1) if item}
+
+    return boxes
+
+
+def iceberg_boxes(generated: tuple[Any, ...]) -> dict[str, str]:
+    """An iceberg's boxes that can have a picture: its tip and its first two hidden things."""
+    return {box: str(text) for box, text in zip(("tip", "hidden_1", "hidden_2"), generated[1:4], strict=False) if text}
+
+
+def flowchart_boxes(generated: tuple[Any, ...]) -> dict[str, str]:
+    """A flowchart's boxes that can have a picture: where yes and no lead, and the end (after its title and question)."""
+    return {box: str(text) for box, text in zip(slides.FLOWCHART_BOXES, generated[2:5], strict=False) if text}
 
 
 @_unless_sensitive

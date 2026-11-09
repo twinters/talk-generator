@@ -2,8 +2,11 @@
 click), rankings that the punchline wins by far, and titled axes; and of how every chart looks: quiet, and readable
 in the classic template and in themes."""
 
+import itertools
+from collections import Counter
+
 import pytest
-from pptx.chart.data import ChartData
+from pptx.chart.data import ChartData, XyChartData
 from pptx.enum.chart import XL_CHART_TYPE, XL_LABEL_POSITION, XL_MARKER_STYLE, XL_TICK_LABEL_POSITION, XL_TICK_MARK
 from pptx.oxml.ns import qn
 from pptx.text.text import Font
@@ -459,12 +462,12 @@ def test_a_named_moment_is_on_one_line_on_the_side_its_line_leaves_free(shape, s
 
 def test_the_side_a_line_leaves_free():
     climbing, falling = [1, 1, 1, 1, 30, 60], [60, 50, 40, 30, 20]
-    assert charts._free_side(climbing, 3) == -1  # (a hockey stick: the line climbs on after the point)
-    assert charts._free_side(falling, 2) == 1
-    assert charts._free_side([10, 50, 90, 50, 10], 2) == 0  # a peak: above it
-    assert charts._free_side([90, 50, 10, 50, 90], 2) == 0  # a dip: no side is free
-    assert charts._free_side([50] * 5, 2) == 0
-    assert charts._free_side(falling, 9) == 0
+    assert charts.free_side(climbing, 3) == -1  # (a hockey stick: the line climbs on after the point)
+    assert charts.free_side(falling, 2) == 1
+    assert charts.free_side([10, 50, 90, 50, 10], 2) == 0  # a peak: above it
+    assert charts.free_side([90, 50, 10, 50, 90], 2) == 0  # a dip: no side is free
+    assert charts.free_side([50] * 5, 2) == 0
+    assert charts.free_side(falling, 9) == 0
 
 
 def test_a_named_moment_moves_only_as_far_as_it_fits_in_the_plot():
@@ -491,3 +494,154 @@ def test_every_format_has_trends_and_rankings_but_not_too_many(format_name):
     choices = external.recipes_of(schema)
     assert external.default_recipe(choices, "chart_trend").id == "trend-chart"
     assert external.default_recipe(choices, "chart_bars").id == "bar-ranking"
+
+
+# LIVELIER CORRELATIONS (docs/v5-plan.md, D64): clouds of many shapes, lines fitted through them, and named clusters
+
+
+@pytest.mark.parametrize("shape", list(chart.CORRELATION_SHAPES))
+def test_a_correlation_comes_in_many_shapes(shape):
+    with random_util.use(random_util.Rng(3)):
+        found, points = chart.correlation_points(shape)
+    assert found == shape and 12 <= len(points) <= 150
+    assert all(x >= 0 and y >= 0 for x, y in points)
+
+
+def test_a_correlation_without_a_shape_gets_one_of_them_all():
+    shapes = Counter()
+    noise = set()
+    for seed in range(300):
+        with random_util.use(random_util.Rng(seed)):
+            shape, points = chart.correlation_points(None)
+        shapes[shape] += 1
+        noise.add(len(points) // 40)
+    assert set(shapes) == set(chart.CORRELATION_SHAPES) and shapes["rising"] > shapes["smile"]
+    assert len(noise) >= 3  # (from a dozen points to a hundred and more)
+
+
+def test_a_planned_correlation_takes_its_shape(monkeypatch):
+    for shape in ("ring", "u-shaped"):
+        with random_util.use(random_util.Rng(1)):
+            spec = _spec(KINDS["chart_correlation"].build({"title": "Naps", "shape": shape}, {}, ENGLISH))
+        (series,) = spec.series
+        assert series.name == "" and len(series.points) >= 12
+    assert clean_text("U-shaped", _field("chart_correlation", "shape")) == "u-shaped"
+
+
+def test_a_line_is_fitted_through_a_cloud_now_and_then():
+    found = Counter()
+    for seed in range(400):
+        with random_util.use(random_util.Rng(seed)):
+            data, trendlines, _ = chart.correlation_data("rising")
+        found[trendlines[0][1] if trendlines else None] += 1
+    assert 0.25 <= (found["linear"] + found["quadratic"]) / 400 <= 0.45 and found["quadratic"] < found["linear"]
+    with random_util.use(random_util.Rng(1)):
+        assert all(chart.trendline_for("smile") is None for _ in range(20))
+
+
+def test_a_fitted_line_is_the_least_squares_one():
+    straight = [(x, 2 * x + 1) for x in range(10)]
+    fitted = charts.fitted_line(straight, "linear", steps=9)
+    assert all(y == pytest.approx(2 * x + 1) for x, y in fitted)
+    curved = [(x, (x - 3) ** 2) for x in range(7)]
+    assert all(y == pytest.approx((x - 3) ** 2) for x, y in charts.fitted_line(curved, "quadratic"))
+    flat = charts.fitted_line(curved, "linear")  # (a straight line through a U: flat, and the joke)
+    assert flat[0][1] == pytest.approx(flat[-1][1])
+    assert charts.fitted_line([(1, 1), (1, 2), (1, 3)], "linear") == []
+
+
+@pytest.mark.parametrize("family", [None, "clean keynote"])
+def test_a_fitted_line_is_a_dashed_trendline_out_of_the_legend(family):
+    data = XyChartData()
+    series = data.add_series("")
+    for x, y in [(1, 2), (2, 3), (3, 5), (4, 4), (5, 7)]:
+        series.add_data_point(x, y)
+    slide = slides.ChartSlide("Naps cause cats", XL_CHART_TYPE.XY_SCATTER, data, trendlines=((0, "quadratic"),))
+    assert _spec(slide).series[0].trendline == "quadratic"
+    drawn, _, _ = _drawn_in(slide, family)
+    (line,) = drawn._chartSpace.xpath(".//c:ser/c:trendline")
+    assert line.find(qn("c:trendlineType")).get("val") == "poly" and line.find(qn("c:order")).get("val") == "2"
+    assert line.find(qn("c:spPr")).find(qn("a:ln")).find(qn("a:prstDash")).get("val") == "dash"
+    assert line.getnext().tag == qn("c:xVal")  # (where the schema has it)
+    assert not drawn.has_legend
+
+
+@pytest.mark.parametrize("family", [None, "dark minimal"])
+def test_named_clusters_are_clouds_of_their_own_in_a_legend(family):
+    with random_util.use(random_util.Rng(4)):
+        slide = KINDS["chart_correlation"].build(
+            {"title": "Who naps most", "cluster_1": "Cats", "cluster_2": "Dogs", "cluster_3": "Owls", "outlier": "Me"},
+            {},
+            ENGLISH,
+        )
+    spec = _spec(slide)
+    assert [series.name for series in spec.series] == ["Cats", "Dogs", "Owls", "Me"]
+    assert all(len(series.points) >= 10 for series in spec.series[:3]) and not any(s.trendline for s in spec.series)
+    assert spec.series[3].labels == ("Me",)
+    drawn, _, _ = _drawn_in(slide, family)
+    assert drawn.has_legend
+    hidden = drawn._chartSpace.xpath(".//c:legend/c:legendEntry[c:delete/@val='1']/c:idx/@val")
+    assert hidden == ["3"]  # (the outlier, a series of one point, isn't a cluster)
+    if family is not None:  # each in its own colour
+        fills = {str(series.marker.format.fill.fore_color.rgb) for series in list(drawn.plots[0].series)[:3]}
+        assert len(fills) == 3
+
+
+def test_a_correlation_comes_out_as_one_cloud_or_as_clusters():
+    recipe = next(
+        generator.llm for generator in get_schema("default").slide_generators if generator.name == "Correlation Curve"
+    )
+    varied = [recipe.varied(random_util.Rng(seed)) for seed in range(300)]
+    clustered = [version for version in varied if "cluster_1" not in version.omit]
+    assert 0.2 <= len(clustered) / len(varied) <= 0.4
+    assert all("shape" in version.omit and "groups of points" in version.brief for version in clustered)
+    assert all(
+        {"cluster_1", "cluster_2", "cluster_3"} <= version.omit for version in varied if version not in clustered
+    )
+    # A recipe of its own without variants gets the kind's (one cloud, or now and then clusters)
+    plain = [Recipe("chart_correlation").varied(random_util.Rng(seed)) for seed in range(100)]
+    assert any("cluster_1" in version.omit for version in plain) and any("cluster_1" not in v.omit for v in plain)
+
+
+def test_a_classic_correlation_has_clusters_now_and_then(monkeypatch):
+    monkeypatch.setattr(chart, "correlation_title_generator", lambda context: "Naps cause cats")
+    related = [(1.0, "dog"), (0.9, "mouse"), (0.8, "yarn"), (0.7, "milk")]
+    monkeypatch.setattr(conceptnet, "get_weighted_related_words", lambda word, limit=50: related)
+    shown = Counter()
+    for seed in range(120):
+        with random_util.use(random_util.Rng(seed)):
+            made = chart.generate_correlation_curve({"topic": "cats", "seed": "naps"})
+        title, _, data, _, _, _, reveal, labels, trendlines = made
+        names = [series.name for series in data]
+        shown["clusters" if any(names) else "cloud"] += 1
+        if any(names):
+            assert set(names) <= {"Dog", "Mouse", "Yarn", "Milk"} and 2 <= len(names) <= 3 and not trendlines
+        shown["fitted"] += bool(trendlines)
+        slide = slides.ChartSlide(*made)
+        assert slide.missing_content() == []
+    assert 0.15 <= shown["clusters"] / 120 <= 0.45 and shown["fitted"] > 10
+
+
+@pytest.mark.parametrize("family", themes.families())
+def test_clusters_and_a_trends_lines_get_colours_that_tell_them_apart(family):
+    with random_util.use(random_util.Rng(4)):
+        clustered = KINDS["chart_correlation"].build(
+            {"title": "Who naps most", "cluster_1": "Cats", "cluster_2": "Dogs", "cluster_3": "Owls"}, {}, ENGLISH
+        )
+    lines = _trend(line="Me", second_line="My cat")
+    for seed in range(3):
+        theme = themes.pick(family, random_util.Rng(seed))
+        deck = engine.lay_out(Deck(generator="test", slides=(clustered.to_deck_slide(), lines.to_deck_slide())), theme)
+        for slide in deck.slides:
+            spec = slide.element("chart").chart
+            colours = [series.color for series in spec.series]
+            assert all(colours) and len(colours) >= 2
+            assert all(engine._far_apart(one, other) for one, other in itertools.combinations(colours, 2)), colours
+            behind = engine._backgrounds(theme)
+            assert all(color.worst_contrast(colour, behind) >= engine.LINE_CONTRAST for colour in colours)
+    # A chart of one cloud keeps its renderer's colours
+    one = _built("chart_correlation", {"title": "Naps cause cats", "shape": "rising"}, 2)
+    (slide,) = engine.lay_out(
+        Deck(generator="test", slides=(one.to_deck_slide(),)), themes.pick(family, random_util.Rng(0))
+    ).slides
+    assert slide.element("chart").chart.series[0].color is None

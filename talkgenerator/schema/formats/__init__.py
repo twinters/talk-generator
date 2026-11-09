@@ -29,7 +29,7 @@ from functools import cache
 from typing import Any
 
 from talkgenerator.images.slots import ImageSlot
-from talkgenerator.plan.kinds import KINDS
+from talkgenerator.plan.kinds import KINDS, box_picture_slot
 from talkgenerator.plan.languages import ENGLISH
 from talkgenerator.schema.formats.arcs import Arc
 from talkgenerator.slide import slide_generator_types, slides
@@ -93,6 +93,7 @@ class KindSlideGenerator(slide_generator_types.SlideGenerator):
         if made is None:
             return None
         texts, images = made
+        images = {**images, **self._box_pictures(presentation_context, texts)}
         generated = [value for value in (*texts.values(), *images.values()) if value is not None]
         if not slide_generator_types.is_different_enough(generated, used):
             return None
@@ -103,6 +104,21 @@ class KindSlideGenerator(slide_generator_types.SlideGenerator):
         if slide.missing_content():
             return None
         return slide, generated
+
+    def _box_pictures(self, presentation_context: dict[str, Any], texts: Mapping[str, str | None]) -> dict[str, Any]:
+        """The pictures of a diagram's boxes, now and then, as a planned diagram of its kind has them (see
+        talkgenerator.plan.kinds.BoxPictures): those of the boxes the dice pick (of those with a text), each a
+        picture about its box's text, by its slot."""
+        pictures = KINDS[self.kind].pictures
+        if pictures is None:
+            return {}
+        boxes = [box for box in pictures.boxes if texts.get(box)]
+        found = {}
+        for box in slides.picked_boxes(boxes, pictures.most, pictures.odds):
+            image = box_picture_slot()({**presentation_context, "seed": texts[box]})
+            if image is not None:
+                found[pictures.slot(box)] = image
+        return found
 
 
 @cache

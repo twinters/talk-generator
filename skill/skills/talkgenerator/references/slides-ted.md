@@ -123,13 +123,17 @@ Images: none
 
 ## `chart_correlation`
 
-A scatter plot of made-up data, under a claim of a correlation.
+A scatter plot of made-up data, under a claim of a correlation: one cloud of points in a shape (now and then with a line fitted through it), or two or three named groups of points, each in its own colour.
 
 | Text | At most | What to write |
 | --- | --- | --- |
 | `title` | 90 | a made-up correlation between two things, as a claim |
 | `x_axis` | 40 | the axis along the bottom: the first of the two things (or empty, for none) |
 | `y_axis` | 40 | the axis going up: the second thing (or empty, for none) |
+| `shape` | 12 | the shape of the cloud of points, the funniest one for the claim: `rising`, `falling`, `exponential`, `saturating`, `u-shaped`, `hill`, `wave`, `step`, `none`, `ring`, `smile` (or empty, for any) |
+| `cluster_1` | 24 | the name of the first group of points, in the legend (or empty, for none) |
+| `cluster_2` | 24 | the name of the second group of points, in the legend (or empty, for none) |
+| `cluster_3` | 24 | the name of the third group of points, in the legend (or empty, for none) |
 | `outlier` | 30 | one point far above the others, named after someone or something that doesn't belong there (or empty, for none) |
 
 Images: none
@@ -195,19 +199,23 @@ Images: none
 
 ## `matrix`
 
-A 2×2 matrix: two axes that cross in the middle, with a title at each end, a label in each quadrant, and one dot with a name, the punchline, which appears on a click.
+A 2×2 matrix: two axes of everyday opposites that cross in the middle, with a word or two at each end, a short name in each quadrant (or familiar things as dots where they belong, or neither), and one dot with a name, the punchline, which appears on a click.
 
 | Text | At most | What to write |
 | --- | --- | --- |
 | `title` | 60 | the matrix's title |
-| `x_left` | 30 | the title at the left end of the axis along the bottom |
-| `x_right` | 30 | the title at the right end of that axis: the opposite of the left end |
-| `y_bottom` | 30 | the title at the bottom end of the axis going up |
-| `y_top` | 30 | the title at the top end of that axis: the opposite of the bottom end |
-| `top_left` | 30 | the label of the top left quadrant: what is both like the top end and like the left end |
-| `top_right` | 30 | the label of the top right quadrant: what is both like the top end and like the right end |
-| `bottom_left` | 30 | the label of the bottom left quadrant: what is both like the bottom end and like the left end |
-| `bottom_right` | 30 | the label of the bottom right quadrant: what is both like the bottom end and like the right end |
+| `x_left` | 24 | the left end of the axis along the bottom: a word or two |
+| `x_right` | 24 | the right end of that axis, a word or two: the opposite of the left end |
+| `y_bottom` | 24 | the bottom end of the axis going up: a word or two |
+| `y_top` | 24 | the top end of that axis, a word or two: the opposite of the bottom end |
+| `top_left` | 30 | a short name for the top left quadrant, a word or two: what is both like the top end and like the left end (or empty, for none) |
+| `top_right` | 30 | a short name for the top right quadrant, a word or two: what is both like the top end and like the right end (or empty, for none) |
+| `bottom_left` | 30 | a short name for the bottom left quadrant, a word or two: what is both like the bottom end and like the left end (or empty, for none) |
+| `bottom_right` | 30 | a short name for the bottom right quadrant, a word or two: what is both like the bottom end and like the right end (or empty, for none) |
+| `top_left_things` | 50 | one or two familiar things that belong in the top left quadrant (both like the top end and like the left end), separated by \| (or empty, for none) |
+| `top_right_things` | 50 | one or two familiar things that belong in the top right quadrant (both like the top end and like the right end), separated by \| (or empty, for none) |
+| `bottom_left_things` | 50 | one or two familiar things that belong in the bottom left quadrant (both like the bottom end and like the left end), separated by \| (or empty, for none) |
+| `bottom_right_things` | 50 | one or two familiar things that belong in the bottom right quadrant (both like the bottom end and like the right end), separated by \| (or empty, for none) |
 | `dot` | 30 | the name of a dot in one of the quadrants: someone or something surprising there, the punchline |
 | `dot_quadrant` | 12 | the quadrant the dot is in, the most surprising one for it: `top left`, `top right`, `bottom left`, `bottom right` (or empty, for any) |
 

@@ -218,6 +218,8 @@ def realize(
         last = attempt >= ATTEMPTS - 1
         wishes: list[tuple[str, Wish]] = []  # the pictures to generate in place of their stock photos
         unfound: list[Wish] = []  # the pictures to generate, as their slots found none (on the last try)
+        # (the pictures of a diagram's boxes: a box without one, when nothing is found, still makes the slide)
+        optional = set(recipe.optional_slots())
         for slot, source in recipe.slots():
             # (what the recipe has it search for, such as a meme's template, or the plan's query)
             query = recipe.queries.get(slot) or plan.images.get(slot, "").strip()
@@ -230,7 +232,7 @@ def realize(
             others = [image for image in images.values() if isinstance(image, ImageData)]
             with generator_util.as_planned():  # searched as written, among the best results
                 found = _find(source, queries[slot], presentation_context, others)
-            if found is None:
+            if found is None and slot not in optional:
                 _note(problems, f"{slot}: no image found for {queries[slot]!r}")
                 # (a query of the recipe's own stays: a meme's captions are for its template, and no other)
                 if last and queries[slot] != concept and slot not in recipe.queries:
@@ -250,20 +252,31 @@ def realize(
                 unfound.append(wish)
                 continue
             if found is None:
+                if slot in optional:
+                    images[slot] = None
+                    continue
                 return None
             images[slot] = found.found_with(queries[slot]) if isinstance(found, ImageData) else found
             if wish is not None and isinstance(images[slot], ImageData):
                 wishes.append((slot, wish))
 
-        if unfound:
-            # (the slide's last try, which runs while it's settled, in order: so the talk grants the same pictures,
-            # made in parallel or one by one; and all of them or none, as the slide needs them all)
+        # (the slide's last try, which runs while it's settled, in order: so the talk grants the same pictures, made
+        # in parallel or one by one; and all of those the slide needs or none, and then those it can do without)
+        for needed in (
+            [wish for wish in unfound if wish.slot not in optional],
+            [w for w in unfound if w.slot in optional],
+        ):
+            if not needed:
+                continue
             assert generation is not None
-            pictures = generation.fill(unfound)
+            pictures = generation.fill(needed)
+            if pictures is None and needed[0].slot in optional:
+                images.update(dict.fromkeys((wish.slot for wish in needed), None))
+                continue
             if pictures is None:
-                _note(problems, "no picture could be generated for " + ", ".join(wish.slot for wish in unfound))
+                _note(problems, "no picture could be generated for " + ", ".join(wish.slot for wish in needed))
                 return None
-            for wish, picture in zip(unfound, pictures, strict=True):
+            for wish, picture in zip(needed, pictures, strict=True):
                 images[wish.slot] = picture.found_with(queries[wish.slot])
 
         try:

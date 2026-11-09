@@ -341,6 +341,17 @@ def _text_effect(run: Any, effect: TextEffect) -> None:
         solid.addnext(parse_xml(f"<a:effectLst {nsdecls('a')}>{effects}</a:effectLst>"))
 
 
+def draw_picture(ppt_slide: Slide, element: ImageElement, images: ImageStore | None = None) -> None:
+    """A picture in its box, as a themed deck draws it (a classic slide's that the template has no place for: a
+    diagram's box's, a picture by a trend's named point)."""
+    _picture(ppt_slide, element, images)
+
+
+def draw_shape(ppt_slide: Slide, element: ShapeElement) -> None:
+    """A shape in its box, as a themed deck draws it (a classic slide's: the line to a picture by a trend's point)."""
+    _shape(ppt_slide, element)
+
+
 def _picture(ppt_slide: Slide, element: ImageElement, images: ImageStore | None) -> None:
     assert element.box is not None
     image = image_data(element.image, images)
@@ -531,6 +542,9 @@ def _chart(ppt_slide: Slide, element: ChartElement, theme: Theme, slide: DeckSli
         punchline=_rgb(palette.accent_2),
     )
     charts.label_points(chart, spec, look, frame.width)
+    charts.add_trendlines(chart, spec, _rgb(palette.text))
+    if isinstance(slide.element(engine.POINT_PICTURE), ImageElement):  # (where the layout reckons its point is)
+        charts.pin_plot(chart, spec, box.w, box.h)
     charts.finish(chart, look)
     if spec.reveal == "series":
         animation.reveal_chart_series(ppt_slide, frame, len(spec.series))
@@ -572,7 +586,8 @@ def _theme_colors(chart: Any, spec: Any, theme: Theme) -> None:
                         run.font.color.rgb = _rgb(on_slice)
         return
     for index, series in enumerate(plot.series):
-        hue = _rgb(series_colors[index % len(series_colors)])
+        own = spec.series[index].color if index < len(spec.series) else None  # (a cluster's or a line's: the engine's)
+        hue = _rgb(own or series_colors[index % len(series_colors)])
         if spec.chart_type == "line":
             series.format.line.color.rgb = hue
         elif spec.chart_type == "scatter":

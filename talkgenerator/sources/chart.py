@@ -1,10 +1,11 @@
 import math
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import Any, Final
 
 from pptx.chart.data import ChartData, XyChartData
 from pptx.enum.chart import XL_CHART_TYPE
 
+from talkgenerator.models.deck import Trendline
 from talkgenerator.render.charts import set_doughnut_properties, set_histogram_properties, set_pie_properties
 from talkgenerator.sources import conceptnet, packs
 from talkgenerator.util import generator_util, random_util
@@ -257,25 +258,9 @@ def generate_correlation_curve(presentation_context):
     if not title:
         return None
 
-    chart_data = XyChartData()
-
-    serie = chart_data.add_series("Model")
-
-    # Generate some Xs, with chance of exponential differences in size between generated x axes
-    xs = generate_random_x(0, 2 ** random_util.uniform(1, 10), int(2 ** random_util.uniform(3, 8)))
-
-    # Generate y
-    data_points = generate_y(xs, create_interesting_curve_function())
-
-    max_x = max(xs)
-
-    data_points = add_gaussian_noise_to_multidim_points(1.5 * random_util.uniform(0, max_x / 10), data_points)
-
-    # Remove negatives
-    data_points = [(abs(datapoint[0]), abs(datapoint[1])) for datapoint in data_points]
-
-    add_data_to_series(serie, data_points)
-
+    # A cloud of one of the shapes, or now and then two or three named clouds: things related to the seed
+    clusters = _classic_clusters(str(y_label)) if random_util.random() < CLUSTER_ODDS else []
+    chart_data, trendlines, labels = correlation_data(None, clusters)
     x_title, y_title = axis_titles(presentation_context)
     return (
         title,
@@ -284,7 +269,161 @@ def generate_correlation_curve(presentation_context):
         create_set_scatter_properties(x_label, y_label),
         x_title,
         y_title,
+        "all",
+        tuple(labels),
+        tuple(trendlines),
     )
+
+
+# How often a classic correlation is of two or three named clouds (as planned ones are, in their variant)
+CLUSTER_ODDS: Final = 0.3
+
+
+def _classic_clusters(seed: str) -> list[str]:
+    """Two or three words related to the seed (capitalised), as a correlation's clouds' names: none if ConceptNet
+    has too few."""
+    related = conceptnet.remove_containing(conceptnet.get_weighted_related_words(seed, 30) or [], seed) or []
+    words = [str(word) for _, word in conceptnet.remove_duplicates(related) or [] if len(str(word)) <= 20]
+    if len(words) < 2:
+        return []
+    chosen = random_util.sample(words, min(len(words), random_util.randint(2, MOST_CLUSTERS)))
+    return [word[:1].upper() + word[1:] for word in chosen]
+
+
+# CORRELATIONS: clouds of points in one of these shapes (each a curve over 0 to 1; the ring and the smile have points
+# of their own: see correlation_points), with a little noise or a lot (docs/v5-plan.md, D64)
+CORRELATION_SHAPES: Final[dict[str, Callable[[float], float] | None]] = {
+    "rising": lambda x: 0.1 + 0.8 * x,
+    "falling": lambda x: 0.9 - 0.8 * x,
+    "exponential": lambda x: 0.05 + 0.9 * (math.exp(4 * x) - 1) / (math.exp(4) - 1),
+    "saturating": lambda x: 0.05 + 0.9 * math.log1p(9 * x) / math.log(10),
+    "u-shaped": lambda x: 0.1 + 0.8 * (2 * x - 1) ** 2,
+    "hill": lambda x: 0.1 + 0.8 * math.sin(math.pi * x),
+    "wave": lambda x: 0.5 + 0.35 * math.sin(5 * math.pi * x),
+    "step": lambda x: 0.2 if x < 0.55 else 0.8,
+    "none": None,  # (no correlation at all: a blob)
+    "ring": None,  # (a perfect circle)
+    "smile": None,  # (a smiling face)
+}
+# How often each comes up, where the plan doesn't say (the silly ones less often)
+_CORRELATION_WEIGHTS: Final = {
+    "rising": 3.0,
+    "falling": 2.0,
+    "exponential": 2.0,
+    "saturating": 1.5,
+    "u-shaped": 1.5,
+    "hill": 1.5,
+    "wave": 1.0,
+    "step": 1.0,
+    "none": 1.5,
+    "ring": 0.5,
+    "smile": 0.5,
+}
+# How loose a cloud is: the spread of its noise, as a share of the chart's height
+_NOISES: Final = (0.02, 0.05, 0.09, 0.15)
+# How often a correlation has a line fitted through it (of those with one cloud), and a parabola rather than a line
+TRENDLINE_ODDS: Final = 0.35
+_PARABOLAS: Final = 0.35
+MOST_CLUSTERS: Final = 3
+
+
+def correlation_points(shape: str | None = None) -> tuple[str, list[tuple[float, float]]]:
+    """A cloud of points in the shape (one of CORRELATION_SHAPES; a random one, by their weights, for none), from a
+    dozen to a hundred and fifty of them, as tight or as loose as the dice say, on axes of a size of their own (x up to
+    10, 100 or 1000, say): none below 0."""
+    if shape not in CORRELATION_SHAPES:
+        shape = random_util.weighted_random([(weight, name) for name, weight in _CORRELATION_WEIGHTS.items()])
+    assert shape is not None
+    count = int(2 ** random_util.uniform(3.6, 7.2))
+    noise = random_util.choice(_NOISES)
+    unit_x, unit_y = 10 ** random_util.randint(1, 3), 10 ** random_util.randint(1, 3)
+    points: list[tuple[float, float]] = []
+    if shape == "ring":
+        for _ in range(count):
+            angle = random_util.uniform(0, 2 * math.pi)
+            points.append((0.5 + 0.4 * math.cos(angle), 0.5 + 0.4 * math.sin(angle)))
+    elif shape == "smile":
+        for _ in range(count):
+            part = random_util.random()
+            if part < 0.6:  # (the mouth)
+                x = random_util.uniform(0.2, 0.8)
+                points.append((x, 0.2 + 1.2 * (x - 0.5) ** 2))
+            else:  # (the eyes)
+                points.append((random_util.choice((0.33, 0.67)) + random_util.gauss(0, 0.02), 0.75))
+    else:
+        curve = CORRELATION_SHAPES[shape]
+        for _ in range(count):
+            x = random_util.uniform(0.02, 0.98)
+            points.append((x, curve(x) if curve is not None else random_util.uniform(0.15, 0.85)))
+    noisy = [
+        (max(0.0, (x + random_util.gauss(0, noise / 3)) * unit_x), max(0.0, (y + random_util.gauss(0, noise)) * unit_y))
+        for x, y in points
+    ]
+    return shape, [(round(x, 3), round(y, 3)) for x, y in noisy]
+
+
+def cluster_points(count: int) -> list[list[tuple[float, float]]]:
+    """Clouds of points of their own, that many (two or three): each round or stretched, tight or loose, around a
+    middle of its own, apart from the others, of ten to sixty points."""
+    unit_x, unit_y = 10 ** random_util.randint(1, 3), 10 ** random_util.randint(1, 3)
+    middles: list[tuple[float, float]] = []
+    for attempt in range(200):  # (far enough apart that every cloud reads as one, as far as the dice allow)
+        middle = (random_util.uniform(0.2, 0.8), random_util.uniform(0.2, 0.8))
+        if all(math.dist(middle, other) > 0.32 for other in middles) or attempt >= 150:
+            middles.append(middle)
+        if len(middles) == count:
+            break
+    clouds = []
+    for x0, y0 in middles:
+        spread_x, spread_y = random_util.uniform(0.03, 0.09), random_util.uniform(0.03, 0.09)
+        tilt = random_util.uniform(-1, 1)  # (how its points lean: up, along, or down)
+        cloud = []
+        for _ in range(random_util.randint(10, 60)):
+            dx = random_util.gauss(0, spread_x)
+            dy = random_util.gauss(0, spread_y) + tilt * dx
+            cloud.append((round(max(0.0, (x0 + dx) * unit_x), 3), round(max(0.0, (y0 + dy) * unit_y), 3)))
+        clouds.append(cloud)
+    return clouds
+
+
+def trendline_for(shape: str) -> Trendline | None:
+    """A line fitted through a cloud of the shape, now and then (TRENDLINE_ODDS): a straight one, or a parabola,
+    now and then (whatever the shape: a straight line through a U is a joke of its own); none for a ring or a
+    smile."""
+    if shape in ("ring", "smile") or random_util.random() >= TRENDLINE_ODDS:
+        return None
+    return "quadratic" if random_util.random() < _PARABOLAS else "linear"
+
+
+def correlation_data(
+    shape: str | None = None, clusters: Sequence[str] = (), outlier: str | None = None
+) -> tuple[XyChartData, list[tuple[int, Trendline]], list[tuple[int, int, str]]]:
+    """A scatter chart's data: a cloud in the shape (see correlation_points), or two or three named clouds of their
+    own (the clusters' names, in their colours); one more point far above the others, named, if there's an outlier
+    (its own series); and the lines fitted through it (a single cloud's, now and then: see trendline_for), and the
+    named points, by series."""
+    data = XyChartData()
+    names = [name for name in clusters if name][:MOST_CLUSTERS]
+    trendlines: list[tuple[int, Trendline]] = []
+    if len(names) >= 2:
+        clouds = cluster_points(len(names))
+        for name, cloud in zip(names, clouds, strict=True):
+            add_data_to_series(data.add_series(name), cloud)
+    else:
+        shape, points = correlation_points(shape)
+        add_data_to_series(data.add_series(""), points)
+        clouds = [points]
+        trendline = trendline_for(shape)
+        if trendline is not None:
+            trendlines.append((0, trendline))
+    labels: list[tuple[int, int, str]] = []
+    if outlier:  # one point far above the others
+        every = [point for cloud in clouds for point in cloud]
+        highest = max((y for _, y in every), default=1.0)
+        widest = max((x for x, _ in every), default=1.0)
+        data.add_series(outlier).add_data_point(widest * random_util.uniform(0.4, 0.8), highest * 1.4 or 1)
+        labels.append((len(clouds), 0, outlier))
+    return data, trendlines, labels
 
 
 # TRENDS: a line along two axes, going one of these ways (each a curve over 0 to 1)
@@ -360,6 +499,13 @@ def generate_trend_chart(presentation_context: dict[str, Any]) -> tuple[Any, ...
     labels = ((0, trend_turn(shape), event),) if event else ()
     x_title, y_title = axis_titles(presentation_context)
     return title, XL_CHART_TYPE.LINE, trend_chart_data([("", values)]), None, x_title, y_title, "all", labels
+
+
+def trend_boxes(generated: tuple[Any, ...]) -> dict[str, str]:
+    """A classic trend's "box" that can have a picture: its named moment (as its point labels have it, after its
+    title, type, data, style, axis titles and how it appears), by the point (docs/v5-plan.md, D64)."""
+    labels = generated[7] if len(generated) > 7 else ()
+    return {"event": str(label)} if (label := next((name for _, _, name in labels if name), None)) else {}
 
 
 # RANKINGS: bars, the last of which, the punchline, wins by far

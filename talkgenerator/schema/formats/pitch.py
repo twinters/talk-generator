@@ -18,7 +18,7 @@ from typing import Any, Final
 
 from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
-from talkgenerator.plan.kinds import Recipe, Variant
+from talkgenerator.plan.kinds import Recipe, Variant, matrix_landscape
 from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema.formats import (
     Format,
@@ -708,6 +708,7 @@ _GENERATORS: Final = [
                 "dot": "the startup, by its made-up name",
                 "dot_quadrant": "top right, the quadrant that's best on both axes",
             },
+            variants=matrix_landscape(_COMPETITOR, "the competitors"),
         ),
     ),
     _part(

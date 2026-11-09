@@ -77,7 +77,7 @@ DOT_DIAMETER: Final = int(0.32 * _INCH)
 # so does the dot's name
 _QUADRANT_LABEL_HEIGHT: Final = int(0.86 * _INCH)
 _DOT_NAME_HEIGHT: Final = int(0.8 * _INCH)
-_QUADRANT_NAMES: Final = ("Top left", "Top right", "Bottom left", "Bottom right")
+QUADRANT_NAMES: Final = ("Top left", "Top right", "Bottom left", "Bottom right")
 
 # The margins of a label's text box, inside it: at either side, and above and below its text
 _MARGIN_ACROSS: Final = int(0.05 * _INCH)
@@ -145,6 +145,7 @@ class Look:
     punchline: RGBColor = PUNCHLINE_COLOUR  # a matrix's dot, and its name
     outline: RGBColor = _WHITE  # around the dot
     font: str | None = None  # the labels' font (None: the template's, whose letters fitting_size estimates)
+    dots: RGBColor = _WHITE  # a matrix's other dots (its labels' colour, which reads on its quadrants)
 
 
 TEMPLATE: Final = Look()
@@ -163,6 +164,7 @@ def look_of(style: DiagramStyle | None) -> Look:
         punchline=_rgb(style.punchline),
         outline=_rgb(style.outline),
         font=style.font,
+        dots=_rgb(style.text),
     )
 
 
@@ -408,14 +410,62 @@ def matrix_layout(frame: Box) -> MatrixLayout:
     return MatrixLayout(matrix, ends, quadrants, (labels[0], labels[1], labels[2], labels[3]))
 
 
-def dot_label_box(layout: MatrixLayout, x: float, y: float) -> tuple[Box, Align]:
+@dataclass(frozen=True)
+class Dot:
+    """One of a matrix's dots, where it is (as MatrixDiagram has it), and whether it's the punchline's."""
+
+    name: str
+    x: float
+    y: float
+    punchline: bool = False
+
+
+def matrix_dots(matrix: MatrixDiagram) -> list[Dot]:
+    """The matrix's dots: its other ones, then the punchline's (drawn last, so on top)."""
+    return [
+        *(Dot(dot.name, dot.x, dot.y) for dot in matrix.dots),
+        Dot(matrix.dot, matrix.dot_x, matrix.dot_y, punchline=True),
+    ]
+
+
+def quadrant_of(x: float, y: float) -> int:
+    """The quadrant a point of a matrix is in, as QUADRANT_NAMES orders them: top left, top right, bottom left,
+    bottom right (the axes cross at 0.5)."""
+    return (0 if y > 0.5 else 2) + (1 if x > 0.5 else 0)
+
+
+def dot_bounds(layout: MatrixLayout, matrix: MatrixDiagram, x: float, y: float) -> Box:
+    """Where the name of a dot at (x, y) may go: its quadrant; or, when another dot shares the quadrant, the half of
+    it the dot is in (the upper or the lower one), with the quadrant's label's band left out, if it has a label."""
+    index = quadrant_of(x, y)
+    quadrant = layout.quadrants[index]
+    sharing = sum(1 for dot in matrix_dots(matrix) if quadrant_of(dot.x, dot.y) == index)
+    if sharing < 2:
+        return quadrant
+    top, bottom = quadrant.top, quadrant.bottom
+    if (matrix.top_left, matrix.top_right, matrix.bottom_left, matrix.bottom_right)[index].strip():
+        label = layout.labels[index]
+        top, bottom = (label.bottom, bottom) if index < 2 else (top, label.top)
+    middle = (top + bottom) // 2
+    _, dot_y = layout.point(x, y)
+    return (
+        Box(quadrant.left, top, quadrant.width, middle - top)
+        if dot_y < middle
+        else (Box(quadrant.left, middle, quadrant.width, bottom - middle))
+    )
+
+
+def dot_label_box(layout: MatrixLayout, x: float, y: float, bounds: Box | None = None) -> tuple[Box, Align]:
     """Where the name of a dot at (x, y) goes: beside it, on the side with the most room, and inside the dot's
-    quadrant (so it doesn't cross an axis). Its text aligns towards the dot."""
+    quadrant (so it doesn't cross an axis), or inside the bounds, if given (see dot_bounds). Its text aligns towards
+    the dot."""
     dot_x, dot_y = layout.point(x, y)
     middle_x, middle_y = layout.middle
     box = layout.matrix
     left_edge, right_edge = (box.left, middle_x) if dot_x < middle_x else (middle_x, box.right)
     top_edge, bottom_edge = (box.top, middle_y) if dot_y < middle_y else (middle_y, box.bottom)
+    if bounds is not None:
+        left_edge, right_edge, top_edge, bottom_edge = bounds.left, bounds.right, bounds.top, bounds.bottom
     margin = int(0.08 * _INCH)
     reach = DOT_DIAMETER / 2 + margin
     room_left, room_right = dot_x - reach - left_edge - margin, right_edge - margin - (dot_x + reach)
@@ -442,13 +492,39 @@ def _matrix_labels(frame: Box, matrix: MatrixDiagram, font: str | None) -> list[
         Label(f"{name}: {title}", title, box, size, italic=True, align=align, anchor=anchor)
         for title, box, (name, align, anchor) in zip(ends, layout.ends, places, strict=True)
     ]
-    quadrant_labels = (matrix.top_left, matrix.top_right, matrix.bottom_left, matrix.bottom_right)
-    size = shared_size(quadrant_labels, layout.labels, 26, bold=True, font=font)
-    found += [
-        Label(f"{name} quadrant: {text}", text, box, size, bold=True, anchor="top" if index < 2 else "bottom")
-        for index, (text, box, name) in enumerate(zip(quadrant_labels, layout.labels, _QUADRANT_NAMES, strict=True))
+    # (only the quadrants that have a label: a matrix may do without them)
+    named = [
+        (index, text, box, name)
+        for index, (text, box, name) in enumerate(
+            zip(
+                (matrix.top_left, matrix.top_right, matrix.bottom_left, matrix.bottom_right),
+                layout.labels,
+                QUADRANT_NAMES,
+                strict=True,
+            )
+        )
+        if text.strip()
     ]
-    name_box, align = dot_label_box(layout, matrix.dot_x, matrix.dot_y)
+    if named:
+        size = shared_size([text for _, text, _, _ in named], [box for _, _, box, _ in named], 26, bold=True, font=font)
+        found += [
+            Label(f"{name} quadrant: {text}", text, box, size, bold=True, anchor="top" if index < 2 else "bottom")
+            for index, text, box, name in named
+        ]
+    # The other dots' names, alike (they're things of a kind), then the punchline's, bigger if it fits
+    others = [
+        (dot, *dot_label_box(layout, dot.x, dot.y, dot_bounds(layout, matrix, dot.x, dot.y)))
+        for dot in matrix_dots(matrix)
+        if not dot.punchline
+    ]
+    if others:
+        size = shared_size([dot.name for dot, _, _ in others], [box for _, box, _ in others], 22, bold=True, font=font)
+        found += [
+            Label(f"Dot {number}: {dot.name}", dot.name, box, size, bold=True, align=align)
+            for number, (dot, box, align) in enumerate(others, 2)
+        ]
+    bounds = dot_bounds(layout, matrix, matrix.dot_x, matrix.dot_y)
+    name_box, align = dot_label_box(layout, matrix.dot_x, matrix.dot_y, bounds)
     size = fitting_size(matrix.dot, name_box, 24, bold=True, font=font)
     found.append(
         Label(f"Dot: {matrix.dot}", matrix.dot, name_box, size, bold=True, align=align, colour="punchline", reveal=True)
@@ -460,7 +536,7 @@ def draw_matrix(slide: Any, frame: Box, matrix: MatrixDiagram, look: Look = TEMP
     """Four see-through quadrants with a label each, two axes crossing in the middle with a title at each end, and a
     dot with its name (the punchline: this returns its shapes)."""
     layout = matrix_layout(frame)
-    for quadrant, colour, name in zip(layout.quadrants, look.fills, _QUADRANT_NAMES, strict=True):
+    for quadrant, colour, name in zip(layout.quadrants, look.fills, QUADRANT_NAMES, strict=True):
         shape = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, *_emu(quadrant))
         shape.name = f"{name} quadrant"
         _style(shape, fill=colour, opacity=look.quadrant_opacity)
@@ -470,6 +546,10 @@ def draw_matrix(slide: Any, frame: Box, matrix: MatrixDiagram, look: Look = TEMP
         _arrow(axis, look.lines)
 
     texts = _matrix_labels(frame, matrix, look.font)
+    for number, other in enumerate((dot for dot in matrix_dots(matrix) if not dot.punchline), 2):
+        shape = slide.shapes.add_shape(MSO_SHAPE.OVAL, *_emu(layout.dot(other.x, other.y)))
+        shape.name = f"Dot {number}"
+        _style(shape, fill=look.dots, line=look.outline)
     for label in texts:
         if not label.reveal:
             _add(slide, label, look)

@@ -239,6 +239,19 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   to crash, with an optional second line that wipes in as the punchline, and a named moment on the line) and a
   **ranking** (bars that the last one wins by far). Charts with axes get axis titles, and charts come labelled in
   funny ways, or bare, for the presenter to explain.
+- Livelier diagrams and charts (docs/v5-plan.md, D64). A **2×2 matrix** has everyday opposites at the ends of its axes
+  and short names in its quadrants, and comes out named, or as **dots** of familiar things where they belong (two in a
+  quadrant at most, each with its name), or bare. A **scatter plot** is a cloud of one of eleven shapes (from rising
+  and exponential to U-shaped, no correlation at all, a ring or a smile), tight or loose, of a dozen to 150 points; a
+  third of the time with a **line fitted through it** (dashed: PowerPoint's own trendline, straight or a parabola), and
+  three times in ten as two or three **named clusters**, each in its own colour, in a legend. Clusters and a trend's
+  lines get colours that tell them apart, in themes whose two accents are alike too. A pyramid, a funnel, a cycle, an
+  iceberg, a process, a flowchart, a Venn diagram or a matrix has a **weird but related picture** in one or two of its
+  boxes about a third of the time (searched for, or generated in a talk that generates pictures), which comes in with
+  its box; a box whose picture isn't found goes without. A trend's named moment gets a **picture by its point** half
+  the time, on a click of its own. The deck format has a matrix's other dots (`MatrixDiagram.dots`), a series' fitted
+  line and colour (`ChartSeries.trendline`, `color`), and quadrants may go without labels: talk-generator-web draws
+  them from its branch for this; its renderer draws the pictures as it draws any picture.
 - **Memes with live captions** (a `meme` slide, docs/v5-plan.md sections 8 and 10.4): one of 25 well-known
   templates of Imgflip's (Drake Hotline Bling, Two Buttons, Distracted Boyfriend, Gru's Plan, Expanding Brain...),
   with its captions as texts on the picture, each in the box the template has for it (`data/memes.json`, measured
