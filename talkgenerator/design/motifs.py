@@ -489,8 +489,8 @@ def _slide_number(
 # Where a slide's number goes when its family has no fixture for it: in the bottom right corner, under the credit
 # line (or in the top right corner, along the top); and the band along the bottom that a number (and what it's on)
 # has, between the credit line and the slide's safe area (the design checks', which ends 16 pixels from its edge)
-_BOTTOM_RIGHT: Final = Box(x=WIDTH - MARGIN - 160, y=1034, w=160, h=30)
-_TOP_RIGHT: Final = Box(x=WIDTH - MARGIN - 160, y=16, w=160, h=32)
+_BOTTOM_RIGHT: Final = Box(x=WIDTH - MARGIN - 120, y=1034, w=120, h=30)
+_TOP_RIGHT: Final = Box(x=WIDTH - MARGIN - 120, y=16, w=120, h=32)
 _FOOT: Final = (1034.0, 30.0)
 
 
@@ -519,7 +519,7 @@ def _keynote(scene: Scene) -> None:
         if opacity >= 0.03:
             scene.under(_ellipse(x + 350, -60, 700, 700, palette.accent, opacity))
     if not scene.placement.photo:
-        _slide_number(scene, _BOTTOM_RIGHT)
+        _slide_number(scene, _BOTTOM_RIGHT, _TOP_RIGHT)
 
 
 def _minimal(scene: Scene) -> None:
@@ -531,7 +531,7 @@ def _minimal(scene: Scene) -> None:
         ink = scene.ink(title)
         scene.add(_rect(40, ink.y + 8, 4, max(40.0, ink.h - 16), palette.accent))
     if not scene.placement.photo:
-        _slide_number(scene, _TOP_RIGHT)
+        _slide_number(scene, _TOP_RIGHT, _BOTTOM_RIGHT)
 
 
 def _corporate(scene: Scene) -> None:
