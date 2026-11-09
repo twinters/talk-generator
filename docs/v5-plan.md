@@ -1098,6 +1098,57 @@ and academic talks had none), in a quarter of the all-hands; a provocation in a 
 family-wide tests, the design test of runs of every slide type (the new figures' too) passed in all 17 families; the
 rest ran in part only (the machine was busy). The generated product shot is tested with a fake generator only.
 
+**The talk's why: problem slides** (2026-11-09, D66), from the user's "what makes a good pitch and a good academic deck
+is typically that they explain the WHY / problem really well in the beginning": a slide type of its own, `problem`,
+that pitches and academic talks open on most of the time, and some TED-like talks too.
+
+- *The slide*: a short heading on a sticker in the theme's accent, as a fun fact's ("The problem", "The pain",
+  "Motivation", "Sound familiar?": the model's, as the talk's kind of talk names it, or the pack's), the problem in big
+  words (one or two short sentences, 130 characters at most), and a line under it that makes it hit home (how often it
+  happens, to whom, what it costs; 80 at most), which appears on a click. Its picture is optional, of one of two slots:
+  `background`, a picture of it behind the problem (a statement's backdrop: calm photos two times in three), or
+  `photo`, a picture beside it that shows the problem as it happens (`weird-stock`, generated in a talk that generates
+  pictures: on talkgenerator.com, on a visitor's own key only); a slide whose picture isn't found goes without it.
+  Three layouts: `v5/problem` (over the shaded picture, light and aligned left, as a statement over a photo; beside a
+  framed photo; or, without a picture, in the middle: the sticker, the problem and the line one under the other, each
+  as tall as it comes out, in the middle of the slide's height), `v5/problem-band` (the problem on a band across the
+  shaded picture, the sticker over the band's top edge) and `v5/problem-split` (the photo filling the slide's left
+  side). Texts, pictures and shapes only, so talk-generator-web draws it unchanged.
+- *The angle*, which the talk's dice pick, for a planned slide (a recipe's variant: `kinds.problem_variants`) as for a
+  classic one (the pack's rule of that angle): a weird problem nobody has noticed yet, an everyday one everyone in the
+  room has had, the topic running into something from another part of life (the word to riff on, or a pack's everyday
+  thing: "Monday mornings", "Reviewer 2"), the problem everyone who deals with the topic knows, or a real one: a
+  how-to people look up on wikiHow. Each angle has a picture behind the problem half the time, beside it otherwise
+  (`PROBLEM_BEHIND`); a pitch weighs everyday and real problems a little more (×1.3, ×1.2), an academic talk typical
+  and weird ones, a TED-like talk everyday and weird ones. A classic slide's template is the problem and its line
+  ("...|..."), the line kept four times in five.
+- *Real problems*: a free, keyless source that passes the facts' checks, wikiHow's public search (which classic talks
+  used already): a classic slide on the real angle says a how-to about the slide's seed ("Right now, someone is
+  searching how to repair an umbrella."), and gives way to another angle when wikiHow has none; a planned
+  slide on it gets one as a flavour text (`facts.howtos`, use `problem`, in English talks only, as dad jokes): the
+  topic's how-tos that say what they fix first ("How to Quit Procrastinating", "How to Repel and Keep Pigeons Away
+  Naturally"), with the facts' checks (no living people, nothing grim: "How to Stop a Goose Attack" stays out),
+  credited "wikiHow" when the slide builds on it. Its line in the request: "Start from this real how-to, which people
+  look up on wikiHow".
+  Considered, not tried: Wikipedia's lists of unsolved problems (a few fields have one, most topics none) and
+  Reddit's complaint subreddits (pictures with titles about anything, which the checks would have to sift).
+- *Where it comes up*: one a talk at most (tag `problem_slide`, capped at one in every format; a pitch's `problem`
+  part may still have two slides, the second its statement or its number). Over 1,000 seeds of ten-slide talks (picks
+  only): **72% of pitches** open their problem part with it, at slide 2 (the problem statement over a photo 9%, the
+  alarming number 18%, over 400 seeds; a pitch of 15 slides or more has it in 96%, at slide 2 or 3); **80% of academic
+  talks**, at slide 2, in a new first part, `motivation` (its research question over a photo otherwise); and **23% of
+  TED-like talks** (32% with the open license policy, whose second slide is history, not the presenter), at slide 3,
+  after the presenter's (`slide_schemas.PROBLEM_WEIGHT`, peaked at the third slide); over all the formats a talk's
+  seed picks, a quarter of ten-slide talks (25% over 3,000 seeds). All-hands and keynotes have none yet.
+- *An academic talk's arc*: `motivation` comes first, rank 1 (kept from three slides on), so a five-slide academic
+  talk is its motivation, method, results and questions (no limitations), a ten-slide one its motivation, related
+  work, a free slide, method, results, limitations, a free slide, references and questions (no future work), and the
+  acknowledgements wait for 13 slides (the outline still for 11). The pitch's arc is as it was.
+- *Content packs*: the pitch pack's version 3 (its problem grammar's `kicker`, `weird`, `everyday`, `crossed` with
+  `crossing`, `typical` and `real`), the academic pack's version 4 (a `motivation` grammar of the same, and research
+  questions) and the TED pack's version 7 (a `problem` grammar, in a TED speaker's voice); linted as every pack is, and
+  each line under a problem 80 characters at most.
+
 ## 8. Slide types and variety
 
 v4's slide types stay: title, about me, history, full-screen gif, meme or photo, image with title, large quote over
@@ -2269,9 +2320,10 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D63 | Most talks are TED-like, and slides of text get pictures (the user's review of 35 talks, 2026-11-09; section 7). `FORMAT_WEIGHTS`: the TED-like talk 20, pitch and academic 1, all-hands and keynote 1.5; specialists ×15 or ×10: 70% of the talks over all the personas are TED-like (it was 57%), a specialist's favourite comes second to them in about two of five of their talks, pitches and academic talks are the rarest, every format keeps 2% or more with every persona. A format's arc keeps a share of its slides free first (`Arc.free`: a quarter for a pitch, an academic talk and an all-hands, 0.15 for a keynote), whose text-heavy parts wait for longer talks; free slides have more memes, gifs, Reddit's weird pictures and the format's own provocations (a picture filling the slide under a word or two in its voice). Big numbers and KPI tiles have an optional picture behind them or beside it, from a look of many sources (`backdrop`), three big numbers in four and half the dashboards, in every format; a slide whose optional picture isn't found goes without it. Statements' backdrops mix calm photos and the backdrop look. Reddit's weird pictures outweigh ShitpostBot's, memes weigh more. A pitch's product (and a keynote's) is searched as a gadget and, in a talk that generates pictures, drawn as an advertisement's product shot. |
 | D64 | Diagrams and charts get livelier (section 8): a matrix has short, everyday names and comes out named, of dots (things where they belong, the deck's `MatrixDiagram.dots`) or bare; a scatter plot has clouds of eleven shapes, a fitted line now and then (`ChartSeries.trendline`, PowerPoint's own trendline) or named clusters in colours the layout engine picks apart (`ChartSeries.color`, a trend's lines' too); a diagram has a weird but related picture in one or two of its boxes 35% of the time, an image element with a box that appears with its box's text (optional image slots: a box without a picture still makes the slide); and a trend's named moment gets a picture by its point, on a click, where every renderer has the point: talk-generator-web's plot, which a PowerPoint chart with a picture is pinned to. The site draws the new deck fields on a branch of its own. |
 | D65 | From the user's look at 35 sample talks (2026-11-09): a dare is a real challenge for the presenter to keep up, or something the whole audience does ("Audience participation"), a dad joke one kind among them; a closing slide ends its talk on a funny picture, a last tip or a callback to an earlier slide's picture, which the deck gives it (realizing a slide still knows no other slide); an academic talk's references are a slide type of their own, with a picture of one of the works (a book's cover or a paper's figure) most of the time; emoji come in front of a list's things now and then, only where a variant asks for them, measured 1.4 ems wide and drawn in an emoji font; and every slide is numbered of the deck's ("7/12"), small and in its family's style, the 2019 template's too. A recipe's variant can say that its slide takes no real fact or flavour text (`Variant.facts`). |
+| D66 | Talks explain their why early (the user's idea, 2026-11-09; section 7): a slide type of its own, `problem` (a heading on a sticker, the problem, a line under it that appears on a click; a picture of it behind it or one that shows it beside it, generated in a talk that generates pictures), on an angle the talk's dice pick (weird, everyday, the topic running into something else, typical of the topic, or a real how-to people look up on wikiHow: a flavour text for a planned slide in an English talk, a pack's template around one for a classic slide), one a talk at most (tag `problem_slide`). It opens a pitch's problem part in about three pitches in four, an academic talk's new first part, `motivation`, in four in five (which keeps it from three slides on: a ten-slide academic talk goes without future work), and comes third in about a quarter of TED-like talks. |
 
 D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, D43 to D62 on 2026-11-08, and D63
-to D65 on 2026-11-09; the others follow from the design.
+to D66 on 2026-11-09; the others follow from the design.
 
 ### Open questions
 

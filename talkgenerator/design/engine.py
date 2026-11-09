@@ -2823,6 +2823,13 @@ def _problem_beside(roles: dict[str, Content]) -> bool:
     return "photo" in roles and "background" not in roles
 
 
+def _problem_sticker(placement: Placement, theme: Theme, box: Box) -> None:
+    """The problem's heading on its sticker, in a colour that reads on it as small text too: a heading of 28 characters
+    comes out small in a wide font, where a fun fact's short one is large."""
+    _sticker(placement, theme, box)
+    placement.colors["kicker"] = _on([theme.palette.accent], theme)
+
+
 def _fitted_height(roles: dict[str, Content], role: str, box: Box, spec: str, theme: Theme) -> float:
     """How tall the slide's text of the role comes out in the box, as the engine fits it there (none, without it)."""
     element = roles.get(role)
@@ -2850,9 +2857,8 @@ def _problem_stack(
     problem = _fitted_height(roles, "problem", Box(x=x, y=0, w=width, h=room), specs[0], theme) or room
     y = MARGIN + (_CONTENT_BOTTOM - MARGIN - (_STICKER + _PROBLEM_GAP + problem + below)) / 2
     sticker_width = min(600.0, width)
-    _sticker(
-        placement, theme, Box(x=x + (width - sticker_width) / 2 if centred else x, y=y, w=sticker_width, h=_STICKER)
-    )
+    sticker_x = x + (width - sticker_width) / 2 if centred else x
+    _problem_sticker(placement, theme, Box(x=sticker_x, y=y, w=sticker_width, h=_STICKER))
     y += _STICKER + _PROBLEM_GAP
     placement.boxes["problem"] = (Box(x=x, y=y, w=width, h=problem), specs[0])
     if detail:
@@ -2887,7 +2893,7 @@ def _problem_band(roles: dict[str, Content], theme: Theme) -> Placement:
     band_box = Box(x=0, y=300, w=WIDTH, h=470)
     band = ShapeElement(role="problem band", box=band_box, color=surface, opacity=BAND_OPACITY)
     placement = Placement("v5/problem-band", shapes=[_shade()], overlays=[band])
-    _sticker(placement, theme, Box(x=MARGIN + 48, y=band_box.y - _STICKER / 2, w=600, h=_STICKER))
+    _problem_sticker(placement, theme, Box(x=MARGIN + 48, y=band_box.y - _STICKER / 2, w=600, h=_STICKER))
     problem = Box(x=200, y=band_box.y + 82, w=WIDTH - 400, h=band_box.h - 112)
     placement.boxes["problem"] = (problem, "band statement")
     placement.colors["problem"] = _on([color.mix(shaded, surface, BAND_OPACITY) for shaded in _SHADED], theme)

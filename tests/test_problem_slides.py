@@ -22,7 +22,12 @@ from talkgenerator import facts
 from talkgenerator.checks.deck import check_completeness, check_leftovers
 from talkgenerator.checks.design import check_design
 from talkgenerator.design import engine, themes
+from talkgenerator.images import context as image_context
+from talkgenerator.images import profiles
+from talkgenerator.images.generation import ImageBudget, ImageGeneration
+from talkgenerator.images.profiles import Profile, SourceUse
 from talkgenerator.models.deck import ImageElement, ShapeElement, TextElement
+from talkgenerator.models.plan import SlidePlan
 from talkgenerator.plan import prompt
 from talkgenerator.plan.kinds import (
     KINDS,
@@ -34,6 +39,7 @@ from talkgenerator.plan.kinds import (
     problem_variants,
 )
 from talkgenerator.plan.languages import ENGLISH, language
+from talkgenerator.plan.realize import realize
 from talkgenerator.render import preview
 from talkgenerator.render.powerpoint import render_pptx
 from talkgenerator.schema import content_generators as cg
@@ -52,6 +58,8 @@ from tests.test_design import _OPEN_PAIRINGS, _with_fonts
 from tests.test_facts import web as web  # the fake Wikipedia (a fixture)
 from tests.test_formats import _context
 from tests.test_formats import offline as offline  # images and related words without the internet (a fixture)
+from tests.test_generated_images import FakePainter
+from tests.test_pictures_on_text_slides import stock as stock  # a fake stock source's pictures (a fixture)
 from tests.test_slide_types import _deck, _theme
 
 FAMILIES = list(themes.FAMILIES)
@@ -173,7 +181,10 @@ def test_the_dice_pick_an_angle_and_a_picture_behind_or_beside():
     assert sum(variant.weight for variant in variants) == pytest.approx(sum(w for w, _, _ in PROBLEM_ANGLES.values()))
     assert {variant.omit for variant in variants} == {frozenset({"photo"}), frozenset({"background"})}
     # (only a real problem builds on something real: a how-to people look up)
-    assert [variant.note.split(",")[0] for variant in variants if variant.facts] == [PROBLEM_ANGLES["real"][1]] * 2
+    assert [variant for variant in variants if variant.note.startswith(PROBLEM_ANGLES["real"][1])] == [
+        variant for variant in variants if variant.facts
+    ]
+    assert len([variant for variant in variants if variant.facts]) == 2
     weighted = problem_variants({"real": 2, "crossed": 0})
     assert not any(PROBLEM_ANGLES["crossed"][1] in variant.note for variant in weighted)
     assert sum(variant.weight for variant in weighted if variant.facts) == pytest.approx(2)
@@ -206,6 +217,42 @@ def test_the_request_says_the_slides_angle_and_where_its_picture_goes():
         "detail",
         f"{slot}_query",
     }
+
+
+def test_a_talk_that_generates_pictures_draws_the_problem_beside_it_from_the_models_prompt(stock, monkeypatch):
+    monkeypatch.setitem(profiles.PROFILES, "weird-stock", Profile("weird-stock", "fake", (SourceUse("fake-stock"),)))
+    generator = slide_generators.get("Problem (Pitch)")
+    assert generator.llm is not None
+    recipes = [generator.llm.varied(random_util.Rng(seed)) for seed in range(40)]
+    beside = next(recipe for recipe in recipes if "background" in recipe.omit)
+    behind = next(recipe for recipe in recipes if "photo" in recipe.omit)
+    painter = FakePainter()
+    talk_generation = ImageGeneration(painter, ImageBudget(3))
+    asked = dict(prompt.generated(beside, talk_generation))
+    assert set(asked) == {"photo"} and "the problem the startup solves" in asked["photo"]
+    assert prompt.generated(behind, talk_generation) == []  # (a backdrop is searched for, as a statement's)
+    plan = SlidePlan(
+        kind="problem",
+        concept="pigeons on balconies",
+        texts={
+            "kicker": "The problem",
+            "problem": "Pigeons have taken every balcony in town.",
+            "detail": "Yours is next.",
+        },
+        images={"photo": "pigeons on a balcony"},
+        prompts={"photo": "A balcony crowded with pigeons, a man peeking out of the door"},
+    )
+    with image_context.for_talk(image_context.ImageContext(generation=talk_generation)):
+        made = realize(plan, beside, {"seed": "pigeons", "topic": "pigeons"}, random_util.Rng(1), 0)
+    assert made is not None
+    slide, _ = made
+    ((stand_in, wish),) = slide.wishes
+    assert "pigeons_on_a_balcony" in stand_in.get_image_url()  # (the stock photo of its query, until it's in)
+    assert wish.request.prompt == plan.prompts["photo"]
+    talk_generation.settled(slide)
+    assert talk_generation.finish()
+    shown = slide.to_deck_slide().element("photo")
+    assert isinstance(shown, ImageElement) and shown.image.license_class == "generated"
 
 
 # THE FORMATS: WHICH TALKS OPEN ON THEIR PROBLEM, AND WHERE

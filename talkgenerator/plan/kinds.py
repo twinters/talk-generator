@@ -1595,31 +1595,31 @@ def closing_variants(line: str) -> tuple[Variant, ...]:
 PROBLEM_ANGLES: Final[dict[str, tuple[float, str, str]]] = {
     "weird": (
         1,
-        "a weird problem with the concept, which nobody has noticed yet",
+        "this one a weird problem with the concept, which nobody has noticed yet",
         "a weird problem with the concept that nobody has noticed yet, stated as if everyone suffers from it, in one "
         "or two short sentences",
     ),
     "everyday": (
         1,
-        "an everyday problem with the concept, which everyone in the room has had",
+        "this one an everyday problem with the concept, which everyone in the room has had",
         "a small, everyday frustration with the concept that everyone in the room has had, made huge, in one or two "
         "short sentences",
     ),
     "crossed": (
         1,
-        "the concept running into something from another part of life",
+        "this one the concept running into something from another part of life",
         "a problem nobody saw coming, where the concept runs into something from another part of life (the word to "
         "riff on, say), in one or two short sentences",
     ),
     "typical": (
         1,
-        "the problem that everyone who deals with the concept knows",
+        "this one the problem that everyone who deals with the concept knows",
         "the problem that everyone who deals with the concept knows, taken deadly seriously, in one or two short "
         "sentences",
     ),
     "real": (
         1,
-        "a problem people really have with the concept",
+        "this one a problem people really have with the concept, which they look up how to fix",
         "a problem people really have with the concept (one they look up how to fix), taken far too seriously, in "
         "one or two short sentences",
     ),
