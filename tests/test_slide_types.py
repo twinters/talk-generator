@@ -146,8 +146,10 @@ def test_long_words_fit_in_every_theme(images, family):
 
 def test_every_new_layout_comes_up_and_needs_what_it_says(images):
     seen = set()
+    pictured = [slides.QuestionsSlide("Questions?", "Remember this one?", _image("wide")) for _ in range(3)]
     for seed in range(12):
-        seen |= {slide.layout for slide in _deck(runs_of_new_types(_image("wide")), _theme(seed=seed), seed).slides}
+        made = [*runs_of_new_types(_image("wide")), *pictured]  # (a closing slide with a picture to end on: D65)
+        seen |= {slide.layout for slide in _deck(made, _theme(seed=seed), seed).slides}
     # (the layouts every family has: a family's own come up in its themes)
     new_layouts = {layout.name for kind in EVERY_KIND for layout in engine._LAYOUTS[kind] if not layout.families}
     assert new_layouts <= seen
@@ -434,7 +436,7 @@ CLASSIC = {
     "news_headline": (slide_texts.news_headline(_photo), slides.NewsHeadlineSlide),
     "agenda": (slide_texts.generate_agenda, slides.AgendaSlide),
     "section": (slide_texts.generate_section, slides.SectionSlide),
-    "questions": (slide_texts.generate_questions, slides.QuestionsSlide),
+    "questions": (slide_texts.questions(_photo), slides.QuestionsSlide),
     "timeline": (slide_texts.generate_timeline, slides.TimelineSlide),
     "pyramid": (slide_texts.generate_pyramid, slides.PyramidSlide),
     "funnel": (slide_texts.generate_funnel, slides.FunnelSlide),

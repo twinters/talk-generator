@@ -21,7 +21,7 @@ A talk of this format goes through these parts, in this order, each with the sli
 | `limitations` | 1 | `limitations-academic`, `limitations-statement-academic` |
 | `future_work` | 1 | `future-work-academic`, `future-work-flowchart-academic`, `research-cycle-academic` |
 | `acknowledgements` | 1 | `acknowledgements-academic`, `acknowledgements-list-academic` |
-| `references` | 1 | `references-academic` |
+| `references` | 1 | `references-academic`, `references-figure-academic` |
 | `questions` | 1 | `questions-academic` |
 
 ## `image`
@@ -267,22 +267,22 @@ Images: none
 | --- | --- | --- |
 | `outline-academic` | The talk's outline, as a conference talk has it: the parts it goes through, in order | the default; `title`: the slide's title, as a conference talk's slide has it, such as 'Outline'; `items`: three to five parts of the talk, in the order they come, separated by \|, each at most 45 characters; tags: agenda, outline |
 | `acknowledgements-list-academic` | The acknowledgements, as a list of who and what made the work possible (made up, never real people) | `title`: the slide's title, as a conference talk's slide has it, such as 'Acknowledgements'; `items`: three to five who or what to thank, each in a few words, separated by \|, each at most 45 characters; tags: acknowledgements |
-| `references-academic` | The references: three to five made-up papers that the talk cites, in a citation style | `title`: the slide's title, as a conference talk's slide has it, such as 'References'; `items`: three to five short made-up references, each an author 'et al.', a year in brackets and a journal of two or three words (no paper's title), separated by \|, each at most 45 characters; tags: references |
 
 ## `questions`
 
-The closing slide, inviting the audience's questions.
+The closing slide, inviting the audience's questions: a question, a line under it (a last tip, say), and a picture to end on, if it has one (a funny one, or an earlier slide's, called back).
 
 | Text | At most | What to write |
 | --- | --- | --- |
 | `title` | 30 | a question that invites the audience's questions |
 | `subtitle` | 80 | a line under it (or empty, for none) |
+| `callback` | 60 | the earlier slide whose picture this one shows again, as a callback: what that picture showed, as its image search query said it (or empty, for none) |
 
-Images: none
+Images: `photo`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `questions-academic` | The closing slide, inviting the audience's questions, as at a conference | the default; `subtitle`: a line under it, such as a plea to the audience; tags: questions, questions |
+| `questions-academic` | The closing slide, inviting the audience's questions, as at a conference | the default; `subtitle`: a line under it, such as a plea to the audience; images: `photo` weird-stock (or generated, from its prompt, with an image generator set up); tags: questions, questions |
 
 ## `timeline`
 
@@ -364,6 +364,23 @@ Images: none
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
 | `method-academic` | The method, as a diagram of three to five steps, each leading to the next, the last one the punchline (a step that can't be right, say) | the default; `title`: the slide's title, as a conference talk's slide has it, such as 'Method'; `step_1`: a step, in two to four words; `step_2`: a step, in two to four words; `step_3`: a step, in two to four words; `step_4`: a step, in two to four words; `step_5`: a step, in two to four words; tags: method, process |
+
+## `references`
+
+A talk's references, as an academic talk ends with them: three to five made-up works it cites, numbered, which appear one by one, a click each; and a picture of one of them, if it has one (a book's cover, or a figure from a paper), with a caption that says which, on the click after them.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `title` | 40 | the slide's title |
+| `items` | 260 | three to five made-up works the talk cites, separated by \|, each at most 45 characters |
+| `caption` | 30 | which of the works the picture is of, by its number in the list, such as 'Cover of [2]' (or empty, for none) |
+
+Images: `figure`
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `references-academic` | The references: three to five made-up works that the talk cites, in a citation style | the default; `title`: the slide's title, as a conference talk's slide has it, such as 'References'; `items`: three to five short made-up references, each an author 'et al.', a year in brackets and a journal of two or three words (no paper's title), separated by \|, each at most 45 characters; `caption`: which work it's the cover of, by its number in the list, such as 'Cover of [2]'; images: `figure` book-covers, else museum, else illustration (or generated, from its prompt, with an image generator set up); tags: references |
+| `references-figure-academic` | The references: three to five made-up works that the talk cites, in a citation style | `title`: the slide's title, as a conference talk's slide has it, such as 'References'; `items`: three to five short made-up references, each an author 'et al.', a year in brackets and a journal of two or three words (no paper's title), separated by \|, each at most 45 characters; `caption`: which work the figure is from, by its number in the list, such as '[3], Fig. 2'; images: `figure` bad-charts, else museum, else illustration; tags: references |
 
 ## `meme`
 

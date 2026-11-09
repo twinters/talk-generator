@@ -27,7 +27,7 @@ from typing import Final
 
 from PIL import ImageFont
 
-from talkgenerator.util import os_util
+from talkgenerator.util import emoji_util, os_util
 
 logger = logging.getLogger("talkgenerator")
 
@@ -107,12 +107,16 @@ WIDTHS_FILE: Final = "data/fonts/widths.json"
 
 def text_width(text: str, font: str, size: float, bold: bool = False) -> float:
     """How wide the text is in the font, at a font size: both in canvas pixels. In an open font, as wide as in its
-    stand-in where that's wider (see OPEN_FONTS)."""
+    stand-in where that's wider (see OPEN_FONTS). Its emoji, which no theme font has, as wide as an emoji font draws
+    them (see talkgenerator.util.emoji_util)."""
+    emoji = emoji_util.count(text)
+    if emoji:
+        text = emoji_util.plain(text)
     width = _width(text, font, size, bold)
     stand_in = OPEN_FONTS.get(font)
     if stand_in is not None:
         width = max(width, _width(text, stand_in, size, bold))
-    return width
+    return width + emoji * emoji_util.WIDTH * size
 
 
 def _width(text: str, font: str, size: float, bold: bool) -> float:
@@ -149,6 +153,15 @@ def width_table(font: str, bold: bool = False) -> dict[str, float] | None:
         if table is not None:
             return table
     return None
+
+
+def emoji_font_file() -> Path | None:
+    """The file of this computer's colour emoji font that the previews draw emoji in (Windows' Segoe UI Emoji), if
+    it has it."""
+    return _font_index().get(_EMOJI_FILE)
+
+
+_EMOJI_FILE: Final = "seguiemj.ttf"
 
 
 def measured(font: str) -> bool:

@@ -49,7 +49,7 @@ from talkgenerator.models.theme import TextEffect, Theme
 from talkgenerator.render import animation, backgrounds, charts, diagrams, embedding, reveal
 from talkgenerator.render.powerpoint import ImageStore, image_data
 from talkgenerator.slide import powerpoint_slide_creator as creator
-from talkgenerator.util import http_util, image_util
+from talkgenerator.util import emoji_util, http_util, image_util
 
 logger = logging.getLogger("talkgenerator")
 
@@ -272,21 +272,27 @@ def _text_box(
         frame.auto_size = MSO_AUTO_SIZE.TEXT_TO_FIT_SHAPE
     paragraph = frame.paragraphs[0]
     paragraph.alignment = _ALIGN[style.align]
-    for text, url in runs:
-        run = paragraph.add_run()
-        run.text = text
-        font = run.font
-        font.name = style.font
-        font.size = Pt(style.size / 2)
-        font.bold = style.bold
-        font.italic = style.italic
-        font.color.rgb = _rgb(style.color)
-        if style.uppercase:
-            run._r.get_or_add_rPr().set("cap", "all")  # shown in capitals, written as it is
-        if style.effect is not None:
-            _text_effect(run, style.effect)
-        if url:  # (in the text's colour, as the rest of a credit line)
-            creator.link(run, url)
+    for whole, url in runs:
+        # (emoji in runs of their own, in an emoji font: no theme font has them, and an emoji font draws them in colour)
+        for text, emoji in emoji_util.runs(whole):
+            run = paragraph.add_run()
+            run.text = text
+            font = run.font
+            font.name = emoji_util.EMOJI_FONT if emoji else style.font
+            font.size = Pt(style.size / 2)
+            font.bold = style.bold
+            font.italic = style.italic
+            font.color.rgb = _rgb(style.color)
+            if emoji:  # (for every script PowerPoint might take them for)
+                properties = run._r.get_or_add_rPr()
+                for slot in ("a:ea", "a:cs", "a:sym"):
+                    etree.SubElement(properties, qn(slot)).set("typeface", emoji_util.EMOJI_FONT)
+            if style.uppercase:
+                run._r.get_or_add_rPr().set("cap", "all")  # shown in capitals, written as it is
+            if style.effect is not None and not emoji:
+                _text_effect(run, style.effect)
+            if url:  # (in the text's colour, as the rest of a credit line)
+                creator.link(run, url)
     if style.effect is not None and style.effect.warp:
         frame._bodyPr.insert(
             0, parse_xml(f'<a:prstTxWarp {nsdecls("a")} prst="{_WARPS[style.effect.warp]}"><a:avLst/></a:prstTxWarp>')

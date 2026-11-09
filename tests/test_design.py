@@ -16,7 +16,7 @@ from talkgenerator import generator, settings
 from talkgenerator.checks.deck import deck_metrics
 from talkgenerator.checks.design import check_design, check_variety
 from talkgenerator.design import color, engine, fit, fonts, themes, treatments
-from talkgenerator.models.deck import Deck, ImageElement, ShapeElement, TextElement
+from talkgenerator.models.deck import DECORATION, Deck, ImageElement, ShapeElement, TextElement
 from talkgenerator.plan import languages
 from talkgenerator.plan.kinds import KINDS
 from talkgenerator.render import embedding, preview
@@ -776,9 +776,10 @@ def test_the_generator_makes_themed_talks(monkeypatch, images):
     _, classic, _ = generator._generate_presentation(
         schema="fake", slides=test_seeds.NUM_SLIDES, topic="cats", int_seed=2, save_ppt=False
     )
-    # The theme doesn't change what's on the slides
+    # The theme doesn't change what's on the slides (but its decoration's own texts: a slide's number, say)
     texts = [[e.text for e in s.elements if isinstance(e, TextElement)] for s in classic.to_deck().slides]
-    assert texts == [[e.text for e in s.elements if isinstance(e, TextElement)] for s in deck.slides]
+    themed = [[e.text for e in s.elements if isinstance(e, TextElement) and e.role != DECORATION] for s in deck.slides]
+    assert texts == themed
     _, chaos, _ = generator._generate_presentation(
         schema="fake", slides=test_seeds.NUM_SLIDES, topic="cats", int_seed=2, save_ppt=False, theme="chaos"
     )

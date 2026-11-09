@@ -153,6 +153,10 @@ SPECS: Final[dict[str, TextSpec]] = {
     "ticker": TextSpec("body", 36, 24, align="left", on_fill=True),
     "outlet": TextSpec("heading", 44, 24, align="center", heading=True, on_fill=True, effect=False),
     "item": TextSpec("body", 68, 30, align="left"),
+    # (an academic talk's references: a work's number as cited, the work, and a caption under a picture of one)
+    "citation": TextSpec("body", 52, 28, color="accent", align="right", bold=True),
+    "reference": TextSpec("body", 52, 28, align="left"),
+    "figure caption": TextSpec("body", 40, 24, color="muted", align="center", anchor="top", italic=True),
     "step": TextSpec("body", 56, 26, align="center", anchor="top"),
     "section number": TextSpec("heading", 240, 100, color="accent", anchor="bottom", heading=True),
     "section title": TextSpec("heading", 128, 56, anchor="top", heading=True),
@@ -267,8 +271,9 @@ def lay_out(
 ) -> Deck:
     """The deck with its elements placed and styled in the theme; with style_chaos, some slides (that share of
     them, picked by the seed) in themes of their own, of the families the talk allows (see
-    talkgenerator.design.themes.allowed; None, all of them)."""
-    layout = DeckLayout(deck.seed, theme, style_chaos, extremes, families)
+    talkgenerator.design.themes.allowed; None, all of them). Every slide knows how many the deck has, for its number
+    ("7/12")."""
+    layout = DeckLayout(deck.seed, theme, style_chaos, extremes, families, total=len(deck.slides))
     slides = tuple(layout.next(slide) for slide in deck.slides)
     return deck.model_copy(update={"theme": theme.name, "style": theme, "slides": slides})
 
@@ -276,7 +281,8 @@ def lay_out(
 class DeckLayout:
     """Lays a deck's slides out one at a time, in order, as lay_out does all at once: a slide's layout depends on the
     deck's seed, the slide's place, and the layouts of the slides before it, so slides can be laid out as they come
-    in (talkgenerator.generator.stream_talk)."""
+    in (talkgenerator.generator.stream_talk). The total is how many slides the deck has, which a talk knows from its
+    start (for a slide's number, "7/12"; None: the number alone)."""
 
     def __init__(
         self,
@@ -285,8 +291,10 @@ class DeckLayout:
         style_chaos: float = 0.0,
         extremes: bool = True,
         families: Sequence[str] | None = None,
+        total: int | None = None,
     ) -> None:
         self.theme, self.style_chaos, self.extremes = theme, style_chaos, extremes
+        self.total = total
         # (the families a slide's own theme can be of, in a chaos deck: None, all of them)
         self.families = tuple(families) if families is not None else None
         self._rng = random_util.Rng(seed if seed is not None else 0).child("layout")
@@ -322,7 +330,14 @@ class DeckLayout:
             if chaotic:
                 own = themes.pick(themes.RANDOM, slide_rng.child("theme"), self.extremes, among=self.families)
         return lay_out_slide(
-            slide, own or self.theme, slide_rng, own_style=own is not None, previous=previous, used=used, number=number
+            slide,
+            own or self.theme,
+            slide_rng,
+            own_style=own is not None,
+            previous=previous,
+            used=used,
+            number=number,
+            total=self.total,
         )
 
 
@@ -353,10 +368,12 @@ def lay_out_slide(
     previous: str | None = None,
     used: Mapping[str, int] | None = None,
     number: int = 0,
+    total: int | None = None,
 ) -> DeckSlide:
-    """The slide (the number-th of its deck, from 0) in one of the layouts that fit it and its theme, picked with its
-    random generator: not the previous slide's layout if another one fits, and less likely the more often the deck
-    has had it already (used); with its theme's own decoration (see talkgenerator.design.motifs)."""
+    """The slide (the number-th of its deck, from 0, of total slides, if that's known) in one of the layouts that fit
+    it and its theme, picked with its random generator: not the previous slide's layout if another one fits, and less
+    likely the more often the deck has had it already (used); with its theme's own decoration (see
+    talkgenerator.design.motifs), which numbers it ("7/12")."""
     from talkgenerator.design import motifs  # (here: motifs draw with this module's layouts and specs)
 
     layouts = [layout for layout in _LAYOUTS.get(slide.type, ()) if layout.for_family(theme.family)]
@@ -385,6 +402,7 @@ def lay_out_slide(
                 number=number,
                 credits=bool(slide.credits),
                 backdrop=isinstance(background, ImageElement),
+                total=total,
             )
         )
     palette = theme.palette
@@ -1591,6 +1609,78 @@ def _questions_mark(roles: dict[str, Content], theme: Theme) -> Placement:
     placement.boxes["title"] = (title, "left title")
     placement.shapes += _decoration(_left_aligned(theme), title, gap=16)
     placement.boxes["subtitle"] = (Box(x=MARGIN, y=690, w=960, h=220), "left subtitle")
+    return placement
+
+
+def _references(left: bool) -> Callable[[dict[str, Content], Theme], Placement]:
+    """An academic talk's references: its works one under the other, each after its number as cited ("[1]"), and a
+    picture of one of them (a book's cover, a paper's figure), if it has one, beside them (on the right, or left), as
+    large as it fits whole, with its caption right under it."""
+
+    def references(roles: dict[str, Content], theme: Theme) -> Placement:
+        placement = Placement("v5/references-left" if left else "v5/references")
+        top = (_with_title(placement, roles, theme) if "title" in roles else MARGIN) + 8
+        figure = roles.get("figure")
+        picture_width = 680.0 if isinstance(figure, ImageElement) else 0.0
+        x0 = MARGIN + picture_width + 64 if picture_width and left else MARGIN
+        x1 = WIDTH - MARGIN - picture_width - 64 if picture_width and not left else WIDTH - MARGIN
+        works = _numbered(roles, "item", 5)
+        y, height = _spread(top, _CONTENT_BOTTOM, len(works), 16, 130)
+        for index in works:
+            placement.boxes[f"number_{index}"] = (Box(x=x0, y=y, w=100, h=height), "citation")
+            placement.boxes[f"item_{index}"] = (Box(x=x0 + 124, y=y, w=x1 - x0 - 124, h=height), "reference")
+            y += height + 16
+        if isinstance(figure, ImageElement):
+            caption = 64.0 if "caption" in roles else 0.0
+            area = Box(
+                x=MARGIN if left else WIDTH - MARGIN - picture_width,
+                y=top,
+                w=picture_width,
+                h=_CONTENT_BOTTOM - top - caption,
+            )
+            shown = _whole(figure, area)
+            placement.boxes["figure"] = (shown, "quote")
+            if caption:
+                below = Box(x=area.x, y=shown.y + shown.h + 12, w=area.w, h=caption - 12)
+                placement.boxes["caption"] = (below, "figure caption")
+        return placement
+
+    return references
+
+
+def _whole(picture: ImageElement, area: Box) -> Box:
+    """Where a picture shows whole in an area, as large as it fits, in its middle (filling the area when its size
+    isn't known)."""
+    width, height = picture.image.width, picture.image.height
+    if not width or not height:
+        return area
+    scale = min(area.w / width, area.h / height)
+    shown_w, shown_h = width * scale, height * scale
+    return Box(x=area.x + (area.w - shown_w) / 2, y=area.y + (area.h - shown_h) / 2, w=shown_w, h=shown_h)
+
+
+def _questions_photo(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The question and its subtitle on the left, and the picture to end on (a funny one, or an earlier slide's,
+    called back) large on the right."""
+    placement = Placement("v5/questions-photo")
+    photo = Box(x=WIDTH - MARGIN - 880, y=110, w=880, h=820)
+    placement.boxes["photo"] = (photo, "quote")
+    width = photo.x - 64 - MARGIN
+    title = Box(x=MARGIN, y=170, w=width, h=440)
+    placement.boxes["title"] = (title, "left title")
+    placement.shapes += _decoration(_left_aligned(theme), title, gap=16)
+    placement.boxes["subtitle"] = (Box(x=MARGIN, y=660, w=width, h=270), "left subtitle")
+    return placement
+
+
+def _questions_banner(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The picture to end on across the top, and the question big under it, with the subtitle below."""
+    placement = Placement("v5/questions-banner")
+    banner = Box(x=MARGIN, y=56, w=WIDTH - 2 * MARGIN, h=520)
+    placement.boxes["photo"] = (banner, "quote")
+    title = Box(x=160, y=banner.y + banner.h + 40, w=WIDTH - 320, h=230)
+    placement.boxes["title"] = (title, "centred title")
+    placement.boxes["subtitle"] = (Box(x=160, y=title.y + title.h + 12, w=WIDTH - 320, h=120), "centred subtitle")
     return placement
 
 
@@ -2995,8 +3085,10 @@ _LAYOUTS: Final[dict[str, tuple[_Layout, ...]]] = {
         _Layout("v5/swiss-section", _swiss_section, 4, families=frozenset({"Swiss poster"})),
     ),
     "questions": (
-        _Layout("v5/questions", _questions),
-        _Layout("v5/questions-mark", _questions_mark, 0.8),
+        _Layout("v5/questions", _questions, fits=_without("photo")),
+        _Layout("v5/questions-mark", _questions_mark, 0.8, _without("photo")),
+        _Layout("v5/questions-photo", _questions_photo, fits=_has("photo")),
+        _Layout("v5/questions-banner", _questions_banner, 0.7, _has("photo")),
     ),
     "timeline": (
         _Layout("v5/timeline", _timeline),
@@ -3026,6 +3118,10 @@ _LAYOUTS: Final[dict[str, tuple[_Layout, ...]]] = {
     "process": (
         _Layout("v5/process", _process_down),
         _Layout("v5/process-across", _process_across, 1.5, _short_steps),
+    ),
+    "references": (
+        _Layout("v5/references", _references(left=False)),
+        _Layout("v5/references-left", _references(left=True), 0.8, _has("figure")),
     ),
     "meme": (_Layout("v5/meme", _meme),),
     # (slide types from PowerPoint karaoke decks)

@@ -1151,6 +1151,40 @@ talks (11% to 17% in `ted`), about one of the ten karaoke kinds a talk; memes st
 the spaghetti diagram (thin turned rectangles could draw its links now), the onion, a tournament bracket, a starter
 pack, "Exhibit A", a museum label, a text-message conversation and buzzword bingo.
 
+**Livelier dares, closing slides and references, and emoji** (2026-11-09, D65), from the user's look at 35 sample talks
+("shouldn't they be more challenging or an audience interaction?", "the 'any questions' slides are also pretty
+boring", "references slides are pretty boring"). A **dare** is now a real challenge for the presenter to keep up from
+then on (an accent, a gesture on every slide, a word to work into every slide, a word they may no longer say, only
+questions for three slides), or something the presenter has the whole audience do, under "Audience participation" in
+the talk's language (a show of hands, a call and response, the front row standing up, a sound everyone makes); a dad
+joke to tell stays, as one kind among them. The dare kind has a field for each, and a recipe's variant leaves one out:
+the language model's dares are 40% for the audience, 35% challenges and 25% for the presenter as before, which in an
+English talk may build on a real dad joke (a variant says whether its slide takes a real fact or a flavour text:
+`Variant.facts`); the classic ones (the TED pack's version 6: 45 challenges, 35 audience dares) are a fifth dad jokes,
+when there's one, and else as many challenges as audience dares. The **closing slide** ("Questions?") ends a talk on
+one of three things, as many of each, in every format that has it (TED-like talks now and then; academic talks,
+all-hands and pitches always): a funny picture beside or above the question (a weird stock photo, generated in a talk
+that generates pictures), a last tip for the audience as its line (in an English talk, a real piece of advice some of
+the time), or a callback, an earlier slide's picture shown again with a line that calls back to it ("Remember this
+one?"). The deck gives a callback its picture once the slides before it are in (`QuestionsSlide.call_back`, as it
+numbers a section), since realizing a slide knows nothing of the others: the picture whose search query and
+description share the most words with what the model says it showed, or else the dice's pick, never a meme's
+template (no joke without its captions), credited as on its slide. An academic talk's **references** are a slide type
+of their own (`references`, a format type as D56's process is): the works numbered as cited ("[1]"), a click each,
+and most of the time a picture of one of them on the click after them, beside the list, as large as it fits whole,
+with a caption that says which ("Cover of [2]", "[3], Fig. 2"): a book's cover (Reddit's book covers, generated in a
+talk that generates pictures; 46% of the model's references) or a figure from a paper (a real chart from the
+internet: 30%), and old prints from museums or illustrations where Reddit can't be had. **Emoji** come in front of a
+list's things now and then, as karaoke decks have them: in a third of the tier lists and alignment charts and a
+quarter of the TED-like agendas, a variant whose hints ask for one a thing (the system prompt asks for none anywhere
+else), and in a third of the classic ones, from a list of their own (`data/emoji.json`: a thing's own emoji by a word
+of it, of 559 words, or else its place's mood, a crown for the S tier, a devil for chaotic evil; none for faiths,
+drink, weapons or death, and no joined sequences). No theme font has emoji: they're measured 1.4 ems wide (Segoe UI
+Emoji draws them 1.37), drawn in runs of their own in Segoe UI Emoji in a .pptx (where it's missing, PowerPoint and
+browsers fall back to their system's colour emoji), and in colour by the previewer where it has the font. Over 500
+seeds of 10-slide `default` talks, a dare comes up in 9.6% of the language model's talks (7.2% of classic ones), a
+closing slide in 10.4% (9.6%), a tier list in 15%, an alignment chart in 11% and an agenda in 7%.
+
 Variety per slide type comes from four axes, each sampled per slide with the talk's random generator:
 
 1. layout: image left or right, full-bleed, framed, split, grid;
@@ -1292,6 +1326,23 @@ section 8):
 - **Found** by laying the saved talks out in all 17 families over 6 seeds (scratchpad scripts in the hand-over notes):
   the split layout's panel was the only shape behind one column alone, and the six framing motifs the only decoration
   that showed before its picture.
+
+**Slide numbers** (2026-11-09, D65), the user's "slide numbers in all templates, albeit usually not very visible, and
+also have the max number like X/Y, so that you know when you're almost at the end": every family numbers its slides
+of the deck's, small (12 to 14 points), in its muted colour or its fixture's, and in its own style: keynote's and dark
+minimal's in a corner ("7/12"), corporate's on its tile, academic's in the Beamer footer ("7 / 12") with a dot for
+every slide of the deck over the title (the slide's own filled, the ones after it fainter), startup's on a faint pill
+of its accent, vintage paper's on a cartouche over its frame's foot, kids' on a sticker, brutalist's on its tag
+("07/12"), neon's by its line along the bottom, a terminal's in its status line ("[07/12]"), a blueprint's in its
+title block ("# 07/12"), a chalkboard's on a strip of tape on its ledge, a newspaper's as its folio, a Swiss poster's
+over its rule, WordArt's on a little yellow sticker, Comic Sans' in a caption box on the panel's border, and
+clip-art's in its top right corner. A number goes in the first of its family's spots that's free and where it reads
+(not across a WordArt member's frame, nor over neon's grid floor), never over a full-screen photo; a slide laid out by
+itself, of no deck, has its number alone ("07"), as before. A talk that streams knows how many slides it'll have from
+its start (its size: `DeckLayout(total=)`), and the deck laid out at the end counts its own (a slide that can't be
+made is left out). The 2019 template numbers its slides too, in its bottom right corner (where its picture layout has
+its slide number), at 11 points in its grey, the credit line ending before it. Measured on the design checks' deck of
+every kind of slide in all 17 families over two seeds, and its runs of slides of a type: no finding about a number.
 
 ## 10. Images: sources, aesthetics and generation
 
@@ -2075,9 +2126,10 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D60 | Talks a language model writes get real facts (`talkgenerator.facts`): up to three of a talk's slides of history (a historical figure's quote, two old photos, a timeline), fun facts, quizzes and big numbers get one each, on their lines of the talk's request, with what to do with it (a fun fact keeps it true and twists it); slides of history get one of the day's events first (Wikipedia's "On this day", of the day the talk is made on), a big number a sentence with a figure, a fun fact one that says how special something is, rather than what the topic is. They're sentences of the lead of the topic's English Wikipedia article (a topic in another language followed there from its language's Wikipedia), and the day's events; none for a topic that's a living person (English Wikipedia's "Category:Living people"), none that names one (of the articles its lead or its event links to), none with a word a slide shouldn't make light of, or of death, war, disasters, crime and accusations, politics or race (but a word of the topic's), none about real-world politics; when Wikipedia can't tell who's living, none that names someone. They're looked up while the talk's seeds are, from the cache of API responses (a week; a day's events a month) or within 8 seconds of the talk's start, after which the talk goes without them (a talk that's late may be a busy computer's: the next one asks again); a talk made again in a block of `same_answers` (a check) gets the facts the first one got (`http_util.keep`). A slide that builds on its fact (two of its telling words are in the slide's texts) credits its article ("Wikipedia: Penguin (CC BY-SA 4.0)", in a credit line that then starts with "Sources:" rather than "Image sources:"); the deck records every fact with its page, license and slide (`Deck.facts`, none for a talk without). Classic talks get them where they fit: half of their fun facts are a real sentence of the lead of the slide's seed's article, with a twist of the TED pack's (its version 4), and half of their quizzes a real question of Open Trivia DB's, of the topic's category by its Wikipedia description (animals for penguins; never celebrities, politics, entertainment, sports or mythology), each credited on its slide. `DISABLE_FACTS`, `DISABLE_WIKIPEDIA` and `DISABLE_OPENTDB` switch them off. Wikidata and REST Countries aren't used (section 11). Flavour texts too, which the user allowed on the public site on 2026-11-08 (`talkgenerator.sources.flavour`): a fun fact may build on a random useless fact (uselessfacts.jsph.pl), a dare dares the presenter to tell a real dad joke (icanhazdadjoke, about the topic's word in the singular if there are any, else of a random page), and the closing slide's line under its title is a real piece of advice (the Advice Slip); classic talks get them in half of their dares and two in five of their closing lines, in framings of the TED pack's version 5. They pass the facts' checks and their own (no insults, drink or faiths), name no living person (their capitalised words, as Wikipedia's articles), and are credited without a license (their sites state none); `DISABLE_USELESS_FACTS`, `DISABLE_DAD_JOKES` and `DISABLE_ADVICE_SLIPS` switch them off. A talk in another language than English gets no dad jokes or advice slips, which a slide says word for word (2026-11-09, section 5.9). |
 | D61 | A talk can leave its format to its seed (`schema="random"`): the seed picks the persona first, then the format from a stream of its own, by `FORMAT_WEIGHTS` (the TED-like talk 8, the formats beyond it 1 each) times the persona's multipliers (`Persona.formats`: a startup founder ×12 for a pitch, a disgraced professor ×12 for an academic talk, a management consultant ×12 for an all-hands, a motivational speaker ×12 for a keynote), so each persona's favourite dominates and every format keeps a few talks in a hundred with every persona. Only the formats for talks take part: not `ted`, whose copyright-free images are a license policy (`open`) that goes with any format, nor `interview` and `test`. A format named weights the persona as before (D56). A talk can also say which personas its seed picks from (`personas=`): the seed picks among all of them first and again among those allowed only when that one isn't, so a talk keeps its persona whenever it's allowed. talkgenerator.com's talks leave their format to the seed, with the personas its visitor didn't switch off. |
 | D62 | A talk can say which families a random theme can be of (`theme_families=`): the seed picks among all the families first, and again among the allowed ones only when that one isn't, by the same weights (the family's own times the persona's and the format's multipliers), so a talk keeps its theme whenever its family is allowed; a chaos deck's slides get themes of the allowed families too. A family named as the theme goes first. talkgenerator.com's settings let a visitor switch families off for "Surprise me". |
+| D65 | From the user's look at 35 sample talks (2026-11-09): a dare is a real challenge for the presenter to keep up, or something the whole audience does ("Audience participation"), a dad joke one kind among them; a closing slide ends its talk on a funny picture, a last tip or a callback to an earlier slide's picture, which the deck gives it (realizing a slide still knows no other slide); an academic talk's references are a slide type of their own, with a picture of one of the works (a book's cover or a paper's figure) most of the time; emoji come in front of a list's things now and then, only where a variant asks for them, measured 1.4 ems wide and drawn in an emoji font; and every slide is numbered of the deck's ("7/12"), small and in its family's style, the 2019 template's too. A recipe's variant can say that its slide takes no real fact or flavour text (`Variant.facts`). |
 
-D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, and D43 to D62 on 2026-11-08; the
-others follow from the design.
+D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, D43 to D62 on 2026-11-08, and D65
+on 2026-11-09; the others follow from the design.
 
 ### Open questions
 

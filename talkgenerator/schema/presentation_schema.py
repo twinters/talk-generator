@@ -151,10 +151,12 @@ def _title_slide(
     return slide, [text for text in (title, subtitle) if text]
 
 
-def _fact_use(pick: SlideGeneratorData | None) -> str | None:
+def _fact_use(pick: SlideGeneratorData | None, recipe: Recipe | None = None) -> str | None:
     """What a slide that the language model writes does with a real fact, if it builds on one (see
-    talkgenerator.facts.use_of)."""
+    talkgenerator.facts.use_of): none for a variant of its recipe that builds on none (a dare for the audience)."""
     if pick is None or pick.llm is None or pick.llm.kind == "title":
+        return None
+    if recipe is not None and not recipe.facts:
         return None
     return facts.use_of(pick.llm.kind, pick.get_tags())
 
@@ -815,7 +817,7 @@ class PresentationSchema:
         uses = [
             (slide.number, use)
             for slide_nr, slide in sorted(talk.planned.items())
-            if (use := _fact_use(talk.picks[slide_nr])) is not None
+            if (use := _fact_use(talk.picks[slide_nr], slide.recipe)) is not None
         ]
         if not uses:
             return {}

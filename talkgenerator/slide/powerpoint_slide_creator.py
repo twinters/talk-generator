@@ -6,10 +6,13 @@ from pathlib import Path
 
 import pptx
 from lxml.etree import XMLSyntaxError
+from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE_TYPE
+from pptx.enum.text import PP_ALIGN
 from pptx.oxml import parse_xml
 from pptx.oxml.ns import qn
 from pptx.presentation import Presentation
+from pptx.util import Inches, Pt
 
 from talkgenerator.datastructures.image_data import CreditPart, ImageData
 from talkgenerator.render import animation, diagrams
@@ -182,6 +185,41 @@ def _add_image_or_text(slide, placeholder_id, image_url_or_text, original_image_
 def _print_all_placeholders(slide):
     for shape in slide.placeholders:
         print("%d %s" % (shape.placeholder_format.idx, shape.name))
+
+
+# A slide's number of the deck's ("7/12"): small and grey, in the template's bottom right corner (where its picture
+# layout has a slide number), over the right end of the strip that holds the credits, which then ends before it
+SLIDE_NUMBER_WIDTH = 800000  # (in EMU: 0.87 inch)
+SLIDE_NUMBER_SIZE = 11  # (points)
+SLIDE_NUMBER_COLOUR = "BFBFBF"  # (the template's muted grey, on its black)
+SLIDE_NUMBER_FONT = "Calibri"  # (the template's body font)
+
+
+def add_slide_number(slide, number: int, total: int, slide_width: int, slide_height: int) -> None:
+    """Number the slide of the deck's slides ("7/12") in the template's bottom right corner, small and grey, and
+    keep its credit line (if any) clear of it."""
+    sources = next((shape for shape in slide.placeholders if shape.placeholder_format.idx == SOURCES_PLACEHOLDER), None)
+    top, height = slide_height - _CREDIT_STRIP, _CREDIT_STRIP
+    if sources is not None:
+        left, top, height = sources.left, sources.top, sources.height  # (the layout's: the slide's own from now on)
+        if left + sources.width > slide_width - SLIDE_NUMBER_WIDTH:
+            sources.left, sources.top, sources.height = left, top, height
+            sources.width = slide_width - SLIDE_NUMBER_WIDTH - left
+    box = slide.shapes.add_textbox(slide_width - SLIDE_NUMBER_WIDTH, top, SLIDE_NUMBER_WIDTH - Inches(0.1), height)
+    box.name = "Slide number"
+    frame = box.text_frame
+    frame.margin_top = frame.margin_bottom = 0
+    frame.word_wrap = False
+    paragraph = frame.paragraphs[0]
+    paragraph.alignment = PP_ALIGN.RIGHT
+    run = paragraph.add_run()
+    run.text = f"{number}/{total}"
+    run.font.name = SLIDE_NUMBER_FONT
+    run.font.size = Pt(SLIDE_NUMBER_SIZE)
+    run.font.color.rgb = RGBColor.from_string(SLIDE_NUMBER_COLOUR)
+
+
+_CREDIT_STRIP = 266008  # (how high the template's strip for the credits is, along the bottom, in EMU)
 
 
 def add_sources_note(slide, credits: Sequence[Sequence[CreditPart]], prefix: str = "Image sources: "):

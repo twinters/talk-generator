@@ -274,18 +274,19 @@ Images: `photo`
 
 ## `questions`
 
-The closing slide, inviting the audience's questions.
+The closing slide, inviting the audience's questions: a question, a line under it (a last tip, say), and a picture to end on, if it has one (a funny one, or an earlier slide's, called back).
 
 | Text | At most | What to write |
 | --- | --- | --- |
 | `title` | 30 | a question that invites the audience's questions |
 | `subtitle` | 80 | a line under it (or empty, for none) |
+| `callback` | 60 | the earlier slide whose picture this one shows again, as a callback: what that picture showed, as its image search query said it (or empty, for none) |
 
-Images: none
+Images: `photo`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `closing-pitch` | The closing slide, after the ask: inviting the investors' questions (and their money) | the default; `subtitle`: a line under it, about investing; tags: closing, questions |
+| `closing-pitch` | The closing slide, after the ask: inviting the investors' questions (and their money) | the default; `subtitle`: a line under it, about investing; images: `photo` weird-stock (or generated, from its prompt, with an image generator set up); tags: closing, questions |
 
 ## `timeline`
 

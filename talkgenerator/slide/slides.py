@@ -1,6 +1,6 @@
 import re
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from talkgenerator.datastructures.image_data import CreditPart, ImageData
 from talkgenerator.images import analysis
@@ -597,12 +597,63 @@ class SectionSlide(DrawnSlide):
 
 
 class QuestionsSlide(DrawnSlide):
-    """The closing slide: a question to the audience ("Questions?"), and a subtitle, if any."""
+    """The closing slide: a question to the audience ("Questions?"), a subtitle, if any (a last tip, say), and a
+    picture to end on, if it has one: a funny one, or, as a callback, an earlier slide's picture, which the deck gives
+    it once the slides before it are in (see call_back). The callback says what that picture showed (in a model's
+    words: "" for any of them), and pick is the dice's share of the way along the earlier pictures, for when no
+    picture's words match it; a line that only makes sense with the picture (a classic "Remember this one?") goes
+    when there's none."""
 
     required_arguments = ("title",)
 
-    def __init__(self, title: str | None, subtitle: str | None = None):
-        super().__init__("questions", None, {"title": title, "subtitle": subtitle, "mark": "?"})
+    def __init__(
+        self,
+        title: str | None,
+        subtitle: str | None = None,
+        photo: ImageData | None = None,
+        callback: str | None = None,
+        pick: float = 0.0,
+        line_needs_picture: bool = False,
+    ):
+        super().__init__("questions", None, {"photo": photo, "title": title, "subtitle": subtitle, "mark": "?"})
+        self.callback = callback
+        self._pick = pick
+        self._line_needs_picture = line_needs_picture
+
+    def call_back(self, earlier: Sequence[Slide]) -> ImageData | None:
+        """Show an earlier slide's picture again, as the callback (if this slide calls back, and has no picture yet):
+        the one whose search query and description share the most words with the callback, or else the dice's pick
+        of them (not a meme's template, which is no joke without its captions); credited as on its slide. The
+        picture, or None when there's none to call back to."""
+        if self.callback is None or self._arguments.get("photo") is not None:
+            return None
+        pictures: list[ImageData] = []
+        for slide in earlier:
+            if isinstance(slide, MemeSlide):
+                continue
+            pictures += [value for value in slide._arguments.values() if isinstance(value, ImageData)]
+        pictures = [picture for index, picture in enumerate(pictures) if picture not in pictures[:index]]
+        if not pictures:
+            if self._line_needs_picture:
+                self._arguments["subtitle"] = None
+            return None
+        wanted = _words(self.callback)
+        scores = [len(wanted & _words(f"{picture.query or ''} {picture.description or ''}")) for picture in pictures]
+        best = max(scores)
+        picked = (
+            pictures[scores.index(best)] if best else pictures[min(len(pictures) - 1, int(self._pick * len(pictures)))]
+        )
+        self._arguments["photo"] = picked
+        self.add_source(picked.get_source(), picked.get_source_url(), picked.get_credit(), image=picked)
+        return picked
+
+
+def _words(text: str) -> set[str]:
+    """A text's words, in lowercase, without little words: to tell what two texts share."""
+    return set(re.findall(r"[a-z]+", text.lower())) - _LITTLE
+
+
+_LITTLE: Final = frozenset("a an the of and or in on at to for with by from its it is are this that".split())
 
 
 # NATIVE DIAGRAMS, drawn as texts on shapes too (Venn diagrams and 2×2 matrices have their own drawing: DiagramSlide)
@@ -712,6 +763,34 @@ class ProcessSlide(DrawnSlide):
 
     def clicks(self) -> dict[str, int]:
         return self._one_by_one(*((f"step_{index}",) for index in range(1, 6)))
+
+
+REFERENCES = 5  # the most works a references slide lists
+
+
+class ReferencesSlide(DrawnSlide):
+    """A talk's references, as an academic talk ends with them: three to five works, numbered as citations ("[1]"),
+    appearing one by one, a click each; and a picture of one of them, if it has one (a book's cover, or a figure from a
+    paper), with a caption that says which ("Cover of [2]"), on the click after them (docs/v5-plan.md, D65)."""
+
+    required_arguments = ("item_1", "item_2", "item_3")
+
+    def __init__(
+        self, title: str | None, *works: str | None, figure: ImageData | None = None, caption: str | None = None
+    ):
+        listed = [work.strip() for work in works if work and work.strip()][:REFERENCES]
+        arguments: dict[str, object] = {"title": title}
+        for index in range(1, REFERENCES + 1):
+            work = listed[index - 1] if index <= len(listed) else None
+            arguments[f"number_{index}"] = f"[{index}]" if work else None
+            arguments[f"item_{index}"] = work
+        arguments["figure"] = figure
+        arguments["caption"] = caption if figure is not None else None
+        super().__init__("references", None, arguments)
+
+    def clicks(self) -> dict[str, int]:
+        works = ((f"number_{index}", f"item_{index}") for index in range(1, REFERENCES + 1))
+        return self._one_by_one(*works, ("figure", "caption"))
 
 
 class FunFactSlide(DrawnSlide):

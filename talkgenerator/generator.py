@@ -586,9 +586,14 @@ class _Following:
     def started(self, slide_deck: SlideDeck) -> None:
         self._go_on()
         theme = slide_deck.theme
-        if theme is not None:  # (laid out one by one as they come, as to_deck lays them all out)
+        if theme is not None:  # (laid out one by one as they come, as to_deck lays them all out, "7/12" by the size)
             self._layout = engine.DeckLayout(
-                slide_deck.seed, theme, slide_deck.style_chaos, slide_deck.extreme_themes, slide_deck.theme_families
+                slide_deck.seed,
+                theme,
+                slide_deck.style_chaos,
+                slide_deck.extreme_themes,
+                slide_deck.theme_families,
+                total=slide_deck.size,
             )
         self.hand_over(
             TalkStarted(

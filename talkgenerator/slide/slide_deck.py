@@ -10,7 +10,7 @@ from talkgenerator.models.deck import Deck, Fact, TalkPersona, TopicOrTitle
 from talkgenerator.models.theme import Theme
 from talkgenerator.models.usage import Usage
 from talkgenerator.render.powerpoint import render_slide
-from talkgenerator.slide.slides import SectionSlide, Slide
+from talkgenerator.slide.slides import QuestionsSlide, SectionSlide, Slide
 
 logger = logging.getLogger("talkgenerator")
 
@@ -100,6 +100,8 @@ class SlideDeck:
     def add_slide(self, slide_index: int, slide):
         if isinstance(slide, SectionSlide):  # (numbered after the sections before it: the talk's opening is the first)
             slide.number(2 + sum(isinstance(other, SectionSlide) for other in self._slides[:slide_index]))
+        if isinstance(slide, QuestionsSlide):  # (a closing slide that calls back shows an earlier slide's picture)
+            slide.call_back([other for other in self._slides[:slide_index] if other is not None])
         self._slides[slide_index] = slide
         if self.listener is not None:
             self.listener(self, slide_index, slide)
@@ -124,8 +126,10 @@ class SlideDeck:
             self._slides = [slide for slide in self._slides if slide is not None]
         deck = self.to_deck()
         images = self.image_store()  # (after the deck, which settles how its images show: as a video, say)
+        total = len(deck.slides)  # (each numbered of them: "7/12")
         return [
-            render_slide(prs_template, deck_slide, debug_notes=debug_notes, images=images) for deck_slide in deck.slides
+            render_slide(prs_template, deck_slide, debug_notes=debug_notes, images=images, number=number, total=total)
+            for number, deck_slide in enumerate(deck.slides, 1)
         ]
 
     def to_deck(self, schema_name: str | None = None) -> Deck:

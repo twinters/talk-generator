@@ -47,5 +47,21 @@
     "2019",
     "2021",
     "2023"
+  ],
+  "cover_caption": [
+    "Cover of \\[{number}\\]",
+    "\\[{number}\\], the cover",
+    "\\[{number}\\], first edition",
+    "\\[{number}\\], signed copy",
+    "\\[{number}\\], still unread",
+    "\\[{number}\\], the paperback"
+  ],
+  "figure_caption": [
+    "\\[{number}\\], Fig. {figure}",
+    "Figure {figure} of \\[{number}\\]",
+    "\\[{number}\\], p. {page}",
+    "\\[{number}\\], Fig. {figure} (detail)",
+    "\\[{number}\\], supplementary Fig. {figure}",
+    "From \\[{number}\\], p. {page}"
   ]
 }

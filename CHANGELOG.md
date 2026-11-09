@@ -282,6 +282,32 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
 - A real chart from the internet (Reddit's) now comes under a confident conclusion that it supposedly proves, two
   times in three, or bare, as karaoke decks have them.
 
+### Livelier dares, closing slides and references, emoji and slide numbers
+
+From the user's look at 35 sample talks (docs/v5-plan.md, D65):
+
+- A **dare** is a real challenge for the presenter to keep up from then on (an accent, a gesture on every slide, a
+  word to work into every slide, a word they may no longer say), or something the presenter has the whole audience
+  do, under "Audience participation" in the talk's language (a show of hands, a call and response, the front row
+  standing up). Daring the presenter to tell a real dad joke stays, as one kind among them: a fifth of the classic
+  dares, and a quarter of the language model's in English talks. The TED content pack (version 6) has 45 challenges
+  and 35 audience dares.
+- The **closing slide** ("Questions?") ends its talk on a funny picture (generated, in a talk that generates
+  pictures), a last tip for the audience (a real piece of advice now and then, in English), or a callback: an earlier
+  slide's picture shown again, with a line that calls back to it ("Remember this one?"), as many of each, in TED-like
+  talks, academic talks, all-hands and pitches. Two new layouts put the picture beside the question or above it.
+- An academic talk's **references** are a slide type of their own: the works numbered as cited, a click each, and
+  most of the time a picture of one of them after them, a book's cover (generated, in a talk that generates
+  pictures) or a figure from a paper, with a caption that says which ("Cover of [2]", "[3], Fig. 2").
+- **Emoji** in front of a list's things now and then: a third of the tier lists and alignment charts, and a quarter of
+  the language model's agendas (a third of the classic ones, from a list of 559 words' emoji and each tier's and
+  alignment's own). Language models may write emoji only where a field asks for them. They're measured as wide as an
+  emoji font draws them, and drawn in Segoe UI Emoji in the .pptx and in previews.
+- **Slide numbers**: every theme family numbers its slides of the deck's ("7/12"), small and in its own style (a
+  terminal's status line, a blueprint's title block, a kindergarten's sticker, a chalkboard's tape...), and so does
+  the 2019 template, in its bottom right corner. A talk that streams numbers its slides of the ones it'll have from
+  its start.
+
 ### Classic texts: the TED content pack
 
 - Classic talks take their texts from the TED content pack (`talkgenerator/data/packs/ted`, docs/v5-plan.md section

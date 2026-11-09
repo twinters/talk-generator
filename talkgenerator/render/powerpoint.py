@@ -74,8 +74,8 @@ def render_pptx(
     _fetch_pictures(deck, images)
     if presentation is None:
         presentation = creator.create_new_powerpoint()
-    for slide in deck.slides:
-        render_slide(presentation, slide, debug_notes=debug_notes, images=images)
+    for number, slide in enumerate(deck.slides, 1):
+        render_slide(presentation, slide, debug_notes=debug_notes, images=images, number=number, total=len(deck.slides))
     return presentation
 
 
@@ -85,8 +85,11 @@ def render_slide(
     *,
     debug_notes: bool = False,
     images: ImageStore | None = None,
+    number: int | None = None,
+    total: int | None = None,
 ) -> Slide | None:
-    """Add one deck slide to the presentation. With debug_notes, its speaker notes say how it was made."""
+    """Add one deck slide to the presentation. With debug_notes, its speaker notes say how it was made. With its
+    number of the deck's total (from 1), it shows them ("7/12"), small, in the template's bottom right corner."""
     if slide.layout != classic.layout_id(slide.type):
         raise ValueError(f"Can't draw layout {slide.layout!r}: only the classic layouts exist so far")
     if slide.type == "chart":
@@ -101,6 +104,10 @@ def render_slide(
         raise ValueError(f"Unknown slide type {slide.type!r}")
     if ppt_slide is not None:
         _finish(ppt_slide, slide, debug_notes)
+        if number is not None and total is not None:
+            creator.add_slide_number(
+                ppt_slide, number, total, int(presentation.slide_width or 0), int(presentation.slide_height or 0)
+            )
     return ppt_slide
 
 

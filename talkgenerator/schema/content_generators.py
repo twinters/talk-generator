@@ -183,6 +183,8 @@ def copyright_free_prefixed_generator_from_word(prefixes: str | Collection[str])
 
 
 weird_copyright_free_generator = ImageSlot("a weird or funny stock photo", aesthetic="weird-stock")
+# The closing slide's picture to end on, a funny one (docs/v5-plan.md, D65): generated, in a talk that generates them
+closing_picture_generator = ImageSlot("a funny picture to end the talk on", aesthetic="weird-stock", generate=True)
 normal_or_weird_copyright_free_generator = CombinedGenerator(
     (1, copyright_free_generator), (1, weird_copyright_free_generator)
 )

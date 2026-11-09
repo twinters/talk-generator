@@ -59,8 +59,9 @@ Never write:
 - anything about real private persons, or the presenter's name on the slides (the title slide has it),
 - slurs, sexual content, or anything that mocks people for who they are,
 - statements about real-world politics, such as a country's wars or disputes, unless the topic is about them,
-- markup, emoji, hashtags, placeholders in curly braces, or the keys of your answer (such as slide_03): a callback \
-repeats what the earlier slide said, never its key or number.
+- markup, hashtags, placeholders in curly braces, or the keys of your answer (such as slide_03): a callback \
+repeats what the earlier slide said, never its key or number,
+- emoji, except where a field asks for them.
 
 If the topic asks for something hateful or harmful, set "unsafe_topic" to true, and keep everything else short.
 Answer with one JSON object in the shape you're given, and nothing else."""

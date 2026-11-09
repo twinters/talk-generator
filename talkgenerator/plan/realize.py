@@ -23,6 +23,7 @@ from talkgenerator.models.plan import SlidePlan
 from talkgenerator.plan import languages
 from talkgenerator.plan.kinds import KINDS, ContentSource, Recipe, TextField
 from talkgenerator.slide.slides import Slide
+from talkgenerator.sources import emoji
 from talkgenerator.util import generator_util, language_util, os_util, random_util
 
 logger = logging.getLogger("talkgenerator")
@@ -210,6 +211,9 @@ def realize(
             if texts[name] is None and not text_field.optional:
                 _note(problems, why)
                 return None
+            mood = recipe.emoji.get(name)
+            if mood is not None and texts[name]:  # (a list its variant asks emoji for: the model's, or else ours)
+                texts[name] = emoji.listed(texts[name], mood, own=language == languages.ENGLISH.code)
 
         images: dict[str, Any] = dict.fromkeys(slot for slot in kind.images if slot in recipe.omit)
         queries: dict[str, str] = {}

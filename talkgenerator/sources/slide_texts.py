@@ -20,7 +20,7 @@ from typing import Any, Final, TypeVar
 from talkgenerator import facts
 from talkgenerator.models import classic
 from talkgenerator.plan.languages import ENGLISH
-from talkgenerator.sources import conceptnet, memes, packs, text_generator
+from talkgenerator.sources import conceptnet, emoji, memes, packs, text_generator
 from talkgenerator.util import language_util, random_util
 
 _LONGEST_WORD: Final = 24  # a related word longer than this is a phrase that doesn't fit an option or an item
@@ -330,7 +330,7 @@ def meme(image: ImageSource) -> Callable[[dict[str, Any]], tuple[Any, ...] | Non
 @_unless_sensitive
 def generate_agenda(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
     """An agenda for a talk about the seed: a title, and three to five items (an opening, things related to the seed,
-    and an end)."""
+    and an end); a third of the time, each with an emoji in front (see talkgenerator.sources.emoji)."""
     related = related_words(presentation_context["seed"])
     variables = _context(presentation_context)
     title = _template("structure.agenda_title")(variables)
@@ -338,7 +338,10 @@ def generate_agenda(presentation_context: dict[str, Any]) -> tuple[str | None, .
     middle = _different("structure.agenda_item", presentation_context, related, random_util.randint(1, 3))
     if not title or not first or not last or not middle:
         return None
-    return title, first, *middle, last
+    items = [first, *middle, last]
+    if random_util.random() < emoji.CHANCE:
+        items = [emoji.with_emoji(item, "agenda") for item in items]
+    return title, *items
 
 
 @_unless_sensitive
@@ -351,21 +354,38 @@ def generate_section(presentation_context: dict[str, Any]) -> tuple[str, str | N
     return title, _maybe(0.5, _template("structure.section_subtitle")(variables))
 
 
-@_unless_sensitive
-def generate_questions(presentation_context: dict[str, Any]) -> tuple[str, str | None] | None:
-    """The closing slide: a question to the audience, and a subtitle (if any). Some of the time (with the advice slips
-    on: see talkgenerator.facts.real_advice), the subtitle is a real piece of advice instead ("Remember: ..."),
-    credited."""
-    variables = _context(presentation_context)
-    title = _template("structure.questions_title")(variables)
-    if not title:
-        return None
-    if facts.flavour_on("ADVICE_SLIPS") and random_util.random() < facts.ADVICE_SHARE:
-        advice = facts.real_advice(facts.ADVICE_LONGEST)
-        line = _template("structure.advice_line")({"advice": advice.text}) if advice is not None else None
-        if advice is not None and line and len(line) <= _CLOSING_LINE:
-            return title, facts.CreditedText(line, advice.fact(use="slide"))
-    return title, _maybe(0.6, _template("structure.questions_subtitle")(variables))
+def questions(picture: ImageSource) -> Callable[[dict[str, Any]], tuple[Any, ...] | None]:
+    """A generator of closing slides (QuestionsSlide's arguments): a question to the audience, and one of three ways
+    to end on, as many of each (from the user's look at the closing slides of 2026-11-09, D65): a funny picture from
+    the image source, with a disclaimer under it half the time; a callback to an earlier slide's picture (which the
+    deck gives it), with a line that says so ("Remember this one?"); or a last tip under it. A last tip is a real
+    piece of advice some of the time (with the advice slips on: see talkgenerator.facts.real_advice), credited ("One
+    last thing: ..."), else one of the TED pack's tips, or a disclaimer about the answers. A closing slide whose
+    picture can't be found gets a last tip instead."""
+
+    @_unless_sensitive
+    def generate(presentation_context: dict[str, Any]) -> tuple[Any, ...] | None:
+        variables = _context(presentation_context)
+        title = _template("structure.questions_title")(variables)
+        if not title:
+            return None
+        way = random_util.random()
+        if way < 1 / 3:
+            photo = picture(dict(presentation_context))
+            if photo is not None:
+                return title, _maybe(0.5, _template("structure.questions_subtitle")(variables)), photo
+        elif way < 2 / 3:
+            line = _template("structure.callback_line")(variables)
+            return title, line, None, "", random_util.random(), True
+        if facts.flavour_on("ADVICE_SLIPS") and random_util.random() < facts.ADVICE_SHARE:
+            advice = facts.real_advice(facts.ADVICE_LONGEST)
+            line = _template("structure.advice_line")({"advice": advice.text}) if advice is not None else None
+            if advice is not None and line and len(line) <= _CLOSING_LINE:
+                return title, facts.CreditedText(line, advice.fact(use="slide"))
+        tip = _template("structure.last_tip")(variables) if random_util.random() < 0.6 else None
+        return title, tip or _maybe(0.6, _template("structure.questions_subtitle")(variables))
+
+    return generate
 
 
 # NATIVE DIAGRAMS
@@ -566,19 +586,27 @@ def generate_acronym(presentation_context: dict[str, Any]) -> tuple[str | None, 
 
 @_unless_sensitive
 def generate_dare(presentation_context: dict[str, Any]) -> tuple[str, str] | None:
-    """A dare for the presenter (from a list of playful ones, some about the seed): its heading and the dare. Half the
-    time (with the dad jokes on: see talkgenerator.facts.real_joke), a dare to tell a real dad joke instead, about the
-    seed if there's one, credited: a groan the presenter has to deliver."""
-    if facts.flavour_on("DAD_JOKES") and random_util.random() < facts.REAL_SHARE:
+    """A dare (from lists of the TED pack's, some about the seed), with its heading: a real challenge for the
+    presenter to keep up from now on ("Challenge"), or something the presenter has the whole audience do ("Audience
+    participation"), as many of one as of the other. A fifth of the time (with the dad jokes on: see
+    talkgenerator.facts.real_joke), a dare to tell a real dad joke instead, about the seed if there's one, credited: a
+    groan the presenter has to deliver."""
+    kind = random_util.random()
+    if kind < _JOKES and facts.flavour_on("DAD_JOKES"):
         joke = facts.real_joke(str(presentation_context["seed"]), facts.JOKE_LONGEST)
         dare = _template("karaoke.joke_dare")({"joke": joke.text}) if joke is not None else None
         if joke is not None and dare and len(dare) <= _DARE:
             return ENGLISH.dare, facts.CreditedText(dare, joke.fact(use="slide"))
-    dare = _template("karaoke.dare")(_context(presentation_context, related_words(presentation_context["seed"])))
+    variables = _context(presentation_context, related_words(presentation_context["seed"]))
+    if kind >= _JOKES + (1 - _JOKES) / 2:  # (the audience's)
+        dare = _template("karaoke.audience_dare")(variables)
+        return (ENGLISH.audience, dare) if dare else None
+    dare = _template("karaoke.dare")(variables)
     return (ENGLISH.dare, dare) if dare else None
 
 
 _DARE: Final = 130  # how long a dare may be (the dare kind's length)
+_JOKES: Final = 0.2  # of the classic dares that dare the presenter to tell a real dad joke (when there's one)
 _CLOSING_LINE: Final = 80  # how long the line under the closing slide's title may be (the questions kind's subtitle)
 
 
@@ -614,7 +642,10 @@ def generate_tier_list(presentation_context: dict[str, Any]) -> tuple[Any, ...] 
     if not title:
         return None
     best = _capitalised(language_util.generic(seed))
-    return title, best, *(" | ".join(tier[:3]) or None for tier in tiers), random_util.choice(loved)
+    written = [best, *(" | ".join(tier[:3]) or None for tier in tiers), random_util.choice(loved)]
+    if random_util.random() < emoji.CHANCE:  # (a third of them with an emoji in front of every thing)
+        written = [emoji.listed(things, f"tier_{tier.lower()}") for tier, things in zip("SABCF", written, strict=True)]
+    return title, *written
 
 
 # THE NEXT ONES FROM THE KARAOKE CATALOGUE: a wall of text, an alignment chart, red flags, reviews and a fake error
@@ -651,6 +682,10 @@ def generate_alignment_chart(presentation_context: dict[str, Any]) -> tuple[Any,
     ]
     if not title or not all(cells) or len(set(cells)) < len(cells):
         return None
+    if random_util.random() < emoji.CHANCE:  # (a third of them with an emoji in front of every cell's thing)
+        cells = [
+            emoji.with_emoji(cell or "", alignment) for cell, alignment in zip(cells, classic.ALIGNMENTS, strict=True)
+        ]
     return title, ENGLISH.lawful_to_chaotic, ENGLISH.good_to_evil, *cells
 
 

@@ -78,7 +78,8 @@ CLASSIC_ROLES: Final[dict[str, dict[str, str]]] = {
         **{f"{part}_{number}": f"{part}_{number}" for number in range(1, 6) for part in ("number", "item")},
     },
     "section": {"kicker": "kicker", "title": "title", "subtitle": "subtitle"},
-    "questions": {"title": "title", "subtitle": "subtitle", "mark": "mark"},
+    # (the closing slide, with a picture to end on, if it has one: docs/v5-plan.md, D65)
+    "questions": {"photo": "photo", "title": "title", "subtitle": "subtitle", "mark": "mark"},
     # (native diagrams, drawn as texts on shapes too)
     "timeline": {
         "title": "title",
@@ -93,8 +94,14 @@ CLASSIC_ROLES: Final[dict[str, dict[str, str]]] = {
         **{f"report_{number}": f"report_{number}" for number in range(1, 5)},
     },
     "iceberg": {"title": "title", "tip": "tip", **{f"hidden_{number}": f"hidden_{number}" for number in range(1, 4)}},
-    # (the talk formats': a method, or how a product works)
+    # (the talk formats': a method, or how a product works; an academic talk's references, with a picture of one)
     "process": {"title": "title", **{f"step_{number}": f"step_{number}" for number in range(1, 6)}},
+    "references": {
+        "title": "title",
+        **{f"{part}_{number}": f"{part}_{number}" for number in range(1, 6) for part in ("number", "item")},
+        "figure": "figure",
+        "caption": "caption",
+    },
     # (a meme: a template's picture, with its captions as texts on it, where the template has them)
     "meme": {"template": "template", **{f"text_{number}": f"text_{number}" for number in range(1, 5)}},
     # (slide types from PowerPoint karaoke decks: docs/v5-plan.md, section 8)
@@ -152,7 +159,7 @@ KARAOKE_TYPES: Final = frozenset(
     | {"wall_of_text", "alignment_chart", "red_flags", "reviews", "error_message"}
 )
 # The slide types that the talk formats beyond TED-like talks brought (docs/v5-plan.md, section 7)
-FORMAT_TYPES: Final = frozenset({"process"})
+FORMAT_TYPES: Final = frozenset({"process", "references"})
 
 # The slide types that the 2019 template has no layout for (all of milestone 6's): a classic deck draws them as a
 # themed deck does, laid out in the template's look (talkgenerator.design.themes.CLASSIC_LOOK), on its blank slide
@@ -188,6 +195,7 @@ REQUIRED_ROLES: Final[dict[str, tuple[str, ...]]] = {
     "org_chart": ("boss", "report_1", "report_2"),
     "iceberg": ("tip", "hidden_1", "hidden_2"),
     "process": ("step_1", "step_2", "step_3"),
+    "references": ("item_1", "item_2", "item_3"),
     "meme": ("template", "text_1"),
     "fun_fact": ("kicker", "fact"),
     "acronym": ("letter_1", "word_1", "letter_2", "word_2", "letter_3", "word_3"),
@@ -201,8 +209,8 @@ REQUIRED_ROLES: Final[dict[str, tuple[str, ...]]] = {
     "error_message": ("message", "button_1", "button_2"),
 }
 
-# The roles of drawn slides that hold pictures: a post's or a story's photo, a meme's template
-IMAGE_ROLES: Final = frozenset({"photo", "template"})
+# The roles of drawn slides that hold pictures: a post's or a story's photo, a meme's template, a work's figure
+IMAGE_ROLES: Final = frozenset({"photo", "template", "figure"})
 
 # Roles that only ever hold text, even when the text looks like an image's file name
 TEXT_ROLES: Final = frozenset(

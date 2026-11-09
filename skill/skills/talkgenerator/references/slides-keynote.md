@@ -310,17 +310,18 @@ Images: `photo`
 
 ## `dare`
 
-A dare for the presenter, on a card: a playful task for the next slide or the rest of the talk, which the audience then watches them do (talkgenerator adds its heading).
+A dare, on a card: a real challenge for the presenter for the rest of the talk (or the next few slides), which the audience then watches them keep up, or something the presenter has the whole audience do (talkgenerator adds its heading).
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `dare` | 130 | the task, said to the presenter: a way of speaking, a word to work in, a voice; for the presenter alone, and nothing physical |
+| `dare` | 130 | the challenge, said to the presenter, for the rest of the talk or the next few slides: an accent or a voice, a gesture on every slide, a word to work into every slide, a rule such as speaking only in questions; hard to keep up, harmless, and for the presenter alone (or empty, for none) |
+| `audience` | 130 | what the presenter has the whole audience do, said to them: a show of hands, a call and response (when the presenter says a word, everyone answers with another), the front row standing up, a sound everyone makes; harmless, fun to join in, and singling nobody out (or empty, for none) |
 
 Images: none
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `dare-keynote` | A dare for the presenter, halfway through the talk: something playful they now have to do on the next slide or for the rest of the talk | the default; tags: dare |
+| `dare-keynote` | A dare, halfway through the talk | the default; tags: dare |
 
 ## `tier_list`
 

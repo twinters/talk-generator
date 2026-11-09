@@ -22,7 +22,7 @@ from typing import Any, Final
 
 from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
-from talkgenerator.plan.kinds import AGENDA_ITEM, Recipe, Variant
+from talkgenerator.plan.kinds import AGENDA_ITEM, Recipe, Variant, closing_variants
 from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema.formats import (
     Format,
@@ -864,8 +864,10 @@ _GENERATORS: Final = [
         "Q&A",
         Recipe(
             "questions",
+            (cg.closing_picture_generator,),
             brief="The closing slide, inviting everyone's questions, as at an all-hands",
             hints={"subtitle": "a line under it, such as where the questions go instead"},
+            variants=closing_variants("a line under it, such as where the questions go instead"),
         ),
         repeats=3,
     ),

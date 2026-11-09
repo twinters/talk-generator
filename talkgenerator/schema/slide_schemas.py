@@ -4,7 +4,7 @@ from talkgenerator.datastructures.slide_generator_data import (
     PeakedWeight,
     SlideGeneratorData,
 )
-from talkgenerator.plan.kinds import Recipe, Variant
+from talkgenerator.plan.kinds import EMOJI_NOTE, Recipe, Variant, closing_variants, with_emoji
 from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema.registry import Registry
 from talkgenerator.slide import slide_generator_types, slides
@@ -916,7 +916,18 @@ fun_fact_slide_generators_copyright_free = _register(
 )
 
 # The ones without pictures, in every format: an acronym for a made-up method, a dare for the presenter (organisers put
-# one such slide in a deck, at most: so it's rarer), a flowchart whose every path leads to the same end, and a tier list
+# one such slide in a deck, at most: so it's rarer), a flowchart whose every path leads to the same end, and a tier list.
+# A third of the tier lists and alignment charts have an emoji in front of every thing (docs/v5-plan.md, D65)
+_TIERS_WITHOUT_B_AND_C = frozenset({"b_tier", "c_tier"})
+# (and the moods of the emoji talkgenerator puts where a model wrote none: see talkgenerator.sources.emoji)
+_TIER_MOODS = {f"{tier.lower()}_tier": f"tier_{tier.lower()}" for tier in slides.TIERS}
+_ALIGNMENT_MOODS = {alignment: alignment for alignment in slides.ALIGNMENTS}
+_TIER_EMOJI = {
+    **with_emoji("tier_list", ("s_tier",)),
+    **with_emoji("tier_list", ("a_tier", "b_tier", "c_tier", "f_tier"), each=True),
+}
+_ALIGNMENT_EMOJI = with_emoji("alignment_chart", slides.ALIGNMENTS)
+
 karaoke_slide_generators = _register(
     "karaoke",
     [
@@ -944,8 +955,27 @@ karaoke_slide_generators = _register(
             "Dare",
             Recipe(
                 "dare",
-                brief="A dare for the presenter, halfway through the talk: something playful they now have to do on "
-                "the next slide or for the rest of the talk",
+                brief="A dare, halfway through the talk",
+                # (a real challenge for the presenter, or the audience joining in, from the user's look at the dares of
+                # 2026-11-09, D65; and in an English talk, now and then a real dad joke to tell: see
+                # talkgenerator.facts)
+                variants=(
+                    Variant(
+                        2,
+                        frozenset({"audience"}),
+                        "a real challenge for the presenter, which they have to keep up from now on: the audience "
+                        "will watch them try",
+                        facts=False,
+                    ),
+                    Variant(
+                        2,
+                        frozenset({"dare"}),
+                        "for the whole audience: the presenter gets everyone to join in, as a show of hands or a call "
+                        "and response",
+                        facts=False,
+                    ),
+                    Variant(1, frozenset({"audience"}), "for the presenter, on the next slide or from now on"),
+                ),
             ),
             repeats=1,
         ),
@@ -972,7 +1002,18 @@ karaoke_slide_generators = _register(
                 "tier_list",
                 brief="A tier list that ranks things to do with the concept as if it were science: arguable "
                 "placements, and a surprising S tier as the punchline",
-                variants=(Variant(2), Variant(1, frozenset({"b_tier", "c_tier"}), "with only its S, A and F tiers")),
+                variants=(
+                    Variant(4 / 3),
+                    Variant(2 / 3, note=EMOJI_NOTE, hints=_TIER_EMOJI, emoji=_TIER_MOODS),
+                    Variant(2 / 3, _TIERS_WITHOUT_B_AND_C, "with only its S, A and F tiers"),
+                    Variant(
+                        1 / 3,
+                        _TIERS_WITHOUT_B_AND_C,
+                        f"with only its S, A and F tiers, {EMOJI_NOTE}",
+                        hints=_TIER_EMOJI,
+                        emoji=_TIER_MOODS,
+                    ),
+                ),
             ),
         ),
         # The next ones from the catalogue (2026-11-08): a wall of text that nobody can read (organisers warn against
@@ -1001,6 +1042,7 @@ karaoke_slide_generators = _register(
                 "alignment_chart",
                 brief="An alignment chart of things to do with the concept, as Dungeons & Dragons sorts characters: "
                 "harmless and wholesome as lawful good, unhinged as chaotic evil, the punchline",
+                variants=(Variant(2), Variant(1, note=EMOJI_NOTE, hints=_ALIGNMENT_EMOJI, emoji=_ALIGNMENT_MOODS)),
             ),
             repeats=3,
         ),
@@ -1060,6 +1102,9 @@ karaoke_slide_generators = _register(
 )
 
 # THE TALK'S STRUCTURE: an agenda after the title, a section's divider in the middle, "Questions?" at the end
+_AGENDA_ITEMS = "three to five parts of the talk, in the order the slides after this one come, separated by |"
+_AGENDA_EMOJI = with_emoji("agenda", ("items",), {"items": _AGENDA_ITEMS}, each=True)
+
 structure_slide_generators = _register(
     "structure",
     [
@@ -1072,10 +1117,9 @@ structure_slide_generators = _register(
             Recipe(
                 "agenda",
                 brief="The talk's agenda: what it will cover",
-                hints={
-                    "items": "three to five parts of the talk, in the order the slides after this one come, "
-                    "separated by |"
-                },
+                hints={"items": _AGENDA_ITEMS},
+                # (a quarter of them with an emoji in front of every item: docs/v5-plan.md, D65)
+                variants=(Variant(3), Variant(1, note=EMOJI_NOTE, hints=_AGENDA_EMOJI, emoji={"items": "agenda"})),
             ),
         ),
         _drawn(
@@ -1095,15 +1139,18 @@ structure_slide_generators = _register(
             ),
         ),
         _drawn(
-            slide_texts.generate_questions,
+            slide_texts.questions(cg.closing_picture_generator),
             slides.QuestionsSlide,
             PeakedWeight((-1,), 1800, 0),
             ["questions"],
             "Questions",
             Recipe(
                 "questions",
+                (cg.closing_picture_generator,),
                 brief="The closing slide, inviting the audience's questions",
                 hints={"subtitle": "a line under it, such as a disclaimer about the answers"},
+                # (a funny picture, a last tip or a callback to an earlier picture: docs/v5-plan.md, D65)
+                variants=closing_variants("a line under it, such as a disclaimer about the answers"),
             ),
         ),
     ],
