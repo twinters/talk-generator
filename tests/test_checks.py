@@ -273,6 +273,19 @@ def test_images_should_be_credited_and_not_come_back():
     assert all(finding.severity == "warning" for finding in findings)
 
 
+def test_a_closing_slides_callback_may_show_an_earlier_picture_again():
+    """A closing slide that calls back shows an earlier slide's picture again on purpose (docs/v5-plan.md, D65), as a
+    free model's pitch did ("Remember the WaddleDrone?"): no finding. Any other slide that shows it again is one."""
+    findings = check_images(
+        _deck(
+            _slide("image", _image("content")),
+            _slide("questions", _text("title", "Questions?"), _text("subtitle", "Remember this?"), _image("photo")),
+            _slide("image", _image("content")),
+        )
+    )
+    assert [(finding.slide, finding.message) for finding in findings] == [(3, "the same image as slide 1")]
+
+
 def test_the_required_roles_are_what_the_slide_classes_require():
     types = {
         slides.TitleSlide: "title",

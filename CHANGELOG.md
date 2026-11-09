@@ -229,6 +229,7 @@ how to keep 4.x's talks. The [docs](https://github.com/twinters/talk-generator/t
   rate limit still answers what it answered before, from its caches.
 - `interview` talks no longer get an about-me slide, and "a title or none" gives none half the time.
 - Wikimedia Commons credits no longer name an author twice ("Unknown author Unknown author").
+- Quote slides no longer quote a film's or a show's cast list from Wikiquote: an actor's name and their role.
 
 ## [4.0.1] - 2026-11-05
 
