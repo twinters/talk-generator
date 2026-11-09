@@ -1070,7 +1070,8 @@ related, can use multiple different generators for each".
   number in the theme's accent made light enough to read on the shade and the rest light (`v5/big-number`, and every
   KPI layout, whose tiles read on anything); the number and its label on a band across the shaded picture
   (`v5/big-number-band`); or the picture filling the slide's right side and the texts beside it on the theme's
-  background (`v5/big-number-side`). No design finding in any family (every layout, three seeds a family).
+  background (`v5/big-number-side`). No design finding in any family (every layout, three seeds a family). The kids
+  family hangs its bunting across the free side then (the merge's slow sweeps found none on it, 2026-11-09).
 - *From many sources*: the pictures behind figures have a look of their own, `backdrop`: stock photos most often, and
   now and then a weird picture from Reddit, a photo from r/pics and the like, a NASA photograph, an old photograph, a
   museum's painting, all of the topic; and a statement's backdrop is a calm photo two times in three, else the
@@ -1280,7 +1281,9 @@ there by hand, its value axis from 0 to the same round number, so the picture is
 point's name and of the lines, with a line from the dot to it. Over 500 seeds of 10-slide talks a language model
 writes: a diagram with pictures in 18% of `default` talks and 25% of `ted` ones (30% of diagram slides), a trend's picture
 in 6% (29% of trends), a matrix of dots in 7% to 8%; a scatter plot is in 3% of talks, as before (its weight is the
-formats'). Previews draw a matrix's dots, fitted lines, and trends where their renderers have them.
+formats'). Previews draw a matrix's dots, fitted lines, and trends where their renderers have them. A dot's name that
+doesn't fit beside its dot even at 12 points (a long word in a wide font, by a dot near its quadrant's side, as the
+merge's slow sweeps found in 8 families) goes across its room just under or over the dot (`diagrams.dot_name_box`).
 
 **Livelier dares, closing slides and references, and emoji** (2026-11-09, D65), from the user's look at 35 sample talks
 ("shouldn't they be more challenging or an audience interaction?", "the 'any questions' slides are also pretty boring",

@@ -478,6 +478,29 @@ def dot_label_box(layout: MatrixLayout, x: float, y: float, bounds: Box | None =
     return Box(round(dot_x - reach - width), round(top), round(width), round(height)), "right"
 
 
+def dot_name_box(
+    layout: MatrixLayout, matrix: MatrixDiagram, dot: Dot, *, font: str | None = None
+) -> tuple[Box, Align]:
+    """Where a dot's name goes: beside the dot (see dot_label_box), or, when it doesn't fit there even at the smallest
+    size, across the room the dot's quadrant gives it (see dot_bounds), just under the dot (or over it, where there's
+    more room), centred. A long word in a wide font didn't fit beside a dot near its quadrant's side (the slow design
+    sweeps of the merge of D63 to D65, 2026-11-09)."""
+    bounds = dot_bounds(layout, matrix, dot.x, dot.y)
+    beside, align = dot_label_box(layout, dot.x, dot.y, bounds)
+    if fits(dot.name, beside, SMALLEST, bold=True, font=font):
+        return beside, align
+    _, dot_y = layout.point(dot.x, dot.y)
+    margin = int(0.08 * _INCH)
+    reach = DOT_DIAMETER / 2 + margin
+    below = bounds.bottom - margin - (dot_y + reach)
+    above = dot_y - reach - (bounds.top + margin)
+    height = min(_DOT_NAME_HEIGHT, max(below, above))
+    if height <= 0:
+        return beside, align
+    top = dot_y + reach if below >= above else dot_y - reach - height
+    return Box(round(bounds.left + margin), round(top), round(bounds.width - 2 * margin), round(height)), "center"
+
+
 def _matrix_labels(frame: Box, matrix: MatrixDiagram, font: str | None) -> list[Label]:
     layout = matrix_layout(frame)
     ends = (matrix.x_left, matrix.x_right, matrix.y_bottom, matrix.y_top)
@@ -512,19 +535,14 @@ def _matrix_labels(frame: Box, matrix: MatrixDiagram, font: str | None) -> list[
             for index, text, box, name in named
         ]
     # The other dots' names, alike (they're things of a kind), then the punchline's, bigger if it fits
-    others = [
-        (dot, *dot_label_box(layout, dot.x, dot.y, dot_bounds(layout, matrix, dot.x, dot.y)))
-        for dot in matrix_dots(matrix)
-        if not dot.punchline
-    ]
+    others = [(dot, *dot_name_box(layout, matrix, dot, font=font)) for dot in matrix_dots(matrix) if not dot.punchline]
     if others:
         size = shared_size([dot.name for dot, _, _ in others], [box for _, box, _ in others], 22, bold=True, font=font)
         found += [
             Label(f"Dot {number}: {dot.name}", dot.name, box, size, bold=True, align=align)
             for number, (dot, box, align) in enumerate(others, 2)
         ]
-    bounds = dot_bounds(layout, matrix, matrix.dot_x, matrix.dot_y)
-    name_box, align = dot_label_box(layout, matrix.dot_x, matrix.dot_y, bounds)
+    name_box, align = dot_name_box(layout, matrix, matrix_dots(matrix)[-1], font=font)
     size = fitting_size(matrix.dot, name_box, 24, bold=True, font=font)
     found.append(
         Label(f"Dot: {matrix.dot}", matrix.dot, name_box, size, bold=True, align=align, colour="punchline", reveal=True)

@@ -664,6 +664,8 @@ def _crayon(scene: Scene) -> None:
             _scenery(scene, crayons)
         else:
             _bunting(scene, crayons, -10, WIDTH + 10, 2, 16, 34, 42)
+    elif (span := _beside_side_photo(scene)) is not None:  # (a picture filling one side: bunting across the other)
+        _bunting(scene, crayons, *span, 2, 12, 34, 42)
     sticker, number = _plate(WIDTH - 44 - 116, 116)
     if not scene.placement.photo and scene.free(number, pad=4):  # (before the confetti, which keeps clear of it)
         corner = sticker.h / 2
@@ -687,6 +689,22 @@ def _crayon(scene: Scene) -> None:
         )
     if scene.slide_type == "section" or scene.slide_type == "questions":
         _sun(scene, Box(x=WIDTH - 330, y=40, w=280, h=280))
+
+
+def _beside_side_photo(scene: Scene) -> tuple[float, float] | None:
+    """Across the top of a slide whose picture fills one side of it, from its top to its bottom (a big number's, D63:
+    a photo slide, whose picture no frame goes around), the span beside the picture, from left to right; None for
+    every other slide."""
+    if not scene.placement.photo or scene.backdrop:
+        return None
+    for role, (box, _) in scene.placement.boxes.items():
+        if not isinstance(scene.roles.get(role), ImageElement) or box.y > 0 or box.h < HEIGHT or box.w > WIDTH * 0.6:
+            continue
+        if box.x + box.w >= WIDTH:
+            return -10, box.x - 24
+        if box.x <= 0:
+            return box.x + box.w + 24, WIDTH + 10
+    return None
 
 
 def _sun(scene: Scene, box: Box) -> None:
