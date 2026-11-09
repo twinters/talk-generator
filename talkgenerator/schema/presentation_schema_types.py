@@ -10,7 +10,7 @@ from talkgenerator.schema import slide_topic_generators
 from talkgenerator.schema.formats import academic, corporate, keynote, pitch
 from talkgenerator.schema.presentation_schema import PresentationSchema
 from talkgenerator.schema.registry import Registry
-from talkgenerator.schema.slide_schemas import default_max_allowed_tags, slide_generators
+from talkgenerator.schema.slide_schemas import SPARE_GENERATORS, default_max_allowed_tags, slide_generators
 from talkgenerator.slide import powerpoint_slide_creator, slide_generator_types
 from talkgenerator.util import random_util
 
@@ -66,6 +66,7 @@ presentation_schema = schemas.register(
         title_candidates=(cg.wikihow_title_generator,),
         slide_generators=slide_generators.groups(*DEFAULT_GROUPS),
         max_allowed_tags=default_max_allowed_tags,
+        spare_generators=SPARE_GENERATORS,
     ),
 )
 
@@ -82,6 +83,7 @@ interview_schema = schemas.register(
         title_candidates=(cg.wikihow_title_generator,),
         slide_generators=slide_generators.groups(*DEFAULT_GROUPS),
         max_allowed_tags=interview_max_allowed_tags,
+        spare_generators=SPARE_GENERATORS,
     ),
 )
 
@@ -167,6 +169,7 @@ ted_schema = schemas.register(
             "quote": 0.2,
             "statement": 0.2,
         },
+        spare_generators=SPARE_GENERATORS,
     ),
 )
 
@@ -191,6 +194,7 @@ pitch_schema = schemas.register(
         slide_generators=slide_generators.group("pitch"),
         max_allowed_tags=pitch.CAPS,
         format=pitch.PITCH,
+        spare_generators=SPARE_GENERATORS,
     ),
 )
 academic_schema = schemas.register(
@@ -202,6 +206,7 @@ academic_schema = schemas.register(
         slide_generators=slide_generators.group("academic"),
         max_allowed_tags=academic.CAPS,
         format=academic.ACADEMIC,
+        spare_generators=SPARE_GENERATORS,
     ),
 )
 corporate_schema = schemas.register(
@@ -213,6 +218,7 @@ corporate_schema = schemas.register(
         slide_generators=slide_generators.group("corporate"),
         max_allowed_tags=corporate.CAPS,
         format=corporate.CORPORATE,
+        spare_generators=SPARE_GENERATORS,
     ),
 )
 keynote_schema = schemas.register(
@@ -224,6 +230,7 @@ keynote_schema = schemas.register(
         slide_generators=slide_generators.group("keynote"),
         max_allowed_tags=keynote.CAPS,
         format=keynote.KEYNOTE,
+        spare_generators=SPARE_GENERATORS,
     ),
 )
 

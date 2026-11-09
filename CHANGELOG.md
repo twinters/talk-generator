@@ -516,6 +516,12 @@ From the user's look at 35 sample talks (docs/v5-plan.md, D65):
 - `slide.updated` (`talkgenerator.models.events.SlideUpdated`): in a talk that streams, a slide handed over before
   comes again, at its index and laid out as before (`DeckLayout.again`), once a generated picture takes its stock
   photo's place; `talk.finished` comes once every picture is in.
+- Spare slides: `stream_talk(..., spares=3)` sends three spare slides early on (`slide.spare`,
+  `talkgenerator.models.events.SlideSpare`), for a presentation to show when it catches up with the making, instead of
+  waiting for the next slide. They're about the talk's topic, of kinds that take a hundredth of a second and hardly
+  ever fail (a tier list, red flags, a quiz, a chart...: no pictures to find; in a talk in another language, a
+  picture of the topic without text), laid out in the talk's theme without a slide number (`DeckLayout.spare`). They
+  stay out of the deck and its PowerPoint, and the talk's slides come out the same with spares or without.
 
 ### Lighter and faster
 

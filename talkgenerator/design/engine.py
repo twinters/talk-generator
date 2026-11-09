@@ -332,8 +332,17 @@ class DeckLayout:
         previous, used = self._before[number]
         return self._lay_out(slide, number, previous, used)
 
-    def _lay_out(self, slide: DeckSlide, number: int, previous: str | None, used: Counter[str]) -> DeckSlide:
-        slide_rng = self._rng.child("slide", number)
+    def spare(self, number: int, slide: DeckSlide) -> DeckSlide:
+        """A spare slide (the number-th, from 0: see talkgenerator.generator.stream_talk's spares) laid out in the
+        deck's theme, as its slides are, but from a random stream of its own and without a slide number ("7/12"): it's
+        none of the deck's slides, which are laid out the same, with spares or without. (It can be laid out while the
+        deck's slides are, on another thread: this changes nothing of the deck's layout so far.)"""
+        return self._lay_out(slide, number, None, Counter(), spare=True)
+
+    def _lay_out(
+        self, slide: DeckSlide, number: int, previous: str | None, used: Counter[str], spare: bool = False
+    ) -> DeckSlide:
+        slide_rng = self._rng.child("spare" if spare else "slide", number)
         own = None
         if self.style_chaos > 0:
             with random_util.use(slide_rng.child("chaos")):
@@ -349,6 +358,7 @@ class DeckLayout:
             used=used,
             number=number,
             total=self.total,
+            numbered=not spare,
         )
 
 
@@ -380,11 +390,13 @@ def lay_out_slide(
     used: Mapping[str, int] | None = None,
     number: int = 0,
     total: int | None = None,
+    numbered: bool = True,
 ) -> DeckSlide:
     """The slide (the number-th of its deck, from 0, of total slides, if that's known) in one of the layouts that fit
     it and its theme, picked with its random generator: not the previous slide's layout if another one fits, and less
     likely the more often the deck has had it already (used); with its theme's own decoration (see
-    talkgenerator.design.motifs), which numbers it ("7/12")."""
+    talkgenerator.design.motifs), which numbers it ("7/12"), unless it's not to be numbered (a spare slide, which is
+    none of the deck's)."""
     from talkgenerator.design import motifs  # (here: motifs draw with this module's layouts and specs)
 
     layouts = [layout for layout in _LAYOUTS.get(slide.type, ()) if layout.for_family(theme.family)]
@@ -414,6 +426,7 @@ def lay_out_slide(
                 credits=bool(slide.credits),
                 backdrop=isinstance(background, ImageElement),
                 total=total,
+                numbered=numbered,
             )
         )
     palette = theme.palette

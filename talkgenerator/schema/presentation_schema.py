@@ -19,7 +19,9 @@ the same seed gives the same talk, and generating the slides in parallel gives t
 
 A talk can be followed while it's made (Progress: talkgenerator.generator.stream_talk does): its slides are settled in
 order as soon as they can be, a planned talk's while the language model is still writing the rest of it, and the
-Progress hears of each.
+Progress hears of each. A Progress can want spare slides too, to show while the next slide isn't in yet: they're made
+early, on a thread of their own and from random streams of their own, so the talk's slides come out the same with
+spares or without (see _Spares).
 
 A talk's persona (see talkgenerator.personas) weighs in on every pick of a slide generator, classic or planned: a
 generator's weight for a slide is its own, times the persona's multiplier for its tags. The tag caps hold as before.
@@ -35,7 +37,7 @@ from collections.abc import Callable, Collection, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import TYPE_CHECKING, Any, Final, Protocol
 
 from pptx.presentation import Presentation
 
@@ -210,7 +212,11 @@ class Progress(Protocol):
     slides), of every slide once it's settled, in order, and of a slide settled before that got a generated picture
     in its stock photo's place (see talkgenerator.images.generation), whenever that comes in. Raising TalkCancelled
     from started or settled stops the talk, and so does setting cancelled, also while the talk waits for the language
-    model (whose answer then isn't read further)."""
+    model (whose answer then isn't read further).
+
+    A Progress may also want spare slides (spares, how many: 0 for none, as one without the attribute), which it's
+    told of (spare, with the spare's number, from 0) as each is made, from the talk's start until its slides are all
+    settled, on a thread of the spares' own: see _Spares."""
 
     cancelled: threading.Event
 
@@ -425,6 +431,115 @@ class _PlannedTalk:
             self.pool = None
 
 
+# The spare generators a spare slide tries, at most, before it's left out (each another kind)
+SPARE_TRIES: Final = 3
+
+
+class _Spares:
+    """A talk's spare slides, which its Progress wants (spares) to show while the talk's next slide isn't in yet: made
+    one after another on a thread of their own from the talk's start, each handed over (Progress.spare) as soon as it's
+    made, until the talk's slides are all settled (stop), after which a spare is of no use, and none is handed over.
+
+    A spare comes from one of the schema's spare generators (see PresentationSchema's spare_generators), which its
+    dice pick by their weights times the persona's, another one for every spare, about the talk's topic: slides that
+    take a fraction of a second and hardly ever fail. In a talk in another language than English, whose classic slides
+    would be English, it's a picture of the topic without text instead (as a planned slide that didn't come out
+    becomes: see PresentationSchema._picture_slide). A spare that fails tries another generator (SPARE_TRIES in all),
+    and is left out if none works.
+
+    Its random streams are its own (the talk's "spare" stream, by the spare's number), so the talk's slides come out
+    the same with spares or without, as long as the sources give the same answers. The spares avoid repeating each
+    other's texts and pictures (not the talk's, which are being made at the same time)."""
+
+    def __init__(
+        self,
+        schema: "PresentationSchema",
+        count: int,
+        slide_deck: SlideDeck,
+        context: dict[str, Any],
+        rng: random_util.Rng,
+        progress: Progress,
+        persona: Persona | None = None,
+    ) -> None:
+        self.schema = schema
+        self.count = count
+        self.slide_deck = slide_deck
+        self.context = context
+        self.rng = rng
+        self.progress = progress
+        self.persona = persona
+        self.handed_over = 0
+        self._stopped = False
+        self._lock = threading.Lock()  # (held while one is handed over: none comes after stop)
+        self._thread: threading.Thread | None = None
+
+    def start(self) -> None:
+        # (finding pictures as the talk does, by its license policy and theme, and probing them while it streams)
+        self._thread = threading.Thread(target=image_util.carry(self._make), name="spares", daemon=True)
+        self._thread.start()
+
+    def stop(self) -> None:
+        """No spare is handed over anymore (one being made is left to finish by itself, and dropped)."""
+        with self._lock:
+            self._stopped = True
+
+    @property
+    def stopped(self) -> bool:
+        with self._lock:
+            return self._stopped or self.progress.cancelled.is_set()
+
+    def _make(self) -> None:
+        state = _DeckState()
+        used: set[SlideGeneratorData] = set()
+        try:
+            for number in range(self.count):
+                if self.stopped:
+                    return
+                worked_out = self._spare(number, state, used)
+                if worked_out is None:
+                    continue
+                _add_used(state, worked_out.generated_elements)
+                with self._lock:
+                    if self._stopped or self.progress.cancelled.is_set():
+                        return
+                    self.progress.spare(self.slide_deck, self.handed_over, worked_out.slide)  # type: ignore[attr-defined]
+                    self.handed_over += 1
+        except TalkCancelled:
+            pass
+        except Exception:  # (a spare must never stop the talk)
+            logger.exception("Making the talk's spare slides crashed: it has no more of them")
+
+    def _spare(self, number: int, state: _DeckState, used: set[SlideGeneratorData]) -> _WorkedOutSlide | None:
+        """The number-th spare (from 0), worked out: from a spare generator the spare's dice pick among those not used
+        yet (and another one if it fails), or in a talk in another language than English, a picture of the topic."""
+        rng = self.rng.child(number)
+        topic = str(self.context["seed"])
+        label = f"spare {number + 1}"
+        if self.slide_deck.language != "en":
+            picture = self.schema._picture_slide(number, topic, self.context, rng.child("picture"), state)
+            if picture is None:
+                logger.info("No picture of %r for %s: it's left out", topic, label)
+            return picture
+        for attempt in range(SPARE_TRIES):
+            weighted = [
+                (weight * (self.persona.weight(generator.get_tags()) if self.persona is not None else 1), generator)
+                for generator, weight in self.schema.spare_generators
+                if generator not in used
+            ]
+            with random_util.use(rng.child("pick", attempt)):
+                generator = random_util.weighted_random(weighted) if weighted else None
+            if generator is None:
+                break
+            used.add(generator)
+            result = self.schema._run_generator(
+                generator, number, self.context, rng.child("content", attempt), state, label=label
+            )
+            if result is not None and self.schema._is_new_enough(result, generator, state):
+                return _WorkedOutSlide(number, generator, *result)
+        logger.info("No spare generator made %s about %r: it's left out", label, topic)
+        return None
+
+
 class PresentationSchema:
     """Class responsible for determining which slide generators to use in a presentation,
     and how the (topic) seed for each slide is generated."""
@@ -441,6 +556,7 @@ class PresentationSchema:
         license_policy: str = licenses.DEFAULT,
         looks: Mapping[str, str] | None = None,
         format: "Format | None" = None,
+        spare_generators: Sequence[tuple[SlideGeneratorData, float]] = (),
     ):
         """title_generator makes a classic talk's title, and title_candidates are more classic title generators (such
         as wikiHow's "How to ..." titles), whose titles, with the title generator's, a language model may pick for a
@@ -449,8 +565,13 @@ class PresentationSchema:
         format is what a talk format beyond the TED-like talks is besides its slides (see
         talkgenerator.schema.formats): its brief for the language model, what its titles and its presenter's job are
         like, how likely each persona is to present it, its talks' theme families and its arc. Without one, a talk is
-        a TED-like talk, and its requests to a language model say nothing of a format."""
+        a TED-like talk, and its requests to a language model say nothing of a format.
+
+        spare_generators make a streamed talk's spare slides, which it shows while its next slide isn't in yet (see
+        _Spares), each with its weight: slide generators that are quick and hardly ever fail (see
+        talkgenerator.schema.slide_schemas.SPARE_GENERATORS). Without them, a talk in English has no spares."""
         self.format = format
+        self.spare_generators: tuple[tuple[SlideGeneratorData, float], ...] = tuple(spare_generators)
         self._powerpoint_creator = powerpoint_creator
         # The license classes its talks' images may have, unless a talk says otherwise (see talkgenerator.images.licenses)
         self.license_policy = licenses.policy(license_policy).name
@@ -563,6 +684,7 @@ class PresentationSchema:
             titling = titles.Titling.of(topic_or_title, language, writes, generators, topics[0], rng)
 
         talk = None
+        spares: _Spares | None = None
         if llm is not None and writes:
             cancelled = progress.cancelled if progress is not None else None
             name = naming.request if naming is not None else None
@@ -638,14 +760,20 @@ class PresentationSchema:
                 "language": talk_language,
             }
             contexts = [create_slide_presentation_context(main_presentation_context, seed) for seed in seeds]
+            # The spare slides its progress wants, if any, made from now on while the slides are (see _Spares)
+            spares = self._spares(progress, slide_deck, main_presentation_context, rng, persona)
             if talk is not None and planned:
                 self._settle_planned_talk(slide_deck, talk, contexts, rng, presenter, persona)
             else:
                 self._generate_slides(slide_deck, contexts, rng, parallel, persona)
+            if spares is not None:
+                spares.stop()  # (with every slide in, a spare is of no use anymore)
             slide_deck.listener = None
             _finish_picking(slide_deck, progress.cancelled if progress is not None else None)
             _finish_generating(slide_deck, progress.cancelled if progress is not None else None)
         except BaseException:
+            if spares is not None:
+                spares.stop()
             if talk is not None:
                 talk.cancelled.set()  # (what's still coming in isn't wanted anymore)
             images = image_context.current()
@@ -687,6 +815,27 @@ class PresentationSchema:
         presentation = self._powerpoint_creator()
         slide_deck.save_to_powerpoint(presentation, debug_notes=debug_notes)
         return presentation
+
+    def _spares(
+        self,
+        progress: Progress | None,
+        slide_deck: SlideDeck,
+        context: dict[str, Any],
+        rng: random_util.Rng,
+        persona: Persona | None = None,
+    ) -> "_Spares | None":
+        """The spare slides the talk's progress wants (its spares), under way about the talk's topic; None when it
+        wants none, or when there's nothing to make them with (a talk in English, without spare generators)."""
+        count = getattr(progress, "spares", 0) if progress is not None else 0
+        if progress is None or not isinstance(count, int) or count <= 0 or not hasattr(progress, "spare"):
+            return None
+        if slide_deck.language == "en" and not self.spare_generators:
+            return None
+        spares = _Spares(
+            self, count, slide_deck, {**context, "seed": context["topic"]}, rng.child("spare"), progress, persona
+        )
+        spares.start()
+        return spares
 
     def writes_with(self, llm: TextProvider | None) -> bool:
         """Whether a language model writes this schema's talks: there is one, and slide generators with recipes."""
@@ -1260,9 +1409,12 @@ class PresentationSchema:
         presentation_context: dict,
         rng: random_util.Rng,
         state: _DeckState,
+        label: str | None = None,
     ) -> _Result:
+        """Run the slide generator for a slide (or what label says it's for, in the logs: "spare 1", say)."""
         seed = presentation_context["seed"]
-        logger.info("* Generating slide {} about {} using {} *".format(slide_nr + 1, seed, generator))
+        what = label or "slide {}".format(slide_nr + 1)
+        logger.info("* Generating {} about {} using {} *".format(what, seed, generator))
         start_time = time.time()
         with random_util.use(rng):
             try:
@@ -1275,9 +1427,7 @@ class PresentationSchema:
         seconds = round(time.time() - start_time, 2)
         if result:
             logger.info(
-                "* Finished generating slide {} about {} using {} in {} seconds *".format(
-                    slide_nr + 1, seed, generator, seconds
-                )
+                "* Finished generating {} about {} using {} in {} seconds *".format(what, seed, generator, seconds)
             )
             return result
         logger.info("Failed to generate after {} seconds using: {}".format(seconds, generator))

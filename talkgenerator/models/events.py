@@ -1,7 +1,8 @@
 """The events of a talk while it's made (talkgenerator.generator.stream_talk), in this order: talk.started, a
 slide.ready for every slide, and talk.finished, with the whole deck. In a talk that generates pictures, a slide can
 come again, as slide.updated, once a generated picture takes the place of its stock photo: whenever that comes in,
-after the slide's slide.ready and before talk.finished.
+after the slide's slide.ready and before talk.finished. A talk that asks for spares gets slide.spare events too, in
+between: slides to show while the next slide isn't in yet, which aren't the talk's (see SlideSpare).
 
 They're plain data, as Server-Sent Events carry them: an event's `event` is its name, and to_json() is its data (the
 deck format's elements, as in talkgenerator.models.deck). A browser can draw a themed talk's slides as they come in,
@@ -64,6 +65,17 @@ class SlideUpdated(_Event):
     slide: DeckSlide
 
 
+class SlideSpare(_Event):
+    """A spare slide: one to show while the talk's next slide isn't in yet, when a presenter catches up with the
+    making (see stream_talk's spares). It's on the talk's topic and laid out in its theme, without a slide number, and
+    made quickly, early on. It's none of the talk's slides: it has no place in the deck, and the finished deck (and so
+    its PowerPoint) leaves it out."""
+
+    event: Literal["slide.spare"] = "slide.spare"
+    index: int  # which spare it is, from 0, in the order they come (not a place in the deck)
+    slide: DeckSlide
+
+
 class TalkFinished(_Event):
     """The talk is done: the whole deck, as generate_presentation makes it, with what it asked of language models and
     image generators."""
@@ -72,4 +84,4 @@ class TalkFinished(_Event):
     deck: Deck
 
 
-TalkEvent = Annotated[TalkStarted | SlideReady | SlideUpdated | TalkFinished, Field(discriminator="event")]
+TalkEvent = Annotated[TalkStarted | SlideReady | SlideUpdated | SlideSpare | TalkFinished, Field(discriminator="event")]
