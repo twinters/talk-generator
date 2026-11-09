@@ -208,7 +208,7 @@ line-length = 120
 target-version = "py311"
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "UP", "B", "TID251"]
+select = ["E", "F", "W", "I", "UP", "B", "TID251", "TC004"]  # (TC004: a runtime annotation of a type-checking import, which broke Python 3.13 and older on 2026-11-09)
 ignore = [
     "E501",  # long lines are left to the formatter
     "UP031",  # %-formatting in older code

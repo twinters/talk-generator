@@ -1409,7 +1409,7 @@ class PresentationSchema:
         name: names.NameRequest | None,
         typed: titles.TitleRequest | None,
         persona: Persona | None,
-        generation: ImageGeneration | None,
+        generation: "ImageGeneration | None",
         gathering: facts.Gathering | None,
     ) -> bool:
         """Write the talk at the Advanced level (see talkgenerator.plan.outline): the model plans it, in an outline that's
