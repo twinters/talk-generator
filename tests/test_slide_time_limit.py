@@ -97,7 +97,10 @@ def held():
 @pytest.fixture
 def photos(monkeypatch, held):
     """A fake image finder: a photo for every query (another one for each to avoid), declared 1600×900; the queries
-    with a part in .slow wait for held first, and those with a part in .none find nothing."""
+    with a part in .slow wait for held first, and those with a part in .none find nothing. Once the test is done, what
+    its talk left to finish by itself (a slide that ran out of time) finishes with it, before the real finder is back:
+    an offline test never searches for real."""
+    before = set(threading.enumerate())
     found = types.SimpleNamespace(slow=set(), none=set(), asked=[])
 
     def find(slot, query, avoid=()):
@@ -115,7 +118,11 @@ def photos(monkeypatch, held):
         raise AssertionError("unreachable")
 
     monkeypatch.setattr(finder, "find", find)
-    return found
+    yield found
+    held.set()
+    deadline = time.monotonic() + 10
+    for thread in set(threading.enumerate()) - before:
+        thread.join(timeout=max(0.0, deadline - time.monotonic()))
 
 
 def _use(monkeypatch, schema):
