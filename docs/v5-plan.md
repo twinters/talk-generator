@@ -1081,8 +1081,9 @@ with every layout of a big number or KPI tiles over a picture in every family, t
 9 classic talks of random formats (`check --quick --seeds 1,2,3 --schema random --theme random`): 0 errors, 0
 warnings, deterministic 9 of 9; 5 sample decks, two by the free models ($0). Over 400 random-format ten-slide talks,
 live-caption memes come up in about half of the TED-like talks, the pitches and the academic talks (ten-slide pitches
-and academic talks had none), in a quarter of the all-hands; a provocation in a third of the pitches. The family-wide
-layout tests ran in part only (the machine was busy), and the generated product shot only with a fake generator.
+and academic talks had none), in a quarter of the all-hands; a provocation in a third of the pitches. Of the
+family-wide tests, the design test of runs of every slide type (the new figures' too) passed in all 17 families; the
+rest ran in part only (the machine was busy). The generated product shot is tested with a fake generator only.
 
 ## 8. Slide types and variety
 
