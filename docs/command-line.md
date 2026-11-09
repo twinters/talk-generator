@@ -66,7 +66,7 @@ Who writes the talk depends on your settings: a language model when one is set u
 | `ted` | The TED-like talk with copyright-free images only (stock photos, artworks and old photos), for decks shown in public: no full-screen images, gifs or memes | `open` |
 | `interview` | The TED-like talk, without slides about the presenter | `all` |
 | `pitch` | A startup pitch to investors: the problem, the solution, the market (TAM, SAM and SOM), the business model, the traction, the competition, the team, the roadmap and the ask | `all` |
-| `academic` | A talk at an academic conference, with affiliations on its title slide: the outline, related work, the method, the results (with p-values), the limitations, future work, the acknowledgements, the references and questions | `all` |
+| `academic` | A talk at an academic conference, with affiliations on its title slide: the motivation (the problem the research is about), the outline, related work, the method, the results (with p-values), the limitations, future work, the acknowledgements, the references and questions | `all` |
 | `corporate` | A company's all-hands meeting or quarterly business review: the agenda, the KPIs against their targets, the quarter's wins, the roadmap, an org change, the synergies, the ask of everyone and Q&A | `all` |
 | `keynote` | A product keynote on a big stage: a big opening statement, the one idea, the reveal of the product, its features, a live demo, the price, the "one more thing" and a closing line | `all` |
 | `test` | For testing talkgenerator itself | `all` |

@@ -1,14 +1,15 @@
 {
   "format": "ted",
   "about": "The classic texts of TED-like talks (the default, ted, interview and test schemas): a grammar per kind of slide, whose rules are lists of templates (see talkgenerator.sources.packs)",
-  "version": 6,
+  "version": 7,
   "versions": {
     "1": "2026-11-08: v4's templates and milestone 6's, from data/text-templates and data/memes.json, unchanged (D54)",
     "2": "2026-11-08: grown in a TED talk's voice, several times the options per slot (titles, about me, history, statements, captions, charts, diagrams, numbers, quizzes, mockups, structure, karaoke types, memes and conclusions), speaking of the topic as English does (generic, one, bare), linted by tests/test_content_pack.py",
     "3": "2026-11-08: the next karaoke types' texts: a wall of text (its titles, points of jargon and highlighted punchlines), an alignment chart's titles and cells, red flags, reviews and their reviewers, and fake error messages with their codes and buttons",
     "4": "2026-11-08: twists for real fun facts (D60): what a classic fun fact says after a true sentence of Wikipedia's about the slide's seed (\"Coincidence? I think not.\")",
     "5": "2026-11-08: flavour texts (D60): a dare to tell a real dad joke ({joke}), and a real piece of advice as the closing slide's line ({advice})",
-    "6": "2026-11-09: livelier dares and closing slides (D65): dares that are real challenges for the presenter (an accent, a gesture, a word on every slide), dares for the whole audience (a show of hands, a call and response), and closing slides' last tips and callback lines"
+    "6": "2026-11-09: livelier dares and closing slides (D65): dares that are real challenges for the presenter (an accent, a gesture, a word on every slide), dares for the whole audience (a show of hands, a call and response), and closing slides' last tips and callback lines",
+    "7": "2026-11-09: problem slides, a TED-like talk's why now and then (D69): headings, and problems on five angles (weird, everyday, crossed with something else, typical, and a real how-to), each with a line under it, in a TED speaker's voice"
   },
   "slots": {
     "title.talk_title": {"variables": ["seed"], "field": "title.title"},
@@ -31,6 +32,12 @@
     "statements.bold_statement": {"variables": ["seed", "topic", "presenter", "title", "action"], "field": "statement.text"},
     "statements.anecdote": {"variables": ["seed", "topic", "presenter", "title"], "field": "statement.text"},
     "statements.deep_question": {"variables": ["seed", "topic", "presenter", "title"], "field": "statement.text"},
+    "problem.kicker": {"variables": ["seed", "number", "percent", "year"], "field": "problem.kicker"},
+    "problem.weird": {"variables": ["seed", "number", "percent", "year"], "field": "problem.problem", "parts": 2},
+    "problem.everyday": {"variables": ["seed", "number", "percent", "year"], "field": "problem.problem", "parts": 2},
+    "problem.crossed": {"variables": ["seed", "number", "percent", "year"], "field": "problem.problem", "parts": 2},
+    "problem.typical": {"variables": ["seed", "number", "percent", "year"], "field": "problem.problem", "parts": 2},
+    "problem.real": {"variables": ["seed", "number", "percent", "year"], "field": "problem.problem", "parts": 2},
     "captions.two_captions": {"variables": ["seed", "topic", "presenter", "title"], "field": "two_columns.caption_1", "parts": 2},
     "captions.three_captions": {"variables": ["seed", "topic", "presenter", "title"], "field": "three_columns.caption_1", "parts": 3},
     "charts.yes_no_question": {"variables": ["seed", "topic", "presenter", "title"], "field": "chart_yes_no.question"},

@@ -1106,6 +1106,71 @@ and academic talks had none), in a quarter of the all-hands; a provocation in a 
 family-wide tests, the design test of runs of every slide type (the new figures' too) passed in all 17 families; the
 rest ran in part only (the machine was busy). The generated product shot is tested with a fake generator only.
 
+**The talk's why: problem slides** (2026-11-09, D69), from the user's "what makes a good pitch and a good academic deck
+is typically that they explain the WHY / problem really well in the beginning": a slide type of its own, `problem`,
+that pitches and academic talks open on most of the time, and some TED-like talks too.
+
+- *The slide*: a short heading on a sticker in the theme's accent, as a fun fact's ("The problem", "The pain",
+  "Motivation", "Sound familiar?": the model's, as the talk's kind of talk names it, or the pack's), the problem in big
+  words (one or two short sentences, 130 characters at most), and a line under it that makes it hit home (how often it
+  happens, to whom, what it costs; 80 at most), which appears on a click. Its picture is optional, of one of two slots:
+  `background`, a picture of it behind the problem (a statement's backdrop: calm photos two times in three), or
+  `photo`, a picture beside it that shows the problem as it happens (`weird-stock`, generated in a talk that generates
+  pictures: on talkgenerator.com, on a visitor's own key only); a slide whose picture isn't found goes without it.
+  Three layouts: `v5/problem` (over the shaded picture, light and aligned left, as a statement over a photo; beside a
+  framed photo; or, without a picture, in the middle: the sticker, the problem and the line one under the other, each
+  as tall as it comes out, in the middle of the slide's height), `v5/problem-band` (the problem on a band across the
+  shaded picture, the sticker over the band's top edge) and `v5/problem-split` (the photo filling the slide's left
+  side). Texts, pictures and shapes only, so talk-generator-web draws it unchanged.
+- *The angle*, which the talk's dice pick, for a planned slide (a recipe's variant: `kinds.problem_variants`) as for a
+  classic one (the pack's rule of that angle): a weird problem nobody has noticed yet, an everyday one everyone in the
+  room has had, the topic running into something from another part of life (the word to riff on, or a pack's everyday
+  thing: "Monday mornings", "Reviewer 2"), the problem everyone who deals with the topic knows, or a real one: a
+  how-to people look up on wikiHow. Each angle has a picture behind the problem half the time, beside it otherwise
+  (`PROBLEM_BEHIND`); a pitch weighs everyday and real problems a little more (×1.3, ×1.2), an academic talk typical
+  and weird ones, a TED-like talk everyday and weird ones. A classic slide's template is the problem and its line
+  ("...|..."), the line kept four times in five.
+- *Real problems*: a free, keyless source that passes the facts' checks, wikiHow's public search (which classic talks
+  used already): a classic slide on the real angle says a how-to about the slide's seed ("Right now, someone is
+  searching how to repair an umbrella."), and gives way to another angle when wikiHow has none; a planned
+  slide on it gets one as a flavour text (`facts.howtos`, use `problem`, in English talks only, as dad jokes): the
+  topic's how-tos that say what they fix first ("How to Quit Procrastinating", "How to Repel and Keep Pigeons Away
+  Naturally"), with the facts' checks (no living people, nothing grim: "How to Stop a Goose Attack" stays out),
+  credited "wikiHow" when the slide builds on it. Its line in the request: "Start from this real how-to, which people
+  look up on wikiHow".
+  Considered, not tried: Wikipedia's lists of unsolved problems (a few fields have one, most topics none) and
+  Reddit's complaint subreddits (pictures with titles about anything, which the checks would have to sift).
+- *Where it comes up*: one a talk at most (tag `problem_slide`, capped at one in every format; a pitch's `problem`
+  part may still have two slides, the second its statement or its number). Over 1,000 seeds of ten-slide talks (picks
+  only): **72% of pitches** open their problem part with it, at slide 2 (the problem statement over a photo 9%, the
+  alarming number 18%, over 400 seeds; a pitch of 15 slides or more has it in 96%, at slide 2 or 3); **80% of academic
+  talks**, at slide 2, in a new first part, `motivation` (its research question over a photo otherwise); and **23% of
+  TED-like talks** (32% with the open license policy, whose second slide is history, not the presenter), at slide 3,
+  after the presenter's (`slide_schemas.PROBLEM_WEIGHT`, peaked at the third slide); over all the formats a talk's
+  seed picks, a quarter of ten-slide talks (25% over 3,000 seeds). All-hands and keynotes have none yet.
+- *An academic talk's arc*: `motivation` comes first, rank 1 (kept from three slides on), so a five-slide academic
+  talk is its motivation, method, results and questions (no limitations), a ten-slide one its motivation, related
+  work, a free slide, method, results, limitations, a free slide, references and questions (no future work), and the
+  acknowledgements wait for 13 slides (the outline still for 11). The pitch's arc is as it was.
+- *Content packs*: the pitch pack's version 3 (its problem grammar's `kicker`, `weird`, `everyday`, `crossed` with
+  `crossing`, `typical` and `real`), the academic pack's version 4 (a `motivation` grammar of the same, and research
+  questions) and the TED pack's version 7 (a `problem` grammar, in a TED speaker's voice); linted as every pack is, and
+  each line under a problem 80 characters at most.
+
+Checked on 2026-11-09, without GIPHY and Unsplash: the quick set (1,914 passed); `tests/test_problem_slides.py` (74,
+its slow ones too: the longest problems and long words in every family and in every open font pairing, every layout);
+the family-wide sweeps of `test_design` (long words in every family and pairing, no layout twice in a row, random
+themes) and `test_motifs`, which found two things, both fixed: a long heading on the sticker needs body contrast (1997
+WordArt), and a problem beside a photo that fills the slide's side gets no decoration or slide number in most
+families, as a big number beside its picture doesn't (photo slides' motifs keep off them, D65), which the test now
+counts as it counts full-screen pictures. `talkgenerator check --quick --seeds 1,2,3` of classic pitches (9 talks: 0
+errors, 0 warnings, deterministic 9 of 9; six open on a problem slide) and academic talks (9 talks: one statement's
+backdrop with detail where its text goes, a free slide's; one talk whose fun fact's photo changed between its two runs
+while Pexels was in a cooldown, deterministic when made again; all nine open on a problem slide). Five sample decks,
+three by the free models ($0), and a free model's pigeons pitch whose problem slide got "How to Repel and Keep Pigeons
+Away Naturally" to start from. No OpenAI image generation: the generated picture beside a problem is tested with a fake
+generator only.
+
 ## 8. Slide types and variety
 
 v4's slide types stay: title, about me, history, full-screen gif, meme or photo, image with title, large quote over
@@ -2328,9 +2393,10 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D66 | A streamed talk can have spare slides (`stream_talk(spares=N)`, the user's idea, 13.1): N slides made as soon as the talk has started, one after another on a thread of their own and from random streams of their own (so the talk's slides come out the same with spares or without), each of another of 13 kinds drawn without pictures (`SPARE_WEIGHTS`, by weight times the persona's: a hundredth of a second, timed on 26 topics), about the talk's topic, or in a talk in another language a picture of the topic without text. Each comes as `slide.spare` (which spare, and the slide laid out in the talk's theme without a slide number: `DeckLayout.spare`) until the talk's last slide is settled; none after that, and none in the deck or its PowerPoint. talkgenerator.com shows one when a presentation goes on before the next slide is in, marked "spare" where the slide's number goes, and the next slide once the presenter goes on and it's in. |
 | D67 | A streamed talk can give every slide but the title slide a time limit (`stream_talk(slide_seconds=S)`, the user's idea, 13.1), from when it could settle (the slide before it settled, and a planned slide's text came in). Out of time, it settles at once with what's quick: a planned slide as the model wrote it, without the pictures it can do without and with spare pictures of the talk's topic (three, found early) for the others; else a stand-in of the spare kinds about the slide's own seed (in another language, a spare picture without text). It's the talk's slide, in the deck and its PowerPoint, its notes saying it ran out of time, until the real slide comes after all: what it waited for goes on by itself, and once it's done, it takes the stand-in's place (a `slide.updated` with `late`, and in the deck), unless it repeats another slide or the talk's caps are full by then; `talk.finished` waits for it 20 s at most once the other slides are in (`LATE_SECONDS`). With nothing to stand in, it's waited for. Off by default: the same seed gives the same talk as long as no slide runs out of time. talkgenerator.com gives its streamed talks 8 s (5% of the slides with pictures timed for D66 took longer). |
 | D68 | How much a language model does is a talk's level (`llm_level=`, `--llm_level`, `TALKGENERATOR_LLM_LEVEL`, and the MCP server's `--llm_level`, never a tool's argument: an Advanced talk costs more, which is the user's call, as the model is): `basic`, one request a talk, as before; `advanced`, where the model plans the talk first (`talkgenerator.plan.outline`), in an outline that's read while it's written: the talk's spine as a Basic request has it (title, presenter's job, thesis, the unsafe flag) and a running gag, then for every slide the word it riffs on (one of the words the dice offer it, its seed and up to three others that would have done, or a sharper one of its own) and its idea, in a short sentence: the point it makes, for a chart what it measures against what, for a diagram what its parts are, never the slide's texts or a description of its pictures (Claude Haiku copied an idea's "a gif titled 'Volcanoes'" onto its slide). Its slides are written as their ideas come in, in batches (`BATCHES`: the second slide alone, so the talk starts soon, then two, then three at a time), each in a request of its own, up to six at once, with the talk's spine and running gag in its system prompt and the plan of the slides before it; they come in any order, and are settled in order. Measured on 2026-11-09 with Claude Haiku 5.5 and Sonnet 5.5, on five talks at both levels: a request per slide made Advanced talks sooner than Basic ones but three and a half times as costly (none of a request's prompt is cached: Claude's cached prefix starts with the request's schema, a slide's own); batches made them sooner still in every talk (the first slide 1.5 to 11 seconds sooner, the whole talk up to 8.5 seconds sooner), in five requests, for about twice the tokens (Haiku about $0.003 a talk, Sonnet about $0.06). So a talk is Advanced by default on a model of your own that costs (Claude, OpenAI's, your ChatGPT plan's, OpenRouter's paid models) and Basic on free ones (whose free quotas count requests, and which are slow) and on any other (`outline.default_level`; the user's call, 2026-11-09, as long as it adds no time); `talkgenerator check` decides it before it records the model's answers. An outline that brings no spine, finds the topic unsafe, starts in English in a talk in another language, is declined (even halfway: what its batches wrote is dropped) or can't be afforded with its batches leaves a Basic talk, from the dice's words, and the deck says which level its slides were written at (`Deck.llm_level`). A real quote is searched for a theme the model writes for its slide (`text_query`, a word or two, at both levels), and then for the slide's concept: the concept ("the slide's subject in two to five words") found nothing on Goodreads and random lines on Wikiquote (an anime quote on a tea talk), where a plain theme finds real quotes about it (the user asked which was better than the model's own sayings, 2026-11-09). talkgenerator.com writes Advanced talks on a visitor's own API key or a paid OpenRouter model (its budget allows the outline and a request per slide), and Basic ones on the free models (Basic AI's, and a visitor's OpenRouter account's: the user's call, 2026-11-09), and says so under Generate and in the Language model tab. The words slides start from are things (from the user's look at a classic volcano talk with "Volcanoes vs. eruptive" and "Do you want glacial?", 2026-11-09): Datamuse tags its related words' parts of speech (`md=p`), and a seed, a language model's word to riff on, and a word a classic template speaks of besides its seed is a noun first of all (WordNet's too), familiar (Zipf 2.5 or more), no name, of a family of its own (no "eruption" after "eruptive", no "musk duck" for rubber ducks), and no word a slide shouldn't make light of; seeds wander two steps from the topic at most (penguins went to leafs, hockey and netball), and a phrase's from its words when its own related words are all of its family. |
+| D69 | Talks explain their why early (the user's idea, 2026-11-09; section 7): a slide type of its own, `problem` (a heading on a sticker, the problem, a line under it that appears on a click; a picture of it behind it or one that shows it beside it, generated in a talk that generates pictures), on an angle the talk's dice pick (weird, everyday, the topic running into something else, typical of the topic, or a real how-to people look up on wikiHow: a flavour text for a planned slide in an English talk, a pack's template around one for a classic slide), one a talk at most (tag `problem_slide`). It opens a pitch's problem part in about three pitches in four, an academic talk's new first part, `motivation`, in four in five (which keeps it from three slides on: a ten-slide academic talk goes without future work), and comes third in about a quarter of TED-like talks. |
 
 D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, D43 to D62 on 2026-11-08, and D63
-to D68 on 2026-11-09; the others follow from the design.
+to D69 on 2026-11-09; the others follow from the design.
 
 ### Open questions
 

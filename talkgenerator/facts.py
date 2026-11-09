@@ -29,6 +29,10 @@ insults, drink or faiths), and name no living person (the articles their capital
 language than English gets no dad jokes or advice, which its slides would say word for word, in English: a free model
 put "Sing in the shower." on a German talk's closing slide (2026-11-09), also when asked for it translated.
 
+A problem slide (D69) that's on a real problem's angle may start from a real how-to about the topic that people look
+up on wikiHow ("How to Stop a Goose Attack"): a flavour text too, which an English talk gets, the problem-like ones
+(stop, fix, deal with...) first.
+
 Classic talks (English) have them where they fit: half of their fun facts are a real one, a sentence about the slide's
 seed from Wikipedia or a useless fact, with an absurd twist of the content pack's, half of their quizzes a real one
 from Open Trivia DB (talkgenerator.sources.opentdb), of the topic's kind (animals for penguins), half of their dares a
@@ -66,6 +70,7 @@ REAL_SHARE: Final = 0.5  # of the classic fun facts and quizzes that are real on
 ADVICE_SHARE: Final = 0.4  # of the classic closing slides whose line under their title is a real piece of advice
 JOKE_LONGEST: Final = 85  # characters in a dad joke, at most (a dare has 130, with what it asks)
 ADVICE_LONGEST: Final = 60  # characters in a piece of advice, at most (the line under the closing title has 80)
+HOWTO_LONGEST: Final = 90  # characters in a wikiHow how-to's title, at most ("How to ...", for a problem slide)
 
 # What a slide of each kind does with its fact, as the request says it on the slide's line
 _ASKS: Final = {
@@ -80,9 +85,12 @@ _ASKS: Final = {
     # (flavour texts: see talkgenerator.sources.flavour)
     "dare": "Dare the presenter to tell this real dad joke, word for word, and say how (a voice, a pause, a pose)",
     "questions": "Make the line under the title this real piece of advice, word for word or nearly",
+    # (D69: a real how-to that people look up, for a problem slide on a real problem's angle)
+    "problem": "Start from this real how-to, which people look up on wikiHow: the problem is what it's for, or that "
+    "people need it at all, in your own words",
 }
 # The uses of flavour texts, which a talk has besides its facts (MOST counts the facts alone)
-_FLAVOUR_USES: Final = frozenset({"dare", "questions"})
+_FLAVOUR_USES: Final = frozenset({"dare", "questions", "problem"})
 # The uses that would rather have an event of the day than a sentence of the topic's article
 _HISTORY: Final = frozenset({"timeline", "history_quote", "history"})
 # Words of facts a talk shouldn't make light of, besides the slides' (slide_texts.sensitive), which history is full
@@ -145,8 +153,8 @@ def on() -> bool:
 def use_of(kind: str, tags: Iterable[str] = ()) -> str | None:
     """What a planned slide of a kind (with its generator's tags) does with a real fact, or None if it has no use for
     one: a fun fact's, a quiz's, a big number's, a timeline's and a historical figure's quote's, and a slide of
-    history's (two old photos of moments in history); and with a flavour text, a dare's (a dad joke) and the closing
-    slide's (a piece of advice)."""
+    history's (two old photos of moments in history); and with a flavour text, a dare's (a dad joke), the closing
+    slide's (a piece of advice) and a problem slide's (a how-to, D69)."""
     if kind in _ASKS and kind != "history":
         return kind
     return "history" if "history" in tags else None
@@ -345,12 +353,14 @@ def look_up(
     useless = [asking.submit(flavour.useless_fact, number) for number in draws.useless] if "fun_fact" in uses else []
     joking = asking.submit(_jokes_about, topic, draws.joke_page) if "dare" in uses else None
     advising = [asking.submit(flavour.advice, number) for number in draws.advice] if "questions" in uses else []
+    fixing = asking.submit(howtos, topic) if "problem" in uses else None
     article = found.result() if found is not None else None
     events = happened.result() if happened is not None else []
     flavours = [
         *((future.result(), "useless") for future in useless),
         *((joke, "joke") for joke in (joking.result() if joking is not None else [])),
         *((future.result(), "advice") for future in advising),
+        *((howto, "howto") for howto in (fixing.result() if fixing is not None else [])),
     ]
     looked_up = time.monotonic()
     candidates = [
@@ -404,8 +414,9 @@ def day_candidates(events: Sequence[wikipedia.Event], day: datetime.date, topic:
     return candidates
 
 
-# What a flavour text of each kind may be at most: a useless fact as a fact, a joke and advice as their slides take them
-_FLAVOUR_LONGEST: Final = {"useless": LONGEST, "joke": JOKE_LONGEST, "advice": ADVICE_LONGEST}
+# What a flavour text of each kind may be at most: a useless fact as a fact, a joke and advice as their slides take
+# them, and a how-to as the request gives it
+_FLAVOUR_LONGEST: Final = {"useless": LONGEST, "joke": JOKE_LONGEST, "advice": ADVICE_LONGEST, "howto": HOWTO_LONGEST}
 
 
 def flavour_candidate(text: flavour.Flavour | None, kind: str, topic: str = "") -> Candidate | None:
@@ -417,6 +428,34 @@ def flavour_candidate(text: flavour.Flavour | None, kind: str, topic: str = "") 
     return Candidate(
         text.text, text.url, names=names[:8], flavour=kind, source=text.source, license=None, license_url=None
     )
+
+
+# What a how-to says that makes its problem plain: what it stops, fixes or gets rid of (D69)
+_FIXING: Final = re.compile(
+    r"^(?:stop|fix|repair|deal with|cope with|get rid of|prevent|avoid|escape|overcome|quit|fight|handle|repel|"
+    r"unclog|untangle|remove|calm|survive|clean|unstick|rescue|recover|tell if|know if)\b"
+    r"|^keep\b.*\b(?:away|from|off|out)\b",
+    re.IGNORECASE,
+)
+
+
+def howtos(topic: str) -> list[flavour.Flavour]:
+    """wikiHow's how-tos about the topic, as flavour texts for a problem slide (D69): "How to Stop a Goose Attack",
+    with its page, the ones that say what they fix first (each group in wikiHow's order); none when wikiHow is off."""
+    from talkgenerator.sources import wikihow  # (here: its search reads related words, which load late)
+
+    try:
+        actions = wikihow.get_related_wikihow_actions(topic)
+    except Exception:  # (a source that misbehaves leaves the problem slide without one, not the talk without facts)
+        logger.exception("Looking up wikiHow's how-tos for a problem slide crashed: it goes without one")
+        return []
+    ordered = [action for action in actions if _FIXING.match(action)] + [
+        action for action in actions if not _FIXING.match(action)
+    ]
+    return [flavour.Flavour(f"How to {action}", "wikiHow", wikihow.page_of(action)) for action in ordered[:HOWTOS]]
+
+
+HOWTOS: Final = 6  # how-tos about a topic a talk looks at, at most (the ones that say what they fix first)
 
 
 def _jokes_about(topic: str, page: int) -> list[flavour.Flavour]:
@@ -468,8 +507,11 @@ def assign(sheet: Sheet, slides: Sequence[tuple[int, str]], rng: random_util.Rng
 def _rank(candidate: Candidate, use: str) -> int | None:
     """How well a fact suits a slide's use: the lower, the better; None for one it can't use."""
     if use in _FLAVOUR_USES or candidate.flavour:
-        wanted = {"dare": "joke", "questions": "advice", "fun_fact": "useless"}.get(use)
-        return 0 if candidate.flavour and candidate.flavour == wanted else None
+        wanted = {"dare": "joke", "questions": "advice", "fun_fact": "useless", "problem": "howto"}.get(use)
+        if not candidate.flavour or candidate.flavour != wanted:
+            return None
+        # (a how-to that says what it fixes makes a plainer problem: D69)
+        return 1 if wanted == "howto" and not _FIXING.match(candidate.text.removeprefix("How to ")) else 0
     if use in _HISTORY:
         return 0 if candidate.day else 1 if candidate.dated else 2 if not candidate.first else 3
     if use == "big_number":  # (an event's date is no figure to count)

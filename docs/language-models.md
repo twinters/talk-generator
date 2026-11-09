@@ -54,8 +54,10 @@ whose facts come later, or whose sources are down, goes without them. Classic ta
 facts are a real one about the slide's word, with a twist, and half of their quizzes a real question from
 [Open Trivia DB](https://opentdb.com). Flavour texts join them: a fun fact may build on a random
 [useless fact](https://uselessfacts.jsph.pl), a dare dares the presenter to tell a real
-[dad joke](https://icanhazdadjoke.com) about the topic, and the closing slide's line can be a real piece of
-[advice](https://api.adviceslip.com), in classic talks too. `DISABLE_FACTS=1` switches them all off.
+[dad joke](https://icanhazdadjoke.com) about the topic, the closing slide's line can be a real piece of
+[advice](https://api.adviceslip.com), in classic talks too, and a problem slide on a real problem's angle (the talk's
+why, early on) starts from a real how-to about the topic that people look up on [wikiHow](https://www.wikihow.com)
+("How to Repel and Keep Pigeons Away Naturally"). `DISABLE_FACTS=1` switches them all off.
 
 ## Which model writes your talks
 

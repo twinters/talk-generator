@@ -1,12 +1,13 @@
 """The academic conference talk (docs/v5-plan.md, section 7; D56): research on the talk's topic, presented at a
 conference, with its affiliations on the title slide.
 
-Its arc goes from the outline through related work (a Venn diagram with this work where the fields overlap, a 2×2
-matrix of earlier work, or the field's history), the method (a diagram of its steps, its equation, or its setup), the
-results (charts with suspicious p-values, or one p-value as a big number), the limitations (an iceberg), future work
-(a timeline, the research cycle, or a flowchart whose every answer leads to more research), the acknowledgements and the
-references to the questions. A short talk keeps the method, the results, the limitations and the questions; a quarter
-of a talk's slides are free (D63), for memes, real charts from the internet, Reddit's weird pictures, the talk's own
+Its arc goes from its motivation (D69: the problem the research is about, its why, as a problem slide four times in
+five, or else its research question over a photo) and the outline through related work (a Venn diagram with this work
+where the fields overlap, a 2×2 matrix of earlier work, or the field's history), the method (a diagram of its steps,
+its equation, or its setup), the results (charts with suspicious p-values, or one p-value as a big number), the
+limitations (an iceberg), future work (a timeline, the research cycle, or a flowchart whose every answer leads to more
+research), the acknowledgements and the references to the questions. A short talk keeps the motivation, the method,
+the results and the questions; a quarter of a talk's slides are free (D63), for memes, real charts from the internet, Reddit's weird pictures, the talk's own
 provocations ("Peer reviewed.", over a full-screen picture), fun facts and the like, and its outline and
 acknowledgements come in talks of eleven slides or more; a long one gives the method a second slide and the results up
 to three. The method's made-up name comes from the topic (see talkgenerator.schema.formats.method).
@@ -21,7 +22,15 @@ from typing import Any, Final
 
 from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
-from talkgenerator.plan.kinds import AGENDA_ITEM, Recipe, Variant, closing_variants, matrix_landscape, pictured
+from talkgenerator.plan.kinds import (
+    AGENDA_ITEM,
+    Recipe,
+    Variant,
+    closing_variants,
+    matrix_landscape,
+    pictured,
+    problem_variants,
+)
 from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema.formats import (
     BIG_NUMBER_PICTURES,
@@ -33,6 +42,7 @@ from talkgenerator.schema.formats import (
     maybe,
     method,
     photos,
+    problem,
     provocation,
     text,
     words,
@@ -46,27 +56,30 @@ PACK: Final = "academic"
 
 # (D63: a quarter of its slides are free, for memes, real charts from the internet and weird pictures, and its outline
 # and acknowledgements, lists of text, wait for a talk of eleven slides or more: the user found ten-slide academic
-# talks "pretty boring with mostly boring text and a lot of superfluous slides")
+# talks "pretty boring with mostly boring text and a lot of superfluous slides"; D69: its motivation first, its why,
+# kept by every talk of three slides or more, as good academic talks explain their problem first, the user said, so a
+# ten-slide talk goes without future work)
 ARC: Final = Arc(
     (
-        Part("outline", rank=7),
-        Part("related_work", rank=5),
-        Part("method", 1, 2, rank=1),
-        Part("results", 1, 3, rank=2),
-        Part("limitations", rank=3),
-        Part("future_work", rank=6),
-        Part("acknowledgements", rank=8),
-        Part("references", rank=4),
+        Part("motivation", rank=1),
+        Part("outline", rank=8),
+        Part("related_work", rank=6),
+        Part("method", 1, 2, rank=2),
+        Part("results", 1, 3, rank=3),
+        Part("limitations", rank=4),
+        Part("future_work", rank=7),
+        Part("acknowledgements", rank=9),
+        Part("references", rank=5),
         Part("questions", rank=0),
     ),
     free=0.25,
 )
 
 ACADEMIC: Final = Format(
-    brief="a talk at an academic conference: an outline, related work, the method, the results with their "
-    "statistics (p-values, error bars), the limitations, future work, the acknowledgements, the references and the "
-    "questions. The topic is the research field, however absurd, and every slide is a conference talk's, played "
-    "straight",
+    brief="a talk at an academic conference: its motivation (the problem the research is about), an outline, "
+    "related work, the method, the results with their statistics (p-values, error bars), the limitations, future work, "
+    "the acknowledgements, the references and the questions. The topic is the research field, however absurd, and "
+    "every slide is a conference talk's, played straight",
     title_hint="like a paper's title at a conference: a catchy phrase, a colon and a dry subtitle",
     job_hint="an affiliation, as on a paper, in a few words: their position and a made-up university or department",
     personas={"disgraced_professor": 6, "passionate_expert": 2.5, "medieval_historian": 1.5, "time_traveller": 1.3},
@@ -125,10 +138,38 @@ _COVER = ImageSlot(
 _FIGURE = ImageSlot(
     "a figure from one of the works the talk cites: a chart", aesthetic="bad-charts", backups=("museum", "illustration")
 )
+# (D69: the problem slide's picture beside the problem, which shows it as it happens; generated, in a talk that
+# generates pictures)
+_PUZZLE = ImageSlot(
+    "a picture that shows the problem the research is about, as it happens", aesthetic="weird-stock", generate=True
+)
 
 
 def _items(prefix: str, texts: list[str]) -> dict[str, str | None]:
     return {f"{prefix}_{index}": item for index, item in enumerate(texts, 1)}
+
+
+# THE MOTIVATION: the problem slide (D69), or the research question over a photo
+
+# (a puzzle: typical and weird ones a little more often than the other angles)
+_ANGLES: Final = {"typical": 1.3, "weird": 1.2}
+_PROBLEMS: Final = {
+    "kicker": "motivation.kicker",
+    "weird": "motivation.weird",
+    "everyday": "motivation.everyday",
+    "crossed": "motivation.crossed",
+    "typical": "motivation.typical",
+    "real": "motivation.real",
+}
+
+
+def _motivation(context: dict[str, Any]) -> Made | None:
+    return problem(PACK, _PROBLEMS, _variables(context), context, (_BACKDROP, _PUZZLE), _ANGLES)
+
+
+def _research_question(context: dict[str, Any]) -> Made | None:
+    question = text(PACK, "motivation.research_question", _variables(context))
+    return ({"text": question}, {"background": _BACKDROP(context)}) if question else None
 
 
 # THE OUTLINE
@@ -446,6 +487,43 @@ _GENERATORS: Final = [
         tags=["title"],
         name="Title slide (Academic)",
         llm=Recipe("title"),
+    ),
+    # The motivation (D69: the problem slide, four times in five)
+    _part(
+        "motivation",
+        4,
+        "problem",
+        _motivation,
+        ["problem_slide"],
+        "Motivation",
+        Recipe(
+            "problem",
+            (_BACKDROP, _PUZZLE),
+            brief="The talk's motivation, right after the title, to hook the audience: the problem the research is "
+            "about, as a conference talk states it, played straight however absurd",
+            hints={
+                "kicker": "a short heading over the problem, as a conference talk has it, such as 'Motivation' or "
+                "'The problem'",
+                "detail": "a short line under it that makes it hit home, dryly: how often it happens, to whom, or "
+                "what science doesn't know about it; it appears on a click",
+            },
+            variants=problem_variants(_ANGLES),
+        ),
+    ),
+    _part(
+        "motivation",
+        1,
+        "statement",
+        _research_question,
+        ["statement", "research_question"],
+        "Research Question",
+        Recipe(
+            "statement",
+            (_BACKDROP,),
+            brief="The talk's motivation, right after the title: its research question, big over a photo",
+            hints={"text": "the research question about the concept, as one short question, in twelve words at most"},
+            limits={"text": 100},
+        ),
     ),
     _part(
         "outline",

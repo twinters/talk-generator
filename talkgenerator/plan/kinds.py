@@ -648,6 +648,15 @@ def _error_message(texts: Mapping[str, str | None], images: Mapping[str, Any], l
     return slides.ErrorMessageSlide(texts.get("title"), texts["message"], texts.get("code"), *buttons)
 
 
+def _problem(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    # (its heading is the model's, as the talk's kind of talk names it; talkgenerator's word for "the problem", in the
+    # talk's language, where the model wrote none)
+    kicker = (texts.get("kicker") or "").strip() or language.problem
+    return slides.ProblemSlide(
+        kicker, texts.get("problem"), texts.get("detail"), images.get("background"), images.get("photo")
+    )
+
+
 def _button(text: str) -> str:
     """A dialog's button as long as one may be: cut between words, without a little word left hanging at its end
     ("Become the", of "Become the plant")."""
@@ -781,6 +790,10 @@ WALL_TEXT: Final = 2600  # how long a wall of text's points may be, together (th
 DARE: Final = 130  # how long a dare may be, for the presenter or for the audience
 CALLBACK: Final = 60  # how long the closing slide's note of which earlier picture it calls back to may be
 ERROR_BUTTON: Final = 20  # how long a fake error message's button may be (they're written as one text)
+# How long a problem slide's heading, its problem and the line under it may be (D69)
+PROBLEM_KICKER: Final = 28
+PROBLEM_TEXT: Final = 130
+PROBLEM_DETAIL: Final = 80
 # What an alignment chart's description of its cells says of the punchline's
 _PUNCHLINE: Final = {"chaotic_evil": ": the punchline"}
 
@@ -1506,6 +1519,32 @@ KINDS: Final[dict[str, Kind]] = {
             (),
             _error_message,
         ),
+        # (the talk's why, early on: docs/v5-plan.md, D69)
+        Kind(
+            "problem",
+            "The problem the talk is about, early on, to hook the audience: a short heading on a sticker, the "
+            "problem in big words, and a line under it that makes it hit home, which appears on a click; over a "
+            "picture of it, or beside a picture that shows it.",
+            (
+                TextField("kicker", "a short heading over the problem, in two or three words", PROBLEM_KICKER),
+                TextField(
+                    "problem",
+                    "the problem, in one or two short sentences: a hook that the audience either recognises at once "
+                    "or can't believe",
+                    PROBLEM_TEXT,
+                ),
+                TextField(
+                    "detail",
+                    "a short line under it that makes it hit home (how often it happens, to whom, or what it costs); "
+                    "it appears on a click",
+                    PROBLEM_DETAIL,
+                    optional=True,
+                ),
+            ),
+            ("background", "photo"),
+            _problem,
+            optional_images=frozenset({"background", "photo"}),
+        ),
     )
 }
 
@@ -1546,4 +1585,66 @@ def closing_variants(line: str) -> tuple[Variant, ...]:
             {"subtitle": CALLBACK_LINE},
             facts=False,
         ),
+    )
+
+
+# THE PROBLEM SLIDE (docs/v5-plan.md, D69): a pitch and an academic talk start from their why, as good ones do, and
+# some TED-like talks do too: the problem the talk is about, on an angle the talk's dice pick, with a picture behind it
+# or beside it. Angle: (how often, against the others; the note for the slide's brief; what to write as the problem).
+# Only a real problem builds on something real, a how-to people look up (see talkgenerator.facts)
+PROBLEM_ANGLES: Final[dict[str, tuple[float, str, str]]] = {
+    "weird": (
+        1,
+        "this one a weird problem with the concept, which nobody has noticed yet",
+        "a weird problem with the concept that nobody has noticed yet, stated as if everyone suffers from it, in one "
+        "or two short sentences",
+    ),
+    "everyday": (
+        1,
+        "this one an everyday problem with the concept, which everyone in the room has had",
+        "a small, everyday frustration with the concept that everyone in the room has had, made huge, in one or two "
+        "short sentences",
+    ),
+    "crossed": (
+        1,
+        "this one the concept running into something from another part of life",
+        "a problem nobody saw coming, where the concept runs into something from another part of life (the word to "
+        "riff on, say), in one or two short sentences",
+    ),
+    "typical": (
+        1,
+        "this one the problem that everyone who deals with the concept knows",
+        "the problem that everyone who deals with the concept knows, taken deadly seriously, in one or two short "
+        "sentences",
+    ),
+    "real": (
+        1,
+        "this one a problem people really have with the concept, which they look up how to fix",
+        "a problem people really have with the concept (one they look up how to fix), taken far too seriously, in "
+        "one or two short sentences",
+    ),
+}
+PROBLEM_BEHIND: Final = 0.5  # of the problem slides with a picture behind the problem (the others' is beside it)
+
+
+def problem_variants(weights: Mapping[str, float] | None = None, behind: float = PROBLEM_BEHIND) -> tuple[Variant, ...]:
+    """The ways a problem slide comes out, which the talk's dice pick: its angle on the problem (see PROBLEM_ANGLES; a
+    recipe's weights over them, by name, are 1 for those it doesn't name), with a picture of it behind the problem
+    (that share of the time), or else a picture beside it that shows it. Only the real problem builds on a real
+    how-to, when the talk has one for it (see talkgenerator.facts)."""
+    pictures = (
+        (behind, "photo", "over a picture of it"),
+        (1 - behind, "background", "beside a picture that shows it"),
+    )
+    return tuple(
+        Variant(
+            weight * (weights or {}).get(name, 1.0) * share,
+            frozenset({left_out}),
+            f"{note}, {placed}",
+            {"problem": problem},
+            facts=name == "real",
+        )
+        for name, (weight, note, problem) in PROBLEM_ANGLES.items()
+        for share, left_out, placed in pictures
+        if weight * (weights or {}).get(name, 1.0) * share > 0
     )

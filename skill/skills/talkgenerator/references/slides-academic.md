@@ -1,6 +1,6 @@
 # The slides of a `academic` talk
 
-A talk at an academic conference, with affiliations on its title slide: the outline, related work, the method, the results (with p-values), the limitations, future work, the acknowledgements, the references and questions, each a part of its arc, in that order.
+A talk at an academic conference, with affiliations on its title slide: the motivation (the problem the research is about), the outline, related work, the method, the results (with p-values), the limitations, future work, the acknowledgements, the references and questions, each a part of its arc, in that order.
 
 Every talk starts with a title slide, made from the plan's `title`, `presenter_job` and `presenter_name` (or the name given to render, or one talkgenerator makes up). The plan's `slides` come after it, each of one of the kinds below. A slide's `recipe` picks its look and its image sources, and makes the slide the classic way when it can't be made as planned; without one, a slide gets its kind's default recipe. The look of a recipe's images (its aesthetic profile) says what they look like and where they come from: `photo` is stock photos, `vintage` old photographs in black and white or sepia, `meme-chaos` Reddit's weird pictures, ShitpostBot's images, gifs and memes, and so on (`talkgenerator formats --looks` lists them all).
 
@@ -14,6 +14,7 @@ A talk of this format goes through these parts, in this order, each with the sli
 
 | Part | Slides | Recipes |
 | --- | --- | --- |
+| `motivation` | 1 | `motivation-academic`, `research-question-academic` |
 | `outline` | 1 | `outline-academic` |
 | `related_work` | 1 | `related-work-matrix-academic`, `related-work-timeline-academic`, `related-work-venn-academic` |
 | `method` | 1 to 2 | `equation-academic`, `experimental-setup-academic`, `method-academic` |
@@ -66,7 +67,8 @@ Images: `background`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `equation-academic` | The method's key equation, big over a photo: one line in letters and symbols, with the concept in it, that sums up the method | the default; `text`: the equation, written out in plain characters (such as x² and ×), on one line; images: `background` calm-backdrop or backdrop; tags: equation, method, statement |
+| `research-question-academic` | The talk's motivation, right after the title: its research question, big over a photo | the default; `text`: the research question about the concept, as one short question, in twelve words at most; images: `background` calm-backdrop or backdrop; tags: motivation, research_question, statement |
+| `equation-academic` | The method's key equation, big over a photo: one line in letters and symbols, with the concept in it, that sums up the method | `text`: the equation, written out in plain characters (such as x² and ×), on one line; images: `background` calm-backdrop or backdrop; tags: equation, method, statement |
 | `limitations-statement-academic` | The study's main limitation, admitted in one short sentence over a photo, as if it were minor | `text`: the limitation, admitted as if it were minor, in ten words at most; images: `background` calm-backdrop or backdrop; tags: limitations, statement |
 | `quote-academic` | A real quote over a photo (talkgenerator finds the quote, about the concept) | images: `background` calm-backdrop or backdrop; finds its `text` itself (don't write one); tags: quote, statement |
 | `full-screen-pixabay-deep-academic` | A deep question over a photo | `text`: a short, deep question, such as 'But... why?'; images: `background` calm-backdrop or backdrop; tags: deep, full_image |
@@ -441,3 +443,19 @@ Images: none
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
 | `future-work-flowchart-academic` | Future work, as a flowchart that pretends to decide what comes next, whose every answer leads to more research | the default; tags: flowchart, future_work |
+
+## `problem`
+
+The problem the talk is about, early on, to hook the audience: a short heading on a sticker, the problem in big words, and a line under it that makes it hit home, which appears on a click; over a picture of it, or beside a picture that shows it.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `kicker` | 28 | a short heading over the problem, in two or three words |
+| `problem` | 130 | the problem, in one or two short sentences: a hook that the audience either recognises at once or can't believe |
+| `detail` | 80 | a short line under it that makes it hit home (how often it happens, to whom, or what it costs); it appears on a click (or empty, for none) |
+
+Images: `background`, `photo`
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `motivation-academic` | The talk's motivation, right after the title, to hook the audience: the problem the research is about, as a conference talk states it, played straight however absurd | the default; `kicker`: a short heading over the problem, as a conference talk has it, such as 'Motivation' or 'The problem'; `detail`: a short line under it that makes it hit home, dryly: how often it happens, to whom, or what science doesn't know about it; it appears on a click; images: `background` calm-backdrop or backdrop, `photo` weird-stock (or generated, from its prompt, with an image generator set up); tags: motivation, problem_slide |

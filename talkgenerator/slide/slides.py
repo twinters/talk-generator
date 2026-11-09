@@ -926,6 +926,29 @@ class FunFactSlide(DrawnSlide):
         super().__init__("fun_fact", None, {"kicker": kicker, "fact": fact, "source": source, "photo": photo})
 
 
+class ProblemSlide(DrawnSlide):
+    """The problem a talk is about, early on, to hook its audience (docs/v5-plan.md, D69): a short heading ("The
+    problem", "Motivation", "Sound familiar?"), the problem in big words, and a line under it that makes it hit home,
+    which appears on a click; over a picture of it (its background), or beside a picture that shows it (its photo), if
+    it has one."""
+
+    required_arguments = ("kicker", "problem")
+
+    def __init__(
+        self,
+        kicker: str | None,
+        problem: str | None,
+        detail: str | None = None,
+        background: ImageData | None = None,
+        photo: ImageData | None = None,
+    ):
+        arguments = {"background": background, "photo": photo, "kicker": kicker, "problem": problem, "detail": detail}
+        super().__init__("problem", None, arguments)
+
+    def clicks(self) -> dict[str, int]:
+        return self._one_by_one(("detail",))
+
+
 # The most letters an acronym has, and the tiers of a tier list, best first (as tier lists have them)
 ACRONYM_LETTERS = 6
 TIERS = ("S", "A", "B", "C", "F")

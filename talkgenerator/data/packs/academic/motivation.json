@@ -1,0 +1,80 @@
+{
+  "kicker": [
+    "Motivation",
+    "The problem",
+    "Research question",
+    "Why this matters",
+    "The gap",
+    "An open question",
+    "Background",
+    "The puzzle",
+    "Why we did this",
+    "Problem statement"
+  ],
+  "weird": [
+    "No study has ever measured the mood of {seed.generic} on a Monday.|We had to build the instruments ourselves.",
+    "When nobody is watching, something changes in {seed.generic}.|Our cameras saw it. Then they stopped working.",
+    "In 1987, a lab noticed something odd about {seed.generic}. The notebook was never found.|We found the notebook.",
+    "We still can't explain the faint ticking sound near {seed.generic}.|Three labs have heard it. One refuses to talk.",
+    "Put {seed.generic} under a microscope and you'll see it: nervousness.|n = 3. All three samples were nervous.",
+    "Nobody knows why {seed.generic} and Tuesdays get along so badly.|The data is clear. The reasons are not.",
+    "Every attempt to study {seed.generic} ended the same way: with a missing stapler.|Coincidence? The literature is silent."
+  ],
+  "everyday": [
+    "Everyone in this room has had a problem with {seed.generic}.|Nobody in this room has written a paper about it.",
+    "We all know the feeling: you need {seed.one}, and the literature has nothing to say.|Until this paper.",
+    "Every researcher has lost a weekend to {seed.generic}.|Most never got it back.",
+    "Ask anyone about {seed.generic} and watch them sigh. Nobody knows why they sigh.|Pilot study: 12 sighs, 0 answers.",
+    "You've read the instructions for {seed.generic} three times. They still make no sense.|We read them 400 times. For science.",
+    "Every family has a long argument about {seed.generic}.|Ours has lasted since 1994. We wrote it up."
+  ],
+  "crossed": [
+    "Two fields that never talk to each other: {seed.generic} and #crossing#.|We made them talk. It got awkward.",
+    "What happens when you put {seed.generic} next to #crossing#?|Nobody knew. Nobody had the funding.",
+    "The literature on {seed.generic} ignores #crossing# completely.|We think that's a mistake. A big one.",
+    "For decades, science has studied {seed.generic} and #crossing# separately.|Never together. Until now.",
+    "Our hypothesis: {seed.generic} and #crossing# are secretly connected.|Spoiler: they are.",
+    "Nobody has ever compared {seed.generic} with #crossing#.|We did. The results will surprise you."
+  ],
+  "crossing": [
+    "peer review",
+    "the grant deadline",
+    "the office coffee machine",
+    "Reviewer 2",
+    "the lab's only printer",
+    "the conference wifi",
+    "a nine o'clock lecture",
+    "the university car park",
+    "tenure committees",
+    "the department fridge",
+    "a broken projector",
+    "faculty meetings",
+    "spreadsheet formulas",
+    "the library's quiet zone"
+  ],
+  "typical": [
+    "Despite decades of research, we still understand very little about {seed.generic}.|Most of those decades went into funding applications.",
+    "The central open question in {seed.bare} research: why?|Just: why.",
+    "Every textbook on {seed.generic} skips chapter 7.|We read chapter 7.",
+    "Everyone in the field agrees on the importance of {seed.generic}. Nobody agrees on why.|Three conferences, zero consensus.",
+    "Measuring {seed.generic}: easy. Doing it correctly: another story.|Ask our last three postdocs.",
+    "The standard model of {seed.generic}: elegant, simple, and with one small flaw.|It doesn't work."
+  ],
+  "real": [
+    "Every day, thousands of people ask the internet how to {seed.wikihow_action.lower}.|Science has never given them an answer.",
+    "Our research question: how do you {seed.wikihow_action.lower}?|The internet has guesses. We have data.",
+    "There's a guide online on how to {seed.wikihow_action.lower}. It has no citations.|This talk fixes that.",
+    "Millions have tried to {seed.wikihow_action.lower}. Nobody has measured how it went.|Until now: n = 4.",
+    "The most common question in our field: how do you {seed.wikihow_action.lower}?|We counted. It took a whole summer.",
+    "Nobody has run a controlled study on how to {seed.wikihow_action.lower}.|We ran three. Two of them were controlled."
+  ],
+  "research_question": [
+    "Research question: could {seed.generic} be the answer all along?",
+    "Why does nobody study {seed.generic}?",
+    "How much is too much, when it comes to {seed.generic}?",
+    "What are we missing about {seed.generic}?",
+    "Can {seed.generic} be measured at all?",
+    "Where do we draw the line with {seed.generic}?",
+    "Is it time to rethink everything we know about {seed.generic}?"
+  ]
+}

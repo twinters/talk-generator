@@ -3,14 +3,14 @@
 A language model (or an agent's plan) writes a talk in its language, and talkgenerator adds a few words of its own:
 the title slide's "By ...", a chart's "Yes" and "No", a social media post's likes and shares, a news story's
 breaking news, the "Did you know?" over a fun fact, the "Challenge" over a dare (and "Audience participation" over a
-dare for everyone), an alignment chart's axes (lawful to chaotic, good to evil) and the "Continued on next slide"
-under a wall of text, which this module has in every
-language. The classic generator only speaks English, so in a talk in another language, a slide that doesn't come out
-as planned becomes a picture without text instead of a classic slide. The language check reads texts with NLTK's
-stopword lists (and a language's words that look like English ones, which they leave out): a language model whose
-answer starts in English, for a talk in another language, is asked again (see reads_as_english), and the check of a
-deck finds a talk that reads as English. The spelling fixes of what's typed for a talk leave the compounds alone of a
-language that writes them as one word.
+dare for everyone), "The problem" over a problem slide whose heading a model left empty, an alignment chart's axes
+(lawful to chaotic, good to evil) and the "Continued on next slide" under a wall of text, which this module has in
+every language. The classic generator only speaks English, so in a talk in another language, a slide that doesn't
+come out as planned becomes a picture without text instead of a classic slide. The language check reads texts with
+NLTK's stopword lists (and a language's words that look like English ones, which they leave out): a language model
+whose answer starts in English, for a talk in another language, is asked again (see reads_as_english), and the check
+of a deck finds a talk that reads as English. The spelling fixes of what's typed for a talk leave the compounds alone
+of a language that writes them as one word.
 """
 
 from __future__ import annotations
@@ -36,6 +36,7 @@ class Language:
     fun_facts: tuple[str, ...] = ("Did you know?", "Fun fact")  # over a fun fact (one of them)
     dare: str = "Challenge"  # over a dare for the presenter
     audience: str = "Audience participation"  # over a dare for the whole audience
+    problem: str = "The problem"  # over a problem slide whose heading the model left empty (D69)
     # An alignment chart's axes, as Dungeons & Dragons has them: across, from lawful to chaotic, and down, from good to
     # evil (as the game's editions in the language say them)
     lawful_to_chaotic: tuple[str, str, str] = ("Lawful", "Neutral", "Chaotic")
@@ -68,6 +69,7 @@ LANGUAGES: Final[dict[str, Language]] = {
             fun_facts=("Wist je dat?", "Weetje"),
             dare="Uitdaging",
             audience="Publieksparticipatie",
+            problem="Het probleem",
             lawful_to_chaotic=("Wettig", "Neutraal", "Chaotisch"),
             good_to_evil=("Goed", "Neutraal", "Kwaad"),
             continued="Vervolg op de volgende dia",
@@ -86,6 +88,7 @@ LANGUAGES: Final[dict[str, Language]] = {
             fun_facts=("Le saviez-vous ?", "Anecdote"),
             dare="Défi",
             audience="Participation du public",
+            problem="Le problème",
             lawful_to_chaotic=("Loyal", "Neutre", "Chaotique"),
             good_to_evil=("Bon", "Neutre", "Mauvais"),
             continued="Suite à la diapositive suivante",
@@ -103,6 +106,7 @@ LANGUAGES: Final[dict[str, Language]] = {
             fun_facts=("Schon gewusst?", "Fun Fact"),
             dare="Aufgabe",
             audience="Publikumsbeteiligung",
+            problem="Das Problem",
             lawful_to_chaotic=("Rechtschaffen", "Neutral", "Chaotisch"),
             good_to_evil=("Gut", "Neutral", "Böse"),
             continued="Fortsetzung auf der nächsten Folie",
@@ -121,6 +125,7 @@ LANGUAGES: Final[dict[str, Language]] = {
             fun_facts=("¿Sabías que...?", "Dato curioso"),
             dare="Reto",
             audience="Participación del público",
+            problem="El problema",
             lawful_to_chaotic=("Legal", "Neutral", "Caótico"),
             good_to_evil=("Bueno", "Neutral", "Malvado"),
             continued="Continúa en la siguiente diapositiva",
@@ -138,6 +143,7 @@ LANGUAGES: Final[dict[str, Language]] = {
             fun_facts=("Lo sapevi?", "Curiosità"),
             dare="Sfida",
             audience="Partecipazione del pubblico",
+            problem="Il problema",
             lawful_to_chaotic=("Legale", "Neutrale", "Caotico"),
             good_to_evil=("Buono", "Neutrale", "Malvagio"),
             continued="Continua nella prossima slide",
@@ -155,6 +161,7 @@ LANGUAGES: Final[dict[str, Language]] = {
             fun_facts=("Você sabia?", "Curiosidade"),
             dare="Desafio",
             audience="Participação do público",
+            problem="O problema",
             lawful_to_chaotic=("Leal", "Neutro", "Caótico"),
             good_to_evil=("Bom", "Neutro", "Mau"),
             continued="Continua no próximo slide",
@@ -172,6 +179,7 @@ LANGUAGES: Final[dict[str, Language]] = {
             fun_facts=("Visste du?", "Kul fakta"),
             dare="Utmaning",
             audience="Publikmedverkan",
+            problem="Problemet",
             lawful_to_chaotic=("Laglig", "Neutral", "Kaotisk"),
             good_to_evil=("God", "Neutral", "Ond"),
             continued="Fortsättning på nästa bild",

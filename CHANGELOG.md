@@ -475,6 +475,24 @@ From the user's look at 35 sample talks (docs/v5-plan.md, D65):
   slide shouldn't make light of. A classic slide's other related words (a matrix's quadrants, a scatter plot's
   groups, a list's things) are things too, and so are a language model's words to riff on.
 
+### Problem slides: a talk's why, early on
+
+- A new slide type, the problem: a short heading on a sticker ("The problem", "Motivation", "Sound familiar?"), the
+  problem in big words, and a line under it that makes it hit home, which appears on a click; with a picture of it
+  behind it, or one beside it that shows it (generated, in a talk that generates pictures). Three layouts: over the
+  picture, on a band across it, or beside it.
+- A talk's dice pick the problem's angle: a weird problem nobody has noticed yet, an everyday one everyone in the room
+  has had, the topic running into something from another part of life, the problem everyone who deals with the topic
+  knows, or a real one, a how-to people look up on wikiHow ("Right now, someone is searching how to repair an
+  umbrella."). A language model writing an English talk gets one of the topic's real how-tos to start from, those
+  that say what they fix first; classic talks get problems from the content packs (the pitch pack's version 3, the
+  academic pack's version 4, the TED pack's version 7).
+- About three pitches in four open on one (at slide 2), four academic talks in five (at slide 2, in a new first part,
+  the motivation, or else its research question over a photo), and about a quarter of TED-like talks (at slide 3,
+  after the presenter's). Never two in a talk.
+- An academic talk keeps its motivation from three slides on: a five-slide one is its motivation, method, results and
+  questions, and a ten-slide one goes without future work.
+
 ### Titles and presenter names
 
 - What someone types can be the topic or the title (`--topic_or_title`, `topic_or_title=`): "penguins" as well as
