@@ -33,6 +33,7 @@ from talkgenerator.util import random_util
 if TYPE_CHECKING:
     from talkgenerator.images.generation import ImageGeneration
     from talkgenerator.personas import Persona
+    from talkgenerator.plan.outline import Outline
     from talkgenerator.schema.formats import Format
 
 SYSTEM_PROMPT: Final = """\
@@ -74,8 +75,9 @@ class PlannedSlide:
     number: int  # counted from 1
     generator: str  # the name of the slide generator it stands in for
     recipe: Recipe
-    seed: str  # the word the slide starts from (from the schema's topic generator)
+    seed: str  # the word the slide starts from (from the schema's topic generator, or the talk's outline)
     digits: int = 1  # as many as the number of the talk's last slide has
+    idea: str = ""  # what the slide does with its word, in a talk the model planned first (talkgenerator.plan.outline)
 
     @property
     def key(self) -> str:
@@ -150,6 +152,7 @@ def talk_request(
     talk_format: Format | None = None,
     facts: Mapping[int, Given] | None = None,
     answered_in_english: bool = False,
+    outline: Outline | None = None,
 ) -> TextRequest:
     """The request for a talk (with the presenter's name, when there's a name request). Asked again, it says that a
     model found the topic unsafe: some of the free models get the flag wrong whichever way it's asked (one turned
@@ -170,7 +173,10 @@ def talk_request(
 
     A talk format beyond the TED-like talks (talk_format: see talkgenerator.schema.formats) says what the talk is, on
     a line of its own, and what its titles and its presenter's job are like, with the persona's. (The TED-like
-    formats have none, and their requests say nothing of a format.)"""
+    formats have none, and their requests say nothing of a format.)
+
+    A talk the model planned first (an outline: see talkgenerator.plan.outline) says its thesis and its running gag,
+    and every slide's line its idea, after its word to riff on (the outline's)."""
     hint = title_hint(persona, title, typed, talk_format)
     job = job_hint(persona, talk_format)
     topic = topics[0] + (f" (and {', '.join(topics[1:])})" if len(topics) > 1 else "")
@@ -186,6 +192,7 @@ def talk_request(
         *([f"The format: {talk_format.brief}"] if talk_format is not None else []),
         *([f"The presenter: {persona.voice}", f"The angle: {persona.angle(rng)}"] if persona is not None else []),
         *([request_line(language)] if facts else []),
+        *(_outline_lines(outline) if outline is not None else []),
         "",
         *(
             [
@@ -216,7 +223,8 @@ def talk_request(
         brief = (slide.recipe.brief or KINDS[slide.recipe.kind].description).rstrip(".")
         given = (facts or {}).get(slide.number)
         fact = f". {given.line()}" if given is not None else ""
-        lines += ["", f"{slide.key}: {brief}. A word to riff on: {slide.seed}{fact}"]
+        idea = f". The idea: {slide.idea.rstrip('.')}" if slide.idea else ""
+        lines += ["", f"{slide.key}: {brief}. A word to riff on: {slide.seed}{idea}{fact}"]
         lines += [
             f"- {text.name}: {field_description(slide.recipe, text, language)}"
             for text in slide.recipe.written_fields()
@@ -231,6 +239,17 @@ def talk_request(
         json_schema=response_schema(planned, language, name, typed, generation, hint, job, titled),
         max_output_tokens=1000 + 300 * len(planned) + 100 * prompts,
     )
+
+
+def _outline_lines(outline: Outline) -> list[str]:
+    """What the talk's request says of the outline the model wrote first: its thesis, its running gag, and that every
+    slide's idea is to land (the slides' lines have them)."""
+    return [
+        *([f"The thesis: {outline.thesis}"] if outline.thesis else []),
+        *([f"The running gag: {outline.running_gag}"] if outline.running_gag else []),
+        "The talk is planned: write every slide so that its idea lands, and keep the thesis as it is. An idea is a "
+        "plan, not a text: never copy its words onto the slide, and write titles and captions as the fields ask.",
+    ]
 
 
 def title_hint(

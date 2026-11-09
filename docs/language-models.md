@@ -9,9 +9,28 @@ A slide the model gets wrong (a text that's missing, an image that can't be foun
 generator instead. So does the whole talk when no model is available, when it fails, or when it turns the topic
 down, so a talk never comes out with holes.
 
-A request holds what the talk is about (the topic, or what you typed) and the slides' kinds and words to riff on.
+A request holds what the talk is about (the topic, or what you typed) and the slides' kinds and words to riff on
+(and in an [Advanced](#basic-or-advanced) talk, the plan the model made first).
 It never holds the presenter's name you give (`--presenter`), and keys never show up in logs, error messages or
 decks.
+
+## Basic or Advanced
+
+How much the model does is the talk's level: `--llm_level`, `llm_level=` in Python, or `TALKGENERATOR_LLM_LEVEL`.
+
+- **Basic**, the default: one request a talk. talkgenerator gives every slide a word to riff on, a related thing that
+  wanders away from the topic and back ("penguins": "krill", "seals", "walrus"), and the model writes the talk from
+  those words in one go.
+- **Advanced**: two requests. The model first plans the talk, in a small request of its own: a thesis, a running gag,
+  and for every slide the word it riffs on (one of the words talkgenerator found for it, or a sharper one) and its
+  idea, the point it makes: for a chart, what it measures against what; for a diagram, what its parts are. Then it
+  writes the talk with that plan in its request. Its talks keep one thread and come out cleverer, for about half as
+  much again (see [Costs](#costs)) and 8 to 13 seconds more before the first slide. When the plan fails (an error, a
+  refusal, or a budget that can't afford both requests), the talk is written as a Basic one.
+
+On talkgenerator.com, talks on your own API key, or on a paid model of your OpenRouter account, are Advanced; the
+site's free models (Basic AI) and your OpenRouter account's free models, whose free quotas count requests, write Basic
+talks. A deck says which level its slides were written at (`llm_level`; none for a classic talk).
 
 ## Real facts
 
@@ -82,18 +101,19 @@ free router at `none`, and a model you name for OpenRouter as it likes.
 
 ## Costs
 
-A 10-slide talk is one request of about 3,000 tokens in and 2,500 out, thinking included (rough figures; a 20-slide
-talk has about twice the output):
+A 10-slide Basic talk is one request of about 7,000 tokens in and 1,000 to 3,000 out (rough figures, measured with
+Claude on 2026-11-09; a 20-slide talk has about twice the output). An Advanced talk adds its plan, about 3,500 tokens
+in and 700 to 1,900 out:
 
-| Route | A 10-slide talk | Paid by |
-| --- | --- | --- |
-| Classic, no language model | $0 | nobody |
-| OpenRouter's free models | $0, one request of the day's 50 or 1,000 | nobody |
-| Claude Haiku 5.5 | about $0.0015 | the key's owner |
-| Claude Sonnet 5.5 | about $0.03 | the key's owner |
-| Claude Opus 5.5 | about $0.06 | the key's owner |
-| Your ChatGPT plan | part of the plan's usage | you, through the plan |
-| Claude, through the [Skill](use-with-claude.md) | part of your Claude usage | you, through your plan |
+| Route | A 10-slide talk, Basic | Advanced | Paid by |
+| --- | --- | --- | --- |
+| Classic, no language model | $0 | | nobody |
+| OpenRouter's free models | $0, one request of the day's 50 or 1,000 | $0, two requests | nobody |
+| Claude Haiku 5.5 | about $0.002 | about $0.003 | the key's owner |
+| Claude Sonnet 5.5 | about $0.03 | about $0.04 | the key's owner |
+| Claude Opus 5.5 | about $0.06 | about $0.09 | the key's owner |
+| Your ChatGPT plan | part of the plan's usage | two requests of it | you, through the plan |
+| Claude, through the [Skill](use-with-claude.md) | part of your Claude usage | | you, through your plan |
 
 The Claude prices behind these figures are Anthropic's list prices per million tokens (November 2026): Claude Opus
 5.5 $4 in and $20 out, Claude Sonnet 5.5 $2 and $10, Claude Haiku 5.5 $0.10 and $0.50 (for prompts up to 100,000

@@ -208,7 +208,7 @@ talkgenerator check                                         # automated quality 
 
 | Step | v4 | v5 with an LLM | Fallback |
 | --- | --- | --- | --- |
-| Topic expansion | ConceptNet walk around the topic | concepts per slide that drift away and come back, chosen with the spine in mind | classic walk (Datamuse, WordNet) |
+| Topic expansion | ConceptNet walk around the topic | things per slide that drift away and come back (D67: nouns, familiar, each of a family of its own, two steps out at most); at the Advanced level, the model picks or sharpens each slide's word with the spine in mind | classic walk (Datamuse, WordNet) |
 | Talk spine (new) | none | title, subtitle, thesis, presenter persona, running gag, two or three callbacks, and the presenter's made-up name ([5.10](#510-presenter-names)) | tracery title; the name from talkgenerator's pack or tracery |
 | Slide text | templates and grammars | titles, captions, statements, chart questions and categories, fake facts, about-me lines, conclusions that call back to earlier slides | the classic generator for that field |
 | Image queries | the slide's seed word, sometimes with a prefix | a search query (and a generation prompt) per image slot, written for the slot's intent and look | seed-based query |
@@ -373,6 +373,10 @@ whose hourly quotas other runs share):
 - Each slide is validated against its type (fields, lengths, banned strings). An invalid slide falls back to
   classic content for that slide only.
 - Regenerating one slide is one small call, with the spine and the neighbouring slides as context.
+- At the Advanced level (D67, `talkgenerator.plan.outline`), a small request comes first: the outline, in which the
+  model plans the talk (a thesis, a running gag, and for every slide its word to riff on and its idea, the point it
+  makes), and the talk's request has that plan. Two requests a talk; a plan that fails, or that the talk's budget
+  can't afford with the talk after it, leaves the talk Basic.
 - The presenter's name never goes to a provider: plans use a `{presenter}` placeholder that's filled in locally.
   Without a name, the model makes one up in the spine, in the same request ([section 5.10](#510-presenter-names)).
 
@@ -470,17 +474,19 @@ Claude API behaviour the adapter has to respect:
 
 ### 5.6 What a talk costs
 
-A 10-slide talk as one call, at about 3,000 input and 2,500 output tokens with thinking included (rough figures):
+A 10-slide talk as one call, at about 7,000 input and 1,000 to 3,000 output tokens with thinking included (measured
+with Claude Haiku 5.5 and Sonnet 5.5 on 2026-11-09, D67); at the Advanced level, its outline adds about 3,500 input
+and 700 to 1,900 output tokens, and 8 to 13 seconds before the first slide:
 
-| Route | Per talk | Paid by |
-| --- | --- | --- |
-| Classic (no LLM) | $0 | nobody |
-| OpenRouter `:free` | $0, one request from the daily quota | nobody |
-| Claude Haiku 5.5 | about $0.0015 | the key's owner |
-| Claude Sonnet 5.5 | about $0.03 | the key's owner |
-| Claude Opus 5.5 | about $0.06 | the key's owner |
-| Sign in with ChatGPT | part of the user's plan allowance | the user |
-| Agent mode (Claude Skill) | part of the user's Claude usage | the user |
+| Route | Per talk, Basic | Advanced | Paid by |
+| --- | --- | --- | --- |
+| Classic (no LLM) | $0 | | nobody |
+| OpenRouter `:free` | $0, one request from the daily quota | $0, two requests | nobody |
+| Claude Haiku 5.5 | about $0.002 | about $0.003 | the key's owner |
+| Claude Sonnet 5.5 | about $0.03 | about $0.04 | the key's owner |
+| Claude Opus 5.5 | about $0.06 | about $0.09 (estimated, at twice Sonnet's prices) | the key's owner |
+| Sign in with ChatGPT | part of the user's plan allowance | two requests of it | the user |
+| Agent mode (Claude Skill) | part of the user's Claude usage | | the user |
 
 A 20-slide talk roughly doubles the output. Generated images cost far more than text: about $0.006 to $0.04 per
 image ([section 10.5](#105-generated-images)).
@@ -1945,7 +1951,8 @@ As built (2026-11-07, `talkgenerator.images.generation` and `talkgenerator.image
 
 - **Kept:** Datamuse, WordNet, Goodreads, Wikiquote, WikiHow (brittle, and off on the site), InspiroBot.
 - **ConceptNet** becomes optional (the public API has been down since late 2025). The LLM planner takes over
-  topic drift; in classic mode, Datamuse and WordNet keep doing it.
+  topic drift at the Advanced level; in classic mode and at the Basic level, Datamuse and WordNet keep doing it, with
+  things only (D67: Datamuse tags its words' parts of speech).
 - **New, keyless sources, as checked on 2026-11-08** (D60): **Wikipedia** (`talkgenerator.sources.wikipedia`): its
   Action API gives an article's lead (its first sentences), its short description and whether it's in "Category:Living
   people" in one request of 1 to 3 KB, and the articles its lead links to in another; its REST feed gives the day's
@@ -2150,7 +2157,7 @@ As built (2026-11-07, `talkgenerator.images.generation` and `talkgenerator.image
 ### 13.2 Running at $0
 
 - **Text:** LLM talks by default (decided), on OpenRouter's free models with an ordered fallback list: one request
-  per talk and one per regenerated slide. With the $10 of credits on the account, that's up to 1,000 requests a
+  per talk (the Basic level, D67) and one per regenerated slide. With the $10 of credits on the account, that's up to 1,000 requests a
   day, and at most 20 a minute. A visible switch picks the classic 2019 generator instead.
 - **When the quota or the rate limit runs out, or a model fails,** the classic engine takes over without fuss
   (the page says "classic mode"). There's never a paid fallback on the site's key.
@@ -2162,7 +2169,8 @@ As built (2026-11-07, `talkgenerator.images.generation` and `talkgenerator.image
   free request a talk: two a talk, so 500 talks a day and 10 a minute on the free tier instead of 1,000 and 20.
 - **Upgrades paid by the visitor** (decided: all of them): "Connect OpenRouter" (OAuth PKCE: the visitor's own
   free quota or credits, and their choice of model, image models included); an Anthropic or OpenAI key for one
-  talk (sent over HTTPS with that request, used once, never stored or logged); and Sign in with ChatGPT once
+  talk (sent over HTTPS with that request, used once, never stored or logged), whose talks are Advanced (D67), as
+  are a paid OpenRouter model's; and Sign in with ChatGPT once
   OpenAI admits the site, through the interest form linked from
   [OpenAI's Sign in with ChatGPT docs](https://developers.openai.com/siwc).
 - **Switches:** `DISABLE_LLM=1`, `DISABLE_IMAGE_GENERATION=1` (built: no generated pictures at all, even with a
@@ -2310,9 +2318,10 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D65 | From the user's look at 35 sample talks (2026-11-09): a dare is a real challenge for the presenter to keep up, or something the whole audience does ("Audience participation"), a dad joke one kind among them; a closing slide ends its talk on a funny picture, a last tip or a callback to an earlier slide's picture, which the deck gives it (realizing a slide still knows no other slide); an academic talk's references are a slide type of their own, with a picture of one of the works (a book's cover or a paper's figure) most of the time; emoji come in front of a list's things now and then, only where a variant asks for them, measured 1.4 ems wide and drawn in an emoji font; and every slide is numbered of the deck's ("7/12"), small and in its family's style, the 2019 template's too. A recipe's variant can say that its slide takes no real fact or flavour text (`Variant.facts`). |
 | D66 | A streamed talk can have spare slides (`stream_talk(spares=N)`, the user's idea, 13.1): N slides made as soon as the talk has started, one after another on a thread of their own and from random streams of their own (so the talk's slides come out the same with spares or without), each of another of 13 kinds drawn without pictures (`SPARE_WEIGHTS`, by weight times the persona's: a hundredth of a second, timed on 26 topics), about the talk's topic, or in a talk in another language a picture of the topic without text. Each comes as `slide.spare` (which spare, and the slide laid out in the talk's theme without a slide number: `DeckLayout.spare`) until the talk's last slide is settled; none after that, and none in the deck or its PowerPoint. talkgenerator.com shows one when a presentation goes on before the next slide is in, marked "spare" where the slide's number goes, and the next slide once the presenter goes on and it's in. |
 | D67 | A streamed talk can give every slide but the title slide a time limit (`stream_talk(slide_seconds=S)`, the user's idea, 13.1), from when it could settle (the slide before it settled, and a planned slide's text came in). Out of time, it settles at once with what's quick: a planned slide as the model wrote it, without the pictures it can do without and with spare pictures of the talk's topic (three, found early) for the others; else a stand-in of the spare kinds about the slide's own seed (in another language, a spare picture without text). It's the talk's slide, in the deck and its PowerPoint, its notes saying it ran out of time; what it waited for goes on by itself, and nothing waits for it. With nothing to stand in, it's waited for. Off by default: the same seed gives the same talk as long as no slide runs out of time. talkgenerator.com gives its streamed talks 8 s (5% of the slides with pictures timed for D66 took longer). |
+| D68 | How much a language model does is a talk's level (`llm_level=`, `--llm_level`, `TALKGENERATOR_LLM_LEVEL`, and the MCP server's `--llm_level`, never a tool's argument: an Advanced talk costs more, which is the user's call, as the model is): `basic` (the default), one request a talk, as before; `advanced`, two, as the model first plans the talk in a small request of its own (`talkgenerator.plan.outline`): a thesis, a running gag, and for every slide the word it riffs on (one of the words the dice offer it, its seed and up to three others that would have done, or a sharper one of its own) and its idea, in a short sentence: the point it makes, for a chart what it measures against what, for a diagram what its parts are, never the slide's texts or a description of its pictures (Claude Haiku copied an idea's "a gif titled 'Volcanoes'" onto its slide); the talk's request then has the plan. A plan that fails, is refused, or that the talk's budget can't afford with the talk's request after it leaves the talk Basic, and the deck says which level its slides were written at (`Deck.llm_level`). Measured on 2026-11-09: an Advanced talk costs about half as much again (Claude Haiku 5.5 about $0.003, Sonnet 5.5 about $0.04) and starts 8 to 13 seconds later. talkgenerator.com writes Advanced talks on a visitor's own API key or a paid OpenRouter model, and Basic ones on the free models (Basic AI's, and a visitor's OpenRouter account's, whose free quotas count requests), and says so under Generate and in the Language model tab. The words slides start from are things (from the user's look at a classic volcano talk with "Volcanoes vs. eruptive" and "Do you want glacial?", 2026-11-09): Datamuse tags its related words' parts of speech (`md=p`), and a seed, a language model's word to riff on, and a word a classic template speaks of besides its seed is a noun first of all (WordNet's too), familiar (Zipf 2.5 or more), no name, of a family of its own (no "eruption" after "eruptive", no "musk duck" for rubber ducks), and no word a slide shouldn't make light of; seeds wander two steps from the topic at most (penguins went to leafs, hockey and netball), and a phrase's from its words when its own related words are all of its family. |
 
 D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, D43 to D62 on 2026-11-08, and D63
-to D67 on 2026-11-09; the others follow from the design.
+to D68 on 2026-11-09; the others follow from the design.
 
 ### Open questions
 

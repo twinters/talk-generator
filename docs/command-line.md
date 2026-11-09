@@ -50,7 +50,10 @@ Who writes the talk depends on your settings: a language model when one is set u
 | --- | --- |
 | `--llm` | The language model that writes the talk, as `provider:model`: `openrouter` (OpenRouter's free models) or `openrouter:<model>[,<fallback>...]`, `anthropic` (Claude Opus 5.5) or `anthropic:<model>`, `openai:<model>`, `chatgpt` or `chatgpt:<model>` (your ChatGPT plan's models), and `none` for a classic talk (*default: `TALKGENERATOR_LLM`, or else your ChatGPT plan's models once you've signed in with ChatGPT, or else OpenRouter's free models when there's an OpenRouter key, or else `none`*) |
 
-[Language models](language-models.md) says what each costs, and how to get the keys.
+| `--llm_level` | How much the language model does: `basic`, one request a talk, in which it writes every slide from the word talkgenerator gives it, or `advanced`, two, as it first plans the talk (a thesis, a running gag, and every slide's word and idea), for cleverer talks, for about half as much again (*default: `TALKGENERATOR_LLM_LEVEL`, or else `basic`*) |
+
+[Language models](language-models.md) says what each costs, how to get the keys, and what
+[Basic and Advanced](language-models.md#basic-or-advanced) do.
 
 ### Formats and license policies
 
@@ -226,6 +229,8 @@ where talkgenerator keeps it.
 
 Claude Desktop and other MCP clients start `talkgenerator mcp` themselves, over stdio, on your computer: see
 [Use it with Claude](use-with-claude.md#the-mcp-server) for how to add it. `--output_folder` is where it saves talks, and
-nowhere else (*default: a `talkgenerator` folder in your documents*); `--verbose` logs debug messages too, on stderr.
+nowhere else (*default: a `talkgenerator` folder in your documents*); `--llm_level` is how much the language model does
+for its talks, `basic` or `advanced` (*default: `TALKGENERATOR_LLM_LEVEL`, or else `basic`*); `--verbose` logs debug
+messages too, on stderr.
 It needs the MCP SDK: `pip install 'talkgenerator[mcp]'`. Run in a terminal, it says that it serves its tools, and
 waits (Ctrl+C stops it).

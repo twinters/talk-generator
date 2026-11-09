@@ -26,7 +26,7 @@ from talkgenerator.llm.providers import NoneProvider, from_settings, provider_fr
 from talkgenerator.models.deck import Deck
 from talkgenerator.models.events import SlideReady, SlideSpare, SlideUpdated, TalkEvent, TalkFinished, TalkStarted
 from talkgenerator.models.theme import Theme
-from talkgenerator.plan import languages
+from talkgenerator.plan import languages, outline
 from talkgenerator.schema import formats
 from talkgenerator.schema.presentation_schema import Progress, TalkCancelled
 from talkgenerator.schema.presentation_schema_types import RANDOM, get_schema, pick_format, schemas
@@ -89,6 +89,7 @@ def generate_presentation_using_cli_arguments(args) -> tuple[Presentation | None
         persona=getattr(args, "persona", None),
         personas=getattr(args, "personas", None),
         vision_pick=getattr(args, "vision_pick", None),
+        llm_level=getattr(args, "llm_level", None),
     )
 
 
@@ -129,6 +130,7 @@ def generate_presentation(
     personas: str | Iterable[str] | None = None,
     vision_pick: bool | str | TextProvider | None = None,
     theme_families: str | Iterable[str] | None = None,
+    llm_level: str | None = None,
 ) -> tuple[Presentation | None, SlideDeck, str | None]:
     """Deprecated, for talkgenerator 4's callers: generate a talk, save it as a PowerPoint in output_folder (unless
     save_ppt is off), and return the PowerPoint, the talk and the file it went to (see _generate_presentation for the
@@ -171,6 +173,7 @@ def generate_presentation(
         personas=personas,
         vision_pick=vision_pick,
         theme_families=theme_families,
+        llm_level=llm_level,
     )
 
 
@@ -204,6 +207,7 @@ def _generate_presentation(
     personas: str | Iterable[str] | None = None,
     vision_pick: bool | str | TextProvider | None = None,
     theme_families: str | Iterable[str] | None = None,
+    llm_level: str | None = None,
 ) -> tuple[Presentation | None, SlideDeck, str | None]:
     """Generate a talk, as talkgenerator's own commands and stream_talk do: what generate_presentation does, without
     its DeprecationWarning. With debug_notes, every slide's speaker notes explain how it was generated.
@@ -231,6 +235,13 @@ def _generate_presentation(
     llm is the language model that writes the talk: a provider, a spec such as "anthropic:claude-opus-5-5", or None
     for the one TALKGENERATOR_LLM sets (without one, talks are classic). It writes in the given language, and the
     budget limits what it may cost; the deck tells what it used.
+
+    llm_level is how much the language model does (see talkgenerator.plan.outline): "basic", one request a talk, in
+    which it writes every slide from the word the talk's dice give it; or "advanced", two requests, as it first plans
+    the talk (its thesis, a running gag, and every slide's word, among those the dice offer, or one of its own, and
+    its idea: what its joke is, what a chart measures or a diagram compares), then writes it. None is the one
+    TALKGENERATOR_LLM_LEVEL names, or else basic. Classic talks have none; the deck says which level its slides were
+    written at (llm_level: advanced only when the plan came in).
 
     theme is "random" (a theme of a family the seed picks, extremes such as 1997 WordArt too unless extreme_themes
     is off), "classic" (the 2019 template), a family's name such as "dark minimal", or "chaos" (every slide in a
@@ -300,6 +311,7 @@ def _generate_presentation(
     families = themes.families(extreme_themes, theme_families) if theme_families is not None else None
     chosen_styles = names.styles(name_styles)  # (a ValueError for a style there isn't)
     languages.language(language)  # (a ValueError for a language talkgenerator doesn't know)
+    level = outline.level(llm_level)  # (a ValueError for a level there isn't)
     if topic_or_title is not None and (topic or title):
         raise ValueError("topic_or_title stands for both the topic and the title: give it without them")
     # (on one line, but with its quote marks, if any: they make it a title, word for word)
@@ -387,7 +399,7 @@ def _generate_presentation(
     provider = _language_model(llm)
     ledger = Ledger()
     if provider is not None:
-        logger.info("Language model: {}".format(provider.id))
+        logger.info("Language model: {} ({} level)".format(provider.id, level))
     elif language != "en":
         logger.warning("Talks in other languages than English need a language model: this one is in English")
 
@@ -441,6 +453,7 @@ def _generate_presentation(
             name_styles=chosen_styles if name_styles is not None else None,
             topic_or_title=typed,
             persona=chosen_persona,
+            llm_level=level,
         )
     slide_deck.schema_name = schema  # (the format it asked for, or the one its seed picked)
     slide_deck.license_policy = policy.name
@@ -503,6 +516,7 @@ def stream_talk(
     theme_families: str | Iterable[str] | None = None,
     spares: int = 0,
     slide_seconds: float | None = None,
+    llm_level: str | None = None,
 ) -> Iterator[TalkEvent]:
     """Make a talk as generate_presentation does (the same deck, for the same options, seed and answers), handing
     over what's ready while it's made (see talkgenerator.models.events): talk.started once its title is known (the
@@ -574,6 +588,7 @@ def stream_talk(
                     personas=personas,
                     vision_pick=vision_pick,
                     theme_families=theme_families,
+                    llm_level=llm_level,
                 )
                 events.put(TalkFinished(deck=slide_deck.to_deck()))
         except TalkCancelled:
@@ -1004,6 +1019,15 @@ def get_argument_parser():
         "openai:<model> or chatgpt[:<model>]; 'none' makes a classic talk (default: TALKGENERATOR_LLM's, or else "
         "your ChatGPT plan's models once you've signed in with talkgenerator login chatgpt, or else OpenRouter's free "
         "models when there's an OpenRouter key: OPENROUTER_API_KEY, or talkgenerator login openrouter)",
+    )
+    parser.add_argument(
+        "--llm_level",
+        default=None,
+        choices=outline.LEVELS,
+        help="How much the language model does: basic (one request a talk: it writes every slide from the word the "
+        "talk's dice give it) or advanced (two requests: it first plans the talk, its thesis, a running gag and every "
+        "slide's word and idea, then writes it; cleverer talks, for about half as much again) (default: "
+        "TALKGENERATOR_LLM_LEVEL's, or else basic)",
     )
     parser.add_argument(
         "--theme",

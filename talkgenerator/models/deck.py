@@ -438,6 +438,9 @@ class Deck(_Data):
     style: Theme | None = None  # the theme's tokens (none for the classic theme)
     # The language model that wrote the talk, as "provider:model" (the one that answered), or none: a classic talk
     language_model: str | None = None
+    # How much the language model did: "basic" (it wrote the talk, in one request) or "advanced" (it planned the talk
+    # first: see talkgenerator.plan.outline); none for a classic talk
+    llm_level: str | None = None
     # The vision model that picked its pictures among their candidates (the one that answered), if it had a vision
     # pick that did (see talkgenerator.images.vision)
     vision_model: str | None = None
