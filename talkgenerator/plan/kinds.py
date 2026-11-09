@@ -600,8 +600,9 @@ def _shortened(text: str, length: int) -> str:
 
 
 def _quadrant(corner: str, ends: str) -> TextField:
+    # (at most 30 letters, for a format's names such as a made-up citation, "Kowalski and Kowalski (2019)")
     return TextField(
-        corner.replace(" ", "_"), f"a short name for the {corner} quadrant, a word or two: what is {ends}", 24, True
+        corner.replace(" ", "_"), f"a short name for the {corner} quadrant, a word or two: what is {ends}", 30, True
     )
 
 
@@ -616,6 +617,26 @@ def _things(corner: str, ends: str) -> TextField:
 
 # The first three steps of a process or a cycle, which every one of them has: the boxes that can have a picture
 _STEPS: Final = {"step_1": "the first step", "step_2": "the second step", "step_3": "the third step"}
+
+
+def matrix_landscape(thing: str, things: str) -> tuple[Variant, Variant]:
+    """The ways a format's matrix of things in three of its quadrants (a pitch's competitors, a review's
+    initiatives, a paper's earlier work) and the dot alone in the best one (top right) comes out: with the things as
+    the three quadrants' names, as it was; or as dots where they belong, one in each of those quadrants, and a name
+    only in the best one (docs/v5-plan.md, D64). thing says what to write for one of them, things what they are."""
+    others = ("top_left", "bottom_left", "bottom_right")
+    return (
+        Variant(1, _MATRIX_THINGS),
+        Variant(
+            1,
+            frozenset(others) | {"top_right_things"},
+            f"with {things} as dots where they belong, one in each of the three other quadrants (their fields of "
+            "things), and a name only in the best quadrant, where the dot is",
+            hints={f"{corner}_things": f"{thing}: one" for corner in others},
+        ),
+    )
+
+
 # How a correlation comes out, where its recipe has no variants of its own (docs/v5-plan.md, D64): one cloud of points,
 # or two or three named groups of them (clusters)
 _CLUSTERS: Final = frozenset(f"cluster_{index}" for index in range(1, chart.MOST_CLUSTERS + 1))

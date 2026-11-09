@@ -19,7 +19,7 @@ from typing import Any, Final
 
 from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
-from talkgenerator.plan.kinds import AGENDA_ITEM, Recipe, Variant
+from talkgenerator.plan.kinds import AGENDA_ITEM, Recipe, Variant, matrix_landscape
 from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema.formats import (
     Format,
@@ -445,6 +445,9 @@ _GENERATORS: Final = [
                 "dot": "this work's method, by its made-up name",
                 "dot_quadrant": "top right",
             },
+            variants=matrix_landscape(
+                "an earlier work, as a made-up author 'et al.' and a year in brackets", "earlier work"
+            ),
         ),
     ),
     _part(

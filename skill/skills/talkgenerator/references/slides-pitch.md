@@ -184,10 +184,10 @@ A 2×2 matrix: two axes of everyday opposites that cross in the middle, with a w
 | `x_right` | 24 | the right end of that axis, a word or two: the opposite of the left end |
 | `y_bottom` | 24 | the bottom end of the axis going up: a word or two |
 | `y_top` | 24 | the top end of that axis, a word or two: the opposite of the bottom end |
-| `top_left` | 24 | a short name for the top left quadrant, a word or two: what is both like the top end and like the left end (or empty, for none) |
-| `top_right` | 24 | a short name for the top right quadrant, a word or two: what is both like the top end and like the right end (or empty, for none) |
-| `bottom_left` | 24 | a short name for the bottom left quadrant, a word or two: what is both like the bottom end and like the left end (or empty, for none) |
-| `bottom_right` | 24 | a short name for the bottom right quadrant, a word or two: what is both like the bottom end and like the right end (or empty, for none) |
+| `top_left` | 30 | a short name for the top left quadrant, a word or two: what is both like the top end and like the left end (or empty, for none) |
+| `top_right` | 30 | a short name for the top right quadrant, a word or two: what is both like the top end and like the right end (or empty, for none) |
+| `bottom_left` | 30 | a short name for the bottom left quadrant, a word or two: what is both like the bottom end and like the left end (or empty, for none) |
+| `bottom_right` | 30 | a short name for the bottom right quadrant, a word or two: what is both like the bottom end and like the right end (or empty, for none) |
 | `top_left_things` | 50 | one or two familiar things that belong in the top left quadrant (both like the top end and like the left end), separated by \| (or empty, for none) |
 | `top_right_things` | 50 | one or two familiar things that belong in the top right quadrant (both like the top end and like the right end), separated by \| (or empty, for none) |
 | `bottom_left_things` | 50 | one or two familiar things that belong in the bottom left quadrant (both like the bottom end and like the left end), separated by \| (or empty, for none) |
