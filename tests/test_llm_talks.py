@@ -620,7 +620,7 @@ def test_a_talk_claude_declines_halfway_is_classic(schema):
     client = anthropic.Anthropic(
         api_key="test", max_retries=0, http_client=anthropic.DefaultHttpxClient(transport=transport)
     )
-    deck = _talk(llm.ClaudeProvider(client=client))
+    deck = _talk(llm.ClaudeProvider(client=client), llm_level="basic")  # (an Advanced one's: test_llm_levels)
     # What Claude wrote before it declined isn't used: not the title, nor the slides it got to
     assert deck.title.startswith("A classic title")
     assert not any(_planned(deck))

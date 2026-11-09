@@ -237,11 +237,13 @@ def _generate_presentation(
     budget limits what it may cost; the deck tells what it used.
 
     llm_level is how much the language model does (see talkgenerator.plan.outline): "basic", one request a talk, in
-    which it writes every slide from the word the talk's dice give it; or "advanced", two requests, as it first plans
-    the talk (its thesis, a running gag, and every slide's word, among those the dice offer, or one of its own, and
-    its idea: what its joke is, what a chart measures or a diagram compares), then writes it. None is the one
-    TALKGENERATOR_LLM_LEVEL names, or else basic. Classic talks have none; the deck says which level its slides were
-    written at (llm_level: advanced only when the plan came in).
+    which it writes every slide from the word the talk's dice give it; or "advanced", as it first plans the talk (its
+    thesis, a running gag, and every slide's word, among those the dice offer, or one of its own, and its idea: the
+    point it makes, what a chart measures or a diagram compares), and writes every slide in a request of its own as
+    soon as its idea is in, in parallel. None is the one TALKGENERATOR_LLM_LEVEL names, or else advanced on a model of
+    your own that costs (Claude, OpenAI's, your ChatGPT plan's, OpenRouter's paid ones) and basic on the free ones.
+    Classic talks have none; the deck says which level its slides were written at (llm_level: advanced only when the
+    plan came in).
 
     theme is "random" (a theme of a family the seed picks, extremes such as 1997 WordArt too unless extreme_themes
     is off), "classic" (the 2019 template), a family's name such as "dark minimal", or "chaos" (every slide in a
@@ -311,7 +313,7 @@ def _generate_presentation(
     families = themes.families(extreme_themes, theme_families) if theme_families is not None else None
     chosen_styles = names.styles(name_styles)  # (a ValueError for a style there isn't)
     languages.language(language)  # (a ValueError for a language talkgenerator doesn't know)
-    level = outline.level(llm_level)  # (a ValueError for a level there isn't)
+    outline.check(llm_level)  # (a ValueError for a level there isn't)
     if topic_or_title is not None and (topic or title):
         raise ValueError("topic_or_title stands for both the topic and the title: give it without them")
     # (on one line, but with its quote marks, if any: they make it a title, word for word)
@@ -398,6 +400,8 @@ def _generate_presentation(
     # The language model that writes the talk, if any; every request it gets is written down in the talk's ledger
     provider = _language_model(llm)
     ledger = Ledger()
+    # How much it does: as asked, or TALKGENERATOR_LLM_LEVEL says, or else Advanced on a model of your own that costs
+    level = outline.level(llm_level, provider)
     if provider is not None:
         logger.info("Language model: {} ({} level)".format(provider.id, level))
     elif language != "en":
@@ -1025,9 +1029,10 @@ def get_argument_parser():
         default=None,
         choices=outline.LEVELS,
         help="How much the language model does: basic (one request a talk: it writes every slide from the word the "
-        "talk's dice give it) or advanced (two requests: it first plans the talk, its thesis, a running gag and every "
-        "slide's word and idea, then writes it; cleverer talks, for about half as much again) (default: "
-        "TALKGENERATOR_LLM_LEVEL's, or else basic)",
+        "talk's dice give it) or advanced (it first plans the talk, its thesis, a running gag and every slide's word "
+        "and idea, and writes every slide in a request of its own as soon as its idea is in, in parallel: cleverer "
+        "talks, as fast, for more requests) (default: TALKGENERATOR_LLM_LEVEL's, or else advanced on a model of your "
+        "own that costs and basic on free models)",
     )
     parser.add_argument(
         "--theme",

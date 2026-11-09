@@ -38,6 +38,7 @@ import re
 import threading
 import time
 from collections.abc import Callable, Collection, Mapping, Sequence
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, field
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
@@ -51,7 +52,7 @@ from talkgenerator.datastructures.slide_generator_data import SlideGeneratorData
 from talkgenerator.images import context as image_context
 from talkgenerator.images import finder, licenses, profiles
 from talkgenerator.images.slots import ImageSlot
-from talkgenerator.llm.base import AnswerStopped, ProviderError, TextProvider, TextRequest
+from talkgenerator.llm.base import AnswerStopped, ProviderError, TextProvider
 from talkgenerator.llm.ledger import MeteredProvider
 from talkgenerator.llm.providers import NoneProvider
 from talkgenerator.models.deck import Fact
@@ -60,7 +61,17 @@ from talkgenerator.models.theme import Theme
 from talkgenerator.personas import Persona
 from talkgenerator.plan import languages, prompt
 from talkgenerator.plan.kinds import KINDS, PRESENTER_JOB, TALK_TITLE, Recipe
-from talkgenerator.plan.outline import ADVANCED, BASIC, Outline, ask_for_outline, in_own_words, outline_request
+from talkgenerator.plan.outline import (
+    ADVANCED,
+    BASIC,
+    RUNNING_GAG,
+    WRITERS,
+    Outline,
+    SlideIdea,
+    outline_request,
+    read_idea,
+    writing_request,
+)
 from talkgenerator.plan.prompt import SPINE, PlannedSlide, slide_plan, talk_request
 from talkgenerator.plan.realize import ATTEMPTS, clean_text, realize
 from talkgenerator.plan.stream import ObjectReader
@@ -71,6 +82,7 @@ from talkgenerator.slide.slide_deck import SlideDeck
 from talkgenerator.util import generator_util, image_util, random_util
 
 if TYPE_CHECKING:
+    from talkgenerator.images.generation import ImageGeneration
     from talkgenerator.schema.formats import Format
 
 logger = logging.getLogger("talkgenerator")
@@ -326,6 +338,11 @@ class _InEnglish(AnswerStopped):
     """The answer's spine reads as English, in a talk in another language: the rest of it isn't read."""
 
 
+class _NotPlanned(AnswerStopped):
+    """An Advanced talk's outline found the topic unsafe, or its spine reads as English in a talk in another language:
+    the rest of it isn't read, and the talk is written as a Basic one (whose request asks again)."""
+
+
 class Progress(Protocol):
     """Who follows a talk while it's made: told once its title and language are known (with the deck, still without
     slides), of every slide once it's settled, in order, and of a slide settled before that got a generated picture
@@ -392,6 +409,11 @@ class _PlannedTalk:
     _started: "_Started" = field(default_factory=lambda: _Started())
     # The model's plan of the talk, at the Advanced level (see talkgenerator.plan.outline)
     outline: Outline | None = None
+    # Whether the slides come in order, in one answer (a Basic talk's): or else in any order, each from a request of
+    # its own (an Advanced talk's), and a slide whose request ended without it is given up (see give_up)
+    in_order: bool = True
+    # The level its slides are written at: Advanced once its outline's spine is in (see _write_planned)
+    level: str = BASIC
 
     def __post_init__(self) -> None:
         self._slide_numbers = {slide.key: slide_nr for slide_nr, slide in self.planned.items()}
@@ -401,6 +423,7 @@ class _PlannedTalk:
         self._reached = -1  # the last slide whose part of the answer came in
         self._finished = False
         self._shapes: list[str] = []  # what came in, by its keys and kinds (see answer_shape)
+        self._given_up: set[int] = set()  # (the slides whose own requests ended without them, out of order)
 
     def answer_shape(self) -> str:
         """What the model's answer brought, in order, by its parts' keys and the kinds of their values (never their
@@ -491,8 +514,31 @@ class _PlannedTalk:
         return bool(self.plans)
 
     def wait_for(self, slide_nr: int) -> None:
-        """Wait for the slide's part of the answer (or a later slide's, as when its part didn't parse, or the end)."""
-        self._wait(lambda: slide_nr in self.plans or self._reached > slide_nr or self._finished)
+        """Wait for the slide's part of the answer (or a later slide's, as when its part didn't parse, or the end); for
+        slides that come in any order, for the slide's own request to end."""
+        self._wait(
+            lambda: (
+                slide_nr in self.plans
+                or (self._reached > slide_nr if self.in_order else slide_nr in self._given_up)
+                or self._finished
+            )
+        )
+
+    @property
+    def spine_in(self) -> bool:
+        """Whether all of the spine came in."""
+        with self._changed:
+            return self._spine_in
+
+    def has_plan(self, slide_nr: int) -> bool:
+        with self._changed:
+            return slide_nr in self.plans
+
+    def give_up(self, slide_nr: int) -> None:
+        """The slide's own request ended without it (in a talk whose slides come in any order): it's classic."""
+        with self._changed:
+            self._given_up.add(slide_nr)
+            self._changed.notify_all()
 
     def _wait(self, ready: Callable[[], bool]) -> None:
         """Wait until it's ready; TalkCancelled once the talk is cancelled (which is looked at four times a second)."""
@@ -567,6 +613,9 @@ class _PlannedTalk:
             self._in_english = False
             self._reached = -1
             self._shapes.clear()
+            self._given_up.clear()
+            self.in_order = True
+            self.level = BASIC
             self._changed.notify_all()
 
     def close(self) -> None:
@@ -1009,8 +1058,8 @@ class PresentationSchema:
             # (the families a chaos deck's slides get their own themes of: see talkgenerator.design.themes.allowed)
             slide_deck.theme_families = tuple(theme_families) if theme_families is not None else None
             slide_deck.language_model = llm.id if planned and llm is not None else None
-            if planned and talk is not None:  # (Advanced only when the model's outline came in)
-                slide_deck.llm_level = ADVANCED if talk.outline is not None else BASIC
+            if planned and talk is not None:  # (Advanced once the model's outline came in)
+                slide_deck.llm_level = talk.level
             slide_deck.facts = talk.facts if planned and talk is not None else ()
             slide_deck.topic_or_title = reading
             if persona is not None:  # (with the angle the language model was given, for a talk it writes)
@@ -1146,8 +1195,8 @@ class PresentationSchema:
         (that can be cancelled), the answer comes in on a thread of its own, and this returns at once, for the slides to
         be settled while it does.
 
-        At level ADVANCED, the model plans the talk first (see _outline), in a request of its own, before the talk's
-        request, which then has its plan."""
+        At level ADVANCED, the model plans the talk first, and its slides are written in parallel as their plans come in
+        (see _write_planned); the talk is a Basic one when that can't be done."""
         num_slides = len(seeds)
         if picks is None:
             picks = self._pick_generators(num_slides, rng, language, persona)
@@ -1182,23 +1231,11 @@ class PresentationSchema:
         def answer() -> None:
             try:
                 generation = image_context.current().generation  # (its images' prompts, if it generates pictures)
-                if level == ADVANCED:
-                    # (worth asking only when the talk's request can still be made after it: a Basic one, as it is now)
-                    then = talk_request(
-                        topics,
-                        list(planned.values()),
-                        rng,
-                        language,
-                        title,
-                        name=name,
-                        typed=typed,
-                        generation=generation,
-                        persona=persona,
-                        talk_format=self.format,
-                    )
-                    talk.outline = self._outline(
-                        llm, talk, then, topics, offers or {}, rng, language, title, typed, persona
-                    )
+                if level == ADVANCED and self._write_planned(
+                    llm, talk, topics, offers or {}, rng, language, title, name, typed, persona, generation, gathering
+                ):
+                    logger.info("The language model wrote %s of the %s slides", len(talk.plans), num_slides)
+                    return
                 given = self._facts_for(talk, gathering, rng)
                 # The model is asked once more for a topic it found unsafe, or for a talk it started in English
                 why_again: str | None = None
@@ -1220,7 +1257,6 @@ class PresentationSchema:
                         talk_format=self.format,
                         facts=given,
                         answered_in_english=why_again == "english",
-                        outline=talk.outline,
                     )
                     self._ask(llm, request, talk)
                     if talk.cancelled.is_set():
@@ -1251,50 +1287,193 @@ class PresentationSchema:
             answer()
         return talk
 
-    def _outline(
+    def _write_planned(
         self,
         llm: TextProvider,
         talk: "_PlannedTalk",
-        then: TextRequest,
         topics: list[str],
         offers: Mapping[int, Sequence[str]],
         rng: random_util.Rng,
         language: str,
         title: str | None,
+        name: names.NameRequest | None,
         typed: titles.TitleRequest | None,
         persona: Persona | None,
-    ) -> Outline | None:
-        """The talk's outline (see talkgenerator.plan.outline), or None when the model has none: its planned slides
-        then riff on the outline's words (in their contexts too, for their notes), with its ideas, and the model writes
-        the texts that classic sources would find for them (a real quote's: see talkgenerator.plan.outline.in_own_words).
-        A title typed to keep is the talk's title already. None too when the talk's budget can't afford the outline and the talk's request
-        after it (then: about as it will be), which matters more."""
+        generation: ImageGeneration | None,
+        gathering: facts.Gathering | None,
+    ) -> bool:
+        """Write the talk at the Advanced level (see talkgenerator.plan.outline): the model plans it, in an outline that's
+        read while it's written (its spine first, then every slide's word and idea), and every slide is written in a
+        request of its own as soon as its idea is in, at most WRITERS at a time, from the plan as far as it goes then;
+        the slides the outline didn't plan, from the dice's words, once it's in. The slides come in any order, and each
+        is realized as soon as it's in. With the real facts being gathered, they're waited for before the first slide's
+        request (they're in by then, mostly).
+
+        Whether the talk was written so (or cancelled): False when it's to be a Basic talk, as the outline brought no
+        spine (an error, a refusal), found the topic unsafe, or started in English in a talk in another language (the
+        Basic talk's request then asks again), or as the talk's budget can't afford the outline and a request per slide."""
         if talk.cancelled.is_set():
-            return None
-        # (the slides whose texts classic sources find, a real quote's, get the model's own words, if it plans them)
-        found = {slide_nr: slide for slide_nr, slide in talk.planned.items() if slide.recipe.texts_from}
-        for slide_nr, slide in found.items():
-            talk.planned[slide_nr] = dataclasses.replace(slide, recipe=in_own_words(slide.recipe))
+            return True
         planned = [talk.planned[slide_nr] for slide_nr in sorted(talk.planned)]
-        kept = typed.typed if typed is not None and (typed.keep or typed.exact) else None
-        request = outline_request(topics, planned, offers, rng, language, title or kept, persona, self.format)
-        outline = None
-        if isinstance(llm, MeteredProvider) and not llm.affords(request, then):
-            logger.info(
-                "The talk's budget doesn't allow an outline before the talk: it's written from the dice's words"
+        request = outline_request(topics, planned, offers, rng, language, title, name, typed, persona, self.format)
+        if isinstance(llm, MeteredProvider):
+            estimates = [
+                writing_request(topics, slide, planned, {}, rng, language, persona, self.format, None, generation)
+                for slide in planned
+            ]
+            if not llm.affords(request, *estimates):
+                logger.info("The talk's budget doesn't allow its outline and a request per slide: it's a Basic talk")
+                return False
+        slide_numbers = {slide.key: slide_nr for slide_nr, slide in talk.planned.items()}
+        # (what a Basic talk starts from, should the outline come to nothing: the dice's words)
+        dice = (dict(talk.planned), [context.get("seed") for context in talk.contexts])
+        ideas: dict[int, SlideIdea] = {}
+        writing: dict[int, Future[None]] = {}
+        planning = threading.Lock()  # (the plan as far as it goes, which the slides' requests read)
+        dropped = threading.Event()  # (the outline was declined: what its slides' requests write isn't used)
+        given: dict[int, facts.Given] | None = None
+        talk.in_order = False
+        talk.check_language = True
+        writers = ThreadPoolExecutor(max_workers=min(WRITERS, len(planned)), thread_name_prefix="slide writer")
+
+        def write(slide_nr: int) -> None:
+            with planning:
+                slide = talk.planned[slide_nr]
+                plan = [talk.planned[number] for number in sorted(talk.planned)]
+            fact = (given or {}).get(slide.number)
+            request = writing_request(
+                topics, slide, plan, dict(talk.spine), rng, language, persona, self.format, fact, generation
             )
-        else:
-            outline = ask_for_outline(llm, request, planned)
-        if outline is None or talk.cancelled.is_set():
-            talk.planned.update(found)  # (as a Basic talk has them)
-            return None
-        for slide_nr, slide in list(talk.planned.items()):
-            idea = outline.slides.get(slide.number)
-            if idea is not None:
-                talk.planned[slide_nr] = dataclasses.replace(slide, seed=idea.riff, idea=idea.idea)
-                talk.contexts[slide_nr]["seed"] = idea.riff
-        logger.info("The language model planned %s of the %s slides it writes", len(outline.slides), len(planned))
-        return outline
+            if not self._ask_slide(llm, request, talk, slide_nr, dropped):
+                talk.give_up(slide_nr)
+
+        def submit(slide_nr: int) -> None:
+            nonlocal given
+            if slide_nr in writing or talk.cancelled.is_set():
+                return
+            if given is None:
+                given = self._facts_for(talk, gathering, rng)
+            writing[slide_nr] = writers.submit(image_util.carry(write), slide_nr)
+
+        reader = ObjectReader()
+        read_anything = False
+
+        def read(text: str) -> None:
+            nonlocal read_anything
+            if talk.cancelled.is_set():
+                raise TalkCancelled()  # (out of the provider's stream, which then stops)
+            read_anything = True
+            for key, value in reader.feed(text):
+                slide_nr = slide_numbers.get(key)
+                if slide_nr is None:
+                    talk.take(key, value)  # (the spine, with its running gag, which the slides' requests tell)
+                    if talk.spine.get("unsafe_topic") is True or talk.in_english:
+                        raise _NotPlanned()
+                    if talk.spine_in:
+                        talk.level = ADVANCED  # (before the first slide: the deck says so)
+                    continue
+                if not talk.spine_in:
+                    continue
+                idea = read_idea(value)
+                if idea is not None:
+                    with planning:
+                        slide = talk.planned[slide_nr] = dataclasses.replace(
+                            talk.planned[slide_nr], seed=idea.riff, idea=idea.idea
+                        )
+                        talk.contexts[slide_nr]["seed"] = idea.riff  # (for its notes)
+                    ideas[slide.number] = idea
+                submit(slide_nr)
+
+        try:
+            response = llm.stream(request, read)
+            if not read_anything:
+                read(response.text)
+            if response.finish == "refused":
+                # (what a model wrote before it declined isn't to be used, as in a Basic talk: the spine, the slides)
+                logger.warning("The language model declined to plan the talk: it's a Basic talk")
+                dropped.set()
+            elif response.finish != "complete":
+                logger.warning(
+                    "The language model's outline was %s: slides it didn't plan keep the dice's words", response.finish
+                )
+        except TalkCancelled:
+            pass
+        except _NotPlanned:
+            logger.info("The talk's outline found the topic unsafe, or started in English: it's a Basic talk")
+        except ProviderError as error:
+            logger.warning("The language model didn't plan the talk (%s)", error)
+        except Exception:  # a misbehaving provider shouldn't sink the talk either
+            logger.exception("Asking the language model for the talk's outline crashed")
+        if not talk.cancelled.is_set() and (
+            dropped.is_set() or not talk.spine_in or talk.spine.get("unsafe_topic") is True or talk.in_english
+        ):
+            dropped.set()
+            writers.shutdown(cancel_futures=True)  # (the slides' requests under way stop at once)
+            talk.planned.update(dice[0])
+            for context, seed in zip(talk.contexts, dice[1], strict=True):
+                context["seed"] = seed
+            talk.restart()  # (and it's a Basic talk, from the dice's words)
+            return False
+        for slide_nr in sorted(talk.planned):  # (those the outline didn't plan, from the dice's words)
+            submit(slide_nr)
+        for future in writing.values():
+            while not talk.cancelled.is_set():
+                try:
+                    future.result(timeout=0.25)
+                    break
+                except TimeoutError:
+                    continue
+                except Exception:  # (write gives a slide up itself; this is what it didn't foresee)
+                    logger.exception("Writing a planned slide crashed")
+                    break
+        writers.shutdown(wait=not talk.cancelled.is_set(), cancel_futures=talk.cancelled.is_set())
+        if ideas:
+            talk.outline = Outline(str(talk.spine.get("thesis") or ""), str(talk.spine.get(RUNNING_GAG) or ""), ideas)
+            logger.info("The language model planned %s of the %s slides it writes", len(ideas), len(planned))
+        return True
+
+    @staticmethod
+    def _ask_slide(
+        llm: TextProvider, request: Any, talk: "_PlannedTalk", slide_nr: int, dropped: threading.Event
+    ) -> bool:
+        """Ask for one slide of an Advanced talk, and hand it to the talk while it comes in: whether it came (a slide the
+        model doesn't write, or gets wrong, is classic, as in a Basic talk). A slide that a model wrote without its key
+        around it (its fields at the answer's top) is taken as written. Once the outline is dropped, nothing more is
+        taken."""
+        key = talk.planned[slide_nr].key
+        reader = ObjectReader()
+        loose: dict[str, Any] = {}
+        read_anything = False
+
+        def read(text: str) -> None:
+            nonlocal read_anything
+            if talk.cancelled.is_set() or dropped.is_set():
+                raise TalkCancelled()
+            read_anything = True
+            for name, value in reader.feed(text):
+                if name == key or (isinstance(value, dict) and key in value):
+                    talk.take(name, value)  # (the slide, or an object around it, which take looks into)
+                else:
+                    loose[name] = value
+
+        try:
+            response = llm.stream(request, read)
+            if not read_anything:
+                read(response.text)
+            if response.finish == "refused":
+                logger.warning("The language model declined to write slide %s: it's classic", slide_nr + 1)
+                return False
+        except TalkCancelled:
+            return False
+        except ProviderError as error:
+            logger.warning("The language model didn't write slide %s (%s): it's classic", slide_nr + 1, error)
+            return False
+        except Exception:  # a misbehaving provider shouldn't sink the talk either
+            logger.exception("Asking the language model for slide %s crashed: it's classic", slide_nr + 1)
+            return False
+        if not talk.has_plan(slide_nr) and loose and not dropped.is_set():
+            talk.take(key, loose)
+        return talk.has_plan(slide_nr)
 
     @staticmethod
     def _facts_for(

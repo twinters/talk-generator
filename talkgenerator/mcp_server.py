@@ -102,10 +102,11 @@ def make_server(
 ) -> MCPServer:
     """The MCP server, whose tools save what they make in output_folder (see output_folder_of) and nowhere else, and
     tell the client every progress_every seconds that a talk is still being made. Its talks are made at llm_level
-    (see talkgenerator.plan.outline): the one given, or else TALKGENERATOR_LLM_LEVEL's, or else basic. Like the
-    language model, it's the user's choice, never a tool's argument: an advanced talk costs more."""
+    (see talkgenerator.plan.outline): the one given, or else TALKGENERATOR_LLM_LEVEL's, or else the model's default
+    (advanced on a model of your own that costs, basic on free ones). Like the language model, it's the user's choice,
+    never a tool's argument: an advanced talk costs more."""
     folder = output_folder_of(output_folder)
-    level = outline.level(llm_level)  # (a ValueError for a level there isn't)
+    level = outline.check(llm_level)  # (a ValueError for a level there isn't)
     one_at_a_time = threading.Lock()  # talks are made one by one, so they don't race each other for the sources
     server = MCPServer(
         "talkgenerator",
@@ -504,8 +505,9 @@ def main(argv: Sequence[str]) -> int:
     parser.add_argument(
         "--llm_level",
         choices=outline.LEVELS,
-        help="how much the language model does for a talk: basic (one request) or advanced (two: it plans the talk "
-        "first, for cleverer talks) (default: TALKGENERATOR_LLM_LEVEL's, or else basic)",
+        help="how much the language model does for a talk: basic (one request) or advanced (it plans the talk "
+        "first, and writes its slides in parallel, for cleverer talks) (default: TALKGENERATOR_LLM_LEVEL's, or else "
+        "advanced on a model of your own that costs and basic on free models)",
     )
     parser.add_argument("--verbose", "-v", action="store_true", help="log debug messages too (on stderr, as all logs)")
     args = parser.parse_args(argv)

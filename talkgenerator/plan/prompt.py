@@ -33,7 +33,6 @@ from talkgenerator.util import random_util
 if TYPE_CHECKING:
     from talkgenerator.images.generation import ImageGeneration
     from talkgenerator.personas import Persona
-    from talkgenerator.plan.outline import Outline
     from talkgenerator.schema.formats import Format
 
 SYSTEM_PROMPT: Final = """\
@@ -152,7 +151,6 @@ def talk_request(
     talk_format: Format | None = None,
     facts: Mapping[int, Given] | None = None,
     answered_in_english: bool = False,
-    outline: Outline | None = None,
 ) -> TextRequest:
     """The request for a talk (with the presenter's name, when there's a name request). Asked again, it says that a
     model found the topic unsafe: some of the free models get the flag wrong whichever way it's asked (one turned
@@ -173,26 +171,25 @@ def talk_request(
 
     A talk format beyond the TED-like talks (talk_format: see talkgenerator.schema.formats) says what the talk is, on
     a line of its own, and what its titles and its presenter's job are like, with the persona's. (The TED-like
-    formats have none, and their requests say nothing of a format.)
-
-    A talk the model planned first (an outline: see talkgenerator.plan.outline) says its thesis and its running gag,
-    and every slide's line its idea, after its word to riff on (the outline's)."""
+    formats have none, and their requests say nothing of a format.)"""
     hint = title_hint(persona, title, typed, talk_format)
     job = job_hint(persona, talk_format)
-    topic = topics[0] + (f" (and {', '.join(topics[1:])})" if len(topics) > 1 else "")
-    kept = " (the typed title keeps its words)" if typed is not None and typed.keep else ""
     titled = bool(title)
     fields = spine(language, name, typed, hint, job, titled)
     language_name = languages.language(language).name
-    thesis = "the thesis, " if language != languages.ENGLISH.code else ""
     lines = [
-        *(typed.lines(topic) if typed is not None else [f"Topic: {topic}", *([f"Title: {title}"] if title else [])]),
-        f"Language: write the title{kept}, {thesis}the presenter's {'name and ' if name is not None else ''}job and "
-        f"every slide in {language_name}, and the image search queries in English",
-        *([f"The format: {talk_format.brief}"] if talk_format is not None else []),
-        *([f"The presenter: {persona.voice}", f"The angle: {persona.angle(rng)}"] if persona is not None else []),
-        *([request_line(language)] if facts else []),
-        *(_outline_lines(outline) if outline is not None else []),
+        *header(
+            topics,
+            rng,
+            f"{spine_language(language, name, typed)} and every slide in {language_name}, and the image search "
+            "queries in English",
+            title,
+            typed,
+            persona,
+            talk_format,
+            facts=bool(facts),
+            language=language,
+        ),
         "",
         *(
             [
@@ -220,17 +217,7 @@ def talk_request(
     ]
     # The guidance per field is in the schema too, but not every model gets to read the schema's descriptions
     for slide in planned:
-        brief = (slide.recipe.brief or KINDS[slide.recipe.kind].description).rstrip(".")
-        given = (facts or {}).get(slide.number)
-        fact = f". {given.line()}" if given is not None else ""
-        idea = f". The idea: {slide.idea.rstrip('.')}" if slide.idea else ""
-        lines += ["", f"{slide.key}: {brief}. A word to riff on: {slide.seed}{idea}{fact}"]
-        lines += [
-            f"- {text.name}: {field_description(slide.recipe, text, language)}"
-            for text in slide.recipe.written_fields()
-        ]
-        lines += [f"- {slot}_query: {_query_description(slot)}" for slot in slide.recipe.image_queries()]
-        lines += [f"- {prompt_field(slot)}: {about}" for slot, about in generated(slide.recipe, generation)]
+        lines += ["", *slide_lines(slide, language, (facts or {}).get(slide.number), generation)]
     prompts = sum(len(generated(slide.recipe, generation)) for slide in planned)
     return TextRequest(
         purpose="talk plan",
@@ -241,14 +228,59 @@ def talk_request(
     )
 
 
-def _outline_lines(outline: Outline) -> list[str]:
-    """What the talk's request says of the outline the model wrote first: its thesis, its running gag, and that every
-    slide's idea is to land (the slides' lines have them)."""
+def header(
+    topics: list[str],
+    rng: random_util.Rng,
+    written: str,
+    title: str | None = None,
+    typed: TitleRequest | None = None,
+    persona: Persona | None = None,
+    talk_format: Format | None = None,
+    facts: bool = False,
+    language: str = "en",
+) -> list[str]:
+    """The lines a request for a talk (or its plan, or one of its slides: see talkgenerator.plan.outline) starts
+    with: what it's about (its topic and title, or what was typed), what's written in which language (written), its
+    format beyond the TED-like talks, its persona's voice and angle, and how to use real facts (with facts)."""
+    topic = topics[0] + (f" (and {', '.join(topics[1:])})" if len(topics) > 1 else "")
     return [
-        *([f"The thesis: {outline.thesis}"] if outline.thesis else []),
-        *([f"The running gag: {outline.running_gag}"] if outline.running_gag else []),
-        "The talk is planned: write every slide so that its idea lands, and keep the thesis as it is. An idea is a "
-        "plan, not a text: never copy its words onto the slide, and write titles and captions as the fields ask.",
+        *(typed.lines(topic) if typed is not None else [f"Topic: {topic}", *([f"Title: {title}"] if title else [])]),
+        f"Language: {written}",
+        *([f"The format: {talk_format.brief}"] if talk_format is not None else []),
+        *([f"The presenter: {persona.voice}", f"The angle: {persona.angle(rng)}"] if persona is not None else []),
+        *([request_line(language)] if facts else []),
+    ]
+
+
+def spine_language(language: str, name: NameRequest | None = None, typed: TitleRequest | None = None) -> str:
+    """What of the spine is written in the talk's language, for a request's language line ("write the title, the
+    thesis, the presenter's job"): the thesis only in another language than English (it's never shown)."""
+    kept = " (the typed title keeps its words)" if typed is not None and typed.keep else ""
+    thesis = "the thesis, " if language != languages.ENGLISH.code else ""
+    return f"write the title{kept}, {thesis}the presenter's {'name and ' if name is not None else ''}job"
+
+
+def slide_lines(
+    slide: PlannedSlide,
+    language: str = languages.ENGLISH.code,
+    given: Given | None = None,
+    generation: ImageGeneration | None = None,
+) -> list[str]:
+    """What a request says of a slide it asks for: its key, what it is, its word to riff on (with its idea, in a talk
+    the model planned first) and its real fact (what to do with it), then every field to write, with its description
+    (which is in the schema too, but not every model gets to read the schema's descriptions)."""
+    brief = (slide.recipe.brief or KINDS[slide.recipe.kind].description).rstrip(".")
+    fact = f". {given.line()}" if given is not None else ""
+    idea = f". The idea: {slide.idea.rstrip('.')}" if slide.idea else ""
+    return [
+        f"{slide.key}: {brief}. A word to riff on: {slide.seed}{idea}{fact}",
+        *(
+            f"- {text.name}: {field_description(slide.recipe, text, language)}"
+            for text in slide.recipe.written_fields()
+        ),
+        *(f"- {slot}_query: {_query_description(slot)}" for slot in slide.recipe.image_queries()),
+        *(f"- {name}: {FOUND_QUERY}" for name in found_queries(slide.recipe)),
+        *(f"- {prompt_field(slot)}: {about}" for slot, about in generated(slide.recipe, generation)),
     ]
 
 
@@ -312,6 +344,8 @@ def slide_schema(
             properties[text.name]["enum"] = [*text.options, *([""] if text.optional else [])]
     for slot in recipe.image_queries():
         properties[f"{slot}_query"] = {"type": "string", "description": _query_description(slot)}
+    for name in found_queries(recipe):
+        properties[name] = {"type": "string", "description": FOUND_QUERY}
     for slot, about in generated(recipe, generation):
         properties[prompt_field(slot)] = {"type": "string", "description": about}
     return _object(properties)
@@ -352,6 +386,21 @@ def field_description(recipe: Recipe, text: TextField, language: str = languages
     return f"{recipe.hints.get(text.name, text.description)}{written_in} ({limit})"
 
 
+# What the model writes for a text that talkgenerator finds (a real quote, from Goodreads or Wikiquote): what to search
+# it with, as a slide's concept ("the slide's subject in two to five words") found nothing on Goodreads, and random
+# lines on Wikiquote (2026-11-09: an anime quote on a tea talk), where a plain theme finds real quotes about it
+FOUND_QUERY: Final = (
+    "the theme of the real quote talkgenerator finds for this slide, in one or two plain English words that a famous "
+    "quote could be about, such as 'patience' or 'tradition': one the slide's point suits"
+)
+
+
+def found_queries(recipe: Recipe) -> list[str]:
+    """The fields the model writes a search for, one for each text that a classic source finds for the slide (a real
+    quote's): "<text>_query"."""
+    return [f"{name}_query" for name in recipe.texts_from if name not in recipe.omit]
+
+
 def _query_description(slot: str) -> str:
     name = slot.replace("_", " ")  # "image 1", "background", ...
     return f"an image search query for {name if name[-1].isdigit() else 'the ' + name}"
@@ -378,6 +427,9 @@ def slide_plan(slide: PlannedSlide, value: Any) -> SlidePlan | None:
         for slot in slide.recipe.image_queries()
         if isinstance(value.get(prompt_field(slot)), str) and value[prompt_field(slot)].strip()
     }
+    for name in found_queries(slide.recipe):  # (with the texts, under their own names: see realize)
+        if isinstance(value.get(name), str) and value[name].strip():
+            texts[name] = value[name]
     concept = value.get("concept")
     return SlidePlan(
         kind=slide.recipe.kind,
