@@ -1,6 +1,7 @@
 """Module providing language-related operations to manipulate strings"""
 
 import logging
+import os
 import re
 import string
 from collections.abc import Callable, Sequence
@@ -432,6 +433,86 @@ def is_adjective(word: str) -> bool:
     except LookupError:
         logger.warning("WordNet is not available; can't recognise adjectives")
         return True
+
+
+@lru_cache(maxsize=4096)
+def is_noun_word(word: str) -> bool:
+    """Whether WordNet knows the word (or phrase) as a noun, in any of its forms ("volcanoes", "geese"), and not only
+    as an adjective, a verb or an adverb ("glacial", "erupted", "both"). True when WordNet isn't available, as it
+    can't tell."""
+    try:
+        return wordnet.is_noun(word)
+    except LookupError:
+        logger.warning("WordNet is not available; can't recognise nouns")
+        return True
+
+
+# THINGS: what a slide's seed, and the words templates speak of besides it, have to be (docs/v5-plan.md, D67)
+
+# How common a word has to be, at least, to name a thing on a slide, on the Zipf scale (2.5: three in ten million
+# words), in its most common form (a plural's singular, say): "krill" and "caldera" are, "scoria" and "volcanology"
+# aren't
+FAMILIAR: Final = 2.5
+
+
+def familiarity(phrase: str) -> float:
+    """How common the phrase is on the Zipf scale (wordfreq's English frequencies), in its most common form: as it
+    is, or with its last word in the singular ("albatrosses" is as common as "albatross")."""
+    words = phrase.split()
+    if not words:
+        return 0.0
+    singular = inflect_engine.singular_noun(words[-1].lower())
+    forms = [phrase] + ([" ".join([*words[:-1], singular])] if singular else [])
+    return max(_zipf(form.lower()) for form in forms)
+
+
+def is_thing(phrase: str, parts_of_speech: Sequence[str] | None = None) -> bool:
+    """Whether the phrase names a thing, as a template that wants a noun takes it ("Do you want {seed.generic}?",
+    "The {related.bare} revolution"): its last word a noun (WordNet's), the phrase familiar enough (FAMILIAR), and,
+    with what Datamuse says of its parts of speech (see talkgenerator.sources.datamuse.parts_of_speech), a noun first
+    of all ("cinder": n, v; not "eruptive": adj, n) and no name ("etna", "pittsburgh": a slide would write them in
+    small letters). Without them, a word that's both a noun and an adjective passes, as WordNet can't tell which is
+    the most common."""
+    words = phrase.split()
+    if not words or not all(any(character.isalpha() for character in word) for word in words):
+        return False
+    if parts_of_speech:
+        kinds = [part for part in parts_of_speech if part != "prop"]
+        if "prop" in parts_of_speech or not kinds or kinds[0].lower() != "n":
+            return False
+    return is_noun_word(words[-1]) and familiarity(phrase) >= FAMILIAR
+
+
+# Little words that say nothing of a phrase's family ("a cup of tea" is of the family of "tea" and "cups")
+_LITTLE_WORDS: Final = frozenset("a an the of to and or with for in on at by my your our their its from as".split())
+# How long a stem has to be to make a family of the words it starts ("duck": "ducklings"; but not "bee": "beekeeper"),
+# and how much of two stems has to be the same when neither starts the other ("volcano": "volcanic")
+_SHORTEST_STEM: Final = 4
+_SHARED_START: Final = 5
+_SHARED_SHARE: Final = 0.7
+
+
+def family(phrase: str) -> frozenset[str]:
+    """The stems of the phrase's words (without little words such as "of"), roughly: "Eruptions" gives "eruption",
+    "erupted" gives "erupt"; same_family compares them."""
+    words = re.findall(r"[a-z]+", phrase.lower())
+    return frozenset(_stem(word) for word in words if word not in _LITTLE_WORDS)
+
+
+def same_family(one: str, other: str) -> bool:
+    """Whether two words or phrases are of one family, so that a slide that has one has no use for the other: they
+    share a word in any form ("musk duck", "rubber ducks"), or a word of one starts one of the other's ("duck",
+    "ducklings"; "light", "lighthouses"), or two of their words start the same way for most of the shorter one
+    ("eruption", "eruptive"; "volcano", "volcanic")."""
+    return any(_related_stems(mine, theirs) for mine in family(one) for theirs in family(other))
+
+
+def _related_stems(one: str, other: str) -> bool:
+    short, long = sorted((one, other), key=len)
+    if short == long or (len(short) >= _SHORTEST_STEM and long.startswith(short)):
+        return True
+    shared = len(os.path.commonprefix([short, long]))
+    return shared >= _SHARED_START and shared >= _SHARED_SHARE * len(short)
 
 
 # Special operators
