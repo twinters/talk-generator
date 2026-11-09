@@ -210,3 +210,67 @@ def test_the_mcp_server_takes_the_level(tmp_path):
     with pytest.raises(ValueError, match="no language model level"):
         mcp_server.make_server(tmp_path, llm_level="expert")
     assert mcp_server.make_server(tmp_path, llm_level="advanced") is not None
+
+
+# THE TEXTS CLASSIC SOURCES FIND, AT THE BASIC LEVEL: A REAL QUOTE'S
+
+
+def test_an_advanced_talk_writes_what_a_basic_one_finds():
+    from talkgenerator.plan.kinds import Recipe
+
+    found = Recipe("statement", brief="A real quote (talkgenerator finds it)", texts_from={"text": lambda context: "x"})
+    written = outline.in_own_words(found)
+    assert written.texts_from == {} and written.brief == ""
+    assert [text.name for text in written.written_fields()] == ["text"]
+    assert "never a real person's words" in written.hints["text"]
+    plain = Recipe("statement")
+    assert outline.in_own_words(plain) is plain
+
+
+@pytest.fixture
+def quotes(seeds, monkeypatch):
+    """The fake schema, with a slide of a real quote that a classic source finds, which every slide would rather be."""
+    from talkgenerator.datastructures.slide_generator_data import ConstantWeightFunction, SlideGeneratorData
+    from talkgenerator.plan.kinds import Recipe
+    from talkgenerator.schema.presentation_schema import PresentationSchema
+    from talkgenerator.slide import powerpoint_slide_creator, slide_generator_types
+    from talkgenerator.util.generator_util import NoneGenerator, StaticGenerator
+    from tests.test_llm_talks import _photo, _photos
+
+    quote = SlideGeneratorData(
+        slide_generator_types.LarqeQuoteSlideGenerator.of(NoneGenerator(), StaticGenerator("A quote"), _photo("q")),
+        weight_function=ConstantWeightFunction(1000),
+        allowed_repeated_elements=10,
+        name="Fake quote",
+        llm=Recipe("statement", images=(_photos,), texts_from={"text": lambda context: "A real quote"}),
+    )
+    schema = PresentationSchema(
+        powerpoint_slide_creator.create_new_powerpoint,
+        seed_generator=_Seeds,
+        title_generator=lambda context: "A classic title",
+        slide_generators=[*seeds.slide_generators, quote],
+        max_allowed_tags={"title": 1, "three_columns": 1},
+    )
+    monkeypatch.setattr(generator, "get_schema", lambda name: schema)
+    return schema
+
+
+def _texts(deck):
+    return [element.text for slide in deck.slides for element in slide.elements if element.kind == "text"]
+
+
+def test_an_advanced_talk_s_quotes_are_sayings_of_its_own(quotes):
+    basic = _talk(FakeModel())
+    assert "A real quote" in _texts(basic)
+    model = FakeModel()
+    advanced = _talk(model, llm_level=ADVANCED)
+    assert "A real quote" not in _texts(advanced) and any(text.startswith("text of slide") for text in _texts(advanced))
+    assert all(_planned(advanced))
+    assert "never a real person's words" in model.requests[1].messages[0].content
+
+
+def test_an_advanced_talk_without_its_plan_keeps_its_real_quotes(quotes):
+    model = _Failing()
+    deck = _talk(model, llm_level=ADVANCED)
+    assert deck.llm_level == BASIC and "A real quote" in _texts(deck)
+    assert "never a real person's words" not in model.requests[1].messages[0].content

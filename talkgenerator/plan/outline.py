@@ -14,12 +14,17 @@ outline in the request, which says what each slide is to do. Two requests a talk
 tokens, and the talk, as long as at the Basic level. When the outline fails (an error, a refusal, the budget), the
 talk is written as at the Basic level, from the dice's words.
 
+At the Advanced level, the model also writes the texts that classic sources find for a talk it writes at the Basic
+level (in_own_words): a real quote's slide, whose quote a search finds for the slide's concept (often far from it),
+has a saying of no one's instead, which the outline plans as it plans the other slides.
+
 The outline's answer, like the talk's, has its properties in alphabetical order (see talkgenerator.plan.prompt): its
 spine, "about", first, then the slides by their keys.
 """
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import logging
 from collections.abc import Mapping, Sequence
@@ -29,7 +34,7 @@ from typing import TYPE_CHECKING, Any, Final
 from talkgenerator import settings
 from talkgenerator.llm.base import Message, ProviderError, TextProvider, TextRequest
 from talkgenerator.plan import languages
-from talkgenerator.plan.kinds import KINDS
+from talkgenerator.plan.kinds import KINDS, Recipe
 from talkgenerator.plan.stream import ObjectReader
 from talkgenerator.util import random_util
 
@@ -89,6 +94,25 @@ _IDEA: Final = (
     "the slide's idea, in one short sentence: the point it makes with its word, for the thesis; for a chart or a "
     f"diagram, what it measures, ranks or compares; no texts for the slide (at most {IDEA_LENGTH} characters)"
 )
+
+
+# What the model writes at the Advanced level for a text that a classic source finds at the Basic level, by the
+# text's field (a statement's text: a real quote), and else the field's own description
+OWN_WORDS: Final = {
+    "text": "a saying about the concept, as a quote of no one's: wise-sounding, a little off, and something the "
+    "presenter has to live up to (never a real person's words)",
+}
+
+
+def in_own_words(recipe: Recipe) -> Recipe:
+    """The recipe as the model writes all of it, at the Advanced level: its texts that classic sources find (a real
+    quote) written by the model instead (OWN_WORDS), and its brief its kind's, as its own brief says that talkgenerator
+    finds them. The recipe itself when it finds none."""
+    if not recipe.texts_from:
+        return recipe
+    texts = {text.name: text.description for text in KINDS[recipe.kind].texts}
+    hints = {name: OWN_WORDS.get(name, texts.get(name, name)) for name in recipe.texts_from}
+    return dataclasses.replace(recipe, texts_from={}, hints={**recipe.hints, **hints}, brief="")
 
 
 def level(value: str | None) -> str:

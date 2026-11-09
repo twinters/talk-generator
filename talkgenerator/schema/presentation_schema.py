@@ -60,7 +60,7 @@ from talkgenerator.models.theme import Theme
 from talkgenerator.personas import Persona
 from talkgenerator.plan import languages, prompt
 from talkgenerator.plan.kinds import KINDS, PRESENTER_JOB, TALK_TITLE, Recipe
-from talkgenerator.plan.outline import ADVANCED, BASIC, Outline, ask_for_outline, outline_request
+from talkgenerator.plan.outline import ADVANCED, BASIC, Outline, ask_for_outline, in_own_words, outline_request
 from talkgenerator.plan.prompt import SPINE, PlannedSlide, slide_plan, talk_request
 from talkgenerator.plan.realize import ATTEMPTS, clean_text, realize
 from talkgenerator.plan.stream import ObjectReader
@@ -1265,21 +1265,28 @@ class PresentationSchema:
         persona: Persona | None,
     ) -> Outline | None:
         """The talk's outline (see talkgenerator.plan.outline), or None when the model has none: its planned slides
-        then riff on the outline's words (in their contexts too, for their notes), with its ideas. A title typed to keep
-        is the talk's title already. None too when the talk's budget can't afford the outline and the talk's request
+        then riff on the outline's words (in their contexts too, for their notes), with its ideas, and the model writes
+        the texts that classic sources would find for them (a real quote's: see talkgenerator.plan.outline.in_own_words).
+        A title typed to keep is the talk's title already. None too when the talk's budget can't afford the outline and the talk's request
         after it (then: about as it will be), which matters more."""
         if talk.cancelled.is_set():
             return None
+        # (the slides whose texts classic sources find, a real quote's, get the model's own words, if it plans them)
+        found = {slide_nr: slide for slide_nr, slide in talk.planned.items() if slide.recipe.texts_from}
+        for slide_nr, slide in found.items():
+            talk.planned[slide_nr] = dataclasses.replace(slide, recipe=in_own_words(slide.recipe))
         planned = [talk.planned[slide_nr] for slide_nr in sorted(talk.planned)]
         kept = typed.typed if typed is not None and (typed.keep or typed.exact) else None
         request = outline_request(topics, planned, offers, rng, language, title or kept, persona, self.format)
+        outline = None
         if isinstance(llm, MeteredProvider) and not llm.affords(request, then):
             logger.info(
                 "The talk's budget doesn't allow an outline before the talk: it's written from the dice's words"
             )
-            return None
-        outline = ask_for_outline(llm, request, planned)
+        else:
+            outline = ask_for_outline(llm, request, planned)
         if outline is None or talk.cancelled.is_set():
+            talk.planned.update(found)  # (as a Basic talk has them)
             return None
         for slide_nr, slide in list(talk.planned.items()):
             idea = outline.slides.get(slide.number)
