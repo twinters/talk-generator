@@ -36,9 +36,6 @@ That's all classic talks need. Extras add the language models that write talks, 
 pip install 'talkgenerator[llm,mcp]'
 ```
 
-<!-- Remove this paragraph once 5.0.0 is on PyPI. -->
-Until talkgenerator 5.0.0 is on PyPI, `pip install talkgenerator` gets talkgenerator 4. To try 5 before then, install it from GitHub's `v5` branch: `pip install "talkgenerator[llm] @ git+https://github.com/twinters/talk-generator@v5"`.
-
 On its first run, the generator downloads the NLTK data it needs (about 30 MB).
 Coming from talkgenerator 4? See [Migrating from 4.x](https://github.com/twinters/talk-generator/blob/master/docs/migrating-from-4.md).
 
@@ -87,7 +84,7 @@ Besides TED-like talks, there are startup pitches (`--schema pitch`), academic c
 - **The classic generator** writes them otherwise, and every slide the model gets wrong: templates and grammars, words related to the topic, quotes, how-tos and pictures from many sources. It's the method of the [EvoMUSART 2019 paper](#credits), with more kinds of slides since: `--llm none --theme classic --name_styles classic --persona none` (the classic generator, the 2019 template, random names and no persona) comes closest to a talk of 2019.
 - **Claude** can write the talk too, as a plan that talkgenerator renders, through the Skill or the MCP server ([Use it with Claude](https://github.com/twinters/talk-generator/blob/master/docs/use-with-claude.md)).
 
-Images come from Unsplash, Pexels, Pixabay, Openverse, Wikimedia Commons, the Art Institute of Chicago, Reddit, GIPHY, InspiroBot and ShitpostBot, in a look that fits the slide (stock photos, old photographs, museum art, weird pictures...), each credited on its slide, with its license when it's openly licensed or public domain.
+Images come from Unsplash, Pexels, Pixabay, Openverse, Wikimedia Commons, the Met and other museums, NASA, Reddit, GIPHY, InspiroBot and ShitpostBot, in a look that fits the slide (stock photos, old photographs, museum art, weird pictures...), each credited on its slide, with its license when it's openly licensed or public domain. An image generator draws a few of them, when you ask for one.
 Talks come in themes, from `clean keynote` and `hacker terminal` to `chalkboard` and `1997 WordArt` ([Images and themes](https://github.com/twinters/talk-generator/blob/master/docs/images-and-themes.md)).
 
 Every talk becomes a deck: plain, versioned JSON data with every text, image, credit and layout of its slides.

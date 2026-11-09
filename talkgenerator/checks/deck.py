@@ -411,7 +411,8 @@ def check_politics(deck: Deck) -> list[Finding]:
 
 def check_images(deck: Deck) -> list[Finding]:
     """Images from the web are credited, and no image comes back on another slide, nor nearly the same one (by the
-    perceptual hashes of the images the image finder looked at: see talkgenerator.images.analysis)."""
+    perceptual hashes of the images the image finder looked at: see talkgenerator.images.analysis). A closing slide
+    that calls back shows an earlier slide's picture again on purpose (docs/v5-plan.md, D65): that's no finding."""
     from talkgenerator.images import analysis  # (here: the checks don't need it otherwise)
 
     findings = []
@@ -425,7 +426,10 @@ def check_images(deck: Deck) -> list[Finding]:
             if url.startswith("http") and not element.image.credit:
                 findings.append(Finding("images", "warning", f"an image without a credit: {url}", number))
             if url in first_slide_of and first_slide_of[url] != number:
-                findings.append(Finding("images", "warning", f"the same image as slide {first_slide_of[url]}", number))
+                # (the image finder never picks a picture the talk has, so a closing slide's is its callback)
+                if slide.type != "questions":
+                    message = f"the same image as slide {first_slide_of[url]}"
+                    findings.append(Finding("images", "warning", message, number))
             elif element.image.analysis is not None and element.image.analysis.hash:
                 own = element.image.analysis.hash
                 near = next(

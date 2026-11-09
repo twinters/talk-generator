@@ -8,799 +8,240 @@ and the project follows [Semantic Versioning](https://semver.org/).
 
 <!-- Add changes here as you merge them; release.py moves them under the new version at release time. -->
 
-talkgenerator 5 brings the 2019 generator up to date. Language models write the talks (OpenRouter's free models,
-at no cost), Claude can write them too, talks come in themes and stream into the browser, and every talk is a deck,
-plain JSON data that the PowerPoint is drawn from. 4.x's command line and settings keep working:
-[Migrating from 4.x](https://github.com/twinters/talk-generator/blob/master/docs/migrating-from-4.md) says what
-changes, and the README and the [docs](https://github.com/twinters/talk-generator/tree/master/docs) cover the rest.
-The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/blob/master/docs/v5-plan.md).
+talkgenerator 5 brings the 2019 generator up to date. Language models write the talks (OpenRouter's free models, at
+no cost), Claude can write them too, and talks come in themes, formats and personas, with more than thirty new kinds
+of slides. Every talk is a deck, plain JSON data that the PowerPoint is drawn from and that streams into the browser
+on talkgenerator.com. 4.x's command line, settings and `.env` keep working. "Changed" below says what's different by
+default, and [Migrating from 4.x](https://github.com/twinters/talk-generator/blob/master/docs/migrating-from-4.md)
+how to keep 4.x's talks. The [docs](https://github.com/twinters/talk-generator/tree/master/docs) cover the rest, and
+[docs/v5-plan.md](https://github.com/twinters/talk-generator/blob/master/docs/v5-plan.md) the design.
 
 ### Language models write the talks
 
 - talkgenerator still picks every slide with the talk's seed, and a language model writes what goes on them, in one
   streamed request per talk: the title, the presenter's job and name, a thesis, and every slide in order, with
-  callbacks to earlier slides. A slide the model gets wrong, whose images can't be found or that repeats one before
-  it comes from the classic generator, and so does the whole talk when the model fails, isn't there, or finds the
-  topic unsafe (it's asked once more first, as free models turned down "penguins"). The presenter's name you give
-  never reaches the model, and the same seed with the same answers gives the same talk.
-- Providers, with their SDKs as extras (`talkgenerator[openai]`, `talkgenerator[anthropic]`, or `talkgenerator[llm]`
-  for both): `openrouter` (OpenRouter's free router, or `openrouter:<model>[,<fallback>...]`), `anthropic` (Claude
-  Opus 5.5, or `anthropic:<model>`), `openai:<model>`, `chatgpt` (the models of your ChatGPT plan), and
-  `replay:<cassette.json>` (answers recorded earlier, for tests). `--llm`, `llm=` and `TALKGENERATOR_LLM` pick one;
-  `--llm none` and `DISABLE_LLM=1` make classic talks.
-- Free models first: without `TALKGENERATOR_LLM`, your ChatGPT plan's models write the talks once you've signed in
-  with ChatGPT, else OpenRouter's free models when there's an OpenRouter key, and paid models only when `--llm` or
-  `TALKGENERATOR_LLM` names them. The free models write without thinking first, which takes a talk from minutes to
-  seconds; `TALKGENERATOR_LLM_EFFORT` sets how hard a model thinks.
-- `talkgenerator login openrouter`: sign in to OpenRouter in the browser, and talkgenerator gets a key of its own,
-  kept in your config folder (`--headless`, `--status` for the free requests left today, `logout openrouter`).
-- `talkgenerator login chatgpt`: Sign in with ChatGPT (OpenAI's sign-in for open-source apps on your own computer, in
-  preview), so that the models of your ChatGPT plan (Plus or Pro) write your talks, counting toward the plan's usage
-  (`--status`, `--new-account`, `logout chatgpt`).
-- Talks in Dutch, French, German, Spanish, Italian, Portuguese and Swedish (`--language`), with talkgenerator's own words on
-  the slides in the talk's language too. A slide that doesn't come out becomes a picture without text instead of an
-  English one, and recipes that find English texts, such as real quotes, are left out. A language model whose answer
-  starts in English (its title, thesis and presenter's job, which come before the slides) is asked once more, with the
-  language stressed: a free model wrote a Swedish talk in English. Every text a slide asks for says the language, so
-  that a hint's English example ("such as 'Outline'") isn't copied, and such a talk gets no dad jokes or advice slips,
-  which a slide would say word for word, in English.
-- After every talk, the logs say how many requests it made and what they cost, and so does the deck (`usage`).
-  `budget=` holds a talk to a limit (a $0 budget lets only free models write it). Keys never show up in logs, error
-  messages or decks.
+  callbacks to earlier slides. A slide the model gets wrong comes from the classic generator, and so does the whole
+  talk when the model fails, isn't set up, or finds the topic unsafe. The same seed with the same answers gives the
+  same talk.
+- `--llm` (or `llm=`, or `TALKGENERATOR_LLM`) picks the model: `openrouter` (OpenRouter's free models, or
+  `openrouter:<model>`), `anthropic` (Claude Opus 5.5, or `anthropic:<model>`), `openai:<model>`, `chatgpt` (the
+  models of your ChatGPT plan), or `none` for a classic talk (`DISABLE_LLM=1` makes every talk classic that doesn't
+  name a model). Their SDKs are extras: `talkgenerator[openai]`, `talkgenerator[anthropic]`, or `talkgenerator[llm]`
+  for both.
+- Free models first: unless a model is named, your ChatGPT plan's models write the talk once you've signed in with
+  ChatGPT, else OpenRouter's free models when there's an OpenRouter key, and else it's classic. A paid model only
+  writes when you name it, whatever keys are set.
+- How much the model does is the talk's level (`--llm_level`, `llm_level=`, `TALKGENERATOR_LLM_LEVEL`): `basic`, the
+  one request above; or `advanced`, the default on a paid model of your own, where the model first plans the talk
+  (a thesis, a running gag, and every slide's word to riff on and its idea) and then writes the slides as their ideas
+  come in, a few at a time in parallel: cleverer talks, no slower, in five requests for about twice the tokens
+  (about $0.003 a talk with Claude Haiku, $0.06 with Sonnet). Free models stay `basic`.
+- `talkgenerator login openrouter` signs in to OpenRouter in the browser and keeps a key of its own in your config
+  folder, and `talkgenerator login chatgpt` signs in with ChatGPT (OpenAI's sign-in for open-source apps, in
+  preview); both have `--status`, and `logout`.
+- Talks in Dutch, French, German, Spanish, Italian, Portuguese and Swedish (`--language`), with talkgenerator's own
+  words on the slides in the talk's language too.
+- The logs and the deck (`usage`) say how many requests a talk made and what they cost, and `budget=` holds a talk
+  to a limit. Keys never show up in logs, error messages or decks.
 
 ### Claude writes talks too
 
-- The talkgenerator Skill (`skill/`): Claude writes talks for PowerPoint karaoke and improvised TED talks as plans,
-  renders them with `talkgenerator render`, and fixes them from the report. It installs as a Claude Code plugin
-  straight from this repository (`/plugin marketplace add twinters/talk-generator`), or as a skill folder.
-- `talkgenerator render plan.json` turns a talk plan into a PowerPoint, with the deck's JSON and a contact sheet of
-  its images next to it, and prints a report in JSON: per slide, whether it came out as planned, the classic way or
-  not at all, and why, and what every image was searched with, what it shows and where it's from. Texts up to an
-  eighth over their length limit stay whole, a text cut shorter ends on a whole word, and an image query may name an
-  image file of your own.
-- `talkgenerator formats` lists the formats (`--details` the slides a plan can have, with their texts, length limits
-  and recipes; `--looks` the image looks; `--licenses` the license policies), and `talkgenerator schema plan|deck`
+- The talkgenerator Skill (`skill/`): Claude writes a talk as a plan, renders it, and fixes it from the report. It
+  installs as a Claude Code plugin straight from this repository (`/plugin marketplace add twinters/talk-generator`).
+- `talkgenerator render plan.json` turns a talk plan into a PowerPoint, its deck JSON and a contact sheet of its
+  images, and prints a report in JSON: per slide, whether it came out as planned, and what each image was searched
+  with, shows and comes from. `talkgenerator formats` lists the formats, the slides a plan can have (`--details`),
+  the image looks, license policies, meme templates and image generators, and `talkgenerator schema plan|deck`
   prints the plan and deck formats as JSON Schemas.
-- `talkgenerator mcp`: a local MCP server for Claude Desktop and other MCP clients (`talkgenerator[mcp]`), with the
-  tools `list_formats`, `describe_format`, `get_plan_schema`, `render_plan` and `generate_talk`. The client starts it
-  on your computer, where it uses your keys and saves only in its output folder, never over a file; a tool call can't
-  pick a paid model. Nothing is hosted. On Windows on Arm, the MCP SDK only installs in an x64 Python.
+- `talkgenerator mcp`: a local MCP server for Claude Desktop and other MCP clients (`talkgenerator[mcp]`), with tools
+  to list and describe the formats, get the plan schema, render a plan and generate a talk. It runs on your computer
+  with your keys, saves only in its output folder, and a tool call can't pick a paid model. Nothing is hosted.
 
 ### Themes and layouts
 
-- `--theme`: besides the 2019 template (`classic`), seventeen families of themes drawn as shapes on a 1920×1080
-  canvas, from `clean keynote` and `dark minimal` to `hacker terminal`, `blueprint`, `chalkboard`, `newspaper` and
-  `Swiss poster`, with `1997 WordArt`, `Comic Sans everywhere` and `clip-art corporate` for laughs. The talk's seed picks a member of the family: its colours (repaired until
-  every text reads on its background, by WCAG's contrast rules), font pair, casing, decoration and layouts. `random`
-  is the default, `--no_extreme_themes` leaves the ones for laughs out of it, `--theme chaos` gives every slide a
-  theme of its own (`--style_chaos`: some of them), and `TALKGENERATOR_THEME` sets another default. A plan can have
-  a `theme` too.
-- A talk can say which families a random theme can be of (`--theme_families "dark minimal,Swiss poster"`,
-  `theme_families=`, the MCP server's `generate_talk`), and with `--theme chaos` every slide's: a talk whose seed picks
-  one of them keeps its theme, and the others get a theme of one of them, as often as the families' weights and the
-  persona's favourites say among them.
-- Every kind of slide has its layouts (61 in all, some of them a family's own title or section slide), which put
-  every text and picture in its box, give every text the largest size at which it fits, and never repeat the layout
-  of the slide before when another fits.
-- Every family has a decoration of its own, so that a theme is more than a font and colours
-  (`talkgenerator.design.motifs`): a fixture on every slide, and its big pieces on the title and section slides. A
-  hacker terminal's window bar, scanlines, prompts, a block cursor and a status line, in green or amber phosphor; a
-  blueprint's grid, registration marks, dimension lines, figure plates and title block; a chalkboard's wooden frame,
-  ledge with chalk and an eraser, chalk underlines and taped pictures; a newspaper's masthead rules and front page; a
-  Swiss poster's grid, black rule, one red block a slide, red circle and black dividers; a kindergarten's bunting,
-  crayon squiggles, confetti, sticker pictures, sun and hills (the `kids` family, reworked); academic's Beamer-like
-  title band and slide dots, neon's sunset over a grid floor, vintage paper's ornamented frame, brutalist's title
-  blocks and hard shadows, and the rest. The decoration is drawn with the deck's own elements, which now also have
-  polygons (stars, pennants, bursts), turned shapes, rounded corners, outlines and background patterns (lines,
-  grids, dots), drawn alike in PowerPoint (a pattern as the slide's background picture, shared by its slides), in
-  previews and in the browser. Its texts (a slide's number, a prompt) are numbers, symbols and code, not the talk's
-  words: the language and leftover checks leave them out. Texts are
-  measured with the open fonts that come with talkgenerator (Liberation, Carlito, Caladea and Gelasio), which share
-  the widths of Arial, Calibri, Cambria, Georgia and the rest.
-- Pictures get their theme's treatment, so that pictures from mixed sources share one look: most stay as they are or
-  get a gentle tint (a slight warm or cool cast, a wash of the theme's paper or accent, laid over them), and the
-  strong filters (grayscale, sepia, a duotone, black and white) are for the families made for them, and only where
-  they fit: a family's filter can be for the photos behind or across a whole slide only (neon, dark minimal), and
-  black and white never goes behind a slide's texts. Of random themes' pictures, a fifth get a strong filter (a third
-  did). Rounded corners, a polaroid frame, grain or a vignette come with some families, as PowerPoint picture effects
-  ("Reset Picture" brings the original back). Some families' headings get WordArt-style effects (1997's rainbow in an
-  outline, bent into a wave or an arch; neon's glow; brutalist's hard shadow), as text effects, so texts stay text.
-- Themed slides animate as the 2019 template's do: two or three columns appear click by click, the one before
-  dimming, and a video plays as its column appears.
-- Calmer slides, after a look at the themed decks (docs/v5-plan.md, D51 to D53):
-  - Image credits are small (7 points), aligned right and quiet: in the colour nearest the slide's background that
-    reads at a contrast of 2.5 (the theme's muted colour, mixed into the background), with their links in that colour
-    too (PowerPoint's own colour for links no longer shows), and no band behind them anywhere; over a photo they're
-    light, with a dark halo around their letters. The design checks hold them to floors of their own: that contrast,
-    and 6 points.
-  - What belongs to a picture comes in with it: a theme's frame, shadow, tape or window around it (and a rule between
-    columns) names the picture in the deck (`part_of`), so PowerPoint and the browser show it on the picture's click,
-    and dim it with it. The split two-column layout lost the panel behind its first half; a thin rule between the
-    halves comes in with the second.
-  - A list of things comes one thing a click, the punchline last: a KPI slide's figures, a quiz's options (its answer
-    on the click after them), an agenda's items, a timeline's moments, a pyramid's levels from its base up, a funnel's
-    stages, a cycle's steps, an org chart's people (who's in charge last), an iceberg's hidden things, an acronym's
-    words, a flowchart's two ways and its end, a tier list's tiers from the worst up to S, and a meme's captions. What
-    a thing is drawn on (a tile, a badge, a band, an oval, a box, a dot) comes with it; the title and the list's frame
-    (a timeline's line, the iceberg, the tier list's letters) are there from the start.
-  - The previewer draws a slide as it shows after so many clicks (`slide_image(..., step=)`), and a sheet of a deck's
-    slides click by click (`steps_sheet`); `talkgenerator.render.reveal` says what appears when, for every renderer.
-- `talkgenerator.render.preview` draws decks as pictures, with a contact sheet of a whole deck, and
-  `talkgenerator.design.themes.catalog()` lists the themes with a label and a description, for a settings menu.
-- Open fonts in themes: every family but the three for laughs has two pairings of open fonts with more personality,
-  from Google Fonts (SIL Open Font License 1.1), which a member has two times in three (`themes.OPEN_FONT_CHANCE`):
-  clean keynote Barlow, and Atkinson Hyperlegible; dark minimal IBM Plex Mono over Barlow, and Titillium Web;
-  corporate Poppins over Lato, and Lato; academic Crimson Text, and Spectral; startup Poppins, and Archivo Black over
-  Poppins; vintage paper Abril Fatface over Crimson Text, and Courier Prime; kids Mali, and Sniglet over Mali;
-  brutalist Archivo Black or Space Mono over IBM Plex Mono; neon Audiowide (never in capitals: too wide for the
-  longest titles) over Chakra Petch, and Chakra Petch; hacker terminal IBM Plex Mono, Space Mono over IBM Plex Mono,
-  and Courier Prime; blueprint Titillium Web over IBM Plex Mono, Chakra Petch over Titillium Web, and Barlow over IBM
-  Plex Mono; chalkboard Mali, and Sniglet over Mali; newspaper Abril Fatface over Crimson Text, and Spectral; Swiss
-  poster Archivo Black over Barlow, and Barlow (kids, hacker terminal and chalkboard have theirs four times in five or
-  more). A member draws them after everything else, so a seed's member
-  keeps its colours and the rest. They're bundled in `data/fonts` (3.9 MB, credited in its README), so they measure
-  the same everywhere, and a themed .pptx carries the ones it uses inside it, regular and bold, as uncompressed
-  Embedded OpenType (`talkgenerator.render.embedding`), which PowerPoint shows where they aren't installed (a deck
-  grows by about 55 to 800 KB). Where a deck's own fonts aren't used (PowerPoint for the web, most likely Keynote), a
-  stand-in shows: each open font has an installed one (`talkgenerator.design.fonts.OPEN_FONTS`), its texts are fitted
-  to both, and its runs carry the font's PANOSE and pitch family, so the stand-in is of the same kind. Lato and
-  Poppins are Office cloud fonts, which PowerPoint for the web shows anyway.
+- Seventeen families of themes, drawn as shapes on a 1920×1080 canvas: from `clean keynote`, `dark minimal` and
+  `Swiss poster` to `hacker terminal`, `blueprint`, `chalkboard` and `newspaper`, with `1997 WordArt`, `Comic Sans
+  everywhere` and `clip-art corporate` for laughs. By default (`--theme random`) the talk's seed picks a member of a
+  family: its colours, repaired until every text reads on its background by WCAG's contrast rules, its fonts, its
+  decoration and its layouts. `--theme` names a family or `classic` (the 2019 template), `--theme_families` limits
+  the seed's choice, `--no_extreme_themes` leaves out the ones for laughs, `--theme chaos` gives every slide a theme
+  of its own, and `TALKGENERATOR_THEME` sets another default.
+- About ninety layouts put every text and picture in its box, give every text the largest size at which it fits, and
+  never repeat the slide before's layout when another fits.
+- Every family has its own decoration (a terminal's window bar and prompts, a blueprint's grid and title block, a
+  chalkboard's wooden frame, a newspaper's masthead...), drawn with the deck's own shapes, and numbers its slides
+  ("7/12") in its own style.
+- Pictures get their theme's treatment, so that pictures from mixed sources share a look: most a gentle tint, the
+  strong filters (grayscale, sepia, a duotone) only in families made for them, and rounded corners, a polaroid frame,
+  grain or a vignette as PowerPoint picture effects. Some families' headings get WordArt-style effects (a rainbow in
+  an outline, a glow, a hard shadow), as text effects, so they stay text.
+- Open fonts come with talkgenerator (`data/fonts`): metric twins of Arial, Calibri, Cambria and Georgia, so texts
+  measure the same on every computer, and Google Fonts pairings, which a themed .pptx carries inside it, so that
+  PowerPoint shows them where they aren't installed.
+- Slides animate: two or three columns appear click by click, a list one thing a click with its punchline last, and
+  what belongs to a picture (its frame, its tape) comes in with it.
+- `talkgenerator.render.preview` draws decks as pictures (contact sheets, and slides click by click), and
+  `talkgenerator.design.themes.catalog()` lists the themes for a settings menu.
 
 ### Images
 
-- License classes and policies: every image has a class (`public-domain`, `open` for CC BY and BY-SA, `stock`,
-  `generated` or `fair-use`), and a talk's license policy picks the classes it allows (`--license_policy`: `all`, the
-  default; `open`, everything but fair use; or classes, as `public-domain,open`). The `ted` format keeps to `open`,
-  the image search keeps to the policy, credits name open and public domain licenses ("CC BY 2.0", linking it), and
-  `talkgenerator check` reports an image the policy doesn't allow as an error.
-- Images come through slots and an image finder, which searches a look's sources a few at a time, in parallel (with
-  v4's caches and cooldowns), filters what they find (license, size, orientation, unsafe descriptions, images the talk
-  has already), and picks with the talk's seed: the same seed finds the same images, whichever search answers first.
-- Looks (aesthetic profiles), with their own sources, filters and preferences: `photo`, `calm-backdrop`, `vintage`,
-  `museum`, `space-science`, `corporate-stock`, `illustration`, `meme-chaos` and more, and flavour packs of curated
-  subreddits: `cursed`, `wholesome`, `bad-charts`, `medieval`, `liminal`, `retro-futurism`, `accidental-art`,
-  `pareidolia` and `corporate-cringe`. `talkgenerator formats --looks` lists them.
-- A look at the candidates' thumbnails (brightness, colourfulness, how gray they are, detail where the text goes,
-  main colours, a perceptual hash): vintage slots prefer black and white and sepia, calm backdrops little detail
-  behind the text, themed talks pictures that go with the theme's colours, and nearly the same picture doesn't come
-  back on another slide. A vintage picture in colour turns sepia in a theme without a filter of its own.
-- Gifs too large to embed play as Reddit's mp4 copy of them (many on r/gifs are 40 to 90 MB): the video starts by
-  itself and loops without sound, as the gif would, with a still as its poster frame.
-- Generated pictures (`talkgenerator.images.generation`, `talkgenerator.images.generators`): in talks a language
-  model writes (and plans from the Skill or the MCP server), an image generator draws what stock photos can't show
-  well: the presenter's weird hobby, the cover of the book they wrote, old photos of moments in a made-up history,
-  the portrait of a made-up historical figure, a made-up news story's photo (slots with `generate`). The model writes
-  a prompt for each (plans: `SlidePlan.prompts`), the slide comes with a stock photo, and the generated picture takes
-  its place once it's in; a planned slide whose images can't be found at all gets generated ones on its last try.
-  One `ImageGenerator` interface (a prompt, an aspect ratio, a style, what to avoid and a seed in; the picture, its
-  model, its cost and moderation's flags out), with adapters for OpenAI's Image API (`openai`, gpt-image-2),
-  OpenRouter's (`openrouter`), Google's Gemini (`gemini`), Black Forest Labs' FLUX (`flux`), and ComfyUI and
-  Automatic1111-style servers of your own (`comfyui`, `automatic1111`), picked by `--image_generator` (also on
-  `talkgenerator render`), `image_generator=` (`generate_presentation`, `stream_talk`, `render_plan`) or
-  `TALKGENERATOR_IMAGE_GENERATOR`, and never because a key is set; `DISABLE_IMAGE_GENERATION=1` switches them off.
-  The default models and list prices are config (`talkgenerator/data/image_generators.json`, and an
-  `image_generators.json` in the config folder over it; `talkgenerator formats --generators` lists them), as image
-  models come and go. A talk generates 3 pictures at most (`--generated_images`, `ImageBudget`), granted in the order
-  of its slides (so the same seed generates for the same slides, in parallel or not), estimates their cost by list
-  price before it generates any, keeps to `TALKGENERATOR_IMAGE_COST_LIMIT` if it's set, and its deck's usage counts
-  them (`images`, `image_cost_usd`, `failed_images`), apart from its language model requests. Generated pictures are
-  credited "AI-generated with <model>", in the `generated` license class (the provider's terms in the deck), shown in
-  a browser from the app's own copy (`display: copy`, as Pixabay's), and kept on disk by model, prompt, shape and
-  seed (`generated-images/` in the cache folder), so a talk made again, or a deck rendered again, generates nothing
-  again. Talkgenerator's own rules come before the provider's moderation (`talkgenerator.images.safety`): a prompt
-  that names a real person, the talk's presenter, a brand or a trademarked character, or asks for gore or sexual
-  content, is never sent, every prompt asks for none of that, and a talk whose topic a slide shouldn't make light of
-  generates nothing; a refused or failed picture keeps its stock photo.
-- **The vision pick** (`talkgenerator.images.vision`; off by default): with `--vision_pick` (also on `talkgenerator
-  render` and `talkgenerator check`) or `vision_pick=` (`generate_presentation`, `stream_talk`, `render_plan`), a
-  vision model picks every picture of a talk's planned slides among the finder's picture and up to three runners-up
-  the finder kept (without a draw of the talk's dice, so the talk finds the same pictures with it or without it), seen
-  side by side on one contact sheet, in one request a talk once the last slide is settled. It says what each row's
-  candidates show before it picks, or answers "none" (the finder's picture stays, as it does when the request fails,
-  takes over 30 seconds or doesn't fit the talk's budget). `on` asks the talk's own model when it reads pictures
-  (Claude, OpenAI's), else OpenRouter's free vision models (Nemotron 3.5 Super VL, then dots-3; not the free router,
-  which sent the sheet to a model that couldn't read it); any model takes its spec. Requests can show pictures now
-  (`Message.images`, `ImagePart`), which the OpenRouter, Claude and OpenAI adapters send as their APIs take them,
-  budgets count by Claude's tokens for a picture, and cassettes name instead of keeping (a request without pictures
-  keeps its old key; two providers can record on one cassette). A streamed talk hands the slides it changed over again
-  (`slide.updated`) before `talk.finished`; the deck says what the model made of each picture it saw
-  (`ImageAsset.vision`: picked, kept or refused) and which model it was (`Deck.vision_model`), its usage counts the
-  request (`vision_requests`, among `requests`), and `talkgenerator check` reports the picks. In 12 talks by the free
-  models on 2026-11-08, the pictures that show what they were searched for went from 36% to 50% of those it saw (judged
-  by eye), for one more request a talk, answered in 3 to 11 seconds.
-- **New image sources** (milestone 5, docs/v5-plan.md 10.4), each with its license classes, its display policy and
-  its filters: **The Met** (public domain artworks, CC0; its search since October 2026, v1.1, and an object per
-  request), the **Cleveland Museum of Art** (CC0), the **Wellcome Collection** (medicine, science and odd history:
-  public domain and CC BY, asked for by license), the **Smithsonian** (CC0; needs a free api.data.gov key,
-  `DATA_GOV_API_KEY`), **NASA's Image and Video Library** (public domain, leaving out pictures it notes as
-  someone else's; NASA's take on almost anything: pizza aboard the space station), **Flagpedia's flags** (public
-  domain, by a country's name) and **Imgflip's meme templates** (fair use, for the memes above). None but the
-  Smithsonian needs a key, and every one loads in a browser from its own server (display `direct`). The museums
-  take one filter vocabulary in a look's source parameters: a type (painting, photograph, print, drawing,
-  sculpture) and the years after and before which it was made, which the Art Institute of Chicago's search now
-  takes too. They joined the looks they fit: `museum` (all the museums), `vintage` (old photographs from the Met,
-  the Art Institute, Cleveland and the Smithsonian), `old-photo`, `portrait` and `old-people` (the museums'
-  portraits), `space-science` (NASA first, and the Smithsonian's Air and Space Museum), `illustration` (Wellcome's prints and drawings) and `weird-stock` (now and then
-  NASA's or Wellcome's odd pictures, for the `ted` format's punchlines); and two new looks, `meme-templates` and
-  `country` (where the presenter comes from: its flag now and then, else photos of it). Their search answers are
-  cached for 7 to 30 days.
+- License classes and policies: every image is `public-domain`, `open` (CC BY and BY-SA), `stock`, `generated` or
+  `fair-use`, and `--license_policy` picks the classes a talk allows (`all` by default; `open` is everything but
+  fair use). The `ted` format keeps to `open`, the image search keeps to the policy, and credits name open licenses,
+  with a link.
+- An image finder searches a look's sources a few at a time, in parallel, filters what they find (license, size,
+  shape, unsafe descriptions, pictures the talk already has), looks at the thumbnails (detail where the text goes,
+  colours that go with the theme, near-duplicates) and picks with the talk's seed. Looks such as `photo`,
+  `calm-backdrop`, `vintage`, `museum` and `space-science`, and flavour packs of subreddits (`cursed`, `wholesome`,
+  `liminal`...): `talkgenerator formats --looks` lists them.
+- New sources: the Met, the Cleveland Museum of Art, the Wellcome Collection, the Smithsonian (with a free
+  `DATA_GOV_API_KEY`), NASA's Image and Video Library, Flagpedia's flags and Imgflip's meme templates.
+- Generated pictures, when you ask for them (`--image_generator`, never because a key is set): OpenAI's or
+  OpenRouter's image models, Google's Gemini, Black Forest Labs' FLUX, or a ComfyUI or Automatic1111 server of your
+  own draws what stock photos can't show well (the presenter's weird hobby, the cover of their book). At most three a
+  talk (`--generated_images`), priced before they're made (`TALKGENERATOR_IMAGE_COST_LIMIT`), credited
+  "AI-generated with <model>", kept on disk, and never of a real person, a brand, gore or sexual content.
+- The vision pick (`--vision_pick`, off by default): a vision model picks each picture of a talk's planned slides
+  among the finder's and up to three runners-up, in one request a talk.
+- Gifs too large to embed play as Reddit's mp4 copy of them.
 
-### New kinds of slides
+### More kinds of slides
 
-- Fourteen kinds drawn as texts on shapes, so that they need no image source (but for a post's and a headline's
-  photo): a **big number** with what it counts and a made-up source, **KPI tiles**, a **quiz** (its options a click
-  each, and the answer on the click after them), a **social media post**, a **news headline**, an **agenda**, a
-  **section** divider, **Questions?**, and native diagrams: a **timeline**, a **pyramid**, a **funnel**, a **cycle**, a
-  small **org chart** and an **iceberg**, their things a click each, the punchline last. They come out the classic way too, in every theme and in the 2019 template, and
-  a talk has at most one of each.
-- **Venn diagrams** and **2×2 matrices**, with the punchline where the circles overlap or as one named dot, on a
-  click.
-- Two new charts: a **trend** (a line along two odd axes, going one of eleven ways, from exponential to hockey stick
-  to crash, with an optional second line that wipes in as the punchline, and a named moment on the line) and a
-  **ranking** (bars that the last one wins by far). Charts with axes get axis titles, and charts come labelled in
-  funny ways, or bare, for the presenter to explain.
-- Livelier diagrams and charts (docs/v5-plan.md, D64). A **2×2 matrix** has everyday opposites at the ends of its axes
-  and short names in its quadrants, and comes out named, or as **dots** of familiar things where they belong (two in a
-  quadrant at most, each with its name), or bare. A **scatter plot** is a cloud of one of eleven shapes (from rising
-  and exponential to U-shaped, no correlation at all, a ring or a smile), tight or loose, of a dozen to 150 points; a
-  third of the time with a **line fitted through it** (dashed: PowerPoint's own trendline, straight or a parabola), and
-  three times in ten as two or three **named clusters**, each in its own colour, in a legend. Clusters and a trend's
-  lines get colours that tell them apart, in themes whose two accents are alike too. A pyramid, a funnel, a cycle, an
-  iceberg, a process, a flowchart, a Venn diagram or a matrix has a **weird but related picture** in one or two of its
-  boxes about a third of the time (searched for, or generated in a talk that generates pictures), which comes in with
-  its box; a box whose picture isn't found goes without. A trend's named moment gets a **picture by its point** half
-  the time, on a click of its own. The deck format has a matrix's other dots (`MatrixDiagram.dots`), a series' fitted
-  line and colour (`ChartSeries.trendline`, `color`), and quadrants may go without labels: talk-generator-web draws
-  them from its branch for this; its renderer draws the pictures as it draws any picture.
-- **Memes with live captions** (a `meme` slide, docs/v5-plan.md sections 8 and 10.4): one of 25 well-known
-  templates of Imgflip's (Drake Hotline Bling, Two Buttons, Distracted Boyfriend, Gru's Plan, Expanding Brain...),
-  with its captions as texts on the picture, each in the box the template has for it (`data/memes.json`, measured
-  on Imgflip's pictures): white Impact in capitals with a black outline, or plain black text on the template's own
-  white or pale area (Drake's panels, Gru's boards). The talk's dice pick the template, and the language model
-  writes what each box says, knowing what it's for (Drake waves the first away and points at the second); a
-  classic talk takes each template's own sentences about the slide's topic and the words related to it, speaking
-  of it as English does ("Love penguins", "Love coffee", "Is this a lighthouse?": the `generic` and `one` template
-  functions, by wordfreq's frequencies of a noun and its plural). Gru's fourth board repeats his third, and the Bell
-  Curve's wise one says what its simple one said. A deck holds
-  a meme as a picture, texts and shapes, which every renderer draws already (talk-generator-web without changes);
-  its picture keeps its look in every theme (no treatment moves its captions). Memes weigh four times what the
-  other slides in the middle of a talk do: about half of all 10-slide talks have one, and a talk has two at most,
-  from its third slide on, and only where its license policy allows fair use (not in `ted`).
-  `talkgenerator formats --memes` lists the templates and what each caption says, for plans
-  written elsewhere, whose `template_query` names one; a picture whose boxes talkgenerator doesn't know gets its
-  captions at its top and its bottom. A caption too long for a narrow box (a sign's) gets a box grown around it,
-  within the picture. A talk's two memes never share a template.
-- Five kinds from real PowerPoint karaoke and battle decks, TED parodies and bad-PowerPoint humour (docs/v5-plan.md,
-  section 8), drawn as texts on shapes in every theme and in the 2019 template, classic and by the language model:
-  a **fun fact** ("Did you know?" or "Fun fact" in the talk's language, on a sticker over the fact, with a made-up
-  source and a photo, or on a sticky note); an **acronym** for a made-up method (the S.P.A.R.K. method), its letters
-  on tiles with their words, a word a click, the last one the punchline; a **dare** for the presenter ("Challenge":
-  present the next slide as a haiku), on a card or between bands of warning tape; a **flowchart** whose Yes and No
-  lead to the same end, each way and the end on a click of its own; and a **tier list** from S to F, its tiers filled
-  a click each, from the worst up to S. A talk has
-  at most one of each, in its middle; a dare is rarer, as organisers put one such slide in a deck at most.
-- Five more from the same catalogue, the funniest of its next ones, drawn as texts on shapes in every theme and in the
-  2019 template, classic (from the TED content pack's version 3) and by the language model: a **wall of text**, an
-  executive summary of dense jargon in fine print that fills its slide (in two columns, or on a page of a report),
-  with one absurd point hidden among the rest, which a marker highlights on its one click, and "Continued on next
-  slide" under it in the talk's language (the design checks give fine print a floor of its own, 9 points); an
-  **alignment chart**, nine things in Dungeons & Dragons' grid from lawful good to chaotic evil (its axes in the
-  talk's language), a cell a click, chaotic evil last; **red flags**, three to five, each beside a red flag on its
-  pole, a flag a click; **reviews** with stars, two or three made-up reviewers' ratings ("4/5" beside the stars) and
-  words, a review a click, the one-star one last; and a **fake error message**, a generic dialog (a title bar, a
-  warning sign, the message and an error code) whose last button is the punchline ("Retry, Ignore, Panic"), all at
-  once. A talk has at most one of each, in its middle; a wall of text and an error message are rarer, as organisers
-  warn against text-heavy decks, and an error breaks the illusion, as a dare does. Personas weigh them too (a
-  consultant's walls of text, a life coach's red flags, a startup founder's reviews, a time traveller's errors).
-- A real chart from the internet (Reddit's) now comes under a confident conclusion that it supposedly proves, two
-  times in three, or bare, as karaoke decks have them.
+- More than thirty new kinds, in every theme and in the 2019 template, written by the classic generator or by the
+  language model: a big number, KPI tiles, a quiz, a social media post, a news headline, an agenda, a section
+  divider, "Questions?" (ending on a funny picture, a last tip, or a callback to an earlier slide's picture), and an
+  academic talk's references; diagrams (a timeline, a pyramid, a funnel, a cycle, an org chart, an iceberg, a
+  process, a Venn diagram and a 2×2 matrix); trend and ranking charts; memes with live captions on 25 of Imgflip's
+  templates; and kinds from real PowerPoint karaoke decks: a fun fact, an acronym, a dare for the presenter or the
+  whole audience, a flowchart whose every answer leads to the same end, a tier list, a wall of text, an alignment
+  chart, red flags, reviews with stars and a fake error message.
+- Livelier slides: big numbers and KPI tiles over a picture of what they're about, a weird but related picture in a
+  diagram's box now and then, scatter plots of eleven shapes with a fitted line or named clusters, emoji in front of
+  a list's things now and then, and charts labelled in funny ways, or bare.
+- A problem slide, the talk's why, early on: about three pitches in four, four academic talks in five and a quarter
+  of TED-like talks open on a problem, weird, everyday, crossed with something else, typical of the topic, or real (a
+  how-to people look up on wikiHow), with a picture of it behind it or beside it.
+- A talk has at most one of most kinds (memes: two), and a list's things appear a click each, the punchline last.
 
-### Livelier dares, closing slides and references, emoji and slide numbers
+### Formats and personas
 
-From the user's look at 35 sample talks (docs/v5-plan.md, D65):
+- Four new formats, each going through its arc: `--schema pitch` (a startup pitched to investors, from the problem to
+  the ask), `academic` (research at a conference: the method, p-values, the limitations as an iceberg), `corporate`
+  (an all-hands: the KPIs against their targets, the new org chart) and `keynote` (a product launch: the reveal, a
+  demo that crashes, one more thing). `--schema random` leaves the format to the talk's seed, which makes 7 talks in
+  10 TED-like.
+- Personas: the talk's seed picks who presents it, one of thirteen (a disgraced professor, a startup founder, a
+  medieval historian, a kindergarten teacher, a retiree and their old job...), whose favourite kinds of slides,
+  titles, names, themes, formats and pictures come up more often (`--persona`, `--personas`, `--persona none`;
+  `talkgenerator.personas.catalog()`).
+- What's typed can be the topic or the title (`--topic_or_title`): "penguins" as well as "Why I Joined a Penguin
+  Cult", with misspelt topics fixed.
+- Made-up presenter names in styles (`--name_styles`): puns on the topic ("Prof. Anna Tomy" for medicine), fun
+  surnames ("Linda Hivesworth"), famous-name puns ("Albert Einstone"), or `classic`, 2019's random names. A famous
+  living person's real name is never used.
 
-- A **dare** is a real challenge for the presenter to keep up from then on (an accent, a gesture on every slide, a
-  word to work into every slide, a word they may no longer say), or something the presenter has the whole audience
-  do, under "Audience participation" in the talk's language (a show of hands, a call and response, the front row
-  standing up). Daring the presenter to tell a real dad joke stays, as one kind among them: a fifth of the classic
-  dares, and a quarter of the language model's in English talks. The TED content pack (version 6) has 45 challenges
-  and 35 audience dares.
-- The **closing slide** ("Questions?") ends its talk on a funny picture (generated, in a talk that generates
-  pictures), a last tip for the audience (a real piece of advice now and then, in English), or a callback: an earlier
-  slide's picture shown again, with a line that calls back to it ("Remember this one?"), as many of each, in TED-like
-  talks, academic talks, all-hands and pitches. Two new layouts put the picture beside the question or above it.
-- An academic talk's **references** are a slide type of their own: the works numbered as cited, a click each, and
-  most of the time a picture of one of them after them, a book's cover (generated, in a talk that generates
-  pictures) or a figure from a paper, with a caption that says which ("Cover of [2]", "[3], Fig. 2").
-- **Emoji** in front of a list's things now and then: a third of the tier lists and alignment charts, and a quarter of
-  the language model's agendas (a third of the classic ones, from a list of 559 words' emoji and each tier's and
-  alignment's own). Language models may write emoji only where a field asks for them, and where one wrote none,
-  talkgenerator puts its own. They're measured as wide as an emoji font draws them, and drawn in Segoe UI Emoji in the
-  .pptx and in previews. A list a language model writes that's too long is cut between its things, never in one, and
-  bars that look like its | count as it.
-- **Slide numbers**: every theme family numbers its slides of the deck's ("7/12"), small and in its own style (a
-  terminal's status line, a blueprint's title block, a kindergarten's sticker, a chalkboard's tape...), and so does
-  the 2019 template, in its bottom right corner. A talk that streams numbers its slides of the ones it'll have from
-  its start.
+### Real facts and classic texts
 
-### Classic texts: the TED content pack
-
-- Classic talks take their texts from the TED content pack (`talkgenerator/data/packs/ted`, docs/v5-plan.md section
-  11): a grammar per kind of slide, and a manifest with the pack's version and the slots the code fills in, with
-  their variables and length limits (`talkgenerator.sources.packs`). It has every classic text of TED-like talks, the
-  memes' classic captions too, and about three times as many as before (2,872 templates, from 909, besides the lists
-  of jobs and countries): titles in a TED talk's voice ("The Quiet Revolution of Penguins", "Notes From a Penguin
-  Survivor"), about-me slides, history, statements, captions, charts, diagrams, big numbers and KPI tiles, quizzes,
-  posts and headlines, agendas and sections, the karaoke types, memes and conclusions. Every template speaks of the
-  topic as English does, keeps to its slide's length with long words, and is checked by `tests/test_content_pack.py`.
-  Jobs a family audience doesn't need (escort, embalmer, soldier...) left the presenters' list.
-
-### Real facts
-
-- Talks a language model writes mix real facts with the nonsense (docs/v5-plan.md section 11, D60): up to three of a
-  talk's slides of history (a made-up historical figure's quote, two old photos, a timeline), fun facts, quizzes and
-  big numbers get a real fact each in the talk's request, which the model keeps true and twists ("Only one species,
-  the Galapagos penguin, lives at the equator" becomes a fun fact about why). They're the first sentences of the
-  topic's English Wikipedia article (`talkgenerator.sources.wikipedia`), and the events of the day the talk is made on
-  from Wikipedia's main page ("On this day"), which slides of history get first.
-- No fact names a living person (none for a topic that is one, as English Wikipedia's "Category:Living people" tells),
-  and none is about death, war, disasters, crime, politics, race or faiths.
-- The facts are looked up while the talk's slides are picked, from the cache (a week) or within 8 seconds of the
-  talk's start: a talk whose facts come later, or whose sources are down, goes without them. A talk made again by
-  `talkgenerator check` gets the facts the first one got.
-- A slide that builds on its fact credits the article ("Wikipedia: Penguin (CC BY-SA 4.0)"), in a credit line that
-  then starts with "Sources:" rather than "Image sources:", and the deck lists every fact the talk got (`facts`: its
-  text, page, license and slide).
-- Classic talks get real ones where they fit: half of their fun facts are a real sentence about the slide's word, with
-  a twist ("Coincidence? I think not.", the TED content pack's version 4), and half of their quizzes a real question
-  from Open Trivia DB (`talkgenerator.sources.opentdb`, of the topic's kind: animals for a talk on penguins), credited
-  on the slide. Open Trivia DB is asked five seconds apart at most, as it asks, and its questions are cached for a week.
-- Flavour texts, which the user allowed on talkgenerator.com (2026-11-08): a fun fact may build on a random
-  useless fact instead (uselessfacts.jsph.pl: "25% of a human's bones are in its feet"), a dare dares the
-  presenter to tell a real dad joke about the topic (icanhazdadjoke, by the topic's word in the singular, else a
-  random page of them), and the closing slide's line under its title is a real piece of advice (the Advice Slip).
-  Classic talks get them too: half of their dares and two in five of their closing lines, in framings of the TED
-  content pack's version 5 ("Tell this joke as if it changed your life: ...", "Remember: ..."). They pass the
-  facts' checks and their own (no insults, drink or faiths, nobody living), are credited on the slide ("Sources:
-  icanhazdadjoke"), and are cached (a week, the advice a month), with 4-second timeouts.
-- `DISABLE_FACTS=1` switches facts off; `DISABLE_WIKIPEDIA=1`, `DISABLE_OPENTDB=1`, `DISABLE_USELESS_FACTS=1`,
-  `DISABLE_DAD_JOKES=1` and `DISABLE_ADVICE_SLIPS=1` a source. No keys.
-
-### Talk formats: startup pitches and academic talks
-
-- `--schema pitch`: a startup about the topic, pitched to investors. Its slides go through its arc, in order: the
-  problem (a bold statement, or an alarming statistic), the solution (the product, life before and after it, or how
-  it works), the market (TAM, SAM and SOM in a funnel, or one enormous number), the business model (pricing plans, a
-  flywheel or its revenue streams), the traction (a hockey stick, figures on tiles, or a happy customer's post), the
-  competition (a 2×2 matrix with the startup alone in its best corner, or a ranking it wins), the team (three photos
-  with made-up roles, or an org chart whose boss is the punchline), the roadmap, the ask (a big number) and the
-  closing "Questions?".
-- `--schema academic`: research on the topic at an academic conference, with affiliations on the title slide: the
-  outline, related work (this work where fields meet in a Venn diagram, earlier work in a 2×2 matrix, or the field's
-  history), the method (a diagram of its steps, its equation, or its setup), the results (charts with suspicious
-  p-values, or one p-value as a big number), the limitations (an iceberg), future work (a timeline, the research
-  cycle, or a flowchart whose every answer leads to more research), the acknowledgements, the references and the
-  questions.
-- A short talk keeps the parts that matter most (a five-slide pitch has the problem, the solution, the traction and
-  the ask), and a long one gives some parts more slides and has memes, quotes, press and the like between them. Every
-  persona keeps a format's arc, and moves a part's slides between its kinds (a founder's traction is figures on tiles
-  more often). A startup founder pitches more often than the other personas, a disgraced professor gives more of the
-  academic talks, and their themes are the `startup` and `academic` families more often.
-- A language model is told the format, and what its titles and its presenter's job are like (a pitch's title names
-  its made-up startup; an academic talk's job is an affiliation), with the persona's. Without one, both formats have
-  content packs of their own (`talkgenerator/data/packs/pitch` and `academic`, a grammar per part of the arc, 687 and
-  591 templates), and a made-up startup or method named after the topic ("PenguinBase", "AutoPenguin") on every slide.
-- A new slide type, the process: three to five steps joined by arrows, appearing one by one, the last one the
-  punchline (an academic talk's method, how a pitch's product works), side by side when their words are short enough
-  and else one under the other.
-- `talkgenerator formats --details --format pitch` (and `academic`) opens with the format's arc and the recipes of
-  each part, the Skill has references for both, and `talkgenerator check` warns of a talk that misses a part of its
-  format's arc.
-
-### Talk formats: all-hands meetings and product keynotes
-
-- `--schema corporate`: a company whose business is the topic, at its all-hands meeting or quarterly business review.
-  Its slides go through its arc, in order: the agenda (or an executive summary nobody can read), the KPIs against
-  their targets (figures on tiles, the actual results falling away from the target's line on a click, the results by
-  region, one headline number, or the sales pipeline as a funnel), the quarter's wins (three photos, the CEO's post,
-  or customers' reviews), the roadmap (a timeline, the new process, or the planning cycle), an org change (the new org
-  chart whose boss is the punchline, the new hierarchy as a pyramid, or the company before and after), the synergies
-  (a Venn diagram, or a 2×2 matrix of priorities), the ask of everyone (a bold statement, or "110%") and Q&A. Its
-  other slides are inspirational quotes, InspiroBot's posters, the company's values as an acronym, the news and the
-  like.
-- `--schema keynote`: a product made of the topic, launched on a big stage: a big opening statement (over a photo, as
-  one huge number, or a full-bleed photo with a greeting), the one idea (a bold question, or a Venn diagram with the
-  product where it all meets), the reveal (the product in one photo, a picture that prefers to be generated), its
-  features (three photos, specs on tiles, or a chart it wins by far), a live demo (that crashes, as a fake error
-  message, how it works, or a photo to present as the demo), the price (a big number, the models' prices, or when it
-  ships), the "one more thing" and a closing line. Its other slides are deep questions over photos, gifs, the press
-  and early reviews.
-- A five-slide all-hands has the KPIs, the wins, the roadmap and Q&A; a five-slide keynote its opening, the reveal, a
-  feature and the "one more thing". A management consultant gives more of the all-hands, a startup founder or a
-  motivational speaker more of the keynotes, and their themes are the `corporate` and `clip-art corporate` families,
-  and `dark minimal` and `clean keynote`, more often.
-- A language model is told the format, and what its titles and its presenter's job are like (an all-hands' title is
-  the quarter and a slogan; a keynote's the product's made-up name and a grand promise), with the persona's. Without
-  one, both have content packs of their own (`talkgenerator/data/packs/corporate` and `keynote`, a grammar per part of
-  the arc, 596 and 391 templates), and a made-up company or product named after the topic ("Penguin Holdings",
-  "Penguin Neo") on every slide.
-- No new slide type: an all-hands' office photos are corporate stock photos, and its executive summary is the wall of
-  text's corporate jargon. `talkgenerator formats --details --format corporate` (and `keynote`) lists the arc, and the
-  Skill has references for both.
-
-### Fewer slides of text, more pictures
-
-- Big numbers and KPI tiles come over a picture of what they're about: three big numbers in four and half the KPI
-  dashboards, in TED-like talks and in every format (a pitch's ask, an all-hands' dashboard, a keynote's price), with
-  the picture behind them under a shade, behind a band, or filling the slide's right side, and their texts readable in
-  every theme. A slide whose picture isn't found comes without one. The pictures come from a look of many sources
-  (`backdrop`): stock photos most often, now and then a weird picture from Reddit, a NASA photograph, an old
-  photograph or a museum's painting; a statement's backdrop is a calm photo two times in three, else one of those.
-- A pitch, an academic talk and an all-hands keep a quarter of their slides free (two of ten; a keynote one), for
-  memes, gifs, Reddit's weird pictures and their own provocations, a picture filling the slide under a word or two in
-  the format's voice ("Disrupt.", "Peer reviewed.", "Synergy.", "Revolutionary."). Their slides of text wait for
-  longer talks: a pitch's market and business model, an academic talk's outline and acknowledgements, an all-hands'
-  agenda come in talks of eleven slides or more.
-- A pitch's product slide shows the product off: searched as a gadget or an invention, and in a talk that generates
-  pictures, drawn from the model's prompt as an advertisement's product shot of something absurd. A keynote's reveal
-  too.
-- More memes with live captions (in TED-like talks too) and more of Reddit's weird pictures, fewer of ShitpostBot's;
-  fewer statements and quotes between a format's parts, more of a pitch's team photos and an academic talk's
-  experimental setup, and a classic fun fact with its photo three times in four.
-
-### Advanced talks, and things to riff on
-
-- How much the language model does is the talk's level (`--llm_level`, `llm_level=`, `TALKGENERATOR_LLM_LEVEL`, and
-  the MCP server's `--llm_level`): `basic`, one request a talk, in which the model writes every slide from the word
-  talkgenerator gives it; or `advanced`, where the model first plans the talk (its title and the presenter's job, a
-  thesis, a running gag, and for every slide the word it riffs on, one talkgenerator found for it or a sharper one,
-  and its idea, the point it makes: for a chart, what it measures against what; for a diagram, what its parts are),
-  and its slides are written as their ideas come in, a few at a time, in parallel requests (the second slide alone,
-  then two, then three at a time). Advanced talks keep one thread, come out cleverer, and are quicker than Basic ones:
-  measured on five talks with Claude Haiku 5.5 and Sonnet 5.5, the first slide was ready 1.5 to 11 seconds sooner and
-  the whole talk up to 8.5 seconds sooner, in five requests, for about twice the tokens (about $0.003 a talk with
-  Haiku, $0.06 with Sonnet). A talk is Advanced by default on a model of your own that costs (Claude, OpenAI's, your
-  ChatGPT plan's, OpenRouter's paid models), and Basic on free ones. An outline that fails, finds the topic unsafe, is
-  declined (even halfway: what its slides' requests wrote is dropped) or can't be afforded leaves a Basic talk. The
-  deck says which level its slides were written at (`llm_level`).
-- A real quote is searched for a theme the language model writes for it (`text_query`, such as "patience" or
-  "tradition"), and then for the slide's concept: the concept found nothing on Goodreads, and random lines on
-  Wikiquote (an anime quote on a tea talk).
-- The words slides start from are things: Datamuse's related words, which it now tags with their parts of speech, are
-  nouns first of all (no "Volcanoes vs. eruptive" on a scatter plot, no "Do you want glacial?" on a flowchart),
-  familiar ones (no "scoria"), no names (no "etna", which a slide would write in small letters), and each of a
-  family of its own (not "eruption", "eruptive" and "erupted" in one talk, nor "musk duck" for rubber ducks). They
-  wander two steps from the topic at most before they come back to it (penguins went to leafs, hockey and netball),
-  a phrase's from its words when its own related words are all of its family ("quantum physics"), and none is a word a
-  slide shouldn't make light of. A classic slide's other related words (a matrix's quadrants, a scatter plot's
-  groups, a list's things) are things too, and so are a language model's words to riff on.
-
-### Problem slides: a talk's why, early on
-
-- A new slide type, the problem: a short heading on a sticker ("The problem", "Motivation", "Sound familiar?"), the
-  problem in big words, and a line under it that makes it hit home, which appears on a click; with a picture of it
-  behind it, or one beside it that shows it (generated, in a talk that generates pictures). Three layouts: over the
-  picture, on a band across it, or beside it.
-- A talk's dice pick the problem's angle: a weird problem nobody has noticed yet, an everyday one everyone in the room
-  has had, the topic running into something from another part of life, the problem everyone who deals with the topic
-  knows, or a real one, a how-to people look up on wikiHow ("Right now, someone is searching how to repair an
-  umbrella."). A language model writing an English talk gets one of the topic's real how-tos to start from, those
-  that say what they fix first; classic talks get problems from the content packs (the pitch pack's version 3, the
-  academic pack's version 4, the TED pack's version 7).
-- About three pitches in four open on one (at slide 2), four academic talks in five (at slide 2, in a new first part,
-  the motivation, or else its research question over a photo), and about a quarter of TED-like talks (at slide 3,
-  after the presenter's). Never two in a talk.
-- An academic talk keeps its motivation from three slides on: a five-slide one is its motivation, method, results and
-  questions, and a ten-slide one goes without future work.
-
-### Titles and presenter names
-
-- What someone types can be the topic or the title (`--topic_or_title`, `topic_or_title=`): "penguins" as well as
-  "Why I Joined a Penguin Cult". What's clearly a title (four words or more, or a question or exclamation) stays the
-  title, with its obvious slips fixed; anything shorter is the topic, or a premise ("Cats are liquid"), on which the
-  language model builds a funnier, more specific title; in quote marks, it's the title, word for word. Misspelled
-  topics are fixed ("pengiuns": "penguins"), but in a talk in another language, typed words of that language
-  stay as typed ("matare", not "mature"), and so do compounds of Dutch, German and Swedish words ("tomatbok"); the
-  deck says how what was typed was read.
-- Made-up presenter names in styles (`--name_styles`): `pun` ("Prof. Anna Tomy" for medicine), `fun_surname`
-  ("Linda Hivesworth" for bees) and `famous_pun` ("Albert Einstone" for geology) by default, and `classic`, the
-  random first and last name of 2019. The language model writes the name in the same request, and a name that won't
-  do (too long, a placeholder, a real famous name or a dictator's) is turned down. Without a
-  model, talkgenerator has names of its own for 642 of the 736 topics in its topic list. A plan can name its
-  presenter (`presenter_name`).
-
-### Personas
-
-- Every talk has a presenter persona, which its seed picks: a disgraced professor, a startup founder, a medieval
-  historian, a conspiracy blogger, a kindergarten teacher and eight more (`--persona`, `persona=`, the MCP server's
-  `generate_talk`; `talkgenerator.personas.catalog()` lists them). The persona is more than the voice the language
-  model writes in and the kind of talk they give. A retiree's old job is one of sixteen, which the talk's seed picks
-  (a lighthouse keeper, a mail carrier, a piano tuner, ...). With a model or without, it shapes the talk:
-  - the kinds of slides it favours: a historian's timelines and history, a founder's KPI tiles and funnels, a
-    teacher's quizzes. No kind of slide is left out, and the format's caps still hold;
-  - its title: the persona's kind of title from the model, and half of a classic talk's titles from the persona's
-    own templates ("Disrupting Penguins");
-  - the presenter's name: a historian's is a famous-name pun more often, and a professor goes by "Prof.", unless
-    `--name_styles` says which styles to use; and with a model, the presenter's job ("Founder and CEO of
-    Penguin.ly");
-  - the theme, when it's random: the persona's favourite families come up 3 to 4.5 times as often (a kindergarten
-    teacher's `kids` and `chalkboard`, a conspiracy blogger's `hacker terminal` and `newspaper`), and across all
-    personas every family about as often as before;
-  - the pictures: favourite looks for some of the looks slides ask for, searched first (a historian's weird
-    pictures are weird medieval art, a founder's photos office stock), with the slide's own look after them.
-- The deck and `talk.started` say which persona a talk had (`persona`: its name, label and voice, and the angle the
-  model was given). `--persona none` makes the format's own talk.
-- A talk can leave its format to its seed (`--schema random`, `schema="random"`, the MCP server's `format="random"`),
-  which picks the persona first and then a format that persona favours: a startup founder pitches in about two of
-  five of their talks, a disgraced professor gives an academic talk, a management consultant an all-hands and a
-  motivational speaker a keynote, and half of their talks are TED-like, as most of the others' are. Every format keeps
-  a few talks in a hundred with every persona, and over all the personas 7 in 10 are TED-like, pitches and academic
-  talks the rarest
-  (`Persona.formats`, multipliers on `presentation_schema_types.FORMAT_WEIGHTS`; `format_odds()` says the odds). The
-  TED-like talk with copyright-free images only (`ted`) is a license choice there: `--license_policy open` goes with
-  any format. The deck's `schema_name`, and `talkgenerator check`'s report, say which format a talk got.
-- A talk can say which personas its seed picks from (`--personas startup_founder,consultant`, `personas=`, the MCP
-  server's `generate_talk`): a talk whose seed picks one of them keeps it, and the others get one of them.
-  `talkgenerator check` takes `--persona` and `--personas` too.
+- Classic talks take their texts from content packs (`talkgenerator/data/packs`): the TED pack has every classic text
+  of TED-like talks, in a TED talk's voice and about four times as many as 4.x had, each speaking of the topic as
+  English does and checked by tests. The new formats have packs of their own.
+- The words slides start from are things: nouns first (Datamuse's parts of speech), familiar ones, none of a family
+  twice, and never far from the topic, so no "Volcanoes vs. eruptive" on a scatter plot. A real quote is searched for
+  a theme the language model picks for it.
+- Real facts: a talk a language model writes gets up to three facts from Wikipedia (the topic's article, and the
+  day's events) for its slides of history, fun facts, quizzes and big numbers, which the model keeps true and twists.
+  Classic talks get half of their fun facts from Wikipedia and half of their quizzes from Open Trivia DB, and now and
+  then a useless fact, a real dad joke to tell or a piece of advice (the Advice Slip). No fact names a living
+  person, or is about death, war, disasters, crime, politics, race or faiths. A slide that uses one credits it, and
+  the deck lists them (`facts`). They need no keys, and `DISABLE_FACTS=1` switches them off.
 
 ### Talks that stream, and decks
 
-- Every talk is a deck (`talkgenerator.models.deck`): plain, versioned JSON data with every text, image, credit and
-  layout, which the PowerPoint is drawn from, so the two always match. `--save_json true` saves it next to the
-  PowerPoint, `slide_deck.to_deck()` returns it, and `talkgenerator.render.powerpoint.render_pptx` draws a saved deck
-  again.
-- `generator.stream_talk()` hands a talk over while it's made: `talk.started` once its title is known, a
-  `slide.ready` for every slide, in order and laid out in its theme, and `talk.finished` with the whole deck, the same
-  deck as a talk made at once. A language model's slides come while it writes the rest, and images are probed rather
-  than downloaded, as a browser loads them itself. talkgenerator.com streams its talks this way, and
-  `image_util.forget_downloads()` gives back the memory of a PowerPoint's downloaded images, for a server.
-- A deck's images say how a browser may show them (`display`: `direct`, `proxy`, `copy` or `local`, as their sources'
-  terms allow), their size, their license and their look, and a streamed slide tells Unsplash that its photos were
-  used, as a PowerPoint does. What appears on a click is marked on its element (`appears_on_click`), for renderers
-  that play clicks.
-- `slide.updated` (`talkgenerator.models.events.SlideUpdated`): in a talk that streams, a slide handed over before
-  comes again, at its index and laid out as before (`DeckLayout.again`), once a generated picture takes its stock
-  photo's place; `talk.finished` comes once every picture is in.
-- Spare slides: `stream_talk(..., spares=3)` sends three spare slides early on (`slide.spare`,
-  `talkgenerator.models.events.SlideSpare`), for a presentation to show when it catches up with the making, instead of
-  waiting for the next slide. They're about the talk's topic, of kinds that take a hundredth of a second and hardly
-  ever fail (a tier list, red flags, a quiz, a chart...: no pictures to find; in a talk in another language, a
-  picture of the topic without text), laid out in the talk's theme without a slide number (`DeckLayout.spare`). They
-  stay out of the deck and its PowerPoint, and the talk's slides come out the same with spares or without.
-- A time limit per slide: with `stream_talk(..., slide_seconds=8)`, a slide that isn't made within 8 seconds of when
-  it could come (the slide before it, and its text) comes at once with what's quick, so one slow slide no longer holds
-  back the rest. A slide a language model wrote keeps its texts, without the pictures it can do without and with spare
-  pictures of the talk's topic, found early, for the others (`realize(..., spare_pictures=)` looks nothing up); else a
-  stand-in of the spare slides' kinds, about the slide's own topic, takes its place. What it waited for goes on by
-  itself, and once it's done, the real slide comes after all, in place of what stood in for it (`slide.updated` with
-  `late`, and in the deck), unless it repeats another slide or the talk's caps are full; `talk.finished` waits for it
-  20 seconds at most once the other slides are in (`presentation_schema.LATE_SECONDS`).
+- Every talk is a deck (`talkgenerator.models.deck`): plain, versioned JSON with every text, image, credit and
+  layout, which the PowerPoint is drawn from. `--save_json true` saves it, `slide_deck.to_deck()` returns it, and
+  `talkgenerator.render.powerpoint.render_pptx(deck)` draws a saved deck again.
+- `generator.stream_talk()` hands a talk over while it's made: `talk.started`, a `slide.ready` for every slide in
+  order, `slide.updated` when a generated picture comes in, and `talk.finished` with the deck. Images are probed
+  rather than downloaded, and each says how a browser may show it (`display`). talkgenerator.com streams its talks
+  this way.
+- For a presenter who catches up with the making: `spares=3` sends three quick spare slides early on
+  (`slide.spare`), and `slide_seconds=8` makes a slide that takes longer than 8 seconds come at once with what's
+  quick, the real slide taking its place once it's made.
 
 ### Lighter and faster
 
-- What talkgenerator asks WordNet (whether a noun's most common meaning is a place, whether a word is an adjective)
-  it reads from WordNet's own files, with the answers NLTK's reader gives, in 8 MB: NLTK's reader kept an index of
-  every lemma, about 150 MB, more than half of what talkgenerator.com used at rest.
-- `parallel` can be a number: at most that many slides are made at the same time (talkgenerator.com makes three at a
-  time, on a small server), and the talk is the one made one by one.
-- A PowerPoint's pictures are downloaded four at a time before its slides are drawn, and one picture at a time is
-  prepared (decoded, scaled, turned), without the copies of it that Pillow made before. A picture that's scaled down
-  anyway comes out as large as its place on the slide needs (twice its box, at most 2400 pixels), so a photo of 12
-  megapixels on a quarter of a slide is decoded at a fraction of its size: a talk's .pptx takes up to 60 MB less
-  memory to make, and comes out up to a third smaller.
-- A host that lets a request time out isn't asked again (urllib3 asked three times, so a hung image host held a slide
-  for 25 s), thumbnails get 5 s to answer and probes 8 s, a transfer that breaks off makes a picture unusable rather
-  than failing its slide, and a search service that takes more than 8 s to answer is skipped for 5 minutes, as one
-  that fails is (the Met's object API took 15 s an object). `http_util.close_idle_connections()` closes the
-  connections that every thread's session keeps open, as a server may after a talk: the threads that live on kept one
-  to every host they asked, with its TLS state, which took a server's memory up by 3 to 4 MB a talk.
+- Less memory: WordNet is read from its own files (8 MB instead of about 150 MB), and pictures are decoded and scaled
+  to the size their place on the slide needs, so a big photo no longer takes hundreds of megabytes on its way into a
+  .pptx, and a .pptx comes out up to a third smaller.
+- `parallel` can be a number (at most that many slides at once), a PowerPoint's pictures are downloaded four at a
+  time, a host that times out isn't asked again, and a search service that takes more than 8 seconds is skipped for
+  5 minutes.
 
 ### Checks
 
-- `talkgenerator check` makes talks on a set of topics (10 by default, `--quick` for 3, `--all` for 30, `--random N`
-  from talkgenerator's list of 736 topics), checks every deck (every slide has what it needs, no template leftovers
-  such as `{seed}`, images credited and allowed by the license policy, the talk's language, and in themed talks texts
-  whose letters read on what's behind them, a theme's decoration and background pattern included, that fit their
-  boxes and stay on the slide), makes every talk again with its seed to see
-  that it comes out the same, and writes a JSON report. `--llm` checks talks a language model writes (the second run
-  replays its answers), `--theme` themed talks, and `--decks` saves every deck. `talkgenerator.topics` has the list
-  of topics, for suggestions.
+- `talkgenerator check` makes talks on a set of topics (`--quick`, `--all`, `--random N`), checks every deck (every
+  slide complete, no template leftovers, images credited and allowed, the talk's language, and in themes, texts that
+  read on what's behind them and fit their boxes), makes every talk again to see that it comes out the same, and
+  writes a JSON report. `--llm` checks talks a language model writes, `--theme` themed ones, and `--decks` saves the
+  decks.
 
 ### Changed
 
-- A talk's look is a theme its seed picks (`--theme random`), not the 2019 template: `--theme classic` or
-  `TALKGENERATOR_THEME=classic` keeps the template.
-- A classic talk on a topic talkgenerator has presenter names for gets one of them, instead of a random first and
-  last name: `--name_styles classic` keeps the random ones.
-- A classic talk's mix of slides and its title depend on its persona: `--persona none` keeps the format's own.
-- A seed gives another talk than in 4.x: every slide draws from its own random streams of the talk's seed now
-  (`talkgenerator.util.random_util`), and the new kinds of slides (about one in six of a talk's slides) and names come
-  into it. A talk without a seed gets a random one, which the logs and the deck mention, so any talk can be made
-  again.
-- Images come through the image finder, from about the same sources with about the same weights as before. History
-  slides show old photographs in black and white or sepia, statements' backdrops come from Pixabay, Unsplash and
-  Pexels (they were Pixabay's only), Reddit's chart slides take charts from r/dataisugly too, and Reddit's images say
-  what they show. Searching sources a few at a time asks more of them per image.
-- Charts are quieter, so that the joke stands out: no gridlines, tick marks or numbers along their axes. A yes/no
-  chart's columns have their shares on top, a doughnut its shares on its ring and a legend, and chart texts are
-  bigger, in the template's or the theme's font.
-- GIPHY's searches aren't cached any more, as GIPHY's API rules forbid it; the other search APIs still are.
-- `SlideDeck.to_slide_deck_dictionary()` returns the deck's slides, which are JSON, instead of dictionaries holding
-  image and chart objects: a breaking change for code that read those (see Deprecated).
+- A talk's look is a theme its seed picks, not the 2019 template: `--theme classic` or `TALKGENERATOR_THEME=classic`
+  keeps the template.
+- A talk has a persona, which shapes its mix of slides and its title (`--persona none` gives the format's own), and
+  a classic talk's presenter gets a name that puns on its topic when talkgenerator has one (`--name_styles classic`
+  keeps the random first and last names).
+- Slides are numbered ("7/12"), small, in the 2019 template's bottom right corner too.
+- Classic talks look up real facts and flavour texts, as above (`DISABLE_FACTS=1` switches them off), and take their
+  texts from the content packs.
+- A seed gives another talk than in 4.x: every slide draws from random streams of its own, and the new kinds of
+  slides come into it. A talk without a seed gets a random one, which the logs and the deck mention.
+- Images come through the image finder, from about the same sources as before, and new ones: history slides prefer
+  old photographs (museums' too) in black and white or sepia, statements' backdrops come from Pixabay, Unsplash and
+  Pexels, Reddit's chart slides take r/dataisugly's too, and the flavour packs search more subreddits.
+- InspiroBot's posters are drawn with the talk's seed from its older posters, so no request goes to its API any more.
+- Charts are quieter (no gridlines, tick marks or numbers along their axes), with bigger texts in the template's or
+  the theme's font.
+- GIPHY's searches aren't cached any more, as GIPHY's API rules forbid it.
+- `SlideDeck.to_slide_deck_dictionary()` returns the deck's slides as JSON-ready dictionaries, instead of
+  dictionaries holding image and chart objects: a breaking change for code that read those.
 - The classic chart styles moved from `talkgenerator.sources.chart` to `talkgenerator.render.charts` (the old names
   still work).
-- New dependency: pydantic. New extras: `openai`, `anthropic`, `llm` and `mcp`.
+- New dependency: pydantic. New extras: `openai`, `anthropic`, `llm` and `mcp`. requests and lxml are at 2.33 and 6.1 or
+  later, past their security advisories.
 - The README is shorter, and `docs/` has pages on the command line, language models, keys and settings, images and
   themes, using it with Claude and from Python, and migrating from 4.x.
-- A deck's `usage` counts its generated pictures too (`images`, `image_cost_usd`, `unpriced_images`,
-  `failed_images`, apart from `requests`, which stay its language model's), and the talk's log line says what they
-  cost. A deck's `language_model` is the language model that answered, never an image generator.
-- The credits of generated pictures name their model, not a license (`licenses.SHOWN` is open and public domain
-  licenses only); `talkgenerator formats --details` (and the Skill's slide references) say which images prefer a
-  generated picture.
-- With the new image sources, a seed's talk finds other pictures than before: history slides take old photographs
-  from the Met, the Art Institute and Cleveland too, an about-me slide's "where I come from" picture is now and
-  then the country's flag, and the flavour packs search more subreddits (each checked for pictures among its hot
-  posts on 2026-11-07): `cursed` r/TIHI and r/Cursed_Images, `wholesome` r/rarepuppers and r/Eyebleach,
-  `bad-charts` r/Infographics and r/MapsWithoutNZ, `accidental-art` r/accidentalart and r/PerfectTiming,
-  `pareidolia` r/facesinthings, `old-photos` r/OldPhotosInRealLife, `memes` r/HistoryMemes and r/ProgrammerHumor,
-  `weird` r/Weird and r/notinteresting.
-- The design check of an outlined text (WordArt's, a meme's) judges it per colour that may be behind it: white with
-  a black outline reads on black by its white and on white by its black.
 
 ### Deprecated
 
-- `generator.generate_presentation()` keeps working throughout talkgenerator 5, with a `DeprecationWarning` that
-  points to `generator.stream_talk()` (whose `talk.finished` event has the deck, which `render_pptx` turns into a
-  PowerPoint) or to `talkgenerator.plan.external.render_plan()`. talkgenerator's own commands, the MCP server and
-  `stream_talk` don't warn.
-- `SlideDeck.to_slide_deck_dictionary()` keeps working throughout talkgenerator 5, with a `DeprecationWarning` that
-  points to `slide_deck.to_deck()`.
+- `generator.generate_presentation()` and `SlideDeck.to_slide_deck_dictionary()` keep working throughout
+  talkgenerator 5, with a `DeprecationWarning` that says what to use instead: `generator.stream_talk()` (whose
+  `talk.finished` event has the deck, which `render_pptx` turns into a PowerPoint) or
+  `talkgenerator.plan.external.render_plan()`, and `slide_deck.to_deck()`. talkgenerator's own commands, the MCP
+  server and `stream_talk` don't warn.
 
 ### Fixed
 
-- Classic texts speak of the topic as English does: no more "How many the titanics are "too many the titanics"?",
-  "Fanatic in Renewable A Plant That Won'T Die Systems", "Plant That Won'T Dies are great" or "Can we talk about
-  regulator for a second?". The templates say `{seed.generic}`, `{seed.one}` and the new `{seed.bare}`, the thing
-  after a word of the template's or before another noun ("The moon paradox" for "the moon", "a penguin expert" for
-  "penguins"); title case leaves a word's other letters as they are ("Won't", "AI"); and `generic` speaks of time,
-  work, art, science and life as amounts ("Hours with time", not "times"), and keeps whole a premise ("a plant that
-  won't die") and a phrase with an "a" and words about its noun after it ("Think about a message in a bottle", not
-  "Think about message in a bottle"; `one` said "cup of tea" for "a cup of tea", by its last word). A slide whose
-  topic drifts to a word about the body (one went from "the Titanic" to "breasts") is made another way, as one about
-  a faith or violence is.
-- Classic memes read as English speaks of the topic: "Love coffee" and "Is this a lighthouse?", not "Love coffees",
-  "happinesses" or "a the french revolution" (every caption pluralised the topic). The template functions
-  `{seed.generic}`, `{seed.one}` and `.cap` tell a countable noun from a mass noun by wordfreq's frequencies of the
-  noun and its plural.
-- A text a language model wrote loses the backslash it put before a quote mark ("what\'s"), where its JSON needed
-  none, and keeps the closing mark of a quote it ends on ("calling it 'Steve'" lost its last mark): only quote marks
-  around all of a text go, and stray ones at its ends.
-- `--int_seed` gives the same talk every time, also with `--parallel` (the default), with seed 0, and in every Python
-  process: slides made in parallel shared one random generator, and seed 0 skipped the reseeding.
-- No slide shows an image of a slide before it (nor nearly the same one). Conclusions, which may repeat texts as they
-  sum up, could repeat a picture too, and a slide generator allowed to repeat a text could repeat an image, which
-  generating in parallel then kept rejecting, round after round.
-- Pictures shown whole keep their shape. They were padded by the wrong amount, so a 9:16 picture on a full-picture
-  slide came out 43% too wide, and a square picture in an "About me" column 6% too narrow.
-- Gif slides show gifs that move: their Reddit search takes only animated posts, an Imgur `.gifv` comes from Imgur
-  instead of as Reddit's still of its first frame, and gifs of up to 16 MB are used (was 8). A file that's too large
-  is turned down as soon as its host says how large it is.
-- The texts on charts, such as a pie's names and shares, showed in black, whatever the chart's font said, so on the
-  2019 template's black they didn't show at all; they're in the template's text colour now. Column charts no longer
-  have gridlines, which v4 meant to leave out (but misspelt `has_mayor_gridlines`).
-- WikiHow's search finds lists, quizzes and questions too, which became odd actions and titles ("e 20 Top Games Like
-  Club Penguin"): only pages that teach an action count now.
-- Template variables that share a start, like `{seed.plural}` and `{seed.plural.title}`, are filled in longest first:
-  in an unlucky order, the longer one came out as garbage.
-- Tracery grammars no longer keep growing in long-running processes such as the web app.
-- The notes of chart slides no longer hold memory addresses, which made the same talk differ from one run to the
-  next.
-- Wikimedia Commons credits named some authors twice ("Unknown author Unknown author").
-- Themed decks laid out on a computer without Verdana, Trebuchet MS, Arial Black, Impact or Comic Sans MS, as a
-  Linux server or CI is, get the font sizes they get on Windows. Texts in those fonts were estimated from an
-  average letter: up to twice as wide as they are, so they came out smaller than they had to, and in capitals or
-  wide letters up to a quarter too narrow, so that a title in capitals could run out of its box, unseen by the
-  design checks, which estimated the same way. talkgenerator now comes with every character's width in those fonts
-  (`data/fonts/widths.json`, made by `scripts/font_widths.py`), and measures texts without kerning on every
-  computer: Pillow kerns where it finds raqm, as on some Linux computers, so a text could get another size there.
-- A Venn diagram's labels take long compounds too. When one of them doesn't fit its place in the circles even at 12
-  points, as a 20-letter word didn't in three circles in any theme's font, all of them go beside the circles
-  instead: left and right of them, and below the bottom one of three. The circles get smaller to make room, and
-  the punchline keeps the middle, where it may spread over them. A diagram whose labels fit is drawn as before. In
-  the classic template, a diagram's labels keep their words whole: PowerPoint broke a word wider than its line in
-  two, as it did punchlines such as "Volcanoes" and "Lighthouses" at 32 points.
-- A talk with an InspiroBot poster comes out the same every time its seed makes it. InspiroBot's API makes a new
-  poster for every request, so `talkgenerator check` found that no such talk (about one classic talk in eight)
-  came out the same in parallel and one by one. The poster is now drawn with the talk's seed from InspiroBot's
-  older posters, at their predictable addresses (73 folders of 9,999 posters, from 2015 to 2017), which used to
-  fill in when the API didn't answer. Talks without a seed get a random one, so they still get any of those
-  posters, and no request goes to InspiroBot's API any more.
-- `talkgenerator check` no longer finds a talk that came out differently because an answer of the on-disk cache
-  expired between its two runs: Pixabay's expire after a day, and a fresh answer links the same pictures under other
-  addresses, so a slide's picture changed its link. The second run now gets the answers the first one got
-  (`http_util.same_answers`), as it gets a language model's; GIPHY's, which may not be kept, are still asked twice.
-- The on-disk cache of API responses reads back what it keeps. Unsplash's searches, and Openverse's once it's
-  signed in, were stored but never read back: their answers say they vary on `Authorization`, which the cache's keys
-  leave out. And Pixabay's, Commons' and Openverse's, which say they vary on `Cookie`, stopped being read back once
-  any host had set a cookie. Those searches went out again every time, using up rate limits (Unsplash's demo key
-  allows 50 an hour). The cache no longer stores answers as varying on either header.
-- A source that's skipped for a while, after an outage or a rate limit, still answers the searches it answered
-  before, from its caches, and asks nothing new: before, it was skipped altogether. A cooldown that started in the
-  middle of a talk, as Unsplash's demo key often makes one, lost the rest of the talk images that were found already,
-  and made `talkgenerator check` find that a talk's second run came out differently. A source that's cooling down
-  also keeps its place among a look's sources, so the sources searched together stay the same. That holds for
-  Pixabay, Pexels, Unsplash, Openverse, Reddit and ConceptNet; GIPHY's answers aren't kept, so it finds nothing
-  meanwhile, as before.
-- A format's cap of none on a kind of slide holds from a talk's first slide: `interview` talks, which have no about-me
-  slide, got one in two talks in five, as caps only counted once a talk had a slide of their kind. A cap that's a
-  share of a talk's slides still allows one, so short talks keep their memes, diagrams and quotes, and a section
-  divider needs a talk of ten slides (about one 9-slide talk in ten had one).
-- "A title or none" gives none half the time: classic two and three captioned pictures, and full-screen photos,
-  always had a title, as a generator that gives none on purpose gave way to the title's.
-- A historical figure's title no longer makes a 61-letter word of a wikiHow action, which ran out of its box in
-  brutalist themes: a template's `dashes` gives nothing for a word of more than 20 letters, so its template gives
-  way to another.
-- A text cut to its length ends where a sentence or a clause in it does, when that keeps half of it, or in English
-  before a word that opens the next clause ("when", "but", "because"...): free models' conclusions read "Your plants
-  are not decorations—they" and "The mountain breathes when prayers", and are "Your plants are not decorations" and
-  "The mountain breathes" now. The language model is asked for conclusions of six words at most.
-- A quiz's answer agrees with its explanation: a free model marked one option and explained why another one was
-  right. When the explanation names one other option, by its words or its letter, that one is the answer, and
-  `talkgenerator check` warns of an explanation that names other options than the answer.
-- A text about real-world politics stays out of a talk that isn't about it: a free model wrote "Japan needs to
-  earnestly reflect on its history of aggression, respect the security concerns of Asian neighbors..." as a
-  lighthouse talk's quote. The request asks for none, a model's text with a phrase that only statements on politics
-  have, or with a real country or people and politics' words, is left out (its slide comes out the classic way when
-  it can't do without it), and `talkgenerator check` warns of one. Absurd humour about places stays ("There are
-  more penguins in Belgium than people").
-- A classic talk takes only wikiHow's actions about its seed, and none of the worst: a lighthouse talk was titled
-  "Never, Ever Make Sex Better". WikiHow pads a search it knows little about with its most popular how-tos ("Kiss",
-  "Tie a Tie", "Make Sex Better") and with loose matches ("Be a Secret Agent" for penguins), and had nothing else
-  for one in four of the seeds that slides wander to. An action now has one of the seed's telling words in any form
-  ("Plan a High School Reunion" for school reunions, not "Skip School"), or one of the words related to it ("Draw a
-  Bird" for birdwatching): 36 of 39 sample topics keep some, and a template that wants an action of a seed without
-  any gives way to another. A how-to with a word on a faith, violence, hate, death or hard drugs is left out ("Live
-  a Good Christian Life", "Apply a Fentanyl Patch"); crude ones about the seed stay, as much of a classic talk's
-  humour is ("Clean Your Penis" for cleaning). The words that slides leave out have fentanyl too.
-- A language model's title doesn't repeat the request anymore. Claude Haiku took the request's line "Title: come up
-  with one" for the title ("Come Up With One: Retrocausal Roasting in Arabica Beans", in 3 of 12 talks): a talk
-  whose title the model makes up has no such line now, and the answer's title field asks for a title of the model's
-  own. `talkgenerator check` warns about a title with words of its request in it.
-- A presenter's name may pun on anyone famous, from history or today ("Umbrella Chomsky", "Taylor Swiftly", "Bread
-  Pitt"), but is never a famous living person's real name as it is: their first name and surname ("Dr. Bill Gates",
-  "Mary Berry"), all of their name ("Beyoncé") or what of it is theirs alone ("Prof. Chomsky") goes, and the talk
-  gets one of talkgenerator's own instead. A list of 175 living people that models reach for tells them; an
-  ordinary name stays ("Dr. Emma Swift", "Dr. Gates"). A generated picture's prompt that names one of them, or a
-  pun on one ("Taylor Swiftly"), isn't sent.
-- A slide's key in the language model's answer never goes on a slide. A free model's conclusion called back to an
-  earlier slide by its key: "Huddling scales trust (from slide_03)". The request now asks for callbacks by what the
-  earlier slide said, never by its key or number; brackets that name a slide by its key are dropped from a text
-  ("Huddling scales trust"), a key anywhere else in it makes the slide the classic generator's, as template code
-  does, and `talkgenerator check` reports a key on a slide as an error.
-- Big photos take far less memory on their way into a .pptx. A 24-megapixel original from Reddit was decoded whole,
-  copied whole to turn it as its camera said, and converted whole twice more to compare it with known placeholders:
-  about 240 MB for one picture, which took talkgenerator.com's downloads to its server's memory limit. Now a photo
-  is scaled down first, then turned, and placeholders are compared on a reduced copy. A big JPEG is even decoded at
-  a half, a quarter or an eighth of its size, as long as its long side stays as wide as a slide (1920 pixels): a
-  phone's 12-megapixel photo comes out at 2016 by 1512 pixels instead of 2400 by 1800, and a deck's peak while
-  it's made is about half what it was.
-- A language model's text that's too long for its place is cut after a comma when no sentence or clause ends where it
-  keeps half of it, and before a bracket the cut would leave open: free models' affiliations lost a dangling word
-  ("Professor of Serenity Studies, Department" is "Professor of Serenity Studies" now), and their roles their open
-  brackets ("Kaito Tanaka (Head of Temporal" is "Kaito Tanaka"). A title slide names its presenter once, where a
-  model wrote the name into the presenter's job too, with a title before it as well ("Harold Beanmore, Dr. Harold
-  Beanmore, Chief Chrono-Roaster" is "Harold Beanmore, Chief Chrono-Roaster"). A cut at a comma or at a clause's end
-  leaves no bracket open either ("Arctic Expansion (High Impact", of an initiative in a 2×2 matrix, is "Arctic
-  Expansion").
-- Claude writes talks of many kinds of slides too. Anthropic refuses to hold an answer to a JSON schema that compiles
-  to too large a grammar ("The compiled grammar is too large"), which a talk with the newest slide types can have,
-  and such a talk came out classic (two of four in a check with Claude Haiku 5.5). Now Claude gets the schema as
-  text then, at the end of the request, and writes the JSON by itself; the talk checks every slide's texts anyway.
-  Given the schema so, Claude Haiku once wrote every slide inside the spine's object, and the talk read none of them
-  (classic but for its title): slides inside another object of the answer count now. A talk whose answer has no
-  slide it can read says so in a warning, with what the answer brought (its keys and kinds, never its texts), and
-  Claude's switch to the schema as text is logged.
+- `--int_seed` gives the same talk every time, also with `--parallel` (the default), with seed 0 and in every Python
+  process, and the notes of chart slides no longer hold memory addresses.
+- Classic texts speak of the topic as English does: no more "How many the titanics are "too many the titanics"?" or
+  "Plant That Won'T Dies are great". Template variables that share a start (`{seed.plural}` and
+  `{seed.plural.title}`) are filled in longest first, and Tracery grammars no longer keep growing in long-running
+  processes such as a web app.
+- WikiHow's actions are how-tos that teach an action about the slide's seed, and none of the worst: a lighthouse talk
+  was titled "Never, Ever Make Sex Better".
+- No slide shows a picture of an earlier slide, nor nearly the same one.
+- Pictures shown whole keep their shape (a 9:16 picture on a full-picture slide came out 43% too wide), and gif
+  slides show gifs that move (animated posts only, Imgur's `.gifv`, up to 16 MB).
+- Chart texts are in the template's text colour (they were black, on the 2019 template's black), and column charts
+  lost the gridlines that v4 meant to leave out.
+- The on-disk cache reads back what it keeps: Unsplash's searches were stored but never read, and Pixabay's, Commons'
+  and Openverse's stopped being read once a host had set a cookie. A source that's cooling down after an outage or a
+  rate limit still answers what it answered before, from its caches.
+- `interview` talks no longer get an about-me slide, and "a title or none" gives none half the time.
+- Wikimedia Commons credits no longer name an author twice ("Unknown author Unknown author").
+- Quote slides no longer quote a film's or a show's cast list from Wikiquote: an actor's name and their role.
 
 ## [4.0.1] - 2026-11-05
 

@@ -284,6 +284,31 @@ def test_wikiquote_extracts_quotes_without_attributions():
     ]
 
 
+# A film's page, as Wikiquote's are: its cast list is actors and their roles, not quotes
+_WIKIQUOTE_FILM_PAGE = """
+<div class="mw-parser-output">
+  <p>A film about a family.</p>
+  <div class="mw-heading mw-heading2"><h2 id="Taglines">Taglines</h2></div>
+  <ul><li>This summer, the family goes further than ever.</li></ul>
+  <div class="mw-heading mw-heading2"><h2 id="Cast">Cast</h2></div>
+  <ul><li><a href="/wiki/Ann_Example">Ann Example</a> - Japanese Kid / Announcer</li>
+    <li>Bob Example - The Neighbour's Dog (voice)</li></ul>
+  <div class="mw-heading mw-heading3"><h3 id="Voice_cast">Voice cast</h3></div>
+  <ul><li>Cleo Example - The Talking Refrigerator</li></ul>
+  <div class="mw-heading mw-heading2"><h2 id="Cast_Away">Cast Away</h2></div>
+  <ul><li>Time is the one thing a lighthouse keeper never runs out of.</li></ul>
+</div>
+"""
+
+
+def test_wikiquote_leaves_a_films_cast_list_out():
+    """But a section of quotes from a film whose name has "cast" in it (an actor's page) stays."""
+    assert wikiquote.extract_quotes(_WIKIQUOTE_FILM_PAGE) == [
+        "This summer, the family goes further than ever.",
+        "Time is the one thing a lighthouse keeper never runs out of.",
+    ]
+
+
 def test_image_credits_link_to_their_pages():
     slide = slides.ImageSlide(title="Cats", image_url=None)
     slide.add_source("Ann (via Pexels)", "https://www.pexels.com/photo/cat-123/")

@@ -22,6 +22,12 @@ MIN_QUOTE_LENGTH = 20
 MAX_QUOTE_LENGTH = 300
 # Sections that don't contain (reliable) quotes
 _SKIPPED_SECTIONS = {"see also", "external links", "references", "sources", "notes", "disputed", "misattributed"}
+# and a film's or a show's cast list, its actors and their roles (a quote slide said "<an actor> - Japanese Kid /
+# Announcer", from The Proud Family Movie's page, all 23 of whose "quotes" were its cast)
+_CAST_LIST = re.compile(
+    r"(?:(?:main|voice|principal|supporting|recurring|guest) )?cast(?: (?:list|members|and characters|and crew))?"
+    r"|starring"
+)
 
 
 def _clean(text: str) -> str:
@@ -47,7 +53,7 @@ def extract_quotes(page_html: str) -> list[str]:
     for element in root.find_all(recursive=False):
         heading = _heading_text(element)
         if heading is not None:
-            skipping = heading.lower() in _SKIPPED_SECTIONS
+            skipping = heading.lower() in _SKIPPED_SECTIONS or bool(_CAST_LIST.fullmatch(heading.lower()))
             continue
         if skipping or element.name != "ul":
             continue
