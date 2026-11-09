@@ -20,6 +20,19 @@ ALIGNMENTS: Final = (
     *("lawful_evil", "neutral_evil", "chaotic_evil"),
 )
 
+
+def _pictures(*boxes: str) -> dict[str, str]:
+    """The roles of the pictures of a diagram's boxes (docs/v5-plan.md, D64), by the roles of the boxes' texts."""
+    return {f"{box}_picture": f"{box}_picture" for box in boxes}
+
+
+def _boxes(prefix: str, most: int) -> dict[str, str]:
+    """A diagram's numbered boxes (prefix_1, prefix_2...), each its text and its picture's role."""
+    return {
+        role: role for number in range(1, most + 1) for role in (f"{prefix}_{number}", f"{prefix}_{number}_picture")
+    }
+
+
 # slide type -> {Slide argument: element role}, in the order the elements appear on the slide
 CLASSIC_ROLES: Final[dict[str, dict[str, str]]] = {
     "title": {"title": "title", "subtitle": "subtitle"},
@@ -42,9 +55,15 @@ CLASSIC_ROLES: Final[dict[str, dict[str, str]]] = {
         "caption_3": "caption_3",
         "image_or_text_3": "content_3",
     },
-    "chart": {"title": "title", "chart_data": "chart"},
-    # (New in v5: a Venn diagram or a 2×2 matrix, drawn as shapes where the 2019 template has its content)
-    "diagram": {"title": "title", "diagram": "diagram"},
+    # (and a picture by a trend's named point, on a click: docs/v5-plan.md, D64)
+    "chart": {"title": "title", "chart_data": "chart", "point_picture": "point_picture"},
+    # (New in v5: a Venn diagram or a 2×2 matrix, drawn as shapes where the 2019 template has its content, with
+    # pictures by its first two circles or in some of its quadrants, now and then)
+    "diagram": {
+        "title": "title",
+        "diagram": "diagram",
+        **_pictures("circle_1", "circle_2", "top_left", "top_right", "bottom_left", "bottom_right"),
+    },
     # (New in v5 too, and drawn as shapes in the template's colours, on its blank slide: see DRAWN_TYPES)
     "big_number": {"title": "title", "number": "number", "label": "label", "source": "source"},
     "kpi": {
@@ -84,17 +103,18 @@ CLASSIC_ROLES: Final[dict[str, dict[str, str]]] = {
         "title": "title",
         **{f"{part}_{number}": f"{part}_{number}" for number in range(1, 6) for part in ("date", "event")},
     },
-    "pyramid": {"title": "title", **{f"level_{number}": f"level_{number}" for number in range(1, 5)}},
-    "funnel": {"title": "title", **{f"stage_{number}": f"stage_{number}" for number in range(1, 6)}},
-    "cycle": {"title": "title", **{f"step_{number}": f"step_{number}" for number in range(1, 6)}},
+    # (each box's picture, if it has one, after its text: docs/v5-plan.md, D64)
+    "pyramid": {"title": "title", **_boxes("level", 4)},
+    "funnel": {"title": "title", **_boxes("stage", 5)},
+    "cycle": {"title": "title", **_boxes("step", 5)},
     "org_chart": {
         "title": "title",
         "boss": "boss",
         **{f"report_{number}": f"report_{number}" for number in range(1, 5)},
     },
-    "iceberg": {"title": "title", "tip": "tip", **{f"hidden_{number}": f"hidden_{number}" for number in range(1, 4)}},
+    "iceberg": {"title": "title", "tip": "tip", **_pictures("tip"), **_boxes("hidden", 3)},
     # (the talk formats': a method, or how a product works)
-    "process": {"title": "title", **{f"step_{number}": f"step_{number}" for number in range(1, 6)}},
+    "process": {"title": "title", **_boxes("step", 5)},
     # (a meme: a template's picture, with its captions as texts on it, where the template has them)
     "meme": {"template": "template", **{f"text_{number}": f"text_{number}" for number in range(1, 5)}},
     # (slide types from PowerPoint karaoke decks: docs/v5-plan.md, section 8)
@@ -107,6 +127,7 @@ CLASSIC_ROLES: Final[dict[str, dict[str, str]]] = {
     "flowchart": {
         "title": "title",
         **{role: role for role in ("question", "yes", "no", "yes_step", "no_step", "end")},
+        **_pictures("yes_step", "no_step", "end"),
     },
     "tier_list": {
         "title": "title",
@@ -201,8 +222,12 @@ REQUIRED_ROLES: Final[dict[str, tuple[str, ...]]] = {
     "error_message": ("message", "button_1", "button_2"),
 }
 
-# The roles of drawn slides that hold pictures: a post's or a story's photo, a meme's template
-IMAGE_ROLES: Final = frozenset({"photo", "template"})
+# The roles of the pictures in diagrams' boxes (docs/v5-plan.md, D64), and by a trend's named point
+PICTURE_ROLES: Final = frozenset(
+    role for roles in CLASSIC_ROLES.values() for role in roles.values() if role.endswith("_picture")
+)
+# The roles of drawn slides that hold pictures: a post's or a story's photo, a meme's template, a box's picture
+IMAGE_ROLES: Final = frozenset({"photo", "template"}) | PICTURE_ROLES
 
 # Roles that only ever hold text, even when the text looks like an image's file name
 TEXT_ROLES: Final = frozenset(
@@ -211,7 +236,7 @@ TEXT_ROLES: Final = frozenset(
 )
 
 # Images that fill their frame (cropped where needed) instead of being shown whole
-COVER_ROLES: Final = frozenset({"background", "photo"})
+COVER_ROLES: Final = frozenset({"background", "photo"}) | PICTURE_ROLES
 
 
 def layout_id(slide_type: str) -> str:

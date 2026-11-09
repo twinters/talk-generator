@@ -1,10 +1,12 @@
+import dataclasses
+
 from talkgenerator.datastructures.slide_generator_data import (
     BetweenWeight,
     ConstantWeightFunction,
     PeakedWeight,
     SlideGeneratorData,
 )
-from talkgenerator.plan.kinds import Recipe, Variant
+from talkgenerator.plan.kinds import CLUSTERED, Recipe, Variant, box_picture_slot
 from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema.registry import Registry
 from talkgenerator.slide import slide_generator_types, slides
@@ -558,6 +560,7 @@ captioned_images_slide_generators_copyright_free = _register(
 # Charts with funny labels, and bare ones for the presenter to explain: what a trend or correlation does without
 _NAMES_ON_A_TREND = frozenset({"line", "second_line", "second_shape", "event"})
 _BARE_CORRELATION = frozenset({"x_axis", "y_axis", "outlier"})
+_CLUSTERS = frozenset({"cluster_1", "cluster_2", "cluster_3"})
 own_chart_generators = _register(
     "chart",
     [
@@ -612,9 +615,13 @@ own_chart_generators = _register(
             llm=Recipe(
                 "chart_correlation",
                 brief="A made-up scientific finding about the concept",
+                # (one cloud, or now and then two or three named ones: docs/v5-plan.md, D64)
                 variants=(
-                    Variant(2, note="with funny, oddly specific titles on its axes"),
-                    Variant(1, _BARE_CORRELATION, "bare: no titles on its axes, for the presenter to explain"),
+                    Variant(1.6, _CLUSTERS, "with funny, oddly specific titles on its axes"),
+                    Variant(
+                        0.8, _CLUSTERS | _BARE_CORRELATION, "bare: no titles on its axes, for the presenter to explain"
+                    ),
+                    dataclasses.replace(CLUSTERED, note=f"{CLUSTERED.note}, and funny titles on its axes"),
                 ),
             ),
         ),
@@ -695,7 +702,9 @@ diagram_slide_generators = _register(
     "diagram",
     [
         SlideGeneratorData(
-            slide_generator_types.DiagramSlideGenerator(diagram.generate_venn),
+            slide_generator_types.DiagramSlideGenerator(
+                slide_texts.pictured(diagram.generate_venn, box_picture_slot(), diagram.venn_boxes)
+            ),
             allowed_repeated_elements=4,
             retries=1,
             weight_function=ConstantWeightFunction(1),
@@ -708,7 +717,9 @@ diagram_slide_generators = _register(
             ),
         ),
         SlideGeneratorData(
-            slide_generator_types.DiagramSlideGenerator(diagram.generate_matrix),
+            slide_generator_types.DiagramSlideGenerator(
+                slide_texts.pictured(diagram.generate_matrix, box_picture_slot(), diagram.matrix_boxes)
+            ),
             allowed_repeated_elements=4,
             retries=1,
             weight_function=ConstantWeightFunction(1),
@@ -950,7 +961,7 @@ karaoke_slide_generators = _register(
             repeats=1,
         ),
         _drawn(
-            slide_texts.generate_flowchart,
+            slide_texts.pictured(slide_texts.generate_flowchart, box_picture_slot(), slide_texts.flowchart_boxes),
             slides.FlowchartSlide,
             _middle(0.8),
             ["flowchart", "diagram"],
@@ -1122,7 +1133,7 @@ native_diagram_slide_generators = _register(
             Recipe("timeline", brief="The concept's made-up history, as a timeline whose last moment is the punchline"),
         ),
         _drawn(
-            slide_texts.generate_pyramid,
+            slide_texts.pictured(slide_texts.generate_pyramid, box_picture_slot(), slide_texts.numbered_boxes("level")),
             slides.PyramidSlide,
             _middle(0.4),
             ["pyramid", "diagram"],
@@ -1132,7 +1143,7 @@ native_diagram_slide_generators = _register(
             ),
         ),
         _drawn(
-            slide_texts.generate_funnel,
+            slide_texts.pictured(slide_texts.generate_funnel, box_picture_slot(), slide_texts.numbered_boxes("stage")),
             slides.FunnelSlide,
             _middle(0.4),
             ["funnel", "diagram"],
@@ -1140,7 +1151,9 @@ native_diagram_slide_generators = _register(
             Recipe("funnel", brief="A sales funnel about the concept, narrowing down to something absurd"),
         ),
         _drawn(
-            slide_texts.generate_cycle,
+            slide_texts.pictured(
+                slide_texts.generate_cycle, box_picture_slot(), slide_texts.numbered_boxes("step"), most=1
+            ),
             slides.CycleSlide,
             _middle(0.4),
             ["cycle", "diagram"],
@@ -1156,7 +1169,7 @@ native_diagram_slide_generators = _register(
             Recipe("org_chart", brief="Who's really in charge of the concept, as an org chart with a surprising boss"),
         ),
         _drawn(
-            slide_texts.generate_iceberg,
+            slide_texts.pictured(slide_texts.generate_iceberg, box_picture_slot(), slide_texts.iceberg_boxes),
             slides.IcebergSlide,
             _middle(0.4),
             ["iceberg", "diagram"],

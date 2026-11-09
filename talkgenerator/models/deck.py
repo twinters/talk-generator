@@ -204,12 +204,22 @@ class ImageElement(_Data):
     appears_on_click: AppearsOnClick = None
 
 
+# A line fitted through a scatter chart's series by least squares, as PowerPoint's trendlines are: a straight one, or
+# a parabola (a polynomial of order 2)
+Trendline = Literal["linear", "quadratic"]
+
+
 class ChartSeries(_Data):
     name: str = ""
     values: tuple[float, ...] = ()  # one per category
     points: tuple[tuple[float, float], ...] = ()  # (x, y) pairs, for scatter charts
     # Names on some of its points, by index ("" for none), on line and scatter charts: a moment on a trend, say
     labels: tuple[str, ...] = ()
+    # A line fitted through its points (a scatter chart's), drawn over them from its leftmost point to its rightmost
+    trendline: Trendline | None = None
+    # Its colour ("#rrggbb"), as the layout engine picked it in a themed deck: a scatter chart's clusters', each its
+    # own, which a theme's two accents can't always be (none: the renderer's own, by the series' place)
+    color: str | None = None
 
 
 class ChartSpec(_Data):
@@ -278,9 +288,19 @@ class VennDiagram(_Data):
         )
 
 
+class MatrixDot(_Data):
+    """One of a matrix's dots besides its punchline's: a thing where it belongs in the matrix, with its name. Where it
+    is: as a matrix's dot is (from 0 to 1 along each axis, the axes crossing at 0.5)."""
+
+    name: str
+    x: float = Field(ge=0, le=1)
+    y: float = Field(ge=0, le=1)
+
+
 class MatrixDiagram(_Data):
-    """A 2×2 matrix: two axes that cross in its middle, with a title at each end, a label in each quadrant, and one
-    dot with a name, the punchline."""
+    """A 2×2 matrix: two axes that cross in its middle, with a title at each end, a label in each quadrant (or in
+    some of them, or none), one dot with a name, the punchline, and maybe other named dots, there from the start
+    (familiar things, where they belong: at most two dots in a quadrant, the punchline's included)."""
 
     diagram_type: Literal["matrix"] = "matrix"
     # The titles at the ends of the axes: of the one along the bottom (left and right), and of the one going up
@@ -288,6 +308,7 @@ class MatrixDiagram(_Data):
     x_right: str = ""
     y_bottom: str = ""
     y_top: str = ""
+    # The quadrants' labels ("" for a quadrant without one)
     top_left: str = ""
     top_right: str = ""
     bottom_left: str = ""
@@ -298,6 +319,7 @@ class MatrixDiagram(_Data):
     dot_x: float = Field(0.5, ge=0, le=1)
     dot_y: float = Field(0.5, ge=0, le=1)
     reveal: DiagramReveal = "all"
+    dots: tuple[MatrixDot, ...] = ()  # (renderers before 2026-11-09 draw only the punchline's)
 
     def labels(self) -> tuple[tuple[str, str], ...]:
         """Its texts, each with what it is."""
@@ -311,6 +333,7 @@ class MatrixDiagram(_Data):
             ("bottom left quadrant", self.bottom_left),
             ("bottom right quadrant", self.bottom_right),
             ("dot", self.dot),
+            *((f"dot {number}", dot.name) for number, dot in enumerate(self.dots, 2)),
         )
 
 

@@ -5,10 +5,11 @@ Datamuse, when ConceptNet is down) relates to the seed. The diagrams are drawn a
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections import Counter
+from collections.abc import Mapping, Sequence
 from typing import Any, Final
 
-from talkgenerator.models.deck import MatrixDiagram, VennDiagram
+from talkgenerator.models.deck import MatrixDiagram, MatrixDot, VennDiagram
 from talkgenerator.sources import conceptnet, packs
 from talkgenerator.util import language_util, random_util
 
@@ -39,6 +40,126 @@ def dot_position(quadrant: str | None) -> tuple[float, float]:
     return round(x, 3), round(y, 3)
 
 
+# The most dots a quadrant holds (the punchline's included): one in its upper half, one in its lower half
+DOTS_IN_A_QUADRANT: Final = 2
+# The most dots a matrix has besides the punchline's
+MOST_DOTS: Final = 4
+
+
+def dot_positions(quadrants: Sequence[str]) -> list[tuple[float, float]]:
+    """Where dots go, one for each quadrant named (a quadrant named twice has two), in a matrix without labels in its
+    quadrants: a dot alone in its quadrant anywhere in it but near its edges, with room for its name beside it; two
+    in a quadrant, one in its upper half and one in its lower half (each one's name stays in its half: see
+    talkgenerator.render.diagrams.dot_bounds), the first nearer the outer side, so never one above the other. (A
+    quadrant holds DOTS_IN_A_QUADRANT at most: the caller leaves the others out.)"""
+    found: list[tuple[float, float]] = []
+    for index, quadrant in enumerate(quadrants):
+        sharing = [other for other in quadrants if other == quadrant]
+        place = quadrants[:index].count(quadrant)  # (the first or the second dot of its quadrant)
+        right, top = quadrant.endswith("right"), quadrant.startswith("top")
+        if len(sharing) < 2:
+            inner = random_util.uniform(0.08, 0.38)  # (from the quadrant's outer side, as a share of the matrix)
+            up = random_util.uniform(0.1, 0.36)  # (from the middle)
+        else:
+            # (the first nearer the outer side, the second nearer the middle: never one above the other)
+            inner = random_util.uniform(0.08, 0.2) if place == 0 else random_util.uniform(0.28, 0.4)
+            up = random_util.uniform(0.33, 0.41) if place == 0 else random_util.uniform(0.09, 0.17)
+        x = 1 - inner if right else inner
+        y = 0.5 + up if top else 0.5 - up
+        found.append((round(x, 3), round(y, 3)))
+    return found
+
+
+def matrix(
+    x_left: str,
+    x_right: str,
+    y_bottom: str,
+    y_top: str,
+    labels: Sequence[str],
+    dot: str,
+    dot_quadrant: str | None,
+    things: Sequence[tuple[str, str]] = (),
+) -> MatrixDiagram:
+    """A matrix of these texts, whose punchline appears on a click: its axes' ends, its quadrants' labels (four, in
+    QUADRANTS' order, "" for none), its punchline's dot in its quadrant (a random one, for one that's none of
+    QUADRANTS), and other things as dots where they belong ((name, quadrant) each). There are at most MOST_DOTS things,
+    and DOTS_IN_A_QUADRANT in a quadrant (the punchline's included), or one in a quadrant of a matrix with labels
+    (where its name stays clear of the label: see dot_position): those that don't fit, repeats and things in no
+    quadrant are left out."""
+    quadrant = dot_quadrant if dot_quadrant in QUADRANTS else random_util.choice(QUADRANTS)
+    labelled = any(label.strip() for label in labels)
+    most = 1 if labelled else DOTS_IN_A_QUADRANT
+    counts = Counter({quadrant: 1})
+    kept: list[tuple[str, str]] = []
+    seen = {dot.strip().casefold()}
+    for name, where in things:
+        if len(kept) == MOST_DOTS:
+            break
+        if where not in QUADRANTS or counts[where] >= most or not name.strip() or name.strip().casefold() in seen:
+            continue
+        counts[where] += 1
+        seen.add(name.strip().casefold())
+        kept.append((name.strip(), where))
+    if labelled:
+        positions = [dot_position(where) for where in (*(where for _, where in kept), quadrant)]
+    else:
+        positions = dot_positions([*(where for _, where in kept), quadrant])
+    *others, (dot_x, dot_y) = positions
+    top_left, top_right, bottom_left, bottom_right = (*labels, "", "", "", "")[:4]
+    return MatrixDiagram(
+        x_left=x_left,
+        x_right=x_right,
+        y_bottom=y_bottom,
+        y_top=y_top,
+        top_left=top_left,
+        top_right=top_right,
+        bottom_left=bottom_left,
+        bottom_right=bottom_right,
+        dot=dot,
+        dot_x=dot_x,
+        dot_y=dot_y,
+        reveal="punchline",
+        dots=tuple(MatrixDot(name=name, x=x, y=y) for (name, _), (x, y) in zip(kept, others, strict=True)),
+    )
+
+
+def quadrant_with_dots(matrix: MatrixDiagram) -> set[str]:
+    """The quadrants that have a dot (any of the matrix's), by their names in QUADRANTS."""
+    points = [(matrix.dot_x, matrix.dot_y), *((dot.x, dot.y) for dot in matrix.dots)]
+    return {QUADRANTS[(0 if y > 0.5 else 2) + (1 if x > 0.5 else 0)] for x, y in points}
+
+
+def pictured_quadrants(matrix: MatrixDiagram, pictures: Mapping[str, Any]) -> dict[str, Any]:
+    """The pictures of the matrix's quadrants (by their corners: "top_left", ...) that it keeps: those of quadrants
+    without a dot, where they have room (a picture of a quadrant with a dot is left out)."""
+    taken = quadrant_with_dots(matrix)
+    return {
+        corner: picture
+        for corner, picture in pictures.items()
+        if picture is not None and corner.replace("_", " ") in QUADRANTS and corner.replace("_", " ") not in taken
+    }
+
+
+def venn_boxes(generated: tuple[Any, ...]) -> dict[str, str]:
+    """A classic Venn diagram's boxes that can have a picture (after its title, the diagram): its first two circles,
+    each with its label."""
+    venn = generated[1]
+    return {f"circle_{number}": label for number, label in enumerate(venn.circles[:2], 1)}
+
+
+def matrix_boxes(generated: tuple[Any, ...]) -> dict[str, str]:
+    """A classic matrix's boxes that can have a picture (after its title, the diagram): its quadrants that have a
+    label and no dot, each with its label."""
+    shown = generated[1]
+    taken = quadrant_with_dots(shown)
+    labels = (shown.top_left, shown.top_right, shown.bottom_left, shown.bottom_right)
+    return {
+        quadrant.replace(" ", "_"): label
+        for quadrant, label in zip(QUADRANTS, labels, strict=True)
+        if label and quadrant not in taken
+    }
+
+
 def generate_venn(presentation_context: dict[str, Any]) -> tuple[str, VennDiagram] | None:
     """A classic Venn diagram: things that are like the slide's seed in two (or, a third of the time, three) ways, and
     the seed where they overlap, appearing on a click."""
@@ -56,10 +177,19 @@ def generate_venn(presentation_context: dict[str, Any]) -> tuple[str, VennDiagra
     return title, VennDiagram(circles=circles, overlap=_capitalised(seed), reveal="punchline")
 
 
+# How a classic matrix comes out (as a planned one does: see talkgenerator.plan.kinds.MATRIX_VARIANTS): words related
+# to its seed as its quadrants' labels, or as dots where its quadrants have no labels, or bare, with only its axes and
+# its dot
+_CLASSIC_MATRICES: Final = (("labels", 2.0), ("dots", 2.0), ("bare", 1.0))
+# A classic matrix's words as dots: this few to this many
+_FEWEST_DOTS: Final = 2
+
+
 def generate_matrix(presentation_context: dict[str, Any]) -> tuple[str, MatrixDiagram] | None:
     """A classic 2×2 matrix: two ways the slide's seed can be (from their opposite, or from not at all, to very)
-    along its axes, things related to the seed in its quadrants, and the seed itself as its dot, appearing on a
-    click."""
+    along its axes, things related to the seed in its quadrants (as their labels, or as dots: two to four of them,
+    in random quadrants, two in a quadrant at most; or none, in a bare matrix), and the seed itself as its dot,
+    appearing on a click."""
     seed = presentation_context["seed"]
     properties = _properties(seed)
     related = [
@@ -73,22 +203,17 @@ def generate_matrix(presentation_context: dict[str, Any]) -> tuple[str, MatrixDi
     across, up = random_util.sample(properties, 2)
     x_left, x_right = _axis(across)
     y_bottom, y_top = _axis(up)
-    top_left, top_right, bottom_left, bottom_right = (_capitalised(word) for word in random_util.sample(related, 4))
-    dot_x, dot_y = dot_position(None)
-    return title, MatrixDiagram(
-        x_left=x_left,
-        x_right=x_right,
-        y_bottom=y_bottom,
-        y_top=y_top,
-        top_left=top_left,
-        top_right=top_right,
-        bottom_left=bottom_left,
-        bottom_right=bottom_right,
-        dot=_capitalised(seed),
-        dot_x=dot_x,
-        dot_y=dot_y,
-        reveal="punchline",
-    )
+    shape = random_util.weighted_random([(weight, name) for name, weight in _CLASSIC_MATRICES])
+    words = [_capitalised(word) for word in random_util.sample(related, 4)]
+    if shape == "labels":
+        return title, matrix(x_left, x_right, y_bottom, y_top, words, _capitalised(seed), None)
+    quadrant = random_util.choice(QUADRANTS)
+    things: list[tuple[str, str]] = []
+    if shape == "dots":  # (in random quadrants, as many as there's room for: two a quadrant, the punchline's counted)
+        room = [where for where in QUADRANTS for _ in range(DOTS_IN_A_QUADRANT - (where == quadrant))]
+        places = random_util.sample(room, random_util.randint(_FEWEST_DOTS, MOST_DOTS))
+        things = list(zip(words, places, strict=False))
+    return title, matrix(x_left, x_right, y_bottom, y_top, ("", "", "", ""), _capitalised(seed), quadrant, things)
 
 
 def _properties(seed: str) -> list[str]:

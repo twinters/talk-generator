@@ -24,6 +24,7 @@ from pptx.slide import Slide
 from talkgenerator.datastructures.image_data import ImageData, VideoCopy
 from talkgenerator.models import classic
 from talkgenerator.models.deck import (
+    Box,
     ChartElement,
     Deck,
     DeckSlide,
@@ -90,9 +91,9 @@ def render_slide(
     if slide.layout != classic.layout_id(slide.type):
         raise ValueError(f"Can't draw layout {slide.layout!r}: only the classic layouts exist so far")
     if slide.type == "chart":
-        ppt_slide: Slide | None = _create_chart_slide(presentation, slide)
+        ppt_slide: Slide | None = _create_chart_slide(presentation, slide, images)
     elif slide.type == "diagram":
-        ppt_slide = _create_diagram_slide(presentation, slide)
+        ppt_slide = _create_diagram_slide(presentation, slide, images)
     elif slide.type in classic.DRAWN_TYPES:
         ppt_slide = _create_drawn_slide(presentation, slide, images)
     elif slide.type in _CREATORS:
@@ -126,7 +127,7 @@ def _creator_arguments(slide: DeckSlide, images: ImageStore | None) -> dict[str,
     return arguments
 
 
-def _create_chart_slide(presentation: Presentation, slide: DeckSlide) -> Slide:
+def _create_chart_slide(presentation: Presentation, slide: DeckSlide, images: ImageStore | None = None) -> Slide:
     chart_element = slide.element("chart")
     if not isinstance(chart_element, ChartElement):
         raise ValueError("A chart slide needs its chart")
@@ -143,13 +144,37 @@ def _create_chart_slide(presentation: Presentation, slide: DeckSlide) -> Slide:
     frame: Any = next(shape for shape in ppt_slide.shapes if getattr(shape, "has_chart", False))
     charts.set_axis_titles(frame.chart, spec)
     charts.label_points(frame.chart, spec, charts.CLASSIC_LOOK, frame.width)
+    charts.add_trendlines(frame.chart, spec, charts.CLASSIC_LOOK.text)
+    box = Box(x=frame.left / _PIXEL, y=frame.top / _PIXEL, w=frame.width / _PIXEL, h=frame.height / _PIXEL)
+    picture = slide.element("point_picture")
+    pinned = None
+    if isinstance(picture, ImageElement):  # (by the named point: see talkgenerator.design.engine.point_picture)
+        from talkgenerator.design import engine  # (it draws on this module)
+
+        pinned = engine.point_picture(spec, box, charts.CLASSIC_LOOK.font)
+        if pinned is not None:
+            charts.pin_plot(frame.chart, spec, box.w, box.h)
     charts.finish(frame.chart, charts.CLASSIC_LOOK)
     if spec.reveal == "series":
         animation.reveal_chart_series(ppt_slide, frame, len(spec.series))
+    if pinned is not None and isinstance(picture, ImageElement):  # (on its click, after the second line's)
+        from talkgenerator.render import shapes
+
+        area, line = pinned
+        before = {shape.shape_id for shape in ppt_slide.shapes}
+        if line is not None:
+            shapes.draw_shape(ppt_slide, line.model_copy(update={"color": f"#{charts.PUNCHLINE_COLOUR}"}))
+        shapes.draw_picture(ppt_slide, picture.model_copy(update={"box": area}), images)
+        animation.reveal_clicks(ppt_slide, [[shape for shape in ppt_slide.shapes if shape.shape_id not in before]])
     return ppt_slide
 
 
-def _create_diagram_slide(presentation: Presentation, slide: DeckSlide) -> Slide:
+def _create_diagram_slide(presentation: Presentation, slide: DeckSlide, images: ImageStore | None = None) -> Slide:
+    """A Venn diagram or a matrix where the template has its content, with the pictures by its circles or in its
+    quadrants that it has, where a themed deck's layout puts them (docs/v5-plan.md, D64), there from the start."""
+    from talkgenerator.design import engine  # (it draws on this module)
+    from talkgenerator.render import diagrams, shapes
+
     diagram_element = slide.element("diagram")
     if not isinstance(diagram_element, DiagramElement):
         raise ValueError("A diagram slide needs its diagram")
@@ -157,7 +182,18 @@ def _create_diagram_slide(presentation: Presentation, slide: DeckSlide) -> Slide
     ppt_slide: Slide = creator.create_diagram_slide(
         presentation, title.text if isinstance(title, TextElement) else None, diagram_element.diagram
     )
+    content = presentation.slide_layouts[creator.LAYOUT_TITLE_AND_CONTENT].placeholders[1]
+    box = diagrams.Box(content.left, content.top, content.width, content.height)
+    frame = Box(x=box.left / _PIXEL, y=box.top / _PIXEL, w=box.width / _PIXEL, h=box.height / _PIXEL)
+    roles = {element.role: element for element in slide.elements}
+    for role, area in engine.diagram_pictures(diagram_element.diagram, frame, None, roles).items():
+        picture = roles[role]
+        if isinstance(picture, ImageElement):
+            shapes.draw_picture(ppt_slide, picture.model_copy(update={"box": area}), images)
     return ppt_slide
+
+
+_PIXEL = 6350  # EMU, a pixel of the 1920×1080 canvas, which is the size of the template's slides
 
 
 def _create_drawn_slide(presentation: Presentation, slide: DeckSlide, images: ImageStore | None) -> Slide:

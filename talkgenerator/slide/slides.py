@@ -1,6 +1,7 @@
 import re
-from collections.abc import Sequence
-from typing import TYPE_CHECKING
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
 
 from talkgenerator.datastructures.image_data import CreditPart, ImageData
 from talkgenerator.images import analysis
@@ -10,7 +11,7 @@ from talkgenerator.plan.languages import ENGLISH, Language
 from talkgenerator.render import charts
 from talkgenerator.render.powerpoint import render_slide
 from talkgenerator.slide import powerpoint_slide_creator
-from talkgenerator.util import image_util, os_util
+from talkgenerator.util import image_util, os_util, random_util
 
 if TYPE_CHECKING:
     from talkgenerator.images.generation import Wish
@@ -318,6 +319,8 @@ class ChartSlide(Slide):
         y_title: str | None = None,
         reveal: model.ChartReveal = "all",
         point_labels: Sequence[tuple[int, int, str]] = (),
+        trendlines: Sequence[tuple[int, model.Trendline]] = (),
+        point_picture: ImageData | None = None,
     ):
         super().__init__(
             type_name="chart",
@@ -331,12 +334,16 @@ class ChartSlide(Slide):
                 "y_title": y_title,
                 "reveal": reveal,
                 "point_labels": tuple(point_labels),
+                "trendlines": tuple(trendlines),
+                "point_picture": point_picture if point_labels else None,  # (by a trend's named point)
             },
         )
 
     def to_deck_slide(self) -> model.DeckSlide:
-        """The chart's numbers, axis titles, named points and how it appears go into the deck; the renderer styles
-        the chart by its type (the chart_modifier stays out: a deck holds data, not functions)."""
+        """The chart's numbers, axis titles, named points, fitted lines and how it appears go into the deck; the
+        renderer styles the chart by its type (the chart_modifier stays out: a deck holds data, not functions). A
+        picture by a trend's named point appears on a click of its own, after the second line's, if it has one (where
+        the layout puts it: see talkgenerator.design.engine.point_picture)."""
         elements: list[model.TextElement | model.ImageElement | model.ChartElement] = []
         title = _to_element("title", self._arguments.get("title"), "contain")
         if title is not None:
@@ -351,20 +358,79 @@ class ChartSlide(Slide):
                 reveal=self._arguments.get("reveal") or "all",
             )
             chart = charts.with_point_labels(chart, self._arguments.get("point_labels") or ())
+            chart = charts.with_trendlines(chart, self._arguments.get("trendlines") or ())
             elements.append(model.ChartElement(role="chart", chart=chart))
+            picture = _to_element(POINT_PICTURE, self._arguments.get(POINT_PICTURE), "cover")
+            if isinstance(picture, model.ImageElement) and charts.named_point(chart) is not None:
+                after = len(chart.series) - 1 if chart.reveal == "series" else 0  # (the second line's click)
+                elements.append(picture.model_copy(update={"appears_on_click": after + 1}))
         return self._deck_slide(tuple(elements))
 
 
+# The role of the picture by a trend's named point
+POINT_PICTURE = "point_picture"
+
+
+@dataclass(frozen=True)
+class Pictures:
+    """Pictures in some of a diagram's boxes, by the role of the box's text ("step_2", "top_left"): what a classic
+    generator gives after its slide's other arguments, which talkgenerator.slide.slide_generator_types passes on to
+    the slide by name (docs/v5-plan.md, D64)."""
+
+    boxes: tuple[tuple[str, ImageData], ...] = ()
+
+    def by_box(self) -> dict[str, ImageData]:
+        return dict(self.boxes)
+
+
+def picture_role(box: str) -> str:
+    """The role of the picture in a diagram's box, by the role of the box's text: "step_2_picture"."""
+    return f"{box}_picture"
+
+
+# How often a diagram has pictures in some of its boxes, and how often two of them (of those that have any, where
+# two may), for the language model's diagrams and classic ones alike (docs/v5-plan.md, D64)
+PICTURE_ODDS = 0.35
+TWO_PICTURES = 0.3
+
+
+def picked_boxes(boxes: Sequence[str], most: int = 2, odds: float = PICTURE_ODDS) -> list[str]:
+    """The boxes that get a picture, by the dice (the talk's random stream in use): none most of the time, else one
+    or, now and then, two (at most so many), in the boxes' order."""
+    if not boxes or random_util.random() >= odds:
+        return []
+    count = 2 if most >= 2 and random_util.random() < TWO_PICTURES else 1
+    return sorted(random_util.sample(list(boxes), min(count, len(boxes))), key=list(boxes).index)
+
+
+# The boxes of a Venn diagram and of a matrix that can have a picture: its first two circles (beside them, or in their
+# part of the circle, as their labels leave room: see talkgenerator.design.engine), and its quadrants
+VENN_BOXES = ("circle_1", "circle_2")
+MATRIX_BOXES = ("top_left", "top_right", "bottom_left", "bottom_right")
+
+
 class DiagramSlide(Slide):
-    """A diagram drawn as shapes, under a title: a Venn diagram or a 2×2 matrix (see talkgenerator.render.diagrams)."""
+    """A diagram drawn as shapes, under a title: a Venn diagram or a 2×2 matrix (see talkgenerator.render.diagrams),
+    with pictures by some of its circles or in some of its quadrants, if it has them (there from the start)."""
 
     required_arguments = ("diagram",)
 
-    def __init__(self, title: str | None, diagram: model.VennDiagram | model.MatrixDiagram | None):
+    def __init__(
+        self,
+        title: str | None,
+        diagram: model.VennDiagram | model.MatrixDiagram | None,
+        pictures: Mapping[str, ImageData | None] | None = None,
+    ):
+        boxes = VENN_BOXES if isinstance(diagram, model.VennDiagram) else MATRIX_BOXES
+        arguments: dict[str, object] = {"title": title, "diagram": diagram}
+        for box in boxes:
+            picture = (pictures or {}).get(box)
+            if picture is not None:
+                arguments[picture_role(box)] = picture
         super().__init__(
             type_name="diagram",
             ppt_slide_creator=powerpoint_slide_creator.create_diagram_slide,
-            arguments={"title": title, "diagram": diagram},
+            arguments=arguments,
         )
 
     def to_deck_slide(self) -> model.DeckSlide:
@@ -375,6 +441,10 @@ class DiagramSlide(Slide):
         diagram = self._arguments.get("diagram")
         if diagram is not None:
             elements.append(model.DiagramElement(role="diagram", diagram=diagram))
+        for box in (*VENN_BOXES, *MATRIX_BOXES):
+            picture = _to_element(picture_role(box), self._arguments.get(picture_role(box)), "cover")
+            if picture is not None:
+                elements.append(picture)
         return self._deck_slide(tuple(elements))
 
 
@@ -608,10 +678,33 @@ class QuestionsSlide(DrawnSlide):
 # NATIVE DIAGRAMS, drawn as texts on shapes too (Venn diagrams and 2×2 matrices have their own drawing: DiagramSlide)
 
 
-def _listed(prefix: str, most: int, items: Sequence[str | None]) -> dict[str, str | None]:
-    """The items that are there, in order, as numbered arguments (prefix_1, prefix_2...), the rest None."""
-    there = [item for item in items if item][:most]
-    return {f"{prefix}_{index}": there[index - 1] if index <= len(there) else None for index in range(1, most + 1)}
+def _listed(
+    prefix: str, most: int, items: Sequence[str | None], pictures: Mapping[str, ImageData | None] | None = None
+) -> dict[str, Any]:
+    """The items that are there, in order, as numbered arguments (prefix_1, prefix_2...), the rest None; and the
+    pictures of their boxes, by the items' numbers as written ("level_3" for the third level written, even when the
+    second stayed empty), as the picture of the item's argument ("level_2_picture", then)."""
+    there = [(number, item) for number, item in enumerate(items, 1) if item][:most]
+    arguments: dict[str, Any] = {
+        f"{prefix}_{index}": there[index - 1][1] if index <= len(there) else None for index in range(1, most + 1)
+    }
+    for index, (number, _) in enumerate(there, 1):
+        picture = (pictures or {}).get(f"{prefix}_{number}")
+        if picture is not None:
+            arguments[picture_role(f"{prefix}_{index}")] = picture
+    return arguments
+
+
+def _with_pictures(
+    arguments: dict[str, object], boxes: Sequence[str], pictures: Mapping[str, ImageData | None] | None
+) -> dict[str, object]:
+    """The arguments, with the pictures of those boxes that have one and a text (a flowchart's steps, an iceberg's
+    tip)."""
+    for box in boxes:
+        picture = (pictures or {}).get(box)
+        if picture is not None and arguments.get(box):
+            arguments[picture_role(box)] = picture
+    return arguments
 
 
 class TimelineSlide(DrawnSlide):
@@ -638,41 +731,46 @@ class TimelineSlide(DrawnSlide):
 
 class PyramidSlide(DrawnSlide):
     """Three or four levels of a pyramid, from its top (the rarest, the punchline) down to its base, appearing one
-    by one, a click each, from the base up."""
+    by one, a click each, from the base up (each with its picture, if it has one)."""
 
     required_arguments = ("level_1", "level_2", "level_3")
 
-    def __init__(self, title: str | None, *levels: str | None):
-        super().__init__("pyramid", None, {"title": title, **_listed("level", 4, levels)})
+    def __init__(self, title: str | None, *levels: str | None, pictures: Mapping[str, ImageData | None] | None = None):
+        super().__init__("pyramid", None, {"title": title, **_listed("level", 4, levels, pictures)})
 
     def clicks(self) -> dict[str, int]:
-        return self._one_by_one(*((f"level_{index}",) for index in range(4, 0, -1)))
+        return self._one_by_one(*(_with_its_picture(f"level_{index}") for index in range(4, 0, -1)))
+
+
+def _with_its_picture(box: str) -> tuple[str, str]:
+    """A box's text and its picture, which appear together."""
+    return box, picture_role(box)
 
 
 class FunnelSlide(DrawnSlide):
     """Three to five stages of a funnel, from its widest at the top to its narrowest at the bottom, the punchline,
-    appearing one by one, a click each."""
+    appearing one by one, a click each (each with its picture, if it has one)."""
 
     required_arguments = ("stage_1", "stage_2", "stage_3")
 
-    def __init__(self, title: str | None, *stages: str | None):
-        super().__init__("funnel", None, {"title": title, **_listed("stage", 5, stages)})
+    def __init__(self, title: str | None, *stages: str | None, pictures: Mapping[str, ImageData | None] | None = None):
+        super().__init__("funnel", None, {"title": title, **_listed("stage", 5, stages, pictures)})
 
     def clicks(self) -> dict[str, int]:
-        return self._one_by_one(*((f"stage_{index}",) for index in range(1, 6)))
+        return self._one_by_one(*(_with_its_picture(f"stage_{index}") for index in range(1, 6)))
 
 
 class CycleSlide(DrawnSlide):
     """Three to five steps around a circle, each leading to the next, and the last back to the first, appearing one
-    by one, a click each."""
+    by one, a click each (a step's picture, if it has one, with it: in the middle of the circle)."""
 
     required_arguments = ("step_1", "step_2", "step_3")
 
-    def __init__(self, title: str | None, *steps: str | None):
-        super().__init__("cycle", None, {"title": title, **_listed("step", 5, steps)})
+    def __init__(self, title: str | None, *steps: str | None, pictures: Mapping[str, ImageData | None] | None = None):
+        super().__init__("cycle", None, {"title": title, **_listed("step", 5, steps, pictures)})
 
     def clicks(self) -> dict[str, int]:
-        return self._one_by_one(*((f"step_{index}",) for index in range(1, 6)))
+        return self._one_by_one(*(_with_its_picture(f"step_{index}") for index in range(1, 6)))
 
 
 class OrgChartSlide(DrawnSlide):
@@ -690,28 +788,36 @@ class OrgChartSlide(DrawnSlide):
 
 class IcebergSlide(DrawnSlide):
     """An iceberg: what everyone sees, above the water, and two or three things under it, which appear one by one,
-    a click each."""
+    a click each (each with its picture, if it has one; the tip's is there with it from the start)."""
 
     required_arguments = ("tip", "hidden_1", "hidden_2")
 
-    def __init__(self, title: str | None, tip: str | None, *hidden: str | None):
-        super().__init__("iceberg", None, {"title": title, "tip": tip, **_listed("hidden", 3, hidden)})
+    def __init__(
+        self,
+        title: str | None,
+        tip: str | None,
+        *hidden: str | None,
+        pictures: Mapping[str, ImageData | None] | None = None,
+    ):
+        arguments = {"title": title, "tip": tip, **_listed("hidden", 3, hidden, pictures)}
+        super().__init__("iceberg", None, _with_pictures(arguments, ("tip",), pictures))
 
     def clicks(self) -> dict[str, int]:
-        return self._one_by_one(*((f"hidden_{index}",) for index in range(1, 4)))
+        return self._one_by_one(*(_with_its_picture(f"hidden_{index}") for index in range(1, 4)))
 
 
 class ProcessSlide(DrawnSlide):
     """A process: three to five steps, each leading to the next by an arrow, appearing one by one, a click each: the
-    last one is the punchline (a talk format's method, or how its product works)."""
+    last one is the punchline (a talk format's method, or how its product works). A step's picture, if it has one,
+    comes with it."""
 
     required_arguments = ("step_1", "step_2", "step_3")
 
-    def __init__(self, title: str | None, *steps: str | None):
-        super().__init__("process", None, {"title": title, **_listed("step", 5, steps)})
+    def __init__(self, title: str | None, *steps: str | None, pictures: Mapping[str, ImageData | None] | None = None):
+        super().__init__("process", None, {"title": title, **_listed("step", 5, steps, pictures)})
 
     def clicks(self) -> dict[str, int]:
-        return self._one_by_one(*((f"step_{index}",) for index in range(1, 6)))
+        return self._one_by_one(*(_with_its_picture(f"step_{index}") for index in range(1, 6)))
 
 
 class FunFactSlide(DrawnSlide):
@@ -775,8 +881,9 @@ class FlowchartSlide(DrawnSlide):
         end: str | None,
         yes: str = "Yes",
         no: str = "No",
+        pictures: Mapping[str, ImageData | None] | None = None,
     ):
-        arguments = {
+        arguments: dict[str, object] = {
             "title": title,
             "question": question,
             "yes": yes,
@@ -785,10 +892,15 @@ class FlowchartSlide(DrawnSlide):
             "no_step": no_step,
             "end": end,
         }
-        super().__init__("flowchart", None, arguments)
+        super().__init__("flowchart", None, _with_pictures(arguments, FLOWCHART_BOXES, pictures))
 
     def clicks(self) -> dict[str, int]:
-        return self._one_by_one(("yes", "yes_step"), ("no", "no_step"), ("end",))
+        steps = (("yes", *_with_its_picture("yes_step")), ("no", *_with_its_picture("no_step")))
+        return self._one_by_one(*steps, _with_its_picture("end"))
+
+
+# The boxes of a flowchart that can have a picture: where each answer leads, and the end
+FLOWCHART_BOXES = ("yes_step", "no_step", "end")
 
 
 def tier_items(text: str | None) -> list[str]:

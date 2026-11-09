@@ -260,13 +260,18 @@ def check_completeness(deck: Deck, expected_slides: int | None = None) -> list[F
 
 
 def diagram_gaps(diagram: VennDiagram | MatrixDiagram) -> list[str]:
-    """What a diagram misses: a Venn diagram needs two or three circles, and every diagram all its labels."""
+    """What a diagram misses: a Venn diagram needs two or three circles, and every diagram all its labels (but a
+    matrix's quadrants, which may go without: docs/v5-plan.md, D64)."""
     what = "Venn diagram" if isinstance(diagram, VennDiagram) else "2×2 matrix"
     gaps = []
     if isinstance(diagram, VennDiagram) and len(diagram.circles) not in (2, 3):
         count = len(diagram.circles)
         gaps.append(f"a Venn diagram of {count} circle{'' if count == 1 else 's'} (it takes two or three)")
-    gaps += [f"a {what} with an empty {name}" for name, label in diagram.labels() if not label.strip()]
+    gaps += [
+        f"a {what} with an empty {name}"
+        for name, label in diagram.labels()
+        if not label.strip() and not name.endswith(" quadrant")
+    ]
     return gaps
 
 

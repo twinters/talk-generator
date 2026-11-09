@@ -38,9 +38,17 @@ class SlideGenerator(metaclass=ABCMeta):
         logger.debug("self._slide_content_generator: {}".format(self._slide_content_generator))
         generated = self._slide_content_generator(presentation_context)
         logger.debug("generated: {}".format(generated))
+        # (a diagram's pictures, after its other arguments, go to the slide by name: they're among what it's made of)
+        pictures: dict[str, ImageData] = {}
+        if isinstance(generated, tuple | list) and generated and isinstance(generated[-1], slides.Pictures):
+            pictures = generated[-1].by_box()
+            generated = [*generated[:-1], *pictures.values()]
+            arguments = generated[: len(generated) - len(pictures)]
+        else:
+            arguments = generated
         if not is_different_enough(generated, used):
             return None
-        slide = self.slide_type(*generated)
+        slide = self.slide_type(*arguments, pictures=pictures) if pictures else self.slide_type(*arguments)
         missing = slide.missing_content()
         if missing:
             logger.info(
