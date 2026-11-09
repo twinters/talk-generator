@@ -23,7 +23,7 @@ from talkgenerator.images.generators import ImageGenerator
 from talkgenerator.llm.base import TextProvider
 from talkgenerator.llm.ledger import Budget, Ledger, MeteredProvider
 from talkgenerator.llm.providers import NoneProvider, from_settings, provider_from_spec
-from talkgenerator.models.deck import Deck
+from talkgenerator.models.deck import Deck, DeckSlide
 from talkgenerator.models.events import SlideReady, SlideSpare, SlideUpdated, TalkEvent, TalkFinished, TalkStarted
 from talkgenerator.models.theme import Theme
 from talkgenerator.plan import languages
@@ -525,10 +525,13 @@ def stream_talk(
     still being looked for, say) comes at once with what's quick instead. A slide the model wrote keeps its texts: it
     comes without the pictures it can do without, and with spare pictures of the talk's topic, found early, for the
     ones it can't. Else a stand-in takes its place, a slide of the spare slides' kinds about the slide's own seed, made
-    in a hundredth of a second (in a talk in another language, a spare picture of the topic, without text). It's the
-    talk's slide, in the deck and its PowerPoint; what the slide waited for goes on by itself, and nothing waits for it
-    (talk.finished neither). Off by default (None): the same seed gives the same talk as long as no slide runs out of
-    time, as it then depends on how long the sources take.
+    in a hundredth of a second (in a talk in another language, a spare picture of the topic, without text). What the
+    slide waited for goes on by itself, and once it's done, the real slide comes after all, in place of what stood in
+    for it (a slide.updated at its index, that's late: laid out in its place, the slides after it as they were), in the
+    deck and its PowerPoint too, unless it repeats another slide or the talk has as many slides of its kind as it may
+    have. Once the other slides are in, talk.finished waits for it 20 seconds at most (presentation_schema.LATE_SECONDS); after that, what
+    stood in for it is the talk's slide. Off by default (None): the same seed gives the same talk as long as no slide
+    runs out of time, as it then depends on how long the sources take.
 
     In a talk that generates pictures (image_generator: see generate_presentation), a slide comes with its stock photo
     where a generated picture is to go, and comes again (slide.updated, at the same index, laid out the same way) once
@@ -575,7 +578,7 @@ def stream_talk(
                     vision_pick=vision_pick,
                     theme_families=theme_families,
                 )
-                events.put(TalkFinished(deck=slide_deck.to_deck()))
+                events.put(TalkFinished(deck=following.finished(slide_deck.to_deck())))
         except TalkCancelled:
             pass
         except BaseException as error:  # (for whoever iterates)
@@ -608,6 +611,8 @@ class _Following:
         self._layout: engine.DeckLayout | None = None
         self._handed_over = 0
         self._indices: dict[int, int] = {}  # every handed-over slide's index, by its slide number
+        self._shown: dict[int, DeckSlide] = {}  # every handed-over slide by its index, as it was last handed over
+        self._replaced = False  # whether a slide came after all, in place of what stood in for it (see replaced)
         # (a slide is laid out again, and handed over again, while later ones are being handed over)
         self._lock = threading.RLock()
 
@@ -646,6 +651,7 @@ class _Following:
             if self._layout is not None:
                 deck_slide = self._layout.next(deck_slide)
             index = self._indices[slide_nr] = self._handed_over
+            self._shown[index] = deck_slide
             self.hand_over(SlideReady(index=index, slide=deck_slide))
             self._handed_over += 1
         # A slide shown is a slide used, which some sources want to hear of (a download, at Unsplash), as a PowerPoint
@@ -665,9 +671,39 @@ class _Following:
             deck_slide = slide.to_deck_slide()
             if self._layout is not None:
                 deck_slide = self._layout.again(index, deck_slide)
+            self._shown[index] = deck_slide
             self.hand_over(SlideUpdated(index=index, slide=deck_slide))
         for image in slide.image_store().values():  # (a picture shown is a picture used, as in settled)
             image.mark_used()
+
+    def replaced(self, slide_deck: SlideDeck, slide_nr: int, slide: Any) -> None:
+        """A slide that ran out of time, come after all, in place of what stood in for it (see
+        talkgenerator.schema.presentation_schema._LateSlides): hand it over at the stand-in's index, as a slide.updated
+        that's late, laid out in the stand-in's place (as engine.DeckLayout.again lays a slide out: the slides after it
+        stay as they were laid out)."""
+        if self.cancelled.is_set():
+            return
+        with self._lock:
+            index = self._indices.get(slide_nr)
+            if index is None:
+                return
+            deck_slide = slide.to_deck_slide()
+            if self._layout is not None:
+                deck_slide = self._layout.again(index, deck_slide)
+            self._shown[index] = deck_slide
+            self._replaced = True
+            self.hand_over(SlideUpdated(index=index, slide=deck_slide, late=True))
+        for image in slide.image_store().values():  # (a picture shown is a picture used, as in settled)
+            image.mark_used()
+
+    def finished(self, deck: Deck) -> Deck:
+        """The finished deck, for talk.finished: as the talk's deck is (deck), but once a slide came after all in place
+        of what stood in for it, with its slides as they were handed over, laid out as they were shown (laying the
+        deck out at once would lay the slides after it out anew, after another slide than they came after)."""
+        with self._lock:
+            if not self._replaced or sorted(self._shown) != list(range(len(deck.slides))):
+                return deck
+            return deck.model_copy(update={"slides": tuple(self._shown[index] for index in range(len(deck.slides)))})
 
     def spare(self, slide_deck: SlideDeck, number: int, slide: Any) -> None:
         """A spare slide (the number-th, from 0), made: hand it over, laid out in the talk's theme as its slides are,

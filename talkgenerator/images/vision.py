@@ -150,6 +150,12 @@ class VisionPick:
     def id(self) -> str:
         return self.provider.id
 
+    def forget(self, slide_nr: int) -> None:
+        """A slide noted before that the talk doesn't have anymore: what stood in for a slide that ran out of time,
+        whose real slide came after all (see talkgenerator.schema.presentation_schema._LateSlides)."""
+        with self._lock:
+            self._slides.pop(slide_nr, None)
+
     def settled(self, slide_nr: int, slide: Slide) -> None:
         """Note a settled slide, if it has pictures to pick, and start fetching their candidates' thumbnails."""
         pictures = _pictures(slide)

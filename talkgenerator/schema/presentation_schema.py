@@ -23,7 +23,9 @@ Progress hears of each. A Progress can want spare slides too, to show while the 
 early, on a thread of their own and from random streams of their own, so the talk's slides come out the same with
 spares or without (see _Spares). And it can give a slide a time limit (see _Clock): a slide that runs out of time
 settles at once with what's quick, as planned without looking its pictures up, or else as a stand-in of a kind that
-takes a hundredth of a second; the same seed then gives the same talk as long as no slide runs out of time.
+takes a hundredth of a second; the same seed then gives the same talk as long as no slide runs out of time. What the
+slide waited for goes on by itself, and once it's done, the real slide takes the place of what stood in for it (see
+_LateSlides).
 
 A talk's persona (see talkgenerator.personas) weighs in on every pick of a slide generator, classic or planned: a
 generator's weight for a slide is its own, times the persona's multiplier for its tags. The tag caps hold as before.
@@ -40,7 +42,7 @@ from collections.abc import Callable, Collection, Mapping, Sequence
 from dataclasses import dataclass, field
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Final, Protocol, TypeVar
+from typing import TYPE_CHECKING, Any, Final, Protocol
 
 from pptx.presentation import Presentation
 
@@ -127,7 +129,8 @@ class _Clock:
     """How long a slide may still take, in a talk with a time limit per slide (seconds; None: no limit), from when it
     could settle: once the slide before it was settled, and (for a slide a language model writes) its text came in.
     A slide that runs out of time settles at once with what's quick (see PresentationSchema._in_time and _stand_in),
-    and what it waited for goes on by itself, which nothing waits for. The title slide has no limit."""
+    and what it waited for goes on by itself: once it's done, the real slide takes the place of what stood in for it
+    (see _LateSlides). The title slide has no limit."""
 
     def __init__(self, seconds: float | None) -> None:
         self.seconds = seconds
@@ -144,32 +147,30 @@ class _Clock:
         return self.remaining() == 0.0
 
 
-_T = TypeVar("_T")
+class _Outcome:
+    """What a piece of a slide's work gives once it's done (or the error it raised), whoever runs it: a pool's thread,
+    which delivers it here also once the pool is terminated (a pool's own AsyncResult isn't, then), or a thread of its
+    own (see _Running). Waited for as a pool's AsyncResult is (wait, ready, get)."""
 
-
-class _Running:
-    """A function running on a thread of its own (finding images as the talk does), for a slide with a time limit:
-    waited for as long as the slide may still take, and then left to finish by itself (what it gives is dropped), or
-    waited for after all. It should work on copies of what the talk changes meanwhile (its _DeckState)."""
-
-    def __init__(self, function: Callable[[], Any]) -> None:
+    def __init__(self) -> None:
         self._given: dict[str, Any] = {}
         self._done = threading.Event()
-        threading.Thread(
-            target=image_util.carry(self._run), args=(function,), name="slide in time", daemon=True
-        ).start()
 
-    def _run(self, function: Callable[[], Any]) -> None:
+    def deliver(self, function: Callable[..., Any], *args: Any) -> None:
+        """Run the function (with the arguments), and keep what it gives."""
         try:
-            self._given["result"] = function()
+            self._given["result"] = function(*args)
         except BaseException as error:  # (for whoever waits for it)
             self._given["error"] = error
         finally:
             self._done.set()
 
-    def wait(self, seconds: float | None) -> bool:
+    def wait(self, seconds: float | None = None) -> bool:
         """Whether it's done, within the seconds (or ever, without them)."""
         return self._done.wait(seconds)
+
+    def ready(self) -> bool:
+        return self._done.is_set()
 
     def result(self) -> Any:
         """What it gave (once it's done), or the error it raised."""
@@ -183,6 +184,93 @@ class _Running:
         if not self._done.wait(timeout):
             raise multiprocessing.TimeoutError
         return self.result()
+
+
+class _Running(_Outcome):
+    """A function running on a thread of its own (finding images as the talk does), for a slide with a time limit:
+    waited for as long as the slide may still take, and then left to finish by itself (for the slide to come after
+    all: see _LateSlides), or waited for after all. It should work on copies of what the talk changes meanwhile (its
+    _DeckState)."""
+
+    def __init__(self, function: Callable[[], Any]) -> None:
+        super().__init__()
+        threading.Thread(
+            target=image_util.carry(self.deliver), args=(function,), name="slide in time", daemon=True
+        ).start()
+
+
+def _deliver(outcomes: dict[int, _Outcome], work: Callable[[int], Any], slide_nr: int) -> None:
+    """A pool's work for a slide, delivered to the slide's outcome (see _Outcome)."""
+    outcomes[slide_nr].deliver(work, slide_nr)
+
+
+# How long a talk waits, once its slides are all in, for the slides that ran out of time to come after all (see
+# _LateSlides): a slide's work that isn't done by then is dropped, and what stood in for it stays
+LATE_SECONDS: Final = 20.0
+
+
+def _worked_out(made: Any) -> "_WorkedOutSlide | None":
+    """What a slide's work made, as a worked-out slide (the work of a slide that ran out of time: see _LateSlides)."""
+    return made if isinstance(made, _WorkedOutSlide) else None
+
+
+def _planned_worked_out(
+    slide_nr: int, generator: SlideGeneratorData, made: tuple[Any, list] | None
+) -> "_WorkedOutSlide | None":
+    """What an attempt at a planned slide made (its slide and generated elements), as a worked-out slide."""
+    return _WorkedOutSlide(slide_nr, generator, *made) if made is not None else None
+
+
+@dataclass
+class _LateSlide:
+    """A slide that ran out of time, whose work goes on by itself (work: see _Outcome): what it gives, as a worked-out
+    slide (as_worked_out; None for none), takes the place of what stood in for it."""
+
+    slide_nr: int
+    work: "_Outcome"
+    as_worked_out: Callable[[Any], "_WorkedOutSlide | None"]
+    since: float = field(default_factory=time.monotonic)
+
+
+class _LateSlides:
+    """The slides of a talk settled so far (settled, by number, and what they use: state), and those of them that ran
+    out of time and settled with what was quick (see _Clock), whose own work goes on by itself (pending): once it's
+    done, the real slide takes the place of what stood in for it, in the deck and for whoever follows the talk
+    (replace: see PresentationSchema._replace_late), unless it repeats another slide, or the talk has as many slides of
+    its kind as its caps allow. They're looked at whenever a slide settles (a slide whose work is done meanwhile waits
+    for that, as long as the slide being waited for may take at most), and four times a second once the slides are all
+    in, for LATE_SECONDS at most."""
+
+    def __init__(
+        self,
+        slide_deck: SlideDeck,
+        state: _DeckState,
+        replace: Callable[[SlideDeck, int, Any], None] | None = None,
+    ) -> None:
+        self.slide_deck = slide_deck
+        self.state = state
+        self.replace = replace if replace is not None else _replace_slide
+        self.settled: dict[int, _WorkedOutSlide] = {}
+        self.pending: dict[int, _LateSlide] = {}
+
+    def settle(
+        self,
+        worked_out: _WorkedOutSlide,
+        work: "_Outcome | None" = None,
+        as_worked_out: Callable[[Any], "_WorkedOutSlide | None"] = _worked_out,
+    ) -> None:
+        """A slide settled in the deck; for one that ran out of time, with its work, which goes on by itself, and
+        what that gives as a worked-out slide (as_worked_out)."""
+        self.settled[worked_out.slide_nr] = worked_out
+        if work is not None:
+            self.pending[worked_out.slide_nr] = _LateSlide(worked_out.slide_nr, work, as_worked_out)
+
+    def done(self) -> list[_LateSlide]:
+        """The late slides whose work is done (which aren't pending anymore)."""
+        ready = [late for late in self.pending.values() if late.work.ready()]
+        for late in ready:
+            del self.pending[late.slide_nr]
+        return ready
 
 
 def _first_attempt(realize_it: Callable[[int, int], Any], slide_nr: int) -> Any:
@@ -213,18 +301,6 @@ class _Started:
             return work(slide_nr) if self.claim(slide_nr) else None
 
         return run
-
-
-def _within(seconds: float | None, function: Callable[[], _T]) -> tuple[_T | None, bool]:
-    """What the function gives, and whether it gave it within the seconds (see _Running: once they're up, it goes on by
-    itself, and what it gives is dropped). Without seconds, it runs here, however long it takes."""
-    if seconds is None:
-        return function(), True
-    running = _Running(function)
-    if not running.wait(seconds):
-        return None, False
-    result: _T | None = running.result()
-    return result, True
 
 
 @dataclass
@@ -297,6 +373,20 @@ def _add_slide(slide_deck: SlideDeck, slide_nr: int, slide: Any) -> None:
         talk.vision.settled(slide_nr, slide)
 
 
+def _replace_slide(slide_deck: SlideDeck, slide_nr: int, slide: Any) -> None:
+    """A slide that ran out of time, come after all, in place of what stood in for it (see _LateSlides): in the deck,
+    for whoever follows the talk to hear (replaced), with the pictures it wishes for to generate, if any, and noted for
+    the vision pick instead of what stood in for it."""
+    talk = image_context.current()
+    if talk.vision is not None:
+        talk.vision.forget(slide_nr)
+    slide_deck.replace_slide(slide_nr, slide)
+    if talk.generation is not None and getattr(slide, "wishes", None):
+        talk.generation.settled(slide, functools.partial(slide_deck.slide_updated, slide_nr))
+    if talk.vision is not None:
+        talk.vision.settled(slide_nr, slide)
+
+
 def _finish_picking(slide_deck: SlideDeck, cancelled: threading.Event | None = None) -> None:
     """In a talk with a vision pick, once its slides are settled: have the vision model pick among their pictures'
     candidates, which take their places (see talkgenerator.images.vision). TalkCancelled, if the talk is cancelled
@@ -334,7 +424,8 @@ class Progress(Protocol):
     told of (spare, with the spare's number, from 0) as each is made, from the talk's start until its slides are all
     settled, on a thread of the spares' own: see _Spares. And it may give every slide but the title slide a time limit
     (slide_seconds; None, as one without the attribute, for none): a slide that runs out of time settles with what's
-    quick instead (see _Clock)."""
+    quick instead (see _Clock), and when the real slide comes after all, in place of what stood in for it, the
+    Progress is told (replaced, as updated is, with the slide that takes the other's place: see _LateSlides)."""
 
     cancelled: threading.Event
 
@@ -373,7 +464,7 @@ class _PlannedTalk:
     spine_fields: frozenset[str]  # what the spine has (a model that doesn't nest the spine writes them one by one)
     spine: dict[str, Any] = field(default_factory=dict)
     plans: dict[int, SlidePlan] = field(default_factory=dict)
-    first_attempts: dict[int, Any] = field(default_factory=dict)
+    first_attempts: dict[int, _Outcome] = field(default_factory=dict)
     pool: ThreadPool | None = None
     language: str = "en"
     facts: tuple[Fact, ...] = ()  # the real facts its request gave its slides (see talkgenerator.facts)
@@ -382,9 +473,12 @@ class _PlannedTalk:
     # Whether the answer's spine is to be in the talk's language: a first answer's is (the model is asked again when
     # it's English, see languages.reads_as_english), the second one is kept whatever it's in
     check_language: bool = False
-    # Whether a slide ran out of time (a talk with a time limit per slide): its realizing goes on by itself, and
-    # nothing waits for it
+    # Whether a slide ran out of time (a talk with a time limit per slide): its realizing goes on by itself, and the
+    # talk doesn't wait for it when it closes
     abandoned: bool = False
+    # The attempts that slides ran out of time waiting for, by slide number, which go on by themselves: for a slide to
+    # come after all, in place of what stood in for it (see _LateSlides)
+    late_work: dict[int, _Outcome] = field(default_factory=dict)
     # The slides whose first attempt has started, in the pool or apart from it (see attempt)
     _started: "_Started" = field(default_factory=lambda: _Started())
 
@@ -466,7 +560,8 @@ class _PlannedTalk:
                 # (unless the slide is due before a thread of the pool gets to it, in a talk with a time limit: then
                 # its first attempt starts apart from the pool, see attempt)
                 first = self._started.then(functools.partial(_first_attempt, realize_it))
-                self.first_attempts[slide_nr] = self.pool.apply_async(first, (slide_nr,))
+                outcome = self.first_attempts[slide_nr] = _Outcome()
+                self.pool.apply_async(outcome.deliver, (first, slide_nr))
 
     def wait_for_spine(self) -> None:
         """Wait for the spine of the answer (its title, the presenter's job and name, its thesis), all of it, or the
@@ -507,23 +602,24 @@ class _PlannedTalk:
         self, slide_nr: int, attempt: int, seconds: float | None = None
     ) -> tuple[tuple[Any, list] | None, bool]:
         """The slide's attempt, realized (or None), and whether it came within the seconds (always, without them):
-        one that doesn't is left to finish by itself, and nothing waits for it (abandoned). With seconds, a first
-        attempt that hasn't started yet (the pool's threads are busy) starts now, apart from the pool."""
+        one that doesn't goes on by itself (late_work, for the slide to come after all), and the talk doesn't wait for
+        it when it closes (abandoned). With seconds, a first attempt that hasn't started yet (the pool's threads are
+        busy) starts now, apart from the pool."""
         with self._changed:
-            first = self.first_attempts.get(slide_nr) if attempt == 0 else None
-            if first is not None and seconds is not None and self._started.claim(slide_nr):
+            under_way = self.first_attempts.get(slide_nr) if attempt == 0 else None
+            if under_way is not None and seconds is not None and self._started.claim(slide_nr):
                 # (it starts now, apart from the pool, whose thread skips it; and it's what's waited for from now on)
-                first = self.first_attempts[slide_nr] = _Running(functools.partial(self._realize, slide_nr, 0))
-        if first is not None:
-            try:
-                result: tuple[Any, list] | None = first.get(seconds)
-            except multiprocessing.TimeoutError:
-                self.abandoned = True
-                return None, False
-            return result, True
-        made, in_time = _within(seconds, functools.partial(self._realize, slide_nr, attempt))
-        self.abandoned = self.abandoned or not in_time
-        return made, in_time
+                under_way = self.first_attempts[slide_nr] = _Running(functools.partial(self._realize, slide_nr, 0))
+        if under_way is None:
+            if seconds is None:
+                return self._realize(slide_nr, attempt), True
+            under_way = _Running(functools.partial(self._realize, slide_nr, attempt))
+        if not under_way.wait(seconds):
+            self.abandoned = True
+            self.late_work[slide_nr] = under_way
+            return None, False
+        result: tuple[Any, list] | None = under_way.result()
+        return result, True
 
     def _realize(self, slide_nr: int, attempt: int) -> tuple[Any, list] | None:
         recipe = self.planned[slide_nr].recipe
@@ -1002,6 +1098,7 @@ class PresentationSchema:
                 progress.started(slide_deck)
                 slide_deck.listener = progress.settled
                 slide_deck.update_listener = getattr(progress, "updated", None)
+                slide_deck.replace_listener = getattr(progress, "replaced", None)
 
             # Create main presentation_context
             main_presentation_context = {
@@ -1015,14 +1112,20 @@ class PresentationSchema:
             # The spare slides its progress wants, if any, made from now on while the slides are (see _Spares)
             spares = self._spares(progress, slide_deck, main_presentation_context, rng, persona)
             if talk is not None and planned:
-                self._settle_planned_talk(slide_deck, talk, contexts, rng, presenter, persona, seconds, pictures)
+                lates = self._settle_planned_talk(
+                    slide_deck, talk, contexts, rng, presenter, persona, seconds, pictures
+                )
             else:
-                self._generate_slides(slide_deck, contexts, rng, parallel, persona, seconds)
+                lates = self._generate_slides(slide_deck, contexts, rng, parallel, persona, seconds)
             if spares is not None:
                 spares.stop()  # (with every slide in, a spare is of no use anymore)
             if pictures is not None:
                 pictures.stop()
+            # The slides that ran out of time, whose own work goes on: each comes after all, in place of what stood in
+            # for it, if it does so within LATE_SECONDS (see _LateSlides)
+            self._replace_late(lates, LATE_SECONDS, progress.cancelled if progress is not None else None)
             slide_deck.listener = None
+            slide_deck.replace_listener = None
             _finish_picking(slide_deck, progress.cancelled if progress is not None else None)
             _finish_generating(slide_deck, progress.cancelled if progress is not None else None)
         except BaseException:
@@ -1318,7 +1421,7 @@ class PresentationSchema:
         persona: Persona | None = None,
         seconds: float | None = None,
         pictures: "_SparePictures | None" = None,
-    ) -> None:
+    ) -> _LateSlides:
         """Settle the slides in order: the title slide from the plan's title, a planned slide in up to ATTEMPTS
         tries (each must not repeat what the slides before it used), and a classic slide wherever that fails (picked as
         the persona weighs them). In a talk in another language than English, where classic slides would be English,
@@ -1326,13 +1429,17 @@ class PresentationSchema:
 
         With seconds, a time limit per slide (see _Clock), a slide that runs out of time settles at once instead: as
         planned, without looking anything up (see _in_time: its pictures from pictures, spare ones of the talk's
-        topic), or else as a stand-in (see _stand_in). What it waited for finishes by itself, and nothing waits for it;
-        with nothing to stand in, it's waited for after all."""
+        topic), or else as a stand-in (see _stand_in). What it waited for goes on by itself, and once it's done, the
+        real slide takes the place of what stood in for it (see _LateSlides: the ones that aren't done once the slides
+        are all in come back, to be waited for); with nothing to stand in, it's waited for after all."""
         num_slides = len(contexts)
         state = _DeckState()
+        lates = _LateSlides(slide_deck, state)
         for slide_nr in range(num_slides):
             pick = talk.picks[slide_nr]
             worked_out: _WorkedOutSlide | None = None
+            late: _Outcome | None = None  # (the work it ran out of time waiting for, which goes on by itself)
+            as_worked_out: Callable[[Any], _WorkedOutSlide | None] = _worked_out
             if slide_nr in talk.planned:
                 talk.wait_for(slide_nr)
             clock = _Clock(seconds if slide_nr > 0 else None)  # (from now: the slide before it is in, its text too)
@@ -1344,11 +1451,14 @@ class PresentationSchema:
             if pick is not None and pick.llm is not None and pick.llm.kind == "title":
                 worked_out = self._planned_title_slide(slide_nr, pick, talk, contexts[slide_nr]["title"], presenter)
             elif pick is not None and slide_nr in talk.plans:
-                worked_out, late = self._planned_attempts(talk, slide_nr, pick, state, clock)
-                if late:
+                worked_out, out_of_time = self._planned_attempts(talk, slide_nr, pick, state, clock)
+                if out_of_time:
                     worked_out = self._in_time(slide_nr, pick, talk, state, pictures, clock) or stand_in()
                     if worked_out is None:  # (nothing to stand in: it's waited for after all)
                         worked_out, _ = self._planned_attempts(talk, slide_nr, pick, state, _Clock(None))
+                    else:
+                        late = talk.late_work.pop(slide_nr, None)
+                        as_worked_out = functools.partial(_planned_worked_out, slide_nr, pick)
             # (the work below gets a copy of what the slides before it used: with a time limit, it may go on by itself
             # while the talk settles more)
             if worked_out is None and talk.language != "en":
@@ -1362,7 +1472,7 @@ class PresentationSchema:
                     rng.child("slide", slide_nr, "picture"),
                     state.copy(),
                 )
-                worked_out = self._bounded(clock, picture, stand_in)
+                worked_out, late = self._bounded(clock, picture, stand_in)
             elif worked_out is None:
                 classic_slide = functools.partial(
                     self._work_out_slide,
@@ -1375,15 +1485,18 @@ class PresentationSchema:
                     generate=True,
                     persona=persona,
                 )
-                classic = self._bounded(clock, classic_slide, stand_in)
-                worked_out = classic if isinstance(classic, _WorkedOutSlide) else None
+                classic, late = self._bounded(clock, classic_slide, stand_in)
+                worked_out = _worked_out(classic)
             if worked_out is None:
                 logger.error("Gave up on generating slide %s", slide_nr + 1)
-                continue
-            _add_slide(slide_deck, slide_nr, worked_out.slide)
-            self._update_used_elements(
-                state.used_elements, state.used_tags, worked_out.generated_elements, worked_out.generator
-            )
+            else:
+                _add_slide(slide_deck, slide_nr, worked_out.slide)
+                self._update_used_elements(
+                    state.used_elements, state.used_tags, worked_out.generated_elements, worked_out.generator
+                )
+                lates.settle(worked_out, late, as_worked_out)
+            self._replace_late(lates)  # (the slides that ran out of time before, come after all by now)
+        return lates
 
     @staticmethod
     def _planned_title_slide(
@@ -1506,6 +1619,79 @@ class PresentationSchema:
         made.slide.add_note(f"Out of time: a stand-in for a slide about {context['seed']!r}")
         return made
 
+    def _replace_late(
+        self, lates: _LateSlides, wait: float | None = None, cancelled: threading.Event | None = None
+    ) -> None:
+        """The slides that ran out of time and came after all (see _LateSlides), each in place of what stood in for
+        it: those whose work is done now, or with wait (seconds), each as it comes, for that long at most.
+        TalkCancelled, once the talk is cancelled meanwhile."""
+        until = time.monotonic() + wait if wait is not None else None
+        while lates.pending:
+            for late in lates.done():
+                self._take_late(lates, late)
+            if until is None or not lates.pending or time.monotonic() >= until:
+                break
+            if cancelled is not None and cancelled.is_set():
+                raise TalkCancelled()
+            first = next(iter(lates.pending.values()))
+            first.work.wait(min(0.25, max(0.0, until - time.monotonic())))
+        if until is not None and lates.pending:
+            numbers = ", ".join(str(slide_nr + 1) for slide_nr in sorted(lates.pending))
+            logger.info(
+                "Slides that ran out of time and didn't come after all within %g s (%s): what stood in for them stays",
+                wait,
+                numbers,
+            )
+
+    def _take_late(self, lates: _LateSlides, late: _LateSlide) -> None:
+        """A slide that ran out of time, come after all: in place of what stood in for it, unless it repeats another
+        slide of the deck (more than its generator allows, or a picture), or the deck has as many slides of its kind as
+        the talk's caps allow without it."""
+        seconds = time.monotonic() - late.since
+        try:
+            real = late.as_worked_out(late.work.get(0))
+        except Exception:  # (one misbehaving source shouldn't sink the talk: what stood in for it stays)
+            logger.exception("Slide %s, come after all, crashed: what stood in for it stays", late.slide_nr + 1)
+            return
+        if real is None:
+            logger.info("Slide %s didn't come out after all: what stood in for it stays", late.slide_nr + 1)
+            return
+        others = _DeckState()
+        for slide_nr, worked_out in lates.settled.items():
+            if slide_nr != late.slide_nr:
+                self._update_used_elements(
+                    others.used_elements, others.used_tags, worked_out.generated_elements, worked_out.generator
+                )
+        capped = [
+            tag
+            for tag in real.generator.get_tags()
+            if tag in self._max_allowed_tags
+            and others.used_tags.get(tag, 0) >= most_slides(self._max_allowed_tags[tag], lates.slide_deck.size)
+        ]
+        if capped or not self._is_new_enough((real.slide, real.generated_elements), real.generator, others):
+            why = f"the talk has its {capped[0]} slides already" if capped else "it repeats another slide"
+            logger.info(
+                "Slide %s came after all, %.1f s after its time ran out, but %s: what stood in for it stays",
+                late.slide_nr + 1,
+                seconds,
+                why,
+            )
+            return
+        real.slide.add_note(f"Came after all, {seconds:.1f} s after its time ran out, in place of what stood in for it")
+        lates.settled[late.slide_nr] = real
+        lates.state.used_elements.clear()  # (what the slides in the deck use now)
+        lates.state.used_tags.clear()
+        for worked_out in lates.settled.values():
+            self._update_used_elements(
+                lates.state.used_elements, lates.state.used_tags, worked_out.generated_elements, worked_out.generator
+            )
+        lates.replace(lates.slide_deck, late.slide_nr, real.slide)
+        logger.info(
+            "Slide %s came after all, %.1f s after its time ran out: it takes the place of what stood in for it",
+            late.slide_nr + 1,
+            seconds,
+        )
+
     def _pick_spare_generator(
         self, rng: random_util.Rng, persona: Persona | None, excluded: Collection[SlideGeneratorData] = ()
     ) -> SlideGeneratorData | None:
@@ -1521,24 +1707,22 @@ class PresentationSchema:
         return picked
 
     @staticmethod
-    def _bounded(clock: _Clock, work: Callable[[], Any], stand_in: Callable[[], Any]) -> Any:
-        """What the work makes, if it does so within the slide's time (see _Clock); else what stand_in makes at once
-        (while the work goes on by itself, and what it makes is dropped), or with nothing to stand in, the work's after
-        all. Without a time limit, the work's, however long it takes. The work should work on copies of what the talk
-        changes meanwhile (its _DeckState): see _Running."""
+    def _bounded(clock: _Clock, work: Callable[[], Any], stand_in: Callable[[], Any]) -> tuple[Any, _Running | None]:
+        """What the work makes, if it does so within the slide's time (see _Clock); else what stand_in makes at once,
+        with the work, which goes on by itself (for what it makes to come after all: see _LateSlides); or with nothing
+        to stand in, the work's after all. Without a time limit, the work's, however long it takes. The work should
+        work on copies of what the talk changes meanwhile (its _DeckState): see _Running."""
         remaining = clock.remaining()
         if remaining is None:
-            return work()
-        running = _Running(work) if remaining > 0 else None
-        if running is not None and running.wait(remaining):
-            return running.result()
+            return work(), None
+        running = _Running(work)  # (also when it's out of time already: for the slide to come after all)
+        if running.wait(remaining):
+            return running.result(), None
         made = stand_in()
         if made is not None:
-            return made
-        if running is None:
-            return work()
+            return made, running
         running.wait(None)
-        return running.result()
+        return running.result(), None
 
     def _picture_slide(
         self,
@@ -1713,19 +1897,22 @@ class PresentationSchema:
         parallel: bool | int,
         persona: Persona | None = None,
         seconds: float | None = None,
-    ) -> None:
+    ) -> _LateSlides:
         """Work out every slide and add it to the deck, picking their generators as the persona weighs them (see the
         module's docstring for how parallel works: a round works out the remaining slides, as many at once as
         slides_at_once says).
 
         With seconds, a time limit per slide (see _Clock), a slide that runs out of time settles at once as a stand-in
-        (see _stand_in), while its work goes on by itself, and nothing waits for it; with nothing to stand in, it's
-        waited for after all. A round then doesn't wait for the work under way when it ends either: the next one goes on
-        from what that found so far. A talk none of whose slides runs out of time comes out as it does without one."""
+        (see _stand_in), while its work goes on by itself: once it's done, the real slide takes the stand-in's place
+        (see _LateSlides: the ones that aren't done once the slides are all in come back, to be waited for); with
+        nothing to stand in, it's waited for after all. A round then doesn't wait for the work under way when it ends
+        either: the next one goes on from what that found so far. A talk none of whose slides runs out of time comes out
+        as it does without one."""
         num_slides = len(contexts)
         slide_rngs = [rng.child("slide", slide_nr) for slide_nr in range(num_slides)]
         results: list[_Results] = [{} for _ in range(num_slides)]
         state = _DeckState()
+        lates = _LateSlides(slide_deck, state, SlideDeck.replace_slide)  # (a classic slide wishes for no pictures)
         clocks: dict[int, _Clock] = {}  # (each slide's, from when it could settle: in the round it does, or before)
 
         def work_out(slide_nr: int, at_state: _DeckState, generate: bool) -> _WorkedOutSlide | _NeedsWork | None:
@@ -1748,14 +1935,19 @@ class PresentationSchema:
             at_once = slides_at_once(parallel, num_slides - slide_nr)
             in_parallel = at_once > 1
             pool: ThreadPool | None = None
-            working: dict[int, Any] = {}  # (each remaining slide's work in this round, as it's under way)
+            # (each remaining slide's work in this round, once it's done: delivered by the pool's thread itself, also
+            # after the round, when the pool is terminated, for a slide that ran out of time to come after all)
+            working: dict[int, _Outcome] = {}
             started = _Started()  # (the slides whose work has started, in the round's pool or apart from it)
             if in_parallel:
                 remaining = list(range(slide_nr, num_slides))
                 logger.info("Generating slides %s in parallel, %s at once", [nr + 1 for nr in remaining], at_once)
                 pool = ThreadPool(processes=at_once)
                 work = image_util.carry(functools.partial(work_out, at_state=state.copy(), generate=True))
-                working = {nr: pool.apply_async(started.then(work), (nr,)) for nr in remaining}  # (started in order)
+                working = {nr: _Outcome() for nr in remaining}
+                deliver = started.then(functools.partial(_deliver, working, work))
+                for nr in remaining:  # (started in order)
+                    pool.apply_async(deliver, (nr,))
             try:
                 # Settle the slides in order, as generating them one by one would: each once its work is done
                 while slide_nr < num_slides:
@@ -1763,12 +1955,13 @@ class PresentationSchema:
                     # (with a time limit, a slide whose work hasn't started yet when it's due, as the round's threads
                     # are busy, starts it now, apart from them: its time is for its own work, not for theirs)
                     apart = clock.seconds is not None and started.claim(slide_nr)
+                    late: _Outcome | None  # (the work it ran out of time waiting for, which goes on by itself)
                     if in_parallel and not apart:
                         settle = functools.partial(work_out, slide_nr, state, False)
-                        worked_out = self._settle_worked(slide_nr, working[slide_nr], clock, settle, stand_in)
+                        worked_out, late = self._settle_worked(slide_nr, working[slide_nr], clock, settle, stand_in)
                     else:
                         one_by_one = functools.partial(work_out, slide_nr, state.copy(), True)
-                        worked_out = self._bounded(clock, one_by_one, functools.partial(stand_in, slide_nr))
+                        worked_out, late = self._bounded(clock, one_by_one, functools.partial(stand_in, slide_nr))
                     if isinstance(worked_out, _NeedsWork):
                         break  # the next round works out the remaining slides again, knowing the ones settled so far
                     if worked_out is None:
@@ -1778,7 +1971,9 @@ class PresentationSchema:
                         self._update_used_elements(
                             state.used_elements, state.used_tags, worked_out.generated_elements, worked_out.generator
                         )
+                        lates.settle(worked_out, late)
                     slide_nr += 1
+                    self._replace_late(lates)  # (the slides that ran out of time before, come after all by now)
             except BaseException:
                 if pool is not None:
                     # (the slides it hasn't started on are dropped, and its threads finish the others by themselves:
@@ -1796,26 +1991,28 @@ class PresentationSchema:
                     for nr, under_way in working.items():
                         if not under_way.ready():
                             results[nr] = dict(results[nr])
+        return lates
 
     @staticmethod
     def _settle_worked(
         slide_nr: int,
-        under_way: Any,
+        under_way: _Outcome,
         clock: _Clock,
         settle: Callable[[], _WorkedOutSlide | _NeedsWork | None],
         stand_in: Callable[[int], _WorkedOutSlide | None],
-    ) -> _WorkedOutSlide | _NeedsWork | None:
-        """A slide of a round worked out in parallel (see _generate_slides), settled (settle) once its work (under_way,
-        a pool's) is done, or once it runs out of time (see _Clock), as a stand-in (stand_in), while its work goes on
-        by itself; with nothing to stand in, once its work is done after all."""
+    ) -> tuple[_WorkedOutSlide | _NeedsWork | None, _Outcome | None]:
+        """A slide of a round worked out in parallel (see _generate_slides), settled (settle) once its work (under_way)
+        is done; or once it runs out of time (see _Clock), as a stand-in (stand_in), with its work, which goes on by
+        itself (for the slide to come after all: see _LateSlides); with nothing to stand in, once its work is done
+        after all."""
         under_way.wait(clock.remaining())
         if not under_way.ready():
             made = stand_in(slide_nr)
             if made is not None:
-                return made
+                return made, under_way
             under_way.wait()
         under_way.get()  # (an error that stopped its work comes out here)
-        return settle()
+        return settle(), None
 
     def _work_out_slide(
         self,

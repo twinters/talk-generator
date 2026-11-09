@@ -1,8 +1,9 @@
 """Offline tests of a streamed talk's time limit per slide (stream_talk's slide_seconds, docs/v5-plan.md D67): a slide
-that isn't made in time comes at once with what's quick, and nothing waits for what it was waiting for. A slide a
-language model wrote keeps its texts, without the pictures it can do without and with spare pictures of the talk's
-topic for those it can't; else a stand-in of the spare slides' kinds takes its place. A talk none of whose slides runs
-out of time comes out as it does without a limit.
+that isn't made in time comes at once with what's quick, and what it was waiting for goes on by itself: once that's
+done, the real slide comes after all, in place of what stood in for it (for 20 seconds at most once the other slides
+are in). A slide a language model wrote keeps its texts, without the pictures it can do without and with spare
+pictures of the talk's topic for those it can't; else a stand-in of the spare slides' kinds takes its place. A talk
+none of whose slides runs out of time comes out as it does without a limit.
 
 The talks are made with small fake schemas, fake spare generators, a fake model (test_llm_talks's) and a fake image
 finder, whose searches for some queries take as long as a test wants.
@@ -21,7 +22,7 @@ from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.datastructures.slide_generator_data import ConstantWeightFunction, PeakedWeight, SlideGeneratorData
 from talkgenerator.images import finder
 from talkgenerator.images.slots import ImageSlot
-from talkgenerator.models.events import SlideReady, TalkFinished
+from talkgenerator.models.events import SlideReady, SlideUpdated, TalkFinished
 from talkgenerator.plan.kinds import Recipe
 from talkgenerator.schema import presentation_schema
 from talkgenerator.schema.presentation_schema import PresentationSchema, _Clock, _photo_slots, _SparePictures
@@ -125,6 +126,13 @@ def photos(monkeypatch, held):
         thread.join(timeout=max(0.0, deadline - time.monotonic()))
 
 
+@pytest.fixture
+def no_late_wait(monkeypatch):
+    """A talk that doesn't wait for its slides that ran out of time to come after all, once the others are in (for the
+    tests of what stands in for them: see the tests of slides that come after all, below)."""
+    monkeypatch.setattr(presentation_schema, "LATE_SECONDS", 0.0)
+
+
 def _use(monkeypatch, schema):
     monkeypatch.setattr(generator, "get_schema", lambda name: schema)
     return schema
@@ -160,7 +168,7 @@ def classic(monkeypatch, held):
 
 
 @pytest.mark.parametrize("parallel", [True, False], ids=["in parallel", "one by one"])
-def test_a_classic_slide_out_of_time_gets_a_stand_in_and_nothing_waits_for_it(classic, held, parallel):
+def test_a_classic_slide_out_of_time_gets_a_stand_in_and_nothing_waits_for_it(classic, held, no_late_wait, parallel):
     events, seconds = _timed(5, llm="none", slide_seconds=SECONDS, parallel=parallel)
 
     *_, finished = events
@@ -173,9 +181,12 @@ def test_a_classic_slide_out_of_time_gets_a_stand_in_and_nothing_waits_for_it(cl
     ready = [event for event in events if isinstance(event, SlideReady)]
     assert [event.index for event in ready] == list(range(5)) and ready[2].slide == third
     assert [_texts(slide)[0] for slide in finished.deck.slides[3:]] == ["Chart about cats"] * 2
+    assert not any(isinstance(event, SlideUpdated) for event in events)
 
 
-def test_a_slide_due_while_the_threads_are_busy_with_slow_ones_starts_apart_and_comes_in_time(monkeypatch, held):
+def test_a_slide_due_while_the_threads_are_busy_with_slow_ones_starts_apart_and_comes_in_time(
+    monkeypatch, held, no_late_wait
+):
     # (two threads, both busy with slides that ran out of time: the quick slide after them isn't a stand-in, as its
     # time is for its own work, which starts when it's due rather than when a thread is free)
     slides = [
@@ -240,7 +251,7 @@ def planned(monkeypatch, photos):
     return _use(monkeypatch, _schema(slides))
 
 
-def test_a_planned_slide_out_of_time_keeps_its_texts_with_spare_pictures_of_the_topic(planned, photos):
+def test_a_planned_slide_out_of_time_keeps_its_texts_with_spare_pictures_of_the_topic(planned, photos, no_late_wait):
     photos.slow.add("slide 4")  # (the two photos' searches)
     events, seconds = _timed(5, llm=FakeModel(), slide_seconds=SECONDS)
 
@@ -254,7 +265,7 @@ def test_a_planned_slide_out_of_time_keeps_its_texts_with_spare_pictures_of_the_
     assert all("Out of time" not in slide.notes for index, slide in enumerate(events[-1].deck.slides) if index != 3)
 
 
-def test_a_planned_slide_out_of_time_goes_without_a_picture_it_can_do_without(planned, photos):
+def test_a_planned_slide_out_of_time_goes_without_a_picture_it_can_do_without(planned, photos, no_late_wait):
     photos.slow.add("slide 3")  # (the picture behind the big number)
     events, seconds = _timed(5, llm=FakeModel(), slide_seconds=SECONDS)
 
@@ -264,7 +275,7 @@ def test_a_planned_slide_out_of_time_goes_without_a_picture_it_can_do_without(pl
     assert _pictures(third) == [] and "Out of time" in third.notes
 
 
-def test_a_planned_slide_out_of_time_without_a_spare_picture_gets_a_stand_in(planned, photos):
+def test_a_planned_slide_out_of_time_without_a_spare_picture_gets_a_stand_in(planned, photos, no_late_wait):
     photos.slow.add("slide 4")
     photos.none.add("cats")  # (no picture of the topic to spare)
     events, seconds = _timed(5, llm=FakeModel(), slide_seconds=SECONDS)
@@ -274,7 +285,7 @@ def test_a_planned_slide_out_of_time_without_a_spare_picture_gets_a_stand_in(pla
     assert _texts(fourth)[0].startswith("Spare ") and "Out of time" in fourth.notes
 
 
-def test_a_planned_slide_out_of_time_in_another_language_keeps_its_texts(planned, photos):
+def test_a_planned_slide_out_of_time_in_another_language_keeps_its_texts(planned, photos, no_late_wait):
     photos.slow.add("slide 4")
     events, _ = _timed(5, llm=FakeModel(), slide_seconds=SECONDS, language="nl")
 
@@ -283,7 +294,7 @@ def test_a_planned_slide_out_of_time_in_another_language_keeps_its_texts(planned
     assert all("cats" in url for url in _pictures(fourth))
 
 
-def test_a_stand_in_in_another_language_is_a_spare_picture_without_text(monkeypatch, planned, photos):
+def test_a_stand_in_in_another_language_is_a_spare_picture_without_text(monkeypatch, planned, photos, no_late_wait):
     # (two photos of a source that's no image slot, which a picture of the topic can't stand in for: as they'd be
     # English otherwise, the stand-in is a picture of the topic, without text)
     def own_photo(context):
@@ -318,6 +329,88 @@ def test_a_planned_talk_with_a_time_limit_none_of_its_slides_runs_out_of_is_the_
     with_limit, _ = _timed(5, llm=FakeModel(), slide_seconds=30)
     without, _ = _timed(5, llm=FakeModel())
     assert with_limit[-1].deck.to_json() == without[-1].deck.to_json()
+
+
+# SLIDES THAT COME AFTER ALL: the real slide, in place of what stood in for it
+
+
+def _late(events):
+    return [event for event in events if isinstance(event, SlideUpdated) and event.late]
+
+
+@pytest.mark.parametrize("parallel", [True, False], ids=["in parallel", "one by one"])
+def test_a_classic_slide_out_of_time_comes_after_all_in_place_of_its_stand_in(classic, held, parallel):
+    threading.Timer(1.5, held.set).start()  # (the slow slide's generator is done 1.5 s in)
+    events, seconds = _timed(5, llm="none", slide_seconds=SECONDS, parallel=parallel)
+
+    assert seconds < 5
+    # The stand-in at once, and the slides after it without waiting for the slow one...
+    ready = [event for event in events if isinstance(event, SlideReady)]
+    assert [event.index for event in ready] == list(range(5))
+    assert _texts(ready[2].slide)[0].startswith("Spare ") and "Out of time" in ready[2].slide.notes
+    assert [_texts(event.slide)[0] for event in ready[3:]] == ["Chart about cats"] * 2
+    # ...and then the real slide, in its place, in the deck too
+    (late,) = _late(events)
+    assert late.index == 2 and events.index(late) > events.index(ready[4])
+    third = events[-1].deck.slides[2]
+    assert late.slide == third and _texts(third)[0] == "Slow about cats"
+    assert "Came after all" in third.notes and "Out of time" not in third.notes
+
+
+def test_a_slide_that_doesnt_come_after_all_in_time_leaves_its_stand_in(classic, held, monkeypatch):
+    monkeypatch.setattr(presentation_schema, "LATE_SECONDS", 0.5)
+    events, seconds = _timed(5, llm="none", slide_seconds=SECONDS)
+
+    assert seconds < 5  # (the talk waited half a second for it, not the ten its generator takes)
+    third = events[-1].deck.slides[2]
+    assert _texts(third)[0].startswith("Spare ") and "Out of time" in third.notes
+    assert _late(events) == []
+
+
+def test_a_slide_that_comes_after_all_keeps_to_the_talks_caps(monkeypatch, held):
+    # (the slow slide's kind may come once, and its twin, quick, took the room the stand-in left: the talk has its one
+    # slide of that kind when the slow one comes after all, so the stand-in stays)
+    slides = [
+        _title(),
+        _generator("Chart", PeakedWeight((1, 4), 100000, 0), _chart("Chart")),
+        _generator("Slow", PeakedWeight((2,), 100000, 0), _chart("Slow", wait=held), tags=("rare",)),
+        _generator("Twin", PeakedWeight((3,), 100000, 0), _chart("Twin"), tags=("rare",)),
+    ]
+    _use(monkeypatch, _schema(slides, {"title": 1, "rare": 1}))
+    threading.Timer(1.5, held.set).start()
+    events, seconds = _timed(5, llm="none", slide_seconds=SECONDS)
+
+    assert seconds < 5
+    deck = events[-1].deck
+    assert _texts(deck.slides[2])[0].startswith("Spare ") and _texts(deck.slides[3])[0] == "Twin about cats"
+    assert _late(events) == []
+
+
+def test_the_finished_deck_has_the_slides_as_they_were_shown(classic, held):
+    threading.Timer(1.5, held.set).start()
+    events, _ = _timed(5, llm="none", slide_seconds=SECONDS)
+
+    shown = {}
+    for event in events:
+        if isinstance(event, SlideReady | SlideUpdated):
+            shown[event.index] = event.slide
+    assert _late(events) and events[-1].deck.slides == tuple(shown[index] for index in range(5))
+
+
+def test_a_planned_slide_out_of_time_comes_after_all_with_its_own_pictures(planned, photos, held):
+    photos.slow.add("slide 4")  # (the two photos' searches)
+    threading.Timer(1.5, held.set).start()
+    events, seconds = _timed(5, llm=FakeModel(), slide_seconds=SECONDS)
+
+    assert seconds < 5
+    ready = [event for event in events if isinstance(event, SlideReady)]
+    assert "Out of time" in ready[3].slide.notes  # (as planned, with spare pictures of the topic)
+    (late,) = _late(events)
+    fourth = events[-1].deck.slides[3]
+    assert late.index == 3 and late.slide == fourth
+    assert fourth.type == "two_column_image" and "title of slide 4" in _texts(fourth)
+    assert all("slide-4" in url for url in _pictures(fourth))  # (its own, looked for)
+    assert "Came after all" in fourth.notes
 
 
 # THE PARTS

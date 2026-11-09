@@ -527,7 +527,9 @@ From the user's look at 35 sample talks (docs/v5-plan.md, D65):
   back the rest. A slide a language model wrote keeps its texts, without the pictures it can do without and with spare
   pictures of the talk's topic, found early, for the others (`realize(..., spare_pictures=)` looks nothing up); else a
   stand-in of the spare slides' kinds, about the slide's own topic, takes its place. What it waited for goes on by
-  itself, and nothing waits for it.
+  itself, and once it's done, the real slide comes after all, in place of what stood in for it (`slide.updated` with
+  `late`, and in the deck), unless it repeats another slide or the talk's caps are full; `talk.finished` waits for it
+  20 seconds at most once the other slides are in (`presentation_schema.LATE_SECONDS`).
 
 ### Lighter and faster
 

@@ -1,8 +1,10 @@
 """The events of a talk while it's made (talkgenerator.generator.stream_talk), in this order: talk.started, a
 slide.ready for every slide, and talk.finished, with the whole deck. In a talk that generates pictures, a slide can
 come again, as slide.updated, once a generated picture takes the place of its stock photo: whenever that comes in,
-after the slide's slide.ready and before talk.finished. A talk that asks for spares gets slide.spare events too, in
-between: slides to show while the next slide isn't in yet, which aren't the talk's (see SlideSpare).
+after the slide's slide.ready and before talk.finished; in a talk with a time limit per slide, a slide that ran out of
+time can come after all (a slide.updated that's late) in place of what stood in for it. A talk that asks for spares
+gets slide.spare events too, in between: slides to show while the next slide isn't in yet, which aren't the talk's
+(see SlideSpare).
 
 They're plain data, as Server-Sent Events carry them: an event's `event` is its name, and to_json() is its data (the
 deck format's elements, as in talkgenerator.models.deck). A browser can draw a themed talk's slides as they come in,
@@ -58,11 +60,15 @@ class SlideReady(_Event):
 class SlideUpdated(_Event):
     """A slide handed over before, again, laid out as it was: with a picture that came in later (a generated one, in
     the place of the stock photo it had: see talkgenerator.images.generation). It takes the place of the slide at its
-    index."""
+    index. Or, late, a whole other slide: in a talk with a time limit per slide (see stream_talk's slide_seconds), the
+    real slide, which ran out of time and came after all, in place of what stood in for it."""
 
     event: Literal["slide.updated"] = "slide.updated"
     index: int  # its place in the deck, from 0, as its slide.ready said
     slide: DeckSlide
+    # True for a slide that came after all, in place of what stood in for it (whoever shows the slide at its index may
+    # rather keep showing that until they go on); none for a slide with a picture that came in later
+    late: bool | None = None
 
 
 class SlideSpare(_Event):

@@ -71,6 +71,9 @@ class SlideDeck:
         # about a slide that changed after it was added (a generated picture in its stock photo's place)
         self.listener: Callable[[SlideDeck, int, Slide], None] | None = None
         self.update_listener: Callable[[SlideDeck, int, Slide], None] | None = None
+        # And about a slide that took the place of another (a slide that ran out of time, come after all in place of
+        # what stood in for it: see talkgenerator.schema.presentation_schema._LateSlides)
+        self.replace_listener: Callable[[SlideDeck, int, Slide], None] | None = None
 
     @property
     def title(self) -> str | None:
@@ -98,13 +101,23 @@ class SlideDeck:
         return self._size
 
     def add_slide(self, slide_index: int, slide):
+        self._place(slide_index, slide)
+        if self.listener is not None:
+            self.listener(self, slide_index, slide)
+
+    def replace_slide(self, slide_index: int, slide) -> None:
+        """Another slide in place of the one at the index (a slide that ran out of time, come after all in place of
+        what stood in for it): the replace_listener hears of it."""
+        self._place(slide_index, slide)
+        if self.replace_listener is not None:
+            self.replace_listener(self, slide_index, slide)
+
+    def _place(self, slide_index: int, slide) -> None:
         if isinstance(slide, SectionSlide):  # (numbered after the sections before it: the talk's opening is the first)
             slide.number(2 + sum(isinstance(other, SectionSlide) for other in self._slides[:slide_index]))
         if isinstance(slide, QuestionsSlide):  # (a closing slide that calls back shows an earlier slide's picture)
             slide.call_back([other for other in self._slides[:slide_index] if other is not None])
         self._slides[slide_index] = slide
-        if self.listener is not None:
-            self.listener(self, slide_index, slide)
 
     def slide_updated(self, slide_index: int) -> None:
         """The slide at the index changed since it was added (it has a generated picture now, say)."""

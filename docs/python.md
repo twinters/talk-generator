@@ -20,6 +20,7 @@ for event in generator.stream_talk("default", 8, topic="peanuts", int_seed=42):
 | --- | --- | --- |
 | `talk.started` (`TalkStarted`) | once the title is known | the title, presenter, topics, language, seed, how many slides there will be, the theme's name and its tokens (`style`), and which language model writes the talk |
 | `slide.ready` (`SlideReady`) | for every slide, in order | its `index` and the `slide`, laid out in the talk's theme |
+| `slide.updated` (`SlideUpdated`) | a slide again, before `talk.finished`: with a picture that came in later (an AI picture, or the vision pick's), or with `slide_seconds`, the real slide that came after all | its `index` and the `slide`, laid out in its place; `late` is true for the real slide that came after all, in place of what stood in for it (see [A time limit per slide](#a-time-limit-per-slide)) |
 | `slide.spare` (`SlideSpare`) | with `spares`, early on, once each is made | which spare it is (`index`, from 0) and the `slide`, laid out in the talk's theme without a slide number: none of the talk's slides (see [Spare slides](#spare-slides)) |
 | `talk.finished` (`TalkFinished`) | at the end | the whole `deck` |
 
@@ -99,11 +100,16 @@ count). A slide that isn't made by then comes at once with what's quick instead:
 - Otherwise, a stand-in takes its place: a slide of the spare slides' kinds, about the slide's own topic, made in a
   hundredth of a second (in a talk in another language, a spare picture of the topic, without text).
 
-That slide is the talk's: it's in the deck, at its place, numbered, and its notes say it ran out of time. What it waited
-for goes on by itself, and nothing waits for it, `talk.finished` neither. With nothing to stand in (a topic the spare
-kinds won't make light of), the slide is waited for after all. Of the slides with pictures timed for D66, 5% took more
-than 8 s. The same seed gives the same talk as long as no slide runs out of time; one that does makes the talk depend
-on how long its sources took.
+That slide is the talk's for now: it's in the deck, at its place, numbered, and its notes say it ran out of time. What
+it waited for goes on by itself, and once that's done, the real slide comes after all, in its place: a `slide.updated`
+at its index with `late` true, laid out where it stands (the slides after it stay as they were laid out), and in the
+deck too, its notes saying how late it came. It doesn't when it would repeat another slide, or when the talk has as
+many slides of its kind as its caps allow (a slide after it took that room). Once the other slides are in,
+`talk.finished` waits for it 20 seconds at most (`LATE_SECONDS`, in `talkgenerator.schema.presentation_schema`); after
+that, what stood in for it stays. A presentation that's on that slide may rather keep showing the stand-in until the
+presenter goes on, as talkgenerator.com does. With nothing to stand in (a topic the spare kinds won't make light of), the slide
+is waited for after all. Of the slides with pictures timed for D66, 5% took more than 8 s. The same seed gives the same
+talk as long as no slide runs out of time; one that does makes the talk depend on how long its sources took.
 
 ## A PowerPoint: `render_pptx`
 
