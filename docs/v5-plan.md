@@ -982,7 +982,7 @@ own (`format`), so the persona, the theme and the slides draw what they drew bef
 the persona it names is the very talk of the format its seed picked. The odds are `FORMAT_WEIGHTS` (in
 `presentation_schema_types`: the TED-like talk 8, the pitch, the academic talk, the corporate all-hands and the
 product keynote 1 each) times the persona's multipliers (`Persona.formats`, 5.2); without a persona, 67% of the
-talks are TED-like:
+talks are TED-like (the odds of 2026-11-08: D63 made the TED-like talk more likely, below):
 
 | Persona | TED-like | Pitch | Academic | All-hands | Keynote |
 | --- | --- | --- | --- | --- | --- |
@@ -1008,6 +1008,73 @@ product keynote joined `FORMAT_WEIGHTS` (×1 each) as they came in (merged toget
 for `corporate`, the motivational speaker's ×12 for `keynote`, ×2 keynotes from the founder, the athlete, the life
 coach, the influencer and the time traveller, and fewer all-hands and keynotes from the kindergarten teacher and the
 lighthouse keeper.
+
+**More TED-like talks, and pictures on slides of text** (2026-11-09, D63), after the user reviewed 35 sample talks:
+"Increase odds of our TED scheme more", "lower the overall odds of [academic] and startup [pitch]", pitch, KPI,
+financial and corporate decks with "way too many textual" slides "while it's often images that perform better",
+academic talks "pretty boring with mostly boring text and a lot of superfluous slides", and "big number slides should
+also have random image in background, and actually most boring text slides should have random image that is somewhat
+related, can use multiple different generators for each".
+
+- *The odds*: `FORMAT_WEIGHTS` is now the TED-like talk 20, the pitch and the academic talk 1 each, the all-hands and
+  the keynote 1.5 each; the specialists' multipliers are ×15 (founder, professor) and ×10 (consultant, motivational
+  speaker), the passionate expert's academic ×2.5, and the smallest ones 0.5 to 0.7 (they were 0.3), so that every
+  format keeps at least 2% with every persona. A specialist still favours their format far more than anyone else does
+  (37% to 38% of their talks, 5 to 10 times the other personas' average), but no longer in most of their talks: half of
+  them are TED-like. Over all thirteen personas, 70% of the talks are TED-like (71% over 2,000 seeds, picked as a talk
+  picks them), 80% without a persona:
+
+  | Persona | TED-like | Pitch | Academic | All-hands | Keynote |
+  | --- | --- | --- | --- | --- | --- |
+  | startup founder | 49% | **37%** | 2% | 4% | 7% |
+  | disgraced professor | 51% | 3% | **38%** | 4% | 4% |
+  | management consultant | 51% | 5% | 3% | **38%** | 4% |
+  | motivational speaker | 51% | 4% | 3% | 4% | **38%** |
+  | influencer, time traveller, former athlete | 74% to 75% | 4% to 7% | 2% to 6% | 6% to 8% | 11% |
+  | the other six | 76% to 87% | 2% to 4% | 2% to 9% | 3% to 6% | 5% to 12% |
+  | over all thirteen | **70%** | 6% | 7% | 7% | 10% |
+  | without a persona | 80% | 4% | 4% | 6% | 6% |
+
+- *Free slides first*: an arc has a free share (`Arc.free`), the share of a talk's slides (but its first and last)
+  that are free slides whatever its parts, before its parts get theirs: a quarter for the pitch, the academic talk and
+  the all-hands (two of ten slides; a ten-slide pitch or academic talk had none, every slide in a part), and 0.15 for
+  the keynote (one of ten). And the text-heavy parts wait for longer talks (eleven slides or more): a pitch's market and
+  business model, an academic talk's outline and acknowledgements, an all-hands' agenda. A ten-slide pitch: problem,
+  solution, a free slide, traction, competition, team, a free slide, the ask, the closing; a ten-slide academic talk:
+  related work, method, a free slide, results, limitations, future work, a free slide, references, questions.
+- *What the free slides are*: memes more often (live-caption memes weigh 3 in a pitch, 2.5 in an academic talk, 2 in
+  an all-hands, 1.6 in a keynote; and 5 in TED-like talks, from 4), gifs, Reddit's weird pictures, real charts from the
+  internet (an academic talk's), fewer statements and quotes; and the formats' own provocation (`Provocation (Pitch)`
+  and so on): a striking or weird picture of the slide's topic filling the slide under a provocative word or two in the
+  format's voice ("Disrupt.", "Peer reviewed.", "Synergy.", "Revolutionary.": each format pack's `free.provocation`,
+  their version 2), a slide in ten at most (tag `provocation`).
+- *Pictures behind figures*: the `big_number` and `kpi` kinds have an optional image slot, `background`
+  (`Kind.optional_images`: a slot that finds nothing leaves the slide without its picture, after searching for the
+  slide's concept on the same try, where any other missing picture takes the slide down; a recipe that predates the
+  slot leaves it out). Three big numbers in four and half the KPI dashboards ask for one (`kinds.pictured`, the
+  classic ones too: `slide_texts.BIG_NUMBER_PICTURES`, `KPI_PICTURES`), in every format: TED-like talks' and the
+  formats' (a pitch's problem, market and ask, an all-hands' headline number and dashboard, a keynote's price and
+  specs, an academic talk's p-value). Their layouts: the picture behind everything under a statement's shade, the
+  number in the theme's accent made light enough to read on the shade and the rest light (`v5/big-number`, and every
+  KPI layout, whose tiles read on anything); the number and its label on a band across the shaded picture
+  (`v5/big-number-band`); or the picture filling the slide's right side and the texts beside it on the theme's
+  background (`v5/big-number-side`). No design finding in any family (every layout, three seeds a family).
+- *From many sources*: the pictures behind figures have a look of their own, `backdrop`: stock photos most often, and
+  now and then a weird picture from Reddit, a photo from r/pics and the like, a NASA photograph, an old photograph, a
+  museum's painting, all of the topic; and a statement's backdrop is a calm photo two times in three, else the
+  backdrop look's (`content_generators.statement_backdrop_generator`). Reddit's weird pictures come up more often:
+  `meme-chaos` has them 14 to ShitpostBot's 5 (was 10 to 8), `meme-chaos-still` 7 to 4, and `weird-stock` (stock
+  photos of weird things) has them too.
+- *Fewer slides of text*: the pitch's product slide (`Solution`) weighs 3 against the before-and-after's 1 and how it
+  works's 0.6, the team's photos, the all-hands' wins and the keynote's three features weigh more, an academic talk's
+  experimental setup (a picture of an odd contraption) more than its equation, and its admitted limitation is ten
+  words at most; a classic fun fact has its photo three times in four (as a planned one).
+- *The pitch's product, shown off*: its picture's look is `product-shot` (stock photos of gadgets and inventions: a
+  classic search puts "gadget", "invention", "machine" or "device" before the topic; a planned slide's query, which
+  describes the product, goes as written), and in a talk that generates pictures, the model's prompt draws it as "a
+  striking advertising photograph of an absurd, imaginative product, lit as a premium product shot". The keynote's
+  reveal has the same look. On talkgenerator.com, a visitor's own key generates pictures (D39); without one, the
+  search finds a weird gadget.
 
 ## 8. Slide types and variety
 
@@ -2075,9 +2142,10 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D60 | Talks a language model writes get real facts (`talkgenerator.facts`): up to three of a talk's slides of history (a historical figure's quote, two old photos, a timeline), fun facts, quizzes and big numbers get one each, on their lines of the talk's request, with what to do with it (a fun fact keeps it true and twists it); slides of history get one of the day's events first (Wikipedia's "On this day", of the day the talk is made on), a big number a sentence with a figure, a fun fact one that says how special something is, rather than what the topic is. They're sentences of the lead of the topic's English Wikipedia article (a topic in another language followed there from its language's Wikipedia), and the day's events; none for a topic that's a living person (English Wikipedia's "Category:Living people"), none that names one (of the articles its lead or its event links to), none with a word a slide shouldn't make light of, or of death, war, disasters, crime and accusations, politics or race (but a word of the topic's), none about real-world politics; when Wikipedia can't tell who's living, none that names someone. They're looked up while the talk's seeds are, from the cache of API responses (a week; a day's events a month) or within 8 seconds of the talk's start, after which the talk goes without them (a talk that's late may be a busy computer's: the next one asks again); a talk made again in a block of `same_answers` (a check) gets the facts the first one got (`http_util.keep`). A slide that builds on its fact (two of its telling words are in the slide's texts) credits its article ("Wikipedia: Penguin (CC BY-SA 4.0)", in a credit line that then starts with "Sources:" rather than "Image sources:"); the deck records every fact with its page, license and slide (`Deck.facts`, none for a talk without). Classic talks get them where they fit: half of their fun facts are a real sentence of the lead of the slide's seed's article, with a twist of the TED pack's (its version 4), and half of their quizzes a real question of Open Trivia DB's, of the topic's category by its Wikipedia description (animals for penguins; never celebrities, politics, entertainment, sports or mythology), each credited on its slide. `DISABLE_FACTS`, `DISABLE_WIKIPEDIA` and `DISABLE_OPENTDB` switch them off. Wikidata and REST Countries aren't used (section 11). Flavour texts too, which the user allowed on the public site on 2026-11-08 (`talkgenerator.sources.flavour`): a fun fact may build on a random useless fact (uselessfacts.jsph.pl), a dare dares the presenter to tell a real dad joke (icanhazdadjoke, about the topic's word in the singular if there are any, else of a random page), and the closing slide's line under its title is a real piece of advice (the Advice Slip); classic talks get them in half of their dares and two in five of their closing lines, in framings of the TED pack's version 5. They pass the facts' checks and their own (no insults, drink or faiths), name no living person (their capitalised words, as Wikipedia's articles), and are credited without a license (their sites state none); `DISABLE_USELESS_FACTS`, `DISABLE_DAD_JOKES` and `DISABLE_ADVICE_SLIPS` switch them off. A talk in another language than English gets no dad jokes or advice slips, which a slide says word for word (2026-11-09, section 5.9). |
 | D61 | A talk can leave its format to its seed (`schema="random"`): the seed picks the persona first, then the format from a stream of its own, by `FORMAT_WEIGHTS` (the TED-like talk 8, the formats beyond it 1 each) times the persona's multipliers (`Persona.formats`: a startup founder ×12 for a pitch, a disgraced professor ×12 for an academic talk, a management consultant ×12 for an all-hands, a motivational speaker ×12 for a keynote), so each persona's favourite dominates and every format keeps a few talks in a hundred with every persona. Only the formats for talks take part: not `ted`, whose copyright-free images are a license policy (`open`) that goes with any format, nor `interview` and `test`. A format named weights the persona as before (D56). A talk can also say which personas its seed picks from (`personas=`): the seed picks among all of them first and again among those allowed only when that one isn't, so a talk keeps its persona whenever it's allowed. talkgenerator.com's talks leave their format to the seed, with the personas its visitor didn't switch off. |
 | D62 | A talk can say which families a random theme can be of (`theme_families=`): the seed picks among all the families first, and again among the allowed ones only when that one isn't, by the same weights (the family's own times the persona's and the format's multipliers), so a talk keeps its theme whenever its family is allowed; a chaos deck's slides get themes of the allowed families too. A family named as the theme goes first. talkgenerator.com's settings let a visitor switch families off for "Surprise me". |
+| D63 | Most talks are TED-like, and slides of text get pictures (the user's review of 35 talks, 2026-11-09; section 7). `FORMAT_WEIGHTS`: the TED-like talk 20, pitch and academic 1, all-hands and keynote 1.5; specialists ×15 or ×10: 70% of the talks over all the personas are TED-like (it was 57%), a specialist's favourite comes second to them in about two of five of their talks, pitches and academic talks are the rarest, every format keeps 2% or more with every persona. A format's arc keeps a share of its slides free first (`Arc.free`: a quarter for a pitch, an academic talk and an all-hands, 0.15 for a keynote), whose text-heavy parts wait for longer talks; free slides have more memes, gifs, Reddit's weird pictures and the format's own provocations (a picture filling the slide under a word or two in its voice). Big numbers and KPI tiles have an optional picture behind them or beside it, from a look of many sources (`backdrop`), three big numbers in four and half the dashboards, in every format; a slide whose optional picture isn't found goes without it. Statements' backdrops mix calm photos and the backdrop look. Reddit's weird pictures outweigh ShitpostBot's, memes weigh more. A pitch's product (and a keynote's) is searched as a gadget and, in a talk that generates pictures, drawn as an advertisement's product shot. |
 
-D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, and D43 to D62 on 2026-11-08; the
-others follow from the design.
+D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, D43 to D62 on 2026-11-08, and D63
+on 2026-11-09; the others follow from the design.
 
 ### Open questions
 

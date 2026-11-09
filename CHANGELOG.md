@@ -387,6 +387,26 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
   text's corporate jargon. `talkgenerator formats --details --format corporate` (and `keynote`) lists the arc, and the
   Skill has references for both.
 
+### Fewer slides of text, more pictures
+
+- Big numbers and KPI tiles come over a picture of what they're about: three big numbers in four and half the KPI
+  dashboards, in TED-like talks and in every format (a pitch's ask, an all-hands' dashboard, a keynote's price), with
+  the picture behind them under a shade, behind a band, or filling the slide's right side, and their texts readable in
+  every theme. A slide whose picture isn't found comes without one. The pictures come from a look of many sources
+  (`backdrop`): stock photos most often, now and then a weird picture from Reddit, a NASA photograph, an old
+  photograph or a museum's painting; a statement's backdrop is a calm photo two times in three, else one of those.
+- A pitch, an academic talk and an all-hands keep a quarter of their slides free (two of ten; a keynote one), for
+  memes, gifs, Reddit's weird pictures and their own provocations, a picture filling the slide under a word or two in
+  the format's voice ("Disrupt.", "Peer reviewed.", "Synergy.", "Revolutionary."). Their slides of text wait for
+  longer talks: a pitch's market and business model, an academic talk's outline and acknowledgements, an all-hands'
+  agenda come in talks of eleven slides or more.
+- A pitch's product slide shows the product off: searched as a gadget or an invention, and in a talk that generates
+  pictures, drawn from the model's prompt as an advertisement's product shot of something absurd. A keynote's reveal
+  too.
+- More memes with live captions (in TED-like talks too) and more of Reddit's weird pictures, fewer of ShitpostBot's;
+  fewer statements and quotes between a format's parts, more of a pitch's team photos and an academic talk's
+  experimental setup, and a classic fun fact with its photo three times in four.
+
 ### Titles and presenter names
 
 - What someone types can be the topic or the title (`--topic_or_title`, `topic_or_title=`): "penguins" as well as
@@ -424,10 +444,11 @@ The design is in [docs/v5-plan.md](https://github.com/twinters/talk-generator/bl
 - The deck and `talk.started` say which persona a talk had (`persona`: its name, label and voice, and the angle the
   model was given). `--persona none` makes the format's own talk.
 - A talk can leave its format to its seed (`--schema random`, `schema="random"`, the MCP server's `format="random"`),
-  which picks the persona first and then a format that persona favours: a startup founder pitches in about half
-  of their talks, a disgraced professor gives an academic talk, a management consultant an all-hands and a
-  motivational speaker a keynote, and most of the others give TED-like talks. Every format keeps a few talks in a
-  hundred with every persona, and over all the personas almost 6 in 10 are TED-like
+  which picks the persona first and then a format that persona favours: a startup founder pitches in about two of
+  five of their talks, a disgraced professor gives an academic talk, a management consultant an all-hands and a
+  motivational speaker a keynote, and half of their talks are TED-like, as most of the others' are. Every format keeps
+  a few talks in a hundred with every persona, and over all the personas 7 in 10 are TED-like, pitches and academic
+  talks the rarest
   (`Persona.formats`, multipliers on `presentation_schema_types.FORMAT_WEIGHTS`; `format_odds()` says the odds). The
   TED-like talk with copyright-free images only (`ted`) is a license choice there: `--license_policy open` goes with
   any format. The deck's `schema_name`, and `talkgenerator check`'s report, say which format a talk got.

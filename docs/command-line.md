@@ -71,7 +71,10 @@ Who writes the talk depends on your settings: a language model when one is set u
 A pitch, an academic talk, an all-hands and a keynote go through the parts of their arc, in that order, whoever
 presents them: a short talk keeps the parts that matter most (a five-slide pitch has the problem, the solution, the
 traction and the ask; a five-slide keynote its opening, the reveal, a feature and the "one more thing"), and a long one
-gives some parts more slides and has memes, quotes and the like between them. A startup founder pitches more often
+gives some parts more slides. Between the parts come memes, gifs, full-screen pictures under a provocative word
+("Disrupt.", "Peer reviewed.") and the like: a quarter of a pitch's, an academic talk's or an all-hands' slides (two of
+ten), and a few of a keynote's. Their big numbers and KPI tiles come over a picture of what they're about, most of the
+time. A startup founder pitches more often
 than the other personas, a disgraced professor gives more of the academic talks, a management consultant more of the
 all-hands and a startup founder or a motivational speaker more of the keynotes; their themes are the `startup`,
 `academic`, `corporate` and `dark minimal` families more often. Their arcs' slides need no image that's fair use, so
@@ -79,10 +82,10 @@ all-hands and a startup founder or a motivational speaker more of the keynotes; 
 slides of each part.
 
 `--schema random` leaves the format to the talk's seed, which picks the persona first and then a format that persona
-favours: in about half of their talks, a startup founder pitches, a disgraced professor gives an academic talk, a
-management consultant an all-hands and a motivational speaker a keynote; most of the others give TED-like talks, in
-6 to 8 of 10. Every format keeps a few talks in a hundred with every persona, and over all the personas almost 6 in
-10 talks are TED-like. Only the formats for talks take part: `default`, `pitch`, `academic`, `corporate` and `keynote`. Copyright-free images go with any of them:
+favours: in about two of five of their talks, a startup founder pitches, a disgraced professor gives an academic talk, a
+management consultant an all-hands and a motivational speaker a keynote, and half of their talks are TED-like; the
+others give TED-like talks in 7 to 9 of 10. Every format keeps a few talks in a hundred with every persona, and over all
+the personas 7 in 10 talks are TED-like, with pitches and academic talks the rarest. Only the formats for talks take part: `default`, `pitch`, `academic`, `corporate` and `keynote`. Copyright-free images go with any of them:
 `--schema random --license_policy open`. The deck's `schema_name` says which format the talk got.
 
 A format's license policy says which license classes its images may have. `--license_policy` sets another one:
