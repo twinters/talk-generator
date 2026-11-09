@@ -1,4 +1,4 @@
-"""Offline tests: how much a language model does for a talk (docs/v5-plan.md, D67). At the Basic level, it writes the
+"""Offline tests: how much a language model does for a talk (docs/v5-plan.md, D68). At the Basic level, it writes the
 talk in one request, from the words the talk's dice give its slides; at the Advanced level, it plans the talk first,
 in a small request of its own (an outline: its thesis, a running gag, and every slide's word and idea), and then
 writes it with that plan in its request. An outline that fails leaves the talk as at the Basic level."""

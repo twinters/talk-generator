@@ -208,7 +208,7 @@ talkgenerator check                                         # automated quality 
 
 | Step | v4 | v5 with an LLM | Fallback |
 | --- | --- | --- | --- |
-| Topic expansion | ConceptNet walk around the topic | things per slide that drift away and come back (D67: nouns, familiar, each of a family of its own, two steps out at most); at the Advanced level, the model picks or sharpens each slide's word with the spine in mind | classic walk (Datamuse, WordNet) |
+| Topic expansion | ConceptNet walk around the topic | things per slide that drift away and come back (D68: nouns, familiar, each of a family of its own, two steps out at most); at the Advanced level, the model picks or sharpens each slide's word with the spine in mind | classic walk (Datamuse, WordNet) |
 | Talk spine (new) | none | title, subtitle, thesis, presenter persona, running gag, two or three callbacks, and the presenter's made-up name ([5.10](#510-presenter-names)) | tracery title; the name from talkgenerator's pack or tracery |
 | Slide text | templates and grammars | titles, captions, statements, chart questions and categories, fake facts, about-me lines, conclusions that call back to earlier slides | the classic generator for that field |
 | Image queries | the slide's seed word, sometimes with a prefix | a search query (and a generation prompt) per image slot, written for the slot's intent and look | seed-based query |
@@ -373,7 +373,7 @@ whose hourly quotas other runs share):
 - Each slide is validated against its type (fields, lengths, banned strings). An invalid slide falls back to
   classic content for that slide only.
 - Regenerating one slide is one small call, with the spine and the neighbouring slides as context.
-- At the Advanced level (D67, `talkgenerator.plan.outline`), a small request comes first: the outline, in which the
+- At the Advanced level (D68, `talkgenerator.plan.outline`), a small request comes first: the outline, in which the
   model plans the talk (a thesis, a running gag, and for every slide its word to riff on and its idea, the point it
   makes), and the talk's request has that plan. Two requests a talk; a plan that fails, or that the talk's budget
   can't afford with the talk after it, leaves the talk Basic.
@@ -475,7 +475,7 @@ Claude API behaviour the adapter has to respect:
 ### 5.6 What a talk costs
 
 A 10-slide talk as one call, at about 7,000 input and 1,000 to 3,000 output tokens with thinking included (measured
-with Claude Haiku 5.5 and Sonnet 5.5 on 2026-11-09, D67); at the Advanced level, its outline adds about 3,500 input
+with Claude Haiku 5.5 and Sonnet 5.5 on 2026-11-09, D68); at the Advanced level, its outline adds about 3,500 input
 and 700 to 1,900 output tokens, and 8 to 18 seconds before the first slide:
 
 | Route | Per talk, Basic | Advanced | Paid by |
@@ -1952,7 +1952,7 @@ As built (2026-11-07, `talkgenerator.images.generation` and `talkgenerator.image
 - **Kept:** Datamuse, WordNet, Goodreads, Wikiquote, WikiHow (brittle, and off on the site), InspiroBot.
 - **ConceptNet** becomes optional (the public API has been down since late 2025). The LLM planner takes over
   topic drift at the Advanced level; in classic mode and at the Basic level, Datamuse and WordNet keep doing it, with
-  things only (D67: Datamuse tags its words' parts of speech).
+  things only (D68: Datamuse tags its words' parts of speech).
 - **New, keyless sources, as checked on 2026-11-08** (D60): **Wikipedia** (`talkgenerator.sources.wikipedia`): its
   Action API gives an article's lead (its first sentences), its short description and whether it's in "Category:Living
   people" in one request of 1 to 3 KB, and the articles its lead links to in another; its REST feed gives the day's
@@ -2157,7 +2157,7 @@ As built (2026-11-07, `talkgenerator.images.generation` and `talkgenerator.image
 ### 13.2 Running at $0
 
 - **Text:** LLM talks by default (decided), on OpenRouter's free models with an ordered fallback list: one request
-  per talk (the Basic level, D67) and one per regenerated slide. With the $10 of credits on the account, that's up to 1,000 requests a
+  per talk (the Basic level, D68) and one per regenerated slide. With the $10 of credits on the account, that's up to 1,000 requests a
   day, and at most 20 a minute. A visible switch picks the classic 2019 generator instead.
 - **When the quota or the rate limit runs out, or a model fails,** the classic engine takes over without fuss
   (the page says "classic mode"). There's never a paid fallback on the site's key.
@@ -2169,7 +2169,7 @@ As built (2026-11-07, `talkgenerator.images.generation` and `talkgenerator.image
   free request a talk: two a talk, so 500 talks a day and 10 a minute on the free tier instead of 1,000 and 20.
 - **Upgrades paid by the visitor** (decided: all of them): "Connect OpenRouter" (OAuth PKCE: the visitor's own
   free quota or credits, and their choice of model, image models included); an Anthropic or OpenAI key for one
-  talk (sent over HTTPS with that request, used once, never stored or logged), whose talks are Advanced (D67), as
+  talk (sent over HTTPS with that request, used once, never stored or logged), whose talks are Advanced (D68), as
   are a paid OpenRouter model's; and Sign in with ChatGPT once
   OpenAI admits the site, through the interest form linked from
   [OpenAI's Sign in with ChatGPT docs](https://developers.openai.com/siwc).

@@ -447,7 +447,7 @@ def is_noun_word(word: str) -> bool:
         return True
 
 
-# THINGS: what a slide's seed, and the words templates speak of besides it, have to be (docs/v5-plan.md, D67)
+# THINGS: what a slide's seed, and the words templates speak of besides it, have to be (docs/v5-plan.md, D68)
 
 # How common a word has to be, at least, to name a thing on a slide, on the Zipf scale (2.5: three in ten million
 # words), in its most common form (a plural's singular, say): "krill" and "caldera" are, "scoria" and "volcanology"

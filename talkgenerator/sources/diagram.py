@@ -192,7 +192,7 @@ def generate_matrix(presentation_context: dict[str, Any]) -> tuple[str, MatrixDi
     appearing on a click."""
     seed = presentation_context["seed"]
     properties = _properties(seed)
-    # (things in its quadrants: not "eruptive" or "glacial", D67)
+    # (things in its quadrants: not "eruptive" or "glacial", D68)
     related = [word for word in _words(conceptnet.related_things(seed, 30), seed, 20) if word not in properties]
     if len(properties) < 2 or len(related) < 4:
         return None

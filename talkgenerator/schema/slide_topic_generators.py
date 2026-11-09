@@ -1,7 +1,7 @@
 """Every slide's seed: the word it starts from (a classic slide's templates speak of it, and a language model gets it
 as the word its slide riffs on). A talk's seeds wander away from its topic and come back to it.
 
-The seeds that wander are things (docs/v5-plan.md, D67): the related words that read as nouns, familiar ones, not
+The seeds that wander are things (docs/v5-plan.md, D68): the related words that read as nouns, familiar ones, not
 names (conceptnet.related_things), each of a family of its own (not "eruptive" and "erupted" on a volcano talk,
 where a slide said "Volcanoes vs. eruptive" and another "Do you want glacial?"), at most MAX_WANDER steps away from
 the topic: a related word of the topic, then maybe one of that word's, and then back.

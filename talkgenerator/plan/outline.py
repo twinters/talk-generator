@@ -1,5 +1,5 @@
 """How much a language model does for a talk: Basic, or Advanced, where it plans the talk before it writes it
-(docs/v5-plan.md, D67).
+(docs/v5-plan.md, D68).
 
 At the Basic level, a talk a language model writes is one request (section 5.3): Python picks the slides and every
 slide's word to riff on (a related thing that wanders away from the topic and back: see

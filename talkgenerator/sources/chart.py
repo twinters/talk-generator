@@ -249,7 +249,7 @@ def generate_correlation_curve(presentation_context):
 
     if is_too_similar_for_axes(x_label, y_label):
         x_label = _CORRELATION_WORD_GENERATOR(y_label)
-    # (an axis is a thing: not an antonym such as "dormant", D67)
+    # (an axis is a thing: not an antonym such as "dormant", D68)
     if is_too_similar_for_axes(x_label, y_label) or not language_util.is_thing(str(x_label)):
         x_label = "time"
     presentation_context.update({"x_label": x_label, "y_label": y_label})

@@ -1,5 +1,5 @@
 """Offline tests: the words a talk's slides start from, and that classic templates speak of, are things (docs/v5-plan.md,
-D67). A classic volcano talk of 2026-11-09 had "Volcanoes vs. eruptive" on a scatter plot and "Do you want glacial?"
+D68). A classic volcano talk of 2026-11-09 had "Volcanoes vs. eruptive" on a scatter plot and "Do you want glacial?"
 on a flowchart, with "eruptive", "eruption" and "erupted" on three slides: Datamuse's related words, which are
 adjectives, verbs and names as often as things."""
 
