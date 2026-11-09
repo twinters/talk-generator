@@ -7,10 +7,11 @@ pipeline as a funnel), the quarter's wins (three photos, the CEO's post, or cust
 timeline, the new process, or the planning cycle), an org change (the new org chart, whose boss is the punchline, the
 new hierarchy as a pyramid, or the company before and after), the synergies (a Venn diagram, or a 2×2 matrix of
 priorities) and the ask of everyone (a bold statement, or a big number) to Q&A. A short all-hands keeps the KPIs, the
-wins, the roadmap and Q&A; a long one gives the KPIs and the wins a second slide, and its free slides are inspirational
-quotes, InspiroBot's posters, the company's values as an acronym, news and the like. The company's made-up name comes
-from the topic (see talkgenerator.schema.formats.company), so that a classic all-hands' slides name the same company as
-its title.
+wins, the roadmap and Q&A; a quarter of a talk's slides are free (D63), for memes, full-screen pictures, its own
+provocations ("Synergy.", over a full-screen picture), inspirational quotes, InspiroBot's posters, the company's values
+as an acronym, news and the like, and its agenda comes in talks of eleven slides or more; a long one gives the KPIs and
+the wins a second slide. The company's made-up name comes from the topic (see talkgenerator.schema.formats.company),
+so that a classic all-hands' slides name the same company as its title.
 
 A management consultant presents an all-hands more often than the other personas, and a startup founder, a
 motivational speaker and a life coach a little more often; its themes are the corporate families' more often.

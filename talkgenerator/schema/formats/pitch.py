@@ -4,9 +4,11 @@ demo day.
 Its arc goes from the problem to the solution, the market (TAM, SAM and SOM, as a funnel), the business model, the
 traction (a hockey stick), the competition (a 2×2 matrix with the startup alone in its best corner), the team and the
 roadmap to the ask (a big number) and the closing "Questions?". A short pitch keeps the problem, the solution, the
-traction and the ask; a long one gives the problem, the solution and the traction a second slide, and its free slides
-are memes, gifs, press and the like. The startup's made-up name comes from the topic (see
-talkgenerator.schema.formats.startup), so that a classic pitch's slides name the same startup as its title.
+traction and the ask; a quarter of a pitch's slides are free (D63), for memes, gifs, Reddit's weird pictures, its own
+provocations ("Disrupt.", over a full-screen picture), press and the like, and its market and business model come in
+pitches of eleven slides or more; a long one gives the problem, the solution and the traction a second slide. The
+startup's made-up name comes from the topic (see talkgenerator.schema.formats.startup), so that a classic pitch's
+slides name the same startup as its title.
 
 A startup founder presents a pitch more often than the other personas, and a consultant, an influencer and a
 motivational speaker a little more often; its themes are the startup family's more often.

@@ -8,8 +8,9 @@ chart it wins by far), a live demo (that crashes, as a fake error message, how i
 the presenter has to present as the demo) and the price (a big number, the models' prices on tiles, or when it ships)
 to the "one more thing" (said over a photo, or a second product, revealed full-bleed) and a closing line (over a photo,
 full-bleed, or someone's post about the keynote). A short keynote keeps the opening, the reveal, a feature and the one
-more thing; a long one gives the features a second slide, and its free slides are deep questions over photos, quotes,
-gifs, the press and early reviews. The product's made-up name comes from the topic (see
+more thing; a long one gives the features a second slide, and its free slides (a slide of ten at least, D63) are deep
+questions over photos, memes, gifs, its own provocations ("Revolutionary.", over a full-screen picture), quotes, the
+press and early reviews. The product's made-up name comes from the topic (see
 talkgenerator.schema.formats.product), so that a classic keynote's slides name the product its title launches.
 
 A startup founder gives a keynote more often than the other personas, a motivational speaker almost as often, and an

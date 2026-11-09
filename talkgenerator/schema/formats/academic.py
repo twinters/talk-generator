@@ -5,9 +5,11 @@ Its arc goes from the outline through related work (a Venn diagram with this wor
 matrix of earlier work, or the field's history), the method (a diagram of its steps, its equation, or its setup), the
 results (charts with suspicious p-values, or one p-value as a big number), the limitations (an iceberg), future work
 (a timeline, the research cycle, or a flowchart whose every answer leads to more research), the acknowledgements and the
-references to the questions. A short talk keeps the outline, the method, the results and the questions; a long one
-gives the method a second slide and the results up to three, and its free slides are real charts from the internet,
-quotes, fun facts and the like. The method's made-up name comes from the topic (see talkgenerator.schema.formats.method).
+references to the questions. A short talk keeps the method, the results, the limitations and the questions; a quarter
+of a talk's slides are free (D63), for memes, real charts from the internet, Reddit's weird pictures, the talk's own
+provocations ("Peer reviewed.", over a full-screen picture), fun facts and the like, and its outline and
+acknowledgements come in talks of eleven slides or more; a long one gives the method a second slide and the results up
+to three. The method's made-up name comes from the topic (see talkgenerator.schema.formats.method).
 
 A disgraced professor presents an academic talk more often than the other personas, and an over-passionate expert, a
 medieval historian and a time traveller a little more often; its themes are the academic family's more often.
