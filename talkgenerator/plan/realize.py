@@ -33,6 +33,8 @@ logger = logging.getLogger("talkgenerator")
 ATTEMPTS: Final = 3
 
 _QUOTE_MARKS: Final = "\"'“”‘’«»"
+# Bars that look like the | that separates a list's things, which a free model wrote instead of it (a box drawing's)
+_BARS: Final = str.maketrans(dict.fromkeys("│┃｜¦∣", "|"))
 # What a cut may leave at the end of a text, besides little words: punctuation that leads on to more
 _DANGLING: Final = ",;:-–—([{/&+ "
 # Where a sentence or a clause ends, for a cut to end there: a full stop, question or exclamation mark, a semicolon or
@@ -72,14 +74,32 @@ def clean_text(value: Any, text_field: TextField, language: str = "en") -> str |
     value = without_key_references(value)  # (a callback that names its slide by its key keeps the rest of it)
     if text_field.options:
         return option_of(value, text_field)
-    text = _unquoted(" ".join(_STRAY_ESCAPE.sub("", value).split()))
+    text = _unquoted(" ".join(_STRAY_ESCAPE.sub("", value).split()).translate(_BARS))
     if not text or leftovers_in(text):
         return None
+    if "|" in text:
+        text = _folded(text)
     extra = len(text) - emoji_util.room(text)  # (the characters its emoji are written with, beyond their room)
     if len(text) > length_limit(text_field) + extra:
         cut = _cut_list if "|" in text else _cut
         text = cut(text, text_field.max_length + extra, language)
     return text
+
+
+def _folded(text: str) -> str:
+    """A list written as one text (its things separated by |), each of its emoji that a model wrote as a thing of its
+    own ("🔥 | Roasting | 🔥", as a free model wrote a tier) in front of the thing after it (one at its end goes)."""
+    things: list[str] = []
+    waiting = ""
+    for thing in (part.strip() for part in text.split("|")):
+        if not thing:
+            continue
+        if not emoji_util.plain(thing).strip():
+            waiting = waiting or thing
+            continue
+        things.append(f"{waiting} {thing}" if waiting else thing)
+        waiting = ""
+    return " | ".join(things) if things else text
 
 
 def _cut_list(text: str, length: int, language: str) -> str:

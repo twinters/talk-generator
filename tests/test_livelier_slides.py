@@ -154,6 +154,15 @@ def test_a_list_is_cut_between_its_things_and_its_emoji_count_as_two_characters(
     assert emoji_util.room("🕵️‍♂️ Spies") == 8 and emoji_util.room("❤️ it") == 5 and emoji_util.room("Plain") == 5
 
 
+def test_a_list_whose_model_wrote_other_bars_or_emoji_as_things_of_their_own_comes_out_whole():
+    tier = next(text for text in KINDS["tier_list"].texts if text.name == "a_tier")
+    # (a free model's tiers, 2026-11-09: box-drawing bars for its |, and its emoji as things of their own)
+    written = "🏋️ │ Loving your boss │ ☕│ Buying good cheese │ 🧀│ Doing moderate exercise │ 🏃"
+    assert clean_text(written, tier) == "🏋️ Loving your boss | ☕ Buying good cheese | 🧀 Doing moderate exercise"
+    assert clean_text("🔥 │ Roasting coffee as tea │ 🔥", tier) == "🔥 Roasting coffee as tea"
+    assert clean_text("Bread｜Statues", tier) == "Bread | Statues"
+
+
 def test_a_third_of_classic_tier_lists_alignment_charts_and_agendas_have_emoji(related):
     def emojified(texts):
         things = [thing for text in texts if text for thing in text.split("|")]
