@@ -210,8 +210,8 @@ def _generate_presentation(
 
     schema is the talk's format, the name of a presentation schema: "default" (a TED-like talk), "ted" (the TED-like
     talk with copyright-free images only), "pitch", "academic" and the others of talkgenerator.plan.external.FORMATS;
-    or "random", for one the talk's seed picks after its persona, who favours some (a startup founder mostly pitches, a
-    disgraced professor mostly gives academic talks), among the TED-like talk and the formats beyond it (see
+    or "random", for one the talk's seed picks after its persona, who favours some (a startup founder pitches more often, a
+    disgraced professor gives academic talks), among the TED-like talk and the formats beyond it (see
     talkgenerator.schema.presentation_schema_types.pick_format). Copyright-free images go with any format: ask for
     them with license_policy "open". The deck says which format the talk had (schema_name).
 
@@ -333,8 +333,8 @@ def _generate_presentation(
     else:
         logger.info("Persona: none (the format's own talk)")
 
-    # Its format: the one it asks for, or one its seed picks, which its persona favours (a startup founder mostly
-    # pitches: see talkgenerator.schema.presentation_schema_types.pick_format)
+    # Its format: the one it asks for, or one its seed picks, which its persona favours (a startup founder pitches
+    # more often: see talkgenerator.schema.presentation_schema_types.pick_format)
     schema = pick_format(schema, rng, chosen_persona)
     if named is None:
         logger.info("Format: {} (the talk's seed picked it, as its persona favours)".format(schema))
@@ -818,7 +818,7 @@ def get_argument_parser():
         choices=(RANDOM, *schemas.names()),
         help="The talk's format: default (a TED-like talk), ted (with copyright-free images only), pitch, academic and "
         "the others (see --list), or random, for one the talk's seed picks after its persona, who favours some (a "
-        "startup founder mostly pitches); --license_policy open gives copyright-free images with any (default: "
+        "startup founder pitches more often); --license_policy open gives copyright-free images with any (default: "
         "default)",
     )
     parser.add_argument(

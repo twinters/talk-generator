@@ -51,7 +51,7 @@ from talkgenerator.models.plan import SlidePlan, TalkPlan
 from talkgenerator.models.theme import Theme
 from talkgenerator.personas import Persona
 from talkgenerator.plan import languages, prompt
-from talkgenerator.plan.kinds import PRESENTER_JOB, TALK_TITLE, Recipe
+from talkgenerator.plan.kinds import KINDS, PRESENTER_JOB, TALK_TITLE, Recipe
 from talkgenerator.plan.prompt import SPINE, PlannedSlide, slide_plan, talk_request
 from talkgenerator.plan.realize import ATTEMPTS, clean_text, realize
 from talkgenerator.plan.stream import ObjectReader
@@ -1365,7 +1365,8 @@ class PresentationSchema:
 
     def unservable(self) -> frozenset[SlideGeneratorData]:
         """The slide generators whose images the talk's license policy allows no source for (a meme slide in a talk
-        without fair use, say), by the image slots of their recipes, which their classic slides use too."""
+        without fair use, say), by the image slots of their recipes, which their classic slides use too (but the slots
+        a slide can do without: a picture behind a big number)."""
         talk = image_context.current()
         policy = talk.policy
         # (a talk that generates pictures can serve the slots that prefer generated ones, whatever their sources)
@@ -1377,8 +1378,10 @@ class PresentationSchema:
                 for generator in self._slide_generators
                 if generator.llm is not None
                 and any(
-                    isinstance(source, ImageSlot) and not finder.servable(source, policy)
-                    for _, source in generator.llm.slots()
+                    isinstance(source, ImageSlot)
+                    and slot not in KINDS[generator.llm.kind].optional_images
+                    and not finder.servable(source, policy)
+                    for slot, source in generator.llm.slots()
                 )
             )
             self._unservable[key] = known

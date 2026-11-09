@@ -163,6 +163,41 @@ def generate_big_number(presentation_context: dict[str, Any]) -> tuple[str | Non
     return title, _figure(kind), label, _maybe(0.7, _template("numbers.big_number_source")(variables))
 
 
+# How often a classic big number and KPI tiles have a picture of their seed behind them, when one is found (D63: the
+# user found slides of text boring)
+BIG_NUMBER_PICTURES: Final = 0.75
+KPI_PICTURES: Final = 0.5
+
+
+def big_number(image: ImageSource) -> Callable[[dict[str, Any]], tuple[Any, ...] | None]:
+    """A generator of big numbers about the seed (see generate_big_number), each with a picture of it from the image
+    source behind it, BIG_NUMBER_PICTURES of the time (when it finds one)."""
+
+    def generate(presentation_context: dict[str, Any]) -> tuple[Any, ...] | None:
+        made = generate_big_number(presentation_context)
+        if made is None:
+            return None
+        picture = image(dict(presentation_context)) if random_util.random() < BIG_NUMBER_PICTURES else None
+        return (*made, picture)
+
+    return generate
+
+
+def kpi(image: ImageSource) -> Callable[[dict[str, Any]], tuple[Any, ...] | None]:
+    """A generator of KPI tiles about the seed (see generate_kpi), with a picture of it from the image source behind
+    them, KPI_PICTURES of the time (when it finds one)."""
+
+    def generate(presentation_context: dict[str, Any]) -> tuple[Any, ...] | None:
+        made = generate_kpi(presentation_context)
+        if made is None:
+            return None
+        figures = (*made, *(None for _ in range(9 - len(made))))  # (the title and four figures, the fourth maybe none)
+        picture = image(dict(presentation_context)) if random_util.random() < KPI_PICTURES else None
+        return (*figures, picture)
+
+    return generate
+
+
 def _kpi_number(punchline: bool) -> str:
     if punchline:
         return random_util.choice(("0", "∞", "1", "-100%", "9,001", "404"))
@@ -472,10 +507,14 @@ def _numbers() -> dict[str, str]:
     }
 
 
+# How often a classic fun fact has a photo (when one is found): as often as a planned one (three in five until D63)
+FUN_FACT_PICTURES: Final = 0.75
+
+
 def fun_fact(image: ImageSource) -> Callable[[dict[str, Any]], tuple[Any, ...] | None]:
     """A generator of fun facts about the seed: a heading ("Did you know?"), the fact (from templates about the seed
-    and a word related to it, with made-up numbers), a made-up source (if any) and a photo from the image source (three
-    times in five, when it finds one). Half the time (with the real facts on: see talkgenerator.facts), the fact is a
+    and a word related to it, with made-up numbers), a made-up source (if any) and a photo from the image source
+    (FUN_FACT_PICTURES of the time, when it finds one). Half the time (with the real facts on: see talkgenerator.facts), the fact is a
     real one about the seed instead, when there's one: a sentence of its Wikipedia article's, with an absurd twist,
     from Wikipedia."""
 
@@ -497,7 +536,7 @@ def fun_fact(image: ImageSource) -> Callable[[dict[str, Any]], tuple[Any, ...] |
             if not fact:
                 return None
             source = _maybe(0.7, _template("numbers.big_number_source")(variables))
-        photo = image(dict(presentation_context)) if random_util.random() < 0.6 else None
+        photo = image(dict(presentation_context)) if random_util.random() < FUN_FACT_PICTURES else None
         return random_util.choice(ENGLISH.fun_facts), fact, source, photo
 
     return generate

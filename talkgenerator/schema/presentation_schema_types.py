@@ -228,14 +228,16 @@ keynote_schema = schemas.register(
 )
 
 
-# THE FORMAT A TALK'S SEED PICKS (decision D61): a talk that leaves its format to its seed (schema "random") gets one of
-# these, by these weights times its persona's multipliers (talkgenerator.personas.Persona.formats), so a startup founder
-# mostly pitches and a disgraced professor mostly gives academic talks, and every format keeps some chance with every
-# persona. Without a persona, most talks are TED-like. Not ted: that's the TED-like talk with copyright-free images
-# only, which is a choice of license rather than of format: a talk asks for those images with license_policy "open",
-# whatever format its seed picks (the formats' arcs need no image that's fair use). Nor interview and test.
+# THE FORMAT A TALK'S SEED PICKS (decisions D61 and D63): a talk that leaves its format to its seed (schema "random")
+# gets one of these, by these weights times its persona's multipliers (talkgenerator.personas.Persona.formats), so a
+# startup founder pitches and a disgraced professor gives academic talks far more often than the others do (about two
+# talks in five; half of theirs are TED-like still), and every format keeps some chance with every persona. Most talks
+# are TED-like: 7 in 10 over all the personas, 8 in 10 without one, as the user asked after reviewing 35 talks
+# (2026-11-09), with the pitch and the academic talk the rarest. Not ted: that's the TED-like talk with copyright-free
+# images only, which is a choice of license rather than of format: a talk asks for those images with license_policy
+# "open", whatever format its seed picks (the formats' arcs need no image that's fair use). Nor interview and test.
 RANDOM: Final = "random"
-FORMAT_WEIGHTS: Final[dict[str, float]] = {"default": 8, "pitch": 1, "academic": 1, "corporate": 1, "keynote": 1}
+FORMAT_WEIGHTS: Final[dict[str, float]] = {"default": 20, "pitch": 1, "academic": 1, "corporate": 1.5, "keynote": 1.5}
 
 
 def choices() -> tuple[str, ...]:

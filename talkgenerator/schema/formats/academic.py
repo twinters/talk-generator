@@ -19,16 +19,19 @@ from typing import Any, Final
 
 from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
-from talkgenerator.plan.kinds import AGENDA_ITEM, Recipe, Variant
+from talkgenerator.plan.kinds import AGENDA_ITEM, Recipe, Variant, pictured
 from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema.formats import (
+    BIG_NUMBER_PICTURES,
     Format,
     KindSlideGenerator,
     Made,
+    behind,
     different,
     maybe,
     method,
     photos,
+    provocation,
     text,
     words,
 )
@@ -39,18 +42,22 @@ from talkgenerator.util import random_util
 
 PACK: Final = "academic"
 
+# (D63: a quarter of its slides are free, for memes, real charts from the internet and weird pictures, and its outline
+# and acknowledgements, lists of text, wait for a talk of eleven slides or more: the user found ten-slide academic
+# talks "pretty boring with mostly boring text and a lot of superfluous slides")
 ARC: Final = Arc(
     (
-        Part("outline", rank=3),
+        Part("outline", rank=7),
         Part("related_work", rank=5),
         Part("method", 1, 2, rank=1),
         Part("results", 1, 3, rank=2),
-        Part("limitations", rank=4),
+        Part("limitations", rank=3),
         Part("future_work", rank=6),
         Part("acknowledgements", rank=8),
-        Part("references", rank=7),
+        Part("references", rank=4),
         Part("questions", rank=0),
-    )
+    ),
+    free=0.25,
 )
 
 ACADEMIC: Final = Format(
@@ -101,7 +108,7 @@ def _subtitle(context: dict[str, Any]) -> str | None:
 
 
 # Images: a calm backdrop behind a statement, an odd photo of the experimental setup, and whoever is thanked
-_BACKDROP = cg.generate_horizontal_pixabay_image
+_BACKDROP = cg.statement_backdrop_generator
 _SETUP = ImageSlot("a photo of the experiment's setup", aesthetic="weird-stock", generate=True)
 _THANKED = cg.copyright_free_generator
 
@@ -253,7 +260,7 @@ def _p_value(context: dict[str, Any]) -> Made | None:
         "number": random_util.choice(words(PACK, "results.p_number")),
         "label": label,
         "source": maybe(0.8, text(PACK, "results.p_source", variables)),
-    }, {}
+    }, behind(context, BIG_NUMBER_PICTURES)
 
 
 # THE LIMITATIONS, AND FUTURE WORK
@@ -486,7 +493,7 @@ _GENERATORS: Final = [
     ),
     _part(
         "method",
-        0.7,
+        0.5,
         "statement",
         _equation,
         ["statement", "equation"],
@@ -501,7 +508,7 @@ _GENERATORS: Final = [
     ),
     _part(
         "method",
-        0.6,
+        1.3,
         "image",
         _setup,
         ["single_image"],
@@ -574,6 +581,7 @@ _GENERATORS: Final = [
         "P-Value",
         Recipe(
             "big_number",
+            (cg.backdrop_generator,),
             brief="The result that matters, as one p-value: a big number just under the threshold, what it shows, "
             "and where in the paper it is",
             hints={
@@ -582,6 +590,7 @@ _GENERATORS: Final = [
                 "label": "what it shows, and what it took to get it, without the number itself",
                 "source": "where in the paper it is, such as an appendix",
             },
+            variants=pictured((), "background", BIG_NUMBER_PICTURES),
         ),
     ),
     # The limitations
@@ -601,7 +610,7 @@ _GENERATORS: Final = [
     ),
     _part(
         "limitations",
-        1,
+        0.6,
         "statement",
         _limitations_statement,
         ["statement"],
@@ -609,8 +618,9 @@ _GENERATORS: Final = [
         Recipe(
             "statement",
             (_BACKDROP,),
-            brief="The study's main limitation, admitted in one sentence over a photo, as if it were minor",
-            hints={"text": "the limitation, admitted as if it were minor"},
+            brief="The study's main limitation, admitted in one short sentence over a photo, as if it were minor",
+            hints={"text": "the limitation, admitted as if it were minor, in ten words at most"},
+            limits={"text": 80},  # (D63: shorter texts on an academic talk's slides)
         ),
     ),
     # Future work
@@ -730,19 +740,25 @@ _GENERATORS: Final = [
 # The format's other slides, for a long talk's free slides (and to stand in for a part's slide that none of the
 # part's generators can make): real charts from the internet, quotes, fun facts, a quiz, a meme, and deep questions
 # over photos, which a talk may have any number of (so that the free slides of a long one never run out of slides)
+# (D63: memes, real charts from the internet, gifs and Reddit's weird pictures more often, and fewer slides of text, as
+# the user found academic talks "pretty boring with mostly boring text"; and the talk's own provocations, a word over a
+# full-screen picture: "Peer reviewed.")
 _OTHERS: Final = {
-    "Reddit Chart": 1.2,
-    "Quote": 1,
+    "Reddit Chart": 1.5,
+    "Quote": 0.6,
     "Fun Fact": 0.8,
-    "Quiz": 0.8,
-    "Meme": 0.8,
+    "Quiz": 0.6,
+    "Meme": 2.5,
     "Full Screen Pixabay Deep": 0.6,
-    "Wikihow Bold Statement": 0.5,
+    "Wikihow Bold Statement": 0.3,
+    "Full Screen Gif": 0.8,
+    "Two Captions Weird Reddit": 0.6,
 }
 
 GENERATORS: Final = [
     *_GENERATORS,
     *(slide_generators.get(name).weighted(Free(ARC, weight), f"{name} (Academic)") for name, weight in _OTHERS.items()),
+    provocation(PACK, ARC, 1.5, _variables, "Academic", "as a researcher puts them on a slide, dryly"),
 ]
 for _generator in GENERATORS:
     slide_generators.register(_generator.name or "", _generator, group=PACK)
@@ -759,4 +775,5 @@ CAPS: Final = {
     "process": 1,
     "big_number": 1,
     "curve": 1,
+    "provocation": 0.1,
 }

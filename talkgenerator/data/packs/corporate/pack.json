@@ -1,13 +1,15 @@
 {
   "format": "corporate",
   "about": "The classic texts of all-hands meetings and quarterly business reviews (the corporate schema): a grammar per part of its arc, whose rules are lists of templates (see talkgenerator.sources.packs and talkgenerator.schema.formats.corporate)",
-  "version": 1,
+  "version": 2,
   "versions": {
-    "1": "2026-11-08: the first texts of all-hands meetings, a part of the arc a grammar: the title, the agenda, the KPIs against their targets, the wins, the roadmap, the org change, the synergies, the ask and Q&A (D59)"
+    "1": "2026-11-08: the first texts of all-hands meetings, a part of the arc a grammar: the title, the agenda, the KPIs against their targets, the wins, the roadmap, the org change, the synergies, the ask and Q&A (D59)",
+    "2": "2026-11-09: the free slides' own provocations: a word or two over a full-screen picture, in the format's voice (D63)"
   },
   "slots": {
     "title.talk_title": {"variables": ["seed", "company"], "field": "title.title"},
     "title.subtitle": {"variables": ["seed", "topic", "presenter", "title", "company"], "field": "title.subtitle"},
+    "free.provocation": {"variables": ["seed", "topic", "presenter", "title", "company"], "field": "full_image.title"},
     "agenda.agenda_title": {"variables": ["seed", "topic", "presenter", "title", "company"], "field": "agenda.title"},
     "agenda.agenda_first": {"variables": ["seed", "topic", "presenter", "title", "company"], "limit": 45},
     "agenda.agenda_item": {"variables": ["seed", "topic", "presenter", "title", "company"], "limit": 45},

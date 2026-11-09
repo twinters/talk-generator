@@ -145,10 +145,12 @@ def _picked_tags(persona, seeds=range(150), slides=10, schema_name="default"):
 
 
 def test_a_persona_s_talks_favour_its_kinds_of_slides():
-    historian = _picked_tags(personas.persona("medieval_historian"))
-    founder = _picked_tags(personas.persona("startup_founder"))
-    teacher = _picked_tags(personas.persona("kindergarten_teacher"))
-    plain = _picked_tags(None)
+    # (over 300 talks: a funnel comes up in about one talk in seventeen, so 150 left its share to chance)
+    seeds = range(300)
+    historian = _picked_tags(personas.persona("medieval_historian"), seeds)
+    founder = _picked_tags(personas.persona("startup_founder"), seeds)
+    teacher = _picked_tags(personas.persona("kindergarten_teacher"), seeds)
+    plain = _picked_tags(None, seeds)
     assert historian["timeline"] > 2 * plain["timeline"] and historian["timeline"] > 3 * founder["timeline"]
     assert historian["history"] > founder["history"] * 3
     assert founder["kpi"] > 2 * plain["kpi"] and founder["kpi"] > 5 * historian["kpi"]
@@ -574,17 +576,25 @@ def test_personas_favour_formats_a_talk_s_seed_can_pick():
         assert all(0.2 <= factor <= 15 for factor in persona.formats.values()), name
 
 
-def test_each_persona_s_favourite_format_comes_up_most_and_every_format_keeps_a_chance():
+def test_most_talks_are_ted_like_and_a_specialist_s_favourite_format_comes_next():
+    # (decision D63: the user asked for more TED-like talks after reviewing 35, so with every persona most talks are
+    # TED-like, and a specialist's favourite format comes second, in about two of their talks in five)
     for name, persona in personas.PERSONAS.items():
         odds = schema_types.format_odds(persona)
         assert sum(odds.values()) == pytest.approx(1)
-        first, second = sorted(odds.values(), reverse=True)[:2]
-        favourite = max(odds, key=odds.__getitem__)
-        assert favourite == FAVOURITES.get(name, "default"), name
-        assert first >= 0.45 and first > 1.4 * second, (name, odds)  # (the favourite comes first, about half or more)
-        assert min(odds.values()) > 0.03, (name, odds)  # (and every format keeps some chance)
-    # Without a persona, most talks are TED-like (60%, with five formats)
-    assert schema_types.format_odds(None)["default"] > 0.55
+        assert max(odds, key=odds.__getitem__) == "default" and odds["default"] >= 0.45, (name, odds)
+        favourite = FAVOURITES.get(name)
+        if favourite is not None:
+            rest = [share for format_name, share in odds.items() if format_name not in ("default", favourite)]
+            assert 0.3 <= odds[favourite] <= 0.45 and odds[favourite] > 3 * max(rest), (name, odds)
+            # (and far more often than with any other persona)
+            others = [
+                schema_types.format_odds(other)[favourite] for other in personas.PERSONAS.values() if other != persona
+            ]
+            assert odds[favourite] > 3 * max(others), (name, favourite)
+        assert min(odds.values()) > 0.02, (name, odds)  # (and every format keeps some chance)
+    # Without a persona, 8 talks in 10 are TED-like
+    assert schema_types.format_odds(None)["default"] >= 0.75
 
 
 def test_the_seed_picks_a_format_as_often_as_the_persona_s_odds_say():
@@ -598,13 +608,15 @@ def test_the_seed_picks_a_format_as_often_as_the_persona_s_odds_say():
             assert picked[format_name] / 2000 == pytest.approx(odds, abs=0.04), (name, format_name)
 
 
-def test_across_the_personas_most_talks_are_still_ted_like():
+def test_across_the_personas_most_talks_are_ted_like_and_pitches_and_academic_talks_the_rarest():
     shares = {
         name: statistics.mean(schema_types.format_odds(persona)[name] for persona in personas.PERSONAS.values())
         for name in schema_types.FORMAT_WEIGHTS
     }
-    assert shares["default"] > 0.45
-    assert all(0.08 < share < 0.25 for name, share in shares.items() if name != "default"), shares
+    assert shares["default"] >= 0.69  # (7 talks in 10: D63)
+    assert all(0.04 < share < 0.12 for name, share in shares.items() if name != "default"), shares
+    # (the user found pitches and academic talks the most boring: they're rarer than all-hands and keynotes)
+    assert max(shares["pitch"], shares["academic"]) < min(shares["corporate"], shares["keynote"]), shares
 
 
 def test_a_format_the_talk_names_is_its_format():

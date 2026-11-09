@@ -1,13 +1,15 @@
 {
   "format": "academic",
   "about": "The classic texts of academic conference talks (the academic schema): a grammar per part of its arc, whose rules are lists of templates (see talkgenerator.sources.packs and talkgenerator.schema.formats.academic)",
-  "version": 1,
+  "version": 2,
   "versions": {
-    "1": "2026-11-08: the first texts of academic conference talks, a part of the arc a grammar: the title with its affiliations, the outline, related work, the method, the results, the limitations, future work, the acknowledgements, the references and the questions (D56)"
+    "1": "2026-11-08: the first texts of academic conference talks, a part of the arc a grammar: the title with its affiliations, the outline, related work, the method, the results, the limitations, future work, the acknowledgements, the references and the questions (D56)",
+    "2": "2026-11-09: the free slides' own provocations: a word or two over a full-screen picture, in the format's voice (D63)"
   },
   "slots": {
     "title.talk_title": {"variables": ["seed", "method"], "field": "title.title"},
     "title.subtitle": {"variables": ["seed", "topic", "presenter", "title", "method"], "field": "title.subtitle"},
+    "free.provocation": {"variables": ["seed", "topic", "presenter", "title", "method"], "field": "full_image.title"},
     "outline.outline_title": {"variables": ["seed", "topic", "presenter", "title", "method"], "field": "agenda.title"},
     "outline.outline_first": {"variables": ["seed", "topic", "presenter", "title", "method"], "limit": 45},
     "outline.outline_item": {"variables": ["seed", "topic", "presenter", "title", "method"], "limit": 45},

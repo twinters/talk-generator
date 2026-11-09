@@ -46,8 +46,16 @@ CLASSIC_ROLES: Final[dict[str, dict[str, str]]] = {
     # (New in v5: a Venn diagram or a 2×2 matrix, drawn as shapes where the 2019 template has its content)
     "diagram": {"title": "title", "diagram": "diagram"},
     # (New in v5 too, and drawn as shapes in the template's colours, on its blank slide: see DRAWN_TYPES)
-    "big_number": {"title": "title", "number": "number", "label": "label", "source": "source"},
+    # (a big number's and KPI tiles' picture, if any, behind them or beside them: D63)
+    "big_number": {
+        "background": "background",
+        "title": "title",
+        "number": "number",
+        "label": "label",
+        "source": "source",
+    },
     "kpi": {
+        "background": "background",
         "title": "title",
         **{f"{part}_{number}": f"{part}_{number}" for number in range(1, 5) for part in ("number", "label")},
     },
@@ -201,8 +209,9 @@ REQUIRED_ROLES: Final[dict[str, tuple[str, ...]]] = {
     "error_message": ("message", "button_1", "button_2"),
 }
 
-# The roles of drawn slides that hold pictures: a post's or a story's photo, a meme's template
-IMAGE_ROLES: Final = frozenset({"photo", "template"})
+# The roles of drawn slides that hold pictures: a post's or a story's photo, a meme's template, the picture behind a
+# big number or KPI tiles
+IMAGE_ROLES: Final = frozenset({"photo", "template", "background"})
 
 # Roles that only ever hold text, even when the text looks like an image's file name
 TEXT_ROLES: Final = frozenset(

@@ -35,7 +35,7 @@ Images: `image`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `introducing-keynote` | The reveal: the product, in one photo, under a title that introduces it by its made-up name | the default; `title`: a title that introduces the product by its made-up name, such as 'Introducing ...'; images: `image` photo (or generated, from its prompt, with an image generator set up); tags: reveal, single_image |
+| `introducing-keynote` | The reveal: the product, in one photo, under a title that introduces it by its made-up name | the default; `title`: a title that introduces the product by its made-up name, such as 'Introducing ...'; images: `image` product-shot (or generated, from its prompt, with an image generator set up); tags: reveal, single_image |
 
 ## `full_image`
 
@@ -50,12 +50,13 @@ Images: `image`
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
 | `opening-image-keynote` | The keynote's opening: a striking photo of the topic, filling the slide, under a greeting | the default; `title`: the greeting, in a few words, as a keynote shows them huge, such as 'Good morning.'; images: `image` photo; tags: full_image, opening |
-| `product-shot-keynote` | The reveal: the product, in a photo filling the slide, with its made-up name as the title | `title`: the product's made-up name, and a few words of your own about it; images: `image` photo (or generated, from its prompt, with an image generator set up); tags: full_image, reveal |
+| `product-shot-keynote` | The reveal: the product, in a photo filling the slide, with its made-up name as the title | `title`: the product's made-up name, and a few words of your own about it; images: `image` product-shot (or generated, from its prompt, with an image generator set up); tags: full_image, reveal |
 | `live-demo-keynote` | The live demo: an odd photo, filling the slide, that the presenter has to present as the demo | `title`: a title such as 'Live demo'; images: `image` weird-stock; tags: demo, full_image |
 | `one-more-thing-reveal-keynote` | The 'one more thing': a second, stranger product, revealed in an odd photo filling the slide | `title`: 'One more thing:' and then the second product, by a made-up name of its own; images: `image` weird-stock (or generated, from its prompt, with an image generator set up); tags: full_image, one_more_thing |
 | `closing-image-keynote` | The keynote's closing: a striking photo of the topic, filling the slide, under its last words | `title`: the last words, in a few words, as a keynote shows them huge, such as 'Thank you.'; images: `image` photo; tags: closing, full_image |
 | `full-screen-neutral-images-keynote` | A photo, filling the slide | images: `image` neutral; tags: full_image, neutral |
 | `full-screen-gif-keynote` | A gif, filling the slide | `title`: two to four words of your own that build up to the gif, or empty for none; images: `image` gifs; tags: full_image, gif |
+| `provocation-keynote` | A dramatic pause between the talk's parts: a striking or weird picture of the concept, filling the slide, under a provocative word or two | `title`: one or two provocative words, as a keynote announces a product, ending in a full stop or a question mark; images: `image` backdrop; tags: full_image, provocation |
 
 ## `statement`
 
@@ -69,12 +70,12 @@ Images: `background`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `opening-statement-keynote` | The keynote's big opening statement, over a photo: that today, everything changes for the topic | the default; `text`: the opening statement, as one sentence in a few words, as a keynote shows them huge; images: `background` calm-backdrop; tags: opening, statement |
-| `the-one-idea-keynote` | The keynote's one idea, as a bold question over a photo: what if the topic were completely different | `text`: the one idea, as a question in a few words, as a keynote shows them huge; images: `background` calm-backdrop; tags: idea, statement |
-| `one-more-thing-keynote` | The 'one more thing', said over a photo, just as the keynote seems over: the presenter has to say what the thing is | `text`: the words that announce one more thing, and nothing more; images: `background` calm-backdrop; tags: one_more_thing, statement |
-| `closing-line-keynote` | The keynote's closing line, over a photo: the product, and what it means for the world | `text`: the closing line, in a few words, as a keynote shows them huge; images: `background` calm-backdrop; tags: closing, statement |
-| `full-screen-pixabay-deep-keynote` | A deep question over a photo | `text`: a short, deep question, such as 'But... why?'; images: `background` calm-backdrop; tags: deep, full_image |
-| `quote-keynote` | A real quote over a photo (talkgenerator finds the quote, about the concept) | images: `background` calm-backdrop; finds its `text` itself (don't write one); tags: quote, statement |
+| `opening-statement-keynote` | The keynote's big opening statement, over a photo: that today, everything changes for the topic | the default; `text`: the opening statement, as one sentence in a few words, as a keynote shows them huge; images: `background` calm-backdrop or backdrop; tags: opening, statement |
+| `the-one-idea-keynote` | The keynote's one idea, as a bold question over a photo: what if the topic were completely different | `text`: the one idea, as a question in a few words, as a keynote shows them huge; images: `background` calm-backdrop or backdrop; tags: idea, statement |
+| `one-more-thing-keynote` | The 'one more thing', said over a photo, just as the keynote seems over: the presenter has to say what the thing is | `text`: the words that announce one more thing, and nothing more; images: `background` calm-backdrop or backdrop; tags: one_more_thing, statement |
+| `closing-line-keynote` | The keynote's closing line, over a photo: the product, and what it means for the world | `text`: the closing line, in a few words, as a keynote shows them huge; images: `background` calm-backdrop or backdrop; tags: closing, statement |
+| `full-screen-pixabay-deep-keynote` | A deep question over a photo | `text`: a short, deep question, such as 'But... why?'; images: `background` calm-backdrop or backdrop; tags: deep, full_image |
+| `quote-keynote` | A real quote over a photo (talkgenerator finds the quote, about the concept) | images: `background` calm-backdrop or backdrop; finds its `text` itself (don't write one); tags: quote, statement |
 
 ## `two_columns`
 
@@ -90,7 +91,7 @@ Images: `image_1`, `image_2`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `two-captions-copyright-free` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | the default; tags: multi_caption, two_captions |
+| `two-captions-copyright-free` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | the default; images: `image_2` photo or weird-stock; tags: multi_caption, two_captions |
 
 ## `three_columns`
 
@@ -161,7 +162,7 @@ Images: none
 
 ## `big_number`
 
-A big, made-up number, with what it counts under it: a figure the presenter has to explain.
+A big, made-up number, with what it counts under it: a figure the presenter has to explain; over a picture of what it's about, or beside it, if it has one.
 
 | Text | At most | What to write |
 | --- | --- | --- |
@@ -170,16 +171,16 @@ A big, made-up number, with what it counts under it: a figure the presenter has 
 | `label` | 90 | what the number counts or measures, in a few words |
 | `source` | 60 | a made-up, unreliable source for the number (or empty, for none) |
 
-Images: none
+Images: `background`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `opening-number-keynote` | The keynote's opening, as one huge number: how well the company has done since its last keynote | the default; `title`: the slide's title, as a keynote's slide has it: a few words, such as 'Since last year'; `number`: the number as people read it, with its unit, such as '2 billion' or '18 h'; `label`: what the number measures, without the number itself; `source`: a made-up, unreliable source, or empty for none; tags: big_number, opening |
-| `price-keynote` | The price, as one big number: what the product costs, and what that gets you | `title`: the slide's title, as a keynote's slide has it: a few words, such as 'Pricing'; `number`: the price with its currency, such as '$999'; `label`: what it gets you, or how to pay it, without the price itself; `source`: the small print, such as its colours; tags: big_number, price |
+| `opening-number-keynote` | The keynote's opening, as one huge number: how well the company has done since its last keynote | the default; `title`: the slide's title, as a keynote's slide has it: a few words, such as 'Since last year'; `number`: the number as people read it, with its unit, such as '2 billion' or '18 h'; `label`: what the number measures, without the number itself; `source`: a made-up, unreliable source, or empty for none; images: `background` backdrop; tags: big_number, opening |
+| `price-keynote` | The price, as one big number: what the product costs, and what that gets you | `title`: the slide's title, as a keynote's slide has it: a few words, such as 'Pricing'; `number`: the price with its currency, such as '$999'; `label`: what it gets you, or how to pay it, without the price itself; `source`: the small print, such as its colours; images: `background` backdrop; tags: big_number, price |
 
 ## `kpi`
 
-Three or four made-up figures on tiles, as on a dashboard, each a number and what it measures; they appear one by one, a click each, the last one the punchline.
+Three or four made-up figures on tiles, as on a dashboard, each a number and what it measures; they appear one by one, a click each, the last one the punchline; over a picture of what they're about, if it has one.
 
 | Text | At most | What to write |
 | --- | --- | --- |
@@ -193,12 +194,12 @@ Three or four made-up figures on tiles, as on a dashboard, each a number and wha
 | `number_4` | 10 | the fourth figure's number, with its unit if it has one (or empty, for none) |
 | `label_4` | 40 | what the fourth figure measures (or empty, for none) |
 
-Images: none
+Images: `background`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `specs-keynote` | The product's specs, as figures on tiles: each a number with its unit and what it measures, the last one the punchline | the default; `title`: the slide's title, as a keynote's slide has it: a few words, such as 'Specs'; `number_1`: the spec's number with its unit, such as '2×' or '18 h'; `number_2`: the spec's number with its unit, such as '2×' or '18 h'; `number_3`: the spec's number with its unit, such as '2×' or '18 h'; `number_4`: the spec's number with its unit, such as '2×' or '18 h'; `label_1`: what the number measures, without the number itself; `label_2`: what the number measures, without the number itself; `label_3`: what the number measures, without the number itself; `label_4`: what the number measures, without the number itself; tags: features, kpi |
-| `models-and-prices-keynote` | The models and their prices, on tiles: each a price and who the model is for, from the cheapest to the last one, the punchline | `title`: the slide's title, as a keynote's slide has it: a few words, such as 'Choose yours'; `number_1`: the model's price, with its currency; `number_2`: the model's price, with its currency; `number_3`: the model's price, with its currency; `number_4`: the model's price, with its currency; `label_1`: the model, and who it's for, without its price; `label_2`: the model, and who it's for, without its price; `label_3`: the model, and who it's for, without its price; `label_4`: the model, and who it's for, without its price; tags: kpi, price |
+| `specs-keynote` | The product's specs, as figures on tiles: each a number with its unit and what it measures, the last one the punchline | the default; `title`: the slide's title, as a keynote's slide has it: a few words, such as 'Specs'; `number_1`: the spec's number with its unit, such as '2×' or '18 h'; `number_2`: the spec's number with its unit, such as '2×' or '18 h'; `number_3`: the spec's number with its unit, such as '2×' or '18 h'; `number_4`: the spec's number with its unit, such as '2×' or '18 h'; `label_1`: what the number measures, without the number itself; `label_2`: what the number measures, without the number itself; `label_3`: what the number measures, without the number itself; `label_4`: what the number measures, without the number itself; images: `background` backdrop; tags: features, kpi |
+| `models-and-prices-keynote` | The models and their prices, on tiles: each a price and who the model is for, from the cheapest to the last one, the punchline | `title`: the slide's title, as a keynote's slide has it: a few words, such as 'Choose yours'; `number_1`: the model's price, with its currency; `number_2`: the model's price, with its currency; `number_3`: the model's price, with its currency; `number_4`: the model's price, with its currency; `label_1`: the model, and who it's for, without its price; `label_2`: the model, and who it's for, without its price; `label_3`: the model, and who it's for, without its price; `label_4`: the model, and who it's for, without its price; images: `background` backdrop; tags: kpi, price |
 
 ## `social_post`
 
@@ -306,7 +307,7 @@ Images: `photo`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `fun-fact-keynote` | A fun fact about the concept: something absurd, stated as certain, that the presenter has to back up | the default; tags: fun_fact |
+| `fun-fact-keynote` | A fun fact about the concept: something absurd, stated as certain, that the presenter has to back up | the default; images: `photo` neutral or meme-chaos; tags: fun_fact |
 
 ## `dare`
 

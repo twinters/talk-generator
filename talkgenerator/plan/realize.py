@@ -230,6 +230,17 @@ def realize(
             others = [image for image in images.values() if isinstance(image, ImageData)]
             with generator_util.as_planned():  # searched as written, among the best results
                 found = _find(source, queries[slot], presentation_context, others)
+            optional = slot in kind.optional_images
+            if found is None and optional:
+                # (a picture the slide can do without, such as one behind its big number: searched for its concept at
+                # once, and else left out, on any try, so the slide comes without it rather than not at all)
+                if queries[slot] != concept and slot not in recipe.queries:
+                    queries[slot] = concept
+                    with generator_util.as_planned():
+                        found = _find(source, concept, presentation_context, others)
+                if found is None:
+                    images[slot] = None
+                    continue
             if found is None:
                 _note(problems, f"{slot}: no image found for {queries[slot]!r}")
                 # (a query of the recipe's own stays: a meme's captions are for its template, and no other)
@@ -242,7 +253,7 @@ def realize(
                 look = talk.look(source.aesthetic)
                 prompt = plan.prompts.get(slot)
                 stream = rng.child("generated", slot)  # (the same seed on every try)
-                if found is None and last and generation.fills(source, look):
+                if found is None and last and not optional and generation.fills(source, look):
                     wish = generation.wish(source, slot, FALLBACK, query or concept, stream, prompt, look)
                 elif found is not None and generation.prefers(source):
                     wish = generation.wish(source, slot, FIRST, query or concept, stream, prompt, look)

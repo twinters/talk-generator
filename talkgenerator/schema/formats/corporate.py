@@ -22,16 +22,20 @@ from typing import Any, Final
 
 from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
-from talkgenerator.plan.kinds import AGENDA_ITEM, Recipe, Variant
+from talkgenerator.plan.kinds import AGENDA_ITEM, Recipe, Variant, pictured
 from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema.formats import (
+    BIG_NUMBER_PICTURES,
+    KPI_PICTURES,
     Format,
     KindSlideGenerator,
     Made,
+    behind,
     company,
     different,
     maybe,
     photos,
+    provocation,
     text,
     words,
 )
@@ -43,17 +47,20 @@ from talkgenerator.util import random_util
 
 PACK: Final = "corporate"
 
+# (D63: a quarter of its slides are free, for memes, pictures and the like, and its agenda, a list of text, waits for
+# a talk of eleven slides or more: the user found all-hands decks too textual)
 ARC: Final = Arc(
     (
-        Part("agenda", rank=4),
+        Part("agenda", rank=7),
         Part("kpis", 1, 2, rank=1),
         Part("wins", 1, 2, rank=2),
         Part("roadmap", rank=3),
-        Part("org_change", rank=5),
-        Part("synergies", rank=6),
-        Part("ask", rank=7),
+        Part("org_change", rank=4),
+        Part("synergies", rank=5),
+        Part("ask", rank=6),
         Part("qa", rank=0),
-    )
+    ),
+    free=0.25,
 )
 
 CORPORATE: Final = Format(
@@ -110,7 +117,7 @@ def _subtitle(context: dict[str, Any]) -> str | None:
 
 # Images: a calm backdrop behind a statement, office photos of the wins and of the company before its reorganisation
 # (and an odd one of it after), and the photo the CEO posted
-_BACKDROP = cg.generate_horizontal_pixabay_image
+_BACKDROP = cg.statement_backdrop_generator
 _WIN = ImageSlot(
     "an office photo of one of the quarter's wins",
     queries=("{}", "office celebration"),
@@ -176,7 +183,7 @@ def _dashboard(context: dict[str, Any]) -> Made | None:
     texts: dict[str, str | None] = {"title": title}
     for index, (number, label) in enumerate(figures, 1):
         texts[f"number_{index}"], texts[f"label_{index}"] = number, label
-    return texts, {}
+    return texts, behind(context, KPI_PICTURES)
 
 
 def _actual_vs_target(context: dict[str, Any]) -> Made | None:
@@ -226,7 +233,7 @@ def _headline_number(context: dict[str, Any]) -> Made | None:
         "number": number,
         "label": label,
         "source": maybe(0.8, text(PACK, "kpis.number_source", variables)),
-    }, {}
+    }, behind(context, BIG_NUMBER_PICTURES)
 
 
 def _pipeline(context: dict[str, Any]) -> Made | None:
@@ -423,7 +430,7 @@ def _ask_number(context: dict[str, Any]) -> Made | None:
         "number": random_util.choice(words(PACK, "ask.ask_number")),
         "label": label,
         "source": maybe(0.8, text(PACK, "ask.ask_source", variables)),
-    }, {}
+    }, behind(context, BIG_NUMBER_PICTURES)
 
 
 def _qa(context: dict[str, Any]) -> Made | None:
@@ -526,6 +533,7 @@ _GENERATORS: Final = [
         "KPI Dashboard",
         Recipe(
             "kpi",
+            (cg.backdrop_generator,),
             brief="The KPIs against their targets, as figures on tiles: each a number and what it measures, the first "
             "a share of its target, the last one the punchline",
             hints={
@@ -533,9 +541,13 @@ _GENERATORS: Final = [
                 **{f"number_{index}": _NUMBER for index in range(1, 5)},
                 **{f"label_{index}": _LABEL for index in range(1, 5)},
             },
-            variants=(
-                Variant(1, frozenset({"number_4", "label_4"}), "with three figures"),
-                Variant(1, note="with four figures"),
+            variants=pictured(
+                (
+                    Variant(1, frozenset({"number_4", "label_4"}), "with three figures"),
+                    Variant(1, note="with four figures"),
+                ),
+                "background",
+                KPI_PICTURES,
             ),
         ),
     ),
@@ -589,6 +601,7 @@ _GENERATORS: Final = [
         "Headline Number",
         Recipe(
             "big_number",
+            (cg.backdrop_generator,),
             brief="The quarter in one number: a share of its target just short of it, or a growth that's "
             "suspiciously small, presented as a triumph",
             hints={
@@ -597,6 +610,7 @@ _GENERATORS: Final = [
                 "label": _LABEL,
                 "source": "a made-up, unreliable source, such as a preliminary report",
             },
+            variants=pictured((), "background", BIG_NUMBER_PICTURES),
         ),
     ),
     _part(
@@ -626,7 +640,7 @@ _GENERATORS: Final = [
     # The quarter's wins
     _part(
         "wins",
-        1.3,
+        1.6,
         "three_columns",
         _three_wins,
         ["three_captions"],
@@ -769,7 +783,7 @@ _GENERATORS: Final = [
     ),
     _part(
         "org_change",
-        0.8,
+        1.2,
         "two_columns",
         _before_and_after,
         ["two_captions"],
@@ -845,6 +859,7 @@ _GENERATORS: Final = [
         "The Ask in Numbers",
         Recipe(
             "big_number",
+            (cg.backdrop_generator,),
             brief="The ask, as one big number: how much more leadership needs from everyone, and of what",
             hints={
                 "title": _TITLE_HINT + ", such as 'Our ask'",
@@ -852,6 +867,7 @@ _GENERATORS: Final = [
                 "label": "what it is of, and from whom, without the number itself",
                 "source": "the small print, such as when it starts",
             },
+            variants=pictured((), "background", BIG_NUMBER_PICTURES),
         ),
         repeats=3,
     ),
@@ -875,17 +891,20 @@ _GENERATORS: Final = [
 # part's generators can make): inspirational quotes and posters, the company's values as an acronym, news, an
 # alignment chart, a tier list, a meme, a fun fact, a fake error message, and full-screen photos, which a talk may
 # have any number of (so that the free slides of a long one, without fair use too, never run out of slides)
+# (D63: memes, full-screen pictures and Reddit's weird pictures more often, and fewer slides of text, as the user found
+# all-hands decks too textual; and the all-hands' own provocations, a word over a full-screen picture: "Synergy.")
 _OTHERS: Final = {
-    "Quote": 1.2,
-    "Acronym": 1,
+    "Quote": 0.6,
+    "Acronym": 0.8,
     "Inspirobot": 0.8,
     "News Headline": 0.8,
-    "Meme": 0.8,
+    "Meme": 2,
+    "Two Captions Weird Reddit": 0.6,
     "Alignment Chart": 0.6,
     "Full Screen Pixabay Quote": 0.6,
     "Tier List": 0.5,
     "Fun Fact": 0.5,
-    "Full Screen Neutral Images": 0.5,
+    "Full Screen Neutral Images": 0.8,
     "Error Message": 0.4,
 }
 
@@ -895,6 +914,7 @@ GENERATORS: Final = [
         slide_generators.get(name).weighted(Free(ARC, weight), f"{name} (Corporate)")
         for name, weight in _OTHERS.items()
     ),
+    provocation(PACK, ARC, 1.5, _variables, "Corporate", "in corporate jargon, as leadership says them"),
 ]
 for _generator in GENERATORS:
     slide_generators.register(_generator.name or "", _generator, group=PACK)
@@ -910,4 +930,5 @@ CAPS: Final = {
     "process": 1,
     "kpi": 1,
     "big_number": 1,
+    "provocation": 0.1,
 }

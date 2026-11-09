@@ -52,9 +52,9 @@ Images: `background`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `wikihow-bold-statement` | A bold statement over a photo | the default; `text`: a bold claim or question about the concept, such as 'Don't we all secretly want to ...?'; images: `background` calm-backdrop; tags: bold_statement, statement |
-| `quote` | A real quote over a photo (talkgenerator finds the quote, about the concept) | images: `background` calm-backdrop; finds its `text` itself (don't write one); tags: quote, statement |
-| `anecdote` | A personal anecdote the presenter now has to tell | `text`: the title of the anecdote, such as 'The time I ...'; images: `background` calm-backdrop; tags: anecdote |
+| `wikihow-bold-statement` | A bold statement over a photo | the default; `text`: a bold claim or question about the concept, such as 'Don't we all secretly want to ...?'; images: `background` calm-backdrop or backdrop; tags: bold_statement, statement |
+| `quote` | A real quote over a photo (talkgenerator finds the quote, about the concept) | images: `background` calm-backdrop or backdrop; finds its `text` itself (don't write one); tags: quote, statement |
+| `anecdote` | A personal anecdote the presenter now has to tell | `text`: the title of the anecdote, such as 'The time I ...'; images: `background` calm-backdrop or backdrop; tags: anecdote |
 
 ## `two_columns`
 
@@ -72,11 +72,11 @@ Images: `image_1`, `image_2`
 | --- | --- | --- |
 | `about-me-location-job` | About the presenter: where they come from and their job | `title`: a title such as 'About me' or 'Who am I?'; `caption_1`: where the presenter comes from: a country, a city or a place; `caption_2`: the presenter's (possibly made-up) job; images: `image_1` country, `image_2` neutral; tags: about_me |
 | `two-history-pictures` | Two old photos from the history of the slide's concept | `title`: a title about the concept's history; `caption_1`: a moment from long ago; `caption_2`: a later moment; images: `image_1` vintage (or generated, from its prompt, with an image generator set up), `image_2` vintage (or generated, from its prompt, with an image generator set up); tags: history, two_images |
-| `two-captions-gifs` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | images: `image_2` gifs, else weird; tags: gif, multi_caption, two_captions |
+| `two-captions-gifs` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | images: `image_1` neutral or meme-chaos, `image_2` gifs, else weird; tags: gif, multi_caption, two_captions |
 | `two-captions-weird-reddit` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | images: `image_1` weird, `image_2` meme-chaos; tags: multi_caption, reddit, two_captions |
 | `two-captions-weird` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | images: `image_1` meme-chaos, `image_2` meme-chaos; tags: multi_caption, reddit, two_captions |
 | `2-conclusions` | The talk's conclusions | `title`: a title for the conclusions, in a few words of your own; `caption_1`: a lesson from the talk in six words at most, calling back to an earlier slide by what it said (not by its number or key); `caption_2`: a lesson from the talk in six words at most, calling back to an earlier slide by what it said (not by its number or key); images: `image_1` neutral, `image_2` weird; tags: conclusion |
-| `two-captions-copyright-free` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | the default; tags: multi_caption, two_captions |
+| `two-captions-copyright-free` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | the default; images: `image_2` photo or weird-stock; tags: multi_caption, two_captions |
 
 ## `three_columns`
 
@@ -95,7 +95,7 @@ Images: `image_1`, `image_2`, `image_3`
 | --- | --- | --- |
 | `about-me-location-job-weirdhobby` | About the presenter: where they come from, their job and their weird hobby | `title`: a title such as 'About me' or 'Who am I?'; `caption_1`: where the presenter comes from: a country, a city or a place; `caption_2`: the presenter's (possibly made-up) job; `caption_3`: the presenter's weird hobby; images: `image_1` country, `image_2` neutral, `image_3` meme-chaos (or generated, from its prompt, with an image generator set up); tags: about_me |
 | `about-me-location-book-weirdhobby` | About the presenter: where they come from, the book they wrote, and their weird hobby | `title`: a title such as 'About me' or 'Who am I?'; `caption_1`: where the presenter comes from: a country, a city or a place; `caption_2`: the title of a book the presenter wrote; `caption_3`: the presenter's weird hobby; images: `image_1` country, `image_2` book-covers (or generated, from its prompt, with an image generator set up), `image_3` meme-chaos (or generated, from its prompt, with an image generator set up); tags: about_me |
-| `three-captions-weird` | Three captioned images that build up, like 'Good, Better, Best' or three steps of a plan | images: `image_2` meme-chaos, `image_3` meme-chaos-still; tags: multi_caption, reddit, three_captions |
+| `three-captions-weird` | Three captioned images that build up, like 'Good, Better, Best' or three steps of a plan | images: `image_1` neutral or meme-chaos, `image_2` meme-chaos, `image_3` meme-chaos-still; tags: multi_caption, reddit, three_captions |
 | `3-conclusions` | The talk's conclusions | `title`: a title for the conclusions, in a few words of your own; `caption_1`: a lesson from the talk in six words at most, calling back to an earlier slide by what it said (not by its number or key); `caption_2`: a lesson from the talk in six words at most, calling back to an earlier slide by what it said (not by its number or key); `caption_3`: a lesson from the talk in six words at most, calling back to an earlier slide by what it said (not by its number or key); images: `image_1` neutral, `image_2` weird, `image_3` gifs, else weird; tags: conclusion |
 | `three-captions-weird-crf` | Three captioned images that build up, like 'Good, Better, Best' or three steps of a plan | the default; images: `image_1` photo, `image_3` weird-stock; tags: multi_caption, three_captions |
 
@@ -245,7 +245,7 @@ Images: none
 
 ## `big_number`
 
-A big, made-up number, with what it counts under it: a figure the presenter has to explain.
+A big, made-up number, with what it counts under it: a figure the presenter has to explain; over a picture of what it's about, or beside it, if it has one.
 
 | Text | At most | What to write |
 | --- | --- | --- |
@@ -254,15 +254,15 @@ A big, made-up number, with what it counts under it: a figure the presenter has 
 | `label` | 90 | what the number counts or measures, in a few words |
 | `source` | 60 | a made-up, unreliable source for the number (or empty, for none) |
 
-Images: none
+Images: `background`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `big-number` | A suspiciously precise statistic about the concept, as one big number | the default; tags: big_number |
+| `big-number` | A suspiciously precise statistic about the concept, as one big number | the default; images: `background` backdrop; tags: big_number |
 
 ## `kpi`
 
-Three or four made-up figures on tiles, as on a dashboard, each a number and what it measures; they appear one by one, a click each, the last one the punchline.
+Three or four made-up figures on tiles, as on a dashboard, each a number and what it measures; they appear one by one, a click each, the last one the punchline; over a picture of what they're about, if it has one.
 
 | Text | At most | What to write |
 | --- | --- | --- |
@@ -276,11 +276,11 @@ Three or four made-up figures on tiles, as on a dashboard, each a number and wha
 | `number_4` | 10 | the fourth figure's number, with its unit if it has one (or empty, for none) |
 | `label_4` | 40 | what the fourth figure measures (or empty, for none) |
 
-Images: none
+Images: `background`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `kpi-tiles` | The concept's made-up key performance indicators, as on a corporate dashboard: figures that start out plausible, the last one the punchline | the default; tags: kpi |
+| `kpi-tiles` | The concept's made-up key performance indicators, as on a corporate dashboard: figures that start out plausible, the last one the punchline | the default; images: `background` backdrop; tags: kpi |
 
 ## `quiz`
 
@@ -317,7 +317,7 @@ Images: `photo`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `social-media-post` | A made-up social media post about the concept, by someone with strong opinions about it | the default; tags: social_post |
+| `social-media-post` | A made-up social media post about the concept, by someone with strong opinions about it | the default; images: `photo` neutral or meme-chaos; tags: social_post |
 
 ## `news_headline`
 
@@ -527,7 +527,7 @@ Images: `photo`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `fun-fact` | A fun fact about the concept: something absurd, stated as certain, that the presenter has to back up | the default; tags: fun_fact |
+| `fun-fact` | A fun fact about the concept: something absurd, stated as certain, that the presenter has to back up | the default; images: `photo` neutral or meme-chaos; tags: fun_fact |
 
 ## `acronym`
 

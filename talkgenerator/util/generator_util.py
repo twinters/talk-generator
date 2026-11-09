@@ -85,6 +85,11 @@ class CombinedGenerator(Generator):
     def __init__(self, *weighted_generators: tuple[float, Callable[[Any], Any]]):
         self._weighted_generators = weighted_generators
 
+    @property
+    def choices(self) -> tuple[Callable[[Any], Any], ...]:
+        """Its generators, without their weights."""
+        return tuple(generator for _, generator in self._weighted_generators)
+
     def __call__(self, seed: str | dict[str, str]):
         logger.debug("Calling generator_util.CombinedGenerator")
         current_weighted_generators = list(self._weighted_generators)
