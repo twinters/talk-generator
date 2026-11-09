@@ -1076,6 +1076,14 @@ related, can use multiple different generators for each".
   reveal has the same look. On talkgenerator.com, a visitor's own key generates pictures (D39); without one, the
   search finds a weird gadget.
 
+Checked on 2026-11-09, without GIPHY and Unsplash: the quick set; new tests (`tests/test_pictures_on_text_slides.py`,
+with every layout of a big number or KPI tiles over a picture in every family, three seeds each: no design finding);
+9 classic talks of random formats (`check --quick --seeds 1,2,3 --schema random --theme random`): 0 errors, 0
+warnings, deterministic 9 of 9; 5 sample decks, two by the free models ($0). Over 400 random-format ten-slide talks,
+live-caption memes come up in about half of the TED-like talks, the pitches and the academic talks (ten-slide pitches
+and academic talks had none), in a quarter of the all-hands; a provocation in a third of the pitches. The family-wide
+layout tests ran in part only (the machine was busy), and the generated product shot only with a fake generator.
+
 ## 8. Slide types and variety
 
 v4's slide types stay: title, about me, history, full-screen gif, meme or photo, image with title, large quote over
