@@ -52,6 +52,8 @@ class SlideDeck:
         self.theme_families: tuple[str, ...] | None = None
         # The language model that writes the talk ("provider:model"), or None: a classic talk
         self.language_model: str | None = None
+        # How much it did: "basic" or "advanced" (it planned the talk first: see talkgenerator.plan.outline)
+        self.llm_level: str | None = None
         # The vision model that picked its pictures among their candidates, if it had a vision pick that did (see
         # talkgenerator.images.vision)
         self.vision_model: str | None = None
@@ -159,6 +161,7 @@ class SlideDeck:
             schema_name=schema_name if schema_name is not None else self.schema_name,
             seed=self._seed,
             language_model=self.language_model,
+            llm_level=self.llm_level,
             vision_model=self.vision_model,
             license_policy=self.license_policy,
             slides=tuple(slide.to_deck_slide() for slide in self._slides if slide is not None),

@@ -234,9 +234,17 @@ def realize(
                 texts[name] = None
                 continue
             if name in recipe.texts_from:
-                found = recipe.texts_from[name]({**presentation_context, "seed": concept})
+                # (searched for the theme the plan gives it, if any, and else, or when that finds none, for its
+                # concept: see talkgenerator.plan.prompt.FOUND_QUERY)
+                theme = " ".join(str(plan.texts.get(f"{name}_query") or "").split())
+                searches = list(dict.fromkeys(search for search in (theme, concept) if search))
+                found = None
+                for search in searches:
+                    found = recipe.texts_from[name]({**presentation_context, "seed": search})
+                    if clean_text(found, text_field, language):
+                        break
                 texts[name] = clean_text(found, text_field, language)
-                why = f"{name}: talkgenerator found none about {concept!r}"
+                why = f"{name}: talkgenerator found none about {' or '.join(map(repr, searches)) or 'nothing'}"
             else:
                 value = plan.texts.get(name)
                 texts[name] = clean_text(value, text_field, language)

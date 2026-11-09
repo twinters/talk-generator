@@ -46,7 +46,7 @@ def _offline_tests_use_no_real_credentials(request, monkeypatch, tmp_path):
     credentials |= {"OPENVERSE_CLIENT_ID", "OPENVERSE_CLIENT_SECRET", "DATA_GOV_API_KEY"}
     # No language model either, unless a test brings its own: offline talks are classic
     credentials |= {"TALKGENERATOR_LLM", "OPENROUTER_API_KEY", "ANTHROPIC_API_KEY", "OPENAI_API_KEY"}
-    credentials |= {"TALKGENERATOR_LLM_EFFORT", "DISABLE_LLM"}
+    credentials |= {"TALKGENERATOR_LLM_EFFORT", "TALKGENERATOR_LLM_LEVEL", "DISABLE_LLM"}
     # Nor an image generator (offline talks generate no pictures, unless a test brings its own), nor its keys
     credentials |= {"TALKGENERATOR_IMAGE_GENERATOR", "DISABLE_IMAGE_GENERATION", "TALKGENERATOR_GENERATED_IMAGES"}
     credentials |= {"TALKGENERATOR_IMAGE_COST_LIMIT", "TALKGENERATOR_IMAGE_QUALITY", "GEMINI_API_KEY", "GOOGLE_API_KEY"}

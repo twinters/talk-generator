@@ -75,7 +75,7 @@ hosted.
 | `describe_format` | The slides a plan for a format can have (as `talkgenerator formats --details --json`) |
 | `get_plan_schema` | The plan format, as a JSON Schema (as `talkgenerator schema plan`) |
 | `render_plan` | Turns a plan into a PowerPoint, and returns the report of `talkgenerator render`, with the paths of the files it saved |
-| `generate_talk` | Makes a whole talk on a topic, as `talkgenerator --topic` does (or with a title, or on a `topic_or_title`): the language model of your settings writes it (OpenRouter's free models, when you have an OpenRouter key), or else the classic generator. Returns where the files are, the talk's seed, and the checks |
+| `generate_talk` | Makes a whole talk on a topic, as `talkgenerator --topic` does (or with a title, or on a `topic_or_title`): the language model of your settings writes it (OpenRouter's free models, when you have an OpenRouter key), at the level of your settings (`TALKGENERATOR_LLM_LEVEL`, or the server's `--llm_level`; without either, `advanced` on a model that costs, which plans the talk first, for cleverer talks), or else the classic generator. Returns where the files are, the talk's seed, its level, and the checks |
 
 1. Install talkgenerator with the MCP SDK on your computer: `pip install 'talkgenerator[mcp]'`. On Windows on Arm,
    install it in an x64 Python: the MCP SDK needs the `cryptography` package, which has no wheels for Windows on Arm.

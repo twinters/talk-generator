@@ -38,7 +38,7 @@ from talkgenerator.images import licenses, profiles
 from talkgenerator.llm import providers
 from talkgenerator.llm.base import TextProvider
 from talkgenerator.models.plan import TalkPlan
-from talkgenerator.plan import external, languages
+from talkgenerator.plan import external, languages, outline
 from talkgenerator.schema.presentation_schema_types import RANDOM, schemas
 from talkgenerator.util import os_util
 
@@ -97,10 +97,16 @@ def output_folder_of(output_folder: str | Path | None) -> Path:
     return Path(output_folder or default_output_folder()).expanduser().resolve()
 
 
-def make_server(output_folder: str | Path | None = None, *, progress_every: float = PROGRESS_EVERY) -> MCPServer:
+def make_server(
+    output_folder: str | Path | None = None, *, progress_every: float = PROGRESS_EVERY, llm_level: str | None = None
+) -> MCPServer:
     """The MCP server, whose tools save what they make in output_folder (see output_folder_of) and nowhere else, and
-    tell the client every progress_every seconds that a talk is still being made."""
+    tell the client every progress_every seconds that a talk is still being made. Its talks are made at llm_level
+    (see talkgenerator.plan.outline): the one given, or else TALKGENERATOR_LLM_LEVEL's, or else the model's default
+    (advanced on a model of your own that costs, basic on free ones). Like the language model, it's the user's choice,
+    never a tool's argument: an advanced talk costs more."""
     folder = output_folder_of(output_folder)
+    level = outline.check(llm_level)  # (a ValueError for a level there isn't)
     one_at_a_time = threading.Lock()  # talks are made one by one, so they don't race each other for the sources
     server = MCPServer(
         "talkgenerator",
@@ -281,7 +287,7 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
     ) -> dict[str, Any]:
         """Make a whole talk on a topic, as `talkgenerator --topic` does (or with a title, or on a topic_or_title). The
         language model the user's settings name writes it (OpenRouter's free models, when there's an OpenRouter key),
-        or else the classic 2019 generator. Saves the PowerPoint with the deck's JSON and a contact sheet of its images
+        at the level they name (basic, or advanced: it plans the talk first), or else the classic 2019 generator. Saves the PowerPoint with the deck's JSON and a contact sheet of its images
         (a PNG) next to it, and returns where, with the talk's title, seed and language model, how many slides the
         model wrote, and the checks. This takes up to a minute or two."""
         if topic_or_title is not None and (topic is not None or title is not None):
@@ -330,6 +336,7 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
                 persona,
                 personas,
                 theme_families,
+                level,
             )
 
         return await _in_a_thread(ctx, "Making the talk", generate, one_at_a_time, progress_every, folder)
@@ -368,6 +375,7 @@ def _generate(
     persona: str | None = None,
     personas: Sequence[str] | None = None,
     theme_families: Sequence[str] | None = None,
+    llm_level: str | None = None,
 ) -> dict[str, Any]:
     """A talk on a topic (or with a title, or on a topic_or_title), saved in the folder with its deck's JSON and
     contact sheet, and the report on it."""
@@ -391,6 +399,7 @@ def _generate(
         persona=persona or None,
         personas=personas or None,
         theme_families=theme_families or None,
+        llm_level=llm_level,
     )
     if saved is None:
         raise ToolError(f"couldn't save the PowerPoint in {folder}")
@@ -416,6 +425,7 @@ def _generate(
         "license_policy": deck.license_policy,
         "seed": deck.seed,
         "language_model": model.id if writes else None,  # None: the classic generator
+        "llm_level": deck.llm_level,  # (basic or advanced, as the talk was written; None: the classic generator)
         "summary": {"deck_slides": len(deck.slides), "written_by_language_model": written},
         "usage": deck.usage.model_dump(),
         "checks": [asdict(finding) for finding in check_deck(deck, slides)],
@@ -492,13 +502,20 @@ def main(argv: Sequence[str]) -> int:
     parser.add_argument(
         "--output_folder", help=f"where the talks are saved, and nowhere else (default: {default_output_folder()})"
     )
+    parser.add_argument(
+        "--llm_level",
+        choices=outline.LEVELS,
+        help="how much the language model does for a talk: basic (one request) or advanced (it plans the talk "
+        "first, and writes its slides in parallel, for cleverer talks) (default: TALKGENERATOR_LLM_LEVEL's, or else "
+        "advanced on a model of your own that costs and basic on free models)",
+    )
     parser.add_argument("--verbose", "-v", action="store_true", help="log debug messages too (on stderr, as all logs)")
     args = parser.parse_args(argv)
 
     # Logs go to stderr, which MCP clients keep in a log file: stdout carries the protocol
     os_util.show_logs(logger, logging.DEBUG if args.verbose else logging.INFO, stream=sys.stderr)
     folder = output_folder_of(args.output_folder)
-    server = make_server(folder)
+    server = make_server(folder, llm_level=args.llm_level)
     logger.info("talkgenerator %s serves its MCP tools over stdio; talks are saved in %s", __version__, folder)
     try:
         server.run("stdio")

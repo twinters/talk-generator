@@ -1,10 +1,10 @@
 """What talkgenerator asks WordNet: whether a noun's most common meaning is a place (or a container), and whether a
-word is an adjective. The answers are NLTK's (wordnet.synsets with its morphy), from the same WordNet files.
+word is an adjective, or a noun. The answers are NLTK's (wordnet.synsets with its morphy), from the same WordNet files.
 
 NLTK's WordNet reader keeps an index of all 147,000 lemmas in memory, as Python objects (about 130 MB), and the data
-files it reads, whole (20 MB more): more than half of what talkgenerator.com's server used at rest, for two questions.
+files it reads, whole (20 MB more): more than half of what talkgenerator.com's server used at rest, for three questions.
 So this reads WordNet's files once, as they're found in NLTK's data (the corpus's zip, or its folder), line by line,
-and keeps only what the two questions need: the noun and adjective lemmas and the nouns whose most common meaning is a
+and keeps only what the questions need: the noun and adjective lemmas and the nouns whose most common meaning is a
 place, as sorted arrays of their hashes (about 1 MB), and the irregular forms (noun.exc and adj.exc). Reading them
 takes a second or two, once per process (a server's warm-up can do it: see load).
 """
@@ -95,6 +95,13 @@ def is_adjective(word: str) -> bool:
     LookupError without WordNet."""
     lexicon = load()
     return bool(_morphy(_lemma(word), lexicon.adjectives, lexicon.adjective_exceptions, _ADJECTIVE_RULES))
+
+
+def is_noun(word: str) -> bool:
+    """Whether WordNet knows the word (or phrase) as a noun, in any of its forms ("geese", "volcanoes"), as NLTK's
+    wordnet.synsets(word, NOUN) does. A LookupError without WordNet."""
+    lexicon = load()
+    return bool(_morphy(_lemma(word), lexicon.nouns, lexicon.noun_exceptions, _NOUN_RULES))
 
 
 def load() -> _Lexicon:

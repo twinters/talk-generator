@@ -61,9 +61,10 @@ def sensitive(text: str) -> bool:
 
 
 def related_words(seed: str, count: int = 12) -> list[str]:
-    """Words that ConceptNet relates to the seed, the weightiest first: short ones, without the seed or sensitive
-    words, capitalised."""
-    entries = conceptnet.get_weighted_related_words(seed, 30) or []
+    """Things that ConceptNet relates to the seed, the weightiest first (conceptnet.related_things: nouns, familiar
+    ones, no names, none of the seed's family, as the templates speak of them as things): short ones, without
+    sensitive words, capitalised."""
+    entries = conceptnet.related_things(seed, 30)
     kept = conceptnet.remove_duplicates(conceptnet.remove_containing(list(entries), seed.lower()) or []) or []
     words = [str(word).strip() for _, word in sorted(kept, key=lambda entry: -entry[0])]
     usable = [word for word in words if word and len(word) <= _LONGEST_WORD and not sensitive(word)]

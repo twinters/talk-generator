@@ -12,12 +12,13 @@ Settings (environment variables or .env):
 
 import logging
 import time
+from collections.abc import Iterable
 from functools import lru_cache
 from urllib.parse import quote, urlencode
 
 from talkgenerator import settings
 from talkgenerator.sources import datamuse
-from talkgenerator.util import cache_util, generator_util, http_util
+from talkgenerator.util import cache_util, generator_util, http_util, language_util
 
 _LOCATION_ARGUMENTS = cache_util.HashableDict(rel="/r/AtLocation", limit=100)
 _HASA_ARGUMENTS = cache_util.HashableDict(rel="/r/HasA", limit=200)
@@ -182,6 +183,25 @@ def get_weighted_related_words(word, limit=50):
         if is_different_enough_label(edge["end"], word) and is_english(edge["end"])
     ]
     return starts + ends
+
+
+def related_things(word: str, limit: int = 50, avoid: Iterable[str] = ()) -> list[tuple[float, str]]:
+    """The related words (see get_weighted_related_words) that a template that wants a noun can speak of: things
+    (language_util.is_thing: nouns first of all, by what Datamuse says of them, familiar, no names), none of the word's
+    family or of any word to avoid (language_util.same_family: not "erupted" or "volcanic" for volcanoes, nor "musk
+    duck" for rubber ducks), each family once (the weightiest of "eruption" and "eruptions"). Their words as they
+    were found, the weightiest first."""
+    taken = [word, *avoid]
+    found: list[tuple[float, str]] = []
+    for weight, candidate in sorted(get_weighted_related_words(word, limit) or [], key=lambda entry: -entry[0]):
+        text = str(candidate).strip()
+        if not text or not language_util.is_thing(text, datamuse.parts_of_speech(text)):
+            continue
+        if any(language_util.same_family(text, other) for other in taken):
+            continue
+        taken.append(text)
+        found.append((weight, text))
+    return found
 
 
 def get_weighted_related_locations(word):

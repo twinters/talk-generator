@@ -8,7 +8,7 @@ from pptx.enum.chart import XL_CHART_TYPE
 from talkgenerator.models.deck import Trendline
 from talkgenerator.render.charts import set_doughnut_properties, set_histogram_properties, set_pie_properties
 from talkgenerator.sources import conceptnet, packs
-from talkgenerator.util import generator_util, random_util
+from talkgenerator.util import generator_util, language_util, random_util
 
 yes_no_question_generator = packs.pack(packs.TED).tracery("charts.yes_no_question")
 funny_yes_no_answer_generator = packs.pack(packs.TED).tracery("charts.funny_yes_no_answer")
@@ -249,7 +249,8 @@ def generate_correlation_curve(presentation_context):
 
     if is_too_similar_for_axes(x_label, y_label):
         x_label = _CORRELATION_WORD_GENERATOR(y_label)
-    if is_too_similar_for_axes(x_label, y_label):
+    # (an axis is a thing: not an antonym such as "dormant", D68)
+    if is_too_similar_for_axes(x_label, y_label) or not language_util.is_thing(str(x_label)):
         x_label = "time"
     presentation_context.update({"x_label": x_label, "y_label": y_label})
 
@@ -282,7 +283,7 @@ CLUSTER_ODDS: Final = 0.3
 def _classic_clusters(seed: str) -> list[str]:
     """Two or three words related to the seed (capitalised), as a correlation's clouds' names: none if ConceptNet
     has too few."""
-    related = conceptnet.remove_containing(conceptnet.get_weighted_related_words(seed, 30) or [], seed) or []
+    related = conceptnet.remove_containing(conceptnet.related_things(seed, 30), seed) or []
     words = [str(word) for _, word in conceptnet.remove_duplicates(related) or [] if len(str(word)) <= 20]
     if len(words) < 2:
         return []

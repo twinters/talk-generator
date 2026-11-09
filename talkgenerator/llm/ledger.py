@@ -145,6 +145,31 @@ class MeteredProvider(TextProvider):
     def max_output_tokens(self, request: TextRequest) -> int:
         return self.provider.max_output_tokens(request)
 
+    def affords(self, *requests: TextRequest) -> bool:
+        """Whether the budget allows these requests, one after the other, as it stands: their number, and their worst
+        case cost with every model that may answer (none of unknown price, under a dollar limit). For a request that's
+        only worth making when the ones after it can be made too (a talk's outline, before the talk)."""
+        spent = self.ledger.total()
+        if self.budget.max_requests is not None and spent.requests + len(requests) > self.budget.max_requests:
+            return False
+        if self.budget.max_cost_usd is None:
+            return True
+        worst_cases = [
+            prices.worst_case_cost(model, request, self.max_output_tokens(request))
+            for request in requests
+            for model in self.possible_models()
+        ]
+        if any(cost is None for cost in worst_cases):
+            return False
+        most = sum(
+            max(
+                prices.worst_case_cost(model, request, self.max_output_tokens(request)) or 0.0
+                for model in self.possible_models()
+            )
+            for request in requests
+        )
+        return spent.cost_usd + most <= self.budget.max_cost_usd
+
     def _metered(self, request: TextRequest, call: Callable[[], TextResponse]) -> TextResponse:
         # Every model that may answer has to fit the budget: a free model can fall back to a paid one
         for model in self.possible_models():

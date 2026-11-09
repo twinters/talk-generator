@@ -448,6 +448,33 @@ From the user's look at 35 sample talks (docs/v5-plan.md, D65):
   fewer statements and quotes between a format's parts, more of a pitch's team photos and an academic talk's
   experimental setup, and a classic fun fact with its photo three times in four.
 
+### Advanced talks, and things to riff on
+
+- How much the language model does is the talk's level (`--llm_level`, `llm_level=`, `TALKGENERATOR_LLM_LEVEL`, and
+  the MCP server's `--llm_level`): `basic`, one request a talk, in which the model writes every slide from the word
+  talkgenerator gives it; or `advanced`, where the model first plans the talk (its title and the presenter's job, a
+  thesis, a running gag, and for every slide the word it riffs on, one talkgenerator found for it or a sharper one,
+  and its idea, the point it makes: for a chart, what it measures against what; for a diagram, what its parts are),
+  and its slides are written as their ideas come in, a few at a time, in parallel requests (the second slide alone,
+  then two, then three at a time). Advanced talks keep one thread, come out cleverer, and are quicker than Basic ones:
+  measured on five talks with Claude Haiku 5.5 and Sonnet 5.5, the first slide was ready 1.5 to 11 seconds sooner and
+  the whole talk up to 8.5 seconds sooner, in five requests, for about twice the tokens (about $0.003 a talk with
+  Haiku, $0.06 with Sonnet). A talk is Advanced by default on a model of your own that costs (Claude, OpenAI's, your
+  ChatGPT plan's, OpenRouter's paid models), and Basic on free ones. An outline that fails, finds the topic unsafe, is
+  declined (even halfway: what its slides' requests wrote is dropped) or can't be afforded leaves a Basic talk. The
+  deck says which level its slides were written at (`llm_level`).
+- A real quote is searched for a theme the language model writes for it (`text_query`, such as "patience" or
+  "tradition"), and then for the slide's concept: the concept found nothing on Goodreads, and random lines on
+  Wikiquote (an anime quote on a tea talk).
+- The words slides start from are things: Datamuse's related words, which it now tags with their parts of speech, are
+  nouns first of all (no "Volcanoes vs. eruptive" on a scatter plot, no "Do you want glacial?" on a flowchart),
+  familiar ones (no "scoria"), no names (no "etna", which a slide would write in small letters), and each of a
+  family of its own (not "eruption", "eruptive" and "erupted" in one talk, nor "musk duck" for rubber ducks). They
+  wander two steps from the topic at most before they come back to it (penguins went to leafs, hockey and netball),
+  a phrase's from its words when its own related words are all of its family ("quantum physics"), and none is a word a
+  slide shouldn't make light of. A classic slide's other related words (a matrix's quadrants, a scatter plot's
+  groups, a list's things) are things too, and so are a language model's words to riff on.
+
 ### Titles and presenter names
 
 - What someone types can be the topic or the title (`--topic_or_title`, `topic_or_title=`): "penguins" as well as

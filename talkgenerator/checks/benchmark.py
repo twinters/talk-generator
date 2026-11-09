@@ -38,7 +38,7 @@ from talkgenerator.llm.base import TextProvider
 from talkgenerator.llm.providers import provider_from_spec
 from talkgenerator.llm.replay import ReplayProvider
 from talkgenerator.models.deck import Deck
-from talkgenerator.plan import languages
+from talkgenerator.plan import languages, outline
 from talkgenerator.schema.presentation_schema_types import RANDOM
 from talkgenerator.util import http_util, os_util, random_util
 
@@ -112,6 +112,7 @@ def generate_deck(
     vision_pick: TextProvider | None = None,
     persona: str | None = None,
     personas: str | None = None,
+    llm_level: str | None = None,
 ) -> Deck:
     _, slide_deck, _ = generator._generate_presentation(
         schema=schema,
@@ -130,6 +131,7 @@ def generate_deck(
         vision_pick=vision_pick,
         persona=persona,
         personas=personas,
+        llm_level=llm_level,
     )
     return slide_deck.to_deck()  # (with the format its seed picked, for schema random)
 
@@ -148,13 +150,16 @@ def check_talk(
     vision_pick: str | None = None,
     persona: str | None = None,
     personas: str | None = None,
+    llm_level: str | None = None,
 ) -> TalkReport:
     """Generate a talk and check it; with determinism, generate it again one by one, which has to give the same.
 
     With a language model (a spec, see talkgenerator.llm.providers), its answers are recorded, and the second run
     replays them, and so do the sources' answers that the on-disk cache keeps (http_util.same_answers), which can
     expire in between; with a vision pick (see talkgenerator.images.vision), its answer too. With decks (a folder),
-    the talk's deck is saved there as JSON, to read what it says."""
+    the talk's deck is saved there as JSON, to read what it says. Its level (llm_level, see talkgenerator.plan.outline)
+    is the model's default unless it's given, for both of its runs: the second one's model, a cassette, has none."""
+    level = outline.level(llm_level, provider_from_spec(llm)) if llm != "none" else None
     with tempfile.TemporaryDirectory(prefix="talkgenerator-check-") as folder, http_util.same_answers():
         cassette = Path(folder) / "answers.json"
         recording: TextProvider | str = llm
@@ -178,6 +183,7 @@ def check_talk(
                 vision_recording,
                 persona,
                 personas,
+                level,
             )
         except Exception as error:  # a talk should never fail: if it does, that's what the check found
             logger.exception("Generating a talk about %r crashed", topic)
@@ -212,6 +218,7 @@ def check_talk(
                 replaying_vision,
                 persona,
                 personas,
+                level,
             )
             # What the talks asked of language models differs (the second one replayed); their slides may not
             report.deterministic = again.model_copy(update={"usage": deck.usage}).to_json() == deck.to_json()
@@ -235,6 +242,7 @@ def run(
     vision_pick: str | None = None,
     persona: str | None = None,
     personas: str | None = None,
+    llm_level: str | None = None,
 ) -> dict[str, Any]:
     """Check a talk for every topic and seed, and return the report."""
     talks = []
@@ -254,6 +262,7 @@ def run(
                 vision_pick,
                 persona,
                 personas,
+                llm_level,
             )
             talks.append(talk)
             if on_talk is not None:
@@ -264,6 +273,7 @@ def run(
         "each format's" if schema == RANDOM else generator.get_schema(schema).license_policy
     )
     report["vision_pick"] = vision_pick
+    report["llm_level"] = llm_level  # (None: each talk's model's default)
     report["persona"] = persona
     report["personas"] = personas
     return report
@@ -448,6 +458,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="have a vision model pick the pictures of the slides the language model writes (see talkgenerator "
         "--help): on (alone), or a model, as provider:model (default: none)",
     )
+    parser.add_argument(
+        "--llm_level",
+        choices=outline.LEVELS,
+        help="how much the language model does: basic or advanced (see talkgenerator --help) (default: "
+        "TALKGENERATOR_LLM_LEVEL's, or else the model's: advanced on a model that costs, basic on free models)",
+    )
     parser.add_argument("--verbose", "-v", action="store_true", help="show the generator's logs")
     args = parser.parse_args(argv)
 
@@ -502,6 +518,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         vision_pick=args.vision_pick,
         persona=args.persona,
         personas=args.personas,
+        llm_level=args.llm_level,
     )
     summary = report["summary"]
     print(

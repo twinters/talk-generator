@@ -207,6 +207,12 @@ def llm_effort() -> str | None:
     return env.str("TALKGENERATOR_LLM_EFFORT", "").strip().lower() or None
 
 
+def llm_level() -> str | None:
+    """How much the language model does for a talk (TALKGENERATOR_LLM_LEVEL: basic or advanced, see
+    talkgenerator.plan.outline), or None for the default, basic."""
+    return env.str("TALKGENERATOR_LLM_LEVEL", "").strip().lower() or None
+
+
 def is_source_disabled(name: str) -> bool:
     """Check whether a content source is switched off via DISABLE_<NAME>=1.
 
