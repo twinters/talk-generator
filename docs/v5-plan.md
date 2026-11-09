@@ -1154,14 +1154,17 @@ pack, "Exhibit A", a museum label, a text-message conversation and buzzword bing
 **Livelier diagrams and charts** (2026-11-09, D64), after the user's review of 35 sample talks: the 2×2 matrices were
 "weird: overly complex names", the scatter plots had "boring distribution", the flowcharts, processes, cycles and the
 rest were boring without pictures, and a chart could show a weird picture at a point of its line. Now a **matrix** has
-everyday opposites at the ends of its axes and short names in its quadrants (a word or two: at most 24 letters, where
-it was 30), and comes out one of three ways, which the talk's dice pick (a recipe of its own can say otherwise): a name
+everyday opposites at the ends of its axes (a word or two: at most 24 letters, where they had 30) and short names in
+its quadrants (a word or two, as the language model is asked; still 30 letters at most, for a format's made-up
+citations), and comes out one of three ways, which the talk's dice pick (a recipe of its own can say otherwise): a name
 in every quadrant (two in five), no names but familiar things as **dots** where they belong (two to four of them, two in
 a quadrant at most, each name in its half of the quadrant; two in five), or bare, with only the axes and the
 punchline's dot (one in five). The language model writes a quadrant's things as `top_left_things` ("Cats | Sloths"); the
 deck's `MatrixDiagram` has them as `dots`, each with its name and place, drawn from the start in the labels' colour (the
 punchline's dot stays on its click), and quadrants without labels draw none; classic matrices take the same three shapes
-from ConceptNet's related words. A **scatter plot** is a cloud of one of eleven shapes (rising, falling, exponential,
+from ConceptNet's related words. The formats' matrices of things in three quadrants (a pitch's competitors, an
+all-hands' initiatives, a paper's earlier work) have them as the quadrants' names or, half the time, as dots where they
+belong, one a quadrant, with a name only in the best one (`kinds.matrix_landscape`). A **scatter plot** is a cloud of one of eleven shapes (rising, falling, exponential,
 saturating, U-shaped, hill, wave, step, no correlation at all, a ring, a smile: a plan can name one, `shape`), as tight
 or as loose as the dice say, of a dozen to 150 points on axes of their own size; a line is fitted through a cloud a third
 of the time (`ChartSeries.trendline`: PowerPoint's own trendline, linear or a parabola, dashed, which talk-generator-web
