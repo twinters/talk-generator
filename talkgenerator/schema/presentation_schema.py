@@ -68,6 +68,7 @@ from talkgenerator.plan.outline import (
     WRITERS,
     Outline,
     SlideIdea,
+    batch_size,
     outline_request,
     read_idea,
     writing_request,
@@ -255,6 +256,12 @@ class PlanOutcome:
 
 # Titles before a name, which a model may write in a presenter's job before the name it gave them ("Dr. ...")
 _HONORIFICS = re.compile(r"^(?:(?:dr|prof|mr|mrs|ms|mx|sir|dame)\.?\s+)+", re.IGNORECASE)
+
+
+def _numbers(batch: Sequence[int]) -> str:
+    """Slides' numbers (counted from 1), as the logs say them: "3", "4 and 5", "6, 7 and 8"."""
+    numbers = [str(slide_nr + 1) for slide_nr in batch]
+    return numbers[0] if len(numbers) == 1 else f"{', '.join(numbers[:-1])} and {numbers[-1]}"
 
 
 def _title_slide(
@@ -1303,11 +1310,11 @@ class PresentationSchema:
         gathering: facts.Gathering | None,
     ) -> bool:
         """Write the talk at the Advanced level (see talkgenerator.plan.outline): the model plans it, in an outline that's
-        read while it's written (its spine first, then every slide's word and idea), and every slide is written in a
-        request of its own as soon as its idea is in, at most WRITERS at a time, from the plan as far as it goes then;
-        the slides the outline didn't plan, from the dice's words, once it's in. The slides come in any order, and each
-        is realized as soon as it's in. With the real facts being gathered, they're waited for before the first slide's
-        request (they're in by then, mostly).
+        read while it's written (its spine first, then every slide's word and idea), and its slides are written as their
+        ideas come in, in batches (BATCHES: the second slide alone, then two, then three at a time), each in a request of
+        its own, at most WRITERS at a time, from the plan so far; the slides the outline didn't plan, from the dice's
+        words, once it's in. The slides come in any order, and each is realized as soon as it's in. With the real facts
+        being gathered, they're waited for before the first batch's request (they're in by then, mostly).
 
         Whether the talk was written so (or cancelled): False when it's to be a Basic talk, as the outline brought no
         spine (an error, a refusal), found the topic unsafe, or started in English in a talk in another language (the
@@ -1317,43 +1324,51 @@ class PresentationSchema:
         planned = [talk.planned[slide_nr] for slide_nr in sorted(talk.planned)]
         request = outline_request(topics, planned, offers, rng, language, title, name, typed, persona, self.format)
         if isinstance(llm, MeteredProvider):
-            estimates = [
-                writing_request(topics, slide, planned, {}, rng, language, persona, self.format, None, generation)
-                for slide in planned
-            ]
+            estimates, left, number = [], list(planned), 0
+            while left:  # (the batches, as the dice's words make them)
+                batch, left = left[: batch_size(number)], left[batch_size(number) :]
+                estimates.append(
+                    writing_request(topics, batch, planned, {}, rng, language, persona, self.format, None, generation)
+                )
+                number += 1
             if not llm.affords(request, *estimates):
-                logger.info("The talk's budget doesn't allow its outline and a request per slide: it's a Basic talk")
+                logger.info("The talk's budget doesn't allow its outline and its slides' requests: it's a Basic talk")
                 return False
         slide_numbers = {slide.key: slide_nr for slide_nr, slide in talk.planned.items()}
         # (what a Basic talk starts from, should the outline come to nothing: the dice's words)
         dice = (dict(talk.planned), [context.get("seed") for context in talk.contexts])
         ideas: dict[int, SlideIdea] = {}
-        writing: dict[int, Future[None]] = {}
-        planning = threading.Lock()  # (the plan as far as it goes, which the slides' requests read)
+        writing: list[Future[None]] = []
+        submitted: set[int] = set()
+        pending: list[int] = []  # (the slides whose ideas are in, for the next batch)
+        planning = threading.Lock()  # (the plan as far as it goes, which the batches' requests read)
         dropped = threading.Event()  # (the outline was declined: what its slides' requests write isn't used)
         given: dict[int, facts.Given] | None = None
         talk.in_order = False
         talk.check_language = True
         writers = ThreadPoolExecutor(max_workers=min(WRITERS, len(planned)), thread_name_prefix="slide writer")
 
-        def write(slide_nr: int) -> None:
+        def write(batch: list[int]) -> None:
             with planning:
-                slide = talk.planned[slide_nr]
+                slides = [talk.planned[slide_nr] for slide_nr in batch]
                 plan = [talk.planned[number] for number in sorted(talk.planned)]
-            fact = (given or {}).get(slide.number)
             request = writing_request(
-                topics, slide, plan, dict(talk.spine), rng, language, persona, self.format, fact, generation
+                topics, slides, plan, dict(talk.spine), rng, language, persona, self.format, given, generation
             )
-            if not self._ask_slide(llm, request, talk, slide_nr, dropped):
-                talk.give_up(slide_nr)
+            taken = self._ask_slides(llm, request, talk, batch, dropped)
+            for slide_nr in batch:
+                if slide_nr not in taken:
+                    talk.give_up(slide_nr)
 
-        def submit(slide_nr: int) -> None:
+        def submit(batch: list[int]) -> None:
             nonlocal given
-            if slide_nr in writing or talk.cancelled.is_set():
+            batch = [slide_nr for slide_nr in batch if slide_nr not in submitted]
+            if not batch or talk.cancelled.is_set():
                 return
             if given is None:
                 given = self._facts_for(talk, gathering, rng)
-            writing[slide_nr] = writers.submit(image_util.carry(write), slide_nr)
+            submitted.update(batch)
+            writing.append(writers.submit(image_util.carry(write), batch))
 
         reader = ObjectReader()
         read_anything = False
@@ -1382,7 +1397,10 @@ class PresentationSchema:
                         )
                         talk.contexts[slide_nr]["seed"] = idea.riff  # (for its notes)
                     ideas[slide.number] = idea
-                submit(slide_nr)
+                pending.append(slide_nr)
+                if len(pending) >= batch_size(len(writing)):
+                    submit(pending[:])
+                    pending.clear()
 
         try:
             response = llm.stream(request, read)
@@ -1414,9 +1432,13 @@ class PresentationSchema:
                 context["seed"] = seed
             talk.restart()  # (and it's a Basic talk, from the dice's words)
             return False
-        for slide_nr in sorted(talk.planned):  # (those the outline didn't plan, from the dice's words)
-            submit(slide_nr)
-        for future in writing.values():
+        # (the slides still waiting for their batch, and those the outline didn't plan, from the dice's words)
+        rest = sorted({*pending, *(slide_nr for slide_nr in talk.planned if slide_nr not in submitted)})
+        while rest:
+            size = batch_size(len(writing))
+            submit(rest[:size])
+            rest = rest[size:]
+        for future in writing:
             while not talk.cancelled.is_set():
                 try:
                     future.result(timeout=0.25)
@@ -1433,14 +1455,14 @@ class PresentationSchema:
         return True
 
     @staticmethod
-    def _ask_slide(
-        llm: TextProvider, request: Any, talk: "_PlannedTalk", slide_nr: int, dropped: threading.Event
-    ) -> bool:
-        """Ask for one slide of an Advanced talk, and hand it to the talk while it comes in: whether it came (a slide the
-        model doesn't write, or gets wrong, is classic, as in a Basic talk). A slide that a model wrote without its key
-        around it (its fields at the answer's top) is taken as written. Once the outline is dropped, nothing more is
-        taken."""
-        key = talk.planned[slide_nr].key
+    def _ask_slides(
+        llm: TextProvider, request: Any, talk: "_PlannedTalk", batch: list[int], dropped: threading.Event
+    ) -> set[int]:
+        """Ask for a batch of an Advanced talk's slides, and hand them to the talk while they come in: the ones that came
+        (a slide the model doesn't write, or gets wrong, is classic, as in a Basic talk). A slide alone that a model
+        wrote without its key around it (its fields at the answer's top) is taken as written. Once the outline is
+        dropped, nothing more is taken."""
+        keys = {talk.planned[slide_nr].key for slide_nr in batch}
         reader = ObjectReader()
         loose: dict[str, Any] = {}
         read_anything = False
@@ -1451,8 +1473,8 @@ class PresentationSchema:
                 raise TalkCancelled()
             read_anything = True
             for name, value in reader.feed(text):
-                if name == key or (isinstance(value, dict) and key in value):
-                    talk.take(name, value)  # (the slide, or an object around it, which take looks into)
+                if name in keys or (isinstance(value, dict) and keys & value.keys()):
+                    talk.take(name, value)  # (a slide, or an object around some, which take looks into)
                 else:
                     loose[name] = value
 
@@ -1461,19 +1483,19 @@ class PresentationSchema:
             if not read_anything:
                 read(response.text)
             if response.finish == "refused":
-                logger.warning("The language model declined to write slide %s: it's classic", slide_nr + 1)
-                return False
+                logger.warning("The language model declined to write slides %s: they're classic", _numbers(batch))
+                return set()
         except TalkCancelled:
-            return False
+            return set()
         except ProviderError as error:
-            logger.warning("The language model didn't write slide %s (%s): it's classic", slide_nr + 1, error)
-            return False
+            logger.warning("The language model didn't write slides %s (%s): they're classic", _numbers(batch), error)
+            return set()
         except Exception:  # a misbehaving provider shouldn't sink the talk either
-            logger.exception("Asking the language model for slide %s crashed: it's classic", slide_nr + 1)
-            return False
-        if not talk.has_plan(slide_nr) and loose and not dropped.is_set():
-            talk.take(key, loose)
-        return talk.has_plan(slide_nr)
+            logger.exception("Asking the language model for slides %s crashed: they're classic", _numbers(batch))
+            return set()
+        if len(batch) == 1 and not talk.has_plan(batch[0]) and loose and not dropped.is_set():
+            talk.take(talk.planned[batch[0]].key, loose)
+        return {slide_nr for slide_nr in batch if talk.has_plan(slide_nr)}
 
     @staticmethod
     def _facts_for(

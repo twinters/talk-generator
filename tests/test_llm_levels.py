@@ -1,7 +1,8 @@
 """Offline tests: how much a language model does for a talk (docs/v5-plan.md, D68). At the Basic level, it writes the
 talk in one request, from the words the talk's dice give its slides; at the Advanced level, it plans the talk first
 (an outline: its spine, a running gag, and every slide's word and idea), and every slide is written in a request of
-its own as soon as its idea is in, in parallel. An outline that brings no spine leaves the talk a Basic one."""
+its own as soon as its idea is in, a few at a time, in parallel. An outline that brings no spine leaves the talk a
+Basic one."""
 
 import importlib.util
 import json
@@ -23,6 +24,7 @@ from tests.test_llm_talks import images as images  # (fake images at example.com
 from tests.test_llm_talks import schema as schema  # (the fake schema, as a fixture)
 
 PLANNED = NUM_SLIDES - 1  # (every slide but the title slide, which the spine makes)
+BATCHED = 3  # (the batches of its six slides: the second slide alone, then two, then three)
 
 
 class _Seeds(SlideSeedGenerator):
@@ -50,7 +52,7 @@ def _purposes(model):
 
 
 def _slide_request(model, key):
-    """The request that wrote the slide of this key (a slide's request at the Advanced level)."""
+    """The request that wrote the slide of this key (its batch's request, at the Advanced level)."""
     return next(
         request
         for request in model.requests
@@ -66,12 +68,14 @@ def test_a_basic_talk_is_one_request(seeds):
     assert "The idea:" not in model.requests[0].messages[0].content
 
 
-def test_an_advanced_talk_is_planned_and_its_slides_written_one_by_one(seeds):
+def test_an_advanced_talk_is_planned_and_its_slides_written_a_few_at_a_time(seeds):
     model = FakeModel()
     deck = _talk(model, llm_level=ADVANCED)
     purposes = _purposes(model)
-    assert purposes[0] == outline.PURPOSE and sorted(purposes[1:]) == [outline.SLIDE_PURPOSE] * PLANNED
-    assert deck.llm_level == ADVANCED and deck.usage.requests == 1 + PLANNED
+    assert purposes[0] == outline.PURPOSE and sorted(purposes[1:]) == [outline.SLIDE_PURPOSE] * BATCHED
+    assert deck.llm_level == ADVANCED and deck.usage.requests == 1 + BATCHED
+    batches = sorted(list(request.json_schema["properties"]) for request in model.requests[1:])
+    assert batches == [["slide_2"], ["slide_3", "slide_4"], ["slide_5", "slide_6", "slide_7"]]
     assert all(_planned(deck))
     assert deck.title == "The title"  # (the outline's spine is the talk's)
 
@@ -80,15 +84,18 @@ def test_an_advanced_talk_is_planned_and_its_slides_written_one_by_one(seeds):
     assert "slide_2: " in asked and "Its words: word 2, other 2, third 2" in asked
     assert "slide_1:" not in asked
     assert "- title: " in asked and f"- {outline.RUNNING_GAG}: " in asked
-    # A slide's request has the talk's spine and running gag (the same for every slide), the plan, and the slide
+    # A batch's request has the talk's spine and running gag (the same for every batch), the plan so far, its slides
     second = _slide_request(model, "slide_2")
     assert "The talk's title: The title" in second.system and "The talk's running gag: The running gag" in second.system
     assert second.system.startswith(prompt.SYSTEM_PROMPT)
     assert {request.system for request in model.requests[1:]} == {second.system}  # (cached once)
     written = second.messages[0].content
     assert "A word to riff on: riff of slide 2. The idea: idea of slide 2" in written
-    assert "- slide_2 (this one): " in written and "word 2" not in written
-    assert list(second.json_schema["properties"]) == ["slide_2"]
+    assert "The plan of the talk so far" not in written and "word 2" not in written  # (nothing before it)
+    later = _slide_request(model, "slide_5").messages[0].content
+    assert "The plan of the talk so far:" in later
+    assert "- slide_2: " in later and "Its word: riff of slide 2. Its idea: idea of slide 2" in later
+    assert "- slide_5: " not in later  # (its own slides come after the plan, to write)
     # (and its slide says what it riffed on, in its notes)
     assert deck.slides[1].notes.startswith("Seed: riff of slide 2")
 
@@ -160,7 +167,7 @@ def test_a_talk_whose_outline_brings_no_spine_is_a_basic_one(seeds, how):
 def test_an_outline_cut_off_still_writes_every_slide(seeds):
     model = _Failing("cut")
     deck = _talk(model, llm_level=ADVANCED)
-    assert sorted(_purposes(model)[1:]) == [outline.SLIDE_PURPOSE] * PLANNED
+    assert sorted(_purposes(model)[1:]) == [outline.SLIDE_PURPOSE] * BATCHED
     assert all(_planned(deck)) and deck.llm_level == ADVANCED
     assert "The idea: idea of slide 2" in _slide_request(model, "slide_2").messages[0].content
     assert "A word to riff on: word 3\n" in _slide_request(model, "slide_3").messages[0].content  # (the dice's)
@@ -208,22 +215,32 @@ def test_a_talk_claude_declines_to_plan_is_written_as_a_basic_one_and_classic_if
     assert deck.usage.requests >= 2  # (the outline, a slide it had planned by then, the Basic talk's, declined too)
 
 
-class _OneSlideFails(FakeModel):
+class _OneBatchFails(FakeModel):
     def complete(self, request):
         if request.purpose == outline.SLIDE_PURPOSE and "slide_4" in request.json_schema["properties"]:
             self.requests.append(request)
-            raise ProviderError("this slide failed")
+            raise ProviderError("this batch failed")
         return super().complete(request)
 
 
-def test_a_slide_whose_request_fails_is_classic_and_the_others_planned(seeds):
-    deck = _talk(_OneSlideFails(), llm_level=ADVANCED)
+def test_slides_whose_request_fails_are_classic_and_the_others_planned(seeds):
+    deck = _talk(_OneBatchFails(), llm_level=ADVANCED)
     planned = _planned(deck)
-    assert not planned[3] and all(planned[:3]) and all(planned[4:])
+    assert planned[:2] == [True, True] and planned[2:4] == [False, False] and all(planned[4:])
+
+
+def test_a_batch_that_brings_some_of_its_slides_gives_the_others_up(seeds):
+    def without_slide_6(answer):
+        if "slide_6" in answer and "riff" not in answer["slide_6"]:
+            del answer["slide_6"]
+
+    deck = _talk(FakeModel(change=without_slide_6), llm_level=ADVANCED)
+    planned = _planned(deck)
+    assert not planned[5] and all(planned[:5]) and planned[6]
 
 
 class _SlowSecondSlide(FakeModel):
-    """Writes the second slide last of all: the slides come in out of order."""
+    """Writes the second slide's batch last of all: the slides come in out of order."""
 
     def __init__(self):
         super().__init__()
@@ -237,7 +254,7 @@ class _SlowSecondSlide(FakeModel):
         response = super().complete(request)
         if keys:
             self.written.append(keys[0])
-            if len(self.written) == PLANNED - 1:
+            if len(self.written) == BATCHED - 1:
                 self.others_done.set()
         return response
 
@@ -249,16 +266,24 @@ def test_slides_that_come_in_out_of_order_are_settled_in_order(seeds):
     assert _talk(FakeModel(), llm_level=ADVANCED).to_json() == deck.to_json()  # (the same talk, whatever the order)
 
 
-def test_an_advanced_talk_takes_about_as_long_as_its_slowest_slide(seeds):
+def test_an_advanced_talk_s_batches_are_written_at_the_same_time(seeds):
     class Slow(FakeModel):
-        def complete(self, request):
-            time.sleep(0.4)
-            return super().complete(request)
+        def __init__(self):
+            super().__init__()
+            self.times: list[tuple[float, float]] = []
 
-    start = time.monotonic()
-    _talk(Slow(), llm_level=ADVANCED)
-    # (the outline, then its six slides at once rather than one after another: 2 times 0.4 seconds, not 7)
-    assert time.monotonic() - start < 0.4 * (1 + PLANNED) + 1.5
+        def complete(self, request):
+            began = time.monotonic()
+            time.sleep(0.4)
+            response = super().complete(request)
+            if request.purpose == outline.SLIDE_PURPOSE:
+                self.times.append((began, time.monotonic()))
+            return response
+
+    model = Slow()
+    _talk(model, llm_level=ADVANCED)
+    assert len(model.times) == BATCHED
+    assert max(began for began, _ in model.times) < min(ended for _, ended in model.times)  # (they overlap)
 
 
 def test_an_outline_s_texts_are_kept_short():
@@ -269,13 +294,13 @@ def test_an_outline_s_texts_are_kept_short():
     assert outline.read_idea({"riff": "", "idea": "x"}) is None and outline.read_idea("not a slide") is None
 
 
-def test_a_budget_without_room_for_a_request_per_slide_makes_a_basic_talk(seeds):
+def test_a_budget_without_room_for_the_outline_and_its_batches_makes_a_basic_talk(seeds):
     model = FakeModel()
-    deck = _talk(model, llm_level=ADVANCED, budget=Budget(max_requests=PLANNED))
+    deck = _talk(model, llm_level=ADVANCED, budget=Budget(max_requests=BATCHED))
     assert _purposes(model) == ["talk plan"]
     assert deck.llm_level == BASIC and all(_planned(deck))
     model = FakeModel()
-    deck = _talk(model, llm_level=ADVANCED, budget=Budget(max_requests=1 + PLANNED))
+    deck = _talk(model, llm_level=ADVANCED, budget=Budget(max_requests=1 + BATCHED))
     assert deck.llm_level == ADVANCED
 
 
@@ -288,7 +313,7 @@ def test_a_budget_of_no_money_skips_a_model_of_unknown_price(seeds):
 def test_the_level_comes_from_the_settings(seeds, monkeypatch):
     monkeypatch.setenv("TALKGENERATOR_LLM_LEVEL", "Advanced")
     model = FakeModel()
-    assert _talk(model).llm_level == ADVANCED and len(model.requests) == 1 + PLANNED
+    assert _talk(model).llm_level == ADVANCED and len(model.requests) == 1 + BATCHED
     model = FakeModel()
     assert _talk(model, llm_level="basic").llm_level == BASIC and len(model.requests) == 1
 
@@ -342,7 +367,7 @@ def test_a_streamed_talk_can_be_advanced(seeds):
     )
     finished = events[-1]
     assert isinstance(finished, TalkFinished) and finished.deck.llm_level == ADVANCED
-    assert _purposes(model)[0] == outline.PURPOSE and len(model.requests) == 1 + PLANNED
+    assert _purposes(model)[0] == outline.PURPOSE and len(model.requests) == 1 + BATCHED
 
 
 def test_the_command_line_takes_the_level():

@@ -10,13 +10,15 @@ At the Advanced level, the model first plans the talk, in a request of its own (
 talk's spine, as a Basic talk's request has it (its title, the presenter's job, its thesis), a running gag, and for
 every slide the word it riffs on (one of the words the talk's dice offer it, or a sharper one of its own) and its
 idea, in a sentence: the point it makes, and for a chart or a diagram what it measures, compares or ranks, so that the
-relation itself is funny. The outline is read while it's written, and every slide is written as soon as its idea is
-in, in a request of its own (writing_request), in parallel with the others: the plan holds the talk's thread, so a
-slide needs no other slide's texts. A slide's request has the talk's spine and running gag in its system prompt (the
-same for all of the talk's slides, so models that cache prompts read it once) and the plan as far as it's known. So
-an Advanced talk's first slide comes about as soon as a Basic talk's, and its last one sooner, at the price of a
-request per slide. When the outline fails before its spine is in (an error, a refusal, the budget, a topic it finds
-unsafe), the talk is written as a Basic one.
+relation itself is funny. The outline is read while it's written, and its slides are written as soon as their ideas
+are in, a few at a time (BATCHES: the second slide alone, so that the talk starts soon, then two, then three at a
+time), each batch in a request of its own (writing_request), in parallel with the others: the plan holds the talk's
+thread, so a slide needs no other slide's texts. A batch's request has the talk's spine and running gag in its system
+prompt, and the plan so far. Measured with Claude Haiku on 2026-11-09, a slide to a request made Advanced talks start
+and end as soon as Basic ones or sooner, but cost three and a half times as much: every request has the talk's system
+prompt and the plan again, and none of it is cached (Claude caches what comes before the system prompt's end, which
+starts with the request's schema, a slide's own). When the outline fails before its spine is in (an error, a refusal,
+the budget, a topic it finds unsafe), the talk is written as a Basic one.
 
 A talk's level is the one it asks for, or TALKGENERATOR_LLM_LEVEL's, or else default_level's: Advanced on a model of
 your own that costs (Claude, OpenAI's models, your ChatGPT plan's, OpenRouter's paid ones), Basic on free ones (whose
@@ -60,8 +62,10 @@ _PAID: Final = frozenset({"anthropic", "openai", "chatgpt"})
 
 PURPOSE: Final = "talk outline"  # (the outline's ledger entry's purpose)
 SLIDE_PURPOSE: Final = "talk slide"  # (and a slide's, written as its idea comes in)
-# How many slides are written at the same time at most, as their ideas come in
+# How many of a talk's batches of slides are written at the same time at most, as their ideas come in
 WRITERS: Final = 6
+# How many slides a talk's first batches have (the second slide alone, for a talk that starts soon), and the others
+BATCHES: Final = (1, 2, 3)
 # How long a riff and an idea may be: a word or a few, and a short sentence
 RIFF_LENGTH: Final = 40
 IDEA_LENGTH: Final = 160
@@ -90,12 +94,12 @@ people for who they are, or statements about real-world politics, unless the top
 If the topic asks for something hateful or harmful, set "unsafe_topic" to true, and keep everything else short.
 Answer with one JSON object in the shape you're given, and nothing else."""
 
-# What a slide's request says of the plan (in its system prompt, after the talk's own)
+# What a batch's request says of the plan (in its system prompt, after the talk's own)
 _WRITING: Final = """\
-The talk is planned: every slide has its word to riff on and its idea, and it's written on its own, from the plan, \
-which holds the talk's thread. Write the slide you're asked for so that its idea lands, in words of your own: an idea \
-is a plan, not a text, so never copy its words onto the slide; write titles and captions as the fields ask, and call \
-back to earlier slides by what they're about."""
+The talk is planned: every slide has its word to riff on and its idea, and the slides are written a few at a time, \
+from the plan, which holds the talk's thread. Write the slides you're asked for so that their ideas land, in words of \
+your own: an idea is a plan, not a text, so never copy its words onto a slide; write titles and captions as the \
+fields ask, and call back to earlier slides by what they're about."""
 
 _RUNNING_GAG_DESCRIPTION: Final = (
     "the running gag: something that keeps coming back (a thing, a made-up person, a claim), in a few words"
@@ -241,24 +245,29 @@ def read_idea(value: Any) -> SlideIdea | None:
     return SlideIdea(riff, idea) if riff and idea else None
 
 
+def batch_size(batch: int) -> int:
+    """How many slides a talk's batch has at most (counted from 0: see BATCHES)."""
+    return BATCHES[min(batch, len(BATCHES) - 1)]
+
+
 def writing_request(
     topics: list[str],
-    slide: PlannedSlide,
+    slides: Sequence[PlannedSlide],
     planned: Sequence[PlannedSlide],
     spine: Mapping[str, Any],
     rng: random_util.Rng,
     language: str = languages.ENGLISH.code,
     persona: Persona | None = None,
     talk_format: Format | None = None,
-    given: Given | None = None,
+    given: Mapping[int, Given] | None = None,
     generation: ImageGeneration | None = None,
 ) -> TextRequest:
-    """The request for one slide of a planned talk: the talk's own system prompt, with what the talk is (its topic,
-    format and persona, its title, the presenter's job, its thesis and running gag: the spine, as the outline wrote it)
-    and the plan's rules after it, the same for all of the talk's slides; and the plan as far as it's known (planned:
-    the talk's slides with the words and ideas they have so far), then the slide to write, as a Basic talk's request
-    asks for it (prompt.slide_lines), with its real fact if it has one. The presenter's name, given or made up, never
-    goes in."""
+    """The request for a batch of a planned talk's slides (slides, in order): the talk's own system prompt, with what
+    the talk is (its topic, format and persona, its title, the presenter's job, its thesis and running gag: the spine,
+    as the outline wrote it) and the plan's rules after it, the same for all of the talk's batches; and the plan of the
+    slides before them (planned: the talk's slides with the words and ideas they have so far), then the slides to write,
+    as a Basic talk's request asks for them (prompt.slide_lines), with their real facts (given, by slide number). The
+    presenter's name, given or made up, never goes in."""
     language_name = languages.language(language).name
     talk = [
         *prompt.header(
@@ -271,29 +280,30 @@ def writing_request(
         ),
         *(f"The talk's {what}: {spine[field]}" for field, what in _TOLD.items() if _told(spine.get(field))),
     ]
+    first = slides[0].number
     plan = [
-        f"- {other.key}{' (this one)' if other.number == slide.number else ''}: "
-        f"{(other.recipe.brief or KINDS[other.recipe.kind].description).rstrip('.')}. Its word: {other.seed}"
-        + (f". Its idea: {other.idea.rstrip('.')}" if other.idea else "")
+        f"- {other.key}: {(other.recipe.brief or KINDS[other.recipe.kind].description).rstrip('.')}. Its word: "
+        f"{other.seed}" + (f". Its idea: {other.idea.rstrip('.')}" if other.idea else "")
         for other in planned
+        if other.number < first
     ]
+    facts = given or {}
+    keys = ", ".join(slide.key for slide in slides)
     lines = [
-        "The plan of the talk, as far as it goes:",
-        *plan,
-        "",
-        *([request_line(language)] if given is not None else []),
-        f"Write {slide.key} as one JSON object with one property, {slide.key}, an object of its texts, a search query "
+        *(["The plan of the talk so far:", *plan, ""] if plan else []),
+        *([request_line(language)] if any(slide.number in facts for slide in slides) else []),
+        f"Write {keys} as one JSON object with a property for each ({keys}): an object of its texts, a search query "
         f"for each of its images, and its concept: {prompt.CONCEPT}.",
-        "",
-        *prompt.slide_lines(slide, language, given, generation),
     ]
-    prompts = len(prompt.generated(slide.recipe, generation))
+    for slide in slides:
+        lines += ["", *prompt.slide_lines(slide, language, facts.get(slide.number), generation)]
+    prompts = sum(len(prompt.generated(slide.recipe, generation)) for slide in slides)
     return TextRequest(
         purpose=SLIDE_PURPOSE,
         system="\n\n".join([prompt.SYSTEM_PROMPT, "\n".join(talk), _WRITING]),
         messages=(Message(role="user", content="\n".join(lines)),),
-        json_schema=_object({slide.key: prompt.slide_schema(slide.recipe, generation, language)}),
-        max_output_tokens=700 + 100 * prompts,
+        json_schema=_object({slide.key: prompt.slide_schema(slide.recipe, generation, language) for slide in slides}),
+        max_output_tokens=400 + 400 * len(slides) + 100 * prompts,
     )
 
 
