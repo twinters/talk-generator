@@ -1173,11 +1173,15 @@ template (no joke without its captions), credited as on its slide. An academic t
 of their own (`references`, a format type as D56's process is): the works numbered as cited ("[1]"), a click each,
 and most of the time a picture of one of them on the click after them, beside the list, as large as it fits whole,
 with a caption that says which ("Cover of [2]", "[3], Fig. 2"): a book's cover (Reddit's book covers, generated in a
-talk that generates pictures; 46% of the model's references) or a figure from a paper (a real chart from the
-internet: 30%), and old prints from museums or illustrations where Reddit can't be had. **Emoji** come in front of a
+talk that generates pictures; 48% of the model's references) or a figure from a paper (a real chart from the
+internet: 32%), and old prints from museums or illustrations where Reddit can't be had. They're two recipes of the
+references part, each with one picture slot (so that a plan written elsewhere, which gets a recipe as it is, searches
+one picture), and each with its list alone a fifth of the time. **Emoji** come in front of a
 list's things now and then, as karaoke decks have them: in a third of the tier lists and alignment charts and a
 quarter of the TED-like agendas, a variant whose hints ask for one a thing (the system prompt asks for none anywhere
-else), and in a third of the classic ones, from a list of their own (`data/emoji.json`: a thing's own emoji by a word
+else) and that talkgenerator fills in where the model wrote none (a free model ignored the hints in a sample talk:
+`Variant.emoji`, by the thing's own word in an English talk, else by its place's mood), and in a third of the classic
+ones, from a list of their own (`data/emoji.json`: a thing's own emoji by a word
 of it, of 559 words, or else its place's mood, a crown for the S tier, a devil for chaotic evil; none for faiths,
 drink, weapons or death, and no joined sequences). No theme font has emoji: they're measured 1.4 ems wide (Segoe UI
 Emoji draws them 1.37), drawn in runs of their own in Segoe UI Emoji in a .pptx (where it's missing, PowerPoint and

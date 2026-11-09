@@ -24,7 +24,7 @@ from talkgenerator.plan import languages
 from talkgenerator.plan.kinds import KINDS, ContentSource, Recipe, TextField
 from talkgenerator.slide.slides import Slide
 from talkgenerator.sources import emoji
-from talkgenerator.util import generator_util, language_util, os_util, random_util
+from talkgenerator.util import emoji_util, generator_util, language_util, os_util, random_util
 
 logger = logging.getLogger("talkgenerator")
 
@@ -63,9 +63,10 @@ def length_limit(text_field: TextField) -> int:
 def clean_text(value: Any, text_field: TextField, language: str = "en") -> str | None:
     """The text as it goes on a slide: on one line, without wrapping quote marks or brackets that name a slide by its
     key in the model's answer ("(from slide_03)"), and cut to the field's length when it's longer than its
-    length_limit (between words, and not after a little word of its language, such as "the"), or the option it names
-    when the field is a choice. None when it's empty, names no option, or holds bits of templates or code (a slide's
-    key elsewhere in it too: see talkgenerator.checks.deck)."""
+    length_limit (between words, and not after a little word of its language, such as "the"; a list, between its
+    things), or the option it names when the field is a choice. Its emoji count as two characters each, however many
+    characters they're written with (a joined one, "🕵️‍♂️", is five). None when it's empty, names no option, or holds
+    bits of templates or code (a slide's key elsewhere in it too: see talkgenerator.checks.deck)."""
     if not isinstance(value, str):
         return None
     value = without_key_references(value)  # (a callback that names its slide by its key keeps the rest of it)
@@ -74,9 +75,23 @@ def clean_text(value: Any, text_field: TextField, language: str = "en") -> str |
     text = _unquoted(" ".join(_STRAY_ESCAPE.sub("", value).split()))
     if not text or leftovers_in(text):
         return None
-    if len(text) > length_limit(text_field):
-        text = _cut(text, text_field.max_length, language)
+    extra = len(text) - emoji_util.room(text)  # (the characters its emoji are written with, beyond their room)
+    if len(text) > length_limit(text_field) + extra:
+        cut = _cut_list if "|" in text else _cut
+        text = cut(text, text_field.max_length + extra, language)
     return text
+
+
+def _cut_list(text: str, length: int, language: str) -> str:
+    """A list written as one text (its things separated by |) cut to its length between its things, keeping as many
+    of them as fit whole (or else its first thing, cut as a text is)."""
+    things = [thing.strip() for thing in text.split("|") if thing.strip()]
+    kept: list[str] = []
+    for thing in things:
+        if len(" | ".join([*kept, thing])) > length:
+            break
+        kept.append(thing)
+    return " | ".join(kept) if kept else _cut(things[0] if things else text, length, language)
 
 
 # Each quote mark that opens a quote, with the mark that closes it (Swedish and Danish close with what opens)

@@ -301,8 +301,9 @@ From the user's look at 35 sample talks (docs/v5-plan.md, D65):
   pictures) or a figure from a paper, with a caption that says which ("Cover of [2]", "[3], Fig. 2").
 - **Emoji** in front of a list's things now and then: a third of the tier lists and alignment charts, and a quarter of
   the language model's agendas (a third of the classic ones, from a list of 559 words' emoji and each tier's and
-  alignment's own). Language models may write emoji only where a field asks for them. They're measured as wide as an
-  emoji font draws them, and drawn in Segoe UI Emoji in the .pptx and in previews.
+  alignment's own). Language models may write emoji only where a field asks for them, and where one wrote none,
+  talkgenerator puts its own. They're measured as wide as an emoji font draws them, and drawn in Segoe UI Emoji in the
+  .pptx and in previews.
 - **Slide numbers**: every theme family numbers its slides of the deck's ("7/12"), small and in its own style (a
   terminal's status line, a blueprint's title block, a kindergarten's sticker, a chalkboard's tape...), and so does
   the 2019 template, in its bottom right corner. A talk that streams numbers its slides of the ones it'll have from

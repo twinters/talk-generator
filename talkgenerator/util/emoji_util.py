@@ -73,6 +73,24 @@ def count(text: str) -> int:
     )
 
 
+def room(text: str) -> int:
+    """How many characters' room the text takes: two for each of its emoji (as wide as an emoji font draws one),
+    however many characters it's written with (a joined one, "🕵️‍♂️", is five), and one for every other character."""
+    total = 0
+    for part, emoji in runs(text):
+        if not emoji:
+            total += len(part)
+            continue
+        # (an emoji begins at a character that isn't joined to the one before it by U+200D, nor joins itself)
+        starts = sum(
+            1
+            for index, character in enumerate(part)
+            if not _joins(ord(character)) and (index == 0 or ord(part[index - 1]) != 0x200D)
+        )
+        total += 2 * starts
+    return total
+
+
 def plain(text: str) -> str:
     """The text without its emoji (and what joins them)."""
     return "".join(part for part, emoji in runs(text) if not emoji)

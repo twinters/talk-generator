@@ -17,7 +17,7 @@ from talkgenerator.models.deck import DECORATION, ImageElement, TextElement
 from talkgenerator.models.plan import SlidePlan
 from talkgenerator.plan import languages, prompt
 from talkgenerator.plan.kinds import CALLBACK_LINE, KINDS, LAST_TIP
-from talkgenerator.plan.realize import realize
+from talkgenerator.plan.realize import clean_text, length_limit, realize
 from talkgenerator.render import shapes
 from talkgenerator.render.powerpoint import render_pptx
 from talkgenerator.schema import presentation_schema, slide_schemas
@@ -141,6 +141,17 @@ def test_a_variant_that_asks_for_emoji_gets_them_where_the_model_wrote_none():
     unasked = dataclasses.replace(recipe, variants=(plain,)).varied(random_util.Rng(1))
     made = realize(SlidePlan(kind="tier_list", concept="pigeons", texts=texts), unasked, context, random_util.Rng(1), 0)
     assert made is not None and made[0].to_slide_dictionary()["item_a_1"] == "Bread"
+
+
+def test_a_list_is_cut_between_its_things_and_its_emoji_count_as_two_characters():
+    tier = next(text for text in KINDS["tier_list"].texts if text.name == "a_tier")
+    # (a free model's tier, cut in the middle of its last thing, left a bare emoji: "| 🦅")
+    written = "💩 Pooping on wedding dresses | 🤯 Getting stuck in escalators | 🦅 Running from hawks"
+    assert clean_text(written, tier) == "💩 Pooping on wedding dresses | 🤯 Getting stuck in escalators"
+    # (83 characters, but 76 characters' room: its joined emoji are written with five or three characters each)
+    spies = "🕵️‍♂️ Navigating subway tunnels | 🕵️‍♀️ Delivering love notes | 🧑‍🚀 Hitting targets"
+    assert len(spies) > length_limit(tier) >= emoji_util.room(spies) and clean_text(spies, tier) == spies
+    assert emoji_util.room("🕵️‍♂️ Spies") == 8 and emoji_util.room("❤️ it") == 5 and emoji_util.room("Plain") == 5
 
 
 def test_a_third_of_classic_tier_lists_alignment_charts_and_agendas_have_emoji(related):
