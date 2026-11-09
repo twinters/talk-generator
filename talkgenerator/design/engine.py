@@ -1024,6 +1024,12 @@ def _beside_title_with_room(prefix: str, most: int) -> Callable[[dict[str, Conte
     return fits
 
 
+def _photo_beside_title(roles: dict[str, Content]) -> bool:
+    """Whether a closing slide has a picture, and a question that fits beside it (without a word too long for the
+    side: a closing slide with one has its picture above it)."""
+    return "photo" in roles and _beside_title(roles)
+
+
 def _has(role: str) -> Callable[[dict[str, Content]], bool]:
     def has(roles: dict[str, Content]) -> bool:
         return role in roles
@@ -3087,7 +3093,7 @@ _LAYOUTS: Final[dict[str, tuple[_Layout, ...]]] = {
     "questions": (
         _Layout("v5/questions", _questions, fits=_without("photo")),
         _Layout("v5/questions-mark", _questions_mark, 0.8, _without("photo")),
-        _Layout("v5/questions-photo", _questions_photo, fits=_has("photo")),
+        _Layout("v5/questions-photo", _questions_photo, fits=_photo_beside_title),
         _Layout("v5/questions-banner", _questions_banner, 0.7, _has("photo")),
     ),
     "timeline": (

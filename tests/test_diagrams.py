@@ -449,7 +449,9 @@ def test_a_diagram_survives_json_and_renders_from_it():
         for slide in (_venn(), _venn(circle_3="Naps"), _matrix())
     ]
     presentation = render_pptx(Deck.from_json(text))
-    assert [_summary(slide) for slide in presentation.slides] == expected
+    # (a deck numbers its slides, "1/3", where a slide made by itself has no number: docs/v5-plan.md, D65)
+    rendered = [[shape for shape in _summary(slide) if shape[0] != "Slide number"] for slide in presentation.slides]
+    assert rendered == expected
 
 
 def test_diagrams_are_strict():

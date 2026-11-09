@@ -304,6 +304,7 @@ def test_the_required_roles_are_what_the_slide_classes_require():
         slides.FlowchartSlide: "flowchart",
         slides.TierListSlide: "tier_list",
         slides.ProcessSlide: "process",
+        slides.ReferencesSlide: "references",
         slides.WallOfTextSlide: "wall_of_text",
         slides.AlignmentChartSlide: "alignment_chart",
         slides.RedFlagsSlide: "red_flags",
