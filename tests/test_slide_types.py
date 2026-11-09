@@ -61,10 +61,26 @@ def every_new_type(image):
     return made
 
 
+def every_pictured_figure(image):
+    """A big number and KPI tiles over a picture of what they're about (D63), with what every one of their layouts
+    takes (a short number, four figures, a title), each credited."""
+    made = [
+        slides.BigNumberSlide("The cat economy", "97%", "of cats have never paid rent", "Source: my neighbour", image),
+        slides.KpiSlide(
+            "Results", "1,204", "Mice caught", "+3%", "Purr growth", "-12", "Laps", "0", "Naps", background=image
+        ),
+    ]
+    for slide in made:
+        slide.add_source("Ann (via Pexels)", "https://www.pexels.com/photo/cat-123/")
+    return made
+
+
 def runs_of_new_types(image, length=3):
-    """Runs of slides of every new type, each run of one type, as the design tests want them."""
+    """Runs of slides of every new type, each run of one type, as the design tests want them (and runs of a big number
+    and KPI tiles over a picture)."""
     return [
-        slide for index in range(len(EVERY_KIND)) for slide in (every_new_type(image)[index] for _ in range(length))
+        *(slide for index in range(len(EVERY_KIND)) for slide in (every_new_type(image)[index] for _ in range(length))),
+        *(slide for index in range(2) for slide in (every_pictured_figure(image)[index] for _ in range(length))),
     ]
 
 
@@ -159,6 +175,11 @@ def test_every_new_layout_comes_up_and_needs_what_it_says(images):
 
     assert fitting(slides.BigNumberSlide(None, "3.2 million", "hairballs")) == ["v5/big-number"]
     assert fitting(slides.BigNumberSlide(None, "1 in 4", "cats")) == ["v5/big-number", "v5/big-number-panel"]
+    # (over a picture, or beside it, if its number is short enough for the side: D63)
+    pictured = slides.BigNumberSlide(None, "1 in 4", "cats", None, _image("wide"))
+    assert fitting(pictured) == ["v5/big-number", "v5/big-number-band", "v5/big-number-side"]
+    pictured = slides.BigNumberSlide(None, "3.2 million", "hairballs", None, _image("wide"))
+    assert fitting(pictured) == ["v5/big-number", "v5/big-number-band"]
     assert fitting(slides.QuizSlide("Why?", "A", "B", "C", None, "A")) == ["v5/quiz-list"]
     assert fitting(slides.KpiSlide("KPIs", "1", "A", "2", "B", "3", "C")) == ["v5/kpi-rows", "v5/kpi-tiles"]
     assert "v5/kpi-grid" not in fitting(slides.KpiSlide("K", "1", "A", "2", "B", "3", "C", "1,000,000,000", "D"))
@@ -289,7 +310,7 @@ def test_powerpoint_shows_the_figures_one_by_one_with_their_tiles(images):
 
 
 def test_a_classic_deck_draws_the_new_types_in_the_templates_look(images):
-    deck = _deck(every_new_type(_image("wide")))
+    deck = _deck([*every_new_type(_image("wide")), *every_pictured_figure(_image("wide"))])
     assert deck.theme == "classic" and all(slide.layout == f"classic/{slide.type}" for slide in deck.slides)
     assert all(element.box is None for slide in deck.slides for element in slide.elements)  # (placed when drawn)
     presentation = render_pptx(deck)
@@ -312,6 +333,7 @@ def test_the_classic_look_passes_the_design_checks(images):
     look = themes.CLASSIC_LOOK
     for made in (
         every_new_type(_image("wide")),
+        every_pictured_figure(_image("wide")),
         [_built(kind, _longest_texts(kind), {"photo": _image("tall")}) for kind in EVERY_KIND],
     ):
         classic_deck = _deck(made)

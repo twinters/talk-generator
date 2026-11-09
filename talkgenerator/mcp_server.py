@@ -221,7 +221,7 @@ def make_server(output_folder: str | Path | None = None, *, progress_every: floa
             str,
             Field(
                 description="The talk format (see list_formats), or 'random' for one the talk's seed picks after its "
-                "persona, who favours some (a startup founder mostly pitches, a disgraced professor mostly gives "
+                "persona, who favours some (a startup founder pitches more often, a disgraced professor gives more "
                 "academic talks); license_policy 'open' gives copyright-free images with any format"
             ),
         ] = "default",

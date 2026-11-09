@@ -14,6 +14,7 @@ from talkgenerator.plan.kinds import (
     Variant,
     box_picture_slot,
     closing_variants,
+    pictured,
     with_emoji,
 )
 from talkgenerator.schema import content_generators as cg
@@ -303,7 +304,7 @@ single_image_slide_generators = _register(
 
 _DEEP_QUESTION = Recipe(
     "statement",
-    (cg.generate_horizontal_pixabay_image,),
+    (cg.statement_backdrop_generator,),
     brief="A deep question over a photo",
     hints={"text": "a short, deep question, such as 'But... why?'"},
 )
@@ -314,7 +315,7 @@ single_image_slide_generators_copyright_free = _register(
     [
         SlideGeneratorData(
             slide_generator_types.LarqeQuoteSlideGenerator.of(
-                NoneGenerator(), cg.deep_abstract_generator, cg.generate_horizontal_pixabay_image
+                NoneGenerator(), cg.deep_abstract_generator, cg.statement_backdrop_generator
             ),
             weight_function=PeakedWeight((2, 3, 4, 5), 2.5, 1),
             tags=["full_image", "deep"],
@@ -325,13 +326,13 @@ single_image_slide_generators_copyright_free = _register(
             slide_generator_types.LarqeQuoteSlideGenerator.of(
                 NoneGenerator(),
                 cg.short_quote_generator,
-                cg.generate_horizontal_pixabay_image,
+                cg.statement_backdrop_generator,
             ),
             tags=["full_image", "quote"],
             name="Full Screen Pixabay Quote",
             llm=Recipe(
                 "statement",
-                (cg.generate_horizontal_pixabay_image,),
+                (cg.statement_backdrop_generator,),
                 brief=_REAL_QUOTE_BRIEF,
                 texts_from={"text": cg.short_quote_generator},
             ),
@@ -348,19 +349,19 @@ single_image_slide_generators_copyright_free = _register(
 # WISE STATEMENTS
 _BOLD_STATEMENT = Recipe(
     "statement",
-    (cg.generate_horizontal_pixabay_image,),
+    (cg.statement_backdrop_generator,),
     brief="A bold statement over a photo",
     hints={"text": "a bold claim or question about the concept, such as 'Don't we all secretly want to ...?'"},
 )
 _REAL_QUOTE = Recipe(
     "statement",
-    (cg.generate_horizontal_pixabay_image,),
+    (cg.statement_backdrop_generator,),
     brief=_REAL_QUOTE_BRIEF,
     texts_from={"text": cg.quote_generator},
 )
 _ANECDOTE = Recipe(
     "statement",
-    (cg.generate_horizontal_pixabay_image,),
+    (cg.statement_backdrop_generator,),
     brief="A personal anecdote the presenter now has to tell",
     hints={"text": "the title of the anecdote, such as 'The time I ...'"},
 )
@@ -385,7 +386,7 @@ statement_slide_generators = _register(
             slide_generator_types.LarqeQuoteSlideGenerator.of(
                 title_generator=NoneGenerator(),
                 text_generator=cg.wikihow_bold_statement_generator,
-                background_image_generator=cg.generate_horizontal_pixabay_image,
+                background_image_generator=cg.statement_backdrop_generator,
             ),
             tags=["bold_statement", "statement"],
             name="Wikihow Bold Statement",
@@ -395,7 +396,7 @@ statement_slide_generators = _register(
             slide_generator_types.LarqeQuoteSlideGenerator.of(
                 title_generator=NoneGenerator(),
                 text_generator=cg.quote_generator,
-                background_image_generator=cg.generate_horizontal_pixabay_image,
+                background_image_generator=cg.statement_backdrop_generator,
             ),
             weight_function=ConstantWeightFunction(1),
             tags=["quote", "statement"],
@@ -406,7 +407,7 @@ statement_slide_generators = _register(
             slide_generator_types.LarqeQuoteSlideGenerator.of(
                 title_generator=NoneGenerator(),
                 text_generator=cg.anecdote_prompt_generator,
-                background_image_generator=cg.generate_horizontal_pixabay_image,
+                background_image_generator=cg.statement_backdrop_generator,
             ),
             weight_function=ConstantWeightFunction(1.2),
             tags=["anecdote"],
@@ -423,7 +424,7 @@ statement_slide_generators_copyright_free = _register(
             slide_generator_types.LarqeQuoteSlideGenerator.of(
                 title_generator=NoneGenerator(),
                 text_generator=cg.wikihow_bold_statement_generator,
-                background_image_generator=cg.generate_horizontal_pixabay_image,
+                background_image_generator=cg.statement_backdrop_generator,
             ),
             tags=["bold_statement", "statement"],
             name="Wikihow Bold Statement (CRF)",
@@ -433,7 +434,7 @@ statement_slide_generators_copyright_free = _register(
             slide_generator_types.LarqeQuoteSlideGenerator.of(
                 title_generator=NoneGenerator(),
                 text_generator=cg.quote_generator,
-                background_image_generator=cg.generate_horizontal_pixabay_image,
+                background_image_generator=cg.statement_backdrop_generator,
             ),
             tags=["quote", "statement"],
             name="Quote (CRF)",
@@ -443,7 +444,7 @@ statement_slide_generators_copyright_free = _register(
             slide_generator_types.LarqeQuoteSlideGenerator.of(
                 title_generator=NoneGenerator(),
                 text_generator=cg.anecdote_prompt_generator,
-                background_image_generator=cg.generate_horizontal_pixabay_image,
+                background_image_generator=cg.statement_backdrop_generator,
             ),
             tags=["anecdote"],
             name="Anecdote (CRF)",
@@ -768,35 +769,46 @@ def _drawn(content, slide_class, weight, tags, name, recipe, repeats=2) -> Slide
     )
 
 
-# FIGURES
+# FIGURES: over a picture of what they're about, if one is found (three big numbers in four, and half the KPI tiles:
+# D63, as the user found slides of text boring), from one of many sources (the backdrop look's)
 number_slide_generators = _register(
     "numbers",
     [
         _drawn(
-            slide_texts.generate_big_number,
+            slide_texts.big_number(cg.backdrop_generator),
             slides.BigNumberSlide,
             _middle(1.2),
             ["big_number"],
             "Big Number",
             Recipe(
                 "big_number",
+                (cg.backdrop_generator,),
                 brief="A suspiciously precise statistic about the concept, as one big number",
-                variants=(Variant(2), Variant(1, frozenset({"source"}), "without a source, for the presenter to give")),
+                variants=pictured(
+                    (Variant(2), Variant(1, frozenset({"source"}), "without a source, for the presenter to give")),
+                    "background",
+                    slide_texts.BIG_NUMBER_PICTURES,
+                ),
             ),
         ),
         _drawn(
-            slide_texts.generate_kpi,
+            slide_texts.kpi(cg.backdrop_generator),
             slides.KpiSlide,
             _middle(0.8),
             ["kpi"],
             "KPI Tiles",
             Recipe(
                 "kpi",
+                (cg.backdrop_generator,),
                 brief="The concept's made-up key performance indicators, as on a corporate dashboard: figures that "
                 "start out plausible, the last one the punchline",
-                variants=(
-                    Variant(1, frozenset({"number_4", "label_4"}), "with three figures"),
-                    Variant(1, note="with four figures"),
+                variants=pictured(
+                    (
+                        Variant(1, frozenset({"number_4", "label_4"}), "with three figures"),
+                        Variant(1, note="with four figures"),
+                    ),
+                    "background",
+                    slide_texts.KPI_PICTURES,
                 ),
             ),
         ),
@@ -864,10 +876,11 @@ mockup_slide_generators_copyright_free = _register(
 # MEMES WITH LIVE CAPTIONS: one of Imgflip's templates, with captions of the talk's own in its boxes (see
 # talkgenerator.sources.memes): the dice pick the template, and the language model writes what each box says (or, in
 # a classic talk, the template's own sentences about the slide's topic). The user loves them (2026-11-07), so they
-# weigh four times what the other middle slides weigh: about half of all 10-slide talks have one (one in five did),
-# and a talk has two at most (caption_meme), and two memes of any kind in ten slides, Reddit's too (meme)
+# weigh five times what the other middle slides weigh (four until the user asked for more of them, D63): more than half
+# of all 10-slide talks have one (one in five did at first), and a talk has two at most (caption_meme), and two memes
+# of any kind in ten slides, Reddit's too (meme)
 _MEME_BRIEF = "A meme about the concept"
-MEME_WEIGHT = 4
+MEME_WEIGHT = 5
 
 
 def _meme_variants() -> tuple[Variant, ...]:

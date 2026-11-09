@@ -8,8 +8,9 @@ chart it wins by far), a live demo (that crashes, as a fake error message, how i
 the presenter has to present as the demo) and the price (a big number, the models' prices on tiles, or when it ships)
 to the "one more thing" (said over a photo, or a second product, revealed full-bleed) and a closing line (over a photo,
 full-bleed, or someone's post about the keynote). A short keynote keeps the opening, the reveal, a feature and the one
-more thing; a long one gives the features a second slide, and its free slides are deep questions over photos, quotes,
-gifs, the press and early reviews. The product's made-up name comes from the topic (see
+more thing; a long one gives the features a second slide, and its free slides (a slide of ten at least, D63) are deep
+questions over photos, memes, gifs, its own provocations ("Revolutionary.", over a full-screen picture), quotes, the
+press and early reviews. The product's made-up name comes from the topic (see
 talkgenerator.schema.formats.product), so that a classic keynote's slides name the product its title launches.
 
 A startup founder gives a keynote more often than the other personas, a motivational speaker almost as often, and an
@@ -22,16 +23,20 @@ from typing import Any, Final
 
 from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
-from talkgenerator.plan.kinds import ERROR_BUTTON, Recipe, Variant
+from talkgenerator.plan.kinds import ERROR_BUTTON, Recipe, Variant, pictured
 from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema.formats import (
+    BIG_NUMBER_PICTURES,
+    KPI_PICTURES,
     Format,
     KindSlideGenerator,
     Made,
+    behind,
     different,
     maybe,
     photos,
     product,
+    provocation,
     text,
     words,
 )
@@ -52,7 +57,8 @@ ARC: Final = Arc(
         Part("price", rank=6),
         Part("one_more_thing", rank=1),
         Part("closing", rank=7),
-    )
+    ),
+    free=0.15,  # (D63: a slide of ten for a meme, a gif or a picture, as in the other formats)
 )
 
 KEYNOTE: Final = Format(
@@ -111,9 +117,14 @@ def _subtitle(context: dict[str, Any]) -> str | None:
 
 # Images: a dark stage behind the big statements, a striking photo of the topic, the product (a picture that prefers to
 # be generated), what its features do, an odd photo for the demo, and the one more thing
-_STAGE = cg.generate_horizontal_pixabay_image
+_STAGE = cg.statement_backdrop_generator
 _HERO = ImageSlot("a big, striking photo of the topic", aesthetic="photo")
-_PRODUCT = ImageSlot("a photo of the product, as a keynote reveals it", aesthetic="photo", generate=True)
+# (D63: an absurd invention, searched as a gadget or a machine, or drawn as an advertisement's product shot)
+_PRODUCT = ImageSlot(
+    "the product a keynote reveals, an absurd invention, shown off as an advertisement would",
+    aesthetic="product-shot",
+    generate=True,
+)
 _FEATURE = ImageSlot("a photo of what one of the product's features does", aesthetic="photo")
 _DEMO = cg.weird_copyright_free_generator
 _THING = ImageSlot("an odd photo of the one more thing", aesthetic="weird-stock", generate=True)
@@ -138,7 +149,7 @@ def _opening_number(context: dict[str, Any]) -> Made | None:
         "number": random_util.choice(words(PACK, "opening.opening_number")),
         "label": label,
         "source": maybe(0.6, text(PACK, "opening.opening_source", variables)),
-    }, {}
+    }, behind(context, BIG_NUMBER_PICTURES)
 
 
 def _opening_image(context: dict[str, Any]) -> Made | None:
@@ -202,7 +213,7 @@ def _specs(context: dict[str, Any]) -> Made | None:
     texts: dict[str, str | None] = {"title": title}
     for index, (number, label) in enumerate([*specs, punchline], 1):
         texts[f"number_{index}"], texts[f"label_{index}"] = number.strip(), label.strip()
-    return texts, {}
+    return texts, behind(context, KPI_PICTURES)
 
 
 def _faster(context: dict[str, Any]) -> Made | None:
@@ -264,7 +275,7 @@ def _price(context: dict[str, Any]) -> Made | None:
         "number": random_util.choice(words(PACK, "price.amount")),
         "label": label,
         "source": maybe(0.8, text(PACK, "price.price_source", variables)),
-    }, {}
+    }, behind(context, BIG_NUMBER_PICTURES)
 
 
 def _models(context: dict[str, Any]) -> Made | None:
@@ -280,7 +291,7 @@ def _models(context: dict[str, Any]) -> Made | None:
     texts: dict[str, str | None] = {"title": title}
     for index, (price, label) in enumerate(zip(prices, [*models, punchline], strict=True), 1):
         texts[f"number_{index}"], texts[f"label_{index}"] = price, label
-    return texts, {}
+    return texts, behind(context, KPI_PICTURES)
 
 
 def _availability(context: dict[str, Any]) -> Made | None:
@@ -411,6 +422,7 @@ _GENERATORS: Final = [
         "Opening Number",
         Recipe(
             "big_number",
+            (cg.backdrop_generator,),
             brief="The keynote's opening, as one huge number: how well the company has done since its last keynote",
             hints={
                 "title": _TITLE_HINT + ", such as 'Since last year'",
@@ -418,6 +430,7 @@ _GENERATORS: Final = [
                 "label": _LABEL,
                 "source": "a made-up, unreliable source, or empty for none",
             },
+            variants=pictured((), "background", BIG_NUMBER_PICTURES),
         ),
         repeats=3,
     ),
@@ -501,7 +514,7 @@ _GENERATORS: Final = [
     # The features
     _part(
         "features",
-        1.2,
+        1.5,
         "three_columns",
         _three_features,
         ["three_captions"],
@@ -528,6 +541,7 @@ _GENERATORS: Final = [
         "Specs",
         Recipe(
             "kpi",
+            (cg.backdrop_generator,),
             brief="The product's specs, as figures on tiles: each a number with its unit and what it measures, the "
             "last one the punchline",
             hints={
@@ -538,9 +552,13 @@ _GENERATORS: Final = [
                 },
                 **{f"label_{index}": _LABEL for index in range(1, 5)},
             },
-            variants=(
-                Variant(1, frozenset({"number_4", "label_4"}), "with three specs"),
-                Variant(1, note="with four specs"),
+            variants=pictured(
+                (
+                    Variant(1, frozenset({"number_4", "label_4"}), "with three specs"),
+                    Variant(1, note="with four specs"),
+                ),
+                "background",
+                KPI_PICTURES,
             ),
         ),
     ),
@@ -605,7 +623,7 @@ _GENERATORS: Final = [
     ),
     _part(
         "demo",
-        0.7,
+        1.1,
         "full_image",
         _live_demo,
         ["full_image"],
@@ -627,6 +645,7 @@ _GENERATORS: Final = [
         "Price",
         Recipe(
             "big_number",
+            (cg.backdrop_generator,),
             brief="The price, as one big number: what the product costs, and what that gets you",
             hints={
                 "title": _TITLE_HINT + ", such as 'Pricing'",
@@ -634,6 +653,7 @@ _GENERATORS: Final = [
                 "label": "what it gets you, or how to pay it, without the price itself",
                 "source": "the small print, such as its colours",
             },
+            variants=pictured((), "background", BIG_NUMBER_PICTURES),
         ),
         repeats=3,
     ),
@@ -646,6 +666,7 @@ _GENERATORS: Final = [
         "Models and Prices",
         Recipe(
             "kpi",
+            (cg.backdrop_generator,),
             brief="The models and their prices, on tiles: each a price and who the model is for, from the cheapest to "
             "the last one, the punchline",
             hints={
@@ -653,9 +674,13 @@ _GENERATORS: Final = [
                 **{f"number_{index}": "the model's price, with its currency" for index in range(1, 5)},
                 **{f"label_{index}": "the model, and who it's for, without its price" for index in range(1, 5)},
             },
-            variants=(
-                Variant(1, frozenset({"number_4", "label_4"}), "with three models"),
-                Variant(1, note="with four models"),
+            variants=pictured(
+                (
+                    Variant(1, frozenset({"number_4", "label_4"}), "with three models"),
+                    Variant(1, note="with four models"),
+                ),
+                "background",
+                KPI_PICTURES,
             ),
         ),
     ),
@@ -760,8 +785,8 @@ _GENERATORS: Final = [
 _OTHERS: Final = {
     "Full Screen Pixabay Deep": 1.2,
     "Full Screen Neutral Images": 0.8,
-    "Meme": 0.8,
-    "Full Screen Gif": 0.7,
+    "Meme": 1.6,  # (D63: memes more often, as in the other formats)
+    "Full Screen Gif": 0.9,
     "News Headline": 0.7,
     "Reviews": 0.7,
     "Quote": 0.6,
@@ -773,6 +798,7 @@ _OTHERS: Final = {
 GENERATORS: Final = [
     *_GENERATORS,
     *(slide_generators.get(name).weighted(Free(ARC, weight), f"{name} (Keynote)") for name, weight in _OTHERS.items()),
+    provocation(PACK, ARC, 1.2, _variables, "Keynote", "as a keynote announces a product"),
 ]
 for _generator in GENERATORS:
     slide_generators.register(_generator.name or "", _generator, group=PACK)
@@ -788,4 +814,5 @@ CAPS: Final = {
     "process": 1,
     "kpi": 1,
     "big_number": 1,
+    "provocation": 0.1,
 }

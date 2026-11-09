@@ -259,9 +259,12 @@ PROFILES: Final[dict[str, Profile]] = {
         ),
         Profile(
             "weird-stock",
-            "stock photos of weird and funny things, and now and then NASA's take on them, or an odd old print",
+            "stock photos of weird and funny things, and now and then a weird picture from Reddit, NASA's take on them, "
+            "or an odd old print",
             (
                 *_STOCK,
+                # (more of Reddit's weird pictures, as the user asked after reviewing 35 talks: D63)
+                SourceUse(reddit("weird"), 1.2, modifiers=_PLAIN),
                 SourceUse("nasa", 0.3, modifiers=_PLAIN),
                 SourceUse("wellcome", 0.3, modifiers=_PLAIN),
             ),
@@ -281,6 +284,39 @@ PROFILES: Final[dict[str, Profile]] = {
             prefers=Preferences(colors=("#1f4e79", "#2a6f97", "#2a9d8f", "#e9eef3")),
             looks=4,
             fallback="photo",
+        ),
+        # Behind a big number or KPI tiles, under a shade (D63): a picture of what they're about, from one of many
+        # sources, so a talk's backdrops vary: stock photos most often, and now and then a weird picture from Reddit, a
+        # photo people are proud of, a space photograph, an old photograph or a museum's painting
+        Profile(
+            "backdrop",
+            "pictures behind a slide's figures, from many sources: stock photos most often, and now and then a weird "
+            "picture from Reddit, a space photograph, an old photograph or a painting",
+            (
+                SourceUse("pixabay", 2, params={"orientation": "landscape"}),
+                SourceUse("unsplash", 1.5, params={"orientation": "landscape"}),
+                SourceUse("pexels", 1.5, params={"orientation": "landscape"}),
+                SourceUse(reddit("weird"), 1.5),
+                SourceUse(reddit("pictures"), 1),
+                SourceUse("nasa", 0.5),
+                SourceUse("met", 0.4, params=_PAINTINGS),
+                SourceUse("wikimedia", 0.4, query='{} deepcat:"Black and white photographs"'),
+                SourceUse("openverse", 0.3, params={"category": "photograph"}),
+            ),
+            orientation="landscape",
+            fallback="calm-backdrop",
+            last_resort=_RANDOM_PHOTO,
+        ),
+        # A made-up product, such as a startup pitches or a keynote reveals (D63): stock photos of gadgets and
+        # inventions (a classic search gets one of these words before the topic: "gadget penguins"), weird ones now and
+        # then; a planned slide's query, which describes the product, goes as written
+        Profile(
+            "product-shot",
+            "photos of gadgets, machines and inventions, as a product's photo: stock photos, and weird ones now and then",
+            (*_STOCK, SourceUse(reddit("weird"), 0.6, modifiers=_PLAIN)),
+            modifiers=("gadget", "invention", "machine", "device", "weird gadget"),
+            fallback="weird-stock",
+            last_resort=_RANDOM_PHOTO,
         ),
         Profile(
             "calm-backdrop",
@@ -389,22 +425,24 @@ PROFILES: Final[dict[str, Profile]] = {
             ),
             fallback="photo",
         ),
+        # (Reddit's weird pictures and memes more often than ShitpostBot's random images, which are about nothing in
+        # particular, as the user asked after reviewing 35 talks: D63)
         Profile(
             "meme-chaos",
             "weird pictures, ShitpostBot's images, gifs and memes",
             (
-                SourceUse(reddit("weird"), 10),
-                SourceUse("shitpostbot", 8),
+                SourceUse(reddit("weird"), 14),
+                SourceUse("shitpostbot", 5),
                 SourceUse(reddit("gifs"), 3),
                 SourceUse("giphy", 3),
-                SourceUse(reddit("memes"), 1),
+                SourceUse(reddit("memes"), 2),
             ),
             fallback="weird-stock",
         ),
         Profile(
             "meme-chaos-still",
             "weird pictures, ShitpostBot's images and memes, without gifs",
-            (SourceUse(reddit("weird"), 4), SourceUse("shitpostbot", 6), SourceUse(reddit("memes"), 1)),
+            (SourceUse(reddit("weird"), 7), SourceUse("shitpostbot", 4), SourceUse(reddit("memes"), 2)),
             fallback="weird-stock",
         ),
         Profile(

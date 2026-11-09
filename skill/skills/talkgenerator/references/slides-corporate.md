@@ -50,6 +50,7 @@ Images: `image`
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
 | `full-screen-neutral-images-corporate` | A photo, filling the slide | the default; images: `image` neutral; tags: full_image, neutral |
+| `provocation-corporate` | A dramatic pause between the talk's parts: a striking or weird picture of the concept, filling the slide, under a provocative word or two | `title`: one or two provocative words, in corporate jargon, as leadership says them, ending in a full stop or a question mark; images: `image` backdrop; tags: full_image, provocation |
 
 ## `statement`
 
@@ -63,9 +64,9 @@ Images: `background`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `the-ask-corporate` | The ask: what leadership needs from everyone, as one bold sentence over a photo, impossible and cheerful | the default; `text`: the ask, as one bold sentence, said to everyone; images: `background` calm-backdrop; tags: ask |
-| `quote-corporate` | A real quote over a photo (talkgenerator finds the quote, about the concept) | images: `background` calm-backdrop; finds its `text` itself (don't write one); tags: quote, statement |
-| `full-screen-pixabay-quote-corporate` | A real quote over a photo (talkgenerator finds the quote, about the concept) | images: `background` calm-backdrop; finds its `text` itself (don't write one); tags: full_image, quote |
+| `the-ask-corporate` | The ask: what leadership needs from everyone, as one bold sentence over a photo, impossible and cheerful | the default; `text`: the ask, as one bold sentence, said to everyone; images: `background` calm-backdrop or backdrop; tags: ask |
+| `quote-corporate` | A real quote over a photo (talkgenerator finds the quote, about the concept) | images: `background` calm-backdrop or backdrop; finds its `text` itself (don't write one); tags: quote, statement |
+| `full-screen-pixabay-quote-corporate` | A real quote over a photo (talkgenerator finds the quote, about the concept) | images: `background` calm-backdrop or backdrop; finds its `text` itself (don't write one); tags: full_image, quote |
 
 ## `two_columns`
 
@@ -82,6 +83,7 @@ Images: `image_1`, `image_2`
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
 | `before-and-after-the-reorganisation-corporate` | The company before its reorganisation and after it, as two captioned photos: how little changed | the default; `caption_1`: the company before, in a few words; `caption_2`: the company after; images: `image_1` corporate-stock, else photo, `image_2` weird-stock; tags: org_change, two_captions |
+| `two-captions-weird-reddit-corporate` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | images: `image_1` weird, `image_2` meme-chaos; tags: multi_caption, reddit, two_captions |
 
 ## `three_columns`
 
@@ -201,7 +203,7 @@ Images: none
 
 ## `big_number`
 
-A big, made-up number, with what it counts under it: a figure the presenter has to explain.
+A big, made-up number, with what it counts under it: a figure the presenter has to explain; over a picture of what it's about, or beside it, if it has one.
 
 | Text | At most | What to write |
 | --- | --- | --- |
@@ -210,16 +212,16 @@ A big, made-up number, with what it counts under it: a figure the presenter has 
 | `label` | 90 | what the number counts or measures, in a few words |
 | `source` | 60 | a made-up, unreliable source for the number (or empty, for none) |
 
-Images: none
+Images: `background`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `headline-number-corporate` | The quarter in one number: a share of its target just short of it, or a growth that's suspiciously small, presented as a triumph | the default; `title`: the slide's title, as an all-hands deck's slide has it, such as 'The quarter in one number'; `number`: the number as people read it, with its unit, such as '97%' or '+0.3%'; `label`: what the number measures, without the number itself; `source`: a made-up, unreliable source, such as a preliminary report; tags: big_number, kpis |
-| `the-ask-in-numbers-corporate` | The ask, as one big number: how much more leadership needs from everyone, and of what | `title`: the slide's title, as an all-hands deck's slide has it, such as 'Our ask'; `number`: the number as people read it, with its unit, such as '110%'; `label`: what it is of, and from whom, without the number itself; `source`: the small print, such as when it starts; tags: ask |
+| `headline-number-corporate` | The quarter in one number: a share of its target just short of it, or a growth that's suspiciously small, presented as a triumph | the default; `title`: the slide's title, as an all-hands deck's slide has it, such as 'The quarter in one number'; `number`: the number as people read it, with its unit, such as '97%' or '+0.3%'; `label`: what the number measures, without the number itself; `source`: a made-up, unreliable source, such as a preliminary report; images: `background` backdrop; tags: big_number, kpis |
+| `the-ask-in-numbers-corporate` | The ask, as one big number: how much more leadership needs from everyone, and of what | `title`: the slide's title, as an all-hands deck's slide has it, such as 'Our ask'; `number`: the number as people read it, with its unit, such as '110%'; `label`: what it is of, and from whom, without the number itself; `source`: the small print, such as when it starts; images: `background` backdrop; tags: ask |
 
 ## `kpi`
 
-Three or four made-up figures on tiles, as on a dashboard, each a number and what it measures; they appear one by one, a click each, the last one the punchline.
+Three or four made-up figures on tiles, as on a dashboard, each a number and what it measures; they appear one by one, a click each, the last one the punchline; over a picture of what they're about, if it has one.
 
 | Text | At most | What to write |
 | --- | --- | --- |
@@ -233,11 +235,11 @@ Three or four made-up figures on tiles, as on a dashboard, each a number and wha
 | `number_4` | 10 | the fourth figure's number, with its unit if it has one (or empty, for none) |
 | `label_4` | 40 | what the fourth figure measures (or empty, for none) |
 
-Images: none
+Images: `background`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `kpi-dashboard-corporate` | The KPIs against their targets, as figures on tiles: each a number and what it measures, the first a share of its target, the last one the punchline | the default; `title`: the slide's title, as an all-hands deck's slide has it, such as 'KPIs against target'; `number_1`: the number as people read it, with its unit, such as '97%' or '+0.3%'; `number_2`: the number as people read it, with its unit, such as '97%' or '+0.3%'; `number_3`: the number as people read it, with its unit, such as '97%' or '+0.3%'; `number_4`: the number as people read it, with its unit, such as '97%' or '+0.3%'; `label_1`: what the number measures, without the number itself; `label_2`: what the number measures, without the number itself; `label_3`: what the number measures, without the number itself; `label_4`: what the number measures, without the number itself; tags: kpi, kpis |
+| `kpi-dashboard-corporate` | The KPIs against their targets, as figures on tiles: each a number and what it measures, the first a share of its target, the last one the punchline | the default; `title`: the slide's title, as an all-hands deck's slide has it, such as 'KPIs against target'; `number_1`: the number as people read it, with its unit, such as '97%' or '+0.3%'; `number_2`: the number as people read it, with its unit, such as '97%' or '+0.3%'; `number_3`: the number as people read it, with its unit, such as '97%' or '+0.3%'; `number_4`: the number as people read it, with its unit, such as '97%' or '+0.3%'; `label_1`: what the number measures, without the number itself; `label_2`: what the number measures, without the number itself; `label_3`: what the number measures, without the number itself; `label_4`: what the number measures, without the number itself; images: `background` backdrop; tags: kpi, kpis |
 
 ## `social_post`
 
@@ -451,7 +453,7 @@ Images: `photo`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `fun-fact-corporate` | A fun fact about the concept: something absurd, stated as certain, that the presenter has to back up | the default; tags: fun_fact |
+| `fun-fact-corporate` | A fun fact about the concept: something absurd, stated as certain, that the presenter has to back up | the default; images: `photo` neutral or meme-chaos; tags: fun_fact |
 
 ## `acronym`
 

@@ -493,17 +493,26 @@ class DrawnSlide(Slide):
 
 
 class BigNumberSlide(DrawnSlide):
-    """A big number, with what it counts under it, and a title and a (made-up) source, if any."""
+    """A big number, with what it counts under it, and a title and a (made-up) source, if any; and a picture of what
+    it's about behind it (or beside it), if it has one (D63)."""
 
     required_arguments = ("number", "label")
 
-    def __init__(self, title: str | None, number: str | None, label: str | None, source: str | None = None):
-        super().__init__("big_number", None, {"title": title, "number": number, "label": label, "source": source})
+    def __init__(
+        self,
+        title: str | None,
+        number: str | None,
+        label: str | None,
+        source: str | None = None,
+        background: ImageData | None = None,
+    ):
+        arguments = {"background": background, "title": title, "number": number, "label": label, "source": source}
+        super().__init__("big_number", None, arguments)
 
 
 class KpiSlide(DrawnSlide):
     """Three or four figures under a title, each a number and what it measures, appearing one by one, a click each:
-    the last one is the punchline."""
+    the last one is the punchline; over a picture of what they're about, if it has one (D63)."""
 
     required_arguments = ("number_1", "label_1", "number_2", "label_2", "number_3", "label_3")
 
@@ -518,10 +527,11 @@ class KpiSlide(DrawnSlide):
         label_3: str | None,
         number_4: str | None = None,
         label_4: str | None = None,
+        background: ImageData | None = None,
     ):
         fourth = bool(number_4 and label_4)  # (a fourth figure is both, or none)
         figures = ((number_1, label_1), (number_2, label_2), (number_3, label_3), (number_4, label_4))
-        arguments: dict[str, str | None] = {"title": title}
+        arguments: dict[str, str | ImageData | None] = {"background": background, "title": title}
         for index, (number, label) in enumerate(figures, 1):
             arguments[f"number_{index}"] = number if index < 4 or fourth else None
             arguments[f"label_{index}"] = label if index < 4 or fourth else None

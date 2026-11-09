@@ -17,8 +17,9 @@ talk names one: generate_presentation's persona), which shapes more of the talk 
 - the presenter's job on the title slide, for the model (job_hint: a founder is the founder and CEO of a startup);
 - the talk's format, when the talk leaves it to its seed (schema "random", decision D61: see
   talkgenerator.schema.presentation_schema_types.pick_format): multipliers on the formats' weights, so a startup
-  founder mostly pitches and a disgraced professor mostly gives academic talks, while every other format keeps some
-  chance with every persona.
+  founder pitches and a disgraced professor gives academic talks far more often than the others do (in about two of
+  every five of their talks; most of the rest are TED-like), while every other format keeps some chance with every
+  persona.
 
 Classic talks get the slides, the titles and the name styles; the voice and the angle are for a language model. The
 persona comes from the talk's seed (its "persona" stream), before the format, the theme and the slides are picked, so
@@ -82,8 +83,8 @@ class Persona:
     # talkgenerator.images.context.ImageContext.tries): a medieval historian's weird pictures are weird medieval art
     looks: Mapping[str, str] = field(default_factory=dict)
     # Multipliers on the formats' weights, for a talk that leaves its format to its seed (schema "random": see
-    # talkgenerator.schema.presentation_schema_types.FORMAT_WEIGHTS): a startup founder mostly pitches (1 for the formats
-    # it doesn't name)
+    # talkgenerator.schema.presentation_schema_types.FORMAT_WEIGHTS): a startup founder pitches far more often than the
+    # others (1 for the formats it doesn't name)
     formats: Mapping[str, float] = field(default_factory=dict)
     # What the presenter may have been, of which the talk's dice pick one, for {past} in the voice, the angles and the
     # job hint (see lived): a retiree worked as a mail carrier, or as a lighthouse keeper. None for most personas.
@@ -199,7 +200,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             "the chair they held before the scandal, in an absurdly specific field",
             themes={"academic": 5, "chalkboard": 3, "blueprint": 2, "kids": 0.3, "neon": 0.5},
             looks={"weird": "bad-charts", "neutral": "illustration"},
-            formats={"academic": 12},
+            formats={"academic": 15},
         ),
         Persona(
             "startup_founder",
@@ -240,7 +241,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             "founder and CEO of their startup, with its made-up name",
             themes={"startup": 5, "Swiss poster": 2.5, "clean keynote": 2, "vintage paper": 0.3, "chalkboard": 0.5},
             looks={"photo": "corporate-stock", "neutral": "corporate-stock", "weird": "corporate-cringe"},
-            formats={"pitch": 12, "keynote": 2},
+            formats={"pitch": 15, "keynote": 2},
         ),
         Persona(
             "medieval_historian",
@@ -280,7 +281,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             "a professorship in medieval studies, as grand and specific as it gets",
             themes={"vintage paper": 5, "newspaper": 2, "neon": 0.3, "hacker terminal": 0.3, "startup": 0.5},
             looks={"weird": "medieval", "neutral": "museum"},
-            formats={"academic": 2, "pitch": 0.5},
+            formats={"academic": 2, "pitch": 0.6},
         ),
         Persona(
             "conspiracy_blogger",
@@ -321,7 +322,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             "a title they gave themselves, as an independent researcher of something",
             themes={"hacker terminal": 5, "newspaper": 3, "1997 WordArt": 2, "corporate": 0.5, "clean keynote": 0.5},
             looks={"weird": "pareidolia", "neutral": "liminal"},
-            formats={"pitch": 0.5},
+            formats={"pitch": 0.6},
         ),
         Persona(
             "kindergarten_teacher",
@@ -367,7 +368,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             "their role at the kindergarten, made to sound grand",
             themes={"kids": 5, "chalkboard": 3, "Comic Sans everywhere": 2, "hacker terminal": 0.3, "brutalist": 0.3},
             looks={"weird": "wholesome", "neutral": "illustration"},
-            formats={"pitch": 0.3, "academic": 0.5, "corporate": 0.3, "keynote": 0.5},
+            formats={"pitch": 0.6, "academic": 0.6, "corporate": 0.5, "keynote": 0.7},
         ),
         Persona(
             "consultant",
@@ -412,7 +413,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             "a consultancy title, with Senior, Principal or Partner in it",
             themes={"corporate": 5, "clip-art corporate": 3, "Swiss poster": 2, "kids": 0.3, "chalkboard": 0.5},
             looks={"photo": "corporate-stock", "neutral": "corporate-stock", "weird": "corporate-cringe"},
-            formats={"pitch": 2, "corporate": 12},
+            formats={"pitch": 2, "corporate": 10},
         ),
         Persona(
             "motivational_speaker",
@@ -450,7 +451,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             "a title like a self-help guru's",
             themes={"dark minimal": 3, "neon": 3, "1997 WordArt": 2, "academic": 0.5, "blueprint": 0.5},
             looks={"neutral": "places", "weird": "accidental-art"},
-            formats={"pitch": 1.5, "keynote": 12},
+            formats={"pitch": 1.5, "keynote": 10},
         ),
         Persona(
             "influencer",
@@ -491,7 +492,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             "a title like an influencer's bio",
             themes={"neon": 4, "kids": 2, "Comic Sans everywhere": 2, "academic": 0.3, "newspaper": 0.5},
             looks={"weird": "memes", "neutral": "pictures"},
-            formats={"pitch": 2, "academic": 0.5, "keynote": 2},
+            formats={"pitch": 2, "academic": 0.6, "keynote": 2},
         ),
         Persona(
             "time_traveller",
@@ -567,7 +568,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             "a title like a wellness guru's",
             themes={"clean keynote": 4, "dark minimal": 3, "brutalist": 0.3, "hacker terminal": 0.5},
             looks={"weird": "wholesome", "neutral": "places"},
-            formats={"academic": 0.5, "keynote": 2, "corporate": 0.5},
+            formats={"academic": 0.6, "keynote": 2, "corporate": 0.6},
         ),
         # (a retired lighthouse keeper until 2026-11-09, whose every talk was about the lighthouse: the user's "why not
         # retired person?" Its old job is one of its pasts now, which the dice pick)
@@ -611,7 +612,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             "retired, after forty years working {past}",
             themes={"vintage paper": 4, "newspaper": 3, "neon": 0.3, "startup": 0.3},
             looks={"weird": "old-photos", "neutral": "places"},
-            formats={"pitch": 0.3, "academic": 0.5, "corporate": 0.3, "keynote": 0.5},
+            formats={"pitch": 0.6, "academic": 0.6, "corporate": 0.5, "keynote": 0.7},
             pasts=(
                 "as a lighthouse keeper",
                 "as a mail carrier",
@@ -670,7 +671,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             "the sport they played, and their new calling in philosophy",
             themes={"brutalist": 4, "Swiss poster": 4, "vintage paper": 0.5},
             looks={"weird": "accidental-art"},
-            formats={"academic": 0.5, "keynote": 2, "corporate": 1.5},
+            formats={"academic": 0.6, "keynote": 2, "corporate": 1.5},
         ),
         Persona(
             "passionate_expert",
@@ -708,7 +709,7 @@ PERSONAS: Final[dict[str, Persona]] = {
             "a professorship in an absurdly specific field",
             themes={"academic": 3, "chalkboard": 2, "dark minimal": 2, "clip-art corporate": 0.5},
             looks={"neutral": "museum"},
-            formats={"academic": 3},
+            formats={"academic": 2.5},
         ),
     )
 }

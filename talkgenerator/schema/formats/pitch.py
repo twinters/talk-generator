@@ -4,9 +4,11 @@ demo day.
 Its arc goes from the problem to the solution, the market (TAM, SAM and SOM, as a funnel), the business model, the
 traction (a hockey stick), the competition (a 2×2 matrix with the startup alone in its best corner), the team and the
 roadmap to the ask (a big number) and the closing "Questions?". A short pitch keeps the problem, the solution, the
-traction and the ask; a long one gives the problem, the solution and the traction a second slide, and its free slides
-are memes, gifs, press and the like. The startup's made-up name comes from the topic (see
-talkgenerator.schema.formats.startup), so that a classic pitch's slides name the same startup as its title.
+traction and the ask; a quarter of a pitch's slides are free (D63), for memes, gifs, Reddit's weird pictures, its own
+provocations ("Disrupt.", over a full-screen picture), press and the like, and its market and business model come in
+pitches of eleven slides or more; a long one gives the problem, the solution and the traction a second slide. The
+startup's made-up name comes from the topic (see talkgenerator.schema.formats.startup), so that a classic pitch's
+slides name the same startup as its title.
 
 A startup founder presents a pitch more often than the other personas, and a consultant, an influencer and a
 motivational speaker a little more often; its themes are the startup family's more often.
@@ -18,15 +20,19 @@ from typing import Any, Final
 
 from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
-from talkgenerator.plan.kinds import Recipe, Variant, closing_variants, matrix_landscape
+from talkgenerator.plan.kinds import Recipe, Variant, closing_variants, matrix_landscape, pictured
 from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema.formats import (
+    BIG_NUMBER_PICTURES,
+    KPI_PICTURES,
     Format,
     KindSlideGenerator,
     Made,
+    behind,
     different,
     maybe,
     photos,
+    provocation,
     startup,
     text,
     words,
@@ -38,19 +44,23 @@ from talkgenerator.util import random_util
 
 PACK: Final = "pitch"
 
+# (D63: a quarter of its slides are free, for memes, gifs and pictures, and its market and business model, figures
+# on shapes, wait for a talk of eleven slides or more: a ten-slide pitch had all its slides in its parts, too many of
+# them text)
 ARC: Final = Arc(
     (
         Part("problem", 1, 2, rank=1),
         Part("solution", 1, 2, rank=2),
-        Part("market", rank=5),
-        Part("business_model", rank=7),
+        Part("market", rank=7),
+        Part("business_model", rank=8),
         Part("traction", 1, 2, rank=3),
         Part("competition", rank=4),
         Part("team", rank=6),
         Part("roadmap", rank=9),
         Part("ask", rank=0),
-        Part("closing", rank=8),
-    )
+        Part("closing", rank=5),
+    ),
+    free=0.25,
 )
 
 PITCH: Final = Format(
@@ -100,8 +110,14 @@ def _subtitle(context: dict[str, Any]) -> str | None:
 
 
 # Images: a calm backdrop behind a statement, the product, life before and after it, and the team's people
-_BACKDROP = cg.generate_horizontal_pixabay_image
-_PRODUCT = ImageSlot("a photo of the startup's product", aesthetic="photo", generate=True)
+_BACKDROP = cg.statement_backdrop_generator
+# (D63: the main product slide's picture shows off an absurd invention: searched as a gadget, an invention or a
+# machine, and in a talk that generates pictures, drawn from the model's prompt as an advertisement's product shot)
+_PRODUCT = ImageSlot(
+    "the startup's product, an absurd invention, shown off as an advertisement would",
+    aesthetic="product-shot",
+    generate=True,
+)
 _BEFORE = cg.copyright_free_generator
 _AFTER = cg.weird_copyright_free_generator
 _PERSON = ImageSlot(
@@ -140,7 +156,7 @@ def _problem_number(context: dict[str, Any]) -> Made | None:
         "number": _figure(kind),
         "label": label,
         "source": maybe(0.7, text(PACK, "problem.problem_source", variables)),
-    }, {}
+    }, behind(context, BIG_NUMBER_PICTURES)
 
 
 # THE SOLUTION
@@ -197,7 +213,7 @@ def _market_number(context: dict[str, Any]) -> Made | None:
         "number": random_util.choice(words(PACK, "market.market_amount")),
         "label": label,
         "source": maybe(0.8, text(PACK, "market.market_source", variables)),
-    }, {}
+    }, behind(context, BIG_NUMBER_PICTURES)
 
 
 # THE BUSINESS MODEL: pricing tiers, a flywheel, or where the money comes from
@@ -222,7 +238,7 @@ def _pricing(context: dict[str, Any]) -> Made | None:
     texts: dict[str, str | None] = {"title": title}
     for index, (price, label) in enumerate(tiers, 1):
         texts[f"number_{index}"], texts[f"label_{index}"] = price, label
-    return texts, {}
+    return texts, behind(context, KPI_PICTURES)
 
 
 def _flywheel(context: dict[str, Any]) -> Made | None:
@@ -281,7 +297,7 @@ def _traction_kpis(context: dict[str, Any]) -> Made | None:
     texts: dict[str, str | None] = {"title": title}
     for index, (number, label) in enumerate(figures, 1):
         texts[f"number_{index}"], texts[f"label_{index}"] = number, label
-    return texts, {}
+    return texts, behind(context, KPI_PICTURES)
 
 
 def _handle(author: str, name: str) -> str:
@@ -396,7 +412,7 @@ def _ask(context: dict[str, Any]) -> Made | None:
         "number": random_util.choice(words(PACK, "ask.amount")),
         "label": label,
         "source": maybe(0.8, text(PACK, "ask.ask_source", variables)),
-    }, {}
+    }, behind(context, BIG_NUMBER_PICTURES)
 
 
 def _closing(context: dict[str, Any]) -> Made | None:
@@ -484,15 +500,21 @@ _GENERATORS: Final = [
         "Problem Number",
         Recipe(
             "big_number",
+            (cg.backdrop_generator,),
             brief="The problem the startup solves, as one alarming, suspiciously precise statistic about the concept",
             hints={"title": _TITLE_HINT + ", such as 'The problem'", "number": _NUMBER, "label": _LABEL},
-            variants=(Variant(2), Variant(1, frozenset({"source"}), "without a source, for the presenter to give")),
+            variants=pictured(
+                (Variant(2), Variant(1, frozenset({"source"}), "without a source, for the presenter to give")),
+                "background",
+                BIG_NUMBER_PICTURES,
+            ),
         ),
     ),
     # The solution
+    # (the main product slide, most of the time: D63)
     _part(
         "solution",
-        1.2,
+        3,
         "image",
         _solution,
         ["single_image"],
@@ -500,7 +522,8 @@ _GENERATORS: Final = [
         Recipe(
             "image",
             (_PRODUCT,),
-            brief="The startup's solution: its product, in one photo, under a title that introduces it by name",
+            brief="The startup's solution: its product, an absurd invention, in one picture of what it looks like (a "
+            "weird gadget, machine or contraption), under a title that introduces it by name",
             hints={"title": "a title that introduces the product by the startup's made-up name"},
         ),
     ),
@@ -520,7 +543,7 @@ _GENERATORS: Final = [
     ),
     _part(
         "solution",
-        1,
+        0.6,
         "process",
         _how_it_works,
         ["process"],
@@ -570,12 +593,14 @@ _GENERATORS: Final = [
         "Market Number",
         Recipe(
             "big_number",
+            (cg.backdrop_generator,),
             brief="The market's size, as one enormous amount of money that the concept is supposedly worth",
             hints={
                 "title": _TITLE_HINT + ", such as 'Market size'",
                 "number": "the market's size, in money",
                 "label": _LABEL,
             },
+            variants=pictured((), "background", BIG_NUMBER_PICTURES),
         ),
     ),
     # The business model
@@ -588,6 +613,7 @@ _GENERATORS: Final = [
         "Pricing",
         Recipe(
             "kpi",
+            (cg.backdrop_generator,),
             brief="The business model, as pricing plans on tiles: each plan a price and what it gets you, from free "
             "to the last one, the punchline",
             hints={
@@ -595,9 +621,13 @@ _GENERATORS: Final = [
                 **{f"number_{index}": "the plan's price" for index in range(1, 5)},
                 **{f"label_{index}": "the plan's name and what it gets you" for index in range(1, 5)},
             },
-            variants=(
-                Variant(1, frozenset({"number_4", "label_4"}), "with three plans"),
-                Variant(1, note="with four plans"),
+            variants=pictured(
+                (
+                    Variant(1, frozenset({"number_4", "label_4"}), "with three plans"),
+                    Variant(1, note="with four plans"),
+                ),
+                "background",
+                KPI_PICTURES,
             ),
         ),
     ),
@@ -663,18 +693,23 @@ _GENERATORS: Final = [
         "Traction Figures",
         Recipe(
             "kpi",
+            (cg.backdrop_generator,),
             brief="The startup's traction, as figures on tiles: growth that starts out impressive, the last figure "
             "the punchline (such as its revenue)",
             hints={"title": _TITLE_HINT + ", such as 'Traction'"},
-            variants=(
-                Variant(1, frozenset({"number_4", "label_4"}), "with three figures"),
-                Variant(1, note="with four figures"),
+            variants=pictured(
+                (
+                    Variant(1, frozenset({"number_4", "label_4"}), "with three figures"),
+                    Variant(1, note="with four figures"),
+                ),
+                "background",
+                KPI_PICTURES,
             ),
         ),
     ),
     _part(
         "traction",
-        0.6,
+        0.9,
         "social_post",
         _testimonial,
         ["social_post"],
@@ -732,7 +767,7 @@ _GENERATORS: Final = [
     # The team
     _part(
         "team",
-        1.2,
+        1.6,
         "three_columns",
         _team,
         ["three_captions"],
@@ -792,6 +827,7 @@ _GENERATORS: Final = [
         "The Ask",
         Recipe(
             "big_number",
+            (cg.backdrop_generator,),
             brief="The ask: how much money the startup is raising, and what for",
             hints={
                 "title": _TITLE_HINT + ", such as 'The ask'",
@@ -799,6 +835,7 @@ _GENERATORS: Final = [
                 "label": "what the money is for, or how much of the startup it buys",
                 "source": "the round and its terms, as a pitch deck says them",
             },
+            variants=pictured((), "background", BIG_NUMBER_PICTURES),
         ),
         repeats=3,
     ),
@@ -824,22 +861,26 @@ _GENERATORS: Final = [
 # part's generators can make): memes, gifs, press, a secret sauce, a bold statement, a fun fact, an anecdote, and full-
 # screen photos, which a talk may have any number of (so that the free slides of a long one, without fair use too,
 # never run out of slides)
+# (D63: memes, gifs, Reddit's weird pictures and full-screen pictures more often, and fewer slides of text, as the user
+# found pitches text-heavy; and the pitch's own provocations, a word over a full-screen picture: "Disrupt.")
 _OTHERS: Final = {
-    "Meme": 2,
-    "Full Screen Gif": 1,
-    "News Headline": 1,
-    "Acronym": 1,
-    "Wikihow Bold Statement": 0.7,
+    "Meme": 3,
+    "Full Screen Gif": 1.2,
+    "News Headline": 0.8,
+    "Acronym": 0.6,
+    "Wikihow Bold Statement": 0.4,
     "Fun Fact": 0.6,
     "Two Captions Gifs": 0.6,
-    "Anecdote": 0.5,
-    "Inspirobot": 0.4,
-    "Full Screen Neutral Images": 0.4,
+    "Two Captions Weird Reddit": 0.8,
+    "Anecdote": 0.3,
+    "Inspirobot": 0.5,
+    "Full Screen Neutral Images": 0.6,
 }
 
 GENERATORS: Final = [
     *_GENERATORS,
     *(slide_generators.get(name).weighted(Free(ARC, weight), f"{name} (Pitch)") for name, weight in _OTHERS.items()),
+    provocation(PACK, ARC, 2, _variables, "Pitch", "as a startup founder says them on stage"),
 ]
 for _generator in GENERATORS:
     slide_generators.register(_generator.name or "", _generator, group=PACK)
@@ -856,4 +897,5 @@ CAPS: Final = {
     "pie_chart": 1,
     "kpi": 1,
     "big_number": 1,
+    "provocation": 0.1,
 }

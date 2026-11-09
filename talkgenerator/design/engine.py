@@ -129,6 +129,14 @@ SPECS: Final[dict[str, TextSpec]] = {
     "panel number": TextSpec("heading", 260, 96, align="center", heading=True, on_fill=True),
     "number label": TextSpec("body", 72, 32, align="center", anchor="top"),
     "side label": TextSpec("body", 72, 32, align="left"),
+    # (a big number's and KPI tiles' texts over their picture, shaded, or on a band across it: D63)
+    "photo title": TextSpec("heading", 88, 44, color="light", heading=True, on_photo=True),
+    "photo number": TextSpec("heading", 300, 120, color="light", align="center", heading=True, on_photo=True),
+    "photo label": TextSpec("body", 72, 32, color="light", align="center", anchor="top", on_photo=True),
+    "photo source": TextSpec("body", 36, 24, color="light", align="center", italic=True, on_photo=True),
+    "band number": TextSpec("heading", 260, 96, align="center", heading=True, on_photo=True),
+    "band label": TextSpec("body", 64, 30, align="center", anchor="top", on_photo=True),
+    "side number": TextSpec("heading", 240, 96, color="accent", align="left", anchor="bottom", heading=True),
     "source": TextSpec("body", 36, 24, color="muted", align="center", italic=True),
     "side source": TextSpec("body", 36, 24, color="muted", align="left", italic=True),
     "tile number": TextSpec(
@@ -1327,6 +1335,24 @@ def _has(role: str) -> Callable[[dict[str, Content]], bool]:
     return has
 
 
+def _plain(fits: Callable[[dict[str, Content]], bool]) -> Callable[[dict[str, Content]], bool]:
+    """Whether the slide has no picture behind it (a big number's: D63), and fits."""
+
+    def plain(roles: dict[str, Content]) -> bool:
+        return "background" not in roles and fits(roles)
+
+    return plain
+
+
+def _pictured(fits: Callable[[dict[str, Content]], bool]) -> Callable[[dict[str, Content]], bool]:
+    """Whether the slide has a picture to put behind it or beside it (a big number's: D63), and fits."""
+
+    def pictured(roles: dict[str, Content]) -> bool:
+        return "background" in roles and fits(roles)
+
+    return pictured
+
+
 def _short(role: str, characters: int) -> Callable[[dict[str, Content]], bool]:
     """Whether the slide's text of the role is at most this long (a number that fits on a disc, say)."""
 
@@ -1395,18 +1421,99 @@ def _left_aligned(theme: Theme) -> Theme:
     return theme.model_copy(update={"title_align": "left"})
 
 
+# A big number or KPI tiles over a picture of what they're about (D63: the user found slides of text boring): the
+# picture behind everything under a statement's shade, and the texts that aren't on a tile of their own light, as they
+# read on it whatever the picture is; or on a band across it; or the picture filling the slide's right side, and the
+# texts beside it on the theme's background
+_SHADED: Final = tuple(color.mix(extreme, SHADE, SHADE_OPACITY) for extreme in ("#000000", "#ffffff"))
+_SIDE_PHOTO: Final = 820  # the width of a picture that fills a slide's right side
+
+
+def _backdrop(placement: Placement, roles: dict[str, Content]) -> bool:
+    """Whether the slide has a picture behind it (its background, which the engine puts behind everything): then the
+    shade goes over it, first of the layout's shapes."""
+    if not isinstance(roles.get("background"), ImageElement):
+        return False
+    placement.shapes.insert(0, _shade())
+    return True
+
+
+def _heading(placement: Placement, roles: dict[str, Content], theme: Theme, photo: bool) -> float:
+    """The title (if any) across the top, with the theme's decoration, or over a shaded picture in a light colour and
+    without it; where the content can start below it."""
+    if "title" not in roles:
+        return MARGIN
+    if not photo:
+        return _with_title(placement, roles, theme)
+    placement.boxes["title"] = (_TITLE, "photo title")
+    return _CONTENT_TOP
+
+
 def _big_number(roles: dict[str, Content], theme: Theme) -> Placement:
-    """The number big in the middle, in the theme's accent, with what it counts under it and its source below."""
+    """The number big in the middle, in the theme's accent, with what it counts under it and its source below; over
+    its picture, if it has one, shaded, with the number in the accent made light enough to read on the shade, and the
+    rest light."""
     placement = Placement("v5/big-number")
-    top = _with_title(placement, roles, theme) if "title" in roles else MARGIN
+    photo = _backdrop(placement, roles)
+    top = _heading(placement, roles, theme, photo)
     bottom = _CONTENT_BOTTOM - (72 if "source" in roles else 0)
     number_height = round((bottom - top) * 0.58)
     width = WIDTH - 2 * MARGIN
-    placement.boxes["number"] = (Box(x=MARGIN, y=top, w=width, h=number_height), "big number")
+    number = Box(x=MARGIN, y=top, w=width, h=number_height)
+    placement.boxes["number"] = (number, "photo number" if photo else "big number")
+    if photo:
+        placement.colors["number"] = color.readable_on(theme.palette.accent, _SHADED, color.LARGE_TEXT_CONTRAST)
     label_top = top + number_height + 16
-    placement.boxes["label"] = (Box(x=MARGIN + 120, y=label_top, w=width - 240, h=bottom - label_top), "number label")
+    label = Box(x=MARGIN + 120, y=label_top, w=width - 240, h=bottom - label_top)
+    placement.boxes["label"] = (label, "photo label" if photo else "number label")
     if "source" in roles:
-        placement.boxes["source"] = (Box(x=MARGIN, y=bottom + 16, w=width, h=56), "source")
+        source = Box(x=MARGIN, y=bottom + 16, w=width, h=56)
+        placement.boxes["source"] = (source, "photo source" if photo else "source")
+    return placement
+
+
+def _big_number_band(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The picture over the whole slide, shaded, and the number with what it counts on a band across its middle, in
+    the theme's colours, as a statement's band has them; the title above it and the source below it, light."""
+    surface = theme.palette.surface
+    band_box = Box(x=0, y=250, w=WIDTH, h=600)
+    band = ShapeElement(role="number band", box=band_box, color=surface, opacity=BAND_OPACITY)
+    placement = Placement("v5/big-number-band", shapes=[_shade()], overlays=[band])
+    on_band = [color.mix(shaded, surface, BAND_OPACITY) for shaded in _SHADED]
+    if "title" in roles:
+        placement.boxes["title"] = (Box(x=MARGIN, y=72, w=WIDTH - 2 * MARGIN, h=150), "photo title")
+    width = WIDTH - 2 * MARGIN
+    placement.boxes["number"] = (Box(x=MARGIN, y=band_box.y + 24, w=width, h=330), "band number")
+    placement.colors["number"] = color.readable_on(theme.palette.accent, on_band, color.LARGE_TEXT_CONTRAST)
+    label_top = band_box.y + 24 + 330 + 12
+    label = Box(x=MARGIN + 120, y=label_top, w=width - 240, h=band_box.y + band_box.h - 24 - label_top)
+    placement.boxes["label"] = (label, "band label")
+    placement.colors["label"] = _on(on_band, theme)
+    if "source" in roles:
+        placement.boxes["source"] = (Box(x=MARGIN, y=band_box.y + band_box.h + 24, w=width, h=64), "photo source")
+    return placement
+
+
+def _big_number_side(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The picture filling the slide's right side, and the number beside it, aligned left, in the theme's accent,
+    with what it counts and its source under it, and the title (if any) above it, on the theme's background."""
+    placement = Placement("v5/big-number-side", photo=True)  # (a picture to the slide's edges: none of a box's frame)
+    picture_x = WIDTH - _SIDE_PHOTO
+    placement.boxes["background"] = (Box(x=picture_x, y=0, w=_SIDE_PHOTO, h=HEIGHT), "quote")
+    width = picture_x - MARGIN - 80
+    top = 120.0
+    if "title" in roles:
+        title = Box(x=MARGIN, y=top, w=width, h=220)
+        placement.boxes["title"] = (title, "side title")
+        placement.shapes += _decoration(_left_aligned(theme), title, gap=12)
+        top += 250
+    bottom = _CONTENT_BOTTOM - (80 if "source" in roles else 0)
+    number_height = round((bottom - top) * 0.5)
+    placement.boxes["number"] = (Box(x=MARGIN, y=top, w=width, h=number_height), "side number")
+    label_top = top + number_height + 16
+    placement.boxes["label"] = (Box(x=MARGIN, y=label_top, w=width, h=bottom - label_top), "side label")
+    if "source" in roles:
+        placement.boxes["source"] = (Box(x=MARGIN, y=bottom + 16, w=width, h=56), "side source")
     return placement
 
 
@@ -1480,9 +1587,10 @@ def _tile(role: str, box: Box, theme: Theme, click: int | None, strip: Literal["
 
 def _kpi_rows(roles: dict[str, Content], theme: Theme) -> Placement:
     """The figures one under the other, each on a band with an accent strip: the number on the left, what it
-    measures beside it. (A figure comes with its band, on its click.)"""
+    measures beside it. (A figure comes with its band, on its click.) Over their picture, if they have one, shaded,
+    with the title light (as on every KPI layout: their tiles read on anything)."""
     placement = Placement("v5/kpi-rows")
-    top = (_with_title(placement, roles, theme) if "title" in roles else MARGIN) + 8
+    top = _heading(placement, roles, theme, _backdrop(placement, roles)) + 8
     figures = _numbered(roles, "number", 4)
     y, height = _spread(top, _CONTENT_BOTTOM, len(figures), 20, 220)
     for index in figures:
@@ -1518,7 +1626,7 @@ def _kpi_tiles(roles: dict[str, Content], theme: Theme) -> Placement:
     """The figures side by side, each on a tile with an accent strip on top: the number, and what it measures
     under it."""
     placement = Placement("v5/kpi-tiles")
-    top = (_with_title(placement, roles, theme) if "title" in roles else MARGIN) + 24
+    top = _heading(placement, roles, theme, _backdrop(placement, roles)) + 24
     figures = _numbered(roles, "number", 4)
     gap = 40
     width = (WIDTH - 2 * MARGIN - gap * (len(figures) - 1)) / len(figures)
@@ -1541,7 +1649,7 @@ def _kpi_grid(roles: dict[str, Content], theme: Theme) -> Placement:
     """Four figures on tiles in two rows of two, each with an accent strip on its left: the number on the left of
     its tile, what it measures on its right."""
     placement = Placement("v5/kpi-grid")
-    top = (_with_title(placement, roles, theme) if "title" in roles else MARGIN) + 24
+    top = _heading(placement, roles, theme, _backdrop(placement, roles)) + 24
     gap = 32
     width = (WIDTH - 2 * MARGIN - gap) / 2
     height = (_CONTENT_BOTTOM - top - gap) / 2
@@ -3458,8 +3566,11 @@ _LAYOUTS: Final[dict[str, tuple[_Layout, ...]]] = {
     # (A type's first layout fits every slide of it: the others may need short numbers, or a fourth option)
     "big_number": (
         _Layout("v5/big-number", _big_number),
-        _Layout("v5/big-number-panel", _big_number_panel, 0.8, _short("number", 7)),
-        _Layout("v5/big-number-disc", _big_number_disc, 0.7, _short("number", 5)),
+        _Layout("v5/big-number-panel", _big_number_panel, 0.8, _plain(_short("number", 7))),
+        _Layout("v5/big-number-disc", _big_number_disc, 0.7, _plain(_short("number", 5))),
+        # (over or beside a picture: D63)
+        _Layout("v5/big-number-band", _big_number_band, 0.8, _has("background")),
+        _Layout("v5/big-number-side", _big_number_side, 0.9, _pictured(_short("number", 9))),
     ),
     "kpi": (
         _Layout("v5/kpi-rows", _kpi_rows),

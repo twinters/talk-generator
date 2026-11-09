@@ -37,7 +37,7 @@ Images: `image`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `solution-pitch` | The startup's solution: its product, in one photo, under a title that introduces it by name | the default; `title`: a title that introduces the product by the startup's made-up name; images: `image` photo (or generated, from its prompt, with an image generator set up); tags: single_image, solution |
+| `solution-pitch` | The startup's solution: its product, an absurd invention, in one picture of what it looks like (a weird gadget, machine or contraption), under a title that introduces it by name | the default; `title`: a title that introduces the product by the startup's made-up name; images: `image` product-shot (or generated, from its prompt, with an image generator set up); tags: single_image, solution |
 | `inspirobot-pitch` | An inspirational poster (made by InspiroBot) that the presenter has to explain | `title`: a title such as 'Something my father always told me'; images: `image` inspirobot; needs no `image_query`; tags: inspiration, statement |
 
 ## `full_image`
@@ -54,6 +54,7 @@ Images: `image`
 | --- | --- | --- |
 | `full-screen-gif-pitch` | A gif, filling the slide | the default; `title`: two to four words of your own that build up to the gif, or empty for none; images: `image` gifs; tags: full_image, gif |
 | `full-screen-neutral-images-pitch` | A photo, filling the slide | images: `image` neutral; tags: full_image, neutral |
+| `provocation-pitch` | A dramatic pause between the talk's parts: a striking or weird picture of the concept, filling the slide, under a provocative word or two | `title`: one or two provocative words, as a startup founder says them on stage, ending in a full stop or a question mark; images: `image` backdrop; tags: full_image, provocation |
 
 ## `statement`
 
@@ -67,9 +68,9 @@ Images: `background`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `problem-statement-pitch` | The problem the startup solves, as a bold statement over a photo: a pain that everyone supposedly has with the concept | the default; `text`: the problem, as one bold sentence or question, stated as a crisis; images: `background` calm-backdrop; tags: problem, statement |
-| `wikihow-bold-statement-pitch` | A bold statement over a photo | `text`: a bold claim or question about the concept, such as 'Don't we all secretly want to ...?'; images: `background` calm-backdrop; tags: bold_statement, statement |
-| `anecdote-pitch` | A personal anecdote the presenter now has to tell | `text`: the title of the anecdote, such as 'The time I ...'; images: `background` calm-backdrop; tags: anecdote |
+| `problem-statement-pitch` | The problem the startup solves, as a bold statement over a photo: a pain that everyone supposedly has with the concept | the default; `text`: the problem, as one bold sentence or question, stated as a crisis; images: `background` calm-backdrop or backdrop; tags: problem, statement |
+| `wikihow-bold-statement-pitch` | A bold statement over a photo | `text`: a bold claim or question about the concept, such as 'Don't we all secretly want to ...?'; images: `background` calm-backdrop or backdrop; tags: bold_statement, statement |
+| `anecdote-pitch` | A personal anecdote the presenter now has to tell | `text`: the title of the anecdote, such as 'The time I ...'; images: `background` calm-backdrop or backdrop; tags: anecdote |
 
 ## `two_columns`
 
@@ -86,7 +87,8 @@ Images: `image_1`, `image_2`
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
 | `before-and-after-pitch` | Life before the startup's product and after it, as two captioned photos | the default; `caption_1`: life before the product, in a few words; `caption_2`: life after it; images: `image_1` photo, `image_2` weird-stock; tags: solution, two_captions |
-| `two-captions-gifs-pitch` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | images: `image_2` gifs, else weird; tags: gif, multi_caption, two_captions |
+| `two-captions-gifs-pitch` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | images: `image_1` neutral or meme-chaos, `image_2` gifs, else weird; tags: gif, multi_caption, two_captions |
+| `two-captions-weird-reddit-pitch` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | images: `image_1` weird, `image_2` meme-chaos; tags: multi_caption, reddit, two_captions |
 
 ## `three_columns`
 
@@ -203,7 +205,7 @@ Images: none
 
 ## `big_number`
 
-A big, made-up number, with what it counts under it: a figure the presenter has to explain.
+A big, made-up number, with what it counts under it: a figure the presenter has to explain; over a picture of what it's about, or beside it, if it has one.
 
 | Text | At most | What to write |
 | --- | --- | --- |
@@ -212,17 +214,17 @@ A big, made-up number, with what it counts under it: a figure the presenter has 
 | `label` | 90 | what the number counts or measures, in a few words |
 | `source` | 60 | a made-up, unreliable source for the number (or empty, for none) |
 
-Images: none
+Images: `background`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `problem-number-pitch` | The problem the startup solves, as one alarming, suspiciously precise statistic about the concept | the default; `title`: the slide's title, as a pitch deck's slide has it, such as 'The problem'; `number`: the number as people read it, with its unit or currency, such as '3.7 billion' or '$2M'; `label`: what the number counts, without the number itself; tags: big_number, problem |
-| `market-number-pitch` | The market's size, as one enormous amount of money that the concept is supposedly worth | `title`: the slide's title, as a pitch deck's slide has it, such as 'Market size'; `number`: the market's size, in money; `label`: what the number counts, without the number itself; tags: big_number, market |
-| `the-ask-pitch` | The ask: how much money the startup is raising, and what for | `title`: the slide's title, as a pitch deck's slide has it, such as 'The ask'; `number`: the amount the startup raises, with its currency, such as '$2M'; `label`: what the money is for, or how much of the startup it buys; `source`: the round and its terms, as a pitch deck says them; tags: ask |
+| `problem-number-pitch` | The problem the startup solves, as one alarming, suspiciously precise statistic about the concept | the default; `title`: the slide's title, as a pitch deck's slide has it, such as 'The problem'; `number`: the number as people read it, with its unit or currency, such as '3.7 billion' or '$2M'; `label`: what the number counts, without the number itself; images: `background` backdrop; tags: big_number, problem |
+| `market-number-pitch` | The market's size, as one enormous amount of money that the concept is supposedly worth | `title`: the slide's title, as a pitch deck's slide has it, such as 'Market size'; `number`: the market's size, in money; `label`: what the number counts, without the number itself; images: `background` backdrop; tags: big_number, market |
+| `the-ask-pitch` | The ask: how much money the startup is raising, and what for | `title`: the slide's title, as a pitch deck's slide has it, such as 'The ask'; `number`: the amount the startup raises, with its currency, such as '$2M'; `label`: what the money is for, or how much of the startup it buys; `source`: the round and its terms, as a pitch deck says them; images: `background` backdrop; tags: ask |
 
 ## `kpi`
 
-Three or four made-up figures on tiles, as on a dashboard, each a number and what it measures; they appear one by one, a click each, the last one the punchline.
+Three or four made-up figures on tiles, as on a dashboard, each a number and what it measures; they appear one by one, a click each, the last one the punchline; over a picture of what they're about, if it has one.
 
 | Text | At most | What to write |
 | --- | --- | --- |
@@ -236,12 +238,12 @@ Three or four made-up figures on tiles, as on a dashboard, each a number and wha
 | `number_4` | 10 | the fourth figure's number, with its unit if it has one (or empty, for none) |
 | `label_4` | 40 | what the fourth figure measures (or empty, for none) |
 
-Images: none
+Images: `background`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `pricing-pitch` | The business model, as pricing plans on tiles: each plan a price and what it gets you, from free to the last one, the punchline | the default; `title`: the slide's title, as a pitch deck's slide has it, such as 'Business model'; `number_1`: the plan's price; `number_2`: the plan's price; `number_3`: the plan's price; `number_4`: the plan's price; `label_1`: the plan's name and what it gets you; `label_2`: the plan's name and what it gets you; `label_3`: the plan's name and what it gets you; `label_4`: the plan's name and what it gets you; tags: business_model, kpi |
-| `traction-figures-pitch` | The startup's traction, as figures on tiles: growth that starts out impressive, the last figure the punchline (such as its revenue) | `title`: the slide's title, as a pitch deck's slide has it, such as 'Traction'; tags: kpi, traction |
+| `pricing-pitch` | The business model, as pricing plans on tiles: each plan a price and what it gets you, from free to the last one, the punchline | the default; `title`: the slide's title, as a pitch deck's slide has it, such as 'Business model'; `number_1`: the plan's price; `number_2`: the plan's price; `number_3`: the plan's price; `number_4`: the plan's price; `label_1`: the plan's name and what it gets you; `label_2`: the plan's name and what it gets you; `label_3`: the plan's name and what it gets you; `label_4`: the plan's name and what it gets you; images: `background` backdrop; tags: business_model, kpi |
+| `traction-figures-pitch` | The startup's traction, as figures on tiles: growth that starts out impressive, the last figure the punchline (such as its revenue) | `title`: the slide's title, as a pitch deck's slide has it, such as 'Traction'; images: `background` backdrop; tags: kpi, traction |
 
 ## `social_post`
 
@@ -422,7 +424,7 @@ Images: `photo`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `fun-fact-pitch` | A fun fact about the concept: something absurd, stated as certain, that the presenter has to back up | the default; tags: fun_fact |
+| `fun-fact-pitch` | A fun fact about the concept: something absurd, stated as certain, that the presenter has to back up | the default; images: `photo` neutral or meme-chaos; tags: fun_fact |
 
 ## `acronym`
 

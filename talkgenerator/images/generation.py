@@ -74,6 +74,9 @@ STYLES: Final[dict[str, str]] = {
     "weird-stock": "a strange, funny stock photograph",
     "corporate-stock": "a corporate stock photograph, in blues and teals",
     "calm-backdrop": "a calm landscape photograph, with little detail in the middle",
+    "backdrop": "a striking photograph, with room for a big number over it",
+    # (a made-up product, shown off: D63, "amazing weird visualization" of what a startup pitches)
+    "product-shot": "a striking advertising photograph of an absurd, imaginative product, lit as a premium product shot",
     "vintage": "an old black and white photograph from an archive, with film grain and faded edges",
     "old-photo": "an old black and white photograph, with film grain",
     "old-people": "an old painted portrait of a made-up person, as in a museum",
@@ -94,6 +97,7 @@ _SHAPES: Final[dict[str, AspectRatio]] = {
     "old-people": "3:4",
     "portrait": "3:4",
     "calm-backdrop": "16:9",
+    "backdrop": "16:9",
 }
 _ORIENTATIONS: Final[dict[str, AspectRatio]] = {"landscape": "3:2", "portrait": "2:3", "square": "1:1"}
 # What the language model writing a talk is told of a prompt it writes for an image generator

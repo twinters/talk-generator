@@ -167,6 +167,17 @@ copyright_free_generator_from_word = copyright_free_generator.from_word
 generate_horizontal_pixabay_image = ImageSlot("a calm photo behind the slide's text", aesthetic="calm-backdrop")
 generate_horizontal_pixabay_image_from_word = generate_horizontal_pixabay_image.from_word
 
+# Behind a big number or KPI tiles (D63), if one is found: a picture of what they're about, from one of many sources
+backdrop_generator = ImageSlot("a picture of what the slide's figures are about, behind them", aesthetic="backdrop")
+# Filling a slide, under a provocative word or two (a talk format's free slides: D63): a striking or weird picture of
+# the slide's topic, from the backdrop look's many sources
+provocation_image_generator = ImageSlot(
+    "a striking or weird picture of the slide's topic, filling the slide", aesthetic="backdrop"
+)
+# And behind a statement: a calm photo most often, else a picture from one of the backdrop's many sources (D63: the
+# user asked for pictures from "multiple different generators" behind slides of text)
+statement_backdrop_generator = CombinedGenerator((2, generate_horizontal_pixabay_image), (1, backdrop_generator))
+
 copyright_free_related_generator_from_word = ConceptNetMapper(copyright_free_generator_from_word)
 copyright_free_related_generator = SeededGenerator(copyright_free_related_generator_from_word)
 

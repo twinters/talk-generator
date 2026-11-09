@@ -28,12 +28,18 @@ from dataclasses import dataclass, field
 from functools import cache
 from typing import Any
 
+from talkgenerator.datastructures.slide_generator_data import SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
-from talkgenerator.plan.kinds import KINDS, box_picture_slot
+from talkgenerator.plan.kinds import KINDS, Recipe, box_picture_slot
 from talkgenerator.plan.languages import ENGLISH
-from talkgenerator.schema.formats.arcs import Arc
+from talkgenerator.schema import content_generators as cg
+from talkgenerator.schema.formats.arcs import Arc, Free
 from talkgenerator.slide import slide_generator_types, slides
 from talkgenerator.sources import packs
+
+# (how often a format's big numbers and KPI tiles have a picture behind them, as the TED-like talks' do: D63)
+from talkgenerator.sources.slide_texts import BIG_NUMBER_PICTURES as BIG_NUMBER_PICTURES
+from talkgenerator.sources.slide_texts import KPI_PICTURES as KPI_PICTURES
 from talkgenerator.util import language_util, random_util
 
 # What a classic generator of a kind of slide makes: the slide's texts, by the kind's text fields (None where it has
@@ -172,6 +178,53 @@ def photos(slot: ImageSlot, context: Mapping[str, Any], count: int, avoid: Seque
         others = [image for image in (*avoid, *found) if image is not None]
         found.append(slot.find(str(context.get("seed")), avoid=others))
     return found
+
+
+def behind(context: Mapping[str, Any], share: float) -> dict[str, Any]:
+    """The images of a classic big number or KPI tiles: a picture of the slide's seed behind them (the backdrop look's,
+    see talkgenerator.schema.content_generators.backdrop_generator), that share of the time, as the current random
+    stream decides (D63); none when none is found."""
+    if random_util.random() >= share:
+        return {}
+    picture = cg.backdrop_generator(dict(context))
+    return {"background": picture} if picture is not None else {}
+
+
+def provocation(
+    format_name: str,
+    arc: Arc,
+    weight: float,
+    variables: Callable[[dict[str, Any]], dict[str, Any]],
+    named: str,
+    voice: str,
+) -> SlideGeneratorData:
+    """A free slide of the format's own (D63): a striking or weird picture of the slide's topic filling it (the
+    backdrop look's: stock photos most often, now and then a weird one from Reddit, a space photograph, an old one or
+    a painting), with a provocative word or two over it, in the format's voice (its pack's free.provocation: "Disrupt."
+    in a pitch, "Peer reviewed." in an academic talk), as the user asked for "more odds on random full-slide images
+    ... with like random provoking (relevant?) word" after reviewing 35 talks. Named "Provocation (<named>)", tagged
+    provocation (a format's caps keep it to one slide in ten)."""
+    image = cg.provocation_image_generator
+
+    def content(context: dict[str, Any]) -> Made | None:
+        title = text(format_name, "free.provocation", variables(context))
+        return ({"title": title}, {"image": image(context)}) if title else None
+
+    return SlideGeneratorData(
+        KindSlideGenerator("full_image", content),
+        weight_function=Free(arc, weight),
+        retries=3,
+        allowed_repeated_elements=1,
+        tags=["full_image", "provocation"],
+        name=f"Provocation ({named})",
+        llm=Recipe(
+            "full_image",
+            (image,),
+            brief="A dramatic pause between the talk's parts: a striking or weird picture of the concept, filling the "
+            "slide, under a provocative word or two",
+            hints={"title": f"one or two provocative words, {voice}, ending in a full stop or a question mark"},
+        ),
+    )
 
 
 def maybe(chance: float, value: str | None) -> str | None:

@@ -1,13 +1,15 @@
 {
   "format": "keynote",
   "about": "The classic texts of product keynotes (the keynote schema): a grammar per part of its arc, whose rules are lists of templates (see talkgenerator.sources.packs and talkgenerator.schema.formats.keynote)",
-  "version": 1,
+  "version": 2,
   "versions": {
-    "1": "2026-11-08: the first texts of product keynotes, a part of the arc a grammar: the title, the opening, the one idea, the reveal, the features, the demo, the price, one more thing and the closing line (D59)"
+    "1": "2026-11-08: the first texts of product keynotes, a part of the arc a grammar: the title, the opening, the one idea, the reveal, the features, the demo, the price, one more thing and the closing line (D59)",
+    "2": "2026-11-09: the free slides' own provocations: a word or two over a full-screen picture, in the format's voice (D63)"
   },
   "slots": {
     "title.talk_title": {"variables": ["seed", "product"], "field": "title.title"},
     "title.subtitle": {"variables": ["seed", "topic", "presenter", "title", "product"], "field": "title.subtitle"},
+    "free.provocation": {"variables": ["seed", "topic", "presenter", "title", "product"], "field": "full_image.title"},
     "opening.opening_statement": {"variables": ["seed", "topic", "presenter", "title", "product"], "field": "statement.text"},
     "opening.opening_number_title": {"variables": ["seed", "topic", "presenter", "title", "product"], "field": "big_number.title"},
     "opening.opening_number": {"variables": [], "field": "big_number.number"},

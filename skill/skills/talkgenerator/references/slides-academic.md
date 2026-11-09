@@ -51,6 +51,8 @@ Images: `image`
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
 | `reddit-chart-academic` | A real chart from the internet, filling the slide | the default; `title`: a confident conclusion about the concept that the chart supposedly proves, as if it were obvious (the chart is a real one, about something else entirely); images: `image` bad-charts; tags: chart |
+| `full-screen-gif-academic` | A gif, filling the slide | `title`: two to four words of your own that build up to the gif, or empty for none; images: `image` gifs; tags: full_image, gif |
+| `provocation-academic` | A dramatic pause between the talk's parts: a striking or weird picture of the concept, filling the slide, under a provocative word or two | `title`: one or two provocative words, as a researcher puts them on a slide, dryly, ending in a full stop or a question mark; images: `image` backdrop; tags: full_image, provocation |
 
 ## `statement`
 
@@ -64,11 +66,11 @@ Images: `background`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `equation-academic` | The method's key equation, big over a photo: one line in letters and symbols, with the concept in it, that sums up the method | the default; `text`: the equation, written out in plain characters (such as x² and ×), on one line; images: `background` calm-backdrop; tags: equation, method, statement |
-| `limitations-statement-academic` | The study's main limitation, admitted in one sentence over a photo, as if it were minor | `text`: the limitation, admitted as if it were minor; images: `background` calm-backdrop; tags: limitations, statement |
-| `quote-academic` | A real quote over a photo (talkgenerator finds the quote, about the concept) | images: `background` calm-backdrop; finds its `text` itself (don't write one); tags: quote, statement |
-| `full-screen-pixabay-deep-academic` | A deep question over a photo | `text`: a short, deep question, such as 'But... why?'; images: `background` calm-backdrop; tags: deep, full_image |
-| `wikihow-bold-statement-academic` | A bold statement over a photo | `text`: a bold claim or question about the concept, such as 'Don't we all secretly want to ...?'; images: `background` calm-backdrop; tags: bold_statement, statement |
+| `equation-academic` | The method's key equation, big over a photo: one line in letters and symbols, with the concept in it, that sums up the method | the default; `text`: the equation, written out in plain characters (such as x² and ×), on one line; images: `background` calm-backdrop or backdrop; tags: equation, method, statement |
+| `limitations-statement-academic` | The study's main limitation, admitted in one short sentence over a photo, as if it were minor | `text`: the limitation, admitted as if it were minor, in ten words at most; images: `background` calm-backdrop or backdrop; tags: limitations, statement |
+| `quote-academic` | A real quote over a photo (talkgenerator finds the quote, about the concept) | images: `background` calm-backdrop or backdrop; finds its `text` itself (don't write one); tags: quote, statement |
+| `full-screen-pixabay-deep-academic` | A deep question over a photo | `text`: a short, deep question, such as 'But... why?'; images: `background` calm-backdrop or backdrop; tags: deep, full_image |
+| `wikihow-bold-statement-academic` | A bold statement over a photo | `text`: a bold claim or question about the concept, such as 'Don't we all secretly want to ...?'; images: `background` calm-backdrop or backdrop; tags: bold_statement, statement |
 
 ## `two_columns`
 
@@ -84,7 +86,7 @@ Images: `image_1`, `image_2`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `two-captions-copyright-free` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | the default; tags: multi_caption, two_captions |
+| `two-captions-weird-reddit-academic` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | the default; images: `image_1` weird, `image_2` meme-chaos; tags: multi_caption, reddit, two_captions |
 
 ## `three_columns`
 
@@ -225,7 +227,7 @@ Images: none
 
 ## `big_number`
 
-A big, made-up number, with what it counts under it: a figure the presenter has to explain.
+A big, made-up number, with what it counts under it: a figure the presenter has to explain; over a picture of what it's about, or beside it, if it has one.
 
 | Text | At most | What to write |
 | --- | --- | --- |
@@ -234,11 +236,11 @@ A big, made-up number, with what it counts under it: a figure the presenter has 
 | `label` | 90 | what the number counts or measures, in a few words |
 | `source` | 60 | a made-up, unreliable source for the number (or empty, for none) |
 
-Images: none
+Images: `background`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `p-value-academic` | The result that matters, as one p-value: a big number just under the threshold, what it shows, and where in the paper it is | the default; `title`: the slide's title, as a conference talk's slide has it, such as 'Main result'; `number`: the p-value, just under 0.05, such as 'p = 0.049'; `label`: what it shows, and what it took to get it, without the number itself; `source`: where in the paper it is, such as an appendix; tags: big_number, results |
+| `p-value-academic` | The result that matters, as one p-value: a big number just under the threshold, what it shows, and where in the paper it is | the default; `title`: the slide's title, as a conference talk's slide has it, such as 'Main result'; `number`: the p-value, just under 0.05, such as 'p = 0.049'; `label`: what it shows, and what it took to get it, without the number itself; `source`: where in the paper it is, such as an appendix; images: `background` backdrop; tags: big_number, results |
 
 ## `quiz`
 
@@ -420,7 +422,7 @@ Images: `photo`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `fun-fact-academic` | A fun fact about the concept: something absurd, stated as certain, that the presenter has to back up | the default; tags: fun_fact |
+| `fun-fact-academic` | A fun fact about the concept: something absurd, stated as certain, that the presenter has to back up | the default; images: `photo` neutral or meme-chaos; tags: fun_fact |
 
 ## `flowchart`
 

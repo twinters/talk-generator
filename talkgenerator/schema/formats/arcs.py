@@ -6,8 +6,9 @@ and the team to the ask; an academic talk from its outline through related work,
 limitations, future work, the acknowledgements and the references to the questions. A part has the fewest and the
 most slides it takes, and a rank: a talk too short for all of its parts keeps the parts of the lowest ranks (a pitch of
 five slides has its problem, its solution, its traction and the ask), and a longer talk gives the parts it keeps more
-slides, by rank too, up to their most. What a long talk has left after that are free slides, between the parts, for the
-format's other slides (memes, quotes, gifs...).
+slides, by rank too, up to their most. Free slides go between the parts, for the format's other slides (memes, gifs,
+full-screen pictures...): an arc keeps a share of a talk's slides free first (its free share: two of a ten-slide
+pitch's, D63), and a long talk has the slides that are left after its parts have their most free too.
 
 The arc decides every slide's part from the talk's length alone, so it's the same in every run, and the slide
 generators' weights come from it: a part's generators weigh in on their part's slides only (in_part), so a persona's
@@ -47,11 +48,21 @@ class Part:
 @dataclass(frozen=True)
 class Arc:
     parts: tuple[Part, ...]
+    # The share of a talk's slides (but its first and its last) that are free slides whatever its parts: the format's
+    # memes, gifs and pictures, before its parts get theirs (decision D63: with every slide in a part, a ten-slide pitch
+    # or academic talk had none, and the user found them text-heavy and dull). Rounded down: none in a short talk
+    free: float = 0.0
 
     def __post_init__(self) -> None:
         names = [part.name for part in self.parts]
         if not names or len(set(names)) < len(names):
             raise ValueError(f"an arc needs parts, each with a name of its own: not {names}")
+        if not 0 <= self.free < 1:
+            raise ValueError(f"an arc's free share is less than all of a talk's slides: not {self.free}")
+
+    def reserved(self, num_slides: int) -> int:
+        """How many of a talk's slides its free share keeps free, whatever its parts."""
+        return int(self.free * max(0, num_slides - 2))
 
     def names(self) -> tuple[str, ...]:
         return tuple(part.name for part in self.parts)
@@ -77,6 +88,8 @@ class Arc:
 @cache
 def _layout(arc: Arc, num_slides: int) -> tuple[str | None, ...]:
     room = max(0, num_slides - 1)  # (the slides after the title slide)
+    reserved = arc.reserved(num_slides)  # (free slides, whatever the parts: see Arc.free)
+    room -= reserved
     by_rank = sorted(range(len(arc.parts)), key=lambda index: (arc.parts[index].rank, index))
     # The parts the talk has room for, the lowest ranks first, each with its fewest slides
     counts: dict[int, int] = {}
@@ -93,7 +106,9 @@ def _layout(arc: Arc, num_slides: int) -> tuple[str | None, ...]:
         for index in grown[:room]:
             counts[index] += 1
             room -= 1
-    # And the free slides that are left, spread over the gaps between the parts (before the only part, if it's one)
+    # And the free slides, the reserved ones and those left, spread over the gaps between the parts (before the only
+    # part, if it's one)
+    room += reserved
     order = sorted(counts)
     gaps = [0] * max(1, len(order) - 1)
     for free in range(room):

@@ -65,8 +65,16 @@ CLASSIC_ROLES: Final[dict[str, dict[str, str]]] = {
         **_pictures("circle_1", "circle_2", "top_left", "top_right", "bottom_left", "bottom_right"),
     },
     # (New in v5 too, and drawn as shapes in the template's colours, on its blank slide: see DRAWN_TYPES)
-    "big_number": {"title": "title", "number": "number", "label": "label", "source": "source"},
+    # (a big number's and KPI tiles' picture, if any, behind them or beside them: D63)
+    "big_number": {
+        "background": "background",
+        "title": "title",
+        "number": "number",
+        "label": "label",
+        "source": "source",
+    },
     "kpi": {
+        "background": "background",
         "title": "title",
         **{f"{part}_{number}": f"{part}_{number}" for number in range(1, 5) for part in ("number", "label")},
     },
@@ -234,9 +242,9 @@ REQUIRED_ROLES: Final[dict[str, tuple[str, ...]]] = {
 PICTURE_ROLES: Final = frozenset(
     role for roles in CLASSIC_ROLES.values() for role in roles.values() if role.endswith("_picture")
 )
-# The roles of drawn slides that hold pictures: a post's or a story's photo, a meme's template, a work's figure (D65), a
-# box's picture
-IMAGE_ROLES: Final = frozenset({"photo", "template", "figure"}) | PICTURE_ROLES
+# The roles of drawn slides that hold pictures: a post's or a story's photo, a meme's template, a work's figure (D65),
+# the picture behind a big number or KPI tiles (D63), a box's picture
+IMAGE_ROLES: Final = frozenset({"photo", "template", "figure", "background"}) | PICTURE_ROLES
 
 # Roles that only ever hold text, even when the text looks like an image's file name
 TEXT_ROLES: Final = frozenset(

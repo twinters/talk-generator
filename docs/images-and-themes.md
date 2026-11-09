@@ -43,6 +43,8 @@ among the candidates.
 | --- | --- |
 | `photo` | stock photos, and Openverse's openly licensed ones |
 | `calm-backdrop` | photos with little detail where a slide's big text goes, and not too light |
+| `backdrop` | pictures behind a big number or KPI tiles, from many sources: stock photos most often, now and then a weird picture from Reddit, a NASA photograph, an old photograph or a painting |
+| `product-shot` | photos of gadgets and inventions, for a made-up product (a pitch's, a keynote's) |
 | `vintage` | old photographs in black and white or sepia |
 | `museum` | public domain art from museums |
 | `space-science` | space and science, as NASA and the like photograph it |

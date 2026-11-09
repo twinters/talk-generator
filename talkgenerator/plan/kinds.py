@@ -113,6 +113,9 @@ class Kind:
     # quadrants, with dots instead, or bare), and the pictures some of its boxes can have
     variants: tuple[Variant, ...] = ()
     pictures: BoxPictures | None = None
+    # The image slots it can do without: when a slot of these finds no image, the slide goes without it (a picture
+    # behind a big number, D63), where any other slot's missing image takes the slide down
+    optional_images: frozenset[str] = frozenset()
 
 
 # A v4 content generator: a presentation context (with the "seed" to search for) in, an image (or None) out
@@ -159,23 +162,31 @@ class Recipe:
         """The image slots the language model writes a search query for."""
         return [
             slot
-            for slot in [*KINDS[self.kind].images, *self.optional_slots()]
+            for slot in [*self._sourced(), *self.optional_slots()]
             if f"{slot}_query" not in self.omit and slot not in self.omit and slot not in self.queries
         ]
 
     def slots(self) -> list[tuple[str, ImageSlot | ContentSource]]:
-        """The image slots this slide has, by name, with what they ask for (not the ones it leaves out): the kind's,
-        then the pictures of its boxes that it has."""
+        """The image slots this slide has, by name, with what they ask for (not the ones it leaves out): the kind's
+        (but the optional ones a recipe made before them gives no source for, see _sourced), then the pictures of its
+        boxes that it has."""
         own = [
-            (name, source)
-            for name, source in zip(KINDS[self.kind].images, self.images, strict=True)
-            if name not in self.omit
+            (name, source) for name, source in zip(self._sourced(), self.images, strict=True) if name not in self.omit
         ]
         return own + [(slot, box_picture_slot()) for slot in self.optional_slots() if slot not in self.omit]
 
     def optional_slots(self) -> list[str]:
         """The image slots that may stay empty when nothing is found for them: the pictures of its boxes."""
         return [BoxPictures.slot(box) for box in self.pictures]
+
+    def _sourced(self) -> tuple[str, ...]:
+        """The kind's image slots the recipe gives a source for: all of them, but the optional ones after those it
+        gives, which a recipe made before its kind had them leaves out (a big number's picture: D63)."""
+        kind = KINDS[self.kind]
+        left = kind.images[len(self.images) :]
+        if left and all(name in kind.optional_images for name in left):
+            return kind.images[: len(self.images)]
+        return kind.images
 
     def varied(self, rng: random_util.Rng, avoid: frozenset[str] = frozenset()) -> Recipe:
         """The recipe as one of its variants, picked by weight with the random stream (itself, without variants; its
@@ -215,6 +226,19 @@ class Recipe:
             + (f"; {kind.pictures.aside}" if kind.pictures.aside else "")
         )
         return dataclasses.replace(varied, brief=f"{brief}, {note}", pictures=tuple(boxes), variants=())
+
+
+def pictured(variants: tuple[Variant, ...], slot: str, share: float) -> tuple[Variant, ...]:
+    """The variants (or one, of none), each that share of the time with the image slot, and else without it: a big
+    number over a picture of what it's about, or without one (D63)."""
+    return tuple(
+        changed
+        for variant in variants or (Variant(1),)
+        for changed in (
+            dataclasses.replace(variant, weight=variant.weight * share),
+            dataclasses.replace(variant, weight=variant.weight * (1 - share), omit=variant.omit | {slot}),
+        )
+    )
 
 
 def _title(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
@@ -368,12 +392,27 @@ def _matrix(texts: Mapping[str, str | None], images: Mapping[str, Any], language
 
 
 def _big_number(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
-    return slides.BigNumberSlide(texts.get("title"), texts["number"], texts["label"], texts.get("source"))
+    return slides.BigNumberSlide(
+        texts.get("title"), texts["number"], texts["label"], texts.get("source"), images.get("background")
+    )
 
 
 def _kpi(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
-    figures = [texts.get(f"{part}_{index}") for index in range(1, 5) for part in ("number", "label")]
-    return slides.KpiSlide(texts["title"], *figures)
+    number_1, label_1, number_2, label_2, number_3, label_3, number_4, label_4 = (
+        texts.get(f"{part}_{index}") for index in range(1, 5) for part in ("number", "label")
+    )
+    return slides.KpiSlide(
+        texts["title"],
+        number_1,
+        label_1,
+        number_2,
+        label_2,
+        number_3,
+        label_3,
+        number_4,
+        label_4,
+        background=images.get("background"),
+    )
 
 
 def _quiz(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
@@ -985,9 +1024,11 @@ KINDS: Final[dict[str, Kind]] = {
             ),
         ),
         # Milestone 6's slide types (docs/v5-plan.md, section 8), drawn as texts on shapes
+        # (D63: with a picture behind it, or beside it, if one is found: the user found slides of text boring)
         Kind(
             "big_number",
-            "A big, made-up number, with what it counts under it: a figure the presenter has to explain.",
+            "A big, made-up number, with what it counts under it: a figure the presenter has to explain; over a "
+            "picture of what it's about, or beside it, if it has one.",
             (
                 _OPTIONAL_TITLE,
                 TextField(
@@ -996,13 +1037,15 @@ KINDS: Final[dict[str, Kind]] = {
                 TextField("label", "what the number counts or measures, in a few words", 90),
                 TextField("source", "a made-up, unreliable source for the number", 60, optional=True),
             ),
-            (),
+            ("background",),
             _big_number,
+            optional_images=frozenset({"background"}),
         ),
         Kind(
             "kpi",
             "Three or four made-up figures on tiles, as on a dashboard, each a number and what it measures; they "
-            "appear one by one, a click each, the last one the punchline.",
+            "appear one by one, a click each, the last one the punchline; over a picture of what they're about, if "
+            "it has one.",
             (
                 TextField("title", "the dashboard's title", 60),
                 *_figure(1, "first"),
@@ -1010,8 +1053,9 @@ KINDS: Final[dict[str, Kind]] = {
                 *_figure(3, "third"),
                 *_figure(4, "fourth", optional=True),
             ),
-            (),
+            ("background",),
             _kpi,
+            optional_images=frozenset({"background"}),
         ),
         Kind(
             "quiz",

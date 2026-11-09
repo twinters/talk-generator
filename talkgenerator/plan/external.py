@@ -597,16 +597,27 @@ def _recipe_entry(choice: RecipeChoice, is_default: bool) -> dict[str, Any]:
 
 def _looks(recipe: Recipe) -> dict[str, str]:
     """The look of each of a recipe's images, as its image slot asks for it (see talkgenerator.images.profiles): what
-    the images will look like, and where they come from."""
+    the images will look like, and where they come from. (Of a mix of slots, each slide's dice picking one, as a
+    statement's backdrop: their looks, "calm-backdrop or backdrop".)"""
     from talkgenerator.images.slots import ImageSlot
+    from talkgenerator.util.generator_util import CombinedGenerator
 
-    return {
-        name: source.aesthetic
-        + "".join(f", else {backup}" for backup in source.backups)
-        + (" (or generated, from its prompt, with an image generator set up)" if source.generate else "")
-        for name, source in recipe.slots()
-        if isinstance(source, ImageSlot)
-    }
+    def look(source: ImageSlot) -> str:
+        return (
+            source.aesthetic
+            + "".join(f", else {backup}" for backup in source.backups)
+            + (" (or generated, from its prompt, with an image generator set up)" if source.generate else "")
+        )
+
+    looks = {}
+    for name, source in recipe.slots():
+        if isinstance(source, ImageSlot):
+            looks[name] = look(source)
+        elif isinstance(source, CombinedGenerator) and all(isinstance(each, ImageSlot) for each in source.choices):
+            looks[name] = " or ".join(
+                dict.fromkeys(look(each) for each in source.choices if isinstance(each, ImageSlot))
+            )
+    return looks
 
 
 def catalog_markdown(schema_name: str = "default") -> str:

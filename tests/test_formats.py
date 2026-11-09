@@ -58,14 +58,17 @@ def test_an_arc_lays_out_talks_of_every_length(name):
         layout = arc.layout(num_slides)
         assert len(layout) == num_slides and layout[0] is None
         kept = arc.kept(num_slides)
-        # The parts it keeps: the lowest ranks, in the arc's order, each with as many slides as it takes
-        assert set(kept) == {part.name for part in ranked[: min(len(ranked), num_slides - 1)]}
+        # The parts it keeps: the lowest ranks, in the arc's order, each with as many slides as it takes, in the room
+        # that the slides its free share keeps free leave
+        reserved = arc.reserved(num_slides)
+        assert set(kept) == {part.name for part in ranked[: min(len(ranked), num_slides - 1 - reserved)]}
         assert list(kept) == [part for part in arc.names() if part in kept]
         counts = collections.Counter(part for part in layout if part is not None)
         assert all(part.fewest <= counts[part.name] <= part.most for part in arc.parts if part.name in kept)
-        # Free slides only once every part has its most slides, and between parts (none after the last)
+        # Free slides: those its free share keeps, and more only once every part has its most slides; between parts
+        # (none after the last)
         free = arc.free_slides(num_slides)
-        assert free == 0 or all(counts[part.name] == part.most for part in arc.parts)
+        assert free >= reserved and (free == reserved or all(counts[part.name] == part.most for part in arc.parts))
         if free and len(kept) > 1:
             assert layout[1] is not None and layout[-1] is not None
         runs = [part for index, part in enumerate(layout[1:], 1) if part is not None and part != layout[index - 1]]
@@ -73,8 +76,22 @@ def test_an_arc_lays_out_talks_of_every_length(name):
 
 
 def test_ten_and_five_slide_talks_have_the_arcs_the_formats_promise():
+    # (D63: two free slides of ten, for memes, gifs and pictures; a pitch's market and business model and an academic
+    # talk's outline and acknowledgements wait for longer talks)
     assert pitch.ARC.layout(10) == (
         None,
+        "problem",
+        "solution",
+        None,
+        "traction",
+        "competition",
+        "team",
+        None,
+        "ask",
+        "closing",
+    )
+    assert pitch.ARC.kept(5) == ("problem", "solution", "traction", "ask")
+    assert pitch.ARC.kept(12) == (
         "problem",
         "solution",
         "market",
@@ -85,45 +102,47 @@ def test_ten_and_five_slide_talks_have_the_arcs_the_formats_promise():
         "ask",
         "closing",
     )
-    assert pitch.ARC.kept(5) == ("problem", "solution", "traction", "ask")
     assert academic.ARC.layout(10) == (
         None,
-        "outline",
         "related_work",
         "method",
+        None,
         "results",
         "limitations",
         "future_work",
-        "acknowledgements",
+        None,
         "references",
         "questions",
     )
-    assert academic.ARC.kept(5) == ("outline", "method", "results", "questions")
+    assert academic.ARC.kept(5) == ("method", "results", "limitations", "questions")
+    assert {"outline", "acknowledgements"} <= set(academic.ARC.kept(12))
 
 
 def test_an_all_hands_and_a_keynote_have_the_arcs_they_promise():
-    # (D59: an all-hands goes from its agenda to Q&A, its KPIs two slides from ten on; a keynote from its opening to
-    # its closing line, its features two slides)
+    # (D59: an all-hands goes from its agenda to Q&A, its KPIs two slides in longer talks; a keynote from its opening
+    # to its closing line. D63: two free slides of ten in an all-hands, whose agenda waits for longer talks, and one in
+    # a keynote)
     assert corporate.ARC.layout(10) == (
         None,
-        "agenda",
-        "kpis",
         "kpis",
         "wins",
+        None,
         "roadmap",
         "org_change",
         "synergies",
+        None,
         "ask",
         "qa",
     )
     assert corporate.ARC.kept(5) == ("kpis", "wins", "roadmap", "qa")
+    assert corporate.ARC.layout(12).count("kpis") == 2 and corporate.ARC.kept(12)[0] == "agenda"
     assert keynote.ARC.layout(10) == (
         None,
         "opening",
         "idea",
         "reveal",
         "features",
-        "features",
+        None,
         "demo",
         "price",
         "one_more_thing",
@@ -138,7 +157,18 @@ def test_a_long_talk_gives_its_parts_more_slides_and_then_free_ones():
     counts = collections.Counter(layout[1:])
     assert counts["problem"] == counts["solution"] == counts["traction"] == 2 and counts["roadmap"] == 1
     assert counts[None] == pitch.ARC.free_slides(20) == 19 - 13
-    assert academic.ARC.layout(13).count("results") == 3 and academic.ARC.layout(13).count("method") == 2
+    assert academic.ARC.layout(20).count("results") == 3 and academic.ARC.layout(20).count("method") == 2
+
+
+def test_an_arc_keeps_its_free_share_of_a_talk_free():
+    # (D63: a quarter of a ten-slide talk's slides but its first and its last, rounded down)
+    arc = Arc((Part("first", 1, 3, rank=1), Part("last", rank=0)), free=0.25)
+    assert [arc.reserved(num_slides) for num_slides in (2, 5, 6, 10, 14, 30)] == [0, 0, 1, 2, 3, 7]
+    assert arc.layout(10).count(None) == 1 + 2 + (9 - 2 - 4)  # (the title, the free share, and what's left)
+    assert Arc((Part("only"),)).reserved(30) == 0
+    for share in (-0.1, 1):
+        with pytest.raises(ValueError):
+            Arc((Part("only"),), free=share)
 
 
 def test_a_parts_slide_generators_weigh_in_on_its_slides_and_the_others_on_the_free_ones():
@@ -193,11 +223,11 @@ def test_a_formats_arc_needs_no_image_that_is_fair_use(name):
 def test_a_persona_still_moves_a_parts_slides_between_its_kinds():
     schema = get_schema("pitch")
 
-    def kpis(persona):
+    def kpis(persona):  # (in twelve-slide pitches, which have their business model: D63)
         return sum(
             "kpi" in pick.get_tags()
             for seed in range(200)
-            for pick in schema._pick_generators(10, random_util.Rng(seed), "en", persona)
+            for pick in schema._pick_generators(12, random_util.Rng(seed), "en", persona)
             if pick is not None
         )
 
@@ -340,7 +370,7 @@ def test_a_talk_that_leaves_its_format_to_its_seed_is_the_talk_of_the_format_it_
     # is the talk of the format its seed picked)
     founder = personas.persona("startup_founder")
     picked = set()
-    for seed in (1, 3, 4, 9):  # (a pitch, an academic talk, a keynote and a TED-like talk, as it happens)
+    for seed in (1, 4, 9, 56):  # (a pitch, a keynote, a TED-like talk and an academic talk, as it happens)
         deck = _talk(presentation_schema_types.RANDOM, seed, persona="startup_founder", theme="random")
         assert deck.schema_name == presentation_schema_types.pick_format("random", random_util.Rng(seed), founder)
         assert deck.to_json() == _talk(deck.schema_name, seed, persona="startup_founder", theme="random").to_json()
