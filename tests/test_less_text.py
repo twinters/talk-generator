@@ -19,7 +19,7 @@ import pytest
 
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.datastructures.slide_generator_data import ConstantWeightFunction, PeakedWeight
-from talkgenerator.models.events import SlideUpdated
+from talkgenerator.models.events import SlideEarly, SlideReady, SlideUpdated
 from talkgenerator.plan import kinds, prompt
 from talkgenerator.plan.kinds import KINDS, PICTURE, Recipe
 from talkgenerator.schema.slide_schemas import slide_generators
@@ -238,6 +238,19 @@ def test_a_classic_charts_picture_out_of_time_stands_in_as_its_text_version_and_
     assert "its text version, while its picture is looked for" in ready[1].slide.notes
     (late,) = [event for event in events if isinstance(event, SlideUpdated) and event.late]
     assert late.index == 1 and late.slide.type == "full_image" and _texts(late.slide) == ["Chart about cats"]
+
+
+def test_a_classic_charts_text_version_stands_in_before_its_early_version(classic_charts, photos, held):
+    # (the slide's own words first, as a planned slide stands in as it's planned before its early version: D73)
+    photos.slow.add("cats")
+    threading.Timer(1.5, held.set).start()
+    events, _ = _timed(2, llm="none", early=1, slide_seconds=SECONDS, parallel=False)
+    (early,) = [event for event in events if isinstance(event, SlideEarly)]
+    assert early.index == 1 and _texts(early.slide)[0].startswith("Spare ")
+    ready = [event for event in events if isinstance(event, SlideReady)]
+    assert ready[1].slide.type == "chart" and _texts(ready[1].slide)[0] == "Chart about cats"
+    (late,) = [event for event in events if isinstance(event, SlideUpdated) and event.late]
+    assert late.index == 1 and late.slide.type == "full_image"
 
 
 def test_a_stand_in_looks_no_picture_up_for_its_boxes(monkeypatch):
