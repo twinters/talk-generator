@@ -48,7 +48,7 @@ Who writes the talk depends on your settings: a language model when one is set u
 
 | Option | What it does |
 | --- | --- |
-| `--llm` | The language model that writes the talk, as `provider:model`: `openrouter` (OpenRouter's free models) or `openrouter:<model>[,<fallback>...]`, `anthropic` (Claude Opus 5.5) or `anthropic:<model>`, `openai:<model>`, `chatgpt` or `chatgpt:<model>` (your ChatGPT plan's models), and `none` for a classic talk (*default: `TALKGENERATOR_LLM`, or else your ChatGPT plan's models once you've signed in with ChatGPT, or else OpenRouter's free models when there's an OpenRouter key, or else `none`*) |
+| `--llm` | The language model that writes the talk, as `provider:model`: `openrouter` (OpenRouter's free models) or `openrouter:<model>[,<fallback>...]`, `anthropic` (Claude Opus 5.5) or `anthropic:<model>`, `openai:<model>`, `gemini` (Gemini 3.8 Flash) or `gemini:<model>`, `chatgpt` or `chatgpt:<model>` (your ChatGPT plan's models), and `none` for a classic talk (*default: `TALKGENERATOR_LLM`, or else your ChatGPT plan's models once you've signed in with ChatGPT, or else OpenRouter's free models when there's an OpenRouter key, or else `none`*) |
 
 | `--llm_level` | How much the language model does: `basic`, one request a talk, in which it writes every slide from the word talkgenerator gives it, or `advanced`, as it first plans the talk (a thesis, a running gag, and every slide's word and idea) and writes its slides a few at a time, in parallel, for cleverer talks, as quick, for about twice the tokens (*default: `TALKGENERATOR_LLM_LEVEL`, or else `advanced` on a model of your own that costs and `basic` on free models*) |
 

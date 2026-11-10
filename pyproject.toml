@@ -40,7 +40,8 @@ dependencies = [
 # Language models that write talks (see talkgenerator.llm); without them, talks are classic
 anthropic = ["anthropic>=2.1"]
 openai = ["openai>=3.37"]  # for OpenRouter and OpenAI
-llm = ["talkgenerator[anthropic,openai]"]
+gemini = ["google-genai>=3.0"]  # Google's Gemini (3.0: httpx2, as the other SDKs)
+llm = ["talkgenerator[anthropic,openai,gemini]"]
 # `talkgenerator mcp`: a local MCP server, for Claude Desktop and other MCP clients (see talkgenerator.mcp_server)
 mcp = ["mcp>=2.3"]
 
@@ -57,6 +58,9 @@ dev = [
     # The optional language model SDKs, so their adapters get tested and type-checked
     "anthropic>=2.1",
     "openai>=3.37",
+    # (and Google's, but not on Windows on Arm, where the cryptography that its google-auth needs doesn't build either:
+    # see the MCP SDK's note below; its tests skip there)
+    "google-genai>=3.0; sys_platform != 'win32' or platform_machine != 'ARM64'",
     # and the MCP SDK, for the MCP server; not on Windows on Arm (even in an x64 Python there, which says ARM64 too), where
     # the cryptography it needs has no wheels (since 46.0.4) and doesn't build, so that `uv sync` works there (the MCP
     # tests skip: run them in an x64 Python with --extra mcp, as the README's "Tests" says)
@@ -133,6 +137,7 @@ module = [
     "talkgenerator.llm.base",
     "talkgenerator.llm.chatgpt",
     "talkgenerator.llm.chatgpt_login",
+    "talkgenerator.llm.gemini",
     "talkgenerator.llm.ledger",
     "talkgenerator.llm.prices",
     "talkgenerator.llm.providers",

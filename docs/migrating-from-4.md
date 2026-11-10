@@ -12,7 +12,8 @@ The [changelog](https://github.com/twinters/talk-generator/blob/master/CHANGELOG
 talkgenerator 5 still needs Python 3.11 or newer, and `pip install --upgrade talkgenerator` upgrades it. Its one new
 dependency is pydantic. The language model SDKs and the MCP SDK are extras, which 4.x didn't have:
 `talkgenerator[openai]` (for OpenRouter, OpenAI and your ChatGPT plan), `talkgenerator[anthropic]` (for Claude),
-`talkgenerator[llm]` (both) and `talkgenerator[mcp]` (for `talkgenerator mcp`).
+`talkgenerator[gemini]` (for Gemini), `talkgenerator[llm]` (all three) and `talkgenerator[mcp]` (for
+`talkgenerator mcp`).
 
 ## Talks are classic without a language model
 

@@ -630,8 +630,8 @@ def _pick_of(value: Any, number: int, letters: str) -> int | None | bool:
 def provider_for(vision_pick: bool | str | TextProvider | None, talk_model: TextProvider | None) -> TextProvider | None:
     """The model a talk's vision pick asks: the one given (a provider, or a spec such as
     "openrouter:nvidia/nemotron-3.5-super-vl:free" or "anthropic:claude-haiku-5-5"), or for vision_pick=True (or
-    "on"), the talk's own language model when it reads pictures (Claude's, OpenAI's, a replayed talk's), and else
-    OpenRouter's free models that read pictures (FREE_MODELS). None when it's off (None, False, "none" or "off")."""
+    "on"), the talk's own language model when it reads pictures (Claude's, OpenAI's, Gemini's, a replayed talk's), and
+    else OpenRouter's free models that read pictures (FREE_MODELS). None when it's off (None, False, "none" or "off")."""
     from talkgenerator.llm.openrouter import OpenRouterProvider
     from talkgenerator.llm.providers import NoneProvider, provider_from_spec
     from talkgenerator.llm.replay import ReplayProvider

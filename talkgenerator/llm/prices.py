@@ -2,7 +2,9 @@
 
 Prices are in dollars per million tokens, as published by the providers. A model missing from the table has no known
 price, which budgets treat as possibly costly. OpenRouter's free models (ids ending in ":free") and replayed answers
-cost nothing, and so do the models of a ChatGPT plan: their requests count toward the plan's usage instead.
+cost nothing, and so do the models of a ChatGPT plan: their requests count toward the plan's usage instead. Gemini's
+models have a free tier, but whether a key is on it is its Google Cloud project's (billing linked or not), which
+talkgenerator can't tell: they're priced as the paid tier charges, what a request costs at most.
 """
 
 from __future__ import annotations
@@ -10,6 +12,7 @@ from __future__ import annotations
 import json
 import math
 from dataclasses import dataclass
+from datetime import date
 from typing import Final
 
 from talkgenerator.llm.base import TextRequest
@@ -40,6 +43,27 @@ PRICES: Final[dict[str, Price]] = {
     "anthropic:claude-opus-5": Price(5.00, 25.00, cached_input=0.50),
     "anthropic:claude-opus-4-8": Price(5.00, 25.00, cached_input=0.50),
     "anthropic:claude-sonnet-5": Price(2.00, 10.00, cached_input=0.20),
+    # Checked on 2026-11-10 (aistudio.google.com/docs/pricing, the paid tier's Standard prices; the cache price is
+    # implicit caching's, which needs nothing asked). Output includes the thinking. The newest models' prices go up on
+    # a date: PRICE_CHANGES
+    "gemini:gemini-4-argon": Price(2.00, 10.00, cached_input=0.10),
+    "gemini:gemini-3.8-flash": Price(0.75, 3.75, cached_input=0.075),
+    "gemini:gemini-3.6-flash": Price(0.75, 3.75, cached_input=0.075),
+    "gemini:gemini-3.5-flash-lite": Price(0.30, 2.50, cached_input=0.03),
+    "gemini:gemini-3.1-flash-lite": Price(0.25, 1.50, cached_input=0.025),
+    # (Above 200,000 tokens of prompt, cached input costs $0.40)
+    "gemini:gemini-3.1-pro-preview": Price(
+        2.00, 12.00, cached_input=0.20, long_prompt_tokens=200_000, long_input=4.00, long_output=18.00
+    ),
+    "gemini:gemini-3-flash-preview": Price(0.50, 3.00, cached_input=0.05),
+    "gemini:gemini-2.5-flash-lite": Price(0.10, 0.40, cached_input=0.01),
+}
+
+# Prices that change on a date (where an introductory price ends): a model's price from that day on
+PRICE_CHANGES: Final[dict[str, tuple[date, Price]]] = {
+    "gemini:gemini-4-argon": (date(2026, 12, 1), Price(4.00, 20.00, cached_input=0.20)),
+    "gemini:gemini-3.8-flash": (date(2027, 1, 1), Price(1.50, 7.50, cached_input=0.15)),
+    "gemini:gemini-3.6-flash": (date(2027, 1, 1), Price(1.50, 7.50, cached_input=0.15)),
 }
 
 
@@ -47,8 +71,11 @@ PRICES: Final[dict[str, Price]] = {
 OPENROUTER_FREE_ROUTER: Final = "openrouter:openrouter/free"
 
 
-def price_of(model: str) -> Price | None:
-    """The price of a model ("provider:model"), or None if it isn't known."""
+def price_of(model: str, today: date | None = None) -> Price | None:
+    """The price of a model ("provider:model") today (or on the day given), or None if it isn't known."""
+    change = PRICE_CHANGES.get(model)
+    if change is not None and (today or date.today()) >= change[0]:
+        return change[1]
     if model in PRICES:
         return PRICES[model]
     provider = model.split(":", 1)[0]

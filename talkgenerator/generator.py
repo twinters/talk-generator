@@ -249,7 +249,8 @@ def _generate_presentation(
     thesis, a running gag, and every slide's word, among those the dice offer, or one of its own, and its idea: the
     point it makes, what a chart measures or a diagram compares), and writes every slide in a request of its own as
     soon as its idea is in, in parallel. None is the one TALKGENERATOR_LLM_LEVEL names, or else advanced on a model of
-    your own that costs (Claude, OpenAI's, your ChatGPT plan's, OpenRouter's paid ones) and basic on the free ones.
+    your own that costs (Claude, OpenAI's, Gemini's, your ChatGPT plan's, OpenRouter's paid ones) and basic on the
+    free ones.
     Classic talks have none; the deck says which level its slides were written at (llm_level: advanced only when the
     plan came in).
 
@@ -304,8 +305,8 @@ def _generate_presentation(
     vision_pick has a vision model look at a few candidates for every picture of the slides a language model writes,
     side by side on one contact sheet, and pick the one that shows what the slide asked for (or none: the finder's
     picture then stays), in one request a talk, once the last slide is settled: True for the talk's own model when it
-    reads pictures (Claude, OpenAI), else OpenRouter's free models that do (they need an OpenRouter key, and cost
-    nothing but a request of the free tier's); or a model's spec, such as "anthropic:claude-haiku-5-5", or a
+    reads pictures (Claude, OpenAI, Gemini), else OpenRouter's free models that do (they need an OpenRouter key, and
+    cost nothing but a request of the free tier's); or a model's spec, such as "anthropic:claude-haiku-5-5", or a
     provider. Off by default (None, False or "none"). The picks are in the deck (each picture's `vision`), its usage
     counts the request, and the talk's budget holds it too. See talkgenerator.images.vision.
 
@@ -1053,8 +1054,8 @@ def get_argument_parser():
         help="Has a vision model pick the pictures of the slides a language model writes, each among a few "
         "candidates, which it sees side by side on one contact sheet, in one request a talk (it can refuse them all: "
         "the finder's picture then stays). Alone or 'on': the talk's own model when it reads pictures (Claude, "
-        "OpenAI), else OpenRouter's free models that do (with an OpenRouter key: one more request of the free tier's "
-        "a talk); or a model, as provider:model, such as anthropic:claude-haiku-5-5; or none (default: none)",
+        "OpenAI, Gemini), else OpenRouter's free models that do (with an OpenRouter key: one more request of the free "
+        "tier's a talk); or a model, as provider:model, such as anthropic:claude-haiku-5-5; or none (default: none)",
     )
     parser.add_argument(
         "--parallel",
@@ -1102,9 +1103,10 @@ def get_argument_parser():
         default=None,
         type=_llm_spec,
         help="The language model that writes the talk, as provider:model: openrouter[:<model>], anthropic[:<model>], "
-        "openai:<model> or chatgpt[:<model>]; 'none' makes a classic talk (default: TALKGENERATOR_LLM's, or else "
-        "your ChatGPT plan's models once you've signed in with talkgenerator login chatgpt, or else OpenRouter's free "
-        "models when there's an OpenRouter key: OPENROUTER_API_KEY, or talkgenerator login openrouter)",
+        "openai:<model>, gemini[:<model>] or chatgpt[:<model>]; 'none' makes a classic talk (default: "
+        "TALKGENERATOR_LLM's, or else your ChatGPT plan's models once you've signed in with talkgenerator login "
+        "chatgpt, or else OpenRouter's free models when there's an OpenRouter key: OPENROUTER_API_KEY, or "
+        "talkgenerator login openrouter)",
     )
     parser.add_argument(
         "--llm_level",

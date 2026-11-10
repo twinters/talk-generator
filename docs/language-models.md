@@ -31,8 +31,9 @@ How much the model does is the talk's level: `--llm_level`, `llm_level=` in Pyth
   talk is written as a Basic one.
 
 Unless a talk asks for a level (or `TALKGENERATOR_LLM_LEVEL` names one), it's Advanced on a model of your own that
-costs (Claude, OpenAI's models, your ChatGPT plan's, OpenRouter's paid models), and Basic on free models, whose free
-quotas count requests. On talkgenerator.com, talks on your own API key, or on a paid model of your OpenRouter account,
+costs (Claude, OpenAI's models, Gemini's, your ChatGPT plan's, OpenRouter's paid models), and Basic on free models,
+whose free quotas count requests. On [Gemini's free tier](#gemini), ask for Basic: talkgenerator can't tell a free
+key from a paid one. On talkgenerator.com, talks on your own API key, or on a paid model of your OpenRouter account,
 are Advanced; the site's free models (Basic AI) and your OpenRouter account's free models write Basic talks. A deck
 says which level its slides were written at (`llm_level`; none for a classic talk).
 
@@ -62,7 +63,8 @@ why, early on) starts from a real how-to about the topic that people look up on 
 ## Which model writes your talks
 
 Free models first: a paid model only writes talks when you ask for it, as a key alone (an `ANTHROPIC_API_KEY` you set
-for other tools, say) shouldn't make talks cost money. talkgenerator takes the first of:
+for other tools, say, or a `GEMINI_API_KEY` for generated pictures) shouldn't make talks cost money. talkgenerator
+takes the first of:
 
 1. the model `--llm` names (or `llm=` in Python), and else the one `TALKGENERATOR_LLM` names;
 2. the models of your ChatGPT plan, once you've signed in with `talkgenerator login chatgpt`;
@@ -80,10 +82,11 @@ doesn't name a model with `--llm`.
 | [OpenRouter](https://openrouter.ai/)'s free models | `openrouter` (its free router), or `openrouter:<model>[,<fallback model>...]` | `talkgenerator login openrouter`, or `OPENROUTER_API_KEY` ([free](https://openrouter.ai/settings/keys)) | `pip install 'talkgenerator[openai]'` | free: 50 requests a day, or 1,000 once the account has bought $10 of credits |
 | Claude | `anthropic` (Claude Opus 5.5), or `anthropic:<model>`, such as `anthropic:claude-haiku-5-5` | `ANTHROPIC_API_KEY` | `pip install 'talkgenerator[anthropic]'` | a few cents a talk with Claude Opus 5.5 (see [Costs](#costs)) |
 | OpenAI | `openai:<model>` | `OPENAI_API_KEY` | `pip install 'talkgenerator[openai]'` | depends on the model |
+| [Gemini](#gemini) | `gemini` (Gemini 3.8 Flash), or `gemini:<model>`, such as `gemini:gemini-3.5-flash-lite` | `GEMINI_API_KEY` (or `GOOGLE_API_KEY`; [free](https://aistudio.google.com/apikey)) | `pip install 'talkgenerator[gemini]'` | about a cent a talk with Gemini 3.8 Flash (see [Costs](#costs)); nothing on Gemini's free tier, within its limits |
 | The models of your ChatGPT plan | `chatgpt` (the first model your account lists), or `chatgpt:<model>` | `talkgenerator login chatgpt` (Plus or Pro) | `pip install 'talkgenerator[openai]'` | nothing extra: requests count toward your plan's usage |
 
-`pip install 'talkgenerator[llm]'` installs both SDKs. Without the one a provider needs, its talks are classic, and
-the logs say what to install.
+`pip install 'talkgenerator[llm]'` installs all three SDKs. Without the one a provider needs, its talks are classic,
+and the logs say what to install.
 
 ### OpenRouter's free models
 
@@ -102,11 +105,45 @@ says how many are left today. A request is billed at the price of the model that
 They write without thinking first: thinking made them take minutes, and they write as well without. A model that has
 to think does so as little as it can.
 
+### Gemini
+
+Google's Gemini models write talks with a key from [Google AI Studio](https://aistudio.google.com/apikey), in
+`GEMINI_API_KEY` (or `GOOGLE_API_KEY`: the same key Gemini's [image models](images-and-themes.md) take), through
+Google's `google-genai` SDK. AI Studio's keys start with `AQ.` (auth keys, since 28 May 2026), or `AIza` for older
+ones. `gemini` is Gemini 3.8 Flash; name another as `gemini:<model>`. Their prices, per million
+tokens in and out (the paid tier's, checked on 2026-11-10; the thinking counts as output):
+
+| Model | In | Out |
+| --- | --- | --- |
+| `gemini-4-argon`, Google's strongest | $2 ($4 from 1 December 2026) | $10 ($20 from 1 December 2026) |
+| `gemini-3.8-flash` (and `gemini-3.6-flash`, the one before) | $0.75 ($1.50 from 1 January 2027) | $3.75 ($7.50 from 1 January 2027) |
+| `gemini-3.5-flash-lite` | $0.30 | $2.50 |
+| `gemini-3.1-flash-lite` | $0.25 | $1.50 |
+
+The answer is held to the talk's JSON schema, and when Gemini finds a schema too complex (a talk with many kinds of
+slides can have one), the model gets it as text and writes the JSON by itself. Gemini 3 and later think before they
+write: at `low` unless `TALKGENERATOR_LLM_EFFORT` says otherwise (see below).
+
+Gemini has a free tier: a key whose Google Cloud project has no billing account pays nothing, for the Flash and
+Flash-Lite models (not Gemini 4 Argon), within limits a minute and a day that Google shows per project in AI Studio
+rather than publishes (in October 2026, reported as 5 requests a minute and 20 a day for Gemini 3.8 Flash, and 15 a
+minute and 500 a day for the Flash-Lite models). talkgenerator can't tell a free key from a paid one: it prices and
+budgets Gemini's requests as the paid tier charges them, and makes their talks Advanced, five requests or more, at
+the same time. On the free tier, ask for Basic (`--llm_level basic`, or `TALKGENERATOR_LLM_LEVEL=basic`), one request
+a talk, preferably with a Flash-Lite model: `--llm gemini:gemini-3.5-flash-lite --llm_level basic`. Google uses what
+the free tier is sent to improve its products (people may read it), and its terms allow only the paid tier for apps
+that serve people in the European Economic Area, Switzerland or the United Kingdom.
+
+On Windows on Arm, the SDK doesn't install in Python for Arm (the `cryptography` it needs has no wheels there): use an
+x64 Python.
+
 ### How hard a model thinks
 
 `TALKGENERATOR_LLM_EFFORT` (such as `none`, `minimal`, `low` or `medium`) sets how hard a model thinks before it
-writes, for the models that take it. Unless it's set, Claude and your ChatGPT plan's models think at `low`, OpenRouter's
-free router at `none`, and a model you name for OpenRouter as it likes.
+writes, for the models that take it. Unless it's set, Claude, Gemini and your ChatGPT plan's models think at `low`,
+OpenRouter's free router at `none`, and a model you name for OpenRouter as it likes. Gemini's levels are `minimal`,
+`low`, `medium` and `high` (`none` is `minimal`, and Claude's `xhigh` and `max` are `high`); Gemini 3.8 Flash and
+Gemini 4 Argon think at least at `low`, and Gemini 2.5's models as they like (2.5 Flash-Lite doesn't think).
 
 ## Costs
 
@@ -121,12 +158,18 @@ on 2026-11-09; a 20-slide talk has about twice as much):
 | Claude Haiku 5.5 | about $0.002 | about $0.003 | the key's owner |
 | Claude Sonnet 5.5 | about $0.03 | about $0.06 | the key's owner |
 | Claude Opus 5.5 | about $0.06 | about $0.12 (estimated) | the key's owner |
+| Gemini 3.5 Flash-Lite | about $0.003 (estimated) | about $0.006 | the key's owner; nothing on the free tier |
+| Gemini 3.8 Flash | about $0.005 ($0.009 from 2027) | about $0.01 ($0.02 from 2027) | the key's owner; nothing on the free tier |
+| Gemini 4 Argon (estimated) | about $0.01 ($0.02 from December 2026) | about $0.03 ($0.05 from December 2026) | the key's owner |
 | Your ChatGPT plan | part of the plan's usage | five requests of it | you, through the plan |
 | Claude, through the [Skill](use-with-claude.md) | part of your Claude usage | | you, through your plan |
 
 The Claude prices behind these figures are Anthropic's list prices per million tokens (November 2026): Claude Opus
 5.5 $4 in and $20 out, Claude Sonnet 5.5 $2 and $10, Claude Haiku 5.5 $0.10 and $0.50 (for prompts up to 100,000
-tokens). talkgenerator keeps them in `talkgenerator.llm.prices`.
+tokens). Gemini's are [above](#gemini). Gemini counts fewer tokens for the same talk: measured on 2026-11-10, a
+Basic talk by Gemini 3.8 Flash was 2,190 tokens in and 772 out (its thinking included), and Advanced ones 6,600 to
+7,800 in and 1,300 to 1,600 out; Gemini 4 Argon's figures are estimates from those tokens. talkgenerator keeps the
+prices in `talkgenerator.llm.prices`, with the dates Gemini's go up.
 
 After every talk, the logs tell how many requests it made, how many tokens went in and out, and what they cost, such
 as:

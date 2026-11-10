@@ -29,7 +29,14 @@ from talkgenerator.llm.base import (
     TextRequest,
     TextResponse,
 )
-from talkgenerator.llm.sdk import MAX_RETRIES, TIMEOUT_SECONDS, import_sdk, parse_json, provider_error
+from talkgenerator.llm.sdk import (
+    MAX_RETRIES,
+    SCHEMA_AS_TEXT,
+    TIMEOUT_SECONDS,
+    import_sdk,
+    parse_json,
+    provider_error,
+)
 
 logger = logging.getLogger("talkgenerator")
 
@@ -47,9 +54,9 @@ _FINISH: Final[dict[str, Finish]] = {
 }
 # Writing to the prompt cache costs a quarter more than plain input
 _CACHE_WRITE_PRICE: Final = 1.25
-# What Anthropic says when a structured output's schema compiles to too large a grammar, and what Claude is told then
+# What Anthropic says when a structured output's schema compiles to too large a grammar (Claude then gets the schema
+# as text: SCHEMA_AS_TEXT)
 _GRAMMAR_TOO_LARGE: Final = "grammar is too large"
-_SCHEMA_AS_TEXT: Final = "Answer with one JSON object that fits this JSON schema, and nothing else: "
 
 
 class ClaudeProvider(TextProvider):
@@ -93,7 +100,7 @@ class ClaudeProvider(TextProvider):
         messages = [{"role": message.role, "content": _content(message)} for message in request.messages]
         if request.json_schema is not None and schema_as_text:
             schema = json.dumps(request.json_schema, ensure_ascii=False, separators=(",", ":"))
-            messages[-1]["content"] = _with_text(messages[-1]["content"], f"\n\n{_SCHEMA_AS_TEXT}{schema}")
+            messages[-1]["content"] = _with_text(messages[-1]["content"], f"\n\n{SCHEMA_AS_TEXT}{schema}")
         elif request.json_schema is not None:
             output_config["format"] = {"type": "json_schema", "schema": request.json_schema}
         arguments: dict[str, Any] = {

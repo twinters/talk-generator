@@ -24,10 +24,11 @@ how to keep 4.x's talks. The [docs](https://github.com/twinters/talk-generator/t
   talk when the model fails, isn't set up, or finds the topic unsafe. The same seed with the same answers gives the
   same talk.
 - `--llm` (or `llm=`, or `TALKGENERATOR_LLM`) picks the model: `openrouter` (OpenRouter's free models, or
-  `openrouter:<model>`), `anthropic` (Claude Opus 5.5, or `anthropic:<model>`), `openai:<model>`, `chatgpt` (the
-  models of your ChatGPT plan), or `none` for a classic talk (`DISABLE_LLM=1` makes every talk classic that doesn't
-  name a model). Their SDKs are extras: `talkgenerator[openai]`, `talkgenerator[anthropic]`, or `talkgenerator[llm]`
-  for both.
+  `openrouter:<model>`), `anthropic` (Claude Opus 5.5, or `anthropic:<model>`), `openai:<model>`, `gemini` (Google's
+  Gemini 3.8 Flash, or `gemini:<model>`, with a `GEMINI_API_KEY`), `chatgpt` (the models of your ChatGPT plan), or
+  `none` for a classic talk (`DISABLE_LLM=1` makes every talk classic that doesn't name a model). Their SDKs are
+  extras: `talkgenerator[openai]`, `talkgenerator[anthropic]`, `talkgenerator[gemini]`, or `talkgenerator[llm]` for
+  all three.
 - Free models first: unless a model is named, your ChatGPT plan's models write the talk once you've signed in with
   ChatGPT, else OpenRouter's free models when there's an OpenRouter key, and else it's classic. A paid model only
   writes when you name it, whatever keys are set.
