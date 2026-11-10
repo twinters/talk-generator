@@ -2387,9 +2387,8 @@ def _org_chart(side: bool) -> Callable[[dict[str, Content], Theme], Placement]:
         y = top + 24 + (_CONTENT_BOTTOM - top - 24 - (2 * box_height + 2 * drop)) / 2
         centre = (left + right) / 2
         boss = Box(x=centre - 300, y=y, w=600, h=box_height)
-        if "boss" not in roles and _has_picture(
-            roles, "boss"
-        ):  # (a picture of who's in charge: a framed portrait, D73)
+        if "boss" not in roles and _has_picture(roles, "boss"):
+            # (a picture of who's in charge: a framed portrait, D73)
             boss = Box(x=centre - 130, y=y, w=260, h=box_height + 30)
         gap = 24.0 if side else 48.0  # (beside a title, the boxes need all the room there is)
         inset = 12.0 if side else 20.0
