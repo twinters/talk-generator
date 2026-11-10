@@ -3460,7 +3460,8 @@ def _at_most(prefix: str, most: int) -> Callable[[dict[str, Content]], bool]:
     """Whether the slide has at most so many of its things (red flags on cards side by side, say)."""
 
     def few(roles: dict[str, Content]) -> bool:
-        return f"{prefix}_{most + 1}" not in roles
+        # (a thing that's a picture in its text's place counts too: D73)
+        return f"{prefix}_{most + 1}" not in roles and f"{prefix}_{most + 1}_picture" not in roles
 
     return few
 
