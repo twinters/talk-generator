@@ -74,6 +74,15 @@ class Slide:
                 self._credits[index] = new.get_credit()
                 self._credited[index] = new
 
+    def picture_title(self) -> str | None:
+        """The title a picture in its place goes under (a chart's or a diagram's that tries a picture first: D73): its
+        title, or else its question (a yes-or-no chart's, a flowchart's); None when it has neither."""
+        for role in ("title", "question"):
+            value = self._arguments.get(role)
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+        return None
+
     def set_note(self, note: str):
         """Debug information about how the slide was generated."""
         self._note = note
@@ -398,6 +407,9 @@ def picture_role(box: str) -> str:
 # How often a diagram has pictures in some of its boxes, and how often two of them (of those that have any, where
 # two may), for the language model's diagrams and classic ones alike (docs/v5-plan.md, D64)
 PICTURE_ODDS = 0.35
+# What a slide's presentation context says when the slide stands in for one that ran out of time, as the text
+# version of a chart or a diagram that tries a picture first (D73): its boxes look no picture up
+STANDING_IN: Final = "standing_in"
 TWO_PICTURES = 0.3
 
 

@@ -26,6 +26,7 @@ from pptx.chart.data import ChartData
 from pptx.enum.chart import XL_CHART_TYPE
 
 from talkgenerator.models.deck import VennDiagram
+from talkgenerator.models.plan import SlidePlan
 from talkgenerator.plan.languages import Language
 from talkgenerator.slide import slides
 from talkgenerator.sources import chart, diagram, memes
@@ -102,6 +103,82 @@ def box_picture_slot() -> ImageSlot:
     return ImageSlot("a weird but related picture in a diagram's box", aesthetic="weird-stock", generate=True)
 
 
+# PICTURES FIRST (docs/v5-plan.md, D73): a chart or a diagram, which shows a lot of text, is a picture in its place now
+# and then, under its title, when one is found in time: as the user found many charts and diagrams too wordy for a
+# presenter who sees them for the first time (2026-11-10). Its text version is what it is when none is found, and what
+# stands in for it, in a talk with a time limit per slide, until its picture comes
+PICTURE_FIRST_ODDS: Final = 0.5  # of the charts and diagrams that try a picture first
+PICTURE: Final = "picture"  # the image slot of a slide's picture, which the language model writes a query for
+
+
+@dataclass(frozen=True)
+class PictureFirst:
+    """The picture a kind of slide tries first, now and then (odds), in its place: of a look (a real chart from the
+    internet, for a chart; a weird picture, for a diagram), what it is (intent, as its image slot says it), what the
+    language model writes to search for it (query), and the text field whose text it goes under (title)."""
+
+    look: str
+    intent: str
+    query: str
+    title: str = "title"
+    odds: float = PICTURE_FIRST_ODDS
+
+    def slot(self) -> ImageSlot:
+        return _picture_slot(self.look, self.intent)
+
+
+@functools.cache
+def _picture_slot(look: str, intent: str) -> ImageSlot:
+    from talkgenerator.images.slots import ImageSlot
+
+    return ImageSlot(intent, aesthetic=look)
+
+
+def pictures_first() -> bool:
+    """Whether charts and diagrams try a picture first: unless DISABLE_PICTURE_FIRST says they don't (as offline tests
+    do, whose talks look nothing up that they don't fake)."""
+    from talkgenerator import settings  # (here: it reads the environment's settings, which tests change)
+
+    return not settings.is_source_disabled("PICTURE_FIRST")
+
+
+_CHART_PICTURE: Final = PictureFirst(
+    "bad-charts",
+    "a real chart from the internet, under the title of the chart it takes the place of",
+    "an image search query for a real chart from the internet that could take this chart's place, under its title "
+    "(which then has to work on its own): what such a chart would show, in two to four plain English words",
+)
+_QUESTION_CHART_PICTURE: Final = dataclasses.replace(_CHART_PICTURE, title="question")
+
+
+def picture_version(plan: SlidePlan, recipe: Recipe) -> tuple[SlidePlan, Recipe] | None:
+    """What a planned slide that tries a picture first (see PictureFirst) tries: a picture filling the slide, of its
+    kind's look, found with the picture's query the model wrote (or else the slide's concept), under the slide's title
+    (its text field's: a chart's claim, a yes-or-no chart's question). None for a slide that doesn't try one."""
+    first = KINDS[recipe.kind].picture_first
+    if first is None or not recipe.picture_first:
+        return None
+    query = str(plan.images.get(PICTURE) or "").strip() or plan.concept
+    title = plan.texts.get(first.title)
+    picture = SlidePlan(
+        kind="full_image",
+        recipe=plan.recipe,
+        concept=plan.concept,
+        texts={"title": title} if isinstance(title, str) else {},
+        images={"image": query},
+    )
+    return picture, Recipe("full_image", (first.slot(),), brief=f"{first.intent}, filling the slide")
+
+
+_DIAGRAM_PICTURE: Final = PictureFirst(
+    "weird-stock",
+    "a weird picture under the title of the diagram it takes the place of",
+    "an image search query for a weird, surprising picture that could take this diagram's place, under its title "
+    "(which then has to work on its own), and make its point: something concrete and odd, in two to six plain English "
+    "words",
+)
+
+
 @dataclass(frozen=True)
 class Kind:
     name: str
@@ -116,6 +193,8 @@ class Kind:
     # The image slots it can do without: when a slot of these finds no image, the slide goes without it (a picture
     # behind a big number, D63), where any other slot's missing image takes the slide down
     optional_images: frozenset[str] = frozenset()
+    # The picture it tries first, now and then, in its place: a chart's or a diagram's (D73)
+    picture_first: PictureFirst | None = None
 
 
 # A v4 content generator: a presentation context (with the "seed" to search for) in, an image (or None) out
@@ -144,6 +223,8 @@ class Recipe:
     facts: bool = True
     # Per text field: the mood of the emoji its things get in front, where the model wrote none (a tier list's tiers)
     emoji: Mapping[str, str] = field(default_factory=dict)
+    # Whether its slide tries a picture first, in its place (its kind's: see PictureFirst), as the dice say (D73)
+    picture_first: bool = False
 
     def text_field(self, text: TextField) -> TextField:
         """A text field of the kind as this slide has it: as long as its limit here allows."""
@@ -159,10 +240,11 @@ class Recipe:
         ]
 
     def image_queries(self) -> list[str]:
-        """The image slots the language model writes a search query for."""
+        """The image slots the language model writes a search query for (and its picture's, for a slide that tries one
+        first: see PictureFirst)."""
         return [
             slot
-            for slot in [*self._sourced(), *self.optional_slots()]
+            for slot in [*self._sourced(), *self.optional_slots(), *([PICTURE] if self.picture_first else [])]
             if f"{slot}_query" not in self.omit and slot not in self.omit and slot not in self.queries
         ]
 
@@ -192,7 +274,25 @@ class Recipe:
         """The recipe as one of its variants, picked by weight with the random stream (itself, without variants; its
         kind's, if it has none of its own): not one whose queries are in avoid, while there are others (a meme's
         template that the talk has already). And, for a diagram whose kind has pictures in its boxes, the boxes that
-        get one, from a stream of their own (none, most of the time)."""
+        get one, from a stream of their own (none, most of the time); and for a chart or a diagram, whether it tries a
+        picture first, in its place (see PictureFirst), from a stream of its own too."""
+        varied = self._varied(rng, avoid)
+        first = KINDS[self.kind].picture_first
+        if first is None or not pictures_first():
+            return varied
+        with random_util.use(rng.child("picture first")):
+            if random_util.random() >= first.odds:
+                return varied
+        brief = (varied.brief or KINDS[self.kind].description).rstrip(".")
+        return dataclasses.replace(
+            varied,
+            brief=f"{brief} (talkgenerator may show a picture under its title in its place)",
+            hints={**varied.hints, f"{PICTURE}_query": first.query},
+            picture_first=True,
+            variants=(),
+        )
+
+    def _varied(self, rng: random_util.Rng, avoid: frozenset[str]) -> Recipe:
         kind = KINDS[self.kind]
         variants = self.variants or kind.variants
         varied = self
@@ -927,6 +1027,7 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             (),
             _chart_yes_no,
+            picture_first=_QUESTION_CHART_PICTURE,
         ),
         Kind(
             "chart_categories",
@@ -937,6 +1038,7 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             (),
             _chart_categories,
+            picture_first=_QUESTION_CHART_PICTURE,
         ),
         Kind(
             "chart_correlation",
@@ -969,6 +1071,7 @@ KINDS: Final[dict[str, Kind]] = {
             (),
             _chart_correlation,
             CORRELATION_VARIANTS,
+            picture_first=_CHART_PICTURE,
         ),
         Kind(
             "chart_trend",
@@ -1006,6 +1109,7 @@ KINDS: Final[dict[str, Kind]] = {
                 most=1,
                 aside="it appears on a click, by the moment's point, so the moment has to be there",
             ),
+            picture_first=_CHART_PICTURE,
         ),
         Kind(
             "chart_bars",
@@ -1019,6 +1123,7 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             (),
             _chart_bars,
+            picture_first=_CHART_PICTURE,
         ),
         # (No examples in these descriptions either: the free models copy them)
         Kind(
@@ -1039,6 +1144,7 @@ KINDS: Final[dict[str, Kind]] = {
             (),
             _venn,
             pictures=BoxPictures({"circle_1": "the first circle", "circle_2": "the second circle"}),
+            picture_first=_DIAGRAM_PICTURE,
         ),
         Kind(
             "matrix",
@@ -1076,6 +1182,7 @@ KINDS: Final[dict[str, Kind]] = {
                 },
                 aside="the dot goes in another quadrant",
             ),
+            picture_first=_DIAGRAM_PICTURE,
         ),
         # Milestone 6's slide types (docs/v5-plan.md, section 8), drawn as texts on shapes
         # (D63: with a picture behind it, or beside it, if one is found: the user found slides of text boring)
@@ -1204,6 +1311,7 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             (),
             _timeline,
+            picture_first=_DIAGRAM_PICTURE,
         ),
         Kind(
             "pyramid",
@@ -1229,6 +1337,7 @@ KINDS: Final[dict[str, Kind]] = {
                     "level_3": "the level under that",
                 }
             ),
+            picture_first=_DIAGRAM_PICTURE,
         ),
         Kind(
             "funnel",
@@ -1251,6 +1360,7 @@ KINDS: Final[dict[str, Kind]] = {
             pictures=BoxPictures(
                 {"stage_1": "the widest stage, at the top", "stage_2": "the second stage", "stage_3": "the third stage"}
             ),
+            picture_first=_DIAGRAM_PICTURE,
         ),
         Kind(
             "cycle",
@@ -1265,6 +1375,7 @@ KINDS: Final[dict[str, Kind]] = {
             (),
             _cycle,
             pictures=BoxPictures(_STEPS, most=1),
+            picture_first=_DIAGRAM_PICTURE,
         ),
         Kind(
             "org_chart",
@@ -1285,6 +1396,7 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             (),
             _org_chart,
+            picture_first=_DIAGRAM_PICTURE,
         ),
         Kind(
             "iceberg",
@@ -1311,6 +1423,7 @@ KINDS: Final[dict[str, Kind]] = {
                     "hidden_2": "the second thing under the water",
                 }
             ),
+            picture_first=_DIAGRAM_PICTURE,
         ),
         # The talk formats' (docs/v5-plan.md, section 7): a method, or how a product works
         Kind(
@@ -1332,6 +1445,7 @@ KINDS: Final[dict[str, Kind]] = {
             (),
             _process,
             pictures=BoxPictures(_STEPS),
+            picture_first=_DIAGRAM_PICTURE,
         ),
         Kind(
             "references",
@@ -1450,6 +1564,7 @@ KINDS: Final[dict[str, Kind]] = {
             pictures=BoxPictures(
                 {"yes_step": "where Yes leads", "no_step": "where No leads", "end": "the end both lead to"}
             ),
+            picture_first=_DIAGRAM_PICTURE,
         ),
         Kind(
             "tier_list",

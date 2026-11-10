@@ -61,3 +61,6 @@ def _offline_tests_use_no_real_credentials(request, monkeypatch, tmp_path):
     # And without real facts (Wikipedia's, Open Trivia DB's), unless a test brings fakes of their sources: see
     # tests/test_facts.py
     monkeypatch.setenv("DISABLE_FACTS", "1")
+    # And with charts and diagrams as they are, without a picture first in their place (D73), whose search their
+    # tests don't fake, unless a test asks for one: see tests/test_less_text.py
+    monkeypatch.setenv("DISABLE_PICTURE_FIRST", "1")

@@ -445,8 +445,8 @@ def pictured(
     @functools.wraps(generate)
     def generator(presentation_context: dict[str, Any]) -> tuple[Any, ...] | None:
         generated = generate(presentation_context)
-        if generated is None:
-            return None
+        if generated is None or presentation_context.get(slides.STANDING_IN):  # (standing in: no lookups, D73)
+            return generated
         texts = {box: text for box, text in boxes(generated).items() if text}
         found = []
         for box in slides.picked_boxes(list(texts), most, odds):

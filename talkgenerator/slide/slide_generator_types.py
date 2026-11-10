@@ -1,5 +1,7 @@
 import logging
 from abc import ABCMeta, abstractmethod
+from collections.abc import Callable
+from typing import Any
 
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.images import analysis
@@ -480,6 +482,45 @@ class DrawnSlideGenerator(SlideGenerator):
     @property
     def slide_type(self):
         return self._slide_class
+
+
+class PictureFirstSlideGenerator:
+    """A classic chart or diagram that's a picture in its place now and then, under its title (docs/v5-plan.md, D73):
+    its text version first, from the slide generator it wraps (text), and then, as the dice say (that share of the
+    time: odds), a picture of the look's (picture: an image slot, such as Reddit's bad charts), found for the slide's
+    seed, filling the slide under the text version's title (or its question); the text version as it is when none is
+    found, or the dice say no, or it has no title. The text version's draws come first, so it comes out the same with
+    pictures first or without; and it's what stands in for it in a talk with a time limit per slide, until its picture
+    comes (see PresentationSchema._generate_slides). DISABLE_PICTURE_FIRST switches the pictures off."""
+
+    def __init__(self, text: SlideGenerator, picture: Callable[[dict[str, Any]], Any], odds: float):
+        self.text = text
+        self.picture = picture
+        self.odds = odds
+
+    def generate_slide(self, presentation_context, used) -> tuple[slides.Slide, list] | None:
+        from talkgenerator.plan.kinds import pictures_first  # (the kinds build slides of this module's types)
+        from talkgenerator.util import random_util
+
+        made = self.text.generate_slide(presentation_context, used)
+        if made is None or not pictures_first() or random_util.random() >= self.odds:
+            return made
+        title = made[0].picture_title()
+        if not title:
+            return made
+        # (not one of the talk's pictures so far, where the picture's source can avoid them: an image slot)
+        seed = presentation_context.get("seed")
+        avoid = [element for element in used[0] if isinstance(element, ImageData)]
+        find = getattr(self.picture, "find", None)
+        picture = (
+            find(str(seed), avoid=avoid) if find is not None and seed else self.picture(dict(presentation_context))
+        )
+        if not isinstance(picture, ImageData) or not is_different_enough([title, picture], used):
+            return made
+        slide = slides.FullImageSlide(title, picture)
+        if slide.missing_content():
+            return made
+        return slide, [title, picture]
 
 
 # HELPERS

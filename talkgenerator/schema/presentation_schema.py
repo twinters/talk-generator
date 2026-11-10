@@ -62,7 +62,15 @@ from talkgenerator.models.plan import SlidePlan, TalkPlan
 from talkgenerator.models.theme import Theme
 from talkgenerator.personas import Persona
 from talkgenerator.plan import languages, prompt
-from talkgenerator.plan.kinds import KINDS, PRESENTER_JOB, TALK_TITLE, Recipe
+from talkgenerator.plan.kinds import (
+    KINDS,
+    PICTURE,
+    PRESENTER_JOB,
+    TALK_TITLE,
+    Recipe,
+    picture_version,
+    pictures_first,
+)
 from talkgenerator.plan.outline import (
     ADVANCED,
     BASIC,
@@ -235,6 +243,17 @@ def _planned_worked_out(
 ) -> "_WorkedOutSlide | None":
     """What an attempt at a planned slide made (its slide and generated elements), as a worked-out slide."""
     return _WorkedOutSlide(slide_nr, generator, *made) if made is not None else None
+
+
+def _planned_picture(
+    slide_nr: int, generator: SlideGeneratorData, made: tuple[Any, list] | None
+) -> "_WorkedOutSlide | None":
+    """What an attempt at a planned slide that tries a picture first made (see talkgenerator.plan.kinds.PictureFirst),
+    as a worked-out slide, if it's the picture: its text version stands in for it already (see
+    PresentationSchema._in_time), and comes again when no picture was found (None, then)."""
+    if made is None or not isinstance(made[0], slides.FullImageSlide):
+        return None
+    return _WorkedOutSlide(slide_nr, generator, *made)
 
 
 @dataclass
@@ -689,6 +708,16 @@ class _PlannedTalk:
             return None  # (dropped: by a model that declined halfway, say)
         problems: list[str] = []
         try:
+            # (a chart or a diagram that tries a picture first, in its place: its text version if none is found, D73)
+            picture = picture_version(plan, recipe)
+            if picture is not None:
+                found = realize(*picture, self.contexts[slide_nr], self.rngs[slide_nr].child(PICTURE), attempt)
+                if found is not None:
+                    found[0].add_note(f"Picture first: in place of its {recipe.kind}, under its title")
+                    return found
+                logger.info(
+                    "Planned slide %s, try %s: no picture found first: its text version", slide_nr + 1, attempt + 1
+                )
             result = realize(plan, recipe, self.contexts[slide_nr], self.rngs[slide_nr], attempt, problems=problems)
         except Exception:  # one misbehaving source shouldn't sink the talk: the slide goes classic
             logger.exception("Realizing planned slide %s crashed", slide_nr + 1)
@@ -1036,6 +1065,20 @@ def _photo_slots(source: Any) -> list[ImageSlot] | None:
     return None if any(slot.aesthetic in _OWN_KIND_LOOKS for slot in slots) else slots
 
 
+def _picture_first(generator: SlideGeneratorData) -> SlideGeneratorData:
+    """The slide generator, or for a chart or a diagram (a kind that tries a picture first: see
+    talkgenerator.plan.kinds.PictureFirst), a copy of it whose classic slides try a picture first, now and then, in their
+    place (see slide_generator_types.PictureFirstSlideGenerator), with the generator itself as its text version."""
+    kind = KINDS.get(generator.llm.kind) if generator.llm is not None else None
+    first = kind.picture_first if kind is not None else None
+    if first is None or generator.text_version is not None:
+        return generator
+    picture = slide_generator_types.PictureFirstSlideGenerator(generator.slide_generator, first.slot(), first.odds)
+    made = generator.wrapped(picture)
+    made.text_version = generator
+    return made
+
+
 class PresentationSchema:
     """Class responsible for determining which slide generators to use in a presentation,
     and how the (topic) seed for each slide is generated."""
@@ -1078,6 +1121,8 @@ class PresentationSchema:
             profiles.profile(look)
         self._unservable: dict[tuple[str, bool], frozenset[SlideGeneratorData]] = {}
         self._seed_generator = seed_generator
+        # (a classic chart or diagram that tries a picture first, now and then, in its place: D73)
+        slide_generators = [_picture_first(generator) for generator in slide_generators]
         self._slide_generators = slide_generators
         self._generator_indices = {id(generator): index for index, generator in enumerate(slide_generators)}
         if max_allowed_tags is None:
@@ -1879,12 +1924,17 @@ class PresentationSchema:
             elif pick is not None and slide_nr in talk.plans:
                 worked_out, out_of_time = self._planned_attempts(talk, slide_nr, pick, state, clock)
                 if out_of_time:
-                    worked_out = self._in_time(slide_nr, pick, talk, state, pictures, clock) or stand_in()
+                    in_time = self._in_time(slide_nr, pick, talk, state, pictures, clock)
+                    worked_out = in_time or stand_in()
                     if worked_out is None:  # (nothing to stand in: it's waited for after all)
                         worked_out, _ = self._planned_attempts(talk, slide_nr, pick, state, _Clock(None))
                     else:
                         late = talk.late_work.pop(slide_nr, None)
-                        as_worked_out = functools.partial(_planned_worked_out, slide_nr, pick)
+                        # (a slide that tries a picture first stands in as its text version: only its picture takes
+                        # its place, D73)
+                        text_version = in_time is not None and talk.planned[slide_nr].recipe.picture_first
+                        late_slide = _planned_picture if text_version else _planned_worked_out
+                        as_worked_out = functools.partial(late_slide, slide_nr, pick)
             # (the work below gets a copy of what the slides before it used: with a time limit, it may go on by itself
             # while the talk settles more)
             if worked_out is None and talk.language != "en":
@@ -1995,7 +2045,10 @@ class PresentationSchema:
             clock.seconds,
             f" ({len(spared)} spare picture{'s' if len(spared) != 1 else ''} of the talk's topic)" if spared else "",
         )
-        slide.add_note(f"Out of time ({clock.seconds:g} s): as planned, without looking for its pictures")
+        if recipe.picture_first:  # (D73)
+            slide.add_note(f"Out of time ({clock.seconds:g} s): its text version, while its picture is looked for")
+        else:
+            slide.add_note(f"Out of time ({clock.seconds:g} s): as planned, without looking for its pictures")
         return _WorkedOutSlide(slide_nr, pick, slide, generated)
 
     def _stand_in(
@@ -2108,6 +2161,31 @@ class PresentationSchema:
                 return str(tag)
         return None
 
+    def _text_version(
+        self,
+        slide_nr: int,
+        generator: SlideGeneratorData | None,
+        context: dict,
+        rng: random_util.Rng,
+        state: _DeckState,
+    ) -> _WorkedOutSlide | None:
+        """What stands in for a classic chart or diagram that tries a picture first (see _picture_first) and ran out of
+        time: its text version, at once (without pictures in its boxes, which it would look up), from the stream its work
+        has, so it's the text that the work has too; None for another slide, or when that doesn't come out."""
+        text = generator.text_version if generator is not None else None
+        if generator is None or text is None or not pictures_first():
+            return None
+        stream = rng.child("content", self._generator_indices[id(generator)])
+        label = f"slide {slide_nr + 1}'s text version"
+        result = self._run_generator(text, slide_nr, {**context, slides.STANDING_IN: True}, stream, state, label)
+        if result is None or not self._is_new_enough(result, generator, state):
+            return None
+        logger.info(
+            "Slide %s ran out of time: its text version stands in for it, while its picture is looked for", slide_nr + 1
+        )
+        result[0].add_note("Out of time: its text version, while its picture is looked for")
+        return _WorkedOutSlide(slide_nr, generator, *result)
+
     def _replace_late(
         self, lates: _LateSlides, wait: float | None = None, cancelled: threading.Event | None = None
     ) -> None:
@@ -2144,6 +2222,15 @@ class PresentationSchema:
             return
         if real is None:
             logger.info("Slide %s didn't come out after all: what stood in for it stays", late.slide_nr + 1)
+            return
+        standing = lates.settled.get(late.slide_nr)
+        if (
+            standing is not None
+            and real.generator.text_version is not None
+            and not isinstance(real.slide, slides.FullImageSlide)
+            and real.slide.to_deck_slide().elements == standing.slide.to_deck_slide().elements
+        ):  # (a chart or a diagram that tried a picture first, come as the text version that stands in for it: D73)
+            logger.info("Slide %s came after all, without its picture: its text version stays", late.slide_nr + 1)
             return
         others = _DeckState()
         for slide_nr, worked_out in lates.settled.items():
@@ -2400,6 +2487,7 @@ class PresentationSchema:
         state = _DeckState()
         lates = _LateSlides(slide_deck, state, SlideDeck.replace_slide)  # (a classic slide wishes for no pictures)
         clocks: dict[int, _Clock] = {}  # (each slide's, from when it could settle: in the round it does, or before)
+        picked: dict[int, SlideGeneratorData] = {}  # (the generator each slide's work runs, last: for its text version)
 
         def work_out(slide_nr: int, at_state: _DeckState, generate: bool) -> _WorkedOutSlide | _NeedsWork | None:
             return self._work_out_slide(
@@ -2411,10 +2499,15 @@ class PresentationSchema:
                 results[slide_nr],
                 generate,
                 persona=persona,
+                picked=picked,
             )
 
         def stand_in(slide_nr: int) -> _WorkedOutSlide | None:
-            return self._stand_in(slide_nr, num_slides, contexts[slide_nr], rng, state, persona, "en", early=early)
+            # (a chart or a diagram that tries a picture first stands in as its text version, while its picture is
+            # looked for, as a planned slide stands in as it's planned: D73; else its early version, or a quick slide)
+            context, stream = contexts[slide_nr], slide_rngs[slide_nr]
+            text = self._text_version(slide_nr, picked.get(slide_nr), context, stream, state)
+            return text or self._stand_in(slide_nr, num_slides, context, rng, state, persona, "en", early=early)
 
         slide_nr = 0
         while slide_nr < num_slides:
@@ -2513,10 +2606,13 @@ class PresentationSchema:
         generate: bool,
         extra_prohibited: Collection[SlideGeneratorData] = (),
         persona: Persona | None = None,
+        picked: dict[int, SlideGeneratorData] | None = None,
     ) -> _WorkedOutSlide | _NeedsWork | None:
         """Work out a slide the way generating the slides one by one does: pick a slide generator (with the slide's
         stream for that pick, as the persona weighs them) among the ones the used tags still allow, run it (with its
-        own stream for this slide), and pick another one when it fails.
+        own stream for this slide), and pick another one when it fails. With picked, the generator it runs goes in it,
+        by the slide's number (for its text version to stand in for it, should it run out of time: see
+        _text_version).
 
         results holds what the generators produced for this slide before, given fewer used elements, and gets what
         they produce now. A failure stays a failure, and a slide still holds as long as it doesn't repeat what's used
@@ -2546,6 +2642,8 @@ class PresentationSchema:
             if not known:
                 if not generate:
                     return _NEEDS_WORK
+                if picked is not None:
+                    picked[slide_nr] = generator
                 result = self._run_generator(
                     generator, slide_nr, presentation_context, rng.child("content", index), state
                 )
