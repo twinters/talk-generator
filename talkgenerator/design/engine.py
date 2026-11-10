@@ -349,12 +349,20 @@ class DeckLayout:
         deck's theme, as its slides are, but from a random stream of its own and without a slide number ("7/12"): it's
         none of the deck's slides, which are laid out the same, with spares or without. (It can be laid out while the
         deck's slides are, on another thread: this changes nothing of the deck's layout so far.)"""
-        return self._lay_out(slide, number, None, Counter(), spare=True)
+        return self._lay_out(slide, number, None, Counter(), stream="spare")
+
+    def early(self, number: int, slide: DeckSlide) -> DeckSlide:
+        """An early version of the deck's number-th slide (from 0: see talkgenerator.generator.stream_talk's early),
+        laid out in the deck's theme and numbered as that slide ("7/12"), but from a random stream of its own and
+        without the layouts of the slides before it, which may not be laid out yet. Like a spare, it changes nothing of
+        the deck's layout so far, and can be laid out while the deck's slides are, on another thread."""
+        return self._lay_out(slide, number, None, Counter(), stream="early")
 
     def _lay_out(
-        self, slide: DeckSlide, number: int, previous: str | None, used: Counter[str], spare: bool = False
+        self, slide: DeckSlide, number: int, previous: str | None, used: Counter[str], stream: str = "slide"
     ) -> DeckSlide:
-        slide_rng = self._rng.child("spare" if spare else "slide", number)
+        slide_rng = self._rng.child(stream, number)
+        spare = stream == "spare"  # (a spare has no slide number: it's none of the deck's slides)
         own = None
         if self.style_chaos > 0:
             with random_util.use(slide_rng.child("chaos")):

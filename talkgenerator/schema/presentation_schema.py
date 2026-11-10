@@ -452,7 +452,9 @@ class Progress(Protocol):
     settled, on a thread of the spares' own: see _Spares. And it may give every slide but the title slide a time limit
     (slide_seconds; None, as one without the attribute, for none): a slide that runs out of time settles with what's
     quick instead (see _Clock), and when the real slide comes after all, in place of what stood in for it, the
-    Progress is told (replaced, as updated is, with the slide that takes the other's place: see _LateSlides)."""
+    Progress is told (replaced, as updated is, with the slide that takes the other's place: see _LateSlides). It may
+    want early versions of the talk's last slides too (early, how many: 0 for none, as one without the attribute),
+    which it's told of (early_version, with the slide's number) as each is made, on a thread of their own: see _Early."""
 
     cancelled: threading.Event
 
@@ -837,6 +839,95 @@ class _Spares:
         return None
 
 
+class _Early:
+    """Early versions of a talk's last slides (slides: their numbers), which its Progress wants (early) for a
+    presentation to show when it reaches one of them before it's made. Each is that slide's stand-in (see
+    PresentationSchema._quick_version: about the slide's own seed, of the spare kinds, mostly in well under a second,
+    though a kind that looks a word or a question up can take a few; in a talk in another language, a picture of that
+    seed without text, which is looked for), made early: one after another,
+    in the slides' order, on a thread of their own from the talk's start, each handed over (Progress.early_version,
+    with the slide's number) as soon as it's made, until the talk's slides are all settled (stop).
+
+    A slide that runs out of time (see _Clock), or can't be made, has its early version take its place (take), as long
+    as it doesn't repeat a slide before it and the talk's caps allow its kind: so what a presentation showed stays,
+    until the real slide comes after all (see _LateSlides). The early versions come from the slides' own stand-in
+    streams, so the talk's slides come out the same with them or without, as long as none runs out of time or fails.
+    They avoid repeating each other (not the talk's slides, which are being made at the same time)."""
+
+    def __init__(
+        self,
+        schema: "PresentationSchema",
+        slides: Sequence[int],
+        slide_deck: SlideDeck,
+        contexts: list[dict[str, Any]],
+        rng: random_util.Rng,
+        progress: Progress,
+        persona: Persona | None = None,
+    ) -> None:
+        self.schema = schema
+        self.slides = tuple(slides)
+        self.slide_deck = slide_deck
+        self.contexts = contexts
+        self.rng = rng
+        self.progress = progress
+        self.persona = persona
+        self._made: dict[int, _WorkedOutSlide] = {}
+        self._stopped = False
+        self._lock = threading.Lock()  # (held while one is handed over: none comes after stop)
+        self._thread: threading.Thread | None = None
+
+    def start(self) -> None:
+        # (finding pictures as the talk does, by its license policy and theme, and probing them while it streams)
+        self._thread = threading.Thread(target=image_util.carry(self._make), name="early versions", daemon=True)
+        self._thread.start()
+
+    def stop(self) -> None:
+        """No early version is handed over anymore (one being made is left to finish by itself, and dropped)."""
+        with self._lock:
+            self._stopped = True
+
+    def take(self, slide_nr: int) -> _WorkedOutSlide | None:
+        """The slide's early version, if it's made by now (once: then it's the deck's)."""
+        with self._lock:
+            return self._made.pop(slide_nr, None)
+
+    def _make(self) -> None:
+        state = _DeckState()  # (what the early versions use, for them not to repeat each other)
+        try:
+            for slide_nr in self.slides:
+                with self._lock:
+                    if self._stopped or self.progress.cancelled.is_set():
+                        return
+                if self.slide_deck.has_slide_nr(slide_nr):
+                    continue  # (it's in already: its early version would be of no use)
+                context = self.contexts[slide_nr]
+                made = self.schema._quick_version(
+                    slide_nr,
+                    self.slide_deck.size,
+                    context,
+                    self.rng,
+                    state,
+                    self.persona,
+                    self.slide_deck.language,
+                    label=f"an early version of slide {slide_nr + 1}",
+                )
+                if made is None:
+                    logger.info("Slide %s has no early version (about %r)", slide_nr + 1, context["seed"])
+                    continue
+                self.schema._update_used_elements(
+                    state.used_elements, state.used_tags, made.generated_elements, made.generator
+                )
+                with self._lock:
+                    if self._stopped or self.progress.cancelled.is_set():
+                        return
+                    self._made[slide_nr] = made
+                    self.progress.early_version(self.slide_deck, slide_nr, made.slide)  # type: ignore[attr-defined]
+        except TalkCancelled:
+            pass
+        except Exception:  # (an early version must never stop the talk)
+            logger.exception("Making early versions of the talk's slides crashed: it has no more of them")
+
+
 # How many pictures of its topic a talk with a time limit per slide finds early, for the slides that run out of time
 # to find their own (a slide has three at most), and the looks whose pictures are of a kind of their own, which a
 # picture of the topic can't stand in for: a meme's template, a poster, a chart, a book's cover
@@ -1095,6 +1186,7 @@ class PresentationSchema:
 
         talk = None
         spares: _Spares | None = None
+        early: _Early | None = None
         pictures: _SparePictures | None = None
         if llm is not None and writes:
             cancelled = progress.cancelled if progress is not None else None
@@ -1185,14 +1277,18 @@ class PresentationSchema:
             contexts = [create_slide_presentation_context(main_presentation_context, seed) for seed in seeds]
             # The spare slides its progress wants, if any, made from now on while the slides are (see _Spares)
             spares = self._spares(progress, slide_deck, main_presentation_context, rng, persona)
+            # And the early versions of its last slides it wants, if any (see _Early)
+            early = self._early(progress, slide_deck, contexts, rng, persona)
             if talk is not None and planned:
                 lates = self._settle_planned_talk(
-                    slide_deck, talk, contexts, rng, presenter, persona, seconds, pictures
+                    slide_deck, talk, contexts, rng, presenter, persona, seconds, pictures, early
                 )
             else:
-                lates = self._generate_slides(slide_deck, contexts, rng, parallel, persona, seconds)
+                lates = self._generate_slides(slide_deck, contexts, rng, parallel, persona, seconds, early)
             if spares is not None:
                 spares.stop()  # (with every slide in, a spare is of no use anymore)
+            if early is not None:
+                early.stop()  # (nor an early version)
             if pictures is not None:
                 pictures.stop()
             # The slides that ran out of time, whose own work goes on: each comes after all, in place of what stood in
@@ -1205,6 +1301,8 @@ class PresentationSchema:
         except BaseException:
             if spares is not None:
                 spares.stop()
+            if early is not None:
+                early.stop()
             if pictures is not None:
                 pictures.stop()
             if talk is not None:
@@ -1269,6 +1367,29 @@ class PresentationSchema:
         )
         spares.start()
         return spares
+
+    def _early(
+        self,
+        progress: Progress | None,
+        slide_deck: SlideDeck,
+        contexts: list[dict[str, Any]],
+        rng: random_util.Rng,
+        persona: Persona | None = None,
+    ) -> "_Early | None":
+        """Early versions of the talk's last slides, as many as its progress wants (its early, never the title slide),
+        under way; None when it wants none, or when there's nothing to make them with (a talk in English, without
+        spare generators)."""
+        count = getattr(progress, "early", 0) if progress is not None else 0
+        if progress is None or isinstance(count, bool) or not isinstance(count, int) or count <= 0:
+            return None
+        if not hasattr(progress, "early_version") or (slide_deck.language == "en" and not self.spare_generators):
+            return None
+        slides = range(max(1, len(contexts) - count), len(contexts))
+        if not slides:
+            return None
+        early = _Early(self, slides, slide_deck, contexts, rng, progress, persona)
+        early.start()
+        return early
 
     def writes_with(self, llm: TextProvider | None) -> bool:
         """Whether a language model writes this schema's talks: there is one, and slide generators with recipes."""
@@ -1721,6 +1842,7 @@ class PresentationSchema:
         persona: Persona | None = None,
         seconds: float | None = None,
         pictures: "_SparePictures | None" = None,
+        early: "_Early | None" = None,
     ) -> _LateSlides:
         """Settle the slides in order: the title slide from the plan's title, a planned slide in up to ATTEMPTS
         tries (each must not repeat what the slides before it used), and a classic slide wherever that fails (picked as
@@ -1729,9 +1851,10 @@ class PresentationSchema:
 
         With seconds, a time limit per slide (see _Clock), a slide that runs out of time settles at once instead: as
         planned, without looking anything up (see _in_time: its pictures from pictures, spare ones of the talk's
-        topic), or else as a stand-in (see _stand_in). What it waited for goes on by itself, and once it's done, the
-        real slide takes the place of what stood in for it (see _LateSlides: the ones that aren't done once the slides
-        are all in come back, to be waited for); with nothing to stand in, it's waited for after all."""
+        topic), or else as a stand-in (see _stand_in: its early version, if it has one). What it waited for goes on by
+        itself, and once it's done, the real slide takes the place of what stood in for it (see _LateSlides: the ones
+        that aren't done once the slides are all in come back, to be waited for); with nothing to stand in, it's waited
+        for after all. A slide that can't be made at all is left out, unless it has an early version (see _Early)."""
         num_slides = len(contexts)
         state = _DeckState()
         lates = _LateSlides(slide_deck, state)
@@ -1746,7 +1869,8 @@ class PresentationSchema:
 
             def stand_in(slide_nr: int = slide_nr) -> _WorkedOutSlide | None:
                 context = contexts[slide_nr]
-                return self._stand_in(slide_nr, num_slides, context, rng, state, persona, talk.language, pictures)
+                language = talk.language
+                return self._stand_in(slide_nr, num_slides, context, rng, state, persona, language, pictures, early)
 
             if pick is not None and pick.llm is not None and pick.llm.kind == "title":
                 worked_out = self._planned_title_slide(slide_nr, pick, talk, contexts[slide_nr]["title"], presenter)
@@ -1787,6 +1911,8 @@ class PresentationSchema:
                 )
                 classic, late = self._bounded(clock, classic_slide, stand_in)
                 worked_out = _worked_out(classic)
+            if worked_out is None:
+                worked_out = self._instead_of_none(slide_nr, early, state, num_slides)
             if worked_out is None:
                 logger.error("Gave up on generating slide %s", slide_nr + 1)
             else:
@@ -1880,44 +2006,105 @@ class PresentationSchema:
         persona: Persona | None,
         language: str,
         pictures: "_SparePictures | None" = None,
+        early: "_Early | None" = None,
     ) -> _WorkedOutSlide | None:
-        """What takes the place of a slide that ran out of time, made at once (see _Clock): a slide of one of the spare
-        generators' kinds, about the slide's own seed, as the persona weighs them, among those the talk's tag caps
-        still allow (another kind if one fails, SPARE_TRIES in all: a hundredth of a second each); or in a talk in
-        another language than English, whose classic slides would be English, a spare picture of the talk's topic
-        (pictures), without text. From the slide's own stream ("stand-in"). None if none comes out (on a seed the
-        spare kinds won't make light of, say)."""
-        stream = rng.child("slide", slide_nr, "stand-in")
-        made: _WorkedOutSlide | None = None
-        if language != "en":
-            if pictures is not None:
-                made = self._picture_slide(slide_nr, str(context["seed"]), context, stream, state, pictures)
+        """What takes the place of a slide that ran out of time, made at once (see _Clock): its early version, if it
+        has one (see _Early) that the deck allows; else a quick slide about its own seed (see _quick_version), without
+        looking anything up, which in a talk in another language than English is a spare picture of the talk's topic
+        (pictures). None if none comes out (on a seed the spare kinds won't make light of, say)."""
+        made = self._early_version(slide_nr, early, state, num_slides)
+        if made is not None:
+            logger.info(
+                "Slide %s ran out of time: its early version (%s) stands in for it", slide_nr + 1, made.generator
+            )
         else:
-            # (not one of a kind the talk's tag caps don't allow anymore: by their tags, as a format has its own copies)
-            capped = {
-                tag
-                for tag, cap in self._max_allowed_tags.items()
-                if state.used_tags.get(tag, 0) >= most_slides(cap, num_slides)
-            }
-            excluded = {generator for generator, _ in self.spare_generators if set(generator.get_tags()) & capped}
-            for attempt in range(SPARE_TRIES):
-                generator = self._pick_spare_generator(stream.child("pick", attempt), persona, excluded)
-                if generator is None:
-                    break
-                excluded.add(generator)
-                label = f"a stand-in for slide {slide_nr + 1}"
-                result = self._run_generator(
-                    generator, slide_nr, context, stream.child("content", attempt), state, label
+            if language == "en" or pictures is not None:  # (in another language, only a spare picture is quick)
+                made = self._quick_version(slide_nr, num_slides, context, rng, state, persona, language, pictures)
+            if made is None:
+                logger.info(
+                    "Slide %s ran out of time, and nothing could stand in for it: it's waited for", slide_nr + 1
                 )
-                if result is not None and self._is_new_enough(result, generator, state):
-                    made = _WorkedOutSlide(slide_nr, generator, *result)
-                    break
-        if made is None:
-            logger.info("Slide %s ran out of time, and nothing could stand in for it: it's waited for", slide_nr + 1)
-            return None
-        logger.info("Slide %s ran out of time: %s stands in for it", slide_nr + 1, made.generator)
+                return None
+            logger.info("Slide %s ran out of time: %s stands in for it", slide_nr + 1, made.generator)
         made.slide.add_note(f"Out of time: a stand-in for a slide about {context['seed']!r}")
         return made
+
+    def _quick_version(
+        self,
+        slide_nr: int,
+        num_slides: int,
+        context: dict,
+        rng: random_util.Rng,
+        state: _DeckState,
+        persona: Persona | None,
+        language: str,
+        pictures: "_SparePictures | None" = None,
+        label: str | None = None,
+    ) -> _WorkedOutSlide | None:
+        """A quick slide about a slide's own seed, from that slide's "stand-in" stream: what stands in for it once it
+        runs out of time (see _stand_in), or its early version, made ahead (see _Early). A slide of one of the spare
+        generators' kinds, as the persona weighs them, among those the talk's tag caps still allow by state (another
+        kind if one fails, SPARE_TRIES in all: mostly well under a second each), that doesn't repeat what state used;
+        or in a talk in another language than English, whose classic slides would be English, a picture of the seed,
+        without text: a spare one of the talk's topic, with pictures, else one that's looked for. None if none comes out
+        (on a seed the spare kinds won't make light of, say). label says what it is, in the logs."""
+        stream = rng.child("slide", slide_nr, "stand-in")
+        if language != "en":
+            return self._picture_slide(slide_nr, str(context["seed"]), context, stream, state, pictures)
+        # (not one of a kind the talk's tag caps don't allow anymore: by their tags, as a format has its own copies)
+        capped = {
+            tag
+            for tag, cap in self._max_allowed_tags.items()
+            if state.used_tags.get(tag, 0) >= most_slides(cap, num_slides)
+        }
+        excluded = {generator for generator, _ in self.spare_generators if set(generator.get_tags()) & capped}
+        for attempt in range(SPARE_TRIES):
+            generator = self._pick_spare_generator(stream.child("pick", attempt), persona, excluded)
+            if generator is None:
+                break
+            excluded.add(generator)
+            what = label or f"a stand-in for slide {slide_nr + 1}"
+            result = self._run_generator(generator, slide_nr, context, stream.child("content", attempt), state, what)
+            if result is not None and self._is_new_enough(result, generator, state):
+                return _WorkedOutSlide(slide_nr, generator, *result)
+        return None
+
+    def _early_version(
+        self, slide_nr: int, early: "_Early | None", state: _DeckState, num_slides: int
+    ) -> _WorkedOutSlide | None:
+        """The slide's early version (see _Early), if it has one by now that doesn't repeat what the slides before it
+        used (state), of a kind the talk's caps still allow: for a slide that ran out of time, or can't be made."""
+        made = early.take(slide_nr) if early is not None else None
+        if made is None:
+            return None
+        capped = self._capped_tag(made.generator, state.used_tags, num_slides)
+        if capped is not None or not self._is_new_enough((made.slide, made.generated_elements), made.generator, state):
+            why = f"the talk has its {capped} slides already" if capped else "it repeats a slide before it"
+            logger.info("Slide %s's early version can't take its place: %s", slide_nr + 1, why)
+            return None
+        return made
+
+    def _instead_of_none(
+        self, slide_nr: int, early: "_Early | None", state: _DeckState, num_slides: int
+    ) -> _WorkedOutSlide | None:
+        """What takes the place of a slide that can't be made at all: its early version, if it has one the deck allows
+        (see _early_version); else nothing, and the slide is left out."""
+        made = self._early_version(slide_nr, early, state, num_slides)
+        if made is not None:
+            logger.info(
+                "Slide %s couldn't be made: its early version (%s) takes its place", slide_nr + 1, made.generator
+            )
+            made.slide.add_note(f"Couldn't be made: its early version, {made.generator}")
+        return made
+
+    def _capped_tag(self, generator: SlideGeneratorData, used_tags: Mapping[str, int], num_slides: int) -> str | None:
+        """A tag of the generator's whose cap the slides that used used_tags have reached (see most_slides), if any:
+        another slide of its kind would go over it."""
+        for tag in generator.get_tags():
+            cap = self._max_allowed_tags.get(tag)
+            if cap is not None and used_tags.get(tag, 0) >= most_slides(cap, num_slides):
+                return str(tag)
+        return None
 
     def _replace_late(
         self, lates: _LateSlides, wait: float | None = None, cancelled: threading.Event | None = None
@@ -1962,14 +2149,9 @@ class PresentationSchema:
                 self._update_used_elements(
                     others.used_elements, others.used_tags, worked_out.generated_elements, worked_out.generator
                 )
-        capped = [
-            tag
-            for tag in real.generator.get_tags()
-            if tag in self._max_allowed_tags
-            and others.used_tags.get(tag, 0) >= most_slides(self._max_allowed_tags[tag], lates.slide_deck.size)
-        ]
-        if capped or not self._is_new_enough((real.slide, real.generated_elements), real.generator, others):
-            why = f"the talk has its {capped[0]} slides already" if capped else "it repeats another slide"
+        capped = self._capped_tag(real.generator, others.used_tags, lates.slide_deck.size)
+        if capped is not None or not self._is_new_enough((real.slide, real.generated_elements), real.generator, others):
+            why = f"the talk has its {capped} slides already" if capped else "it repeats another slide"
             logger.info(
                 "Slide %s came after all, %.1f s after its time ran out, but %s: what stood in for it stays",
                 late.slide_nr + 1,
@@ -2197,17 +2379,19 @@ class PresentationSchema:
         parallel: bool | int,
         persona: Persona | None = None,
         seconds: float | None = None,
+        early: "_Early | None" = None,
     ) -> _LateSlides:
         """Work out every slide and add it to the deck, picking their generators as the persona weighs them (see the
         module's docstring for how parallel works: a round works out the remaining slides, as many at once as
         slides_at_once says).
 
         With seconds, a time limit per slide (see _Clock), a slide that runs out of time settles at once as a stand-in
-        (see _stand_in), while its work goes on by itself: once it's done, the real slide takes the stand-in's place
-        (see _LateSlides: the ones that aren't done once the slides are all in come back, to be waited for); with
-        nothing to stand in, it's waited for after all. A round then doesn't wait for the work under way when it ends
-        either: the next one goes on from what that found so far. A talk none of whose slides runs out of time comes out
-        as it does without one."""
+        (see _stand_in: its early version, if it has one), while its work goes on by itself: once it's done, the real
+        slide takes the stand-in's place (see _LateSlides: the ones that aren't done once the slides are all in come
+        back, to be waited for); with nothing to stand in, it's waited for after all. A round then doesn't wait for the
+        work under way when it ends either: the next one goes on from what that found so far. A talk none of whose
+        slides runs out of time comes out as it does without one. A slide that can't be made at all is left out, unless
+        it has an early version (see _Early)."""
         num_slides = len(contexts)
         slide_rngs = [rng.child("slide", slide_nr) for slide_nr in range(num_slides)]
         results: list[_Results] = [{} for _ in range(num_slides)]
@@ -2228,7 +2412,7 @@ class PresentationSchema:
             )
 
         def stand_in(slide_nr: int) -> _WorkedOutSlide | None:
-            return self._stand_in(slide_nr, num_slides, contexts[slide_nr], rng, state, persona, "en")
+            return self._stand_in(slide_nr, num_slides, contexts[slide_nr], rng, state, persona, "en", early=early)
 
         slide_nr = 0
         while slide_nr < num_slides:
@@ -2264,6 +2448,8 @@ class PresentationSchema:
                         worked_out, late = self._bounded(clock, one_by_one, functools.partial(stand_in, slide_nr))
                     if isinstance(worked_out, _NeedsWork):
                         break  # the next round works out the remaining slides again, knowing the ones settled so far
+                    if worked_out is None:
+                        worked_out = self._instead_of_none(slide_nr, early, state, num_slides)
                     if worked_out is None:
                         logger.error("Gave up on generating slide %s", slide_nr + 1)
                     else:

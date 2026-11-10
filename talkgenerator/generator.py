@@ -24,7 +24,15 @@ from talkgenerator.llm.base import TextProvider
 from talkgenerator.llm.ledger import Budget, Ledger, MeteredProvider
 from talkgenerator.llm.providers import NoneProvider, from_settings, provider_from_spec
 from talkgenerator.models.deck import Deck, DeckSlide
-from talkgenerator.models.events import SlideReady, SlideSpare, SlideUpdated, TalkEvent, TalkFinished, TalkStarted
+from talkgenerator.models.events import (
+    SlideEarly,
+    SlideReady,
+    SlideSpare,
+    SlideUpdated,
+    TalkEvent,
+    TalkFinished,
+    TalkStarted,
+)
 from talkgenerator.models.theme import Theme
 from talkgenerator.plan import languages, outline
 from talkgenerator.schema import formats
@@ -521,6 +529,7 @@ def stream_talk(
     spares: int = 0,
     slide_seconds: float | None = None,
     llm_level: str | None = None,
+    early: int = 0,
 ) -> Iterator[TalkEvent]:
     """Make a talk as generate_presentation does (the same deck, for the same options, seed and answers), handing
     over what's ready while it's made (see talkgenerator.models.events): talk.started once its title is known (the
@@ -547,9 +556,22 @@ def stream_talk(
     slide waited for goes on by itself, and once it's done, the real slide comes after all, in place of what stood in
     for it (a slide.updated at its index, that's late: laid out in its place, the slides after it as they were), in the
     deck and its PowerPoint too, unless it repeats another slide or the talk has as many slides of its kind as it may
-    have. Once the other slides are in, talk.finished waits for it 20 seconds at most (presentation_schema.LATE_SECONDS); after that, what
-    stood in for it is the talk's slide. Off by default (None): the same seed gives the same talk as long as no slide
-    runs out of time, as it then depends on how long the sources take.
+    have. Once the other slides are in, talk.finished waits for it 20 seconds at most
+    (presentation_schema.LATE_SECONDS); after that, what stood in for it is the talk's slide. Off by default (None): the
+    same seed gives the same talk as long as no slide runs out of time, as it then depends on how long the sources
+    take.
+
+    With early, it also makes an early version of each of the talk's last slides, that many of them (never the title
+    slide), for a presenter who reaches one before it's made: the slide's stand-in (see slide_seconds), made from the
+    talk's start on a thread of its own, in the slides' order, about that slide's own topic, mostly in well under a
+    second (a kind that looks a word or a question up can take a few; in a talk in another language, it's a picture of
+    that topic, without text, which is looked for). Each comes as a
+    slide.early at its slide's place, laid out there and numbered as that slide, unless the slide is in by then; the
+    slide's slide.ready takes its place. An early version is none of the talk's slides, unless its slide runs out of
+    time (with slide_seconds) or can't be made: then the early version is what stands in for it, as long as it doesn't
+    repeat another slide, so what a presentation showed stays until the real slide comes after all. Early versions
+    come from the slides' own stand-in streams, so the talk's slides come out the same with them or without, as long
+    as no slide runs out of time or fails.
 
     In a talk that generates pictures (image_generator: see generate_presentation), a slide comes with its stock photo
     where a generated picture is to go, and comes again (slide.updated, at the same index, laid out the same way) once
@@ -564,7 +586,7 @@ def stream_talk(
     Stopping the iteration (closing the iterator, or leaving a for loop over it) stops the talk, and an error that
     stopped it comes out of the iterator."""
     events: queue.SimpleQueue[TalkEvent | None] = queue.SimpleQueue()  # (None: the end)
-    following = _Following(events.put, spares=max(0, spares), slide_seconds=slide_seconds)
+    following = _Following(events.put, spares=max(0, spares), slide_seconds=slide_seconds, early=max(0, early))
     failures: list[BaseException] = []
 
     def make() -> None:
@@ -617,19 +639,25 @@ def stream_talk(
 
 class _Following:
     """Turns a talk's progress into events (see stream_talk), and stops the talk once they're not wanted anymore. It
-    wants that many spare slides, and gives every slide that long at most (spares and slide_seconds: see
-    talkgenerator.schema.presentation_schema.Progress)."""
+    wants that many spare slides, gives every slide that long at most, and wants early versions of that many of the
+    talk's last slides (spares, slide_seconds and early: see talkgenerator.schema.presentation_schema.Progress)."""
 
     def __init__(
-        self, hand_over: Callable[[TalkEvent], None], spares: int = 0, slide_seconds: float | None = None
+        self,
+        hand_over: Callable[[TalkEvent], None],
+        spares: int = 0,
+        slide_seconds: float | None = None,
+        early: int = 0,
     ) -> None:
         self.hand_over = hand_over
         self.spares = spares
         self.slide_seconds = slide_seconds
+        self.early = early
         self.cancelled = threading.Event()
         self._layout: engine.DeckLayout | None = None
         self._handed_over = 0
         self._indices: dict[int, int] = {}  # every handed-over slide's index, by its slide number
+        self._settled_up_to = 0  # (the slide numbers settled so far are below this one: some may have been left out)
         self._shown: dict[int, DeckSlide] = {}  # every handed-over slide by its index, as it was last handed over
         self._replaced = False  # whether a slide came after all, in place of what stood in for it (see replaced)
         # (a slide is laid out again, and handed over again, while later ones are being handed over)
@@ -673,6 +701,7 @@ class _Following:
             self._shown[index] = deck_slide
             self.hand_over(SlideReady(index=index, slide=deck_slide))
             self._handed_over += 1
+            self._settled_up_to = slide_nr + 1
         # A slide shown is a slide used, which some sources want to hear of (a download, at Unsplash), as a PowerPoint
         # tells them when it gets the slide. (A PowerPoint made later from the deck doesn't tell them again.)
         for image in slide.image_store().values():
@@ -734,6 +763,23 @@ class _Following:
         if self._layout is not None:
             deck_slide = self._layout.spare(number, deck_slide)
         self.hand_over(SlideSpare(index=number, slide=deck_slide))
+
+    def early_version(self, slide_deck: SlideDeck, slide_nr: int, slide: Any) -> None:
+        """An early version of a slide (see stream_talk's early), made: hand it over at that slide's place, laid out in
+        the talk's theme and numbered as that slide, without changing how the slides are laid out (see
+        engine.DeckLayout.early); unless the slide is in by then, which makes it of no use. Its pictures, if any,
+        aren't marked used: it's only shown when a presenter reaches the slide before it's made."""
+        if self.cancelled.is_set():
+            return
+        with self._lock:
+            if slide_nr < self._settled_up_to:  # (in, or left out: either way, of no use)
+                return
+            # (its place: its number, but for the slides before it that were left out)
+            index = slide_nr - (self._settled_up_to - self._handed_over)
+            deck_slide = slide.to_deck_slide()
+            if self._layout is not None:
+                deck_slide = self._layout.early(index, deck_slide)
+            self.hand_over(SlideEarly(index=index, slide=deck_slide))
 
     def _go_on(self) -> None:
         if self.cancelled.is_set():

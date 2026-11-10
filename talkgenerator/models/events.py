@@ -4,7 +4,8 @@ come again, as slide.updated, once a generated picture takes the place of its st
 after the slide's slide.ready and before talk.finished; in a talk with a time limit per slide, a slide that ran out of
 time can come after all (a slide.updated that's late) in place of what stood in for it. A talk that asks for spares
 gets slide.spare events too, in between: slides to show while the next slide isn't in yet, which aren't the talk's
-(see SlideSpare).
+(see SlideSpare); and one that asks for early versions of its last slides gets a slide.early for each, before that
+slide's slide.ready (see SlideEarly).
 
 They're plain data, as Server-Sent Events carry them: an event's `event` is its name, and to_json() is its data (the
 deck format's elements, as in talkgenerator.models.deck). A browser can draw a themed talk's slides as they come in,
@@ -82,6 +83,18 @@ class SlideSpare(_Event):
     slide: DeckSlide
 
 
+class SlideEarly(_Event):
+    """An early version of one of the talk's slides (see stream_talk's early): a quick slide about that slide's own
+    topic, laid out in the talk's theme and numbered as that slide, made early on, for a presentation to show when it
+    reaches that place before the slide is in. It comes before the slide's slide.ready, which takes its place. It's
+    none of the talk's slides, unless the slide runs out of time or can't be made: then the early version is the slide
+    (its slide.ready brings it, laid out where it stands)."""
+
+    event: Literal["slide.early"] = "slide.early"
+    index: int  # the place of the slide it's an early version of, from 0, as that slide's slide.ready will say
+    slide: DeckSlide
+
+
 class TalkFinished(_Event):
     """The talk is done: the whole deck, as generate_presentation makes it, with what it asked of language models and
     image generators."""
@@ -90,4 +103,6 @@ class TalkFinished(_Event):
     deck: Deck
 
 
-TalkEvent = Annotated[TalkStarted | SlideReady | SlideUpdated | SlideSpare | TalkFinished, Field(discriminator="event")]
+TalkEvent = Annotated[
+    TalkStarted | SlideReady | SlideUpdated | SlideSpare | SlideEarly | TalkFinished, Field(discriminator="event")
+]

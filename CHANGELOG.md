@@ -164,9 +164,11 @@ how to keep 4.x's talks. The [docs](https://github.com/twinters/talk-generator/t
   order, `slide.updated` when a generated picture comes in, and `talk.finished` with the deck. Images are probed
   rather than downloaded, and each says how a browser may show it (`display`). talkgenerator.com streams its talks
   this way.
-- For a presenter who catches up with the making: `spares=3` sends three quick spare slides early on
-  (`slide.spare`), and `slide_seconds=8` makes a slide that takes longer than 8 seconds come at once with what's
-  quick, the real slide taking its place once it's made.
+- For a presenter who catches up with the making: `early=4` sends an early version of each of the talk's last four
+  slides early on (`slide.early`: a quick slide about that slide's own topic, at its place), `spares=3` sends three
+  quick spare slides about the talk's topic (`slide.spare`), and `slide_seconds=8` makes a slide that takes longer
+  than 8 seconds come at once with what's quick (its early version, if it has one), the real slide taking its place
+  once it's made.
 
 ### Lighter and faster
 

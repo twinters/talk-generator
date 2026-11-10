@@ -21,6 +21,7 @@ for event in generator.stream_talk("default", 8, topic="peanuts", int_seed=42):
 | `talk.started` (`TalkStarted`) | once the title is known | the title, presenter, topics, language, seed, how many slides there will be, the theme's name and its tokens (`style`), and which language model writes the talk |
 | `slide.ready` (`SlideReady`) | for every slide, in order | its `index` and the `slide`, laid out in the talk's theme |
 | `slide.updated` (`SlideUpdated`) | a slide again, before `talk.finished`: with a picture that came in later (an AI picture, or the vision pick's), or with `slide_seconds`, the real slide that came after all | its `index` and the `slide`, laid out in its place; `late` is true for the real slide that came after all, in place of what stood in for it (see [A time limit per slide](#a-time-limit-per-slide)) |
+| `slide.early` (`SlideEarly`) | with `early`, early on, once each is made, before its slide | the place of the slide it's an early version of (`index`) and the `slide`, laid out there and numbered as that slide: none of the talk's slides, unless it stands in for it (see [Early versions](#early-versions)) |
 | `slide.spare` (`SlideSpare`) | with `spares`, early on, once each is made | which spare it is (`index`, from 0) and the `slide`, laid out in the talk's theme without a slide number: none of the talk's slides (see [Spare slides](#spare-slides)) |
 | `talk.finished` (`TalkFinished`) | at the end | the whole `deck` |
 
@@ -58,6 +59,7 @@ The options, after the format (`"default"`, `"ted"`, `"interview"`, `"pitch"`, `
 | `int_seed`, `parallel` | The seed (the same seed gives the same talk, in parallel or not) and whether slides are made at the same time: `True` (all of them; a language model's eight at a time), a number (at most that many at once, as a small server does: each slide being made holds what it found until it's settled), or `False` (one by one) |
 | `spares` | `stream_talk` only: how many spare slides to send, for a presenter who goes on before the next slide is in (see [Spare slides](#spare-slides)); 0, the default, for none |
 | `slide_seconds` | `stream_talk` only: how long a slide may take at most, after which it comes at once with what's quick (see [A time limit per slide](#a-time-limit-per-slide)); `None`, the default, for no limit |
+| `early` | `stream_talk` only: of how many of the talk's last slides to send early versions, for a presenter who reaches one before it's made (see [Early versions](#early-versions)); 0, the default, for none |
 
 ### Spare slides
 
@@ -110,6 +112,32 @@ that, what stood in for it stays. A presentation that's on that slide may rather
 presenter goes on, as talkgenerator.com does. With nothing to stand in (a topic the spare kinds won't make light of), the slide
 is waited for after all. Of the slides with pictures timed for D66, 5% took more than 8 s. The same seed gives the same
 talk as long as no slide runs out of time; one that does makes the talk depend on how long its sources took.
+
+### Early versions
+
+Spares are about the talk's topic, and belong nowhere in particular. With `stream_talk(..., early=4)`, the talk's
+last four slides get early versions: each that slide's stand-in (see above), made early, about that slide's own
+topic. They're made from the talk's start on a thread of their own, in the slides' order, mostly in well under a
+second each (a kind that looks a word or a question up can take a few seconds; in a talk in another language, an
+early version is a picture of the slide's topic, without text, which is looked for). Each comes as a `slide.early` at
+its slide's place, laid out there and numbered as that slide, before the slide's `slide.ready` (unless the slide is in
+by then). A presentation that reaches that place before the slide is in can show it, and the slide's `slide.ready`
+then takes its place.
+
+```python
+from talkgenerator.models.events import SlideEarly, SlideReady
+
+for event in generator.stream_talk("default", 8, topic="peanuts", early=4, slide_seconds=8):
+    if isinstance(event, SlideEarly):
+        ...  # an early version of the slide at event.index, to show while that slide isn't in yet
+```
+
+An early version is none of the talk's slides, unless its slide runs out of time (with `slide_seconds`) or can't be
+made at all: then the early version is what stands in for it, as long as it doesn't repeat a slide before it and the
+talk's caps still allow its kind, so what a presentation showed stays until the real slide comes after all. The early
+versions come from the slides' own stand-in streams, so the talk's slides come out the same with them or without, as
+long as no slide runs out of time or fails. talkgenerator.com asks for early versions of the slides that may still be
+being made when its presentation opens.
 
 ## A PowerPoint: `render_pptx`
 
