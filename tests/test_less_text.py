@@ -19,11 +19,13 @@ import pytest
 
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.datastructures.slide_generator_data import ConstantWeightFunction, PeakedWeight
+from talkgenerator.design import engine, themes
 from talkgenerator.models.events import SlideEarly, SlideReady, SlideUpdated
 from talkgenerator.plan import kinds, prompt
 from talkgenerator.plan.kinds import KINDS, PICTURE, Recipe
 from talkgenerator.schema.slide_schemas import slide_generators
 from talkgenerator.slide import slide_generator_types, slides
+from talkgenerator.slide.slide_deck import SlideDeck
 from talkgenerator.util import random_util
 from tests.test_llm_talks import FakeModel
 from tests.test_slide_time_limit import (
@@ -383,6 +385,25 @@ def test_a_lists_punchline_can_be_a_picture_in_its_texts_place(images, slide, ro
 
     deck = Deck(generator="test", slides=(slides.TitleSlide("Geese", None).to_deck_slide(), made.to_deck_slide()))
     assert check_completeness(deck) == []  # (a picture in a thing's place is no thing missing)
+
+
+def test_an_emoji_alone_is_drawn_as_large_as_its_box_takes():
+    deck = SlideDeck(2, seed=1)
+    deck.add_slide(0, slides.TitleSlide("Geese", None))
+    deck.add_slide(1, slides.RedFlagsSlide("Flags", "It honks at night", "It owns a car", "🙄"))
+    deck.theme = themes.pick("kids", random_util.Rng(2))
+    flags = {element.role: element for element in deck.to_deck().slides[1].elements}
+    assert flags["flag_3"].style.size > max(flags[role].style.size for role in ("flag_1", "flag_2"))
+    # (a text with a letter in it is no emoji alone, without looking for emoji in it: fitting texts stays fast)
+    assert [engine._emoji_alone(text) for text in ("🙄", "👍 👍", "1️⃣", "~/talk", "Meh 🙄", " ", "")] == [
+        True,
+        True,
+        True,
+        False,
+        False,
+        False,
+        False,
+    ]
 
 
 def test_a_planned_punchlines_picture_takes_its_texts_place_or_it_stays_as_written(images, photos, breaking):

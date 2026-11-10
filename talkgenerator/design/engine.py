@@ -670,6 +670,14 @@ def credits_legibility(style: TextStyle, behind: Sequence[str]) -> float:
 EMOJI_LARGEST: Final = 220  # (an emoji alone's size at most: see _style)
 
 
+def _emoji_alone(text: str) -> bool:
+    """Whether the text is an emoji alone (or a few), with nothing else: no letter first, which most texts have, so
+    that fitting them stays as fast as it was (finding emoji takes a hundred times as long)."""
+    return (
+        bool(text.strip()) and not any(character.isalpha() for character in text) and not emoji_util.plain(text).strip()
+    )
+
+
 def _style(
     text: str,
     box: Box,
@@ -686,7 +694,7 @@ def _style(
     bold = (theme.fonts.heading_bold if spec.heading else False) or spec.bold
     uppercase = spec.uppercase or (theme.fonts.heading_uppercase if spec.heading else False)
     largest = max(spec.smallest, round(spec.largest * theme.text_scale / fit.STEP) * fit.STEP)
-    if text.strip() and not emoji_util.plain(text).strip():
+    if _emoji_alone(text):
         # (an emoji alone, as a punchline that breaks its list's pattern: as large as its box takes, D73)
         largest = max(largest, round(min(EMOJI_LARGEST, box.h * 0.8) / fit.STEP) * fit.STEP)
     fitted = fit.fit(text.upper() if uppercase else text, box.w, box.h, font, largest, spec.smallest, bold)
