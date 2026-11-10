@@ -231,6 +231,9 @@ def test_keys_stay_out_of_its_errors():
     assert KEY not in str(error.value) and "REDACTED" in str(error.value)
     assert http_util.redact(f"key={KEY}") == "key=REDACTED"
     assert KEY not in http_util.redact(f"the key {KEY}, again")
+    # (AI Studio's keys since 2026-05-28, "auth keys", bound to a service account, are of another form)
+    auth_key = "AQ." + "Ab8RN6Lmade-up_test-value" * 2
+    assert http_util.redact(f"the key {auth_key}, again") == "the key REDACTED, again"
 
 
 def test_gemini_needs_a_key():

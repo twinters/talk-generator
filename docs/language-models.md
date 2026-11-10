@@ -82,7 +82,7 @@ doesn't name a model with `--llm`.
 | [OpenRouter](https://openrouter.ai/)'s free models | `openrouter` (its free router), or `openrouter:<model>[,<fallback model>...]` | `talkgenerator login openrouter`, or `OPENROUTER_API_KEY` ([free](https://openrouter.ai/settings/keys)) | `pip install 'talkgenerator[openai]'` | free: 50 requests a day, or 1,000 once the account has bought $10 of credits |
 | Claude | `anthropic` (Claude Opus 5.5), or `anthropic:<model>`, such as `anthropic:claude-haiku-5-5` | `ANTHROPIC_API_KEY` | `pip install 'talkgenerator[anthropic]'` | a few cents a talk with Claude Opus 5.5 (see [Costs](#costs)) |
 | OpenAI | `openai:<model>` | `OPENAI_API_KEY` | `pip install 'talkgenerator[openai]'` | depends on the model |
-| [Gemini](#gemini) | `gemini` (Gemini 3.8 Flash), or `gemini:<model>`, such as `gemini:gemini-3.5-flash-lite` | `GEMINI_API_KEY` (or `GOOGLE_API_KEY`; [free](https://aistudio.google.com/apikey)) | `pip install 'talkgenerator[gemini]'` | a cent or two a talk with Gemini 3.8 Flash (see [Costs](#costs)); nothing on Gemini's free tier, within its limits |
+| [Gemini](#gemini) | `gemini` (Gemini 3.8 Flash), or `gemini:<model>`, such as `gemini:gemini-3.5-flash-lite` | `GEMINI_API_KEY` (or `GOOGLE_API_KEY`; [free](https://aistudio.google.com/apikey)) | `pip install 'talkgenerator[gemini]'` | about a cent a talk with Gemini 3.8 Flash (see [Costs](#costs)); nothing on Gemini's free tier, within its limits |
 | The models of your ChatGPT plan | `chatgpt` (the first model your account lists), or `chatgpt:<model>` | `talkgenerator login chatgpt` (Plus or Pro) | `pip install 'talkgenerator[openai]'` | nothing extra: requests count toward your plan's usage |
 
 `pip install 'talkgenerator[llm]'` installs all three SDKs. Without the one a provider needs, its talks are classic,
@@ -109,7 +109,8 @@ to think does so as little as it can.
 
 Google's Gemini models write talks with a key from [Google AI Studio](https://aistudio.google.com/apikey), in
 `GEMINI_API_KEY` (or `GOOGLE_API_KEY`: the same key Gemini's [image models](images-and-themes.md) take), through
-Google's `google-genai` SDK. `gemini` is Gemini 3.8 Flash; name another as `gemini:<model>`. Their prices, per million
+Google's `google-genai` SDK. AI Studio's keys start with `AQ.` (auth keys, since 28 May 2026), or `AIza` for older
+ones. `gemini` is Gemini 3.8 Flash; name another as `gemini:<model>`. Their prices, per million
 tokens in and out (the paid tier's, checked on 2026-11-10; the thinking counts as output):
 
 | Model | In | Out |
@@ -157,16 +158,18 @@ on 2026-11-09; a 20-slide talk has about twice as much):
 | Claude Haiku 5.5 | about $0.002 | about $0.003 | the key's owner |
 | Claude Sonnet 5.5 | about $0.03 | about $0.06 | the key's owner |
 | Claude Opus 5.5 | about $0.06 | about $0.12 (estimated) | the key's owner |
-| Gemini 3.5 Flash-Lite (estimated) | about $0.007 | about $0.01 | the key's owner; nothing on the free tier |
-| Gemini 3.8 Flash (estimated) | about $0.01 ($0.03 from 2027) | about $0.02 ($0.04 from 2027) | the key's owner; nothing on the free tier |
-| Gemini 4 Argon (estimated) | about $0.03 ($0.07 from December 2026) | about $0.06 ($0.12 from December 2026) | the key's owner |
+| Gemini 3.5 Flash-Lite | about $0.003 (estimated) | about $0.006 | the key's owner; nothing on the free tier |
+| Gemini 3.8 Flash | about $0.005 ($0.009 from 2027) | about $0.01 ($0.02 from 2027) | the key's owner; nothing on the free tier |
+| Gemini 4 Argon (estimated) | about $0.01 ($0.02 from December 2026) | about $0.03 ($0.05 from December 2026) | the key's owner |
 | Your ChatGPT plan | part of the plan's usage | five requests of it | you, through the plan |
 | Claude, through the [Skill](use-with-claude.md) | part of your Claude usage | | you, through your plan |
 
 The Claude prices behind these figures are Anthropic's list prices per million tokens (November 2026): Claude Opus
 5.5 $4 in and $20 out, Claude Sonnet 5.5 $2 and $10, Claude Haiku 5.5 $0.10 and $0.50 (for prompts up to 100,000
-tokens). Gemini's are [above](#gemini), and its figures estimates from the same tokens (Claude's, thinking
-included), not measured. talkgenerator keeps them in `talkgenerator.llm.prices`, with the dates Gemini's go up.
+tokens). Gemini's are [above](#gemini). Gemini counts fewer tokens for the same talk: measured on 2026-11-10, a
+Basic talk by Gemini 3.8 Flash was 2,190 tokens in and 772 out (its thinking included), and Advanced ones 6,600 to
+7,800 in and 1,300 to 1,600 out; Gemini 4 Argon's figures are estimates from those tokens. talkgenerator keeps the
+prices in `talkgenerator.llm.prices`, with the dates Gemini's go up.
 
 After every talk, the logs tell how many requests it made, how many tokens went in and out, and what they cost, such
 as:

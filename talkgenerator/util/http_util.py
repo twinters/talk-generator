@@ -104,11 +104,11 @@ _SECRET_PARAMS = re.compile(
     r"((?:key|client_id|client_secret|api_key|token|access_token|id_token_hint)=)[^&\s'\"]+", re.IGNORECASE
 )
 # The keys of language model providers wherever they show up (sk-or-v1-... at OpenRouter, sk-ant-... at Anthropic,
-# sk-... and sk-proj-... at OpenAI, AIza... at Google, for Gemini), bearer tokens, and JSON Web Tokens (a sign-in's,
-# such as Sign in with ChatGPT's)
+# sk-... and sk-proj-... at OpenAI, and Google's for Gemini: AQ.... since 2026-05-28, AIza... before), bearer tokens,
+# and JSON Web Tokens (a sign-in's, such as Sign in with ChatGPT's)
 _SECRET_TOKENS = re.compile(
-    r"\bsk-[A-Za-z0-9_\-]{16,}|\bAIza[A-Za-z0-9_\-]{30,}|(?<=Bearer )[A-Za-z0-9._~+/\-]{16,}=*"
-    r"|\beyJ[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]*",
+    r"\bsk-[A-Za-z0-9_\-]{16,}|\bAIza[A-Za-z0-9_\-]{30,}|\bAQ\.[A-Za-z0-9_\-]{30,}"
+    r"|(?<=Bearer )[A-Za-z0-9._~+/\-]{16,}=*|\beyJ[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]*",
     re.IGNORECASE,
 )
 _thread_local = threading.local()
