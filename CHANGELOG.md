@@ -214,7 +214,8 @@ how to keep 4.x's talks. The [docs](https://github.com/twinters/talk-generator/t
   Pexels, Reddit's chart slides take r/dataisugly's too, and the flavour packs search more subreddits.
 - InspiroBot's posters are drawn with the talk's seed from its older posters, so no request goes to its API any more.
 - Charts are quieter (no gridlines, tick marks or numbers along their axes), with bigger texts in the template's or
-  the theme's font.
+  the theme's font. Half of the charts and diagrams are a picture in their place when one is found, classic ones too
+  (`DISABLE_PICTURE_FIRST=1` keeps them drawn).
 - GIPHY's searches aren't cached any more, as GIPHY's API rules forbid it.
 - `SlideDeck.to_slide_deck_dictionary()` returns the deck's slides as JSON-ready dictionaries, instead of
   dictionaries holding image and chart objects: a breaking change for code that read those.

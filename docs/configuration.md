@@ -76,6 +76,7 @@ says what they cost.
 | `TALKGENERATOR_THEME` | The look of talks that don't ask for one, as `--theme` takes it (*default: `random`*); `classic` keeps the 2019 template |
 | `DISABLE_<SOURCE>` | `1` switches a source off: `REDDIT`, `UNSPLASH`, `PIXABAY`, `PEXELS`, `GIPHY`, `OPENVERSE`, `WIKIMEDIA_COMMONS`, `ART_INSTITUTE`, `WIKIHOW`, `WIKIQUOTE`, `SHITPOSTBOT`, `INSPIROBOT`, `MET`, `CLEVELAND`, `WELLCOME`, `NASA`, `SMITHSONIAN`, `FLAGS`, `IMGFLIP`, `CONCEPTNET`, `WIKIPEDIA`, `OPENTDB` (Open Trivia DB), `USELESS_FACTS`, `DAD_JOKES` or `ADVICE_SLIPS` (the flavour texts), such as `DISABLE_WIKIHOW=1` |
 | `DISABLE_FACTS` | `1` switches the [real facts](language-models.md#real-facts) off |
+| `DISABLE_PICTURE_FIRST` | `1` keeps charts and diagrams as they are: without it, half of them try a picture first, in their place, under their title |
 | `CONCEPTNET_API_URL` | A ConceptNet API of your own (*default: the public one, `https://api.conceptnet.io`*) |
 | `UNSPLASH_APP_NAME` | Your app's name at Unsplash, for the `utm_source` of the links to photographers (*default: `talkgenerator`*) |
 | `TALKGENERATOR_CACHE_DIR` | Where the cache of search answers goes (*default: your user cache folder*) |
