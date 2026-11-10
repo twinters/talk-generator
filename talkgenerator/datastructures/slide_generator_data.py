@@ -108,7 +108,9 @@ class SlideGeneratorData:
                     return None
 
                 if slide:
-                    # Remember how the slide was made (only shown in the speaker notes with debug_notes)
+                    # Remember how the slide was made (only shown in the speaker notes with debug_notes), and what its
+                    # generator noted (a chart that's a picture in its place, say: D73)
+                    noted = slide.note
                     slide.set_note(
                         "Seed: "
                         + presentation_context["seed"]
@@ -119,6 +121,8 @@ class SlideGeneratorData:
                         + " \n Generated Elements: "
                         + describe_elements(generated_elements)
                     )
+                    if noted:
+                        slide.add_note(noted)
 
                     # Add all sources of generated elements: their images', and the real facts' it shows as they are
                     for generated_element in generated_elements:

@@ -218,6 +218,8 @@ def test_a_classic_chart_is_its_picture_when_one_is_found(classic_charts, photos
     events, _ = _timed(4, llm="none")
     assert [slide.type for slide in events[-1].deck.slides[1:]] == ["full_image"] * 3
     assert _texts(events[-1].deck.slides[1]) == ["Chart about cats"]
+    assert "Picture first: in place of its chart" in events[-1].deck.slides[1].notes  # (and how it was made)
+    assert "Generator: Trend" in events[-1].deck.slides[1].notes
     photos.none.add("cats")
     events, _ = _timed(4, llm="none")
     assert [slide.type for slide in events[-1].deck.slides[1:]] == ["chart"] * 3

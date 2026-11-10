@@ -83,6 +83,11 @@ class Slide:
                 return value.strip()
         return None
 
+    @property
+    def note(self) -> str:
+        """The debug information about how the slide was generated, so far."""
+        return self._note
+
     def set_note(self, note: str):
         """Debug information about how the slide was generated."""
         self._note = note

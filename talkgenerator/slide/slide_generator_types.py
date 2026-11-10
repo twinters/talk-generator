@@ -520,6 +520,7 @@ class PictureFirstSlideGenerator:
         slide = slides.FullImageSlide(title, picture)
         if slide.missing_content():
             return made
+        slide.add_note(f"Picture first: in place of its {made[0].type_name}, under its title")
         return slide, [title, picture]
 
 

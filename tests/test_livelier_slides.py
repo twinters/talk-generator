@@ -119,7 +119,9 @@ def test_the_language_model_writes_emoji_only_where_a_field_asks_for_them():
         recipe = slide_schemas.slide_generators.get(name).llm
         asking = [variant for variant in recipe.variants if any("emoji" in hint for hint in variant.hints.values())]
         assert asking and all("emoji" in variant.note for variant in asking), name
-        share = sum(variant.weight for variant in asking) / sum(variant.weight for variant in recipe.variants)
+        # (in front of every thing: not D73's pattern breaks, such as an S tier of one emoji)
+        in_front = [variant for variant in asking if "pattern" not in variant.note]
+        share = sum(variant.weight for variant in in_front) / sum(variant.weight for variant in recipe.variants)
         assert 0.2 <= share <= 1 / 3 + 0.01, name  # (now and then)
         plain = [variant for variant in recipe.variants if variant not in asking]
         assert plain and not any("emoji" in hint for variant in plain for hint in variant.hints.values())
