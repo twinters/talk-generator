@@ -125,9 +125,10 @@ how to keep 4.x's talks. The [docs](https://github.com/twinters/talk-generator/t
 - Less text, more surprise: half of the charts and diagrams try a picture first, in their place, under their title (a
   real chart from the internet for a chart, a weird picture for a diagram), and are their text version when none is
   found; with `slide_seconds`, the text version comes at once and the picture takes its place when it comes.
-  `DISABLE_PICTURE_FIRST=1` switches them off. A list's last thing breaks its pattern now and then: a review of a few
-  words or an emoji alone, a red flag of a few words, a KPI tile without a number, an S tier of one emoji, and a third
-  picture in a row that doesn't follow the first two. A chart's title says what it shows, never "X vs Y": what it
+  `DISABLE_PICTURE_FIRST=1` switches them off. A list's punchline, or a diagram's, breaks the pattern now and then:
+  an emoji alone, a few words, or a picture in its place (a red flag's, a review's, an org chart's boss, a tier list's
+  S tier, an alignment chart's chaotic evil), and the third of three pictures in a row doesn't follow the first two
+  (`DISABLE_PATTERN_BREAKS=1` switches the breaks off). A chart's title says what it shows, never "X vs Y": what it
   compares goes on its axes.
 - A talk has at most one of most kinds (memes: two), and a list's things appear a click each, the punchline last.
 

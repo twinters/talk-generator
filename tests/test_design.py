@@ -27,7 +27,7 @@ from talkgenerator.util import os_util, random_util
 from tests import test_seeds
 from tests.test_deck import _every_kind_of_slide, _image, _pie_chart_data
 from tests.test_deck import images as images  # the fake image downloads (a fixture)
-from tests.test_karaoke_types import KARAOKE, every_karaoke_type
+from tests.test_karaoke_types import KARAOKE, SHORT_CELLS, _axes, every_karaoke_type
 from tests.test_karaoke_types import _longest as _karaoke_longest
 from tests.test_slide_types import EVERY_KIND, _built, _longest_texts
 from tests.test_slide_types import _deck as _deck_of
@@ -337,6 +337,24 @@ def test_layouts_and_sizes_come_from_the_seed(images):
     assert len(layouts) > 1  # a slide gets one of the layouts of its type
 
 
+def _pictured_punchlines(image):
+    """Lists whose punchline is a picture in its text's place (a pattern break, D73): red flags (four, which fit their
+    rows and their cards), reviews, an org chart's boss, a tier list's S tier and an alignment chart's chaotic evil."""
+    return [
+        slides.RedFlagsSlide(
+            "Red flags", "Hates naps", "Owns a dog", "Says 'meow' wrong", "x", pictures={"flag_4": image}
+        ),
+        slides.ReviewsSlide(
+            "What people say", "5", "Purrfect.", "Ann", "4", "Fine.", "Bo", "1", "", "Cy", pictures={"review_3": image}
+        ),
+        slides.OrgChartSlide("Who's in charge", "The cat", "Me", "The dog", "The vet", pictures={"boss": image}),
+        slides.TierListSlide(
+            "Cat toys, ranked", "A box", "Yarn | Laser", "Mouse", None, "Bed", pictures={"s_tier": image}
+        ),
+        slides.AlignmentChartSlide("Cats", *_axes(), *SHORT_CELLS, pictures={"chaotic_evil": image}),
+    ]
+
+
 def _runs(seed=1, theme=None):
     """A deck with runs of slides of one type, as talks have them: two-column slides, full-screen pictures with and
     without a title, charts, image slides, statements and three-column slides, several of each in a row, each with
@@ -381,6 +399,8 @@ def _runs(seed=1, theme=None):
             slides.ProblemSlide("Sound familiar?", "Cats keep sitting on keyboards.", "Every single day.", photo=tall)
             for _ in range(3)
         ),
+        # (and, from D73, lists whose punchline is a picture in its text's place, one kind after the other, twice)
+        *(_pictured_punchlines(wide) * 2),
     ]
     slide_deck = SlideDeck(len(runs), title="Cats", topics=["cats"], seed=seed)
     for index, slide in enumerate(runs):

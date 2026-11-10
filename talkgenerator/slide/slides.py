@@ -107,6 +107,8 @@ class Slide:
         images_on_slide: list[ImageData] = []
         for name in self.required_arguments:
             value = self._arguments.get(name)
+            if value is None:  # (a list's thing that's a picture in its text's place, as its pattern break: D73)
+                value = self._arguments.get(picture_role(name))
             repeated = isinstance(value, ImageData) and any(
                 value == other or analysis.near_duplicates(value.analysis, other.analysis) for other in images_on_slide
             )
@@ -780,6 +782,30 @@ def _listed(
     return arguments
 
 
+def _instead(
+    prefix: str, most: int, items: Sequence[str | None], pictures: Mapping[str, ImageData | None] | None
+) -> dict[str, Any]:
+    """The items that are there, in order, as numbered arguments (prefix_1, prefix_2...), the rest None, as _listed has
+    them; but an item with a picture (by its number as written) is that picture in its text's place, as a list's
+    pattern break (docs/v5-plan.md, D73): its argument None, its picture's role the picture."""
+    there = [
+        (number, item) for number, item in enumerate(items, 1) if item or (pictures or {}).get(f"{prefix}_{number}")
+    ][:most]
+    arguments: dict[str, Any] = {}
+    for index in range(1, most + 1):
+        number, item = there[index - 1] if index <= len(there) else (0, None)
+        picture = (pictures or {}).get(f"{prefix}_{number}") if number else None
+        arguments[f"{prefix}_{index}"] = None if picture is not None else item
+        if picture is not None:
+            arguments[picture_role(f"{prefix}_{index}")] = picture
+    return arguments
+
+
+def _or_its_picture(role: str) -> tuple[str, str]:
+    """A thing's text, or the picture in its place (D73): whichever it has appears on its click."""
+    return role, picture_role(role)
+
+
 def _with_pictures(
     arguments: dict[str, object], boxes: Sequence[str], pictures: Mapping[str, ImageData | None] | None
 ) -> dict[str, object]:
@@ -864,11 +890,22 @@ class OrgChartSlide(DrawnSlide):
 
     required_arguments = ("boss", "report_1", "report_2")
 
-    def __init__(self, title: str | None, boss: str | None, *reports: str | None):
-        super().__init__("org_chart", None, {"title": title, "boss": boss, **_listed("report", 4, reports)})
+    def __init__(
+        self,
+        title: str | None,
+        boss: str | None,
+        *reports: str | None,
+        pictures: Mapping[str, ImageData | None] | None = None,
+    ):
+        # (who's in charge may be a picture in their name's place, as the chart's pattern break: D73)
+        picture = (pictures or {}).get("boss")
+        arguments: dict[str, Any] = {"title": title, "boss": None if picture is not None else boss}
+        if picture is not None:
+            arguments[picture_role("boss")] = picture
+        super().__init__("org_chart", None, {**arguments, **_listed("report", 4, reports)})
 
     def clicks(self) -> dict[str, int]:
-        return self._one_by_one(*((f"report_{index}",) for index in range(1, 5)), ("boss",))
+        return self._one_by_one(*((f"report_{index}",) for index in range(1, 5)), _or_its_picture("boss"))
 
 
 class IcebergSlide(DrawnSlide):
@@ -1052,19 +1089,26 @@ class TierListSlide(DrawnSlide):
 
     required_arguments = ("tier_s", "item_s_1", "tier_a", "item_a_1")
 
-    def __init__(self, title: str | None, *tiers: str | None):
-        arguments: dict[str, str | None] = {"title": title}
+    def __init__(self, title: str | None, *tiers: str | None, pictures: Mapping[str, ImageData | None] | None = None):
+        arguments: dict[str, Any] = {"title": title}
         for letter, written in zip(TIERS, (*tiers, *([None] * len(TIERS)))[: len(TIERS)], strict=True):
-            things = tier_items(written)
             key = letter.lower()
-            arguments[f"tier_{key}"] = letter if things else None
+            # (a tier may be a picture in its things' place, as the list's pattern break: the S tier's, D73)
+            picture = (pictures or {}).get(f"{key}_tier")
+            things = tier_items(written) if picture is None else []
+            arguments[f"tier_{key}"] = letter if things or picture is not None else None
             for index in range(1, TIER_ITEMS + 1):
                 arguments[f"item_{key}_{index}"] = things[index - 1] if index <= len(things) else None
+            if picture is not None:
+                arguments[picture_role(f"item_{key}_1")] = picture
         super().__init__("tier_list", None, arguments)
 
     def clicks(self) -> dict[str, int]:
         tiers = [tier.lower() for tier in reversed(TIERS)]  # (the worst first)
-        groups = (tuple(f"item_{tier}_{index}" for index in range(1, TIER_ITEMS + 1)) for tier in tiers)
+        groups = (
+            (*(f"item_{tier}_{index}" for index in range(1, TIER_ITEMS + 1)), picture_role(f"item_{tier}_1"))
+            for tier in tiers
+        )
         return self._one_by_one(*groups)
 
 
@@ -1129,18 +1173,23 @@ class AlignmentChartSlide(DrawnSlide):
         columns: Sequence[str],
         rows: Sequence[str],
         *cells: str | None,
+        pictures: Mapping[str, ImageData | None] | None = None,
     ):
-        arguments: dict[str, str | None] = {"title": title}
+        arguments: dict[str, Any] = {"title": title}
         for index in range(1, 4):
             arguments[f"column_{index}"] = columns[index - 1] if index <= len(columns) else None
             arguments[f"row_{index}"] = rows[index - 1] if index <= len(rows) else None
         for index, alignment in enumerate(ALIGNMENTS):
             cell = cells[index] if index < len(cells) else None
-            arguments[alignment] = cell.strip() if cell and cell.strip() else None
+            # (a cell may be a picture in its thing's place, as the chart's pattern break: chaotic evil's, D73)
+            picture = (pictures or {}).get(alignment)
+            arguments[alignment] = cell.strip() if cell and cell.strip() and picture is None else None
+            if picture is not None:
+                arguments[picture_role(alignment)] = picture
         super().__init__("alignment_chart", None, arguments)
 
     def clicks(self) -> dict[str, int]:
-        return self._one_by_one(*((alignment,) for alignment in ALIGNMENTS))
+        return self._one_by_one(*(_or_its_picture(alignment) for alignment in ALIGNMENTS))
 
 
 RED_FLAGS = 5  # the most red flags a slide has
@@ -1152,11 +1201,12 @@ class RedFlagsSlide(DrawnSlide):
 
     required_arguments = ("flag_1", "flag_2", "flag_3")
 
-    def __init__(self, title: str | None, *flags: str | None):
-        super().__init__("red_flags", None, {"title": title, **_listed("flag", RED_FLAGS, flags)})
+    def __init__(self, title: str | None, *flags: str | None, pictures: Mapping[str, ImageData | None] | None = None):
+        # (a flag may be a picture in its words' place, as the list's pattern break: the last one's, D73)
+        super().__init__("red_flags", None, {"title": title, **_instead("flag", RED_FLAGS, flags, pictures)})
 
     def clicks(self) -> dict[str, int]:
-        return self._one_by_one(*((f"flag_{index}",) for index in range(1, RED_FLAGS + 1)))
+        return self._one_by_one(*(_or_its_picture(f"flag_{index}") for index in range(1, RED_FLAGS + 1)))
 
 
 REVIEWS = 3  # the most reviews a slide has
@@ -1183,26 +1233,39 @@ class ReviewsSlide(DrawnSlide):
 
     required_arguments = ("stars_1", "review_1", "stars_2", "review_2")
 
-    def __init__(self, title: str | None, *stars_reviews_and_reviewers: object):
+    def __init__(
+        self,
+        title: str | None,
+        *stars_reviews_and_reviewers: object,
+        pictures: Mapping[str, ImageData | None] | None = None,
+    ):
         given = stars_reviews_and_reviewers
-        written = []
+        # (a review may be a picture its reviewer posted, in its words' place, as the list's pattern break: the last
+        # one's, by its number as written, D73)
+        written: list[tuple[int, str, str, ImageData | None]] = []
         for index in range(0, len(given) - 1, 3):
             rating, review = stars(given[index]), str(given[index + 1] or "").strip()
             reviewer = str(given[index + 2] or "").strip() if index + 2 < len(given) else ""
-            if rating is not None and review:
-                written.append((rating, review, reviewer))
-        arguments: dict[str, str | None] = {"title": title}
+            picture = (pictures or {}).get(f"review_{index // 3 + 1}")
+            if rating is not None and (review or picture is not None):
+                written.append((rating, review, reviewer, picture))
+        arguments: dict[str, Any] = {"title": title}
         for index in range(1, REVIEWS + 1):
             there = index <= len(written)
-            given_stars, given_review, given_reviewer = written[index - 1] if there else (0, "", "")
+            given_stars, given_review, given_reviewer, picture = written[index - 1] if there else (0, "", "", None)
             arguments[f"stars_{index}"] = f"{given_stars}/{MOST_STARS}" if there else None
-            arguments[f"review_{index}"] = given_review if there else None
+            arguments[f"review_{index}"] = given_review if there and picture is None else None
             arguments[f"reviewer_{index}"] = f"— {given_reviewer}" if there and given_reviewer else None
+            if picture is not None:
+                arguments[picture_role(f"review_{index}")] = picture
         super().__init__("reviews", None, arguments)
 
     def clicks(self) -> dict[str, int]:
         return self._one_by_one(
-            *((f"stars_{index}", f"review_{index}", f"reviewer_{index}") for index in range(1, REVIEWS + 1))
+            *(
+                (f"stars_{index}", *_or_its_picture(f"review_{index}"), f"reviewer_{index}")
+                for index in range(1, REVIEWS + 1)
+            )
         )
 
 

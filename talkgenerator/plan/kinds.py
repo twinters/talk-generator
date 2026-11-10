@@ -134,12 +134,54 @@ def _picture_slot(look: str, intent: str) -> ImageSlot:
     return ImageSlot(intent, aesthetic=look)
 
 
+# PATTERN BREAKS (docs/v5-plan.md, D73): a slide that lists things, or a diagram with a punchline, breaks its pattern
+# now and then in its punchline, its last thing: an emoji alone, a few words where the others are sentences, or a
+# picture in its place (in the kinds whose layouts show one: red flags, reviews, an org chart's boss, a tier list's S
+# tier and an alignment chart's chaotic evil), as 2019's talks put a weird picture in the last of three columns: the
+# user missed "playing with the unexpected" (2026-11-10)
+PATTERN_BREAK_ODDS: Final = 0.35  # of the lists' slides whose punchline breaks the pattern (a quarter of diagrams')
+# What the model writes for each way, after the field's own description (a list in one field: its last thing)
+_BREAKS: Final = {
+    "emoji": "a single emoji, nothing else",
+    "short": "one to three words, where the others are whole sentences",
+    "number": "a word, a symbol or an emoji instead of a number",
+    "off": "something that has nothing to do with the talk, in a few words",
+}
+
+
+@dataclass(frozen=True)
+class PatternBreak:
+    """How a kind's slide breaks its pattern now and then (odds), in its punchline (fields: the first of these that
+    the slide has, as its variant leaves some out; which: how the model is told of it): in one of its ways, by weight
+    ("emoji", "short", "number", "off": see _BREAKS; "picture": a picture in its place, which the kind's layouts can
+    show). In a list written as one field (listed), it's the field's last thing."""
+
+    fields: tuple[str, ...]
+    ways: Mapping[str, float]
+    which: str
+    odds: float = PATTERN_BREAK_ODDS
+    listed: bool = False
+
+
+_FLAGS: Final = ("flag_5", "flag_4", "flag_3")
+_LIST_BREAKS: Final = {"short": 1.0, "emoji": 0.7, "picture": 1.3}
+_DIAGRAM_ODDS: Final = 0.25
+
+
 def pictures_first() -> bool:
     """Whether charts and diagrams try a picture first: unless DISABLE_PICTURE_FIRST says they don't (as offline tests
     do, whose talks look nothing up that they don't fake)."""
     from talkgenerator import settings  # (here: it reads the environment's settings, which tests change)
 
     return not settings.is_source_disabled("PICTURE_FIRST")
+
+
+def pattern_breaks() -> bool:
+    """Whether lists and diagrams break their pattern now and then: unless DISABLE_PATTERN_BREAKS says they don't (as
+    offline tests do, whose slides' texts and pictures they check as they were)."""
+    from talkgenerator import settings
+
+    return not settings.is_source_disabled("PATTERN_BREAKS")
 
 
 _CHART_PICTURE: Final = PictureFirst(
@@ -195,6 +237,8 @@ class Kind:
     optional_images: frozenset[str] = frozenset()
     # The picture it tries first, now and then, in its place: a chart's or a diagram's (D73)
     picture_first: PictureFirst | None = None
+    # How it breaks its pattern now and then, in its punchline: a list's or a diagram's (D73)
+    pattern_break: PatternBreak | None = None
 
 
 # A v4 content generator: a presentation context (with the "seed" to search for) in, an image (or None) out
@@ -274,9 +318,10 @@ class Recipe:
         """The recipe as one of its variants, picked by weight with the random stream (itself, without variants; its
         kind's, if it has none of its own): not one whose queries are in avoid, while there are others (a meme's
         template that the talk has already). And, for a diagram whose kind has pictures in its boxes, the boxes that
-        get one, from a stream of their own (none, most of the time); and for a chart or a diagram, whether it tries a
-        picture first, in its place (see PictureFirst), from a stream of its own too."""
-        varied = self._varied(rng, avoid)
+        get one, from a stream of their own (none, most of the time); for a list or a diagram, whether its punchline
+        breaks the pattern, and how (see PatternBreak); and for a chart or a diagram, whether it tries a picture first,
+        in its place (see PictureFirst), each from a stream of its own too."""
+        varied = self._varied(rng, avoid)._broken(rng.child("pattern break"))
         first = KINDS[self.kind].picture_first
         if first is None or not pictures_first():
             return varied
@@ -290,6 +335,42 @@ class Recipe:
             hints={**varied.hints, f"{PICTURE}_query": first.query},
             picture_first=True,
             variants=(),
+        )
+
+    def _broken(self, rng: random_util.Rng) -> Recipe:
+        """The recipe with its punchline breaking the pattern (see PatternBreak), that share of the time, in one of
+        its ways: the hint of the punchline's field asks for it (an emoji alone, a few words...), or the slide gets an
+        optional picture in its place (searched with a query the model writes, the field's text where none is found)."""
+        kind = KINDS[self.kind]
+        pattern = kind.pattern_break
+        if pattern is None or not pattern_breaks():
+            return self
+        with random_util.use(rng):
+            if random_util.random() >= pattern.odds:
+                return self
+            way = random_util.weighted_random([(weight, name) for name, weight in pattern.ways.items()])
+        field = next((name for name in pattern.fields if name not in self.omit and name not in self.texts_from), None)
+        if way is None or field is None:
+            return self
+        brief = (self.brief or kind.description).rstrip(".")
+        if way == "picture":
+            query = (
+                f"an image search query for a surprising picture that takes the place of {pattern.which}'s words "
+                "(the pattern break): something concrete and odd that they make one think of, in two to six plain "
+                "English words"
+            )
+            return dataclasses.replace(
+                self,
+                brief=f"{brief}, {pattern.which} breaking the pattern: a picture in its place",
+                hints={**self.hints, f"{field}_picture_query": query},
+                pictures=(*self.pictures, field),
+            )
+        described = self.hints.get(field) or next(text.description for text in kind.texts if text.name == field)
+        ask = f"the last of them {_BREAKS[way]}" if pattern.listed else _BREAKS[way]
+        return dataclasses.replace(
+            self,
+            brief=f"{brief}, {pattern.which} breaking the pattern: {_BREAKS[way]}",
+            hints={**self.hints, field: f"{described}{', ' if pattern.listed else ': '}{ask} (the pattern break)"},
         )
 
     def _varied(self, rng: random_util.Rng, avoid: frozenset[str]) -> Recipe:
@@ -630,7 +711,9 @@ def _cycle(texts: Mapping[str, str | None], images: Mapping[str, Any], language:
 
 
 def _org_chart(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
-    return slides.OrgChartSlide(texts["title"], texts["boss"], *_numbered(texts, "report", 4))
+    # (who's in charge, or a picture in their name's place: a pattern break, D73)
+    pictures = _box_pictures(images)
+    return slides.OrgChartSlide(texts["title"], texts["boss"], *_numbered(texts, "report", 4), pictures=pictures)
 
 
 def _iceberg(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
@@ -746,7 +829,7 @@ def _tier_list(texts: Mapping[str, str | None], images: Mapping[str, Any], langu
     tiers = [texts.get(f"{tier.lower()}_tier") for tier in slides.TIERS]
     if not slides.tier_items(tiers[0]) or not slides.tier_items(tiers[1]):
         raise ValueError("a tier list needs things in its S and A tiers")
-    return slides.TierListSlide(texts["title"], *tiers)
+    return slides.TierListSlide(texts["title"], *tiers, pictures=_box_pictures(images))  # (D73)
 
 
 def _wall_of_text(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
@@ -759,11 +842,13 @@ def _wall_of_text(texts: Mapping[str, str | None], images: Mapping[str, Any], la
 
 def _alignment_chart(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
     cells = [texts.get(alignment) for alignment in slides.ALIGNMENTS]
-    return slides.AlignmentChartSlide(texts.get("title"), language.lawful_to_chaotic, language.good_to_evil, *cells)
+    axes = (language.lawful_to_chaotic, language.good_to_evil)
+    return slides.AlignmentChartSlide(texts.get("title"), *axes, *cells, pictures=_box_pictures(images))  # (D73)
 
 
 def _red_flags(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
-    return slides.RedFlagsSlide(texts["title"], *_numbered(texts, "flag", slides.RED_FLAGS))
+    flags = _numbered(texts, "flag", slides.RED_FLAGS)
+    return slides.RedFlagsSlide(texts["title"], *flags, pictures=_box_pictures(images))  # (D73)
 
 
 def _reviews(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
@@ -772,7 +857,7 @@ def _reviews(texts: Mapping[str, str | None], images: Mapping[str, Any], languag
         for index in range(1, slides.REVIEWS + 1)
         for part in (texts.get(f"stars_{index}"), texts.get(f"review_{index}"), texts.get(f"reviewer_{index}"))
     ]
-    return slides.ReviewsSlide(texts.get("title"), *written)
+    return slides.ReviewsSlide(texts.get("title"), *written, pictures=_box_pictures(images))  # (D73)
 
 
 def _error_message(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
@@ -1145,6 +1230,7 @@ KINDS: Final[dict[str, Kind]] = {
             _venn,
             pictures=BoxPictures({"circle_1": "the first circle", "circle_2": "the second circle"}),
             picture_first=_DIAGRAM_PICTURE,
+            pattern_break=PatternBreak(("overlap",), {"emoji": 1.0}, "what's in all of them", _DIAGRAM_ODDS),
         ),
         Kind(
             "matrix",
@@ -1183,6 +1269,7 @@ KINDS: Final[dict[str, Kind]] = {
                 aside="the dot goes in another quadrant",
             ),
             picture_first=_DIAGRAM_PICTURE,
+            pattern_break=PatternBreak(("dot",), {"emoji": 1.0}, "the dot", _DIAGRAM_ODDS),
         ),
         # Milestone 6's slide types (docs/v5-plan.md, section 8), drawn as texts on shapes
         # (D63: with a picture behind it, or beside it, if one is found: the user found slides of text boring)
@@ -1217,6 +1304,7 @@ KINDS: Final[dict[str, Kind]] = {
             ("background",),
             _kpi,
             optional_images=frozenset({"background"}),
+            pattern_break=PatternBreak(("number_4", "number_3"), {"number": 1.0}, "the last figure"),
         ),
         Kind(
             "quiz",
@@ -1267,6 +1355,7 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             (),
             _agenda,
+            pattern_break=PatternBreak(("items",), {"emoji": 1.0, "off": 1.0}, "the last item", odds=0.2, listed=True),
         ),
         Kind(
             "section",
@@ -1312,6 +1401,9 @@ KINDS: Final[dict[str, Kind]] = {
             (),
             _timeline,
             picture_first=_DIAGRAM_PICTURE,
+            pattern_break=PatternBreak(
+                ("event_5", "event_4", "event_3"), {"emoji": 1.0}, "the last moment", _DIAGRAM_ODDS
+            ),
         ),
         Kind(
             "pyramid",
@@ -1338,6 +1430,7 @@ KINDS: Final[dict[str, Kind]] = {
                 }
             ),
             picture_first=_DIAGRAM_PICTURE,
+            pattern_break=PatternBreak(("level_1",), {"emoji": 1.0}, "the top", _DIAGRAM_ODDS),
         ),
         Kind(
             "funnel",
@@ -1361,6 +1454,9 @@ KINDS: Final[dict[str, Kind]] = {
                 {"stage_1": "the widest stage, at the top", "stage_2": "the second stage", "stage_3": "the third stage"}
             ),
             picture_first=_DIAGRAM_PICTURE,
+            pattern_break=PatternBreak(
+                ("stage_5", "stage_4", "stage_3"), {"emoji": 1.0}, "the narrowest stage", _DIAGRAM_ODDS
+            ),
         ),
         Kind(
             "cycle",
@@ -1397,6 +1493,7 @@ KINDS: Final[dict[str, Kind]] = {
             (),
             _org_chart,
             picture_first=_DIAGRAM_PICTURE,
+            pattern_break=PatternBreak(("boss",), {"emoji": 1.0, "picture": 1.5}, "who's in charge"),
         ),
         Kind(
             "iceberg",
@@ -1424,6 +1521,7 @@ KINDS: Final[dict[str, Kind]] = {
                 }
             ),
             picture_first=_DIAGRAM_PICTURE,
+            pattern_break=PatternBreak(("hidden_3", "hidden_2"), {"emoji": 1.0}, "the deepest thing", _DIAGRAM_ODDS),
         ),
         # The talk formats' (docs/v5-plan.md, section 7): a method, or how a product works
         Kind(
@@ -1446,6 +1544,7 @@ KINDS: Final[dict[str, Kind]] = {
             _process,
             pictures=BoxPictures(_STEPS),
             picture_first=_DIAGRAM_PICTURE,
+            pattern_break=PatternBreak(("step_5", "step_4", "step_3"), {"emoji": 1.0}, "the last step", _DIAGRAM_ODDS),
         ),
         Kind(
             "references",
@@ -1565,6 +1664,7 @@ KINDS: Final[dict[str, Kind]] = {
                 {"yes_step": "where Yes leads", "no_step": "where No leads", "end": "the end both lead to"}
             ),
             picture_first=_DIAGRAM_PICTURE,
+            pattern_break=PatternBreak(("end",), {"emoji": 1.0}, "the end", _DIAGRAM_ODDS),
         ),
         Kind(
             "tier_list",
@@ -1580,6 +1680,7 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             (),
             _tier_list,
+            pattern_break=PatternBreak(("s_tier",), {"emoji": 1.0, "picture": 1.3}, "the S tier"),
         ),
         Kind(
             "wall_of_text",
@@ -1622,6 +1723,7 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             (),
             _alignment_chart,
+            pattern_break=PatternBreak(("chaotic_evil",), {"emoji": 1.0, "picture": 1.3}, "chaotic evil"),
         ),
         Kind(
             "red_flags",
@@ -1641,6 +1743,7 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             (),
             _red_flags,
+            pattern_break=PatternBreak(_FLAGS, _LIST_BREAKS, "the last red flag"),
         ),
         Kind(
             "reviews",
@@ -1656,6 +1759,7 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             (),
             _reviews,
+            pattern_break=PatternBreak(("review_3", "review_2"), _LIST_BREAKS, "the last review"),
         ),
         Kind(
             "error_message",

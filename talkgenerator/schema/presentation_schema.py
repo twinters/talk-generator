@@ -859,9 +859,8 @@ class _Spares:
             if generator is None:
                 break
             used.add(generator)
-            result = self.schema._run_generator(
-                generator, number, self.context, rng.child("content", attempt), state, label=label
-            )
+            quick = {**self.context, slides.STANDING_IN: True}  # (looking nothing up: D73)
+            result = self.schema._run_generator(generator, number, quick, rng.child("content", attempt), state, label)
             if result is not None and self.schema._is_new_enough(result, generator, state):
                 return _WorkedOutSlide(number, generator, *result)
         logger.info("No spare generator made %s about %r: it's left out", label, topic)
@@ -2119,7 +2118,8 @@ class PresentationSchema:
                 break
             excluded.add(generator)
             what = label or f"a stand-in for slide {slide_nr + 1}"
-            result = self._run_generator(generator, slide_nr, context, stream.child("content", attempt), state, what)
+            quick = {**context, slides.STANDING_IN: True}  # (looking nothing up, nor breaking a pattern: D73)
+            result = self._run_generator(generator, slide_nr, quick, stream.child("content", attempt), state, what)
             if result is not None and self._is_new_enough(result, generator, state):
                 return _WorkedOutSlide(slide_nr, generator, *result)
         return None

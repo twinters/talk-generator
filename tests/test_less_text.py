@@ -262,49 +262,133 @@ def slides_texts_pictured(picture):
     )
 
 
-# PATTERN BREAKS: the last thing of a list breaks its pattern now and then
+# PATTERN BREAKS: a list's punchline (its last thing), or a diagram's, breaks the pattern now and then: an emoji alone,
+# a few words, or a picture in its place
 
 
-def _breaks(name):
-    """The share of a recipe's variants (by weight) whose last thing breaks the pattern."""
-    variants = slide_generators.get(name).llm.variants
-    return sum(variant.weight for variant in variants if "pattern" in variant.note) / sum(v.weight for v in variants)
+@pytest.fixture
+def breaking(monkeypatch):
+    """Pattern breaks on (which offline tests have off)."""
+    monkeypatch.delenv("DISABLE_PATTERN_BREAKS", raising=False)
 
 
-def test_a_planned_lists_last_thing_breaks_its_pattern_now_and_then():
-    for name in ("Reviews", "Red Flags", "KPI Tiles"):
-        assert _breaks(name) == pytest.approx(0.35, abs=0.01), name
-    for name in ("Three Captions Weird", "Three Captions Weird (CRF)"):
-        assert _breaks(name) == pytest.approx(0.6), name
-    for name in ("Tier List", "Agenda"):
-        assert 0.15 < _breaks(name) < 0.25, name
-    reviews = slide_generators.get("Reviews").llm
-    broken = [
-        reviews.varied(random_util.Rng(seed))
-        for seed in range(60)
-        if "pattern" in reviews.varied(random_util.Rng(seed)).brief
-    ]
-    assert broken and all(recipe.hints["stars_3"].endswith("the punchline") for recipe in broken)
-    asked = {recipe.hints["review_3"] for recipe in broken}
-    assert any("a single emoji" in hint for hint in asked) and any("one to three words" in hint for hint in asked)
-    flags = slide_generators.get("Red Flags").llm
-    for seed in range(40):  # (the last red flag, whichever it is)
-        varied = flags.varied(random_util.Rng(seed))
-        if "pattern" in varied.brief:
-            last = max(int(name[-1]) for name in varied.hints if name.startswith("flag_"))
-            assert f"flag_{last + 1}" in varied.omit or last == 5
-    three = slide_generators.get("Three Captions Weird").llm
-    varied = next(
-        recipe
-        for recipe in (three.varied(random_util.Rng(seed)) for seed in range(40))
-        if "breaking the pattern" in recipe.brief
+def _broken(kind, seeds=400, recipe=None):
+    """The recipes of a kind (or the recipe) as the dice vary them over the seeds, and those whose punchline breaks."""
+    made = [(recipe or Recipe(kind)).varied(random_util.Rng(seed)) for seed in range(seeds)]
+    return made, [varied for varied in made if "breaking the pattern" in varied.brief]
+
+
+def test_lists_and_diagrams_break_their_pattern_now_and_then(breaking):
+    for kind in ("red_flags", "reviews", "org_chart", "tier_list", "alignment_chart", "kpi"):
+        made, broken = _broken(kind)
+        assert 0.28 < len(broken) / len(made) < 0.42, kind
+    for kind in ("pyramid", "funnel", "timeline", "venn", "matrix", "flowchart", "iceberg", "process"):
+        made, broken = _broken(kind)
+        assert 0.18 < len(broken) / len(made) < 0.32, kind
+    made, broken = _broken("agenda")
+    assert 0.13 < len(broken) / len(made) < 0.27
+    assert KINDS["quiz"].pattern_break is None and KINDS["cycle"].pattern_break is None
+    # (from a stream of their own: the variants' and box pictures' draws are as they were)
+    for seed in range(30):
+        plain = Recipe("red_flags")._varied(random_util.Rng(seed), frozenset())
+        assert Recipe("red_flags").varied(random_util.Rng(seed)).omit == plain.omit
+
+
+def test_a_punchline_breaks_as_an_emoji_a_few_words_or_a_picture_in_its_place(breaking):
+    _, broken = _broken("red_flags")
+    ways = {
+        "emoji" if "a single emoji" in recipe.brief else "short" if "one to three words" in recipe.brief else "picture"
+        for recipe in broken
+    }
+    assert ways == {"emoji", "short", "picture"}
+    picture = next(recipe for recipe in broken if recipe.pictures)
+    assert picture.pictures == ("flag_5",) and "flag_5_picture" in picture.image_queries()
+    lines = prompt.slide_lines(prompt.PlannedSlide(5, "Red Flags", picture, "geese"))
+    assert any(
+        line.startswith("- flag_5_picture_query: an image search query for a surprising picture") for line in lines
     )
-    lines = prompt.slide_lines(prompt.PlannedSlide(4, "Three Captions Weird", varied, "naps"))
-    assert any(line.startswith("- image_3_query: an image search query for the third picture") for line in lines)
-    assert any(line.startswith("- caption_3: the right caption: one that breaks the pattern") for line in lines)
+    emoji = next(recipe for recipe in broken if "a single emoji" in recipe.brief)
+    assert emoji.hints["flag_5"] == "a fifth red flag: a single emoji, nothing else (the pattern break)"
+    # (the last red flag the slide has: by its variant, the third or the fourth)
+    flags = slide_generators.get("Red Flags").llm
+    _, broken = _broken("red_flags", recipe=flags)
+    for recipe in broken:
+        named = {name.removesuffix("_picture_query") for name in recipe.hints if name.startswith("flag_")}
+        named |= set(recipe.pictures)
+        assert len(named) == 1 and not named & recipe.omit, recipe.brief
+    # (a list written as one field breaks in its last thing)
+    _, broken = _broken("agenda")
+    assert all("the last of them" in recipe.hints["items"] for recipe in broken)
+    # (a picture in a thing's place only where the kind's layouts show one: a diagram's punchline is an emoji alone)
+    pictured = {kind for kind, made in KINDS.items() if made.pattern_break and "picture" in made.pattern_break.ways}
+    assert pictured == {"red_flags", "reviews", "org_chart", "tier_list", "alignment_chart"}
+    _, broken = _broken("pyramid")
+    assert broken and all(
+        recipe.hints["level_1"].endswith("a single emoji, nothing else (the pattern break)") for recipe in broken
+    )
 
 
-def test_a_classic_lists_last_thing_breaks_its_pattern_now_and_then(monkeypatch):
+def test_without_breaks_a_recipe_is_as_it_was():
+    assert not any(
+        "breaking the pattern" in Recipe("red_flags").varied(random_util.Rng(seed)).brief for seed in range(60)
+    )
+
+
+def _picture(name="https://example.com/goose.jpg"):
+    return ImageData(name, source="Fake photos", declared_size=(1600, 900), license_class="public-domain")
+
+
+@pytest.mark.parametrize(
+    ("slide", "role"),
+    [
+        (lambda p: slides.RedFlagsSlide("Flags", "One", "Two", "Three", "Four", pictures={"flag_4": p}), "flag_4"),
+        (lambda p: slides.RedFlagsSlide("Flags", "One", "Two", "Three", pictures={"flag_3": p}), "flag_3"),
+        (
+            lambda p: slides.ReviewsSlide("Said", "5", "Great.", "Ann", "1", "Bad.", "Bob", pictures={"review_2": p}),
+            "review_2",
+        ),
+        (lambda p: slides.OrgChartSlide("Boss", "The goose", "Me", "You", pictures={"boss": p}), "boss"),
+        (lambda p: slides.TierListSlide("Ranked", "Geese", "Ducks", pictures={"s_tier": p}), "item_s_1"),
+        (
+            lambda p: slides.AlignmentChartSlide(
+                "A", ("L", "N", "C"), ("G", "N", "E"), *"abcdefgh", "i", pictures={"chaotic_evil": p}
+            ),
+            "chaotic_evil",
+        ),
+    ],
+)
+def test_a_lists_punchline_can_be_a_picture_in_its_texts_place(images, slide, role):
+    made = slide(_picture())
+    assert made.missing_content() == []
+    elements = {element.role: element for element in made.to_deck_slide().elements}
+    assert role not in elements and elements[f"{role}_picture"].kind == "image"  # (instead of its text)
+    clicks = [element.appears_on_click for element in elements.values() if element.appears_on_click]
+    assert elements[f"{role}_picture"].appears_on_click == max(clicks)  # (as the punchline, last)
+
+
+def test_a_planned_punchlines_picture_takes_its_texts_place_or_it_stays_as_written(images, photos, breaking):
+    from talkgenerator.plan.realize import realize
+
+    picture_way = next(recipe for recipe in _broken("org_chart")[1] if recipe.pictures)
+    plan = kinds.SlidePlan(
+        kind="org_chart",
+        recipe="Org Chart",
+        concept="geese",
+        texts={"title": "Who's in charge", "boss": "The goose", "report_1": "Me", "report_2": "You"},
+        images={"boss_picture": "a goose in a tie"},
+    )
+    made = realize(plan, picture_way, {"seed": "geese"}, random_util.Rng(1), 0)
+    assert made is not None and "a goose in a tie" in photos.asked
+    roles = {element.role for element in made[0].to_deck_slide().elements}
+    assert "boss_picture" in roles and "boss" not in roles
+    photos.none.add("a goose in a tie")  # (no picture: who's in charge, as the model wrote them)
+    made = realize(plan, picture_way, {"seed": "geese"}, random_util.Rng(1), 0)
+    assert made is not None
+    elements = {element.role: element for element in made[0].to_deck_slide().elements}
+    assert "boss_picture" not in elements and elements["boss"].text == "The goose"
+
+
+def test_a_classic_lists_punchline_breaks_its_pattern_now_and_then(breaking, monkeypatch):
     from talkgenerator.sources import packs, slide_texts
 
     monkeypatch.setattr(slide_texts, "related_words", lambda seed: ["dog", "mouse", "yarn", "milk"])
@@ -316,8 +400,7 @@ def test_a_classic_lists_last_thing_breaks_its_pattern_now_and_then(monkeypatch)
     lasts = []
     for seed in range(60):
         with random_util.use(random_util.Rng(seed)):
-            reviews = slide_texts.generate_reviews(context)
-        lasts.append(reviews[-2])
+            lasts.append(slide_texts.generate_reviews(context)[-2])
     assert 0.2 < sum(last in short for last in lasts) / len(lasts) < 0.5
     numbers = []
     for seed in range(60):
@@ -325,5 +408,55 @@ def test_a_classic_lists_last_thing_breaks_its_pattern_now_and_then(monkeypatch)
             numbers.append(slide_texts._kpi_number(True))
     words = [number for number in numbers if number in slide_texts._NOT_NUMBERS]
     assert 0.2 < len(words) / len(numbers) < 0.5 and all(len(number) <= 10 for number in slide_texts._NOT_NUMBERS)
-    breaking = [template for template in packs.pack().rule("captions.three_captions") if "Step 47" in template]
-    assert breaking == ["Step 1|Step 2|Step 47"]
+    breaking_rows = [template for template in packs.pack().rule("captions.three_captions") if "Step 47" in template]
+    assert breaking_rows == ["Step 1|Step 2|Step 47"]
+
+
+def test_a_classic_punchline_is_an_emoji_or_a_picture_in_its_place(breaking, images):
+    from talkgenerator.sources import slide_texts
+
+    found = []
+
+    def picture(context):
+        found.append(context["seed"])
+        return _picture()
+
+    def org_chart(context):
+        return ("Who's in charge", "The van keys", "Me", "You")
+
+    generate = slide_texts.broken(org_chart, slide_texts.at(1, "boss"), {"emoji": 1.0, "picture": 1.0}, 1.0, picture)
+    made = []
+    for seed in range(20):
+        with random_util.use(random_util.Rng(seed)):
+            made.append(generate({"seed": "cats"}))
+    emojis = [generated for generated in made if not isinstance(generated[-1], slides.Pictures)]
+    pictures = [generated for generated in made if isinstance(generated[-1], slides.Pictures)]
+    assert emojis and pictures and set(found) == {"The van keys"}  # (a picture of its words)
+    assert all(generated[1] == "🔑" for generated in emojis)  # (the thing's own emoji, by a word of it)
+    assert all(generated[-1].by_box() == {"boss": _picture()} for generated in pictures)
+    slide = slide_generator_types.DrawnSlideGenerator(generate, slides.OrgChartSlide)
+    with random_util.use(random_util.Rng(next(n for n, g in enumerate(made) if g in pictures))):
+        shown, _ = slide.generate_slide({"seed": "cats"}, (set(), 10))
+    assert "boss_picture" in {element.role for element in shown.to_deck_slide().elements}
+    # (one that stands in for a slide out of time looks nothing up, nor breaks at all)
+    with random_util.use(random_util.Rng(1)):
+        assert generate({"seed": "cats", slides.STANDING_IN: True}) == org_chart({})
+    monkeypatch_free = slide_texts.broken(org_chart, slide_texts.at(-1), {"emoji": 1.0}, 1.0)
+    with random_util.use(random_util.Rng(1)):
+        assert monkeypatch_free({"seed": "cats"})[:3] == ("Who's in charge", "The van keys", "Me")
+
+
+def test_the_third_of_three_pictures_breaks_the_pattern_most_of_the_time():
+    for name in ("Three Captions Weird", "Three Captions Weird (CRF)"):
+        variants = slide_generators.get(name).llm.variants
+        breaking_share = sum(variant.weight for variant in variants if "pattern" in variant.note)
+        assert breaking_share / sum(variant.weight for variant in variants) == pytest.approx(0.6), name
+    three = slide_generators.get("Three Captions Weird").llm
+    varied = next(
+        recipe
+        for recipe in (three.varied(random_util.Rng(seed)) for seed in range(40))
+        if "breaking the pattern" in recipe.brief
+    )
+    lines = prompt.slide_lines(prompt.PlannedSlide(4, "Three Captions Weird", varied, "naps"))
+    assert any(line.startswith("- image_3_query: an image search query for the third picture") for line in lines)
+    assert any(line.startswith("- caption_3: the right caption: one that breaks the pattern") for line in lines)

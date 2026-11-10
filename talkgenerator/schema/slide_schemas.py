@@ -54,10 +54,9 @@ _HOBBY = "the presenter's weird hobby"
 _CONTRAST = "Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing"
 _SEQUENCE = "Three captioned images that build up, like 'Good, Better, Best' or three steps of a plan"
 _CONCLUSIONS_TITLE = "a title for the conclusions, in a few words of your own"
-# PATTERN BREAKS (docs/v5-plan.md, D73): a slide that lists things breaks its pattern now and then, in its last thing, as
-# 2019's talks put a weird picture in the last of three columns: the user missed "playing with the unexpected"
-# (2026-11-10). Three captioned pictures in a row do most of the time (the user remembered the weird picture last as
-# usual), about a third of the slides of reviews, red flags and KPI tiles, a fifth of the tier lists and agendas
+# The third of three captioned pictures in a row breaks the pattern of the first two most of the time, as 2019's talks
+# had a weird picture last, which the user remembered as usual (2026-11-10, D73: a list's other pattern breaks are its
+# kind's, see talkgenerator.plan.kinds.PatternBreak)
 _THIRD_BREAKS = (
     "with the third one breaking the pattern of the first two: an unexpected picture, under a caption that doesn't "
     "follow theirs"
@@ -67,6 +66,11 @@ _THIRD_PICTURE = (
     "an image search query for the third picture: something unexpected that breaks the pattern of the first two, in "
     "two to six plain English words"
 )
+# (and classic ones: a list's punchline an emoji alone or a picture in its place, a diagram's an emoji, D73)
+_PICTURE_OR_EMOJI = {"emoji": 1.0, "picture": 1.3}
+_EMOJI = {"emoji": 1.0}
+_DIAGRAM_BREAKS = 0.25
+_LATE_PICTURES = 0.2  # (of the classic red flags and reviews, whose last one is a few words 35% of the time already)
 _SEQUENCE_VARIANTS = (
     Variant(0.4),
     Variant(0.6, note=_THIRD_BREAKS, hints={"caption_3": _THIRD_CAPTION, "image_3_query": _THIRD_PICTURE}),
@@ -794,13 +798,6 @@ def _drawn(content, slide_class, weight, tags, name, recipe, repeats=2) -> Slide
     )
 
 
-# (the last of KPI tiles, breaking their pattern now and then: D73)
-_LAST_FIGURE_BREAKS = "the last one breaking the pattern: a word, a symbol or an emoji where a number would be"
-_LAST_NUMBER = (
-    "the {which} and last figure's number: a word, a symbol or an emoji instead of a number, such as a dashboard "
-    "would never show (the pattern break)"
-)
-
 # FIGURES: over a picture of what they're about, if one is found (three big numbers in four, and half the KPI tiles:
 # D63, as the user found slides of text boring), from one of many sources (the backdrop look's)
 number_slide_generators = _register(
@@ -836,19 +833,8 @@ number_slide_generators = _register(
                 "start out plausible, the last one the punchline",
                 variants=pictured(
                     (
-                        Variant(0.65, frozenset({"number_4", "label_4"}), "with three figures"),
-                        Variant(
-                            0.35,
-                            frozenset({"number_4", "label_4"}),
-                            f"with three figures, {_LAST_FIGURE_BREAKS}",
-                            hints={"number_3": _LAST_NUMBER.format(which="third")},
-                        ),
-                        Variant(0.65, note="with four figures"),
-                        Variant(
-                            0.35,
-                            note=f"with four figures, {_LAST_FIGURE_BREAKS}",
-                            hints={"number_4": _LAST_NUMBER.format(which="fourth")},
-                        ),
+                        Variant(1, frozenset({"number_4", "label_4"}), "with three figures"),
+                        Variant(1, note="with four figures"),
                     ),
                     "background",
                     slide_texts.KPI_PICTURES,
@@ -965,12 +951,6 @@ meme_slide_generators = _register(
 _FUN_FACT_BRIEF = "A fun fact about the concept: something absurd, stated as certain, that the presenter has to back up"
 # (the reviews' punchline: models gave three glowing ones in a row, a motivational speaker's especially)
 _ONE_STAR = "how many stars the {which} and last reviewer gives: 1, the one-star review that's the punchline"
-# (and its pattern break now and then, after long and glowing ones: D73)
-_SHORT_REVIEW = "what the third and last reviewer wrote: one to three words, no more (the pattern break)"
-_EMOJI_REVIEW = "what the third and last reviewer wrote: a single emoji, nothing else (the pattern break)"
-# (the last red flag, breaking their pattern now and then: D73)
-_COUNTS = {3: "three", 4: "four", 5: "five"}
-_LAST_FLAG = "the last red flag, the punchline: two or three words, where the others are whole sentences"
 
 
 def _fun_fact(photo, suffix: str = "") -> list[SlideGeneratorData]:
@@ -1125,7 +1105,11 @@ karaoke_slide_generators = _register(
             repeats=1,
         ),
         _drawn(
-            slide_texts.pictured(slide_texts.generate_flowchart, box_picture_slot(), slide_texts.flowchart_boxes),
+            slide_texts.pictured(
+                slide_texts.broken(slide_texts.generate_flowchart, slide_texts.at(4), _EMOJI, _DIAGRAM_BREAKS),
+                box_picture_slot(),
+                slide_texts.flowchart_boxes,
+            ),
             slides.FlowchartSlide,
             _middle(0.8),
             ["flowchart", "diagram"],
@@ -1138,7 +1122,12 @@ karaoke_slide_generators = _register(
             ),
         ),
         _drawn(
-            slide_texts.generate_tier_list,
+            slide_texts.broken(
+                slide_texts.generate_tier_list,
+                slide_texts.at(1, "s_tier"),
+                _PICTURE_OR_EMOJI,
+                picture=box_picture_slot(),
+            ),
             slides.TierListSlide,
             _middle(1),
             ["tier_list"],
@@ -1157,12 +1146,6 @@ karaoke_slide_generators = _register(
                         f"with only its S, A and F tiers, {EMOJI_NOTE}",
                         hints=_TIER_EMOJI,
                         emoji=_TIER_MOODS,
-                    ),
-                    # (D73)
-                    Variant(
-                        2 / 3,
-                        note="its S tier breaking the pattern: a single emoji where the other tiers have words",
-                        hints={"s_tier": "the S tier, the very best: a single emoji, nothing else (the pattern break)"},
                     ),
                 ),
             ),
@@ -1184,7 +1167,12 @@ karaoke_slide_generators = _register(
             repeats=4,
         ),
         _drawn(
-            slide_texts.generate_alignment_chart,
+            slide_texts.broken(
+                slide_texts.generate_alignment_chart,
+                slide_texts.at(-1, "chaotic_evil"),
+                _PICTURE_OR_EMOJI,
+                picture=box_picture_slot(),
+            ),
             slides.AlignmentChartSlide,
             _middle(0.8),
             ["alignment_chart"],
@@ -1198,7 +1186,13 @@ karaoke_slide_generators = _register(
             repeats=3,
         ),
         _drawn(
-            slide_texts.generate_red_flags,
+            slide_texts.broken(
+                slide_texts.generate_red_flags,
+                slide_texts.last("flag"),
+                {"picture": 1.0},
+                _LATE_PICTURES,
+                picture=box_picture_slot(),
+            ),
             slides.RedFlagsSlide,
             _middle(0.8),
             ["red_flags"],
@@ -1207,23 +1201,21 @@ karaoke_slide_generators = _register(
                 "red_flags",
                 brief="Red flags about the concept, as in dating advice: warning signs that someone or something "
                 "around it is trouble, each more alarming than the last",
-                variants=tuple(
-                    variant
-                    for count, omitted in ((3, {"flag_4", "flag_5"}), (4, {"flag_5"}), (5, set()))
-                    for variant in (
-                        Variant(0.65, frozenset(omitted), f"with {_COUNTS[count]} red flags"),
-                        Variant(
-                            0.35,
-                            frozenset(omitted),
-                            f"with {_COUNTS[count]} red flags, the last one breaking the pattern: two or three words",
-                            hints={f"flag_{count}": _LAST_FLAG},
-                        ),
-                    )
+                variants=(
+                    Variant(1, frozenset({"flag_4", "flag_5"}), "with three red flags"),
+                    Variant(1, frozenset({"flag_5"}), "with four red flags"),
+                    Variant(1, note="with five red flags"),
                 ),
             ),
         ),
         _drawn(
-            slide_texts.generate_reviews,
+            slide_texts.broken(
+                slide_texts.generate_reviews,
+                slide_texts.last_review,
+                {"picture": 1.0},
+                _LATE_PICTURES,
+                picture=box_picture_slot(),
+            ),
             slides.ReviewsSlide,
             _middle(0.8),
             ["reviews"],
@@ -1239,17 +1231,6 @@ karaoke_slide_generators = _register(
                         frozenset({"stars_3", "review_3", "reviewer_3"}),
                         "with two reviews",
                         hints={"stars_2": _ONE_STAR.format(which="second")},
-                    ),
-                    # (D73)
-                    Variant(
-                        1,
-                        note="with three reviews, the last one breaking the pattern: a one-star review of a few words",
-                        hints={"stars_3": _ONE_STAR.format(which="third"), "review_3": _SHORT_REVIEW},
-                    ),
-                    Variant(
-                        0.6,
-                        note="with three reviews, the last one breaking the pattern: an emoji alone",
-                        hints={"stars_3": _ONE_STAR.format(which="third"), "review_3": _EMOJI_REVIEW},
                     ),
                 ),
             ),
@@ -1274,11 +1255,6 @@ karaoke_slide_generators = _register(
 # THE TALK'S STRUCTURE: an agenda after the title, a section's divider in the middle, "Questions?" at the end
 _AGENDA_ITEMS = "three to five parts of the talk, in the order the slides after this one come, separated by |"
 _AGENDA_EMOJI = with_emoji("agenda", ("items",), {"items": _AGENDA_ITEMS}, each=True)
-# (its pattern break now and then: D73)
-_AGENDA_BREAKS = {
-    "items": f"{_AGENDA_ITEMS}, the last one breaking the pattern: something that has nothing to do with the talk, in a "
-    "few words"
-}
 
 structure_slide_generators = _register(
     "structure",
@@ -1294,11 +1270,7 @@ structure_slide_generators = _register(
                 brief="The talk's agenda: what it will cover",
                 hints={"items": _AGENDA_ITEMS},
                 # (a quarter of them with an emoji in front of every item: docs/v5-plan.md, D65)
-                variants=(
-                    Variant(3),
-                    Variant(1, note=EMOJI_NOTE, hints=_AGENDA_EMOJI, emoji={"items": "agenda"}),
-                    Variant(1, note="its last item breaking the pattern", hints=_AGENDA_BREAKS),  # (D73)
-                ),
+                variants=(Variant(3), Variant(1, note=EMOJI_NOTE, hints=_AGENDA_EMOJI, emoji={"items": "agenda"})),
             ),
         ),
         _drawn(
@@ -1340,7 +1312,7 @@ native_diagram_slide_generators = _register(
     "diagram",
     [
         _drawn(
-            slide_texts.generate_timeline,
+            slide_texts.broken(slide_texts.generate_timeline, slide_texts.last(), _EMOJI, _DIAGRAM_BREAKS),
             slides.TimelineSlide,
             _middle(0.4),
             ["timeline", "diagram"],
@@ -1348,7 +1320,11 @@ native_diagram_slide_generators = _register(
             Recipe("timeline", brief="The concept's made-up history, as a timeline whose last moment is the punchline"),
         ),
         _drawn(
-            slide_texts.pictured(slide_texts.generate_pyramid, box_picture_slot(), slide_texts.numbered_boxes("level")),
+            slide_texts.pictured(
+                slide_texts.broken(slide_texts.generate_pyramid, slide_texts.at(1), _EMOJI, _DIAGRAM_BREAKS),
+                box_picture_slot(),
+                slide_texts.numbered_boxes("level"),
+            ),
             slides.PyramidSlide,
             _middle(0.4),
             ["pyramid", "diagram"],
@@ -1358,7 +1334,11 @@ native_diagram_slide_generators = _register(
             ),
         ),
         _drawn(
-            slide_texts.pictured(slide_texts.generate_funnel, box_picture_slot(), slide_texts.numbered_boxes("stage")),
+            slide_texts.pictured(
+                slide_texts.broken(slide_texts.generate_funnel, slide_texts.last(), _EMOJI, _DIAGRAM_BREAKS),
+                box_picture_slot(),
+                slide_texts.numbered_boxes("stage"),
+            ),
             slides.FunnelSlide,
             _middle(0.4),
             ["funnel", "diagram"],
@@ -1376,7 +1356,12 @@ native_diagram_slide_generators = _register(
             Recipe("cycle", brief="A vicious circle about the concept: steps that lead to each other, and back"),
         ),
         _drawn(
-            slide_texts.generate_org_chart,
+            slide_texts.broken(
+                slide_texts.generate_org_chart,
+                slide_texts.at(1, "boss"),
+                {"emoji": 1.0, "picture": 1.5},
+                picture=box_picture_slot(),
+            ),
             slides.OrgChartSlide,
             _middle(0.4),
             ["org_chart", "diagram"],
@@ -1384,7 +1369,11 @@ native_diagram_slide_generators = _register(
             Recipe("org_chart", brief="Who's really in charge of the concept, as an org chart with a surprising boss"),
         ),
         _drawn(
-            slide_texts.pictured(slide_texts.generate_iceberg, box_picture_slot(), slide_texts.iceberg_boxes),
+            slide_texts.pictured(
+                slide_texts.broken(slide_texts.generate_iceberg, slide_texts.last(), _EMOJI, _DIAGRAM_BREAKS),
+                box_picture_slot(),
+                slide_texts.iceberg_boxes,
+            ),
             slides.IcebergSlide,
             _middle(0.4),
             ["iceberg", "diagram"],
