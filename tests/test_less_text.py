@@ -3,9 +3,10 @@
 Charts and diagrams try a picture first, now and then, in their place (a real chart from the internet for a chart, a
 weird picture for a diagram), under their title: a slide is that picture when one is found (in its time, in a talk with
 a time limit per slide), and else its text version, which stands in for it until its picture comes. Planned and classic
-slides alike; DISABLE_PICTURE_FIRST (which offline tests have) switches it off. And a slide that lists things breaks its
-pattern now and then, in its last thing: a review of a few words or an emoji alone, a red flag of a few words, a KPI
-tile without a number, a third picture that doesn't follow the first two.
+slides alike; DISABLE_PICTURE_FIRST (which offline tests have) switches it off. And a slide that lists things, or a
+diagram, breaks its pattern now and then in its punchline: an emoji alone, a few words, or a picture in its place (red
+flags, reviews, an org chart's boss, a tier list's S tier, an alignment chart's chaotic evil), and the third of three
+pictures doesn't follow the first two; DISABLE_PATTERN_BREAKS (which offline tests have too) switches them off.
 
 The talks are made with test_slide_time_limit's small fake schemas, fake model and fake image finder.
 """
@@ -364,6 +365,11 @@ def test_a_lists_punchline_can_be_a_picture_in_its_texts_place(images, slide, ro
     assert role not in elements and elements[f"{role}_picture"].kind == "image"  # (instead of its text)
     clicks = [element.appears_on_click for element in elements.values() if element.appears_on_click]
     assert elements[f"{role}_picture"].appears_on_click == max(clicks)  # (as the punchline, last)
+    from talkgenerator.checks.deck import check_completeness
+    from talkgenerator.models.deck import Deck
+
+    deck = Deck(generator="test", slides=(slides.TitleSlide("Geese", None).to_deck_slide(), made.to_deck_slide()))
+    assert check_completeness(deck) == []  # (a picture in a thing's place is no thing missing)
 
 
 def test_a_planned_punchlines_picture_takes_its_texts_place_or_it_stays_as_written(images, photos, breaking):

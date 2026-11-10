@@ -1445,7 +1445,8 @@ odd combinations, odd content).
   talk that generates pictures), and the model's words stay where none is found; the five kinds' layouts put it where
   the punchline's text would go (`engine._text_or_picture`: in a red flag's row or card, a review's card or row, the
   boss's box, made a framed portrait, the S tier's band, chaotic evil's tile), and so does the 2019 template, which
-  lays them out with the same engine. The third of three captioned pictures in a row is unexpected 60% of the time,
+  lays them out with the same engine; an emoji alone is drawn as large as its box takes (up to 220 px, `_style`), and
+  the deck checks take a thing's picture for the thing. The third of three captioned pictures in a row is unexpected 60% of the time,
   with a query and a caption of its own (that recipe's variants: the user remembered it as usual). Classic, as often:
   the TED schema's lists and diagrams wrapped (`slide_texts.broken`: an emoji, the thing's own by a word of it or else
   one of `emoji.json`'s new "surprise" mood; or a picture of the punchline's words), red flags and reviews in a few

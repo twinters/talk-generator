@@ -42,7 +42,7 @@ from talkgenerator.models.deck import (
 from talkgenerator.models.theme import TextEffect, Theme
 from talkgenerator.render import charts, diagrams  # (where a diagram's labels go, and a trend's points)
 from talkgenerator.sources import memes
-from talkgenerator.util import random_util
+from talkgenerator.util import emoji_util, random_util
 
 WIDTH: Final = 1920
 HEIGHT: Final = 1080
@@ -667,6 +667,9 @@ def credits_legibility(style: TextStyle, behind: Sequence[str]) -> float:
     return worst
 
 
+EMOJI_LARGEST: Final = 220  # (an emoji alone's size at most: see _style)
+
+
 def _style(
     text: str,
     box: Box,
@@ -683,6 +686,9 @@ def _style(
     bold = (theme.fonts.heading_bold if spec.heading else False) or spec.bold
     uppercase = spec.uppercase or (theme.fonts.heading_uppercase if spec.heading else False)
     largest = max(spec.smallest, round(spec.largest * theme.text_scale / fit.STEP) * fit.STEP)
+    if text.strip() and not emoji_util.plain(text).strip():
+        # (an emoji alone, as a punchline that breaks its list's pattern: as large as its box takes, D73)
+        largest = max(largest, round(min(EMOJI_LARGEST, box.h * 0.8) / fit.STEP) * fit.STEP)
     fitted = fit.fit(text.upper() if uppercase else text, box.w, box.h, font, largest, spec.smallest, bold)
     colors = {
         "text": theme.palette.text,

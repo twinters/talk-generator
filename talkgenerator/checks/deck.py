@@ -241,7 +241,8 @@ def check_completeness(deck: Deck, expected_slides: int | None = None) -> list[F
             findings.append(Finding("completeness", "error", f"an unknown type of slide: {slide.type!r}", number))
             continue
         for role in required:
-            if slide.element(role) is None:
+            # (or a picture in its text's place: a list's punchline that breaks the pattern, D73)
+            if slide.element(role) is None and slide.element(f"{role}_picture") is None:
                 findings.append(Finding("completeness", "error", f"no {role} on this {slide.type} slide", number))
         for element in slide.elements:
             if isinstance(element, TextElement) and not element.text.strip():
