@@ -515,8 +515,8 @@ _GENERATORS: Final = [
             hints={
                 "kicker": "a short heading over the problem, as a pitch deck has it, such as 'The problem' or 'The "
                 "pain'",
-                "detail": "a short line under it that makes the pain hit home: how often it happens, to how many "
-                "people, or what it costs them; it appears on a click",
+                "detail": "a short line under it, a few words, that makes the pain hit home: how often it happens, "
+                "to how many people, or what it costs them; it appears on a click",
             },
             variants=problem_variants(_ANGLES),
         ),
@@ -533,7 +533,7 @@ _GENERATORS: Final = [
             (_BACKDROP,),
             brief="The problem the startup solves, as a bold statement over a photo: a pain that everyone "
             "supposedly has with the concept",
-            hints={"text": "the problem, as one bold sentence or question, stated as a crisis"},
+            hints={"text": "the problem, stated as a crisis in a few words (eight at most): a bold claim or question"},
         ),
     ),
     _part(

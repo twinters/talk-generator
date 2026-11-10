@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import functools
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from functools import cache
 from typing import Any, Final, TypeVar
 
@@ -22,7 +22,7 @@ from talkgenerator.models import classic
 from talkgenerator.plan.languages import ENGLISH
 from talkgenerator.slide import slides
 from talkgenerator.sources import conceptnet, emoji, memes, packs, text_generator
-from talkgenerator.util import language_util, random_util
+from talkgenerator.util import emoji_util, language_util, random_util
 
 _LONGEST_WORD: Final = 24  # a related word longer than this is a phrase that doesn't fit an option or an item
 ImageSource = Callable[[dict[str, Any]], Any]
@@ -200,8 +200,25 @@ def kpi(image: ImageSource) -> Callable[[dict[str, Any]], tuple[Any, ...] | None
     return generate
 
 
+# PATTERN BREAKS (docs/v5-plan.md, D73): the last thing of a classic list breaks its pattern now and then, as 2019's
+# talks put a weird picture in the last of three columns: a review of a few words or an emoji after long ones, a red flag
+# of a few words, a KPI tile whose figure is no number
+PATTERN_BREAK: Final = 0.35
+# What a KPI tile shows where its figure would be, when it breaks the pattern
+_NOT_NUMBERS: Final = ("Yes", "No", "Lots", "Soon", "Maybe", "?", "Huh", "Ask Bob", "🤷", "🔥", "📉", "😶")
+
+
+def _breaking() -> bool:
+    """Whether classic lists break their pattern (see talkgenerator.plan.kinds.pattern_breaks)."""
+    from talkgenerator.plan.kinds import pattern_breaks  # (the kinds build slides of the classes these fill)
+
+    return pattern_breaks()
+
+
 def _kpi_number(punchline: bool) -> str:
     if punchline:
+        if _breaking() and random_util.random() < PATTERN_BREAK:  # (no number at all: D73)
+            return random_util.choice(_NOT_NUMBERS)
         return random_util.choice(("0", "∞", "1", "-100%", "9,001", "404"))
     return random_util.choice(
         (
@@ -445,9 +462,9 @@ def pictured(
     @functools.wraps(generate)
     def generator(presentation_context: dict[str, Any]) -> tuple[Any, ...] | None:
         generated = generate(presentation_context)
-        if generated is None:
-            return None
-        texts = {box: text for box, text in boxes(generated).items() if text}
+        if generated is None or presentation_context.get(slides.STANDING_IN):  # (standing in: no lookups, D73)
+            return generated
+        texts = {box: text for box, text in boxes(generated).items() if text and emoji_util.plain(text).strip()}
         found = []
         for box in slides.picked_boxes(list(texts), most, odds):
             image = picture({**presentation_context, "seed": texts[box]})
@@ -456,6 +473,62 @@ def pictured(
         return (*generated, slides.Pictures(tuple(found))) if found else generated
 
     return generator
+
+
+# PATTERN BREAKS OF CLASSIC LISTS (docs/v5-plan.md, D73): a list's punchline in another form now and then, as a
+# planned one's (see talkgenerator.plan.kinds.PatternBreak): an emoji alone, or a picture in its place
+Punchline = Callable[[tuple[Any, ...]], tuple[int, str]]
+
+
+def broken(
+    generate: Generator,
+    punchline: Punchline,
+    ways: Mapping[str, float],
+    odds: float = PATTERN_BREAK,
+    picture: ImageSource | None = None,
+) -> Generator:
+    """The generator of a list's arguments whose punchline (punchline finds it in them: its place, and the name of its
+    box, for a picture) breaks the pattern now and then, that share of the time (odds), in one of the ways by weight:
+    "emoji", an emoji alone in its place (the thing's own, by its words, or else a surprising one), or "picture", a
+    picture of it from the image source in its place (after the slide's other arguments, as slides.Pictures, which the
+    slide shows instead of its text), when one is found (else it stays as it is). Not for a slide that stands in for
+    another (which looks nothing up), nor with DISABLE_PATTERN_BREAKS."""
+
+    @functools.wraps(generate)
+    def generator(presentation_context: dict[str, Any]) -> tuple[Any, ...] | None:
+        generated = generate(presentation_context)
+        if generated is None or presentation_context.get(slides.STANDING_IN) or not _breaking():
+            return generated
+        if random_util.random() >= odds:
+            return generated
+        way = random_util.weighted_random([(weight, name) for name, weight in ways.items()])
+        index, box = punchline(tuple(generated))
+        index %= len(generated)  # (counted from the end, as -1 is the last)
+        thing = str(generated[index] or "")
+        if way == "emoji" or picture is None:
+            return (*generated[:index], emoji.pick(thing, "surprise"), *generated[index + 1 :])
+        words = emoji_util.plain(thing).strip() or str(presentation_context["seed"])
+        image = picture({**presentation_context, "seed": words})
+        return (*generated, slides.Pictures(((box, image),))) if image is not None else tuple(generated)
+
+    return generator
+
+
+def at(index: int, box: str = "") -> Punchline:
+    """A punchline at this place among a generator's arguments (its box's name, for a picture)."""
+    return lambda generated: (index, box)
+
+
+def last(prefix: str = "") -> Punchline:
+    """A punchline that's the last of a generator's arguments (its box's name, for a picture, by its number: the last
+    of a list of things after the title, prefix_<n>)."""
+    return lambda generated: (len(generated) - 1, f"{prefix}_{len(generated) - 1}" if prefix else "")
+
+
+def last_review(generated: tuple[Any, ...]) -> tuple[int, str]:
+    """The last review's text among a reviews slide's arguments (its title, then each review's stars, text and
+    reviewer), and its box's name, by its number."""
+    return len(generated) - 2, f"review_{(len(generated) - 1) // 3}"
 
 
 def numbered_boxes(prefix: str, first: int = 1, count: int = 3) -> Callable[[tuple[Any, ...]], dict[str, str]]:
@@ -784,11 +857,14 @@ def generate_alignment_chart(presentation_context: dict[str, Any]) -> tuple[Any,
 @_unless_sensitive
 def generate_red_flags(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
     """Red flags about the seed: a title, two to four warning signs about it and words related to it, and a last one,
-    the punchline."""
+    the punchline, which breaks their pattern now and then (PATTERN_BREAK): a few words where they're sentences."""
     related = related_words(presentation_context["seed"])
     title = _template("karaoke.red_flags_title")(_context(presentation_context))
     flags = _different("karaoke.red_flag", presentation_context, related, random_util.randint(2, 4))
-    last = _template("karaoke.red_flag_last")(_context(presentation_context, related))
+    # (the last one breaking the pattern now and then, in a few words: D73)
+    short = _breaking() and random_util.random() < PATTERN_BREAK
+    last_rule = "karaoke.red_flag_short" if short else "karaoke.red_flag_last"
+    last = _template(last_rule)(_context(presentation_context, related))
     if not title or len(flags) < 2 or not last:
         return None
     return title, *flags, last
@@ -810,11 +886,15 @@ def _reviewer() -> str | None:
 @_unless_sensitive
 def generate_reviews(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
     """Made-up reviews of the seed: a title, then one or two glowing reviews (five stars or four) and a one-star one
-    last, the punchline, each its stars, what it says and who wrote it."""
+    last, the punchline, each its stars, what it says and who wrote it; the last one breaks their pattern now and then
+    (PATTERN_BREAK): a few words, or an emoji alone."""
     related = related_words(presentation_context["seed"])
     title = _template("karaoke.reviews_title")(_context(presentation_context))
     glowing = _different("karaoke.review_glowing", presentation_context, related, random_util.randint(1, 2))
-    bad = _template("karaoke.review_one_star")(_context(presentation_context, related))
+    # (the last one breaking the pattern now and then, in a few words or an emoji alone: D73)
+    short = _breaking() and random_util.random() < PATTERN_BREAK
+    bad_rule = "karaoke.review_short" if short else "karaoke.review_one_star"
+    bad = _template(bad_rule)(_context(presentation_context, related))
     if not title or not glowing or not bad:
         return None
     reviews: list[str | None] = []

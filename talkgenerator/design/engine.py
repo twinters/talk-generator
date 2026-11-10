@@ -42,7 +42,7 @@ from talkgenerator.models.deck import (
 from talkgenerator.models.theme import TextEffect, Theme
 from talkgenerator.render import charts, diagrams  # (where a diagram's labels go, and a trend's points)
 from talkgenerator.sources import memes
-from talkgenerator.util import random_util
+from talkgenerator.util import emoji_util, random_util
 
 WIDTH: Final = 1920
 HEIGHT: Final = 1080
@@ -667,6 +667,17 @@ def credits_legibility(style: TextStyle, behind: Sequence[str]) -> float:
     return worst
 
 
+EMOJI_LARGEST: Final = 220  # (an emoji alone's size at most: see _style)
+
+
+def _emoji_alone(text: str) -> bool:
+    """Whether the text is an emoji alone (or a few), with nothing else: no letter first, which most texts have, so
+    that fitting them stays as fast as it was (finding emoji takes a hundred times as long)."""
+    return (
+        bool(text.strip()) and not any(character.isalpha() for character in text) and not emoji_util.plain(text).strip()
+    )
+
+
 def _style(
     text: str,
     box: Box,
@@ -683,6 +694,9 @@ def _style(
     bold = (theme.fonts.heading_bold if spec.heading else False) or spec.bold
     uppercase = spec.uppercase or (theme.fonts.heading_uppercase if spec.heading else False)
     largest = max(spec.smallest, round(spec.largest * theme.text_scale / fit.STEP) * fit.STEP)
+    if _emoji_alone(text):
+        # (an emoji alone, as a punchline that breaks its list's pattern: as large as its box takes, D73)
+        largest = max(largest, round(min(EMOJI_LARGEST, box.h * 0.8) / fit.STEP) * fit.STEP)
     fitted = fit.fit(text.upper() if uppercase else text, box.w, box.h, font, largest, spec.smallest, bold)
     colors = {
         "text": theme.palette.text,
@@ -1439,8 +1453,31 @@ def _click(roles: dict[str, Content], role: str) -> int | None:
 
 
 def _numbered(roles: dict[str, Content], prefix: str, most: int) -> list[int]:
-    """The numbers of the slide's elements of a kind that it has, such as its options (option_1, option_2...)."""
-    return [number for number in range(1, most + 1) if f"{prefix}_{number}" in roles]
+    """The numbers of the slide's elements of a kind that it has, such as its options (option_1, option_2...): a thing
+    that's a picture in its text's place too (a list's pattern break, D73)."""
+    return [
+        number
+        for number in range(1, most + 1)
+        if f"{prefix}_{number}" in roles or isinstance(roles.get(f"{prefix}_{number}_picture"), ImageElement)
+    ]
+
+
+def _item_click(roles: dict[str, Content], role: str) -> int | None:
+    """The click on which a list's thing appears: its text's, or the picture's in its place (D73)."""
+    click = _click(roles, role)
+    return click if click is not None or role in roles else _click(roles, f"{role}_picture")
+
+
+def _text_or_picture(
+    placement: Placement, roles: dict[str, Content], role: str, box: Box, spec: str, beside: bool = False
+) -> None:
+    """Where a list's thing goes: its text in the box, or a picture in its text's place, as the list's pattern break
+    (docs/v5-plan.md, D73), as large as fits the box, in its middle (or at its left end, beside: a red flag's, by
+    its flag)."""
+    if role not in roles and isinstance(roles.get(f"{role}_picture"), ImageElement):
+        _place_picture(placement, role, _beside_picture(box) if beside else _picture_box(box))
+        return
+    placement.boxes[role] = (box, spec)
 
 
 def _spread(top: float, bottom: float, count: int, gap: float, most: float) -> tuple[float, float]:
@@ -2358,6 +2395,9 @@ def _org_chart(side: bool) -> Callable[[dict[str, Content], Theme], Placement]:
         y = top + 24 + (_CONTENT_BOTTOM - top - 24 - (2 * box_height + 2 * drop)) / 2
         centre = (left + right) / 2
         boss = Box(x=centre - 300, y=y, w=600, h=box_height)
+        if "boss" not in roles and _has_picture(roles, "boss"):
+            # (a picture of who's in charge: a framed portrait, D73)
+            boss = Box(x=centre - 130, y=y, w=260, h=box_height + 30)
         gap = 24.0 if side else 48.0  # (beside a title, the boxes need all the room there is)
         inset = 12.0 if side else 20.0
         width = min(420.0, (right - left - gap * (len(reports) - 1)) / len(reports))
@@ -2382,9 +2422,9 @@ def _org_chart(side: bool) -> Callable[[dict[str, Content], Theme], Placement]:
             )
             placement.boxes[f"report_{index}"] = (_inset(report, inset), "box")
             placement.colors[f"report_{index}"] = _on([palette.surface], theme)
-        click = _click(roles, "boss")
+        click = _item_click(roles, "boss")
         placement.shapes.append(ShapeElement(role="boss box", box=boss, color=palette.accent, appears_on_click=click))
-        placement.boxes["boss"] = (_inset(boss, 20), "boss")
+        _text_or_picture(placement, roles, "boss", _inset(boss, 12 if "boss" not in roles else 20), "boss")
         placement.colors["boss"] = _on([palette.accent], theme, color.LARGE_TEXT_CONTRAST)
         return placement
 
@@ -3107,11 +3147,13 @@ def _tier_list(side: bool) -> Callable[[dict[str, Content], Theme], Placement]:
             band = Box(x=tile.x + tile.w + 12, y=y, w=right - tile.x - tile.w - 12, h=height)
             placement.shapes.append(ShapeElement(role=f"tier {tier} band", box=band, color=palette.surface))
             items = [index for index in range(1, 4) if f"item_{tier}_{index}" in roles]
+            if not items and isinstance(roles.get(f"item_{tier}_1_picture"), ImageElement):
+                items = [1]  # (a picture in its things' place, as the list's pattern break: D73)
             gap = 16
             item_width = (band.w - gap * (len(items) + 1)) / max(1, len(items))
             for position, index in enumerate(items):
                 item = Box(x=band.x + gap + position * (item_width + gap), y=y + 8, w=item_width, h=height - 16)
-                placement.boxes[f"item_{tier}_{index}"] = (item, "tier item")
+                _text_or_picture(placement, roles, f"item_{tier}_{index}", item, "tier item", beside=True)
                 placement.colors[f"item_{tier}_{index}"] = on_band
             y += height + 12
         return placement
@@ -3328,9 +3370,9 @@ def _alignment_chart(side: bool) -> Callable[[dict[str, Content], Theme], Placem
             tile = Box(x=grid_x + across * (cell_w + gap), y=grid_y + down * (cell_h + gap), w=cell_w, h=cell_h)
             punchline = alignment == classic.ALIGNMENTS[-1]
             fill = palette.accent_2 if punchline else color.mix(palette.surface, palette.accent, 0.1 * down)
-            click = _click(roles, alignment)
+            click = _item_click(roles, alignment)
             placement.shapes.append(ShapeElement(role=f"{alignment} box", box=tile, color=fill, appears_on_click=click))
-            placement.boxes[alignment] = (_inset(tile, 14), "cell")
+            _text_or_picture(placement, roles, alignment, _inset(tile, 14), "cell")
             placement.colors[alignment] = _on([fill], theme)
         return placement
 
@@ -3388,9 +3430,9 @@ def _red_flags(roles: dict[str, Content], theme: Theme) -> Placement:
     for index in flags:
         role = f"flag_{index}"
         icon = Box(x=MARGIN + 24, y=y + (height - icon_h) / 2, w=0.85 * icon_h, h=icon_h)
-        _flag(placement, role, icon, theme, _slide_colours(theme), _click(roles, role))
+        _flag(placement, role, icon, theme, _slide_colours(theme), _item_click(roles, role))
         x = icon.x + icon.w + 48
-        placement.boxes[role] = (Box(x=x, y=y, w=WIDTH - MARGIN - x, h=height), "flag")
+        _text_or_picture(placement, roles, role, Box(x=x, y=y, w=WIDTH - MARGIN - x, h=height), "flag", beside=True)
         y += height + 20
     return placement
 
@@ -3406,7 +3448,7 @@ def _red_flags_cards(roles: dict[str, Content], theme: Theme) -> Placement:
     height = min(600.0, _CONTENT_BOTTOM - top)
     y = top + (_CONTENT_BOTTOM - top - height) / 2
     for position, index in enumerate(flags):
-        role, click = f"flag_{index}", _click(roles, f"flag_{index}")
+        role, click = f"flag_{index}", _item_click(roles, f"flag_{index}")
         x = MARGIN + position * (width + gap)
         card = Box(x=x, y=y, w=width, h=height)
         placement.shapes.append(
@@ -3415,7 +3457,8 @@ def _red_flags_cards(roles: dict[str, Content], theme: Theme) -> Placement:
         icon = Box(x=x + (width - 128) / 2, y=y + 40, w=128, h=150)
         _flag(placement, role, icon, theme, [palette.surface], click)
         text_top = icon.y + icon.h + 32
-        placement.boxes[role] = (Box(x=x + 28, y=text_top, w=width - 56, h=y + height - 28 - text_top), "card flag")
+        under = Box(x=x + 28, y=text_top, w=width - 56, h=y + height - 28 - text_top)
+        _text_or_picture(placement, roles, role, under, "card flag")
         placement.colors[role] = _on([palette.surface], theme)
     return placement
 
@@ -3424,7 +3467,8 @@ def _at_most(prefix: str, most: int) -> Callable[[dict[str, Content]], bool]:
     """Whether the slide has at most so many of its things (red flags on cards side by side, say)."""
 
     def few(roles: dict[str, Content]) -> bool:
-        return f"{prefix}_{most + 1}" not in roles
+        # (a thing that's a picture in its text's place counts too: D73)
+        return f"{prefix}_{most + 1}" not in roles and f"{prefix}_{most + 1}_picture" not in roles
 
     return few
 
@@ -3445,7 +3489,7 @@ def _stars(placement: Placement, roles: dict[str, Content], index: int, at: Box,
     gives, the rest grey, all appearing with the review, on its click."""
     gold = color.readable_on(_GOLD, [under], 2.0)
     grey = color.mix(under, theme.palette.text, 0.18)
-    rating, click, size = _rating(roles, index), _click(roles, f"review_{index}"), at.h
+    rating, click, size = _rating(roles, index), _item_click(roles, f"review_{index}"), at.h
     for number in range(5):
         box = Box(x=at.x + number * 1.12 * size, y=at.y, w=size, h=size)
         placement.shapes.append(
@@ -3464,13 +3508,23 @@ def _stars_width(size: float) -> float:
     return 5 * 1.12 * size - 0.12 * size
 
 
-def _review_texts(placement: Placement, index: int, rating: Box, text: Box, reviewer: Box, ink: str) -> None:
+def _review_texts(
+    placement: Placement,
+    roles: dict[str, Content],
+    index: int,
+    rating: Box,
+    text: Box,
+    reviewer: Box,
+    ink: str,
+    beside: bool = False,
+) -> None:
+    """A review's rating, what it says (or the picture its reviewer posted in its place: D73) and who wrote it."""
     for role, box, spec in (
         (f"stars_{index}", rating, "rating"),
         (f"review_{index}", text, "review"),
         (f"reviewer_{index}", reviewer, "reviewer"),
     ):
-        placement.boxes[role] = (box, spec)
+        _text_or_picture(placement, roles, role, box, spec, beside)
         placement.colors[role] = ink
 
 
@@ -3489,7 +3543,7 @@ def _reviews(roles: dict[str, Content], theme: Theme) -> Placement:
     for position, index in enumerate(reviews):
         x = MARGIN + position * (width + gap)
         card = Box(x=x, y=y, w=width, h=height)
-        click = _click(roles, f"review_{index}")
+        click = _item_click(roles, f"review_{index}")
         placement.shapes.append(
             ShapeElement(role=f"review {index} card", box=card, color=palette.surface, appears_on_click=click)
         )
@@ -3503,7 +3557,7 @@ def _reviews(roles: dict[str, Content], theme: Theme) -> Placement:
         foot = y + height - padding - 64
         text = Box(x=x + padding, y=text_top, w=width - 2 * padding, h=foot - 8 - text_top)
         reviewer = Box(x=x + padding, y=foot, w=width - 2 * padding, h=64)
-        _review_texts(placement, index, rating, text, reviewer, ink)
+        _review_texts(placement, roles, index, rating, text, reviewer, ink)
     return placement
 
 
@@ -3519,7 +3573,7 @@ def _reviews_rows(roles: dict[str, Content], theme: Theme) -> Placement:
     size, padding = 52.0, 32.0
     for index in reviews:
         band = Box(x=MARGIN, y=y, w=WIDTH - 2 * MARGIN, h=height)
-        click = _click(roles, f"review_{index}")
+        click = _item_click(roles, f"review_{index}")
         placement.shapes.append(
             ShapeElement(role=f"review {index} card", box=band, color=palette.surface, appears_on_click=click)
         )
@@ -3529,7 +3583,7 @@ def _reviews_rows(roles: dict[str, Content], theme: Theme) -> Placement:
         x = stars.x + stars.w + 48
         text = Box(x=x, y=y + 20, w=band.x + band.w - padding - x, h=height - 20 - 64 - 12)
         reviewer = Box(x=x, y=y + height - 64 - 8, w=text.w, h=64)
-        _review_texts(placement, index, rating, text, reviewer, ink)
+        _review_texts(placement, roles, index, rating, text, reviewer, ink, beside=True)
         y += height + 24
     return placement
 

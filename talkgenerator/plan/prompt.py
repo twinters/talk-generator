@@ -278,7 +278,7 @@ def slide_lines(
             f"- {text.name}: {field_description(slide.recipe, text, language)}"
             for text in slide.recipe.written_fields()
         ),
-        *(f"- {slot}_query: {_query_description(slot)}" for slot in slide.recipe.image_queries()),
+        *(f"- {slot}_query: {_query_description(slot, slide.recipe)}" for slot in slide.recipe.image_queries()),
         *(f"- {name}: {FOUND_QUERY}" for name in found_queries(slide.recipe)),
         *(f"- {prompt_field(slot)}: {about}" for slot, about in generated(slide.recipe, generation)),
     ]
@@ -343,7 +343,7 @@ def slide_schema(
         if text.options:  # one of these words (or empty, when the field may stay empty)
             properties[text.name]["enum"] = [*text.options, *([""] if text.optional else [])]
     for slot in recipe.image_queries():
-        properties[f"{slot}_query"] = {"type": "string", "description": _query_description(slot)}
+        properties[f"{slot}_query"] = {"type": "string", "description": _query_description(slot, recipe)}
     for name in found_queries(recipe):
         properties[name] = {"type": "string", "description": FOUND_QUERY}
     for slot, about in generated(recipe, generation):
@@ -401,7 +401,12 @@ def found_queries(recipe: Recipe) -> list[str]:
     return [f"{name}_query" for name in recipe.texts_from if name not in recipe.omit]
 
 
-def _query_description(slot: str) -> str:
+def _query_description(slot: str, recipe: Recipe | None = None) -> str:
+    """What to write for an image slot's search query: the recipe's hint for it, if it has one (a picture that a chart
+    tries first, in its place: see talkgenerator.plan.kinds.PictureFirst), or else what it searches for."""
+    hint = recipe.hints.get(f"{slot}_query") if recipe is not None else None
+    if hint:
+        return hint
     name = slot.replace("_", " ")  # "image 1", "background", ...
     return f"an image search query for {name if name[-1].isdigit() else 'the ' + name}"
 

@@ -44,11 +44,14 @@ At both levels, a slide with a real quote has the model say what it's to be abou
 
 Some slides get a real fact to build on, in the same request: up to three of a talk's slides of history (a made-up
 historical figure, old photos, a timeline), fun facts, quizzes and big numbers, from the first sentences of the
-topic's English Wikipedia article, or from the events of the day on Wikipedia's main page ("On this day"). The model
-keeps what a fact says and twists it: "Only one species, the Galapagos penguin, lives at the equator" becomes a fun
-fact about why. No fact names a living person, and none is about death, war, disasters, crime, politics, race or
-faiths. A slide that builds on its fact credits the article (CC BY-SA 4.0), in its credit line ("Sources: ..."), and
-the deck lists every fact a talk got (`facts`).
+topic's English Wikipedia article. The model keeps what a fact says and twists it: "Only one species, the Galapagos
+penguin, lives at the equator" becomes a fun fact about why. Slides of history, and fun facts now and then, get a
+coincidence instead: a moment of the topic's history (a sentence of its article with its year) and something else
+that happened that year, from Wikipedia's article on the year ("1886"), which the slide puts side by side as if one
+caused the other ("In 1938, nylon came to socks" and "1938: the ballpoint pen is patented"). No fact names a living
+person, and none is about death, war, disasters, crime, politics, race or faiths. A slide that builds on its fact
+credits the article (CC BY-SA 4.0), a coincidence both of its articles, in its credit line ("Sources: ..."), and the
+deck lists every fact a talk got (`facts`).
 
 The facts come from the cache, or else within eight seconds of the talk's start, while its slides are picked: a talk
 whose facts come later, or whose sources are down, goes without them. Classic talks get some too: half of their fun

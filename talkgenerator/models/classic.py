@@ -119,6 +119,7 @@ CLASSIC_ROLES: Final[dict[str, dict[str, str]]] = {
     "org_chart": {
         "title": "title",
         "boss": "boss",
+        **_pictures("boss"),  # (who's in charge, as a picture in their name's place: a pattern break, D73)
         **{f"report_{number}": f"report_{number}" for number in range(1, 5)},
     },
     "iceberg": {"title": "title", "tip": "tip", **_pictures("tip"), **_boxes("hidden", 3)},
@@ -157,7 +158,7 @@ CLASSIC_ROLES: Final[dict[str, dict[str, str]]] = {
         **{
             role: role
             for tier in "sabcf"
-            for role in (f"tier_{tier}", *(f"item_{tier}_{number}" for number in range(1, 4)))
+            for role in (f"tier_{tier}", *(f"item_{tier}_{number}" for number in range(1, 4)), f"item_{tier}_1_picture")
         },
     },
     # (and the next ones from the karaoke catalogue: a wall of text, an alignment chart, red flags, reviews with
@@ -173,12 +174,15 @@ CLASSIC_ROLES: Final[dict[str, dict[str, str]]] = {
         **{f"column_{number}": f"column_{number}" for number in range(1, 4)},
         **{f"row_{number}": f"row_{number}" for number in range(1, 4)},
         **{alignment: alignment for alignment in ALIGNMENTS},
+        **_pictures(*ALIGNMENTS),
     },
-    "red_flags": {"title": "title", **{f"flag_{number}": f"flag_{number}" for number in range(1, 6)}},
+    "red_flags": {"title": "title", **_boxes("flag", 5)},
     "reviews": {
         "title": "title",
         **{
-            f"{part}_{number}": f"{part}_{number}" for number in range(1, 4) for part in ("stars", "review", "reviewer")
+            role: role
+            for number in range(1, 4)
+            for role in (f"stars_{number}", f"review_{number}", f"review_{number}_picture", f"reviewer_{number}")
         },
     },
     "error_message": {

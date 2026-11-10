@@ -535,7 +535,12 @@ def test_the_next_classic_ones_are_what_their_slides_need(related):
     with random_util.use(random_util.Rng(5)):
         _, across, down, *cells = slide_texts.generate_alignment_chart({"seed": "cat", "topic": "cats"})
     assert (across, down) == _axes() and len(set(cells)) == 9
-    last_flags = {_spoken(template) for template in packs.pack().rule("karaoke.red_flag_last")}
+    # (the last one, or now and then one in a few words, which breaks their pattern: D73)
+    last_flags = {
+        _spoken(template)
+        for rule in ("karaoke.red_flag_last", "karaoke.red_flag_short")
+        for template in packs.pack().rule(rule)
+    }
     for seed in range(6):
         with random_util.use(random_util.Rng(seed)):
             _, *reviews = slide_texts.generate_reviews({"seed": "cat", "topic": "cats"})

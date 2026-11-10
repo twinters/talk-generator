@@ -121,7 +121,15 @@ how to keep 4.x's talks. The [docs](https://github.com/twinters/talk-generator/t
   a list's things now and then, and charts labelled in funny ways, or bare.
 - A problem slide, the talk's why, early on: about three pitches in four, four academic talks in five and a quarter
   of TED-like talks open on a problem, weird, everyday, crossed with something else, typical of the topic, or real (a
-  how-to people look up on wikiHow), with a picture of it behind it or beside it.
+  how-to people look up on wikiHow), in a few words, with a picture of it behind it or beside it.
+- Less text, more surprise: half of the charts and diagrams try a picture first, in their place, under their title (a
+  real chart from the internet for a chart, a weird picture for a diagram), and are their text version when none is
+  found; with `slide_seconds`, the text version comes at once and the picture takes its place when it comes.
+  `DISABLE_PICTURE_FIRST=1` switches them off. A list's punchline, or a diagram's, breaks the pattern now and then:
+  an emoji alone, a few words, or a picture in its place (a red flag's, a review's, an org chart's boss, a tier list's
+  S tier, an alignment chart's chaotic evil), and the third of three pictures in a row doesn't follow the first two
+  (`DISABLE_PATTERN_BREAKS=1` switches the breaks off). A chart's title says what it shows, never "X vs Y": what it
+  compares goes on its axes.
 - A talk has at most one of most kinds (memes: two), and a list's things appear a click each, the punchline last.
 
 ### Formats and personas
@@ -149,8 +157,10 @@ how to keep 4.x's talks. The [docs](https://github.com/twinters/talk-generator/t
 - The words slides start from are things: nouns first (Datamuse's parts of speech), familiar ones, none of a family
   twice, and never far from the topic, so no "Volcanoes vs. eruptive" on a scatter plot. A real quote is searched for
   a theme the language model picks for it.
-- Real facts: a talk a language model writes gets up to three facts from Wikipedia (the topic's article, and the
-  day's events) for its slides of history, fun facts, quizzes and big numbers, which the model keeps true and twists.
+- Real facts: a talk a language model writes gets up to three facts from Wikipedia (the topic's article) for its
+  slides of history, fun facts, quizzes and big numbers, which the model keeps true and twists; slides of history,
+  and fun facts now and then, get a coincidence: a moment of the topic's history and something else that happened the
+  same year (from the year's article), side by side as if one caused the other.
   Classic talks get half of their fun facts from Wikipedia and half of their quizzes from Open Trivia DB, and now and
   then a useless fact, a real dad joke to tell or a piece of advice (the Advice Slip). No fact names a living
   person, or is about death, war, disasters, crime, politics, race or faiths. A slide that uses one credits it, and
@@ -205,7 +215,8 @@ how to keep 4.x's talks. The [docs](https://github.com/twinters/talk-generator/t
   Pexels, Reddit's chart slides take r/dataisugly's too, and the flavour packs search more subreddits.
 - InspiroBot's posters are drawn with the talk's seed from its older posters, so no request goes to its API any more.
 - Charts are quieter (no gridlines, tick marks or numbers along their axes), with bigger texts in the template's or
-  the theme's font.
+  the theme's font. Half of the charts and diagrams are a picture in their place when one is found, classic ones too
+  (`DISABLE_PICTURE_FIRST=1` keeps them drawn).
 - GIPHY's searches aren't cached any more, as GIPHY's API rules forbid it.
 - `SlideDeck.to_slide_deck_dictionary()` returns the deck's slides as JSON-ready dictionaries, instead of
   dictionaries holding image and chart objects: a breaking change for code that read those.

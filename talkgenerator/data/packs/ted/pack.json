@@ -1,7 +1,7 @@
 {
   "format": "ted",
   "about": "The classic texts of TED-like talks (the default, ted, interview and test schemas): a grammar per kind of slide, whose rules are lists of templates (see talkgenerator.sources.packs)",
-  "version": 7,
+  "version": 8,
   "versions": {
     "1": "2026-11-08: v4's templates and milestone 6's, from data/text-templates and data/memes.json, unchanged (D54)",
     "2": "2026-11-08: grown in a TED talk's voice, several times the options per slot (titles, about me, history, statements, captions, charts, diagrams, numbers, quizzes, mockups, structure, karaoke types, memes and conclusions), speaking of the topic as English does (generic, one, bare), linted by tests/test_content_pack.py",
@@ -9,7 +9,8 @@
     "4": "2026-11-08: twists for real fun facts (D60): what a classic fun fact says after a true sentence of Wikipedia's about the slide's seed (\"Coincidence? I think not.\")",
     "5": "2026-11-08: flavour texts (D60): a dare to tell a real dad joke ({joke}), and a real piece of advice as the closing slide's line ({advice})",
     "6": "2026-11-09: livelier dares and closing slides (D65): dares that are real challenges for the presenter (an accent, a gesture, a word on every slide), dares for the whole audience (a show of hands, a call and response), and closing slides' last tips and callback lines",
-    "7": "2026-11-09: problem slides, a TED-like talk's why now and then (D69): headings, and problems on five angles (weird, everyday, crossed with something else, typical, and a real how-to), each with a line under it, in a TED speaker's voice"
+    "7": "2026-11-09: problem slides, a TED-like talk's why now and then (D69): headings, and problems on five angles (weird, everyday, crossed with something else, typical, and a real how-to), each with a line under it, in a TED speaker's voice",
+    "8": "2026-11-10: less text and more surprise (D73): problems of a few words, each with a short line under it; chart claims for charts whose axes say what they compare (no more \"X vs. Y\" titles); short last reviews and red flags, an emoji alone among them, that break their slides' pattern; and three captions in a row whose third breaks the first two's"
   },
   "slots": {
     "title.talk_title": {"variables": ["seed"], "field": "title.title"},
@@ -45,6 +46,7 @@
     "charts.location_question": {"variables": ["seed", "topic", "presenter", "title"], "field": "chart_categories.question"},
     "charts.property_question": {"variables": ["seed", "topic", "presenter", "title"], "field": "chart_categories.question"},
     "charts.correlation_title": {"variables": ["seed", "topic", "presenter", "title", "x_label", "y_label"], "field": "chart_correlation.title"},
+    "charts.chart_claim": {"variables": ["seed", "topic", "presenter", "title", "x_label", "y_label"], "field": "chart_correlation.title"},
     "charts.ranking_title": {"variables": ["seed", "topic", "presenter", "title"], "field": "chart_bars.title"},
     "charts.trend_event": {"variables": ["seed", "topic", "presenter", "title", "x_label", "y_label"], "field": "chart_trend.event"},
     "charts.x_axis_title": {"variables": ["seed", "topic", "presenter", "title", "x_label", "y_label"], "field": "chart_correlation.x_axis"},
@@ -117,9 +119,11 @@
     "karaoke.red_flags_title": {"variables": ["seed"], "field": "red_flags.title"},
     "karaoke.red_flag": {"variables": ["seed", "related"], "field": "red_flags.flag_1"},
     "karaoke.red_flag_last": {"variables": ["seed", "related"], "field": "red_flags.flag_3"},
+    "karaoke.red_flag_short": {"variables": ["seed", "related"], "field": "red_flags.flag_3"},
     "karaoke.reviews_title": {"variables": ["seed"], "field": "reviews.title"},
     "karaoke.review_glowing": {"variables": ["seed", "related"], "field": "reviews.review_1"},
     "karaoke.review_one_star": {"variables": ["seed", "related"], "field": "reviews.review_3"},
+    "karaoke.review_short": {"variables": ["seed", "related"], "field": "reviews.review_3"},
     "karaoke.reviewer_detail": {"variables": [], "limit": 17},
     "karaoke.error_title": {"variables": ["seed"], "field": "error_message.title"},
     "karaoke.error_message": {"variables": ["seed", "related"], "field": "error_message.message"},

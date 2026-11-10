@@ -3,14 +3,19 @@
 In a talk a language model writes, up to three of its slides that can build on a fact get one each, in the talk's one
 request: a slide of history (a made-up historical figure's quote, two old photos of moments in history, a timeline), a
 fun fact ("Did you know?"), a quiz or a big number. The facts are sentences of the lead of the topic's English
-Wikipedia article, and events of the day the talk is made on, from Wikipedia's main page ("On this day"), which the
-slides of history get first. The model keeps what a fact says true where its slide states it, and twists it: "Only one
-species, the Galapagos penguin, lives at the equator" becomes a fun fact about why. A slide that builds on its fact
-credits its article (CC BY-SA 4.0).
+Wikipedia article. The model keeps what a fact says true where its slide states it, and twists it: "Only one species,
+the Galapagos penguin, lives at the equator" becomes a fun fact about why. A slide that builds on its fact credits its
+article (CC BY-SA 4.0).
+
+Slides of history, and fun facts now and then, get a coincidence first (D73, in place of D60's events of the day the
+talk is made on, which the user found confusing, and the same in talk after talk): a moment of the topic's history (a
+sentence of its article with its year, the lead's or else the rest's) and something else that happened the same year,
+from the year's article ("1886"), which the slide puts side by side as if one caused the other: "In 1886, Karl Benz
+patented the motor car" and "1886: Coca-Cola is first sold in Atlanta". Its slide credits both articles.
 
 No fact about a living person goes on a slide: none for a topic that is one (English Wikipedia's "Category:Living
-people"), and none that names one (an article its sentence names, of the articles the lead links to, or that an event
-links to); nor one with a word a slide shouldn't make light of (see slide_texts.sensitive) or of death, war, disasters,
+people"), and none that names one (an article its sentence names, of the articles the lead links to, or a name a
+year's event spells out, from 1910 on); nor one with a word a slide shouldn't make light of (see slide_texts.sensitive) or of death, war, disasters,
 crime and accusations, politics or race (_GRIM_WORDS), nor one about real-world politics (see
 talkgenerator.checks.deck.real_politics). When Wikipedia can't tell who's living, the facts that name someone stay out.
 
@@ -43,6 +48,7 @@ DISABLE_DAD_JOKES=1 and DISABLE_ADVICE_SLIPS=1 a source.
 
 from __future__ import annotations
 
+import dataclasses
 import datetime
 import logging
 import re
@@ -89,9 +95,24 @@ _ASKS: Final = {
     "problem": "Start from this real how-to, which people look up on wikiHow: the problem is what it's for, or that "
     "people need it at all, in your own words",
 }
+# What a slide does with a coincidence (D73): two real things of the same year, the topic's and another, side by side
+# as if one caused the other
+_COINCIDENCE_ASKS: Final = {
+    "fun_fact": "Build it on these two real things that happened in the same year: keep both true, and state as "
+    "certain that the first caused the second",
+    "timeline": "Put these two real moments of the same year among the made-up ones, next to each other, as if the "
+    "first caused the second, each with its year and a few words of your own",
+    "history_quote": "The made-up figure lived through these two real moments of the same year, and is sure that the "
+    "first caused the second",
+    "history": "Its two moments are these two real ones of the same year, in a few words of your own each, the second "
+    "as if the first caused it",
+}
+COINCIDENCE_YEARS: Final = 2  # years of the topic's history whose events a talk looks up, at most (a request each)
+LIVING_SINCE: Final = 1910  # (the year from which a year's events may name someone alive today: none before it can)
 # The uses of flavour texts, which a talk has besides its facts (MOST counts the facts alone)
 _FLAVOUR_USES: Final = frozenset({"dare", "questions", "problem"})
-# The uses that would rather have an event of the day than a sentence of the topic's article
+# The uses that would rather have a coincidence (or else a moment of history, with its year) than another sentence of
+# the topic's article
 _HISTORY: Final = frozenset({"timeline", "history_quote", "history"})
 # Words of facts a talk shouldn't make light of, besides the slides' (slide_texts.sensitive), which history is full
 # of: death, war, disasters, crime and accusations, politics and race (a word ending in "*" stands for every word it
@@ -162,23 +183,24 @@ def use_of(kind: str, tags: Iterable[str] = ()) -> str | None:
 
 @dataclass(frozen=True)
 class Candidate:
-    """A fact that a slide could get: its text, its page, where it's from (an article's lead, the day's events, or a
-    flavour text's source), whether it's the article's first sentence (what the topic is), the articles it names (by
-    title), and its source as credited, with its license."""
+    """A fact that a slide could get: its text, its page, where it's from (an article, or a flavour text's source),
+    whether it's the article's first sentence (what the topic is), the articles it names (by title), and its source as
+    credited, with its license; and for a coincidence (D73), the other real thing of its year (also: an event of the
+    year's article, which it goes with)."""
 
     text: str
     url: str
-    day: bool = False  # an event of the day's (with its date), not a sentence of the topic's article
     first: bool = False
     names: tuple[str, ...] = ()
     flavour: str = ""  # a flavour text's kind: "useless" (a useless fact), "joke" or "advice"; none for Wikipedia's
     source: str = "Wikipedia"
     license: str | None = wikipedia.LICENSE
     license_url: str | None = wikipedia.LICENSE_URL
+    also: Candidate | None = None  # (a coincidence's other half: something else that happened the same year)
 
     @property
     def dated(self) -> bool:
-        return self.day or bool(_YEAR.search(self.text))
+        return bool(_YEAR.search(self.text))
 
     @property
     def figure(self) -> bool:
@@ -187,7 +209,11 @@ class Candidate:
     @property
     def surprising(self) -> bool:
         """Whether it says how special something is (a sentence of the article's lead, but its first)."""
-        return not self.first and not self.day and not self.flavour and bool(_SURPRISING.search(self.text))
+        return not self.first and not self.flavour and self.also is None and bool(_SURPRISING.search(self.text))
+
+    @property
+    def coincidence(self) -> bool:
+        return self.also is not None
 
     def fact(self, slide: int | None = None, use: str = "prompt") -> Fact:
         return Fact(
@@ -203,8 +229,8 @@ class Candidate:
 
 @dataclass(frozen=True)
 class Sheet:
-    """The facts found for a talk: its topic's article's (if any), and the day's events', none about living people,
-    in the order they came."""
+    """The facts found for a talk: its topic's article's (if any), its coincidences, and its flavour texts, none about
+    living people, in the order they came."""
 
     candidates: tuple[Candidate, ...] = ()
 
@@ -214,17 +240,26 @@ EMPTY: Final = Sheet()
 
 @dataclass(frozen=True)
 class Given:
-    """A fact a planned slide gets, with what the slide does with it (see use_of)."""
+    """A fact a planned slide gets, with what the slide does with it (see use_of); for a coincidence, with the other
+    real thing of its year (also)."""
 
     use: str
     fact: Fact
+    also: Fact | None = None
 
     def line(self) -> str:
-        """What the request says about it, after the slide's brief: for a timeline, an event of the day with its year
-        alone ("1291: A law was passed..."), as models copied its whole date into a date's short field."""
+        """What the request says about it, after the slide's brief: for a coincidence, both real things and that one
+        caused the other."""
         text = self.fact.text.replace('"', "'")
-        day = _DAY.match(text) if self.use == "timeline" else None
-        return f'{_ASKS[self.use]}: "{text[day.end() :] if day else text}"'
+        if self.also is not None and self.use in _COINCIDENCE_ASKS:
+            other = self.also.text.replace('"', "'")
+            return f'{_COINCIDENCE_ASKS[self.use]}: "{text}", and the same year, "{other}"'
+        return f'{_ASKS[self.use]}: "{text}"'
+
+    @property
+    def facts(self) -> tuple[Fact, ...]:
+        """The real facts it gives its slide: the one, or a coincidence's two."""
+        return (self.fact, self.also) if self.also is not None else (self.fact,)
 
 
 # THE FACTS OF A TALK A LANGUAGE MODEL WRITES
@@ -322,8 +357,8 @@ def gather(
     rng: random_util.Rng | None = None,
 ) -> Gathering:
     """Start looking up a talk's facts (see Gathering): for the uses its slides have (see use_of; all of them, without
-    uses), its topic's English Wikipedia article's and the day's events (of today, unless another day is given), and the
-    flavour texts they want, drawn by the talk's random stream (see Draws)."""
+    uses), its topic's English Wikipedia article's, its coincidences (of the years before today's, unless another day
+    is given), and the flavour texts they want, drawn by the talk's random stream (see Draws)."""
     day = today or datetime.date.today()
     wanted = frozenset(uses) if uses is not None else frozenset(_ASKS)
     draws = Draws.of(rng.child("flavour")) if rng is not None else Draws()
@@ -338,9 +373,9 @@ def look_up(
     uses: frozenset[str] = frozenset(_ASKS),
     draws: Draws = Draws(),
 ) -> Sheet:
-    """A talk's facts (see the module's documentation), for the uses its slides have: the article's sentences, and the
-    day's events, that pass the checks, and the flavour texts that do (useless facts for a fun fact, dad jokes for a
-    dare, advice for the closing slide), none about a living person."""
+    """A talk's facts (see the module's documentation), for the uses its slides have: the article's sentences that pass
+    the checks, its coincidences (for the slides of history and fun facts: see coincidences), and the flavour texts that
+    do (useless facts for a fun fact, dad jokes for a dare, advice for the closing slide), none about a living person."""
     if not on():
         return EMPTY
     if language != languages.ENGLISH.code:
@@ -349,13 +384,17 @@ def look_up(
     asking = _asking()
     wiki = wikipedia.available() and bool(uses & _WIKIPEDIA_USES)
     found = asking.submit(wikipedia.article, topic, language) if wiki else None
-    happened = asking.submit(wikipedia.on_this_day, day.month, day.day) if wiki else None
     useless = [asking.submit(flavour.useless_fact, number) for number in draws.useless] if "fun_fact" in uses else []
     joking = asking.submit(_jokes_about, topic, draws.joke_page) if "dare" in uses else None
     advising = [asking.submit(flavour.advice, number) for number in draws.advice] if "questions" in uses else []
     fixing = asking.submit(howtos, topic) if "problem" in uses else None
     article = found.result() if found is not None else None
-    events = happened.result() if happened is not None else []
+    lead = article_candidates(article, topic)
+    # (the years of the topic's history, and what else happened in them: for the slides that put the two side by side)
+    years: list[int] = []
+    coincidences: list[Candidate] = []
+    if article is not None and uses & _COINCIDENCE_USES:
+        coincidences = coincidence_candidates(article, lead, topic, day.year, asking, years)
     flavours = [
         *((future.result(), "useless") for future in useless),
         *((joke, "joke") for joke in (joking.result() if joking is not None else [])),
@@ -364,20 +403,20 @@ def look_up(
     ]
     looked_up = time.monotonic()
     candidates = [
-        *article_candidates(article, topic),
-        *day_candidates(events, day, topic),
+        *lead,
+        *coincidences,
         *(candidate for candidate in (flavour_candidate(text, kind, topic) for text, kind in flavours) if candidate),
     ]
     checked = time.monotonic()
     kept = asking.submit(without_living, candidates).result()
     logger.info(
-        "Real facts: %s of %s (%s), %s of the day's %s events, %s flavour texts, in %.1f s (%.1f s to look up, %.1f s "
+        "Real facts: %s of %s (%s), %s coincidences (of %s), %s flavour texts, in %.1f s (%.1f s to look up, %.1f s "
         "to check, %.1f s for who's living)",
-        sum(not candidate.day and not candidate.flavour for candidate in kept),
+        sum(not candidate.coincidence and not candidate.flavour for candidate in kept),
         "the article" if article is not None else "no article",
         article.title if article is not None else topic,
-        sum(candidate.day for candidate in kept),
-        len(events),
+        sum(candidate.coincidence for candidate in kept),
+        ", ".join(str(year) for year in years) or "no year",
         sum(bool(candidate.flavour) for candidate in kept),
         time.monotonic() - started,
         looked_up - started,
@@ -402,16 +441,135 @@ def article_candidates(article: wikipedia.Article | None, topic: str = "", longe
     return candidates
 
 
-def day_candidates(events: Sequence[wikipedia.Event], day: datetime.date, topic: str = "") -> list[Candidate]:
-    """The events of the day that could be facts, with their dates: "8 November 1895: Wilhelm Röntgen discovers
-    X-rays...", passing the checks."""
-    url = wikipedia.anniversaries_url(day.month, day.day)
-    candidates = []
+# COINCIDENCES (D73): a moment of the topic's history and something else that happened the same year, which a slide puts
+# side by side as if one caused the other
+
+# The uses that put a coincidence on their slide
+_COINCIDENCE_USES: Final = frozenset(_COINCIDENCE_ASKS)
+# The year a sentence dates something to: four digits after a word that dates ("in 1886", "since 1791", "by 1902"), a
+# month ("May 1886") or a day ("8 May 1886"), or at its start ("1886 was..."), but not a figure ("1500 metres")
+_DATED: Final = re.compile(
+    r"(?:\b(?:in|since|by|from|until|till|after|before|during|around|circa|c\.|early|late|mid|"
+    + "|".join(wikipedia.MONTHS)
+    + r")(?:\s+\d{1,2},?)?\s+|^)(1[0-9]{3}|20[0-9]{2})(?![\d,.]*\s*(?:metres|meters|km|kilometres|kilometers|miles|"
+    r"feet|kg|kilograms|tonnes|tons|people|species|years|m\b))",
+    re.IGNORECASE,
+)
+EVENTS_A_YEAR: Final = 12  # of a year's events that pass the checks, the ones a talk keeps (the lively ones first)
+RECENT: Final = 10  # years before this one whose events are mostly the news (politics, crises): none of those
+# What makes a year's event the news of its day, which a talk leaves out besides the facts' checks (fit): governments,
+# crowns, money and borders, which a year's article lists more than anything (and nobody laughs at a currency's fall)
+_NEWS: Final = re.compile(
+    r"\b(?:crisis|crises|dispute\w*|agreement\w*|alliance\w*|independence|constitution\w*|reign\w*|throne|crown\w*|"
+    r"succeed\w*|monarch\w*|king|kings|queen|queens|emperor\w*|empress\w*|prince\w*|duke\w*|count|countess|pope\w*|"
+    r"cardinal\w*|bishop\w*|church\w*|currency|currencies|devalu\w*|bank|banks|recession\w*|strike|strikes|"
+    r"revolution\w*|rebel\w*|fleet\w*|siege\w*|surrender\w*|colon\w*|conquest\w*|occupation\w*|BRICS|NATO|"
+    r"United Nations|European Union|EU|territor\w*|border\w*|province\w*|navy|naval|armada\w*|tsar\w*|sultan\w*|"
+    r"gun|guns|revolver\w*|rifle\w*|pistol\w*|cannon\w*|musket\w*|opium|cocaine|heroin|missionar\w*|mormon\w*|"
+    r"religio\w*|temple\w*|mosque\w*|cathedral\w*|monaster\w*|saint\w*|holy)\b",
+    re.IGNORECASE,
+)
+# What makes one lively: a first, an invention, something opening, coming out or going on show
+_LIVELY: Final = re.compile(
+    r"\b(?:first|invent\w*|discover\w*|patent\w*|found(?:s|ed|ing)?|open(?:s|ed|ing)?|publish\w*|premiere\w*|"
+    r"launch\w*|record\w*|introduc\w*|unveil\w*|releas\w*|debut\w*|demonstrat\w*|exhibit\w*|perform\w*|sold|sells?|"
+    r"complet\w*|built|builds|arriv\w*)\b",
+    re.IGNORECASE,
+)
+
+
+def year_of(text: str, this_year: int) -> int | None:
+    """The year a sentence dates something to (see _DATED), when its year's article lists its events: from
+    wikipedia.FIRST_YEAR to RECENT years before this one; else None."""
+    for found in _DATED.finditer(text):
+        year = int(found.group(1))
+        if wikipedia.FIRST_YEAR <= year <= this_year - RECENT:
+            return year
+    return None
+
+
+def history_candidates(article: wikipedia.Article, topic: str, this_year: int) -> list[Candidate]:
+    """The sentences of the rest of an article (beyond its lead) that date a moment of its topic's history (see
+    year_of), as facts that pass the checks, each with the names it spells out (from LIVING_SINCE on: for who's
+    living)."""
+    lead = set(sentences(article.extract))
+    found = []
+    for sentence in sentences(wikipedia.article_text(article.title)):
+        year = year_of(sentence, this_year)
+        if sentence in lead or year is None or len(sentence) > LONGEST or _BACK_REFERENCE.match(sentence):
+            continue
+        if fit(sentence, topic or article.title):
+            names = tuple(title for title in article.links if names_article(sentence, title))
+            spelled = _names_in(sentence) if year >= LIVING_SINCE else ()
+            found.append(Candidate(sentence, article.url, names=tuple(dict.fromkeys((*names, *spelled)))))
+    return found
+
+
+def coincidence_candidates(
+    article: wikipedia.Article,
+    lead: Sequence[Candidate],
+    topic: str,
+    this_year: int,
+    asking: ThreadPoolExecutor | None = None,
+    years: list[int] | None = None,
+) -> list[Candidate]:
+    """A topic's coincidences: each moment of its history (a sentence of its lead that dates something, or else of the
+    rest of its article: see year_of), of its first COINCIDENCE_YEARS years, with each of the events of its year (from
+    the year's article, EVENTS_A_YEAR of those that pass the checks, spread over the year) that's about something else
+    (none of the topic's telling words, nor two of the moment's). The years looked up go in years, if given."""
+    if article.living:
+        return []
+    dated = [candidate for candidate in lead if year_of(candidate.text, this_year) is not None]
+    if not dated:
+        dated = history_candidates(article, topic, this_year)
+    picked: list[int] = []
+    for candidate in dated:
+        year = year_of(candidate.text, this_year)
+        if year is not None and year not in picked:
+            picked.append(year)
+    picked = picked[:COINCIDENCE_YEARS]
+    if years is not None:
+        years[:] = picked
+    if not picked:
+        return []
+    listed = asking.map(wikipedia.year_events, picked) if asking is not None else map(wikipedia.year_events, picked)
+    about = set(_telling(f"{topic} {article.title}"))
+    events = {year: _year_candidates(year, found, topic, about) for year, found in zip(picked, listed, strict=True)}
+    coincidences = []
+    for candidate in dated:
+        year = year_of(candidate.text, this_year)
+        moment = set(_telling(candidate.text))
+        for event in events.get(year, ()) if year is not None else ():
+            if len(set(_telling(event.text)) & moment) < 2:  # (not the same moment, told twice)
+                coincidences.append(dataclasses.replace(candidate, also=event))
+    return coincidences
+
+
+def _year_candidates(year: int, events: Sequence[wikipedia.Event], topic: str, about: set[str]) -> list[Candidate]:
+    """A year's events as the second halves of coincidences ("1886: Coca-Cola is first sold in Atlanta"): those that
+    pass the checks, aren't the news of their day (_NEWS), say something on their own (not "French Revolution:", over
+    the events it lists) and are about something else than the topic, EVENTS_A_YEAR at most, the lively ones first
+    (_LIVELY: firsts, inventions, premieres); with the names they spell out, from LIVING_SINCE on."""
+    usable = []
     for event in events:
-        text = f"{day.day} {wikipedia.MONTHS[day.month - 1]} {event.year}: {_without_brackets(event.text)}"
-        if len(text) <= LONGEST and fit(event.text, topic):
-            candidates.append(Candidate(text, url, day=True, names=event.pages))
-    return candidates
+        text = _without_brackets(event.text).strip()
+        if len(text) < _SHORTEST_EVENT or text.endswith(":") or _BACK_REFERENCE.match(text) or _NEWS.search(text):
+            continue
+        told = f"{year}: {text}"
+        if set(_telling(text)) & about or len(told) > LONGEST or not fit(text, topic):
+            continue
+        names = _names_in(text) if year >= LIVING_SINCE else ()
+        usable.append(Candidate(told, wikipedia.year_url(year), names=names))
+    lively = [candidate for candidate in usable if _LIVELY.search(candidate.text)]
+    return [*lively, *(candidate for candidate in usable if candidate not in lively)][:EVENTS_A_YEAR]
+
+
+_SHORTEST_EVENT: Final = 30  # (characters of a year's event, at least: a shorter one is a heading, or says little)
+
+
+def _names_in(text: str) -> tuple[str, ...]:
+    """The capitalised words and names a text spells out, as articles that might be a living person's."""
+    return tuple(dict.fromkeys(found.group(0).strip(" .'") for found in _CAPITALISED.finditer(text)))[:8]
 
 
 # What a flavour text of each kind may be at most: a useless fact as a fact, a joke and advice as their slides take
@@ -469,23 +627,28 @@ def _jokes_about(topic: str, page: int) -> list[flavour.Flavour]:
 
 def without_living(candidates: Sequence[Candidate]) -> list[Candidate]:
     """The candidates that name no living person, as English Wikipedia's articles tell (all those that name nobody,
-    when it can't tell)."""
-    named = {title for candidate in candidates for title in candidate.names}
+    when it can't tell), a coincidence in neither of its halves."""
+    named = {title for candidate in candidates for title in _named(candidate)}
     people = wikipedia.living(named) if named else frozenset()
     if people is None:
         logger.info("Wikipedia couldn't tell who's living: the facts that name someone stay out")
-        return [candidate for candidate in candidates if not candidate.names]
-    return [candidate for candidate in candidates if not people & set(candidate.names)]
+        return [candidate for candidate in candidates if not _named(candidate)]
+    return [candidate for candidate in candidates if not people & _named(candidate)]
+
+
+def _named(candidate: Candidate) -> set[str]:
+    """The articles a candidate names, a coincidence's in both its halves."""
+    return set(candidate.names) | (set(candidate.also.names) if candidate.also is not None else set())
 
 
 def assign(sheet: Sheet, slides: Sequence[tuple[int, str]], rng: random_util.Rng) -> dict[int, Given]:
     """The facts that the slides get, by slide number (as given): up to MOST slides, in order, one each, never one
-    fact twice, and a flavour text for a dare and the closing slide besides. A slide of history gets an event of the
-    day first, then a sentence with a date; a big number one with a number; a fun fact one that says how special
-    something is (not what the topic is: the first sentence) or a useless fact; a quiz any of the article's; a dare a
-    dad joke, and the closing slide a piece of advice. Among the ones a slide likes as much, its pick is the random
-    stream's."""
-    taken: set[Candidate] = set()
+    fact twice (nor a sentence that's half of another slide's coincidence), and a flavour text for a dare and the
+    closing slide besides. A slide of history gets a coincidence first (D73), then a sentence with a date; a big number
+    one with a number; a fun fact one that says how special something is (not what the topic is: the first sentence),
+    a coincidence or a useless fact; a quiz any of the article's; a dare a dad joke, and the closing slide a piece of
+    advice. Among the ones a slide likes as much, its pick is the random stream's."""
+    taken: set[str] = set()  # (the texts given so far)
     given: dict[int, Given] = {}
     facts = 0
     shuffled = list(sheet.candidates)
@@ -494,14 +657,19 @@ def assign(sheet: Sheet, slides: Sequence[tuple[int, str]], rng: random_util.Rng
         if use not in _FLAVOUR_USES and facts == MOST:
             continue
         ranked = [(rank, candidate) for candidate in shuffled if (rank := _rank(candidate, use)) is not None]
-        fresh = [(rank, candidate) for rank, candidate in ranked if candidate not in taken]
+        fresh = [(rank, candidate) for rank, candidate in ranked if not _texts(candidate) & taken]
         if not fresh:
             continue
         best = min(fresh, key=lambda ranked_candidate: ranked_candidate[0])[1]
-        taken.add(best)
-        given[number] = Given(use, best.fact(number))
+        taken |= _texts(best)
+        also = best.also.fact(number) if best.also is not None else None
+        given[number] = Given(use, best.fact(number), also)
         facts += use not in _FLAVOUR_USES
     return given
+
+
+def _texts(candidate: Candidate) -> set[str]:
+    return {candidate.text} | ({candidate.also.text} if candidate.also is not None else set())
 
 
 def _rank(candidate: Candidate, use: str) -> int | None:
@@ -513,29 +681,28 @@ def _rank(candidate: Candidate, use: str) -> int | None:
         # (a how-to that says what it fixes makes a plainer problem: D69)
         return 1 if wanted == "howto" and not _FIXING.match(candidate.text.removeprefix("How to ")) else 0
     if use in _HISTORY:
-        return 0 if candidate.day else 1 if candidate.dated else 2 if not candidate.first else 3
-    if use == "big_number":  # (an event's date is no figure to count)
-        return 2 if candidate.day else 0 if candidate.figure else 1
+        return 0 if candidate.coincidence else 1 if candidate.dated else 2 if not candidate.first else 3
+    if candidate.coincidence and use not in _COINCIDENCE_USES:  # (a big number counts something, a quiz asks one thing)
+        return None
+    if use == "big_number":
+        return 0 if candidate.figure else 1
     if use == "fun_fact":
-        return 0 if candidate.surprising else 1 if not candidate.first and not candidate.day else 2
-    return 0 if not candidate.day else 1  # (a quiz)
+        return 0 if candidate.surprising or candidate.coincidence else 1 if not candidate.first else 2
+    return 0  # (a quiz)
 
 
 def used_in(fact: Fact, texts: Iterable[str | None]) -> bool:
-    """Whether a slide's texts build on a fact: two of its telling words (of four letters or more, and its years, but
-    not an event's day and month) are in them, or its only one ("A bean untaxed is a vassal unchecked, as the emperor
-    knew in 1278", of the emperor who retired on 8 November 1278), or one of its figures, which counts for two (a big
-    number of "383/km2", of Belgium's population density of 383/km2)."""
-    found = _DAY.match(fact.text)
-    told = fact.text[found.end() :] if found else fact.text
-    words = set(_telling(told)) | set(_YEARS.findall(fact.text))
-    figures = _figures(told) - words
+    """Whether a slide's texts build on a fact: two of its telling words (of four letters or more, and its years) are
+    in them, or its only one ("A bean untaxed is a vassal unchecked, as the emperor knew in 1278", of "1278: Emperor
+    Tran Thanh Tong retires"), or one of its figures, which counts for two (a big number of "383/km2", of Belgium's
+    population density of 383/km2)."""
+    words = set(_telling(fact.text)) | set(_YEARS.findall(fact.text))
+    figures = _figures(fact.text) - words
     written = " ".join(text for text in texts if text)
     shared = len(words & (set(_telling(written)) | set(_YEARS.findall(written)))) + 2 * len(figures & _figures(written))
     return bool(words or figures) and shared >= min(2, len(words) + 2 * len(figures))
 
 
-_DAY: Final = re.compile(r"\d{1,2} [A-Z][a-z]+ (?=\d{1,4}: )")  # (an event's day and month, before its year)
 _YEARS: Final = re.compile(r"\b(?:1[0-9]{3}|20[0-9]{2})\b")
 _FIGURE_DIGITS: Final = re.compile(r"\d[\d,.]*\d")  # (of two digits or more, as "30,689" or "11.8")
 
@@ -558,7 +725,6 @@ def credit(fact: Fact) -> tuple[CreditPart, ...]:
     """A fact's credit, as a slide's credit line has it: "Wikipedia: Penguin (CC BY-SA 4.0)"."""
     page = fact.url or ""
     title = page.rsplit("/wiki/", 1)[-1].replace("_", " ") if "/wiki/" in page else ""
-    title = title.replace("Wikipedia:Selected anniversaries/", "On this day, ")
     named = f"{fact.source}: {unquote(title)}" if title else fact.source
     if not fact.license:
         return ((named, fact.url),)

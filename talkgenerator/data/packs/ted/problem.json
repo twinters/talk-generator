@@ -12,33 +12,32 @@
     "Imagine this"
   ],
   "weird": [
-    "Every night, while you sleep, something happens to {seed.generic}.|I've spent {number} years trying to find out what.",
-    "Nobody talks about the strange silence around {seed.generic}.|I did. Once. I couldn't stop.",
-    "In {year}, someone noticed something odd about {seed.generic}. Then everyone forgot.|I didn't.",
-    "There's a smell that only {seed.bare} experts can detect.|I'm one of them. It changed my life.",
-    "I once spent a whole night staring at {seed.generic}. Something stared back.|That was {number} years ago.",
-    "Somewhere, right now, {seed.generic} and a stranger's sock are in the same drawer.|Think about that. I can't stop thinking about it."
+    "Something is off with {seed.generic}.|I've known for {number} years.",
+    "A strange smell near {seed.generic}.|Only I can smell it.",
+    "Nobody asks {seed.generic} anything.|Not once since {year}.",
+    "I can hear {seed.generic}.|Right now. Can't you?",
+    "Something feels wrong about {seed.generic}.|It has since {year}.",
+    "{seed.generic.cap}, at 3 a.m.|You don't want to know."
   ],
   "everyday": [
-    "You know that moment when you need {seed.one}, and there's none anywhere?|That moment cost me {number} years of my life.",
-    "We've all lied about {seed.generic} at least once.|{percent} of you are lying right now.",
-    "Every family has that one argument about {seed.generic}.|Mine has lasted {number} years.",
-    "You've been doing {seed.generic} wrong your whole life.|So have I. Until last Tuesday.",
-    "Raise your hand if {seed.generic} ever ruined your weekend.|Keep it up. Look around. You're not alone.",
-    "At some point today, you thought about {seed.generic}. You didn't tell anyone.|Neither did I. Until now."
+    "You're doing {seed.generic} wrong.|So was I. Until Tuesday.",
+    "We've all lied about {seed.generic}.|{percent} of you, today.",
+    "No {seed.bare} when you need it.|Every. Single. Time.",
+    "{seed.generic.cap}: a daily struggle.|Twice on Mondays.",
+    "Lost {seed.one} again?|You're not alone.",
+    "The {seed.bare} argument. Again.|{number} years and counting."
   ],
   "crossed": [
-    "My life changed the day {seed.generic} ran into #crossing#.|Nobody warned me. Nobody warns anyone.",
-    "Nobody has ever studied what {seed.generic} and #crossing# have in common.|I did. It took {number} years.",
-    "We keep {seed.generic} and #crossing# in separate parts of our lives.|That's the mistake.",
-    "What do you get when you mix {seed.generic} with #crossing#?|I found out the hard way.",
-    "Here's a question nobody asks: {seed.generic} or #crossing#?|Choose wisely. I didn't.",
-    "{seed.generic.cap} and #crossing#: two things I never thought would meet.|Then, one Tuesday, they did."
+    "{seed.generic.cap}, meet #crossing#.|Nobody warned me.",
+    "Never mix {seed.generic} with #crossing#.|I did. Once.",
+    "{seed.generic.cap}. #crossing.capitalize#. Same day.|Never again.",
+    "{seed.generic.cap} plus #crossing#.|Every single week.",
+    "{seed.generic.cap} ruined #crossing#.|Or the other way round."
   ],
   "crossing": [
     "Monday mornings",
     "airport security",
-    "my grandmother's cooking",
+    "grandma's cooking",
     "group chats",
     "the self-checkout",
     "parallel parking",
@@ -47,25 +46,25 @@
     "a wobbly table",
     "the snooze button",
     "hold music",
-    "the last slice of pizza",
+    "the last pizza slice",
     "my old school photos",
-    "assembly instructions",
-    "the dentist's waiting room"
+    "flat-pack furniture",
+    "the dentist's chair"
   ],
   "typical": [
-    "Ask anyone who works with {seed.generic} about the worst part of the job.|Then watch their face.",
-    "The biggest problem with {seed.generic}? It's not what you think.|It's much, much weirder.",
-    "Everyone who loves {seed.generic}: I know your secret.|And now, so will everyone else.",
-    "For {number} years, nobody in the world of {seed.generic} wanted to talk about this.|Today, we talk about it.",
-    "Everybody wants {seed.generic}. Nobody wants to deal with the paperwork.|You know what I mean.",
-    "We talk about {seed.generic} all the time. We never talk about the hard part.|Today, we will."
+    "Nobody reads the {seed.bare} manual.|Not even its authors.",
+    "The worst part of {seed.generic}?|You know the one.",
+    "{seed.generic.cap}: harder than it looks.|Ask anyone. Watch them sigh.",
+    "The {seed.bare} paperwork.|Nobody talks about it.",
+    "Everybody wants {seed.generic}.|Nobody wants the paperwork.",
+    "The dark side of {seed.generic}.|Today, we talk about it."
   ],
   "real": [
-    "Right now, somewhere, someone is searching how to {seed.wikihow_action.lower}.|Last night, that someone was me.",
-    "Last year, I tried to {seed.wikihow_action.lower}. I failed.|This talk is about what I learned.",
-    "There's a guide online on how to {seed.wikihow_action.lower}. I've read it {number} times.|It doesn't help.",
-    "{percent} of people have tried to {seed.wikihow_action.lower} at least once.|The rest are lying.",
-    "Nobody teaches you how to {seed.wikihow_action.lower}. Not at school, not at home.|So I had to learn the hard way.",
-    "My grandmother knew how to {seed.wikihow_action.lower}. Nobody else in my family does.|This talk is for her."
+    "How do you {seed.wikihow_action.lower}?|Nobody knows. I asked.",
+    "Nobody knows how to {seed.wikihow_action.lower}.|I searched {number} times.",
+    "I still can't {seed.wikihow_action.lower}.|{number} tutorials later.",
+    "Can you {seed.wikihow_action.lower}?|Exactly.",
+    "Step 1: {seed.wikihow_action.lower}.|There is no step 2.",
+    "Who can {seed.wikihow_action.lower}?|Not me. Not since {year}."
   ]
 }

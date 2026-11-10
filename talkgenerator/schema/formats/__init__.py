@@ -116,7 +116,7 @@ class KindSlideGenerator(slide_generator_types.SlideGenerator):
         talkgenerator.plan.kinds.BoxPictures): those of the boxes the dice pick (of those with a text), each a
         picture about its box's text, by its slot."""
         pictures = KINDS[self.kind].pictures
-        if pictures is None:
+        if pictures is None or presentation_context.get(slides.STANDING_IN):  # (standing in: no lookups, D73)
             return {}
         boxes = [box for box in pictures.boxes if texts.get(box)]
         found = {}

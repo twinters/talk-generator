@@ -1,5 +1,5 @@
 {
-  "about": "Emoji for classic talks' lists (docs/v5-plan.md, D65): a thing's own emoji by a word of it (singular, lowercase; a phrase of two words goes first), else one of its place's mood (a tier list's tier, an alignment chart's cell, an agenda's item). None for faiths, drink, weapons or death, nor joined sequences, which not every font joins (see talkgenerator.sources.emoji).",
+  "about": "Emoji for classic talks' lists (docs/v5-plan.md, D65): a thing's own emoji by a word of it (singular, lowercase; a phrase of two words goes first), else one of its place's mood (a tier list's tier, an alignment chart's cell, an agenda's item, or a punchline that breaks its list's pattern: surprise, D73). None for faiths, drink, weapons or death, nor joined sequences, which not every font joins (see talkgenerator.sources.emoji).",
   "words": {
     "penguin": "🐧", "cat": "🐱", "kitten": "🐱", "dog": "🐶", "puppy": "🐶", "bird": "🐦", "fish": "🐟", "whale": "🐋",
     "dolphin": "🐬", "shark": "🦈", "octopus": "🐙", "crab": "🦀", "lobster": "🦞", "shrimp": "🦐", "snail": "🐌",
@@ -102,6 +102,7 @@
     "lawful_evil": ["😏", "📈", "💼", "🧐"],
     "neutral_evil": ["😒", "🦹", "🐍"],
     "chaotic_evil": ["😈", "🌪️", "💥", "🔥"],
-    "agenda": ["📌", "👉", "💡", "🔍", "🎯", "📊", "🚀", "🤔", "🎉", "✅", "🧭", "🗺️"]
+    "agenda": ["📌", "👉", "💡", "🔍", "🎯", "📊", "🚀", "🤔", "🎉", "✅", "🧭", "🗺️"],
+    "surprise": ["🦆", "🦖", "🐐", "🙃", "🤯", "🍕", "🛸", "🧀", "🦄", "🐙", "🥔", "🐌", "🦩", "🧦"]
   }
 }

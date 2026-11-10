@@ -361,20 +361,26 @@ def realize(
     if missing:
         _note(problems, f"an image couldn't be downloaded, or is on the slide twice ({', '.join(missing)})")
         return None
-    # A real fact the slide was given (see talkgenerator.facts), which it credits when its texts build on it
-    fact = presentation_context.get("fact")
-    built_on = isinstance(fact, Fact) and facts.used_in(fact, texts.values())
+    # The real facts the slide was given (see talkgenerator.facts: a coincidence's two, D73), each of which it credits
+    # when its texts build on it
+    given = [fact for fact in (presentation_context.get("fact"), presentation_context.get("also_fact")) if fact]
+    built_on = [isinstance(fact, Fact) and facts.used_in(fact, texts.values()) for fact in given]
     slide.set_note(
         f"Seed: {presentation_context.get('seed')}\nPlanned: a {recipe.kind} slide for {plan.recipe}, about {concept!r}"
         f"\nTexts: {texts}\nImage queries: {queries}"
         + "".join(f"\nTo generate ({wish.reason}) for {wish.slot}: {wish.request.prompt!r}" for _, wish in slide.wishes)
-        + (f"\nReal fact ({'built on' if built_on else 'left out'}): {fact.text!r}" if isinstance(fact, Fact) else "")
+        + "".join(
+            f"\nReal fact ({'built on' if used else 'left out'}): {fact.text!r}"
+            for fact, used in zip(given, built_on, strict=True)
+            if isinstance(fact, Fact)
+        )
     )
     for image in images.values():
         if isinstance(image, ImageData):
             slide.add_source(image.get_source(), image.get_source_url(), image.get_credit(), image=image)
-    if built_on and isinstance(fact, Fact):
-        slide.add_source(fact.source, fact.url, facts.credit(fact), text=True)
+    for fact, used in zip(given, built_on, strict=True):
+        if used and isinstance(fact, Fact):
+            slide.add_source(fact.source, fact.url, facts.credit(fact), text=True)
     generated = [value for value in (*texts.values(), *images.values()) if value is not None]
     return slide, generated
 

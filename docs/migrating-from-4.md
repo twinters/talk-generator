@@ -31,7 +31,7 @@ model with `--llm`. [Language models](language-models.md) has the details.
 
 ## What a talk looks like
 
-Six things changed, and four of them can be set back, to come as close to 4.x's talks as talkgenerator 5 gets:
+Seven things changed, and five of them can be set back, to come as close to 4.x's talks as talkgenerator 5 gets:
 
 | | talkgenerator 4 | talkgenerator 5 | To keep 4.x's |
 | --- | --- | --- | --- |
@@ -40,6 +40,7 @@ Six things changed, and four of them can be set back, to come as close to 4.x's 
 | Who presents it | nobody in particular | a persona the talk's seed picks (a startup founder, a medieval historian...), whose kinds of slides come up more often, and whose own titles half of the classic titles are | `--persona none` |
 | Real facts | none | half of a classic talk's fun facts and quizzes are real (Wikipedia's, Open Trivia DB's), and some of its dares and closing lines a real dad joke or piece of advice, credited on the slide | `DISABLE_FACTS=1` |
 | Slide numbers | none | slides are numbered ("7/12"), small, in a corner | |
+| Charts and diagrams | always drawn | half of them try a picture first, in their place, under their title (a real chart from the internet, a weird picture), and are drawn when none is found | `DISABLE_PICTURE_FIRST=1` |
 | The slides | v4's slide types | more than thirty more (big numbers, quizzes, timelines, memes with live captions, tier lists, fake error messages...), and texts from the TED content pack, in a TED talk's voice and about four times as many as 4.x had | |
 
 Classic slides look as they did, and their images come from about the same sources, with a few changes: history

@@ -1,6 +1,7 @@
 import logging
 from collections.abc import Callable, Collection
 from functools import lru_cache
+from typing import Any
 
 from talkgenerator import facts
 from talkgenerator.datastructures.image_data import ImageData
@@ -77,6 +78,9 @@ class SlideGeneratorData:
         # How a language model fills this kind of slide (a talkgenerator.plan.kinds.Recipe): which slide shape, which
         # image sources, and what to write. Without one, the slide is always classic.
         self.llm = llm
+        # For a classic chart or diagram that tries a picture first (D73): the generator of its text version alone, which
+        # stands in for it until its picture comes (see PresentationSchema._generate_slides)
+        self.text_version: SlideGeneratorData | None = None
 
     def generate(self, presentation_context, used_elements):
         """Generate a slide for a given presentation using the given seed."""
@@ -104,7 +108,9 @@ class SlideGeneratorData:
                     return None
 
                 if slide:
-                    # Remember how the slide was made (only shown in the speaker notes with debug_notes)
+                    # Remember how the slide was made (only shown in the speaker notes with debug_notes), and what its
+                    # generator noted (a chart that's a picture in its place, say: D73)
+                    noted = slide.note
                     slide.set_note(
                         "Seed: "
                         + presentation_context["seed"]
@@ -115,6 +121,8 @@ class SlideGeneratorData:
                         + " \n Generated Elements: "
                         + describe_elements(generated_elements)
                     )
+                    if noted:
+                        slide.add_note(noted)
 
                     # Add all sources of generated elements: their images', and the real facts' it shows as they are
                     for generated_element in generated_elements:
@@ -134,7 +142,7 @@ class SlideGeneratorData:
     def weighted(self, weight_function: Callable[[int, int], float], name: str) -> "SlideGeneratorData":
         """The same slide generator under another name, with another weight: a talk format's, which has the slides of
         another format among its own (see talkgenerator.schema.formats)."""
-        return SlideGeneratorData(
+        made = SlideGeneratorData(
             self._generator,
             weight_function=weight_function,
             retries=self._retries,
@@ -143,6 +151,26 @@ class SlideGeneratorData:
             name=name,
             llm=self.llm,
         )
+        made.text_version = self.text_version.weighted(weight_function, name) if self.text_version else None
+        return made
+
+    def wrapped(self, generator: Any) -> "SlideGeneratorData":
+        """The same slide generator, with another generator of its slides (one that wraps its own, say), under its name
+        and with its weight, tags and recipe."""
+        return SlideGeneratorData(
+            generator,
+            weight_function=self._weight_function,
+            retries=self._retries,
+            allowed_repeated_elements=self._allowed_repeated_elements,
+            tags=set(self._tags),
+            name=self._name,
+            llm=self.llm,
+        )
+
+    @property
+    def slide_generator(self) -> Any:
+        """What generates its slides (see talkgenerator.slide.slide_generator_types)."""
+        return self._generator
 
     def get_weight_for(self, slide_nr: int, total_slides: int) -> float:
         """The weight of the generator for a particular slide.

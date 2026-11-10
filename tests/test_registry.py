@@ -36,7 +36,11 @@ def test_every_schema_only_uses_registered_slide_generators():
     registered = set(map(id, slide_generators))
     for name in schemas.names():
         assert schemas.get(name).slide_generators, name
-        assert all(id(generator) in registered for generator in schemas.get(name).slide_generators), name
+        # (or a chart's or a diagram's copy that tries a picture first, whose text version is the registered one: D73)
+        assert all(
+            id(generator) in registered or id(generator.text_version) in registered
+            for generator in schemas.get(name).slide_generators
+        ), name
 
 
 def test_listing():

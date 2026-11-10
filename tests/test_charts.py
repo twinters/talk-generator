@@ -15,7 +15,7 @@ from talkgenerator.checks.deck import check_leftovers
 from talkgenerator.design import color, engine, themes
 from talkgenerator.models.deck import Deck
 from talkgenerator.models.plan import SlidePlan
-from talkgenerator.plan import external, languages, prompt
+from talkgenerator.plan import external, kinds, languages, prompt
 from talkgenerator.plan.kinds import KINDS, Recipe
 from talkgenerator.plan.realize import clean_text
 from talkgenerator.render import charts
@@ -170,16 +170,34 @@ def test_the_reference_lists_the_options():
 
 def test_the_classic_trend_chart(monkeypatch):
     monkeypatch.setattr(chart, "correlation_title_generator", lambda context: f"{context['y_label']} over time")
+    monkeypatch.setattr(chart, "chart_claim_generator", lambda context: "The data doesn't lie")
     monkeypatch.setattr(chart, "axis_titles", lambda context: (f"Love of {context['x_label']}", context["y_label"]))
     with random_util.use(random_util.Rng(4)):
         content = chart.generate_trend_chart({"topic": "cats", "seed": "naps"})
     title, chart_type, _, _, x_title, y_title, _, _ = content
-    assert (title, chart_type, x_title, y_title) == ("naps over time", XL_CHART_TYPE.LINE, "Love of cats", "naps")
+    # (its axes say what it compares: its title is a claim, D73)
+    assert (title, chart_type, x_title, y_title) == ("The data doesn't lie", XL_CHART_TYPE.LINE, "Love of cats", "naps")
     spec = _spec(slides.ChartSlide(*content))
     assert (spec.chart_type, spec.x_title, spec.y_title) == ("line", "Love of cats", "naps")
 
     with random_util.use(random_util.Rng(4)):
         assert chart.generate_trend_chart({"topic": "cat", "seed": "cats"})[4] == "Love of time"  # axes too alike
+    monkeypatch.setattr(chart, "axis_titles", lambda context: (None, None))
+    with random_util.use(random_util.Rng(4)):
+        assert chart.generate_trend_chart({"topic": "cats", "seed": "naps"})[0] == "naps over time"  # (bare: it names)
+
+
+def test_a_planned_charts_title_that_says_what_it_compares_goes_on_its_axes():
+    assert kinds.axes_from_title("Coffee vs. productivity", None, None) == (None, "Coffee", "Productivity")
+    assert kinds.axes_from_title("naps versus genius: the data", None, "Hours") == ("The data", "Naps", "Hours")
+    assert kinds.axes_from_title("Penguins v. pigeons", "Joy", "Time") == (None, "Joy", "Time")
+    claim = "Penguins get happier the colder it gets"
+    assert kinds.axes_from_title(claim, None, None) == (claim, None, None)
+    long = "Why cats always win against every single dog vs. the rest"  # (a claim, with "vs." in it)
+    assert kinds.axes_from_title(long, None, None) == (long, None, None)
+    slide = kinds.KINDS["chart_correlation"].build({"title": "Socks vs. sadness", "shape": "rising"}, {}, ENGLISH)
+    spec = _spec(slide)
+    assert (spec.y_title, spec.x_title) == ("Socks", "Sadness") and slide.to_deck_slide().elements[0].role == "chart"
 
 
 def test_classic_charts_have_funny_axis_titles_or_none():

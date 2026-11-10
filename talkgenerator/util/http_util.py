@@ -68,10 +68,9 @@ CACHE_EXPIRY: ExpirationPatterns = {
     "images-api.nasa.gov/search": timedelta(days=7),
     "flagcdn.com/en/codes.json": timedelta(days=30),
     "api.imgflip.com/get_memes": timedelta(days=7),
-    # Real facts (see talkgenerator.facts): Wikipedia's articles change slowly, its day's events by the day (its address
-    # names the day), and Open Trivia DB answers a category's questions at random, so it's the same ones all week
+    # Real facts (see talkgenerator.facts): Wikipedia's articles change slowly (a year's events too), and Open Trivia
+    # DB answers a category's questions at random, so it's the same ones all week
     "*.wikipedia.org/w/api.php": timedelta(days=7),
-    "en.wikipedia.org/api/rest_v1/feed/onthisday": timedelta(days=30),
     "opentdb.com/api.php": timedelta(days=7),
     # Flavour texts (see talkgenerator.sources.flavour): a useless fact by its number in the week's pool (the API
     # answers at random), dad jokes by their search or page, an advice slip by its number (they don't change)
