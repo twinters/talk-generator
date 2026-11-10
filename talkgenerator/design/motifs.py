@@ -379,12 +379,13 @@ def _number(scene: Scene) -> str:
 
 
 def _count(scene: Scene, padded: bool = False, gap: str = "") -> str:
-    """The slide's number of its deck's slides, as "7/12" (padded, as "07/12"; with a gap, as "7 / 12"), so that
-    presenter and audience see how far the talk is; or its number alone ("07"), when the deck's size isn't known."""
+    """The slide's number of its deck's slides, as "7/12" (padded, as "07/12", the total too: "03/08", never "03/8",
+    which the user found odd on 2026-11-10; with a gap, as "7 / 12"), so that presenter and audience see how far the
+    talk is; or its number alone ("07"), when the deck's size isn't known."""
     if scene.total is None:
         return _number(scene)
     digits = max(2, len(str(scene.total))) if padded else 1
-    return f"{scene.number + 1:0{digits}d}{gap}/{gap}{scene.total}"
+    return f"{scene.number + 1:0{digits}d}{gap}/{gap}{scene.total:0{digits}d}"
 
 
 def _roman(number: int) -> str:

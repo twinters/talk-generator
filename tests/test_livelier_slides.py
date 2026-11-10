@@ -65,6 +65,16 @@ def test_every_family_numbers_its_slides_of_the_decks(images, family):
         assert findings == [], (family, findings)
 
 
+def test_a_padded_number_pads_its_total_too():
+    # (the user, 2026-11-10: "03/8" put a 0 before the number but not before the total; "either one")
+    from talkgenerator.design import motifs
+
+    eight = dataclasses.make_dataclass("Scene", [("number", int), ("total", int)])(2, 8)
+    assert motifs._count(eight, padded=True) == "03/08"
+    assert motifs._count(eight) == "3/8"
+    assert motifs._count(dataclasses.replace(eight, number=6, total=12), padded=True, gap=" ") == "07 / 12"
+
+
 def test_a_talk_that_streams_numbers_its_slides_of_the_ones_it_will_have():
     layout = engine.DeckLayout(3, _theme("clean keynote"), total=12)
     first = layout.next(slides.AgendaSlide("Today", "One", "Two", "Three").to_deck_slide())
