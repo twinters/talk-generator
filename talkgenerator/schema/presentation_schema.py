@@ -1757,7 +1757,9 @@ class PresentationSchema:
             return {}
         for number, fact in given.items():
             talk.contexts[number - 1]["fact"] = fact.fact
-        talk.facts = tuple(fact.fact for fact in given.values())
+            if fact.also is not None:  # (a coincidence's other real thing: D73)
+                talk.contexts[number - 1]["also_fact"] = fact.also
+        talk.facts = tuple(each for fact in given.values() for each in fact.facts)
         if given:
             logger.info("Real facts for slides %s", ", ".join(str(number) for number in given))
         return given

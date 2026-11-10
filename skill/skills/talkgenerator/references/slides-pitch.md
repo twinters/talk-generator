@@ -68,7 +68,7 @@ Images: `background`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `problem-statement-pitch` | The problem the startup solves, as a bold statement over a photo: a pain that everyone supposedly has with the concept | the default; `text`: the problem, as one bold sentence or question, stated as a crisis; images: `background` calm-backdrop or backdrop; tags: problem, statement |
+| `problem-statement-pitch` | The problem the startup solves, as a bold statement over a photo: a pain that everyone supposedly has with the concept | the default; `text`: the problem, stated as a crisis in a few words (eight at most): a bold claim or question; images: `background` calm-backdrop or backdrop; tags: problem, statement |
 | `wikihow-bold-statement-pitch` | A bold statement over a photo | `text`: a bold claim or question about the concept, such as 'Don't we all secretly want to ...?'; images: `background` calm-backdrop or backdrop; tags: bold_statement, statement |
 | `anecdote-pitch` | A personal anecdote the presenter now has to tell | `text`: the title of the anecdote, such as 'The time I ...'; images: `background` calm-backdrop or backdrop; tags: anecdote |
 
@@ -144,7 +144,7 @@ A line chart of a made-up trend along two odd axes; a second line, if any, draws
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 90 | the chart's claim, as its title |
+| `title` | 90 | the chart's claim, as its title, in a few words: what it shows, such as a headline would say it, never 'X vs Y' (the two things it compares go on its axes) |
 | `x_axis` | 40 | what the chart goes along, such as 'Hours since the meeting started' (or empty, for none) |
 | `y_axis` | 40 | what the line measures, such as 'Times someone said synergy' (or empty, for none) |
 | `shape` | 20 | how the line goes: `rising`, `falling`, `exponential`, `diminishing`, `hockey stick`, `peak`, `crash`, `plateau`, `rollercoaster`, `dip`, `flat` (or empty, for any) |
@@ -449,16 +449,16 @@ Images: none
 
 ## `problem`
 
-The problem the talk is about, early on, to hook the audience: a short heading on a sticker, the problem in big words, and a line under it that makes it hit home, which appears on a click; over a picture of it, or beside a picture that shows it.
+The problem the talk is about, early on, to hook the audience: a short heading on a sticker, the problem in a few big words, and a short line under it that makes it hit home, which appears on a click; over a picture of it, or beside a picture that shows it.
 
 | Text | At most | What to write |
 | --- | --- | --- |
 | `kicker` | 28 | a short heading over the problem, in two or three words |
-| `problem` | 130 | the problem, in one or two short sentences: a hook that the audience either recognises at once or can't believe |
-| `detail` | 80 | a short line under it that makes it hit home (how often it happens, to whom, or what it costs); it appears on a click (or empty, for none) |
+| `problem` | 60 | the problem in a few words, three to eight, not a sentence that explains it: a hook that the audience either recognises at once or can't believe |
+| `detail` | 60 | a short line under it, a few words, that makes it hit home (how often it happens, to whom, or what it costs); it appears on a click (or empty, for none) |
 
 Images: `background`, `photo`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `problem-pitch` | The problem the startup solves, right after the title, to hook the investors: a pain everyone in the room has, or should have, with the concept | the default; `kicker`: a short heading over the problem, as a pitch deck has it, such as 'The problem' or 'The pain'; `detail`: a short line under it that makes the pain hit home: how often it happens, to how many people, or what it costs them; it appears on a click; images: `background` calm-backdrop or backdrop, `photo` weird-stock (or generated, from its prompt, with an image generator set up); tags: problem, problem_slide |
+| `problem-pitch` | The problem the startup solves, right after the title, to hook the investors: a pain everyone in the room has, or should have, with the concept | the default; `kicker`: a short heading over the problem, as a pitch deck has it, such as 'The problem' or 'The pain'; `detail`: a short line under it, a few words, that makes the pain hit home: how often it happens, to how many people, or what it costs them; it appears on a click; images: `background` calm-backdrop or backdrop, `photo` weird-stock (or generated, from its prompt, with an image generator set up); tags: problem, problem_slide |

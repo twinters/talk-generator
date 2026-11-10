@@ -127,7 +127,7 @@ A scatter plot of made-up data, under a claim of a correlation: one cloud of poi
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 90 | a made-up correlation between two things, as a claim |
+| `title` | 90 | a made-up correlation between two things, as a claim in a few words: what it shows, such as a headline would say it, never 'X vs Y' (the two things it compares go on its axes) |
 | `x_axis` | 40 | the axis along the bottom: the first of the two things (or empty, for none) |
 | `y_axis` | 40 | the axis going up: the second thing (or empty, for none) |
 | `shape` | 12 | the shape of the cloud of points, the funniest one for the claim: `rising`, `falling`, `exponential`, `saturating`, `u-shaped`, `hill`, `wave`, `step`, `none`, `ring`, `smile` (or empty, for any) |
@@ -148,7 +148,7 @@ A line chart of a made-up trend along two odd axes; a second line, if any, draws
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 90 | the chart's claim, as its title |
+| `title` | 90 | the chart's claim, as its title, in a few words: what it shows, such as a headline would say it, never 'X vs Y' (the two things it compares go on its axes) |
 | `x_axis` | 40 | what the chart goes along, such as 'Hours since the meeting started' (or empty, for none) |
 | `y_axis` | 40 | what the line measures, such as 'Times someone said synergy' (or empty, for none) |
 | `shape` | 20 | how the line goes: `rising`, `falling`, `exponential`, `diminishing`, `hockey stick`, `peak`, `crash`, `plateau`, `rollercoaster`, `dip`, `flat` (or empty, for any) |
@@ -668,13 +668,13 @@ Images: none
 
 ## `problem`
 
-The problem the talk is about, early on, to hook the audience: a short heading on a sticker, the problem in big words, and a line under it that makes it hit home, which appears on a click; over a picture of it, or beside a picture that shows it.
+The problem the talk is about, early on, to hook the audience: a short heading on a sticker, the problem in a few big words, and a short line under it that makes it hit home, which appears on a click; over a picture of it, or beside a picture that shows it.
 
 | Text | At most | What to write |
 | --- | --- | --- |
 | `kicker` | 28 | a short heading over the problem, in two or three words |
-| `problem` | 130 | the problem, in one or two short sentences: a hook that the audience either recognises at once or can't believe |
-| `detail` | 80 | a short line under it that makes it hit home (how often it happens, to whom, or what it costs); it appears on a click (or empty, for none) |
+| `problem` | 60 | the problem in a few words, three to eight, not a sentence that explains it: a hook that the audience either recognises at once or can't believe |
+| `detail` | 60 | a short line under it, a few words, that makes it hit home (how often it happens, to whom, or what it costs); it appears on a click (or empty, for none) |
 
 Images: `background`, `photo`
 

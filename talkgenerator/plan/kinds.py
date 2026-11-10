@@ -301,6 +301,38 @@ def _chart_categories(texts: Mapping[str, str | None], images: Mapping[str, Any]
     return slides.ChartSlide(texts["question"], chart_type, data, style)
 
 
+# A chart's title that only says what it compares ("Coffee vs. productivity", "Naps versus genius: the data"), which is
+# what its axes are for (the user's look at the sample talks, 2026-11-10: D73)
+_VERSUS: Final = re.compile(
+    r"^\s*(?P<first>[^:]+?)\s+(?:vs\.?|versus|v\.)\s+(?P<second>[^:]+?)\s*[.!]?\s*(?::\s*(?P<rest>.*))?$",
+    re.IGNORECASE,
+)
+_VERSUS_WORDS: Final = 6  # (the most words of a thing it compares: a longer one is a claim, "Why cats always win")
+
+
+def axes_from_title(
+    title: str | None, y_axis: str | None, x_axis: str | None
+) -> tuple[str | None, str | None, str | None]:
+    """A chart's title and the titles of its axes (the one going up, and the one along the bottom): where the title
+    only says what it compares ("Coffee vs. productivity"), the two things go on the axes that have no title of their
+    own, the first going up (as a plot of y against x is said), and the title keeps what it says after a colon, if
+    anything ("Naps versus genius: the data" keeps "The data"). Other titles stay as they are."""
+    found = _VERSUS.match(title or "")
+    if found is None or any(len(found[part].split()) > _VERSUS_WORDS for part in ("first", "second")):
+        return title, y_axis, x_axis
+    rest = (found["rest"] or "").strip()
+    return (
+        rest[:1].upper() + rest[1:] if rest else None,
+        y_axis or _capitalised(found["first"]),
+        x_axis or _capitalised(found["second"]),
+    )
+
+
+def _capitalised(text: str) -> str:
+    text = text.strip().rstrip(".!")
+    return text[:1].upper() + text[1:]
+
+
 def _chart_trend(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
     # The first line goes the way the plan says (or a random way), and a second line, if any, another way
     shape, values = chart.trend_values(texts.get("shape"))
@@ -309,12 +341,13 @@ def _chart_trend(texts: Mapping[str, str | None], images: Mapping[str, Any], lan
     if second:
         lines.append((second, chart.trend_values(texts.get("second_shape"), avoid=shape)[1]))
     event = texts.get("event")
+    title, y_title, x_title = axes_from_title(texts["title"], texts.get("y_axis"), texts.get("x_axis"))
     return slides.ChartSlide(
-        texts["title"],
+        title,
         XL_CHART_TYPE.LINE,
         chart.trend_chart_data(lines),
-        x_title=texts.get("x_axis"),
-        y_title=texts.get("y_axis"),
+        x_title=x_title,
+        y_title=y_title,
         reveal="series" if second else "all",
         point_labels=((0, chart.trend_turn(shape), event),) if event else (),
         # (a weird picture of the moment by its point, now and then, on a click: see BoxPictures)
@@ -338,13 +371,14 @@ def _chart_correlation(texts: Mapping[str, str | None], images: Mapping[str, Any
     # line fitted through it; or two or three named clouds, each in its colour; and maybe an outlier
     clusters = [texts.get(f"cluster_{index}") or "" for index in range(1, chart.MOST_CLUSTERS + 1)]
     data, trendlines, labels = chart.correlation_data(texts.get("shape"), clusters, texts.get("outlier"))
+    title, y_title, x_title = axes_from_title(texts["title"], texts.get("y_axis"), texts.get("x_axis"))
     return slides.ChartSlide(
-        texts["title"],
+        title,
         XL_CHART_TYPE.XY_SCATTER,
         data,
         chart.create_set_scatter_properties("", ""),
-        x_title=texts.get("x_axis"),
-        y_title=texts.get("y_axis"),
+        x_title=x_title,
+        y_title=y_title,
         point_labels=labels,
         trendlines=trendlines,
     )
@@ -757,6 +791,10 @@ MATRIX_VARIANTS: Final = (
 )
 
 
+# What a chart's title isn't (D73): what it compares, which is what its axes say
+_NOT_VERSUS: Final = (
+    ": what it shows, such as a headline would say it, never 'X vs Y' (the two things it compares go on its axes)"
+)
 _NUMBER: Final = re.compile(r"[-+]?\d+(?:[.,]\d+)?\s*%?")
 _LETTERED: Final = re.compile(r"^\(?[A-Da-d]\s*[).:]\s*")  # a quiz option's own letter, as in "A) Yes"
 _SPELLED: Final = re.compile(r"^[A-Za-z]\s*[-–—:.)=]\s+")  # an acronym's word's own letter, as in "S - Synergy"
@@ -790,10 +828,11 @@ WALL_TEXT: Final = 2600  # how long a wall of text's points may be, together (th
 DARE: Final = 130  # how long a dare may be, for the presenter or for the audience
 CALLBACK: Final = 60  # how long the closing slide's note of which earlier picture it calls back to may be
 ERROR_BUTTON: Final = 20  # how long a fake error message's button may be (they're written as one text)
-# How long a problem slide's heading, its problem and the line under it may be (D69)
+# How long a problem slide's heading, its problem and the line under it may be (D69): a few words, which the user
+# found much funnier than a sentence or two (2026-11-10, D73)
 PROBLEM_KICKER: Final = 28
-PROBLEM_TEXT: Final = 130
-PROBLEM_DETAIL: Final = 80
+PROBLEM_TEXT: Final = 60
+PROBLEM_DETAIL: Final = 60
 # What an alignment chart's description of its cells says of the punchline's
 _PUNCHLINE: Final = {"chaotic_evil": ": the punchline"}
 
@@ -904,7 +943,9 @@ KINDS: Final[dict[str, Kind]] = {
             "A scatter plot of made-up data, under a claim of a correlation: one cloud of points in a shape (now and "
             "then with a line fitted through it), or two or three named groups of points, each in its own colour.",
             (
-                TextField("title", "a made-up correlation between two things, as a claim", 90),
+                TextField(
+                    "title", f"a made-up correlation between two things, as a claim in a few words{_NOT_VERSUS}", 90
+                ),
                 TextField("x_axis", "the axis along the bottom: the first of the two things", 40, optional=True),
                 TextField("y_axis", "the axis going up: the second thing", 40, optional=True),
                 TextField(
@@ -934,7 +975,7 @@ KINDS: Final[dict[str, Kind]] = {
             "A line chart of a made-up trend along two odd axes; a second line, if any, draws itself across it on a "
             "click, as the punchline.",
             (
-                TextField("title", "the chart's claim, as its title", 90),
+                TextField("title", f"the chart's claim, as its title, in a few words{_NOT_VERSUS}", 90),
                 TextField(
                     "x_axis", "what the chart goes along, such as 'Hours since the meeting started'", 40, optional=True
                 ),
@@ -1523,20 +1564,20 @@ KINDS: Final[dict[str, Kind]] = {
         Kind(
             "problem",
             "The problem the talk is about, early on, to hook the audience: a short heading on a sticker, the "
-            "problem in big words, and a line under it that makes it hit home, which appears on a click; over a "
-            "picture of it, or beside a picture that shows it.",
+            "problem in a few big words, and a short line under it that makes it hit home, which appears on a click; "
+            "over a picture of it, or beside a picture that shows it.",
             (
                 TextField("kicker", "a short heading over the problem, in two or three words", PROBLEM_KICKER),
                 TextField(
                     "problem",
-                    "the problem, in one or two short sentences: a hook that the audience either recognises at once "
-                    "or can't believe",
+                    "the problem in a few words, three to eight, not a sentence that explains it: a hook that the "
+                    "audience either recognises at once or can't believe",
                     PROBLEM_TEXT,
                 ),
                 TextField(
                     "detail",
-                    "a short line under it that makes it hit home (how often it happens, to whom, or what it costs); "
-                    "it appears on a click",
+                    "a short line under it, a few words, that makes it hit home (how often it happens, to whom, or what "
+                    "it costs); it appears on a click",
                     PROBLEM_DETAIL,
                     optional=True,
                 ),
@@ -1596,32 +1637,32 @@ PROBLEM_ANGLES: Final[dict[str, tuple[float, str, str]]] = {
     "weird": (
         1,
         "this one a weird problem with the concept, which nobody has noticed yet",
-        "a weird problem with the concept that nobody has noticed yet, stated as if everyone suffers from it, in one "
-        "or two short sentences",
+        "a weird problem with the concept that nobody has noticed yet, stated as if everyone suffers from it, in a "
+        "few words (three to eight), such as a headline would put it",
     ),
     "everyday": (
         1,
         "this one an everyday problem with the concept, which everyone in the room has had",
-        "a small, everyday frustration with the concept that everyone in the room has had, made huge, in one or two "
-        "short sentences",
+        "a small, everyday frustration with the concept that everyone in the room has had, made huge, in a few words "
+        "(three to eight)",
     ),
     "crossed": (
         1,
         "this one the concept running into something from another part of life",
         "a problem nobody saw coming, where the concept runs into something from another part of life (the word to "
-        "riff on, say), in one or two short sentences",
+        "riff on, say), in a few words (three to eight)",
     ),
     "typical": (
         1,
         "this one the problem that everyone who deals with the concept knows",
-        "the problem that everyone who deals with the concept knows, taken deadly seriously, in one or two short "
-        "sentences",
+        "the problem that everyone who deals with the concept knows, taken deadly seriously, in a few words (three "
+        "to eight)",
     ),
     "real": (
         1,
         "this one a problem people really have with the concept, which they look up how to fix",
-        "a problem people really have with the concept (one they look up how to fix), taken far too seriously, in "
-        "one or two short sentences",
+        "a problem people really have with the concept (one they look up how to fix), taken far too seriously, in a "
+        "few words (three to eight)",
     ),
 }
 PROBLEM_BEHIND: Final = 0.5  # of the problem slides with a picture behind the problem (the others' is beside it)

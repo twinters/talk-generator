@@ -1,5 +1,6 @@
 """Offline tests of real facts in talks (talkgenerator.facts, docs/v5-plan.md D60), with fakes of their sources:
-Wikipedia (an article's lead, the living people's category, the day's events) and Open Trivia DB.
+Wikipedia (an article's lead and the rest of it, the living people's category, a year's events) and Open Trivia
+DB.
 
 A talk a language model writes gives up to three of its slides that build on a fact (history, a fun fact, a quiz, a
 big number) a real one each, in its one request, and its deck records them; a slide that builds on its fact credits
@@ -81,14 +82,23 @@ SEARCHES = {
 }
 # The Dutch Wikipedia's articles, by their English ones
 DUTCH = {"Pinguïns": "Penguin"}
-# The day's events, as Wikipedia's main page has them: a year, what happened and the articles it links to
-EVENTS = (
-    (1895, "Wilhelm Röntgen (pictured) discovered X-rays.", ("Wilhelm Röntgen", "X-ray")),
-    (1291, "A law was passed that confined most of Venice's glassmaking industry to nearby Murano.", ("Murano",)),
-    (1966, "Edward Brooke was elected to the United States Senate.", ("Edward Brooke",)),
-    (2017, "The Louvre Abu Dhabi was opened by Emmanuel Macron.", ("Louvre Abu Dhabi", "Emmanuel Macron")),
-    (1932, "The Australian military withdrew from its war against emus.", ("Emu War",)),
-)
+# The rest of an article, beyond its lead (as a whole article's text has it, with its sections): the years of its
+# topic's history, for coincidences (D73), but not in a section that lists links
+HISTORY = {
+    "Penguin": "\n\n== History ==\nIn 1895, the first penguin was exhibited at London Zoo.\n=== Later ===\nPenguins "
+    "were filmed in colour for the first time in 2003, by a crew in a long boat.\n\n== See also ==\nIn 1990, a list of "
+    "penguins was made by many people.",
+}
+# Years' articles: their events by date, under "Events" (and their births, which aren't events)
+YEARS = {
+    1895: "1895 was a common year.\n\n== Events ==\n\n=== November ===\nNovember 8 – Wilhelm Röntgen (pictured) "
+    "discovers X-rays.\nNovember 9–12 – The war against emus begins in a wheat field.\nNovember – French "
+    "Revolution:\nNovember 11 - Edward Brooke is elected to the United States Senate.\nDecember 28 – The Lumière "
+    "brothers show the first films to a paying audience in Paris.\n\n== Births ==\nJanuary 1 – A baby is born in a "
+    "village somewhere far away.",
+    2003: "== Events ==\n=== May ===\nMay 1 – Emmanuel Macron opens a new museum of modern art in Paris.\nMay 2 – The "
+    "Louvre opens a new wing for its collection of modern sculpture.",
+}
 # Open Trivia DB's questions of a category, as it gives them (with HTML entities)
 TRIVIA = {
     27: [
@@ -177,8 +187,6 @@ class FakeWeb:
             if not 1 <= number <= 224:
                 return _Response(200, {"message": {"type": "error", "text": "Advice slip not found."}})
             return _Response(200, {"slip": {"id": number, "advice": ADVICE_SLIPS[number % len(ADVICE_SLIPS)]}})
-        if "/feed/onthisday/selected/" in parts.path:
-            return self._day()
         if params.get("action") == "parse":
             return self._parse(params)
         if parts.netloc.startswith("nl."):
@@ -195,11 +203,14 @@ class FakeWeb:
         page: dict = {"ns": 0, "title": title}
         if title in DISAMBIGUATION:
             return {**page, "extract": f"{title} may refer to:", "pageprops": {"disambiguation": ""}}
+        if title.isdigit() and int(title) in YEARS:
+            return {**page, "extract": YEARS[int(title)]}
         if title not in LEADS and title not in PEOPLE:
             return {**page, "missing": True}
         wanted = params.get("prop", "")
         if "extracts" in wanted and title in LEADS:
-            page["extract"] = LEADS[title][1]
+            # (the lead alone, or the whole article: its lead and the rest)
+            page["extract"] = LEADS[title][1] + ("" if params.get("exintro") else HISTORY.get(title, ""))
         if "description" in wanted and title in LEADS:
             page["description"] = LEADS[title][0]
         if "categories" in wanted and title in LIVING:
@@ -238,18 +249,6 @@ class FakeWeb:
             return _Response(200, {"query": {"pages": [{"ns": 0, "title": title, "missing": True}]}})
         page = {"ns": 0, "title": title, "langlinks": [{"lang": "en", "title": DUTCH[title]}]}
         return _Response(200, {"query": {"pages": [page]}})
-
-    @staticmethod
-    def _day() -> _Response:
-        selected = [
-            {
-                "year": year,
-                "text": text,
-                "pages": [{"title": page.replace(" ", "_"), "titles": {"normalized": page}} for page in pages],
-            }
-            for year, text, pages in EVENTS
-        ]
-        return _Response(200, {"selected": selected})
 
     @staticmethod
     def _trivia(params: dict) -> _Response:
@@ -327,24 +326,37 @@ def test_living_people_are_unknown_when_wikipedia_cant_tell(web):
     assert wikipedia.living(["Elon Musk"]) is None
 
 
-def test_the_days_events_come_oldest_first(web):
-    events = wikipedia.on_this_day(11, 8)
-    assert [event.year for event in events] == sorted(year for year, _, _ in EVENTS)
-    assert events[0].pages == ("Murano",)
+def test_a_years_events_are_its_articles_lines_under_events_without_their_dates(web):
+    events = wikipedia.year_events(1895)
+    assert [event.text for event in events] == [
+        "Wilhelm Röntgen (pictured) discovers X-rays.",
+        "The war against emus begins in a wheat field.",
+        "French Revolution:",
+        "Edward Brooke is elected to the United States Senate.",
+        "The Lumière brothers show the first films to a paying audience in Paris.",
+    ]  # (not its births)
+    assert {event.year for event in events} == {1895}
+    assert wikipedia.year_events(800) == [] and web.requests[-1][1]["titles"] == "1895"  # (titled "AD 800": not asked)
+
+
+def test_an_articles_text_is_all_of_it_but_its_lists_of_links(web):
+    text = wikipedia.article_text("Penguin")
+    assert text.startswith("Penguins are a group") and "In 1895, the first penguin" in text and "2003" in text
+    assert "1990" not in text and "==" not in text  # (not its "See also", nor its headings)
 
 
 def test_a_wikipedia_that_is_down_gives_nothing_and_is_skipped_for_a_while(web):
     web.down = True
     assert wikipedia.article("penguins") is None
     asked = len(web.requests)
-    assert wikipedia.article("penguins") is None and wikipedia.on_this_day(11, 8) == []
+    assert wikipedia.article("penguins") is None and wikipedia.year_events(1895) == []
     assert len(web.requests) == asked  # (its cooldown: nothing more is asked)
 
 
 def test_wikipedia_can_be_switched_off(web, monkeypatch):
     monkeypatch.setenv("DISABLE_WIKIPEDIA", "1")
-    assert wikipedia.article("penguins") is None and wikipedia.on_this_day(11, 8) == []
-    assert web.requests == []
+    assert wikipedia.article("penguins") is None and wikipedia.year_events(1895) == []
+    assert wikipedia.article_text("Penguin") == "" and web.requests == []
 
 
 # OPEN TRIVIA DB
@@ -439,17 +451,18 @@ def test_no_fact_names_a_living_person(web):
     texts = [candidate.text for candidate in sheet.candidates]
     assert "Tesla, Inc. is named after the inventor Nikola Tesla." in texts
     assert not [text for text in texts if "Eberhard" in text or "Musk" in text or "Macron" in text]
-    assert (
-        "8 November 1291: A law was passed that confined most of Venice's glassmaking industry to nearby Murano."
-        in texts
-    )
-    assert "8 November 1895: Wilhelm Röntgen discovered X-rays." in texts  # (without "(pictured)")
-    assert not [text for text in texts if "Senate" in text or "emus" in text]  # (politics, war)
+    assert not [candidate for candidate in sheet.candidates if candidate.coincidence]  # (2003, 2004: by living people)
+    others = {candidate.also.text for candidate in facts.look_up("penguins", "en", DAY).candidates if candidate.also}
+    assert others == {
+        "1895: Wilhelm Röntgen discovers X-rays.",  # (without "(pictured)")
+        "1895: The Lumière brothers show the first films to a paying audience in Paris.",
+        "2003: The Louvre opens a new wing for its collection of modern sculpture.",
+    }  # (not the war, the heading, the politics, nor the living Macron's)
 
 
 def test_a_living_persons_article_gives_no_facts(web):
     candidates = facts.look_up("Elon Musk", "en", DAY).candidates
-    assert [candidate for candidate in candidates if not candidate.day and not candidate.flavour] == []
+    assert [candidate for candidate in candidates if not candidate.flavour] == []
 
 
 def test_facts_that_name_someone_stay_out_when_wikipedia_cant_tell_whos_living(web, monkeypatch):
@@ -481,11 +494,14 @@ def test_each_slide_gets_a_fact_that_suits_it_and_no_fact_comes_twice(web):
             sheet, [(2, "timeline"), (4, "fun_fact"), (6, "big_number"), (8, "quiz")], random_util.Rng(seed)
         )
         assert list(given) == [2, 4, 6]  # (three at most)
-        assert given[2].fact.text.startswith("8 November ")  # (a day's event, for history)
-        assert not given[4].fact.text.startswith("8 November ") and "Penguins are a group" not in given[4].fact.text
-        assert re.search(r"\d", given[6].fact.text) and not given[6].fact.text.startswith("8 November ")
-        assert len({fact.fact.text for fact in given.values()}) == 3
-        assert [fact.fact.slide for fact in given.values()] == [2, 4, 6]
+        assert given[2].also is not None and given[2].also.text[:6] in ("1895: ", "2003: ")  # (a coincidence)
+        assert "Penguins are a group" not in given[4].fact.text
+        assert re.search(r"\d", given[6].fact.text) and given[6].also is None  # (no coincidence for a big number)
+        texts = [each.text for fact in given.values() for each in fact.facts]
+        assert len(set(texts)) == len(texts)  # (never twice, not even half of a coincidence)
+        assert [each.slide for fact in given.values() for each in fact.facts] == sorted(
+            number for number, fact in given.items() for _ in fact.facts
+        )
     picks = {facts.assign(sheet, [(4, "fun_fact")], random_util.Rng(seed))[4].fact.text for seed in range(10)}
     assert len(picks) > 1  # (the random stream picks among those it likes as much)
     assert facts.assign(sheet, [(4, "fun_fact")], random_util.Rng(3)) == facts.assign(
@@ -497,11 +513,11 @@ def test_a_slide_builds_on_its_fact_when_its_texts_say_what_the_fact_does():
     fact = Fact(text="Only one species, the Galapagos penguin, lives at the equator.", source="Wikipedia")
     assert facts.used_in(fact, ["The Galapagos penguin moved to the equator for the tax breaks", None])
     assert not facts.used_in(fact, ["Penguins are secretly dentists"])
-    day = Fact(text="8 November 1895: Wilhelm Röntgen discovered X-rays.", source="Wikipedia")
-    assert facts.used_in(day, ["1895", "Röntgen discovered X-rays, and my cat"])
-    assert not facts.used_in(day, ["8 November 1895", "Nothing happened"])  # (its day and month don't count)
+    event = Fact(text="1895: Wilhelm Röntgen discovers X-rays.", source="Wikipedia")
+    assert facts.used_in(event, ["1895", "Röntgen discovered X-rays, and my cat"])
+    assert not facts.used_in(event, ["1896", "Nothing happened"])
     retired = Fact(
-        text="8 November 1278: Trần Thánh Tông, the second emperor of Vietnam, took up the title of retired emperor.",
+        text="1278: Trần Thánh Tông, the second emperor of Vietnam, takes up the title of retired emperor.",
         source="Wikipedia",
     )
     assert facts.used_in(retired, ["The Bean Tax of 1278", "A bean untaxed is a vassal unchecked, as the emperor knew"])
@@ -516,8 +532,8 @@ def test_a_facts_credit_names_its_article_and_its_license():
     fact = facts.Candidate("A fact.", "https://en.wikipedia.org/wiki/Tesla,_Inc.").fact()
     assert "".join(text for text, _ in facts.credit(fact)) == "Wikipedia: Tesla, Inc. (CC BY-SA 4.0)"
     assert facts.credit(fact)[0][1] == "https://en.wikipedia.org/wiki/Tesla,_Inc."
-    day = facts.Candidate("A fact.", wikipedia.anniversaries_url(11, 8), day=True).fact()
-    assert "".join(text for text, _ in facts.credit(day)) == "Wikipedia: On this day, November 8 (CC BY-SA 4.0)"
+    event = facts.Candidate("1895: A fact.", wikipedia.year_url(1895)).fact()
+    assert "".join(text for text, _ in facts.credit(event)) == "Wikipedia: 1895 (CC BY-SA 4.0)"
 
 
 # TALKS A LANGUAGE MODEL WRITES
@@ -657,21 +673,24 @@ def test_a_talk_s_request_gives_its_slides_real_facts_and_its_deck_records_them(
     assert facts.request_line() in request
     kinds = {slide.type: number for number, slide in enumerate(deck.slides, 1)}
     uses = {kinds[kind]: kind for kind in ("fun_fact", "timeline", "quiz", "questions")}
-    assert [fact.slide for fact in deck.facts] == sorted(uses)  # (the closing slide's: a piece of advice)
+    assert sorted({fact.slide for fact in deck.facts}) == sorted(uses)  # (the closing slide's: a piece of advice)
     assert all(fact.use == "prompt" for fact in deck.facts)
     by_slide = {fact.slide: fact for fact in deck.facts}
     assert by_slide[kinds["questions"]].source == "Advice Slip"
     assert {by_slide[kinds[kind]].source for kind in ("timeline", "quiz")} == {"Wikipedia"}
     assert by_slide[kinds["fun_fact"]].source in ("Wikipedia", "Useless Facts")  # (as the seed's shuffle picks)
     for fact in deck.facts:
-        assert fact.text.split(": ", 1)[-1] in request  # (a timeline's event with its year alone)
-    timeline = by_slide[kinds["timeline"]]
-    assert timeline.text.startswith(f"{datetime.date.today().day} ")  # (an event of the day the talk is made on)
-    # (small: a line, and three facts and a piece of advice on their slides' lines)
-    added = len(facts.request_line()) + sum(
-        len(facts.Given(uses[fact.slide], fact).line()) for fact in deck.facts if fact.slide is not None
-    )
-    assert added < 1200
+        assert fact.text in request
+    # (a timeline gets a coincidence: a moment of the topic's history and something else of the same year, D73)
+    timeline = [fact for fact in deck.facts if fact.slide == kinds["timeline"]]
+    assert len(timeline) == 2 and timeline[1].text.startswith(("1895: ", "2003: "))
+    assert timeline[1].text[:4] in timeline[0].text and "as if the first caused the second" in request
+    # (small: a line, and three slides' facts and a piece of advice on their slides' lines)
+    lines = {
+        number: facts.Given(uses[number], *(fact for fact in deck.facts if fact.slide == number)).line()
+        for number in uses
+    }
+    assert len(facts.request_line()) + sum(len(line) for line in lines.values()) < 1400
 
 
 def test_a_slide_that_builds_on_its_fact_credits_it(web, schema):
@@ -745,8 +764,7 @@ def test_a_wikipedia_that_is_down_makes_a_talk_without_facts(web, schema):
 
 def test_a_talk_on_a_living_person_gets_no_facts_about_them(web, schema):
     deck = _talk(FakeModel(), topic="Elon Musk")
-    of_wikipedia = [fact for fact in deck.facts or () if fact.source == "Wikipedia"]
-    assert all(fact.text.startswith(f"{datetime.date.today().day} ") for fact in of_wikipedia)  # (the day's alone)
+    assert not [fact for fact in deck.facts or () if fact.source == "Wikipedia"]  # (nor any coincidence)
     assert not [fact for fact in deck.facts or () if "Musk" in fact.text]
 
 
@@ -913,14 +931,54 @@ def test_a_credit_line_that_credits_a_fact_starts_with_sources(web, related):
     assert not pictured.credits_a_text() and engine.credits_prefix(pictured) == "Image sources: "
 
 
-def test_a_timeline_gets_an_event_of_the_day_with_its_year_alone():
-    fact = Fact(text="8 November 1291: A law confined Venice's glassmaking to Murano.", source="Wikipedia")
-    assert facts.Given("timeline", fact).line().endswith(': "1291: A law confined Venice\'s glassmaking to Murano."')
+def test_a_coincidence_says_both_real_things_and_that_one_caused_the_other():
+    moment = Fact(text="In 1895, the first penguin was exhibited at London Zoo.", source="Wikipedia")
+    other = Fact(text='1895: Wilhelm Röntgen discovers "X-rays".', source="Wikipedia")
+    line = facts.Given("timeline", moment, other).line()
+    assert line.endswith(""": "In 1895, the first penguin was exhibited at London Zoo.", and the same year, "1895: \
+Wilhelm Röntgen discovers 'X-rays'.\"""")
+    assert "as if the first caused the second" in line
+    for use in ("fun_fact", "history_quote", "history"):
+        assert "same year" in facts.Given(use, moment, other).line()
     assert (
-        facts.Given("history_quote", fact)
-        .line()
-        .endswith(': "8 November 1291: A law confined Venice\'s glassmaking to Murano."')
+        facts.Given("timeline", moment).line().endswith(': "In 1895, the first penguin was exhibited at London Zoo."')
     )
+    assert facts.Given("timeline", moment, other).facts == (moment, other)
+
+
+def test_a_moment_of_history_is_a_year_that_dates_something():
+    assert facts.year_of("In 1886, Karl Benz patented the motor car.", 2026) == 1886
+    assert facts.year_of("Since 1791, the word has been used.", 2026) == 1791
+    assert facts.year_of("The word entered English on May 8, 1582.", 2026) == 1582
+    assert facts.year_of("1886 was the year of the car.", 2026) == 1886
+    assert facts.year_of("It dives to 1500 metres.", 2026) is None  # (a figure)
+    assert facts.year_of("The industry was worth $495 billion in 2023.", 2026) is None  # (the news: RECENT)
+    assert facts.year_of("It was first mentioned in 812.", 2026) is None  # (titled "812"? "AD 812": not looked up)
+    assert facts.year_of("Penguins live in the Southern Hemisphere.", 2026) is None
+
+
+def test_a_coincidence_is_of_the_leads_years_or_else_the_articles(web):
+    sheet = facts.look_up("penguins", "en", DAY, frozenset({"timeline"}))
+    coincidences = [candidate for candidate in sheet.candidates if candidate.coincidence]
+    assert {candidate.text for candidate in coincidences} == {
+        "In 1895, the first penguin was exhibited at London Zoo.",
+        "Penguins were filmed in colour for the first time in 2003, by a crew in a long boat.",
+    }  # (the lead names no year: the rest of the article does, but not its "See also")
+    assert all(candidate.also.url == wikipedia.year_url(int(candidate.also.text[:4])) for candidate in coincidences)
+    assert not facts.look_up("penguins", "en", DAY, frozenset({"quiz"})).candidates[-1].coincidence  # (none asked)
+
+
+def test_a_year_lists_its_lively_events_first(web):
+    events = [
+        wikipedia.Event(1895, text)
+        for text in ("A long line about a quiet day in a town.", "The first films are shown to a paying audience.")
+    ]
+    picked = facts._year_candidates(1895, events, "penguins", set())
+    assert [candidate.text for candidate in picked] == [
+        "1895: The first films are shown to a paying audience.",
+        "1895: A long line about a quiet day in a town.",
+    ]
+    assert facts._year_candidates(1895, [wikipedia.Event(1895, "The king of Spain sends a fleet.")], "x", set()) == []
 
 
 # FLAVOUR TEXTS: USELESS FACTS, DAD JOKES AND ADVICE SLIPS
@@ -994,10 +1052,11 @@ def test_a_talk_in_another_language_gets_no_dad_joke_or_advice(web):
     assert set(facts.assign(german, slides, random_util.Rng(1))) <= {3}
 
 
-def test_a_fun_fact_builds_on_the_topics_facts_or_a_useless_fact(web):
+def test_a_fun_fact_builds_on_the_topics_facts_a_coincidence_or_a_useless_fact(web):
     sheet = facts.look_up("penguins", "en", DAY)
-    picks = {facts.assign(sheet, [(3, "fun_fact")], random_util.Rng(seed))[3].fact.source for seed in range(20)}
-    assert picks == {"Wikipedia", "Useless Facts"}
+    picks = [facts.assign(sheet, [(3, "fun_fact")], random_util.Rng(seed))[3] for seed in range(40)]
+    assert {given.fact.source for given in picks} == {"Wikipedia", "Useless Facts"}
+    assert any(given.also is not None for given in picks) and any(given.also is None for given in picks)
 
 
 def test_each_kind_of_text_goes_to_its_own_slides(web):

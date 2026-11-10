@@ -45,6 +45,7 @@
     "charts.location_question": {"variables": ["seed", "topic", "presenter", "title"], "field": "chart_categories.question"},
     "charts.property_question": {"variables": ["seed", "topic", "presenter", "title"], "field": "chart_categories.question"},
     "charts.correlation_title": {"variables": ["seed", "topic", "presenter", "title", "x_label", "y_label"], "field": "chart_correlation.title"},
+    "charts.chart_claim": {"variables": ["seed", "topic", "presenter", "title", "x_label", "y_label"], "field": "chart_correlation.title"},
     "charts.ranking_title": {"variables": ["seed", "topic", "presenter", "title"], "field": "chart_bars.title"},
     "charts.trend_event": {"variables": ["seed", "topic", "presenter", "title", "x_label", "y_label"], "field": "chart_trend.event"},
     "charts.x_axis_title": {"variables": ["seed", "topic", "presenter", "title", "x_label", "y_label"], "field": "chart_correlation.x_axis"},

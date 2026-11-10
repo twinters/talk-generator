@@ -87,33 +87,30 @@
     "Houston, we have a problem"
   ],
   "weird": [
-    "Every night, something strange happens to {seed.generic}. Nobody has ever filmed it.|We have. It's worse than you think.",
-    "Nobody has ever asked {seed.generic} for permission.|Not once, in all of recorded history.",
-    "Half of all {seed.bare} owners secretly wish they had bought a hamster instead.|We asked. They whispered.",
-    "There's a faint humming sound around {seed.generic}, and nobody has reported it.|Since 2019. Every single night.",
-    "Somewhere right now, someone is wasting {seed.one} on a Tuesday afternoon.|Multiply that by every Tuesday since 1970.",
-    "Every year, thousands of people mix up {seed.generic} and their passport.|Airports have stopped asking questions.",
-    "Statistically, you are within three metres of {seed.one} right now.|And you had no idea. That's the problem."
+    "{seed.generic.cap}: secretly broken.|We checked. Twice.",
+    "Nobody has fixed {seed.generic}. Ever.|Not since the Stone Age.",
+    "A faint hum around {seed.generic}.|Every night since 2019.",
+    "Tuesdays. {seed.generic.cap}. Chaos.|Multiply that by 52.",
+    "Nobody asked {seed.generic} first.|Not once in history.",
+    "Nobody talks about {seed.generic}.|We do. Loudly."
   ],
   "everyday": [
-    "You need {seed.one}. There's none in sight. Again.|Every. Single. Time.",
-    "Your group chat argues about {seed.generic} every single week.|And nobody has ever won.",
-    "You've explained {seed.generic} to your parents four times this year.|They still call it 'the thing'.",
-    "Ever tried to find {seed.one} at two in the morning?|Exactly.",
-    "The manual for {seed.generic}: 47 pages long. In Swedish.|And page 12 is missing.",
-    "Every morning starts the same way: you, {seed.generic}, and a deep sigh.|Twice on Mondays.",
-    "You've lost a whole Saturday to {seed.generic}. We all have.|Nobody gets those Saturdays back."
+    "No {seed.bare} in sight. Again.|Every. Single. Time.",
+    "{seed.generic.cap}, at 2 a.m.?|Exactly.",
+    "The {seed.bare} manual: 47 pages.|In Swedish.",
+    "Lost {seed.one} again?|So did 2 million people.",
+    "Explaining {seed.generic} to your parents.|For the fourth time.",
+    "Waiting for {seed.generic}. Again.|47 minutes, on average."
   ],
   "crossed": [
-    "Nobody saw it coming: {seed.generic} and #crossing# don't mix.|And yet, every day, they meet.",
-    "Every year, more people confuse {seed.generic} with #crossing#.|The numbers don't lie. The people do.",
-    "The world was built for {seed.generic}, or for #crossing#. Never for both.|Until now.",
-    "What happens when you combine {seed.generic} with #crossing#?|Chaos. Measurable, billable chaos.",
-    "Two things ruin your week: {seed.generic} and #crossing#. Usually at the same time.|Nobody has ever fixed both."
+    "{seed.generic.cap}, meet #crossing#.|Chaos. Billable chaos.",
+    "{seed.generic.cap} and #crossing# don't mix.|Yet they meet every day.",
+    "Never both: {seed.generic} and #crossing#.|Until now.",
+    "{seed.generic.cap} plus #crossing#.|Nobody saw it coming."
   ],
   "crossing": [
     "Monday mornings",
-    "self-checkout machines",
+    "self-checkouts",
     "the office printer",
     "group chats",
     "airport security",
@@ -121,30 +118,29 @@
     "tax returns",
     "reply-all emails",
     "flat-pack furniture",
-    "the queue at the post office",
-    "your neighbour's leaf blower",
+    "post office queues",
+    "leaf blowers",
     "hold music",
-    "the dentist's waiting room",
+    "the dentist's chair",
     "password rules",
-    "a wobbly shopping trolley",
-    "the last slice of cake",
+    "wobbly trolleys",
+    "the last cake slice",
     "your in-laws"
   ],
   "typical": [
-    "Ask anyone who works with {seed.generic}: the real problem is that nobody reads the manual.|Not even the people who wrote it.",
-    "The {seed.bare} industry still runs on spreadsheets from 1997.|Some of them are still open.",
-    "Ask any {seed.bare} expert what keeps them up at night.|Then watch them sigh.",
-    "With {seed.generic}, it's always the same story: too much paperwork, too little progress.|Every. Single. Quarter.",
-    "Everybody wants {seed.generic}. Nobody knows where to start.|We checked. Twice.",
-    "The biggest problem with {seed.generic}? Nobody owns the problem.|Until today."
+    "The {seed.bare} industry runs on fax.|Some still beep.",
+    "Nobody owns the {seed.bare} problem.|Until today.",
+    "Everybody wants {seed.generic}.|Nobody knows where to start.",
+    "{seed.generic.cap}: all paperwork.|Every. Single. Quarter.",
+    "Nobody reads the {seed.bare} manual.|Not even the people who wrote it.",
+    "{seed.generic.cap}: too slow, too pricey.|Every customer says so."
   ],
   "real": [
-    "Right now, someone is searching how to {seed.wikihow_action.lower}.|There's no app for it. Yet.",
-    "Every day, thousands of people ask the internet how to {seed.wikihow_action.lower}.|The internet doesn't know either.",
-    "Millions of people still don't know how to {seed.wikihow_action.lower}.|And they're too proud to ask.",
-    "There's a 14-step guide on how to {seed.wikihow_action.lower}.|{startup} does it in one tap.",
-    "You shouldn't need a guide to {seed.wikihow_action.lower}.|And yet, here we are.",
-    "Somewhere, someone is on step 9 of a guide on how to {seed.wikihow_action.lower}.|Step 10 is where it all goes wrong.",
-    "People spend whole evenings learning how to {seed.wikihow_action.lower}.|Evenings they will never get back."
+    "How do you {seed.wikihow_action.lower}?|There's no app for that. Yet.",
+    "Still can't {seed.wikihow_action.lower}?|{startup} can.",
+    "A 14-step guide to {seed.wikihow_action.lower}.|We need one tap.",
+    "Nobody knows how to {seed.wikihow_action.lower}.|And they're too proud to ask.",
+    "Step 9 of how to {seed.wikihow_action.lower}.|Step 10 is where it goes wrong.",
+    "Googling how to {seed.wikihow_action.lower}?|You and 2 million others."
   ]
 }

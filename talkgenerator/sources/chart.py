@@ -15,6 +15,8 @@ funny_yes_no_answer_generator = packs.pack(packs.TED).tracery("charts.funny_yes_
 location_question_generator = packs.pack(packs.TED).tracery("charts.location_question")
 property_question_generator = packs.pack(packs.TED).tracery("charts.property_question")
 correlation_title_generator = packs.pack(packs.TED).tracery("charts.correlation_title")
+# (a chart whose axes say what it compares has a claim as its title, rather than the two things again: D73)
+chart_claim_generator = packs.pack(packs.TED).tracery("charts.chart_claim")
 ranking_title_generator = packs.pack(packs.TED).tracery("charts.ranking_title")
 trend_event_generator = packs.pack(packs.TED).tracery("charts.trend_event")
 x_axis_title_generator = packs.pack(packs.TED).tracery("charts.x_axis_title")
@@ -29,6 +31,15 @@ def axis_titles(presentation_context: dict[str, Any]) -> tuple[str | None, str |
     if random_util.random() < BARE_CHARTS:
         return None, None
     return x_axis_title_generator(presentation_context), y_axis_title_generator(presentation_context)
+
+
+def claimed(title: str, x_title: str | None, y_title: str | None, presentation_context: dict[str, Any]) -> str:
+    """A classic chart's title: where its axes have titles, which say what it compares, a claim of what it shows ("The
+    data doesn't lie") rather than the two things again; else the title that names them, for the presenter to explain
+    (the user's look at the sample talks, 2026-11-10: D73)."""
+    if not x_title and not y_title:
+        return title
+    return chart_claim_generator(presentation_context) or title
 
 
 # DATA POINTS HELPERS
@@ -264,7 +275,7 @@ def generate_correlation_curve(presentation_context):
     chart_data, trendlines, labels = correlation_data(None, clusters)
     x_title, y_title = axis_titles(presentation_context)
     return (
-        title,
+        claimed(title, x_title, y_title, presentation_context),
         XL_CHART_TYPE.XY_SCATTER,
         chart_data,
         create_set_scatter_properties(x_label, y_label),
@@ -499,6 +510,7 @@ def generate_trend_chart(presentation_context: dict[str, Any]) -> tuple[Any, ...
     event = trend_event_generator(presentation_context) if random_util.random() < 0.5 else None
     labels = ((0, trend_turn(shape), event),) if event else ()
     x_title, y_title = axis_titles(presentation_context)
+    title = claimed(title, x_title, y_title, presentation_context)
     return title, XL_CHART_TYPE.LINE, trend_chart_data([("", values)]), None, x_title, y_title, "all", labels
 
 

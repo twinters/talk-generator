@@ -1,5 +1,6 @@
-"""Real facts from Wikipedia (https://en.wikipedia.org), the free encyclopedia: an article's lead, and the day's events
-from its main page ("On this day"), for talks with real facts in them (see talkgenerator.facts, docs/v5-plan.md D60).
+"""Real facts from Wikipedia (https://en.wikipedia.org), the free encyclopedia: an article's lead (and the rest of it,
+for the years of its history), and the events of a year, from the year's article ("1886"), for talks with real facts in
+them (see talkgenerator.facts, docs/v5-plan.md D60 and D73).
 
 English Wikipedia's, whatever the talk's language: a topic typed in another language is looked up in that language's
 Wikipedia and followed to its English article, as English Wikipedia's "Category:Living people" tells which of its
@@ -7,8 +8,8 @@ articles are about living people (no fact about one goes on a slide), and the ch
 light of read English. Its texts are under CC BY-SA 4.0: a slide that shows one credits its article.
 
 Wikimedia asks API clients for a User-Agent that says who they are (http_util's does) and for no more than 200
-requests a minute: a talk asks four to six times, and the cache keeps the answers for a week (the day's events for
-a month: their address names the day). No key; a source that fails is skipped for a while (its cooldown).
+requests a minute: a talk asks four to eight times, and the cache keeps the answers for a week. No key; a source that
+fails is skipped for a while (its cooldown).
 """
 
 from __future__ import annotations
@@ -28,9 +29,6 @@ from talkgenerator.util import http_util
 logger = logging.getLogger("talkgenerator")
 
 API: Final = "https://{language}.wikipedia.org/w/api.php"
-ON_THIS_DAY: Final = "https://en.wikipedia.org/api/rest_v1/feed/onthisday/selected/{month:02d}/{day:02d}"
-# The main page's selection of a day's events, which the feed above gives
-ANNIVERSARIES: Final = "https://en.wikipedia.org/wiki/Wikipedia:Selected_anniversaries/{month}_{day}"
 LICENSE: Final = "CC BY-SA 4.0"
 LICENSE_URL: Final = "https://creativecommons.org/licenses/by-sa/4.0/"
 LIVING_PEOPLE: Final = "Category:Living people"
@@ -82,12 +80,10 @@ class Article:
 
 @dataclass(frozen=True)
 class Event:
-    """An event of a day of the year, as Wikipedia's main page has it: its year, what happened, and the articles it
-    links to (by title)."""
+    """An event of a year, as the year's article lists it: its year, and what happened (without its date)."""
 
     year: int
     text: str
-    pages: tuple[str, ...] = ()
 
 
 def available() -> bool:
@@ -249,30 +245,76 @@ def living(titles: Iterable[str]) -> frozenset[str] | None:
     return frozenset(found)
 
 
-def on_this_day(month: int, day: int) -> list[Event]:
-    """The events of a day of the year, as Wikipedia's main page has them (its selection: some 15 to 20), oldest
-    first; none when Wikipedia can't be asked."""
-    if not available():
-        return []
-    data = http_util.search_json(ON_THIS_DAY.format(month=month, day=day), _cooldown, timeout=TIMEOUT)
-    selected = (data or {}).get("selected") if isinstance(data, dict) else None
-    events: list[Event] = []
-    for entry in selected or []:
-        if not isinstance(entry, dict) or not isinstance(entry.get("year"), int):
+# The sections of an article that say nothing of its topic's history (lists of links and sources)
+_NOT_HISTORY: Final = frozenset(
+    "see also|references|notes|external links|further reading|bibliography|sources|citations|footnotes".split("|")
+)
+_HEADING: Final = re.compile(r"^(=+)\s*(.*?)\s*\1$")
+
+
+def article_text(title: str) -> str:
+    """The plain text of an English article (by its title, as article gives it): its lead and every section of it but
+    those that list links and sources (see also, references...), for the years of its topic's history (a lead that
+    names none, say: D73). Empty when there's none, or Wikipedia can't be asked."""
+    if not title.strip() or not available():
+        return ""
+    data = _query(titles=title, redirects=1, prop="extracts", explaintext=1, exsectionformat="wiki")
+    pages = ((data or {}).get("query") or {}).get("pages") or []
+    page = pages[0] if pages and isinstance(pages[0], dict) else None
+    if page is None or not _usable(page):
+        return ""
+    kept: list[str] = []
+    skipping = False
+    for line in str(page.get("extract") or "").splitlines():
+        heading = _HEADING.match(line.strip())
+        if heading is not None:
+            if len(heading.group(1)) == 2:  # (a section: a subsection goes with its section)
+                skipping = heading.group(2).strip().lower() in _NOT_HISTORY
             continue
-        text = " ".join(str(entry.get("text") or "").split())
-        pages = tuple(
-            str((page.get("titles") or {}).get("normalized") or page.get("title") or "").replace("_", " ")
-            for page in entry.get("pages") or []
-            if isinstance(page, dict)
-        )
-        if text:
-            events.append(Event(int(entry["year"]), text, tuple(page for page in pages if page)))
-    return sorted(events, key=lambda event: event.year)
+        if not skipping:
+            kept.append(line)
+    return "\n".join(kept)
 
 
-def anniversaries_url(month: int, day: int) -> str:
-    return ANNIVERSARIES.format(month=MONTHS[month - 1], day=day)
+# The first and last years whose articles list their events by date, under "Events": the first year that's titled by
+# its number alone ("1000"; before it, "AD 79" and "79 BC"), and the year before this one (whose article is still growing)
+FIRST_YEAR: Final = 1000
+
+# An event of a year's article, on a line of its own: its date (a month, its day or days, or none) and what happened
+_MONTH: Final = "|".join(MONTHS)
+_EVENT: Final = re.compile(
+    rf"^(?:(?:{_MONTH})(?:\s+\d{{1,2}})?(?:\s*[–-]\s*(?:(?:{_MONTH})\s+)?\d{{1,2}})?\s+)?[–—-]\s+(?P<text>\S.*)$"
+)
+
+
+def year_url(year: int) -> str:
+    return article_url(str(year))
+
+
+def year_events(year: int) -> list[Event]:
+    """The events of a year, as its English article ("1886") lists them under "Events", in its order, each without its
+    date ("Karl Benz patents the first successful gasoline-driven automobile"); none for a year before FIRST_YEAR, or
+    when Wikipedia can't be asked."""
+    if year < FIRST_YEAR or not available():
+        return []
+    data = _query(titles=str(year), redirects=1, prop="extracts", explaintext=1, exsectionformat="wiki")
+    pages = ((data or {}).get("query") or {}).get("pages") or []
+    page = pages[0] if pages and isinstance(pages[0], dict) else None
+    if page is None or not _usable(page):
+        return []
+    events: list[Event] = []
+    listing = False
+    for line in str(page.get("extract") or "").splitlines():
+        line = " ".join(line.split())
+        heading = _HEADING.match(line)
+        if heading is not None:
+            if len(heading.group(1)) == 2:  # (its months are subsections of "Events")
+                listing = heading.group(2).strip().lower() == "events"
+            continue
+        found = _EVENT.match(line) if listing else None
+        if found is not None:
+            events.append(Event(year, found.group("text").strip()))
+    return events
 
 
 # A word of a title or a topic, without its qualifier in brackets ("Mercury (planet)")

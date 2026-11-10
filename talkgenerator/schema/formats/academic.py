@@ -504,8 +504,8 @@ _GENERATORS: Final = [
             hints={
                 "kicker": "a short heading over the problem, as a conference talk has it, such as 'Motivation' or "
                 "'The problem'",
-                "detail": "a short line under it that makes it hit home, dryly: how often it happens, to whom, or "
-                "what science doesn't know about it; it appears on a click",
+                "detail": "a short line under it, a few words, that makes it hit home, dryly: how often it happens, "
+                "to whom, or what science doesn't know about it; it appears on a click",
             },
             variants=problem_variants(_ANGLES),
         ),
