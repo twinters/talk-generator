@@ -102,7 +102,7 @@ Copy [`.env.example`](https://github.com/twinters/talk-generator/blob/master/.en
 | Classic, or OpenRouter's free models (50 talks a day, or 1,000 once the account has bought $10 of credits) | $0 |
 | Your ChatGPT plan (`talkgenerator login chatgpt`), or Claude through the Skill | part of your plan's usage |
 | Claude Haiku 5.5, Sonnet 5.5 or Opus 5.5, with your own key | about $0.003, $0.06 or $0.12 (Advanced, the default; Basic: about half) |
-| Gemini 3.5 Flash-Lite or 3.8 Flash, with your own key | about $0.02 or $0.04, estimated (Advanced); nothing on Gemini's free tier, within its limits |
+| Gemini 3.5 Flash-Lite or 3.8 Flash, with your own key | about $0.01 or $0.02, estimated (Advanced); nothing on Gemini's free tier, within its limits |
 
 ## Use it with Claude
 
