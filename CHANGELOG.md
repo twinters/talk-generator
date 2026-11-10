@@ -167,6 +167,10 @@ how to keep 4.x's talks. The [docs](https://github.com/twinters/talk-generator/t
 - For a presenter who catches up with the making: `spares=3` sends three quick spare slides early on
   (`slide.spare`), and `slide_seconds=8` makes a slide that takes longer than 8 seconds come at once with what's
   quick, the real slide taking its place once it's made.
+- `progress=True` sends how far the talk is (`talk.progress`), from its very start and whenever that changes: its
+  stage (starting, asking its language model, planning, writing, composing, finishing), every slide's own (waiting,
+  planned, written, ready), how much of the model's plan came in, and how many slides the model wrote, so that a
+  page can show it while a talk is made (talkgenerator.com shows it in front of its curtain).
 
 ### Lighter and faster
 

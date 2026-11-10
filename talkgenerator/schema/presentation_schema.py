@@ -452,7 +452,11 @@ class Progress(Protocol):
     settled, on a thread of the spares' own: see _Spares. And it may give every slide but the title slide a time limit
     (slide_seconds; None, as one without the attribute, for none): a slide that runs out of time settles with what's
     quick instead (see _Clock), and when the real slide comes after all, in place of what stood in for it, the
-    Progress is told (replaced, as updated is, with the slide that takes the other's place: see _LateSlides)."""
+    Progress is told (replaced, as updated is, with the slide that takes the other's place: see _LateSlides).
+
+    And a Progress may want to know how far the language model that writes the talk is (planning: one without it, or
+    with None, isn't told): it's told whenever that changes, from when the model is asked until its answers are all in
+    (see Planning), on whichever thread the change came on."""
 
     cancelled: threading.Event
 
@@ -461,6 +465,24 @@ class Progress(Protocol):
     def settled(self, slide_deck: SlideDeck, slide_nr: int, slide: Any) -> None: ...
 
     def updated(self, slide_deck: SlideDeck, slide_nr: int, slide: Any) -> None: ...
+
+
+@dataclass(frozen=True)
+class Planning:
+    """How far the language model that writes a talk is (see Progress's planning): the slides it writes (by number,
+    from 0: all but the title slide, mostly), whether its answer has started coming in (heard), how many parts of its
+    plan came in (the fields of the talk's spine, and at the Advanced level the slides' ideas), the slides whose idea is
+    in (planned, at the Advanced level) and the slides it wrote, whether its plan is all in (the spine, and at the
+    Advanced level the outline: every slide's idea, or the outline's end), and whether its answers are all in
+    (answered: or there won't be any, as when it failed). When it's asked again, it starts over."""
+
+    writes: tuple[int, ...]
+    heard: bool = False
+    parts: int = 0
+    planned: frozenset[int] = frozenset()
+    written: frozenset[int] = frozenset()
+    plan_in: bool = False
+    answered: bool = False
 
 
 def _shape(key: str, value: Any) -> str:
@@ -515,6 +537,8 @@ class _PlannedTalk:
     in_order: bool = True
     # The level its slides are written at: Advanced once its outline's spine is in (see _write_planned)
     level: str = BASIC
+    # Who wants to know how far the model is, whenever that changes (see Progress's planning)
+    listener: Callable[[Planning], None] | None = None
 
     def __post_init__(self) -> None:
         self._slide_numbers = {slide.key: slide_nr for slide_nr, slide in self.planned.items()}
@@ -525,6 +549,58 @@ class _PlannedTalk:
         self._finished = False
         self._shapes: list[str] = []  # what came in, by its keys and kinds (see answer_shape)
         self._given_up: set[int] = set()  # (the slides whose own requests ended without them, out of order)
+        self._heard = False  # whether the model's answer has started coming in (for the listener)
+        self._outlined = False  # whether the outline is all in, at the Advanced level (for the listener)
+        self._partial = 0  # the spine's fields in so far, while it comes in as one object (for the listener)
+
+    def tell(self) -> None:
+        """Tell the listener, if any, how far the model is (see Planning). One that fails is told no more: how far a
+        talk is never stops it (this runs inside the model's answer as it comes in)."""
+        listener = self.listener
+        if listener is None:
+            return
+        with self._changed:
+            ideas = frozenset(slide_nr for slide_nr, slide in self.planned.items() if slide.idea)
+            planning = Planning(
+                writes=tuple(sorted(self.planned)),
+                heard=self._heard,
+                parts=max(len(self.spine), self._partial) + len(ideas),
+                planned=ideas,
+                written=frozenset(self.plans),
+                # (a Basic answer's slides come after its spine; an Advanced talk's plan is its outline: every slide's
+                # idea, or else all of it)
+                plan_in=(self._spine_in or bool(self.plans))
+                if self.in_order
+                else self._outlined or ideas.issuperset(self.planned),
+                answered=self._finished,
+            )
+            try:
+                listener(planning)
+            except Exception:
+                logger.exception("Telling how far the language model is crashed: it's told no more")
+                self.listener = None
+
+    def heard(self) -> None:
+        """The model's answer has started coming in."""
+        if not self._heard:
+            with self._changed:
+                self._heard = True
+            self.tell()
+
+    def reading(self, key: str | None, parts: int) -> None:
+        """What of the answer is being read (see ObjectReader.reading): the spine, as one object, with that many of its
+        fields in so far, or another part."""
+        partial = parts if key == SPINE else 0
+        if partial != self._partial:
+            with self._changed:
+                self._partial = partial
+            self.tell()
+
+    def outlined(self) -> None:
+        """The outline is all in (or there won't be more of it), at the Advanced level."""
+        with self._changed:
+            self._outlined = True
+        self.tell()
 
     def answer_shape(self) -> str:
         """What the model's answer brought, in order, by its parts' keys and the kinds of their values (never their
@@ -581,6 +657,7 @@ class _PlannedTalk:
             for name, part in inside.items():
                 self._take_slide(self._slide_numbers[name], part)
             self._changed.notify_all()
+            self.tell()
 
     def _take_slide(self, slide_nr: int, value: Any) -> None:
         """A slide's part of the answer (with the lock held): its plan, and its first attempt, started in parallel."""
@@ -641,6 +718,7 @@ class _PlannedTalk:
         with self._changed:
             self._given_up.add(slide_nr)
             self._changed.notify_all()
+            self.tell()
 
     def _wait(self, ready: Callable[[], bool]) -> None:
         """Wait until it's ready; TalkCancelled once the talk is cancelled (which is looked at four times a second)."""
@@ -655,6 +733,7 @@ class _PlannedTalk:
         with self._changed:
             self._finished = True
             self._changed.notify_all()
+            self.tell()
 
     def attempt(
         self, slide_nr: int, attempt: int, seconds: float | None = None
@@ -704,6 +783,7 @@ class _PlannedTalk:
             for written in ("title", "own_title", "presenter_name", "name_plays_on"):
                 self.spine.pop(written, None)
             self._changed.notify_all()
+            self.tell()
 
     def restart(self) -> None:
         """Forget the answer, for the model to be asked again."""
@@ -719,7 +799,10 @@ class _PlannedTalk:
             self._given_up.clear()
             self.in_order = True
             self.level = BASIC
+            self._heard = self._outlined = False  # (the model is asked again)
+            self._partial = 0
             self._changed.notify_all()
+            self.tell()
 
     def close(self) -> None:
         """Wait for the rest of the answer and for the slides being realized, unless the talk was cancelled, or a
@@ -1116,6 +1199,7 @@ class PresentationSchema:
                 gathering=gathering,
                 level=llm_level,
                 offers=offers,
+                listener=getattr(progress, "planning", None),  # (how far the model is, for a Progress that asks)
             )
         # The time a slide may take, if its progress gives one (see _Clock), and for a talk a language model writes,
         # the pictures of its topic that its slides can have when they run out of time to find their own: looked for
@@ -1295,6 +1379,7 @@ class PresentationSchema:
         gathering: facts.Gathering | None = None,
         level: str = BASIC,
         offers: Mapping[int, Sequence[str]] | None = None,
+        listener: Callable[[Planning], None] | None = None,
     ) -> "_PlannedTalk":
         """Pick every slide's generator (as the persona weighs them, unless they're picked already), and ask the
         language model, in one request, what goes on the slides whose generators have recipes (and the presenter's
@@ -1306,7 +1391,8 @@ class PresentationSchema:
         be settled while it does.
 
         At level ADVANCED, the model plans the talk first, and its slides are written in parallel as their plans come in
-        (see _write_planned); the talk is a Basic one when that can't be done."""
+        (see _write_planned); the talk is a Basic one when that can't be done. A listener hears how far the model is
+        (see Planning), from now on."""
         num_slides = len(seeds)
         if picks is None:
             picks = self._pick_generators(num_slides, rng, language, persona)
@@ -1330,10 +1416,12 @@ class PresentationSchema:
             frozenset(prompt.spine(language, name, typed)),
             language=language,
             cancelled=cancelled or threading.Event(),
+            listener=listener,
         )
         if not planned:
             talk.finish()
             return talk
+        talk.tell()  # (it's asked)
         at_once = slides_at_once(parallel, len(planned), most=8)
         if at_once > 1:
             talk.pool = ThreadPool(processes=at_once)
@@ -1488,6 +1576,7 @@ class PresentationSchema:
                     )
                     talk.contexts[slide_nr]["seed"] = idea.riff  # (for its notes)
                 ideas[slide.number] = idea
+                talk.tell()
             pending.append(slide_nr)
             if len(pending) >= batch_size(len(writing)):
                 submit(pending[:])
@@ -1498,6 +1587,7 @@ class PresentationSchema:
             if talk.cancelled.is_set():
                 raise TalkCancelled()  # (out of the provider's stream, which then stops)
             read_anything = True
+            talk.heard()
             for key, value in reader.feed(text):
                 slide_nr = slide_numbers.get(key)
                 if slide_nr is not None:
@@ -1517,6 +1607,7 @@ class PresentationSchema:
                     talk.level = ADVANCED  # (before the first slide: the deck says so)
                 for name, part in inside.items():
                     plan(slide_numbers[name], part)
+            talk.reading(*reader.reading)
 
         try:
             response = llm.stream(request, read)
@@ -1538,6 +1629,7 @@ class PresentationSchema:
             logger.warning("The language model didn't plan the talk (%s)", error)
         except Exception:  # a misbehaving provider shouldn't sink the talk either
             logger.exception("Asking the language model for the talk's outline crashed")
+        talk.outlined()
         if not talk.cancelled.is_set() and (
             dropped.is_set() or not talk.spine_in or talk.spine.get("unsafe_topic") is True or talk.in_english
         ):
@@ -1652,10 +1744,12 @@ class PresentationSchema:
             if talk.cancelled.is_set():
                 raise TalkCancelled()  # (out of the provider's stream, which then stops)
             read_anything = True
+            talk.heard()
             for key, value in reader.feed(text):
                 talk.take(key, value)
                 if talk.in_english:
                     raise _InEnglish()  # (out of the provider's stream, which then stops: the model is asked again)
+            talk.reading(*reader.reading)
 
         try:
             response = llm.stream(request, read)
