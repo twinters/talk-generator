@@ -1082,6 +1082,18 @@
     "Asked you to sign a contract about {seed.generic}",
     "Says their parents are {seed.generic}"
   ],
+  "red_flag_short": [
+    "{seed.generic.cap}.",
+    "🚩",
+    "Everything.",
+    "This slide.",
+    "You know why.",
+    "The {seed.bare} thing.",
+    "Mondays.",
+    "Their {related.bare} collection.",
+    "Socks in sandals.",
+    "The silence."
+  ],
   "reviews_title": [
     "What people are saying",
     "Customer reviews",
@@ -1117,6 +1129,23 @@
     "I followed every step. Now I am {seed.one}.",
     "Do not read the reviews. Too late.",
     "Tastes like {related.generic}. I did not order {related.generic}."
+  ],
+  "review_short": [
+    "Meh.",
+    "No.",
+    "Why?",
+    "Never again.",
+    "Just no.",
+    "It bit me.",
+    "Too much {seed.bare}.",
+    "Help.",
+    "Wow. No.",
+    "Ask my lawyer.",
+    "Returned it.",
+    "🙄",
+    "👎",
+    "😐",
+    "🫠"
   ],
   "reviewer_detail": [
     "verified buyer",

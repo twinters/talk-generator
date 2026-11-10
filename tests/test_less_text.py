@@ -3,7 +3,9 @@
 Charts and diagrams try a picture first, now and then, in their place (a real chart from the internet for a chart, a
 weird picture for a diagram), under their title: a slide is that picture when one is found (in its time, in a talk with
 a time limit per slide), and else its text version, which stands in for it until its picture comes. Planned and classic
-slides alike; DISABLE_PICTURE_FIRST (which offline tests have) switches it off.
+slides alike; DISABLE_PICTURE_FIRST (which offline tests have) switches it off. And a slide that lists things breaks its
+pattern now and then, in its last thing: a review of a few words or an emoji alone, a red flag of a few words, a KPI
+tile without a number, a third picture that doesn't follow the first two.
 
 The talks are made with test_slide_time_limit's small fake schemas, fake model and fake image finder.
 """
@@ -19,6 +21,7 @@ from talkgenerator.datastructures.slide_generator_data import ConstantWeightFunc
 from talkgenerator.models.events import SlideUpdated
 from talkgenerator.plan import kinds, prompt
 from talkgenerator.plan.kinds import KINDS, PICTURE, Recipe
+from talkgenerator.schema.slide_schemas import slide_generators
 from talkgenerator.slide import slide_generator_types, slides
 from talkgenerator.util import random_util
 from tests.test_llm_talks import FakeModel
@@ -255,3 +258,68 @@ def slides_texts_pictured(picture):
         slide_texts.numbered_boxes("level"),
         odds=1.0,
     )
+
+
+# PATTERN BREAKS: the last thing of a list breaks its pattern now and then
+
+
+def _breaks(name):
+    """The share of a recipe's variants (by weight) whose last thing breaks the pattern."""
+    variants = slide_generators.get(name).llm.variants
+    return sum(variant.weight for variant in variants if "pattern" in variant.note) / sum(v.weight for v in variants)
+
+
+def test_a_planned_lists_last_thing_breaks_its_pattern_now_and_then():
+    for name in ("Reviews", "Red Flags", "KPI Tiles", "Three Captions Weird", "Three Captions Weird (CRF)"):
+        assert _breaks(name) == pytest.approx(0.35, abs=0.01), name
+    for name in ("Tier List", "Agenda"):
+        assert 0.15 < _breaks(name) < 0.25, name
+    reviews = slide_generators.get("Reviews").llm
+    broken = [
+        reviews.varied(random_util.Rng(seed))
+        for seed in range(60)
+        if "pattern" in reviews.varied(random_util.Rng(seed)).brief
+    ]
+    assert broken and all(recipe.hints["stars_3"].endswith("the punchline") for recipe in broken)
+    asked = {recipe.hints["review_3"] for recipe in broken}
+    assert any("a single emoji" in hint for hint in asked) and any("one to three words" in hint for hint in asked)
+    flags = slide_generators.get("Red Flags").llm
+    for seed in range(40):  # (the last red flag, whichever it is)
+        varied = flags.varied(random_util.Rng(seed))
+        if "pattern" in varied.brief:
+            last = max(int(name[-1]) for name in varied.hints if name.startswith("flag_"))
+            assert f"flag_{last + 1}" in varied.omit or last == 5
+    three = slide_generators.get("Three Captions Weird").llm
+    varied = next(
+        recipe
+        for recipe in (three.varied(random_util.Rng(seed)) for seed in range(40))
+        if "breaking the pattern" in recipe.brief
+    )
+    lines = prompt.slide_lines(prompt.PlannedSlide(4, "Three Captions Weird", varied, "naps"))
+    assert any(line.startswith("- image_3_query: an image search query for the third picture") for line in lines)
+    assert any(line.startswith("- caption_3: the right caption: one that breaks the pattern") for line in lines)
+
+
+def test_a_classic_lists_last_thing_breaks_its_pattern_now_and_then(monkeypatch):
+    from talkgenerator.sources import packs, slide_texts
+
+    monkeypatch.setattr(slide_texts, "related_words", lambda seed: ["dog", "mouse", "yarn", "milk"])
+    context = {"seed": "cat", "topic": "cats"}
+    short = {
+        slide_texts.text_generator.apply_variables_to_template(template, {"seed": "cat", "related": "dog"})
+        for template in packs.pack().rule("karaoke.review_short")
+    }
+    lasts = []
+    for seed in range(60):
+        with random_util.use(random_util.Rng(seed)):
+            reviews = slide_texts.generate_reviews(context)
+        lasts.append(reviews[-2])
+    assert 0.2 < sum(last in short for last in lasts) / len(lasts) < 0.5
+    numbers = []
+    for seed in range(60):
+        with random_util.use(random_util.Rng(seed)):
+            numbers.append(slide_texts._kpi_number(True))
+    words = [number for number in numbers if number in slide_texts._NOT_NUMBERS]
+    assert 0.2 < len(words) / len(numbers) < 0.5 and all(len(number) <= 10 for number in slide_texts._NOT_NUMBERS)
+    breaking = [template for template in packs.pack().rule("captions.three_captions") if "Step 47" in template]
+    assert breaking == ["Step 1|Step 2|Step 47"]

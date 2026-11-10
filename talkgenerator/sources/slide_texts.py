@@ -200,8 +200,18 @@ def kpi(image: ImageSource) -> Callable[[dict[str, Any]], tuple[Any, ...] | None
     return generate
 
 
+# PATTERN BREAKS (docs/v5-plan.md, D73): the last thing of a classic list breaks its pattern now and then, as 2019's
+# talks put a weird picture in the last of three columns: a review of a few words or an emoji after long ones, a red flag
+# of a few words, a KPI tile whose figure is no number
+PATTERN_BREAK: Final = 0.35
+# What a KPI tile shows where its figure would be, when it breaks the pattern
+_NOT_NUMBERS: Final = ("Yes", "No", "Lots", "Soon", "Maybe", "?", "Huh", "Ask Bob", "🤷", "🔥", "📉", "🫠")
+
+
 def _kpi_number(punchline: bool) -> str:
     if punchline:
+        if random_util.random() < PATTERN_BREAK:  # (no number at all: D73)
+            return random_util.choice(_NOT_NUMBERS)
         return random_util.choice(("0", "∞", "1", "-100%", "9,001", "404"))
     return random_util.choice(
         (
@@ -784,11 +794,13 @@ def generate_alignment_chart(presentation_context: dict[str, Any]) -> tuple[Any,
 @_unless_sensitive
 def generate_red_flags(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
     """Red flags about the seed: a title, two to four warning signs about it and words related to it, and a last one,
-    the punchline."""
+    the punchline, which breaks their pattern now and then (PATTERN_BREAK): a few words where they're sentences."""
     related = related_words(presentation_context["seed"])
     title = _template("karaoke.red_flags_title")(_context(presentation_context))
     flags = _different("karaoke.red_flag", presentation_context, related, random_util.randint(2, 4))
-    last = _template("karaoke.red_flag_last")(_context(presentation_context, related))
+    # (the last one breaking the pattern now and then, in a few words: D73)
+    last_rule = "karaoke.red_flag_short" if random_util.random() < PATTERN_BREAK else "karaoke.red_flag_last"
+    last = _template(last_rule)(_context(presentation_context, related))
     if not title or len(flags) < 2 or not last:
         return None
     return title, *flags, last
@@ -810,11 +822,14 @@ def _reviewer() -> str | None:
 @_unless_sensitive
 def generate_reviews(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
     """Made-up reviews of the seed: a title, then one or two glowing reviews (five stars or four) and a one-star one
-    last, the punchline, each its stars, what it says and who wrote it."""
+    last, the punchline, each its stars, what it says and who wrote it; the last one breaks their pattern now and then
+    (PATTERN_BREAK): a few words, or an emoji alone."""
     related = related_words(presentation_context["seed"])
     title = _template("karaoke.reviews_title")(_context(presentation_context))
     glowing = _different("karaoke.review_glowing", presentation_context, related, random_util.randint(1, 2))
-    bad = _template("karaoke.review_one_star")(_context(presentation_context, related))
+    # (the last one breaking the pattern now and then, in a few words or an emoji alone: D73)
+    bad_rule = "karaoke.review_short" if random_util.random() < PATTERN_BREAK else "karaoke.review_one_star"
+    bad = _template(bad_rule)(_context(presentation_context, related))
     if not title or not glowing or not bad:
         return None
     reviews: list[str | None] = []

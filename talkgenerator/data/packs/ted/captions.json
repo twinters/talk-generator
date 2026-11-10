@@ -140,6 +140,18 @@
     "Without {seed.generic}|With {seed.generic}|Only {seed.generic}",
     "Discover {seed.generic}|Love {seed.generic}|Become {seed.one}",
     "What I planned|What happened|What I told people",
-    "The idea|The meeting|The other meeting"
+    "The idea|The meeting|The other meeting",
+    "Good|Better|{seed.generic.cap}",
+    "Step 1|Step 2|Step 47",
+    "Breakfast|Lunch|{seed.generic.cap}",
+    "Mind|Body|{seed.generic.cap}",
+    "Ready|Set|Nap",
+    "Hope|Doubt|{seed.generic.cap}",
+    "Reduce|Reuse|Panic",
+    "Morning|Noon|3 a.m.",
+    "Then|Now|Never",
+    "Small|Medium|Oh no",
+    "Me|Also me|Bob",
+    "Past|Present|Wednesday"
   ]
 }

@@ -54,6 +54,23 @@ _HOBBY = "the presenter's weird hobby"
 _CONTRAST = "Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing"
 _SEQUENCE = "Three captioned images that build up, like 'Good, Better, Best' or three steps of a plan"
 _CONCLUSIONS_TITLE = "a title for the conclusions, in a few words of your own"
+# PATTERN BREAKS (docs/v5-plan.md, D73): a slide that lists things breaks its pattern now and then, in its last thing, as
+# 2019's talks put a weird picture in the last of three columns: the user missed "playing with the unexpected"
+# (2026-11-10). About a third of the slides of reviews, red flags, KPI tiles and three captioned pictures in a row do, a
+# fifth of the tier lists and agendas
+_THIRD_BREAKS = (
+    "with the third one breaking the pattern of the first two: an unexpected picture, under a caption that doesn't "
+    "follow theirs"
+)
+_THIRD_CAPTION = "the right caption: one that breaks the pattern of the first two (the punchline)"
+_THIRD_PICTURE = (
+    "an image search query for the third picture: something unexpected that breaks the pattern of the first two, in "
+    "two to six plain English words"
+)
+_SEQUENCE_VARIANTS = (
+    Variant(1.3),
+    Variant(0.7, note=_THIRD_BREAKS, hints={"caption_3": _THIRD_CAPTION, "image_3_query": _THIRD_PICTURE}),
+)
 # (Asked for "a lesson from the talk, calling back to an earlier slide", a free model wrote "Huddling scales trust
 # (from slide_03)": the slide's key in its answer; and lessons as whole sentences, which a caption's 40 characters cut,
 # as in "Your plants are not decorations—they")
@@ -527,6 +544,7 @@ captioned_images_slide_generators = _register(
                     cg.weird_punchline_static_image_generator,
                 ),
                 brief=_SEQUENCE,
+                variants=_SEQUENCE_VARIANTS,
             ),
         ),
     ],
@@ -567,6 +585,7 @@ captioned_images_slide_generators_copyright_free = _register(
                 "three_columns",
                 (cg.copyright_free_generator, cg.copyright_free_related_generator, cg.weird_copyright_free_generator),
                 brief=_SEQUENCE,
+                variants=_SEQUENCE_VARIANTS,
             ),
         ),
     ],
@@ -775,6 +794,13 @@ def _drawn(content, slide_class, weight, tags, name, recipe, repeats=2) -> Slide
     )
 
 
+# (the last of KPI tiles, breaking their pattern now and then: D73)
+_LAST_FIGURE_BREAKS = "the last one breaking the pattern: a word, a symbol or an emoji where a number would be"
+_LAST_NUMBER = (
+    "the {which} and last figure's number: a word, a symbol or an emoji instead of a number, such as a dashboard "
+    "would never show (the pattern break)"
+)
+
 # FIGURES: over a picture of what they're about, if one is found (three big numbers in four, and half the KPI tiles:
 # D63, as the user found slides of text boring), from one of many sources (the backdrop look's)
 number_slide_generators = _register(
@@ -810,8 +836,19 @@ number_slide_generators = _register(
                 "start out plausible, the last one the punchline",
                 variants=pictured(
                     (
-                        Variant(1, frozenset({"number_4", "label_4"}), "with three figures"),
-                        Variant(1, note="with four figures"),
+                        Variant(0.65, frozenset({"number_4", "label_4"}), "with three figures"),
+                        Variant(
+                            0.35,
+                            frozenset({"number_4", "label_4"}),
+                            f"with three figures, {_LAST_FIGURE_BREAKS}",
+                            hints={"number_3": _LAST_NUMBER.format(which="third")},
+                        ),
+                        Variant(0.65, note="with four figures"),
+                        Variant(
+                            0.35,
+                            note=f"with four figures, {_LAST_FIGURE_BREAKS}",
+                            hints={"number_4": _LAST_NUMBER.format(which="fourth")},
+                        ),
                     ),
                     "background",
                     slide_texts.KPI_PICTURES,
@@ -928,6 +965,12 @@ meme_slide_generators = _register(
 _FUN_FACT_BRIEF = "A fun fact about the concept: something absurd, stated as certain, that the presenter has to back up"
 # (the reviews' punchline: models gave three glowing ones in a row, a motivational speaker's especially)
 _ONE_STAR = "how many stars the {which} and last reviewer gives: 1, the one-star review that's the punchline"
+# (and its pattern break now and then, after long and glowing ones: D73)
+_SHORT_REVIEW = "what the third and last reviewer wrote: one to three words, no more (the pattern break)"
+_EMOJI_REVIEW = "what the third and last reviewer wrote: a single emoji, nothing else (the pattern break)"
+# (the last red flag, breaking their pattern now and then: D73)
+_COUNTS = {3: "three", 4: "four", 5: "five"}
+_LAST_FLAG = "the last red flag, the punchline: two or three words, where the others are whole sentences"
 
 
 def _fun_fact(photo, suffix: str = "") -> list[SlideGeneratorData]:
@@ -1115,6 +1158,12 @@ karaoke_slide_generators = _register(
                         hints=_TIER_EMOJI,
                         emoji=_TIER_MOODS,
                     ),
+                    # (D73)
+                    Variant(
+                        2 / 3,
+                        note="its S tier breaking the pattern: a single emoji where the other tiers have words",
+                        hints={"s_tier": "the S tier, the very best: a single emoji, nothing else (the pattern break)"},
+                    ),
                 ),
             ),
         ),
@@ -1158,10 +1207,18 @@ karaoke_slide_generators = _register(
                 "red_flags",
                 brief="Red flags about the concept, as in dating advice: warning signs that someone or something "
                 "around it is trouble, each more alarming than the last",
-                variants=(
-                    Variant(1, frozenset({"flag_4", "flag_5"}), "with three red flags"),
-                    Variant(1, frozenset({"flag_5"}), "with four red flags"),
-                    Variant(1, note="with five red flags"),
+                variants=tuple(
+                    variant
+                    for count, omitted in ((3, {"flag_4", "flag_5"}), (4, {"flag_5"}), (5, set()))
+                    for variant in (
+                        Variant(0.65, frozenset(omitted), f"with {_COUNTS[count]} red flags"),
+                        Variant(
+                            0.35,
+                            frozenset(omitted),
+                            f"with {_COUNTS[count]} red flags, the last one breaking the pattern: two or three words",
+                            hints={f"flag_{count}": _LAST_FLAG},
+                        ),
+                    )
                 ),
             ),
         ),
@@ -1182,6 +1239,17 @@ karaoke_slide_generators = _register(
                         frozenset({"stars_3", "review_3", "reviewer_3"}),
                         "with two reviews",
                         hints={"stars_2": _ONE_STAR.format(which="second")},
+                    ),
+                    # (D73)
+                    Variant(
+                        1,
+                        note="with three reviews, the last one breaking the pattern: a one-star review of a few words",
+                        hints={"stars_3": _ONE_STAR.format(which="third"), "review_3": _SHORT_REVIEW},
+                    ),
+                    Variant(
+                        0.6,
+                        note="with three reviews, the last one breaking the pattern: an emoji alone",
+                        hints={"stars_3": _ONE_STAR.format(which="third"), "review_3": _EMOJI_REVIEW},
                     ),
                 ),
             ),
@@ -1206,6 +1274,11 @@ karaoke_slide_generators = _register(
 # THE TALK'S STRUCTURE: an agenda after the title, a section's divider in the middle, "Questions?" at the end
 _AGENDA_ITEMS = "three to five parts of the talk, in the order the slides after this one come, separated by |"
 _AGENDA_EMOJI = with_emoji("agenda", ("items",), {"items": _AGENDA_ITEMS}, each=True)
+# (its pattern break now and then: D73)
+_AGENDA_BREAKS = {
+    "items": f"{_AGENDA_ITEMS}, the last one breaking the pattern: something that has nothing to do with the talk, in a "
+    "few words"
+}
 
 structure_slide_generators = _register(
     "structure",
@@ -1221,7 +1294,11 @@ structure_slide_generators = _register(
                 brief="The talk's agenda: what it will cover",
                 hints={"items": _AGENDA_ITEMS},
                 # (a quarter of them with an emoji in front of every item: docs/v5-plan.md, D65)
-                variants=(Variant(3), Variant(1, note=EMOJI_NOTE, hints=_AGENDA_EMOJI, emoji={"items": "agenda"})),
+                variants=(
+                    Variant(3),
+                    Variant(1, note=EMOJI_NOTE, hints=_AGENDA_EMOJI, emoji={"items": "agenda"}),
+                    Variant(1, note="its last item breaking the pattern", hints=_AGENDA_BREAKS),  # (D73)
+                ),
             ),
         ),
         _drawn(

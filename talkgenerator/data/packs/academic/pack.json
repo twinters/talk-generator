@@ -1,12 +1,13 @@
 {
   "format": "academic",
   "about": "The classic texts of academic conference talks (the academic schema): a grammar per part of its arc, whose rules are lists of templates (see talkgenerator.sources.packs and talkgenerator.schema.formats.academic)",
-  "version": 4,
+  "version": 5,
   "versions": {
     "1": "2026-11-08: the first texts of academic conference talks, a part of the arc a grammar: the title with its affiliations, the outline, related work, the method, the results, the limitations, future work, the acknowledgements, the references and the questions (D56)",
     "2": "2026-11-09: a picture of one of the references, a book's cover or a paper's figure, with a caption that says which (D65)",
     "3": "2026-11-09: the free slides' own provocations: a word or two over a full-screen picture, in the format's voice (D63)",
-    "4": "2026-11-09: the motivation, the talk's why: a problem slide's headings and problems on five angles (weird, everyday, crossed with something else, typical, and a real how-to), each with a line under it, and research questions over a photo (D69)"
+    "4": "2026-11-09: the motivation, the talk's why: a problem slide's headings and problems on five angles (weird, everyday, crossed with something else, typical, and a real how-to), each with a line under it, and research questions over a photo (D69)",
+    "5": "2026-11-10: motivations of a few words, each with a short line under it (D73)"
   },
   "slots": {
     "title.talk_title": {"variables": ["seed", "method"], "field": "title.title"},
