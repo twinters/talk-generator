@@ -270,8 +270,10 @@ def _breaks(name):
 
 
 def test_a_planned_lists_last_thing_breaks_its_pattern_now_and_then():
-    for name in ("Reviews", "Red Flags", "KPI Tiles", "Three Captions Weird", "Three Captions Weird (CRF)"):
+    for name in ("Reviews", "Red Flags", "KPI Tiles"):
         assert _breaks(name) == pytest.approx(0.35, abs=0.01), name
+    for name in ("Three Captions Weird", "Three Captions Weird (CRF)"):
+        assert _breaks(name) == pytest.approx(0.6), name
     for name in ("Tier List", "Agenda"):
         assert 0.15 < _breaks(name) < 0.25, name
     reviews = slide_generators.get("Reviews").llm

@@ -121,7 +121,14 @@ how to keep 4.x's talks. The [docs](https://github.com/twinters/talk-generator/t
   a list's things now and then, and charts labelled in funny ways, or bare.
 - A problem slide, the talk's why, early on: about three pitches in four, four academic talks in five and a quarter
   of TED-like talks open on a problem, weird, everyday, crossed with something else, typical of the topic, or real (a
-  how-to people look up on wikiHow), with a picture of it behind it or beside it.
+  how-to people look up on wikiHow), in a few words, with a picture of it behind it or beside it.
+- Less text, more surprise: half of the charts and diagrams try a picture first, in their place, under their title (a
+  real chart from the internet for a chart, a weird picture for a diagram), and are their text version when none is
+  found; with `slide_seconds`, the text version comes at once and the picture takes its place when it comes.
+  `DISABLE_PICTURE_FIRST=1` switches them off. A list's last thing breaks its pattern now and then: a review of a few
+  words or an emoji alone, a red flag of a few words, a KPI tile without a number, an S tier of one emoji, and a third
+  picture in a row that doesn't follow the first two. A chart's title says what it shows, never "X vs Y": what it
+  compares goes on its axes.
 - A talk has at most one of most kinds (memes: two), and a list's things appear a click each, the punchline last.
 
 ### Formats and personas
@@ -149,8 +156,10 @@ how to keep 4.x's talks. The [docs](https://github.com/twinters/talk-generator/t
 - The words slides start from are things: nouns first (Datamuse's parts of speech), familiar ones, none of a family
   twice, and never far from the topic, so no "Volcanoes vs. eruptive" on a scatter plot. A real quote is searched for
   a theme the language model picks for it.
-- Real facts: a talk a language model writes gets up to three facts from Wikipedia (the topic's article, and the
-  day's events) for its slides of history, fun facts, quizzes and big numbers, which the model keeps true and twists.
+- Real facts: a talk a language model writes gets up to three facts from Wikipedia (the topic's article) for its
+  slides of history, fun facts, quizzes and big numbers, which the model keeps true and twists; slides of history,
+  and fun facts now and then, get a coincidence: a moment of the topic's history and something else that happened the
+  same year (from the year's article), side by side as if one caused the other.
   Classic talks get half of their fun facts from Wikipedia and half of their quizzes from Open Trivia DB, and now and
   then a useless fact, a real dad joke to tell or a piece of advice (the Advice Slip). No fact names a living
   person, or is about death, war, disasters, crime, politics, race or faiths. A slide that uses one credits it, and

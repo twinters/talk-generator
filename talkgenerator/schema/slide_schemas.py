@@ -56,8 +56,8 @@ _SEQUENCE = "Three captioned images that build up, like 'Good, Better, Best' or 
 _CONCLUSIONS_TITLE = "a title for the conclusions, in a few words of your own"
 # PATTERN BREAKS (docs/v5-plan.md, D73): a slide that lists things breaks its pattern now and then, in its last thing, as
 # 2019's talks put a weird picture in the last of three columns: the user missed "playing with the unexpected"
-# (2026-11-10). About a third of the slides of reviews, red flags, KPI tiles and three captioned pictures in a row do, a
-# fifth of the tier lists and agendas
+# (2026-11-10). Three captioned pictures in a row do most of the time (the user remembered the weird picture last as
+# usual), about a third of the slides of reviews, red flags and KPI tiles, a fifth of the tier lists and agendas
 _THIRD_BREAKS = (
     "with the third one breaking the pattern of the first two: an unexpected picture, under a caption that doesn't "
     "follow theirs"
@@ -68,8 +68,8 @@ _THIRD_PICTURE = (
     "two to six plain English words"
 )
 _SEQUENCE_VARIANTS = (
-    Variant(1.3),
-    Variant(0.7, note=_THIRD_BREAKS, hints={"caption_3": _THIRD_CAPTION, "image_3_query": _THIRD_PICTURE}),
+    Variant(0.4),
+    Variant(0.6, note=_THIRD_BREAKS, hints={"caption_3": _THIRD_CAPTION, "image_3_query": _THIRD_PICTURE}),
 )
 # (Asked for "a lesson from the talk, calling back to an earlier slide", a free model wrote "Huddling scales trust
 # (from slide_03)": the slide's key in its answer; and lessons as whole sentences, which a caption's 40 characters cut,
