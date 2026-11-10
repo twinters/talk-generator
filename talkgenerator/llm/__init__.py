@@ -15,6 +15,7 @@ from talkgenerator.llm.base import (
 )
 from talkgenerator.llm.chatgpt import ChatGPTProvider
 from talkgenerator.llm.claude import ClaudeProvider
+from talkgenerator.llm.gemini import GeminiProvider
 from talkgenerator.llm.ledger import Budget, Ledger, LedgerEntry, MeteredProvider
 from talkgenerator.llm.openai_responses import OpenAIProvider
 from talkgenerator.llm.openrouter import OpenRouterProvider
@@ -29,6 +30,7 @@ __all__ = [
     "ChatGPTProvider",
     "ClaudeProvider",
     "Finish",
+    "GeminiProvider",
     "Ledger",
     "LedgerEntry",
     "Message",

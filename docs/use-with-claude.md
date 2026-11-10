@@ -122,7 +122,9 @@ Good to know:
   `talkgenerator login chatgpt`: the server finds them in your config folder. It also finds the `.env` of a clone of
   this repository when it runs from that clone (installed with `pip install -e '.[mcp]'`).
 - Every other setting works under `env` too, such as `TALKGENERATOR_LLM` (see [Language models](language-models.md)),
-  which is the only way to have a paid model write the talks: a tool call can't pick one.
+  which is the only way to have a paid model write the talks: a tool call can't pick one. For Gemini, say, that's
+  `"TALKGENERATOR_LLM": "gemini"` and `"GEMINI_API_KEY": "..."`, with talkgenerator installed as
+  `talkgenerator[mcp,gemini]`.
 - The decks go to a `talkgenerator` folder in your documents, or to the folder that
   `"args": ["mcp", "--output_folder", "<folder>"]` names, and nowhere else. They never overwrite a file: a deck made
   again gets a name of its own.

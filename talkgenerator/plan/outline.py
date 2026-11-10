@@ -21,8 +21,8 @@ starts with the request's schema, a slide's own). When the outline fails before 
 the budget, a topic it finds unsafe), the talk is written as a Basic one.
 
 A talk's level is the one it asks for, or TALKGENERATOR_LLM_LEVEL's, or else default_level's: Advanced on a model of
-your own that costs (Claude, OpenAI's models, your ChatGPT plan's, OpenRouter's paid ones), Basic on free ones (whose
-free quotas count requests) and on any other.
+your own that costs (Claude, OpenAI's models, Gemini's, your ChatGPT plan's, OpenRouter's paid ones), Basic on free
+ones (whose free quotas count requests) and on any other.
 
 The outline's answer, like the talk's, has its properties in alphabetical order (see talkgenerator.plan.prompt): its
 spine, "about", first, then the slides by their keys.
@@ -58,7 +58,8 @@ BASIC: Final = "basic"
 ADVANCED: Final = "advanced"
 LEVELS: Final = (BASIC, ADVANCED)
 # The providers whose models cost their owner (an API key, a plan), where a talk is Advanced unless it asks otherwise
-_PAID: Final = frozenset({"anthropic", "openai", "chatgpt"})
+# (Gemini's too: its free tier is a key's, not a model's, and talkgenerator can't tell it from the paid one)
+_PAID: Final = frozenset({"anthropic", "openai", "gemini", "chatgpt"})
 
 PURPOSE: Final = "talk outline"  # (the outline's ledger entry's purpose)
 SLIDE_PURPOSE: Final = "talk slide"  # (and a slide's, written as its idea comes in)
@@ -130,9 +131,10 @@ def check(value: str | None) -> str | None:
 
 def default_level(model: TextProvider | None) -> str:
     """Advanced on a model of your own that costs, every model that may answer for it (a paid OpenRouter model's
-    fallbacks too): Claude, OpenAI's models, your ChatGPT plan's (which counts toward your plan's usage) and OpenRouter's
-    paid models. Basic on free models (OpenRouter's free models and its free router, whose free quotas count requests,
-    and which are slow), and on any other (a replayed talk, a test's)."""
+    fallbacks too): Claude, OpenAI's models, Gemini's (also on its free tier, which talkgenerator can't tell from the
+    paid one: ask for Basic there), your ChatGPT plan's (which counts toward your plan's usage) and OpenRouter's paid
+    models. Basic on free models (OpenRouter's free models and its free router, whose free quotas count requests, and
+    which are slow), and on any other (a replayed talk, a test's)."""
     models = model.possible_models() if model is not None else ()
     return ADVANCED if models and all(_paid(spec) for spec in models) else BASIC
 

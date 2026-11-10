@@ -15,6 +15,9 @@ from talkgenerator.util.http_util import redact
 TIMEOUT_SECONDS: Final = 120.0
 # Retry rate limits and server errors once: a talk falls back to classic slides rather than keep the audience waiting
 MAX_RETRIES: Final = 1
+# What a model is told at the end of the last message when its provider can't hold its answer to a request's JSON
+# schema (one too large for Anthropic's grammar, or too complex for Gemini): it writes the JSON by itself
+SCHEMA_AS_TEXT: Final = "Answer with one JSON object that fits this JSON schema, and nothing else: "
 
 
 def import_sdk(module: str, extra: str) -> Any:

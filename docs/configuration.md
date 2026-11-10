@@ -45,6 +45,7 @@ WordNet.
 | `OPENROUTER_API_KEY` | An [OpenRouter key](https://openrouter.ai/settings/keys): OpenRouter's free models then write the talks. `talkgenerator login openrouter` gets one for you instead |
 | `ANTHROPIC_API_KEY` | An Anthropic key, for `--llm anthropic` (Claude). It doesn't make Claude write talks on its own |
 | `OPENAI_API_KEY` | An OpenAI key, for `--llm openai:<model>`. It doesn't make OpenAI's models write talks on its own |
+| `GEMINI_API_KEY` | A [Gemini key](https://aistudio.google.com/apikey) (or `GOOGLE_API_KEY`), for `--llm gemini` (and Gemini's image models). It doesn't make Gemini write talks on its own |
 | `TALKGENERATOR_LLM` | The language model that writes talks that don't name one, as `--llm` takes it, such as `openrouter`, `anthropic:claude-haiku-5-5` or `none` |
 | `TALKGENERATOR_LLM_EFFORT` | How hard the model thinks before it writes: `none`, `minimal`, `low`, `medium` or `high`, for the models that take it |
 | `TALKGENERATOR_LLM_LEVEL` | How much the model does, as `--llm_level` takes it: `basic` (one request a talk) or `advanced` (it plans the talk first and writes its slides in parallel, for cleverer talks); *default: `advanced` on a model of your own that costs, `basic` on free models* |
@@ -58,7 +59,7 @@ WordNet.
 | Variable | What it does |
 | --- | --- |
 | `TALKGENERATOR_IMAGE_GENERATOR` | The image generator of talks that don't name one, as `--image_generator` takes it (*default: none*) |
-| `GEMINI_API_KEY`, `BFL_API_KEY` | Keys for `gemini` and `flux` (`openai` takes `OPENAI_API_KEY`, and `openrouter` the key that writes your talks) |
+| `GEMINI_API_KEY`, `BFL_API_KEY` | Keys for `gemini` and `flux` (`openai` takes `OPENAI_API_KEY`, and `openrouter` the key that writes your talks; `gemini` the one `--llm gemini` takes) |
 | `COMFYUI_URL`, `COMFYUI_WORKFLOW`, `AUTOMATIC1111_URL` | Servers of your own, for `comfyui` and `automatic1111` |
 | `TALKGENERATOR_GENERATED_IMAGES` | How many pictures a talk generates at most (*default: 3*) |
 | `TALKGENERATOR_IMAGE_COST_LIMIT` | What a talk's pictures may cost, in dollars |

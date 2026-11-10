@@ -29,7 +29,8 @@ That's all classic talks need. Extras add the language models that write talks, 
 | --- | --- |
 | `talkgenerator[openai]` | [OpenRouter](https://openrouter.ai/)'s free models, OpenAI's models and the models of your ChatGPT plan |
 | `talkgenerator[anthropic]` | Claude |
-| `talkgenerator[llm]` | both of the above |
+| `talkgenerator[gemini]` | Google's Gemini |
+| `talkgenerator[llm]` | all three of the above |
 | `talkgenerator[mcp]` | `talkgenerator mcp`, for Claude Desktop and other MCP clients |
 
 ```sh
@@ -93,7 +94,7 @@ The PowerPoint is drawn from it, talkgenerator.com shows it in the browser, and 
 ## API keys
 
 Every key is optional: without any, talkgenerator makes classic talks with the image sources that need no key.
-Copy [`.env.example`](https://github.com/twinters/talk-generator/blob/master/.env.example) to `.env` in the folder you run the generator from, and fill in the keys you have: image sources (Reddit, Unsplash, Pixabay, Pexels, GIPHY, Openverse), and language models (`OPENROUTER_API_KEY` for the free models, which `talkgenerator login openrouter` gets for you too, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`).
+Copy [`.env.example`](https://github.com/twinters/talk-generator/blob/master/.env.example) to `.env` in the folder you run the generator from, and fill in the keys you have: image sources (Reddit, Unsplash, Pixabay, Pexels, GIPHY, Openverse), and language models (`OPENROUTER_API_KEY` for the free models, which `talkgenerator login openrouter` gets for you too, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`).
 [Keys and settings](https://github.com/twinters/talk-generator/blob/master/docs/configuration.md) says where to get each key, and lists every setting.
 
 | Route | A 10-slide talk costs |
@@ -101,6 +102,7 @@ Copy [`.env.example`](https://github.com/twinters/talk-generator/blob/master/.en
 | Classic, or OpenRouter's free models (50 talks a day, or 1,000 once the account has bought $10 of credits) | $0 |
 | Your ChatGPT plan (`talkgenerator login chatgpt`), or Claude through the Skill | part of your plan's usage |
 | Claude Haiku 5.5, Sonnet 5.5 or Opus 5.5, with your own key | about $0.003, $0.06 or $0.12 (Advanced, the default; Basic: about half) |
+| Gemini 3.5 Flash-Lite or 3.8 Flash, with your own key | about $0.02 or $0.04, estimated (Advanced); nothing on Gemini's free tier, within its limits |
 
 ## Use it with Claude
 
