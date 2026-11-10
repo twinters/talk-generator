@@ -23,6 +23,7 @@ for event in generator.stream_talk("default", 8, topic="peanuts", int_seed=42):
 | `slide.updated` (`SlideUpdated`) | a slide again, before `talk.finished`: with a picture that came in later (an AI picture, or the vision pick's), or with `slide_seconds`, the real slide that came after all | its `index` and the `slide`, laid out in its place; `late` is true for the real slide that came after all, in place of what stood in for it (see [A time limit per slide](#a-time-limit-per-slide)) |
 | `slide.early` (`SlideEarly`) | with `early`, early on, once each is made, before its slide | the place of the slide it's an early version of (`index`) and the `slide`, laid out there and numbered as that slide: none of the talk's slides, unless it stands in for it (see [Early versions](#early-versions)) |
 | `slide.spare` (`SlideSpare`) | with `spares`, early on, once each is made | which spare it is (`index`, from 0) and the `slide`, laid out in the talk's theme without a slide number: none of the talk's slides (see [Spare slides](#spare-slides)) |
+| `talk.progress` (`TalkProgress`) | with `progress`, from the very start (before `talk.started`) and whenever how far the talk is changes | its `stage`, every slide's own (`slides`), the parts of the plan in (`parts`), and how many slides the model writes and wrote (`writes`, `written`): see [How far a talk is](#how-far-a-talk-is) |
 | `talk.finished` (`TalkFinished`) | at the end | the whole `deck` |
 
 The events are in `talkgenerator.models.events`. Each one's `event` is its name, and its `to_json()` is one line of
@@ -60,6 +61,7 @@ The options, after the format (`"default"`, `"ted"`, `"interview"`, `"pitch"`, `
 | `spares` | `stream_talk` only: how many spare slides to send, for a presenter who goes on before the next slide is in (see [Spare slides](#spare-slides)); 0, the default, for none |
 | `slide_seconds` | `stream_talk` only: how long a slide may take at most, after which it comes at once with what's quick (see [A time limit per slide](#a-time-limit-per-slide)); `None`, the default, for no limit |
 | `early` | `stream_talk` only: of how many of the talk's last slides to send early versions, for a presenter who reaches one before it's made (see [Early versions](#early-versions)); 0, the default, for none |
+| `progress` | `stream_talk` only: `True` to get how far the talk is, as `talk.progress` events (see [How far a talk is](#how-far-a-talk-is)); `False`, the default, for none |
 
 ### Spare slides
 
@@ -138,6 +140,36 @@ talk's caps still allow its kind, so what a presentation showed stays until the 
 versions come from the slides' own stand-in streams, so the talk's slides come out the same with them or without, as
 long as no slide runs out of time or fails. talkgenerator.com asks for early versions of the slides that may still be
 being made when its presentation opens.
+
+### How far a talk is
+
+A talk takes a while: a free language model can take seconds to say its first word, and a slide's pictures take
+seconds to find. `stream_talk(..., progress=True)` also sends how far the talk is, as a `talk.progress`, from its very
+start (before `talk.started`, which waits for the model's title and first slide) and whenever that changes, whole each
+time, so the last one says it all:
+
+```python
+from talkgenerator import generator
+from talkgenerator.models.events import TalkProgress
+
+for event in generator.stream_talk("default", 8, topic="peanuts", llm="openrouter", progress=True):
+    if isinstance(event, TalkProgress):
+        print(event.stage, event.written, "of", event.writes, "written", event.slides.count("ready"), "ready")
+```
+
+Its `stage` is where the talk is: `starting` (its persona, format, theme and its slides' words are being picked),
+`asking` (its language model was asked, and hasn't said a word yet: it may be thinking), `planning` (the model's plan
+comes in: the talk's title, the presenter's job and name, its thesis, and at the Advanced level every slide's word and
+idea), `writing` (the model writes the slides), `composing` (the slides are made, their pictures looked up, and come
+in order) and `finishing` (every slide is in, and the talk waits for what comes after them: generated pictures, a
+vision pick, a slide that ran out of time). A classic talk goes from `starting` to `composing`, and a model that's asked
+again (it found the topic unsafe, or answered in English in a talk in another language) takes the talk back to
+`asking`. `slides` has every slide's own stage, by its number: `waiting`, `planned` (its idea is in, at the Advanced
+level), `written` (its texts are in, and its pictures are being looked up) or `ready` (it came as a `slide.ready`); a
+slide the model doesn't write, such as the title slide, goes from `waiting` to `ready`. `parts` counts the parts of
+the model's plan as they come in, the fields of its spine one by one and every slide's idea, `writes` how many slides
+the model writes (none in a classic talk), and `written` how many of those it wrote so far. talkgenerator.com shows it
+in front of its curtain: the stage in words, a dot for every part of the plan, and a mark for every slide.
 
 ## A PowerPoint: `render_pptx`
 

@@ -128,9 +128,10 @@ for event in generator.stream_talk("default", 8, topic="peanuts", theme="random"
 
 `stream_talk` hands over the talk while it's made, a slide at a time, and ends with the whole deck. With `early=4`,
 it also sends early versions of the last four slides early on, a quick one about each slide's own topic, for a
-presenter who reaches a slide before it's made (with `spares=3`, three spare slides about the talk's topic); and with
+presenter who reaches a slide before it's made (with `spares=3`, three spare slides about the talk's topic); with
 `slide_seconds=8`, a slide that isn't made within 8 seconds comes at once with what's quick, and the real slide takes
-its place once it's made after all.
+its place once it's made after all; and with `progress=True`, it says how far the talk is, from its start
+(`talk.progress`: asking the language model, planning, writing, composing).
 [Python](https://github.com/twinters/talk-generator/blob/master/docs/python.md) covers the events, decks, plans and the catalogs for a settings menu.
 `generator.generate_presentation()`, talkgenerator 4's way, keeps working throughout talkgenerator 5, with a deprecation warning.
 

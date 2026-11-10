@@ -33,6 +33,7 @@ from talkgenerator.models.events import (
     SlideUpdated,
     TalkEvent,
     TalkFinished,
+    TalkProgress,
     TalkStarted,
 )
 from talkgenerator.models.theme import Fonts, Palette, TextEffect, Theme
@@ -67,6 +68,7 @@ __all__ = [
     "TalkEvent",
     "TalkFinished",
     "TalkPersona",
+    "TalkProgress",
     "TalkStarted",
     "TextEffect",
     "TextElement",

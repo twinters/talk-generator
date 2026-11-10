@@ -28,15 +28,18 @@ from talkgenerator.models.events import (
     SlideEarly,
     SlideReady,
     SlideSpare,
+    SlideStage,
     SlideUpdated,
     TalkEvent,
     TalkFinished,
+    TalkProgress,
+    TalkStage,
     TalkStarted,
 )
 from talkgenerator.models.theme import Theme
 from talkgenerator.plan import languages, outline
 from talkgenerator.schema import formats
-from talkgenerator.schema.presentation_schema import Progress, TalkCancelled
+from talkgenerator.schema.presentation_schema import Planning, Progress, TalkCancelled
 from talkgenerator.schema.presentation_schema_types import RANDOM, get_schema, pick_format, schemas
 from talkgenerator.slide.slide_deck import SlideDeck
 from talkgenerator.sources import word_frequency
@@ -531,6 +534,7 @@ def stream_talk(
     slide_seconds: float | None = None,
     llm_level: str | None = None,
     early: int = 0,
+    progress: bool = False,
 ) -> Iterator[TalkEvent]:
     """Make a talk as generate_presentation does (the same deck, for the same options, seed and answers), handing
     over what's ready while it's made (see talkgenerator.models.events): talk.started once its title is known (the
@@ -581,17 +585,31 @@ def stream_talk(
     slide whose picture the vision model picked another one for comes again (slide.updated) once the last slide is
     settled and the model has answered; talk.finished comes after that.
 
+    With progress, it also hands over how far the talk is (talk.progress: see talkgenerator.models.events.TalkProgress),
+    from its very start, before talk.started, and whenever that changes until talk.finished: where the talk is
+    (starting, asking its language model, planning, writing, composing, finishing), where each of its slides is
+    (waiting, planned, written, ready), how much of the model's plan came in, and how many of its slides the model
+    wrote, so that whoever shows the talk can show how far it is, as a free model can take a while to answer. Off by
+    default: then the events are the ones above, and only those.
+
     Images are probed rather than downloaded (see talkgenerator.util.image_util.probing): a browser that shows the
     slides loads them itself. Nothing is saved: the deck in talk.finished renders as a PowerPoint
     (talkgenerator.render.powerpoint.render_pptx), which downloads them then.
     Stopping the iteration (closing the iterator, or leaving a for loop over it) stops the talk, and an error that
     stopped it comes out of the iterator."""
     events: queue.SimpleQueue[TalkEvent | None] = queue.SimpleQueue()  # (None: the end)
-    following = _Following(events.put, spares=max(0, spares), slide_seconds=slide_seconds, early=max(0, early))
+    following = _Following(
+        events.put,
+        spares=max(0, spares),
+        slide_seconds=slide_seconds,
+        early=max(0, early),
+        stages=slides if progress else None,
+    )
     failures: list[BaseException] = []
 
     def make() -> None:
         try:
+            following.begin()
             with image_util.probing():
                 _, slide_deck, _ = _generate_presentation(
                     schema,
@@ -641,7 +659,9 @@ def stream_talk(
 class _Following:
     """Turns a talk's progress into events (see stream_talk), and stops the talk once they're not wanted anymore. It
     wants that many spare slides, gives every slide that long at most, and wants early versions of that many of the
-    talk's last slides (spares, slide_seconds and early: see talkgenerator.schema.presentation_schema.Progress)."""
+    talk's last slides (spares, slide_seconds and early: see talkgenerator.schema.presentation_schema.Progress). With
+    stages, the number of the talk's slides, it hands over how far the talk is too (talk.progress events: see _Stages),
+    and wants to know how far its language model is (planning)."""
 
     def __init__(
         self,
@@ -649,6 +669,7 @@ class _Following:
         spares: int = 0,
         slide_seconds: float | None = None,
         early: int = 0,
+        stages: int | None = None,
     ) -> None:
         self.hand_over = hand_over
         self.spares = spares
@@ -663,6 +684,14 @@ class _Following:
         self._replaced = False  # whether a slide came after all, in place of what stood in for it (see replaced)
         # (a slide is laid out again, and handed over again, while later ones are being handed over)
         self._lock = threading.RLock()
+        self._stages = _Stages(hand_over, stages, self.cancelled) if stages is not None else None
+        # (what the talk tells of its language model, when its stages are wanted: none otherwise, so it tells nothing)
+        self.planning: Callable[[Planning], None] | None = self._stages.planning if self._stages is not None else None
+
+    def begin(self) -> None:
+        """The talk is starting: its first talk.progress, if its stages are wanted."""
+        if self._stages is not None:
+            self._stages.begin()
 
     def started(self, slide_deck: SlideDeck) -> None:
         self._go_on()
@@ -691,6 +720,8 @@ class _Following:
                 language_model=slide_deck.language_model,
             )
         )
+        if self._stages is not None:
+            self._stages.started()
 
     def settled(self, slide_deck: SlideDeck, slide_nr: int, slide: Any) -> None:
         self._go_on()
@@ -703,6 +734,8 @@ class _Following:
             self.hand_over(SlideReady(index=index, slide=deck_slide))
             self._handed_over += 1
             self._settled_up_to = slide_nr + 1
+        if self._stages is not None:
+            self._stages.ready(slide_nr)
         # A slide shown is a slide used, which some sources want to hear of (a download, at Unsplash), as a PowerPoint
         # tells them when it gets the slide. (A PowerPoint made later from the deck doesn't tell them again.)
         for image in slide.image_store().values():
@@ -785,6 +818,82 @@ class _Following:
     def _go_on(self) -> None:
         if self.cancelled.is_set():
             raise TalkCancelled()
+
+
+class _Stages:
+    """How far a talk is (see talkgenerator.models.events.TalkProgress), as its Progress is told: from its start, that
+    it started (talk.started), how far its language model is (see Planning) and every slide it settled; handed over as
+    a talk.progress event whenever that changes, until the talk is cancelled. Its Progress tells it on whichever thread
+    it's told, so it hands over one event at a time, in the order the changes came."""
+
+    def __init__(self, hand_over: Callable[[TalkEvent], None], slides: int, cancelled: threading.Event) -> None:
+        self._hand_over = hand_over
+        self._cancelled = cancelled
+        self._ready = [False] * max(0, slides)  # by slide number
+        self._started = False
+        self._planning: Planning | None = None
+        self._last: TalkProgress | None = None
+        self._lock = threading.Lock()
+
+    def begin(self) -> None:
+        with self._lock:
+            self._tell()
+
+    def started(self) -> None:
+        with self._lock:
+            self._started = True
+            self._tell()
+
+    def ready(self, slide_nr: int) -> None:
+        with self._lock:
+            if 0 <= slide_nr < len(self._ready):
+                self._ready[slide_nr] = True
+            self._tell()
+
+    def planning(self, planning: Planning) -> None:
+        with self._lock:
+            self._planning = planning
+            self._tell()
+
+    def _tell(self) -> None:
+        """Hand over how far the talk is, if that changed (with the lock held). How far a talk is never stops it."""
+        planning = self._planning
+        try:
+            progress = TalkProgress(
+                stage=self._stage(planning),
+                slides=tuple(self._slide_stage(slide_nr, planning) for slide_nr in range(len(self._ready))),
+                parts=planning.parts if planning is not None else 0,
+                writes=len(planning.writes) if planning is not None else 0,
+                written=len(planning.written) if planning is not None else 0,
+            )
+        except Exception:
+            logger.exception("Telling how far the talk is crashed")
+            return
+        if progress != self._last and not self._cancelled.is_set():
+            self._last = progress
+            self._hand_over(progress)
+
+    def _stage(self, planning: Planning | None) -> TalkStage:
+        if self._ready and all(self._ready):
+            return "finishing"
+        if planning is not None and not planning.answered:
+            if not planning.heard:
+                return "asking"
+            if not planning.plan_in:
+                return "planning"
+            if len(planning.written) < len(planning.writes):
+                return "writing"
+        # (once the model is asked, its slides are being made as their texts come in, before talk.started too)
+        return "composing" if self._started or planning is not None else "starting"
+
+    def _slide_stage(self, slide_nr: int, planning: Planning | None) -> SlideStage:
+        if self._ready[slide_nr]:
+            return "ready"
+        if planning is not None and slide_nr in planning.written:
+            return "written"
+        if planning is not None and slide_nr in planning.planned:
+            return "planned"
+        return "waiting"
 
 
 def palette(theme: Theme | None) -> tuple[str, ...]:

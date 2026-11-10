@@ -4,8 +4,9 @@ come again, as slide.updated, once a generated picture takes the place of its st
 after the slide's slide.ready and before talk.finished; in a talk with a time limit per slide, a slide that ran out of
 time can come after all (a slide.updated that's late) in place of what stood in for it. A talk that asks for spares
 gets slide.spare events too, in between: slides to show while the next slide isn't in yet, which aren't the talk's
-(see SlideSpare); and one that asks for early versions of its last slides gets a slide.early for each, before that
-slide's slide.ready (see SlideEarly).
+(see SlideSpare); one that asks for early versions of its last slides gets a slide.early for each, before that
+slide's slide.ready (see SlideEarly); and one that asks for its progress gets talk.progress events, from its very start
+(before talk.started) until it's finished: how far it is, whenever that changes (see TalkProgress).
 
 They're plain data, as Server-Sent Events carry them: an event's `event` is its name, and to_json() is its data (the
 deck format's elements, as in talkgenerator.models.deck). A browser can draw a themed talk's slides as they come in,
@@ -95,6 +96,38 @@ class SlideEarly(_Event):
     slide: DeckSlide
 
 
+# Where a talk is while it's made, and where each of its slides is (see TalkProgress)
+TalkStage = Literal["starting", "asking", "planning", "writing", "composing", "finishing"]
+SlideStage = Literal["waiting", "planned", "written", "ready"]
+
+
+class TalkProgress(_Event):
+    """How far the talk is while it's made, for a talk that asks for it (see stream_talk's progress): sent whenever
+    that changes, whole, so that the last one says it all. It's no slide, and the deck has none of it.
+
+    stage is where the talk is: starting (its persona, format, theme and its slides' words are being picked); asking (a
+    language model writes it, and was asked, but hasn't answered yet: a free model can take a while); planning (the
+    model's plan comes in: the talk's title, the presenter's job and name, its thesis, and at the Advanced level every
+    slide's word and idea); writing (the model writes the slides' texts); composing (the slides are made, their pictures
+    looked up, and handed over in order, slide.ready); and finishing (every slide is in, and the talk waits for what
+    comes after its slides: generated pictures, a vision pick, a slide that ran out of time). A classic talk goes from
+    starting to composing. A model that's asked again (when it found the topic unsafe, or answered in English in a talk
+    in another language) takes the talk back to asking.
+
+    slides is every slide's own stage, by its number (from 0): waiting; planned (its idea is in, at the Advanced level);
+    written (the model wrote its texts, and its pictures are being looked up); or ready (handed over). A slide the model
+    doesn't write (the title slide, a classic slide) goes from waiting to ready. parts counts the parts of the model's
+    plan that came in (the fields of its spine, and at the Advanced level the slides' ideas), writes how many slides the
+    model writes, and written how many of those it wrote so far (ready ones too)."""
+
+    event: Literal["talk.progress"] = "talk.progress"
+    stage: TalkStage
+    slides: tuple[SlideStage, ...]
+    parts: int = 0
+    writes: int = 0
+    written: int = 0
+
+
 class TalkFinished(_Event):
     """The talk is done: the whole deck, as generate_presentation makes it, with what it asked of language models and
     image generators."""
@@ -104,5 +137,6 @@ class TalkFinished(_Event):
 
 
 TalkEvent = Annotated[
-    TalkStarted | SlideReady | SlideUpdated | SlideSpare | SlideEarly | TalkFinished, Field(discriminator="event")
+    TalkStarted | SlideReady | SlideUpdated | SlideSpare | SlideEarly | TalkProgress | TalkFinished,
+    Field(discriminator="event"),
 ]
