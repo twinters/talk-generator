@@ -1,0 +1,472 @@
+# Topics for talks in Portuguese (pt): things a talk can be about, for the site's random topic button when a visitor
+# picks Portuguese and for checking talkgenerator on varied topics. Adapted from topics.txt where a topic says well in
+# Portuguese (in the words a speaker would use, not word for word), plus about a third from the Portuguese-speaking
+# world's own life: Brazil and Portugal, and a little of Angola, Mozambique and Cape Verde. Spelling of the 1990
+# agreement, with words both countries understand where they differ. One topic a line, mostly short (a phone shows
+# about 20 characters of the site's topic field); blank lines, comments and repeats are skipped.
+
+# Animals
+os gatos
+os cães
+os pinguins
+os pombos
+os polvos
+as preguiças
+as capivaras
+os tucanos
+as lhamas
+os ouriços
+as corujas
+os flamingos
+os tubarões
+as águas-vivas
+as araras
+os jacarés
+as formigas
+as gaivotas
+os caracóis
+os papagaios
+os tamanduás
+o boto-cor-de-rosa
+as galinhas
+os patos
+as tartarugas
+as baratas voadoras
+o lince-ibérico
+o mico-leão-dourado
+
+# Food and drink
+o pão
+o café
+o cafezinho
+a bica
+o chá
+as torradas
+o queijo
+o pastel de nata
+o bacalhau
+a feijoada
+o pão de queijo
+as batatas fritas
+o chocolate
+o açaí
+a coxinha
+o brigadeiro
+a sopa
+o caldo verde
+a francesinha
+a maionese
+as pipocas
+as sardinhas assadas
+a farofa
+o sushi
+a pizza
+a tapioca
+o churrasco
+o alho
+os ovos
+o bolo de aniversário
+o pudim de leite
+o sorvete
+as bolas de Berlim
+a cachupa
+o chimarrão
+as sobras
+a última fatia de pizza
+
+# Everyday objects
+as meias
+os guarda-chuvas
+as colheres
+os patinhos de borracha
+os cones de trânsito
+os carrinhos de compras
+as chaves
+o controle remoto
+as lâmpadas
+os despertadores
+os óculos de sol
+as mochilas
+as malas de viagem
+os chapéus
+a fita adesiva
+os chinelos
+os anões de jardim
+o galo de Barcelos
+os azulejos
+as máquinas de lavar
+os micro-ondas
+a panela de pressão
+o ventilador de teto
+o filtro de barro
+a rede de dormir
+o chuveiro elétrico
+o plástico-bolha
+as caixas de papelão
+a marmita
+a gaveta da tralha
+
+# Places
+a Bélgica
+a Lua
+Marte
+os elevadores
+os aeroportos
+as bibliotecas
+a padaria da esquina
+a feira livre
+os faróis
+as cavernas
+os vulcões
+o Polo Norte
+o fundo do mar
+o Cristo Redentor
+a praia de Copacabana
+o rio Amazonas
+o Pantanal
+as Cataratas do Iguaçu
+a Torre de Belém
+os miradouros de Lisboa
+a Serra da Estrela
+os Açores
+a ilha do Sal
+as salas de espera
+os parques de diversões
+o sótão
+os perdidos e achados
+a mesa da cozinha
+as rotundas
+
+# Things people do
+a procrastinação
+a sesta
+o karaokê
+o tricô
+sonhar acordado
+a conversa fiada
+a fofoca
+a faxina
+a gambiarra
+o desenrascanço
+o puxadinho
+o fiado
+dar boleia
+o banho de mar
+fazer baliza
+montar móveis
+as mudanças de casa
+fazer as malas
+as palavras cruzadas
+os truques de magia
+pechinchar
+pedir desculpa
+cantar no chuveiro
+falar com as plantas
+chegar atrasado
+as selfies
+
+# Work and the office
+as folhas de cálculo
+as reuniões
+o teletrabalho
+os prazos
+os slides
+a pausa para o café
+a impressora do escritório
+as entrevistas de emprego
+as dinâmicas de grupo
+as segundas-feiras
+as sextas-feiras
+as listas de tarefas
+as horas extras
+a festa da empresa
+o amigo secreto da empresa
+a chuva de ideias
+a papelada
+a burocracia
+o carimbo
+a repartição pública
+a semana de quatro dias
+
+# Technology
+a inteligência artificial
+os robôs
+a internet
+o wi-fi
+os emojis
+o corretor automático
+as videochamadas
+o grupo da família
+o áudio de dez minutos
+os captchas
+as atualizações
+as barras de carregamento
+o modo escuro
+a realidade virtual
+as máquinas de escrever
+o orelhão
+o fax
+os códigos QR
+o microfone desligado
+
+# Science and nature
+a física quântica
+a gravidade
+os buracos negros
+os cogumelos
+o cheiro da chuva
+os arco-íris
+as tempestades
+a garoa de São Paulo
+as ondas de calor
+a neve
+a pororoca
+os ipês amarelos
+os jacarandás de Lisboa
+a vitória-régia
+o embondeiro
+os sobreiros
+os dinossauros
+os fusos horários
+os anos bissextos
+a velocidade da luz
+as areias movediças
+a previsão do tempo
+o Big Bang
+a Via Láctea
+a tabela periódica
+
+# History and myth
+os piratas
+os vikings
+a Idade Média
+o Império Romano
+o Antigo Egito
+a Idade da Pedra
+o Velho Oeste
+os ninjas
+os dragões
+os fantasmas
+os vampiros
+os lobisomens
+o saci-pererê
+o curupira
+a mula sem cabeça
+a Iara
+o bicho-papão
+as mouras encantadas
+o Adamastor
+o Pedro Malasartes
+a Dona Baratinha
+os contos de fadas
+os super-heróis
+as viagens no tempo
+as casas assombradas
+o monstro do lago Ness
+os mapas do tesouro
+
+# Big and small ideas
+o tempo
+a sorte
+a saudade
+a nostalgia
+a paciência
+o tédio
+a felicidade
+a vergonha
+o silêncio
+o caos
+o fracasso
+as coincidências
+o déjà vu
+o sentido da vida
+a vida adulta
+envelhecer
+as primeiras impressões
+o fim de semana
+amanhã
+a morabeza
+o xodó
+a pirosice
+as desculpas esfarrapadas
+os boatos
+as superstições
+o mau-olhado
+
+# Things that happen
+os engarrafamentos
+as filas
+o jet lag
+os soluços
+as queimaduras de sol
+os domingos à noite
+o silêncio constrangedor
+as festas surpresa
+os casamentos
+os primeiros encontros
+as reuniões de família
+o almoço de domingo
+os vizinhos
+os sogros
+os turistas
+a bagagem perdida
+os dias de chuva
+o primeiro dia de aulas
+as resoluções de Ano Novo
+sair de casa dos pais
+a cadeira do dentista
+o Carnaval
+as festas juninas
+os Santos Populares
+o magusto
+a consoada
+o Natal no verão
+pular sete ondas
+o feriadão
+a festa de quinze anos
+a Queima das Fitas
+
+# Sports and games
+o xadrez
+o curling
+o minigolfe
+a corrida de sacos
+o cabo de guerra
+o pingue-pongue
+o futebol
+o futebol de praia
+o futebol de rua
+a capoeira
+o frescobol
+a natação sincronizada
+o tiro com arco
+o paraquedismo
+o hóquei em patins
+o esconde-esconde
+a amarelinha
+soltar pipa
+a dança das cadeiras
+pedra-papel-tesoura
+o truco
+o dominó na praça
+os bambolês
+os Jogos Olímpicos
+o braço de ferro
+
+# Music, art and entertainment
+o fado
+o samba
+a bossa nova
+o forró
+o kuduro
+a morna
+a marrabenta
+o jazz
+a ópera
+a gaita de foles
+a dança interpretativa
+a mímica
+o triângulo
+o cavaquinho
+a guitarra portuguesa
+o heavy metal
+as canções de ninar
+a música de elevador
+a marchinha de Carnaval
+o rancho folclórico
+a arte abstrata
+a calçada portuguesa
+a literatura de cordel
+as novelas
+os reality shows
+os filmes de terror
+as comédias românticas
+o circo
+os palhaços
+os musicais
+
+# Getting around
+as bicicletas
+os submarinos
+os balões de ar quente
+os comboios
+o elétrico de Lisboa
+o cacilheiro
+os barcos rabelos
+as jangadas
+o trio elétrico
+o ônibus lotado
+o candongueiro
+os helicópteros
+os monociclos
+os tratores
+os carros de bombeiros
+as escadas rolantes
+os tapetes rolantes
+os teleféricos
+o lugar da janela
+
+# The body
+as sobrancelhas
+os cotovelos
+os joelhos
+os dentes do siso
+as sardas
+as covinhas
+os bigodes
+os pesadelos
+o cafuné
+ser canhoto
+os arrepios
+os umbigos
+
+# People and jobs
+os canalizadores
+os bombeiros
+os salva-vidas
+os astronautas
+os faroleiros
+os carteiros
+os árbitros
+os detetives
+os influenciadores
+o porteiro do prédio
+o feirante
+o vendedor de praia
+o amolador
+o fadista
+o motoboy
+o tio do pavê
+os avós
+os madrugadores
+os sabichões
+os passeadores de cães
+o colega novo
+
+# Oddly specific
+uma coroa grande demais
+uma roda-gigante parada
+uma meia desaparecida
+um papagaio que fala
+uma torradeira assombrada
+o crachá errado
+uma porta minúscula
+uma mensagem numa garrafa
+um dragão no sótão
+um fantasma no escritório
+um gato no teclado
+o despertador que não tocou
+um caracol com pressa
+uma senha esquecida
+uma planta que não morre
+um chapéu num dia de vento
+um mapa sem norte
+o último pastel de nata
+o pastel de vento
+o chuveiro que dá choque
+o guarda-sol que voou
+o pombo do Rossio
+a capivara no condomínio
+a novela das nove
+a fava no bolo-rei
+uma sardinha no pão

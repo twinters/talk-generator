@@ -1,0 +1,462 @@
+# Topics for talks in Italian (it): things a talk can be about, for the site's random topic button and for checking
+# talkgenerator on varied topics in Italian. Made from topics.txt: its topics that say well in Italian, adapted (in the
+# words an Italian speaker would call out at an improv show, not word for word), plus about a third from Italian life
+# (Italy and Italian-speaking Switzerland), each in the section where it belongs. One topic a line, with its article,
+# mostly short (a phone shows about 20 characters of the site's topic field); blank lines, comments and repeats are
+# skipped.
+
+# Animals
+i gatti
+i cani
+i pinguini
+i piccioni
+le oche
+i polpi
+i bradipi
+i capibara
+i procioni
+i ricci
+i pesci rossi
+gli scoiattoli
+i fenicotteri
+gli squali
+le meduse
+la zanzara tigre
+le formiche
+le api
+le cicale
+i gabbiani
+le lumache
+i pappagalli
+i cinghiali
+le tartarughe
+gli stambecchi
+le marmotte
+i trichechi
+gli asini
+
+# Food and drink
+il pane
+la moka
+il caffè al bar
+il formaggio
+i sottaceti
+le patatine fritte
+il cioccolato
+i broccoli
+gli avocado
+i panini
+la maionese
+il sushi
+la pizza
+la pizza al taglio
+l'ananas sulla pizza
+la pasta al dente
+la carbonara
+il risotto
+la polenta
+l'aglio
+le cipolle
+le uova
+gli avanzi
+la torta della nonna
+i cavoletti di Bruxelles
+il peperoncino
+la fonduta
+il gelato
+la granita
+il tiramisù
+i cannoli
+gli arancini
+la piadina
+il panettone
+le caldarroste
+fare la scarpetta
+
+# Everyday objects
+i calzini
+gli ombrelli
+gli ombrelloni
+la spillatrice
+le paperelle
+i coni stradali
+le chiavi
+il telecomando
+i caricabatterie
+la sveglia
+gli occhiali da sole
+i lacci delle scarpe
+gli scontrini
+le ciabatte
+i nani da giardino
+le piante grasse
+l'aspirapolvere
+la lavatrice
+lo stendino
+il frigo
+gli scatoloni
+le grucce
+le tapparelle
+i termosifoni
+il bidet
+lo scolapasta
+i centrini
+il servizio buono
+le bomboniere
+
+# Places
+il Belgio
+la luna
+Marte
+gli ascensori
+gli aeroporti
+i parcheggi
+i supermercati
+il benzinaio
+l'area di servizio
+i castelli
+il Polo Nord
+il fondo del mare
+la sala d'attesa
+le rotonde
+la cantina
+la fermata del bus
+gli oggetti smarriti
+il sedile posteriore
+l'Antartide
+il bar sotto casa
+la piazza del paese
+la casa al mare
+il lido
+la Torre di Pisa
+il Colosseo
+la Fontana di Trevi
+il Vesuvio
+le Dolomiti
+il lago di Lugano
+il passo del Gottardo
+il grotto ticinese
+
+# Things people do
+la procrastinazione
+la pennichella
+la passeggiata
+il karaoke
+fare la maglia
+il giardinaggio
+le pulizie di Pasqua
+stirare le camicie
+stendere i panni
+il cambio di stagione
+il sonnambulismo
+sognare a occhi aperti
+le chiacchiere
+i pettegolezzi
+i gesti con le mani
+lo shopping online
+fare la fila
+tirare sul prezzo
+montare i mobili
+il trasloco
+le parole crociate
+chiedere scusa
+lamentarsi
+cantare sotto la doccia
+parlare alle piante
+arrivare in ritardo
+la raccolta differenziata
+il fai da te
+fare la pasta
+fare la passata
+
+# Work and the office
+le riunioni
+lo smart working
+le scadenze
+le slide
+la stampante
+i colloqui di lavoro
+il team building
+l'open space
+le call
+la cena aziendale
+le scartoffie
+la burocrazia
+il timbro
+la marca da bollo
+le macchinette
+la schiscetta
+la settimana corta
+il posto fisso
+la tredicesima
+
+# Technology
+l'intelligenza artificiale
+i robot
+internet
+il Wi-Fi
+gli smartphone
+le emoji
+il correttore automatico
+le videochiamate
+la chat delle mamme
+la stampa 3D
+lo spam
+gli aggiornamenti
+i podcast
+la realtà virtuale
+i monopattini
+le macchine da scrivere
+il fax
+il digitale terrestre
+
+# Science and nature
+la fisica quantistica
+la gravità
+i buchi neri
+i funghi
+l'arcobaleno
+i temporali
+la pioggerella
+la nebbia padana
+l'afa
+il solleone
+lo scirocco
+la bora
+le calamite
+l'elettricità statica
+i fusi orari
+gli anni bisestili
+il muschio
+le nuvole
+le sabbie mobili
+i dinosauri
+il Big Bang
+la Via Lattea
+la tavola periodica
+
+# History and myth
+i pirati
+i vichinghi
+i gladiatori
+Romolo e Remo
+il Medioevo
+le piramidi
+i cavalieri
+il Rinascimento
+Leonardo da Vinci
+la Divina Commedia
+Marco Polo
+Guglielmo Tell
+i draghi
+gli unicorni
+le sirene
+i fantasmi
+i vampiri
+la Befana
+Pinocchio
+i supereroi
+i viaggi nel tempo
+lo sbarco sulla luna
+il cavallo di Troia
+Atlantide
+le mappe del tesoro
+i cavernicoli
+
+# Big and small ideas
+il tempo
+la fortuna
+la nostalgia
+la noia
+la felicità
+l'amicizia
+l'imbarazzo
+il silenzio
+il caos
+le coincidenze
+il déjà vu
+il buon senso
+il senso della vita
+invecchiare
+la prima impressione
+i piaceri proibiti
+la gentilezza
+le buone maniere
+la bella figura
+il dolce far niente
+l'arte di arrangiarsi
+le voci di corridoio
+gli errori
+il venerdì 17
+il malocchio
+il cornetto rosso
+
+# Things that happen
+gli ingorghi
+il singhiozzo
+gli starnuti
+le scottature
+la domenica sera
+il pranzo della domenica
+il lunedì mattina
+l'ora dell'aperitivo
+i silenzi imbarazzanti
+le feste a sorpresa
+i matrimoni
+il primo appuntamento
+i vicini di casa
+la riunione di condominio
+i suoceri
+i bagagli smarriti
+i treni in ritardo
+le giornate no
+il primo giorno di scuola
+l'interrogazione
+la gita scolastica
+la maturità
+i buoni propositi
+il cenone
+la Pasquetta
+il presepe
+la sagra di paese
+Ferragosto
+la notte di San Lorenzo
+
+# Sports and games
+gli scacchi
+il curling
+il minigolf
+il tiro alla fune
+le freccette
+il calcio
+il calcetto
+il fantacalcio
+le figurine
+il nuoto sincronizzato
+il sumo
+le bocce
+il Giro d'Italia
+la settimana bianca
+nascondino
+il gioco della sedia
+la morra cinese
+la briscola
+la tombola
+il gioco dell'oca
+i videogiochi
+le Olimpiadi
+la corsa nei sacchi
+il braccio di ferro
+
+# Music, art and entertainment
+l'opera
+le cornamuse
+il mimo
+il flauto dolce
+il triangolo
+la fisarmonica
+la tarantella
+il ballo liscio
+le ninne nanne
+la musica da ascensore
+il tormentone estivo
+i cantautori
+il Festival di Sanremo
+l'arte astratta
+i fumetti
+i cartoni animati
+i cinepanettoni
+il circo
+i pagliacci
+la Commedia dell'arte
+Arlecchino
+Pulcinella
+il Carnevale di Venezia
+i ventriloqui
+le boy band
+
+# Getting around
+la bicicletta
+il motorino
+i sottomarini
+la mongolfiera
+il tram
+il treno regionale
+l'autobus notturno
+il monociclo
+il tandem
+i pattini a rotelle
+i trattori
+le scale mobili
+il tapis roulant
+la funivia
+la funicolare
+le gondole
+il vaporetto
+la doppia fila
+suonare il clacson
+il casello
+il posto al finestrino
+
+# The body
+le sopracciglia
+i gomiti
+le ginocchia
+i denti del giudizio
+le lentiggini
+i baffi
+il taglio di capelli
+gli incubi
+i mancini
+la pelle d'oca
+l'ombelico
+la cervicale
+il colpo della strega
+il colpo d'aria
+il bagno dopo mangiato
+
+# People and jobs
+i pompieri
+i bagnini
+gli astronauti
+i guardiani del faro
+gli arbitri
+gli archeologi
+i prestigiatori
+le spie
+il pizzaiolo
+il vigile urbano
+il bidello
+la portinaia
+i commercialisti
+gli influencer
+la nonna
+la mamma
+gli adolescenti
+i gattari
+i nottambuli
+i saputelli
+gli umarell
+il collega nuovo
+
+# Oddly specific
+il calzino spaiato
+un pappagallo che parla
+un tostapane infestato
+una porta minuscola
+un messaggio in bottiglia
+un drago in soffitta
+un fantasma in ufficio
+un gatto sulla tastiera
+una sveglia che non suona
+la multa sul parabrezza
+una lumaca col turbo
+l'ultimo treno
+un pranzo di cinque ore
+un tenore sul balcone
+la pasta scotta
+un gondoliere stonato
+la Torre di Pisa dritta
+il tiramisù senza caffè
+i dinosauri nel presepe
+il cappuccino a cena

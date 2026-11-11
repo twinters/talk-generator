@@ -114,6 +114,18 @@ _IDEA: Final = (
 )
 
 
+def _riff(language: str) -> str:
+    """What to write for a slide's riff: in a talk in another language than English, in that language, as the slide's
+    writer then needn't say an English word in it (D74: "redevelopment" became "geherontwikkeld" on a Dutch slide)."""
+    if language == languages.ENGLISH.code:
+        return _RIFF
+    name = languages.language(language).name
+    return (
+        f"the word the slide riffs on, in {name}: one of its words (an English one said in {name}, as a {name} speaker "
+        f"would say it), or a sharper one of your own (at most {RIFF_LENGTH} characters)"
+    )
+
+
 def level(value: str | None, model: TextProvider | None = None) -> str:
     """The level a talk is made at: the one asked for (case and spaces don't matter), or else TALKGENERATOR_LLM_LEVEL's,
     or else the model's default (default_level). A ValueError for a level there isn't."""
@@ -178,10 +190,12 @@ def outline_request(
     format and the persona), its spine to write as a Basic talk's request has it (prompt.spine: the title, the
     presenter's job and made-up name, the thesis, the unsafe flag), a running gag, and for every planned slide what it
     is (its brief) and the words the dice offer it (offers, by slide number: its seed first, then the others that
-    would have done), for its riff and its idea."""
+    would have done), for its riff and its idea. In a talk in another language than English, the riffs are in that
+    language too (English words offered say they're English: D74), and the ideas in English."""
     fields = _spine_fields(language, title, name, typed, persona, talk_format)
     language_name = languages.language(language).name
-    plans_in = "" if language == languages.ENGLISH.code else ", and plan the slides in English"
+    other = language != languages.ENGLISH.code
+    plans_in = f", every slide's riff in {language_name} too, and its idea in English" if other else ""
     lines = [
         *prompt.header(
             topics,
@@ -202,12 +216,13 @@ def outline_request(
     for slide in planned:
         brief = (slide.recipe.brief or KINDS[slide.recipe.kind].description).rstrip(".")
         words = ", ".join(dict.fromkeys(word for word in offers.get(slide.number, (slide.seed,)) if word))
-        lines += ["", f"{slide.key}: {brief}. Its words: {words or slide.seed}"]
+        marked = " (English)" if slide.english and other else ""
+        lines += ["", f"{slide.key}: {brief}. Its words{marked}: {words or slide.seed}"]
     return TextRequest(
         purpose=PURPOSE,
         system=OUTLINE_SYSTEM_PROMPT,
         messages=(Message(role="user", content="\n".join(lines)),),
-        json_schema=_outline_schema(fields, planned),
+        json_schema=_outline_schema(fields, planned, language),
         max_output_tokens=600 + 120 * len(planned),
     )
 
@@ -226,7 +241,9 @@ def _spine_fields(
     return {**prompt.spine(language, name, typed, hint, job, bool(title)), RUNNING_GAG: _RUNNING_GAG_DESCRIPTION}
 
 
-def _outline_schema(fields: Mapping[str, str], planned: Sequence[PlannedSlide]) -> dict[str, Any]:
+def _outline_schema(
+    fields: Mapping[str, str], planned: Sequence[PlannedSlide], language: str = languages.ENGLISH.code
+) -> dict[str, Any]:
     """The JSON Schema of the outline's answer: its spine first, then the slides in order (alphabetical order too)."""
     spine = {
         field: {"type": "boolean" if field == "unsafe_topic" else "string", "description": description}
@@ -234,7 +251,7 @@ def _outline_schema(fields: Mapping[str, str], planned: Sequence[PlannedSlide]) 
     }
     properties: dict[str, Any] = {prompt.SPINE: _object(spine)}
     for slide in planned:
-        properties[slide.key] = _object({"riff": _string(_RIFF), "idea": _string(_IDEA)})
+        properties[slide.key] = _object({"riff": _string(_riff(language)), "idea": _string(_IDEA)})
     return _object(properties)
 
 
@@ -283,9 +300,12 @@ def writing_request(
         *(f"The talk's {what}: {spine[field]}" for field, what in _TOLD.items() if _told(spine.get(field))),
     ]
     first = slides[0].number
+    marked = language != languages.ENGLISH.code  # (an English word in a talk in another language says it's English)
     plan = [
         f"- {other.key}: {(other.recipe.brief or KINDS[other.recipe.kind].description).rstrip('.')}. Its word: "
-        f"{other.seed}" + (f". Its idea: {other.idea.rstrip('.')}" if other.idea else "")
+        f"{other.seed}"
+        + (" (English)" if marked and other.english else "")
+        + (f". Its idea: {other.idea.rstrip('.')}" if other.idea else "")
         for other in planned
         if other.number < first
     ]
@@ -295,7 +315,7 @@ def writing_request(
         *(["The plan of the talk so far:", *plan, ""] if plan else []),
         *([request_line(language)] if any(slide.number in facts for slide in slides) else []),
         f"Write {keys} as one JSON object with a property for each ({keys}): an object of its texts, a search query "
-        f"for each of its images, and its concept: {prompt.CONCEPT}.",
+        f"for each of its images, and its concept: {prompt.concept(language)}.",
     ]
     for slide in slides:
         lines += ["", *prompt.slide_lines(slide, language, facts.get(slide.number), generation)]

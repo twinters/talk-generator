@@ -11,6 +11,12 @@ NLTK's stopword lists (and a language's words that look like English ones, which
 whose answer starts in English, for a talk in another language, is asked again (see reads_as_english), and the check
 of a deck finds a talk that reads as English. The spelling fixes of what's typed for a talk leave the compounds alone
 of a language that writes them as one word.
+
+A language model is asked for a talk in another language as a native speaker of it writes (D74, see
+talkgenerator.plan.prompt.native_line), with one of the language's words that only look like English ones and the
+words that have capitals in its titles; and a topic's articles are left off to look up what it is in English (see
+talkgenerator.schema.slide_topic_generators.english_name), and don't count toward the words that make what's typed a
+title (see talkgenerator.titles.clearly_a_title).
 """
 
 from __future__ import annotations
@@ -48,9 +54,19 @@ class Language:
     # Its words that are English stopwords too but missing from its own NLTK list, which the language check then
     # doesn't count as English (Swedish "in", "all" and "just", and "is", ice)
     english_lookalikes: frozenset[str] = frozenset()
+    # The articles a topic may start with ("les vacances"), which looking up what it is in English leaves off when the
+    # topic as typed finds nothing (see talkgenerator.schema.slide_topic_generators.english_topics)
+    articles: tuple[str, ...] = ()
+    # An English word that a word of the language only looks like, with the word it is instead (D74: a free model
+    # wrote "graf", a grave, for a graph in a Dutch talk), for the request's line on writing as a native speaker would
+    false_friend: str = ""
+    # Which words of a title have a capital in the language, for that same line (English titles have one on every word)
+    capitals: str = "only its first word and names"
 
 
-ENGLISH: Final = Language("en", "English", ("By", "A presentation by", "Presented by"), "Yes", "No", "english")
+ENGLISH: Final = Language(
+    "en", "English", ("By", "A presentation by", "Presented by"), "Yes", "No", "english", articles=("the", "a", "an")
+)
 
 LANGUAGES: Final[dict[str, Language]] = {
     language.code: language
@@ -74,6 +90,8 @@ LANGUAGES: Final[dict[str, Language]] = {
             good_to_evil=("Goed", "Neutraal", "Kwaad"),
             continued="Vervolg op de volgende dia",
             compounds=True,
+            articles=("de", "het", "een", "'t"),
+            false_friend="a graph is a 'grafiek', never a 'graf' (a grave)",
         ),
         Language(
             "fr",
@@ -92,6 +110,8 @@ LANGUAGES: Final[dict[str, Language]] = {
             lawful_to_chaotic=("Loyal", "Neutre", "Chaotique"),
             good_to_evil=("Bon", "Neutre", "Mauvais"),
             continued="Suite à la diapositive suivante",
+            articles=("le", "la", "les", "l'", "l’", "un", "une", "des", "du"),
+            false_friend="'actually' is 'en fait', never 'actuellement' (currently)",
         ),
         Language(
             "de",
@@ -111,6 +131,9 @@ LANGUAGES: Final[dict[str, Language]] = {
             good_to_evil=("Gut", "Neutral", "Böse"),
             continued="Fortsetzung auf der nächsten Folie",
             compounds=True,
+            articles=("der", "die", "das", "den", "dem", "ein", "eine"),
+            false_friend="'eventually' is 'schließlich', never 'eventuell' (perhaps)",
+            capitals="its first word, names and every noun",
         ),
         Language(
             "es",
@@ -129,6 +152,8 @@ LANGUAGES: Final[dict[str, Language]] = {
             lawful_to_chaotic=("Legal", "Neutral", "Caótico"),
             good_to_evil=("Bueno", "Neutral", "Malvado"),
             continued="Continúa en la siguiente diapositiva",
+            articles=("el", "la", "los", "las", "un", "una", "unos", "unas"),
+            false_friend="'embarrassed' is 'avergonzado', never 'embarazada' (pregnant)",
         ),
         Language(
             "it",
@@ -147,6 +172,8 @@ LANGUAGES: Final[dict[str, Language]] = {
             lawful_to_chaotic=("Legale", "Neutrale", "Caotico"),
             good_to_evil=("Buono", "Neutrale", "Malvagio"),
             continued="Continua nella prossima slide",
+            articles=("il", "lo", "la", "i", "gli", "le", "l'", "l’", "un", "uno", "una", "un'", "un’"),
+            false_friend="'actually' is 'in realtà', never 'attualmente' (currently)",
         ),
         Language(
             "pt",
@@ -165,6 +192,8 @@ LANGUAGES: Final[dict[str, Language]] = {
             lawful_to_chaotic=("Leal", "Neutro", "Caótico"),
             good_to_evil=("Bom", "Neutro", "Mau"),
             continued="Continua no próximo slide",
+            articles=("o", "a", "os", "as", "um", "uma"),
+            false_friend="'to pretend' is 'fingir', never 'pretender' (to intend)",
         ),
         Language(
             "sv",
@@ -186,6 +215,8 @@ LANGUAGES: Final[dict[str, Language]] = {
             compounds=True,
             # (into, all, just, to ask, a village and ice)
             english_lookalikes=frozenset({"in", "all", "just", "be", "by", "is"}),
+            articles=("en", "ett"),
+            false_friend="a gift is a 'present', never 'gift' (married, or poison)",
         ),
     )
 }

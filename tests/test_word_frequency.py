@@ -28,6 +28,16 @@ def test_a_word_of_the_talks_language_doesnt_become_an_english_one():
     assert word_frequency.fix_spelling("pengiuns", "sv") == "penguins"  # (what's typed for a talk may be English)
 
 
+def test_a_rare_word_of_the_talks_language_doesnt_become_another_of_its_words():
+    # (D74: each a hundred times rarer than a word a letter away, which talks were about instead)
+    assert word_frequency.fix_spelling("os polvos", "pt") == "os polvos"  # (octopuses: once "povos", peoples)
+    assert word_frequency.fix_spelling("i polpi", "it") == "i polpi"  # (octopuses: once "colpi", blows)
+    assert word_frequency.fix_spelling("lämlar", "sv") == "lämlar"  # (lemmings: once "lämnar", leaves)
+    assert word_frequency.fix_spelling("verkeerskegels", "nl") == "verkeerskegels"  # (once the rules of the road)
+    assert word_frequency.fix_spelling("la tarte Tatin", "fr") == "la tarte Tatin"  # (once "Matin")
+    assert word_frequency.fix_spelling("faglar", "sv") == "fåglar"  # (but its accents are put right)
+
+
 def test_compounds_of_the_talks_language_stay_as_typed():
     # Dutch, German and Swedish write them as one word: rarely one that wordfreq knows, yet no misspelling. (They
     # were once taken as near matches: "tomato", "robotar" (robots), "spökar" (haunts), "mansion", "computerised")

@@ -266,9 +266,16 @@ class Given:
 
 
 def request_line(language: str = "en") -> str:
-    """What the request says about the facts, once, when some of its slides get one."""
+    """What the request says about the facts, once, when some of its slides get one. In a talk in another language,
+    that they're English, to be told in the talk's language in words of the model's own: a free model put "Over
+    duizend soorten kaas bestaan" on a Dutch slide, word for word in English's order, and an English useless fact on a
+    French one, as it was (D74)."""
+    name = languages.language(language).name
     english = (
-        " The facts are in English; write the slides in the talk's language, as asked." if language != "en" else ""
+        f" The facts are in English: tell them in {name}, in your own words, as a {name} speaker would, never in English "
+        "and never word for word."
+        if language != languages.ENGLISH.code
+        else ""
     )
     return (
         "Real facts: some slides come with one (from Wikipedia, or a real useless fact, dad joke or piece of advice), to "

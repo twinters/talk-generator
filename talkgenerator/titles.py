@@ -4,10 +4,10 @@ What someone types for a talk (generate_presentation's topic_or_title) can be it
 are liquid") or its title ("Why I Joined a Penguin Cult"). In a talk a language model writes:
 
 - What's typed in quote marks is the title, word for word (talkgenerator.com has no other way to say so).
-- What's clearly a title (see clearly_a_title: four words or more, or a question or exclamation) stays the talk's
-  title, with only its obvious slips fixed (spelling, grammar, capitals) by the model, in the same request: its wording
-  and its joke stay (see recognisable), or else it stays as typed, with the slips fixed that talkgenerator can fix
-  itself (see polished).
+- What's clearly a title (see clearly_a_title: four words or more, but an article it starts with, or a question or
+  exclamation) stays the talk's title, with only its obvious slips fixed (spelling, grammar, capitals) by the model, in
+  the same request: its wording and its joke stay (see recognisable), or else it stays as typed, with the slips fixed
+  that talkgenerator can fix itself (see polished).
 - Anything shorter is the talk's topic, or a premise, on which the model builds a title of its own, funnier and more
   specific than what was typed ("The French Revolution" deserves better than itself; a premise keeps its words). (The
   user's call, 2026-11-07, after the free models proved unreliable at telling a topic from a title themselves.) The
@@ -105,12 +105,22 @@ def quoted(text: str) -> bool:
     return len(text) > 2 and text[0] in _QUOTE_MARKS and text[-1] in _QUOTE_MARKS and bool(normalised(text))
 
 
-def clearly_a_title(text: str) -> bool:
+def clearly_a_title(text: str, language: str = "en") -> bool:
     """Whether what was typed is a title whatever a language model says: a part of it (between commas) has four
-    words or more, or it ends in "?" or "!". (The free models took "10 reasons your toaster hates you" and "Is cheese
-    the future of money?" for topics, and the talks lost their titles.)"""
+    words or more, not counting an article it starts with, or it ends in "?" or "!". (The free models took "10 reasons
+    your toaster hates you" and "Is cheese the future of money?" for topics, and the talks lost their titles.) An
+    article in English or the talk's language: French says its topics with one ("le Tour de France", "la cabane à
+    sucre"), which aren't titles for it (D74)."""
     text = normalised(text)
-    return text.endswith(_TITLE_ENDS) or any(len(_words(part)) > _MOST_TOPIC_WORDS for part in text.split(","))
+    return text.endswith(_TITLE_ENDS) or any(_counted(part, language) > _MOST_TOPIC_WORDS for part in text.split(","))
+
+
+def _counted(part: str, language: str) -> int:
+    """How many words a part of what's typed has, but an article it starts with (in English or the language)."""
+    words = _words(part)
+    spoken = languages.LANGUAGES.get(language)
+    articles = {*languages.ENGLISH.articles, *(spoken.articles if spoken is not None else ())}
+    return len(words) - (1 if words and words[0] in articles else 0)
 
 
 def guess(text: str, language: str = "en") -> str:
@@ -122,7 +132,7 @@ def guess(text: str, language: str = "en") -> str:
     if quoted(text):
         return TITLE
     text = normalised(text)
-    if clearly_a_title(text):
+    if clearly_a_title(text, language):
         return TITLE
     words = _words(text)
     for start in {*_TITLE_STARTS["en"], *_TITLE_STARTS.get(language, ())}:
@@ -144,7 +154,7 @@ def topics_from(text: str, language: str = "en") -> list[str]:
     title's rarest, as no language knows it."""
     title = quoted(text)
     text = normalised(text)
-    if title or clearly_a_title(text):
+    if title or clearly_a_title(text, language):
         return [word_frequency.get_rarest_word(text, language, fix_spelling=True) or text]
     fixed = word_frequency.fix_spelling(text, language)
     return [part.strip() for part in fixed.split(",") if part.strip()] or [text]
@@ -366,7 +376,7 @@ class Titling:
         typed = titling.typed
         if not written:
             return titling
-        keep = exact or clearly_a_title(typed)
+        keep = exact or clearly_a_title(typed, language)
         way = "none"
         drawn: tuple[str, ...] = ()
         if not keep and language == "en" and rng is not None:

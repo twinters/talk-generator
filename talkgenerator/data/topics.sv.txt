@@ -1,0 +1,484 @@
+# Topics for talks in Swedish (sv), talkgenerator's counterpart of topics.txt: for the site's random topic button
+# when a visitor picks Swedish as the talk's language, and for checking talkgenerator on varied Swedish topics.
+# About two thirds are adapted from topics.txt where a topic says well in Swedish, in the words a Swedish speaker
+# would shout at an improv show rather than word for word; about a third come from Swedish life (Sweden and
+# Swedish-speaking Finland), mixed into the same sections. One topic a line, mostly short (a phone shows about 20
+# characters of the site's topic field); blank lines, comments and repeats are skipped. All harmless, as in
+# topics.txt: no living people, brands, alcohol or politics.
+
+# Animals
+katter
+hundar
+älgar
+pingviner
+duvor
+gäss
+renar
+bläckfiskar
+sengångare
+kapybaror
+tvättbjörnar
+igelkottar
+lamadjur
+ekorrar
+ugglor
+hajar
+myror
+myggor
+knott
+getingar
+kråkor
+måsar
+uttrar
+grävlingar
+vildsvin
+papegojor
+höns
+kor
+grodor
+fladdermöss
+ankor
+gäddor
+lämlar
+mördarsniglar
+narvalar
+
+# Food and drink
+fika
+kaffe
+påtår
+kanelbullar
+bröd
+knäckebröd
+surdeg
+mackor
+smörgåstårta
+ost
+pannkakor
+köttbullar
+lingonsylt
+choklad
+kladdkaka
+prinsesstårta
+semlor
+lussekatter
+pepparkakor
+sju sorters kakor
+broccoli
+brysselkål
+vitlök
+surströmming
+Janssons frestelse
+falukorv
+korv med mos
+pizza
+kebabpizza
+sista pizzabiten
+stark mat
+snabbnudlar
+glass
+munkar
+lördagsgodis
+julmust
+havremjölk
+runebergstårta
+karelska piroger
+
+# Everyday objects
+strumpor
+raggsockor
+vantar
+paraplyer
+reflexer
+skedar
+osthyveln
+häftapparater
+tejp
+badankor
+kundvagnar
+nummerlappar
+nycklar
+fjärrkontrollen
+mobilladdare
+glödlampor
+levande ljus
+adventsljusstakar
+väckarklockor
+snoozeknappen
+blixtlås
+termosen
+matlådor
+engångsgrillar
+trädgårdstomtar
+dalahästar
+krukväxter
+påskris
+midsommarstången
+dammsugare
+brödrostar
+bubbelplast
+flyttkartonger
+skräplådan
+
+# Places
+Norrland
+månen
+Mars
+Gotland
+skärgården
+fjällen
+skogen
+Skåne
+Åland
+sommarstugan
+utedasset
+tvättstugan
+kolonilotten
+bastu
+hissar
+flygplatser
+centralstationen
+bibliotek
+mataffären
+loppisar
+fyrar
+Nordpolen
+havsbotten
+väntrummet
+rondeller
+busshållplatsen
+vindsförrådet
+källaren
+hittegodset
+köksbordet
+Bullerbyn
+
+# Things people do
+prokrastinering
+tupplurar
+fredagsmys
+fågelskådning
+gökotta
+karaoke
+stickning
+bakning
+svampplockning
+pimpelfiske
+fjällvandring
+vinterbad
+grilla korv
+sömngång
+dagdrömmar
+kallprat
+skvaller
+gnäll
+fickparkering
+skruva ihop möbler
+flytthjälp
+korsord
+pussel
+ståuppkomik
+sjunga i duschen
+prata med växter
+komma för sent
+vårstädning
+snöskottning
+sopsortering
+panta burkar
+
+# Work and the office
+kalkylark
+möten
+fikarasten
+jobba hemifrån
+deadlines
+bildspel
+kontorsskrivaren
+kaffemaskinen
+fruktkorgen
+jobbintervjuer
+kickoff
+måndagar
+autosvar
+kontorslandskap
+utvecklingssamtal
+att göra-listor
+mellanchefer
+byråkrati
+det finstilta
+flextid
+friskvårdstimmen
+sommarvikarien
+kön till mikron
+
+# Technology
+AI
+robotar
+mobilen
+wifi
+molnet
+kakor
+skräppost
+jag är inte en robot
+chattbottar
+självkörande bilar
+drönare
+elsparkcyklar
+mörkt läge
+poddar
+gruppchatten
+du är på mute
+skärmtid
+disketter
+text-tv
+
+# Science and nature
+kvantfysik
+tyngdkraften
+svarta hål
+Vintergatan
+ljusets hastighet
+dinosaurier
+vädret
+blåst
+duggregn
+dimma
+åskväder
+snö
+slask
+istappar
+novembermörkret
+vårtecken
+midnattssolen
+norrsken
+mångatan
+regnbågar
+doften efter regn
+björkar
+flyttfåglar
+dammråttor
+kvicksand
+djuphavet
+
+# History and myth
+vikingar
+runstenar
+pirater
+riddare
+medeltiden
+stenåldern
+antikens Rom
+det gamla Egypten
+Vilda västern
+ninjor
+drakar
+enhörningar
+sjöjungfrur
+spöken
+troll
+tomtar
+näcken
+skogsrået
+Blåkulla
+Midgårdsormen
+Storsjöodjuret
+superhjältar
+tidsresor
+månlandningen
+
+# Big and small ideas
+tiden
+lagom
+tur
+nostalgi
+tålamod
+tristess
+nyfikenhet
+lycka
+vänskap
+tystnad
+kaos
+misslyckanden
+slumpen
+déjà vu
+sunt förnuft
+meningen med livet
+vuxenlivet
+första intrycket
+helgen
+framtiden
+jantelagen
+allemansrätten
+smultronställen
+ordning och reda
+skämskudden
+hyfs
+vidskepelse
+kompromisser
+
+# Things that happen
+köer
+försenade tåg
+bilsemester
+försvunnet bagage
+hicka
+snarkningar
+öronmaskar
+söndagsångest
+måndagsmorgnar
+pinsamma tystnader
+resfeber
+barnkalas
+bröllop
+första dejten
+släktträffar
+klassträffar
+grannar
+första skoldagen
+skolavslutningen
+studentfirandet
+nyårslöften
+vabruari
+fettisdagen
+påskkärringar
+valborg
+midsommar
+kräftskiva
+kanelbullens dag
+luciatåg
+julafton
+julgransplundring
+
+# Sports and games
+schack
+luffarschack
+curling
+minigolf
+kubb
+brännboll
+dragkamp
+pingis
+fotboll
+innebandy
+bandy
+konstsim
+konståkning
+Vasaloppet
+en svensk klassiker
+orientering
+tipspromenader
+pulkaåkning
+kurragömma
+hela havet stormar
+sten-sax-påse
+tv-spel
+frisbeegolf
+säckhoppning
+
+# Music, art and entertainment
+Melodifestivalen
+allsång
+dansband
+sommarplågor
+hårdrock
+opera
+dragspel
+blockflöjt
+hissmusik
+luftgitarr
+pojkband
+små grodorna
+uttrycksdans
+pantomim
+cirkusen
+dockteater
+tecknat
+dokusåpor
+julkalendern
+Kalle Anka på julafton
+Pippi Långstrump
+Emil i Lönneberga
+Karlsson på taket
+mumintrollen
+Bamse
+Nils Holgersson
+
+# Getting around
+cyklar
+lådcyklar
+tandemcyklar
+enhjulingar
+sparkstöttingar
+tåg
+nattåget
+tunnelbanan
+spårvagnar
+nattbussen
+färjor
+kanoter
+luftballonger
+snöskotrar
+husvagnar
+varning för älg
+fönsterplatsen
+
+# The body
+ögonbryn
+armbågar
+visdomständer
+fräknar
+smilgropar
+skägg
+mustascher
+gåshud
+fingeravtryck
+naveln
+drömmar
+träningsvärk
+
+# People and jobs
+rörmokare
+brandmän
+livräddare
+astronauter
+fyrvaktare
+trollkarlar
+meteorologer
+reseledare
+vaktmästare
+skolsköterskan
+mormor
+lattepappor
+treåringar
+morgonmänniskor
+nattugglor
+besserwissrar
+den nya kollegan
+
+# Oddly specific
+en för stor krona
+pappersstopp
+fast i pariserhjulet
+ett inställt flyg
+en ensam strumpa
+en hemsökt brödrost
+mandeln i gröten
+flaskpost
+en drake på vinden
+en älg i trädgården
+en duva på perrongen
+en snigel med bråttom
+ett glömt lösenord
+ett grupparbete
+en växt som vägrar dö
+regn på midsommar
+en mygga i sovrummet
+en karta utan norr
+semlor i januari
+ärtsoppa på torsdagar
+den sista kanelbullen
+hemliga svampställen
+en kall bastu
+ta i trä
+sista tåget hem
+en macka utan pålägg

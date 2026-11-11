@@ -1,0 +1,469 @@
+# Topics for talks in Dutch (nl): things a talk can be about, for suggestions (such as talk-generator-web's random
+# topic button when a visitor picks Dutch) and for checking talkgenerator on varied topics in Dutch.
+# Made by adapting topics.txt where a topic says well in Dutch (in the words a speaker would shout at an improv show,
+# not word for word), plus about a third from the Netherlands' and Flanders' own life: food, habits, places,
+# weather, holidays, sports and oddly specific situations, all harmless.
+# Standard Dutch for both countries; where they say a thing differently, either word (now and then both).
+# One topic a line, mostly short (a phone shows about 20 characters of the site's topic field); blank lines,
+# comments and repeats are skipped.
+
+# Animals
+katten
+honden
+pinguïns
+duiven
+postduiven
+ganzen
+octopussen
+luiaards
+capibara's
+wasberen
+egels
+lama's
+goudvissen
+eekhoorns
+uilen
+zeehonden
+flamingo's
+kwallen
+bijen
+ooievaars
+kangoeroes
+meeuwen
+slakken
+papegaaien
+koeien in de wei
+schapen op de dijk
+
+# Food and drink
+brood
+zuurdesem
+koffie
+thee
+kaas
+frietjes
+patat
+het frietkot
+mayonaise
+spaghetti
+augurken
+pannenkoeken
+poffertjes
+wafels
+stroopwafels
+speculoos
+chocolade
+hagelslag
+pindakaas
+boterhammen
+pistolets op zondag
+tosti's
+spruitjes
+witloof
+stamppot
+aardappelen
+mosselen met friet
+stoofvlees
+bitterballen
+een kroket uit de muur
+haring happen
+zoute drop
+popcorn
+restjes
+verjaardagstaart
+beschuit met muisjes
+tompoezen
+oliebollen
+gourmetten
+ijsjes
+het laatste stuk pizza
+havermelk
+
+# Everyday objects
+sokken
+paraplu's
+nietmachines
+paperclips
+badeendjes
+verkeerskegels
+winkelkarretjes
+sleutels
+de afstandsbediening
+koffers
+kassabonnetjes
+klompen
+tuinkabouters
+kamerplanten
+de kaasschaaf
+stofzuigers
+kruiwagens
+noppenfolie
+de broodtrommel
+de boterhamdoos
+de koektrommel
+de rommellade
+behang
+de verjaardagskalender
+de thermostaat
+de snoozeknop
+
+# Places
+België
+Nederland
+de maan
+Mars
+de dijk
+de polder
+de Waddenzee
+de duinen
+de sloot
+de grachten
+liften
+bibliotheken
+supermarkten
+vuurtorens
+vulkanen
+bergen
+de Ardennen
+de Noordpool
+wachtkamers
+rotondes
+campings
+pretparken
+de kinderboerderij
+het begijnhof
+het Atomium
+Manneken Pis
+de fietsenstalling
+de zolder
+het tuinhuisje
+gevonden voorwerpen
+de achterbank
+
+# Things people do
+uitstelgedrag
+een dutje doen
+vogels kijken
+eendjes voeren
+karaoke
+breien
+kamperen
+strijken
+dagdromen
+koetjes en kalfjes
+roddelen
+in de rij staan
+fileparkeren
+verhuizen
+fietsen in de regen
+op een terrasje zitten
+een dagje naar zee
+wadlopen
+postzegels verzamelen
+bloembollen planten
+surprises knutselen
+sorry zeggen
+zingen onder de douche
+praten tegen planten
+dingen kwijtraken
+te laat komen
+de grote schoonmaak
+de stoep vegen
+afval scheiden
+klussen
+
+# Work and the office
+vergaderingen
+het overleg
+thuiswerken
+mailtjes
+deadlines
+de kantoorprinter
+teambuilding
+het bedrijfsuitje
+kantoortuinen
+to-dolijstjes
+allen beantwoorden
+spreadsheets
+bureaucratie
+de vierdagenweek
+een brugdag
+vakantiegeld
+het kerstpakket
+de fietsvergoeding
+de kleine lettertjes
+de koffieautomaat
+
+# Technology
+kunstmatige intelligentie
+robots
+wifi
+smartphones
+emoji's
+autocorrectie
+de cloud
+videobellen
+chatbots
+zelfrijdende auto's
+captcha's
+elektrische steps
+het faxapparaat
+teletekst
+de groepsapp
+je staat op mute
+schermtijd
+
+# Science and nature
+kwantumfysica
+de zwaartekracht
+zwarte gaten
+paddenstoelen
+tulpen
+windmolens
+de geur van regen
+regenbogen
+onweer
+mist
+motregen
+druilerig weer
+tegenwind
+windkracht tien
+Hollandse luchten
+eb en vloed
+de Deltawerken
+dinosaurussen
+fotosynthese
+schrikkeljaren
+de lichtsnelheid
+drijfzand
+kastanjes
+het weer
+de oerknal
+het periodiek systeem
+
+# History and myth
+piraten
+Vikingen
+de middeleeuwen
+de Romeinen
+ridders
+het Wilde Westen
+de boekdrukkunst
+draken
+eenhoorns
+zeemeerminnen
+spoken
+heksen
+sprookjes
+Reinaert de Vos
+Tijl Uilenspiegel
+de Vliegende Hollander
+Klaas Vaak
+de vinger in de dijk
+superhelden
+tijdreizen
+de maanlanding
+het monster van Loch Ness
+holbewoners
+guldens en franken
+
+# Big and small ideas
+de tijd
+geluk
+gezelligheid
+nostalgie
+spijt
+geduld
+verveling
+stilte
+chaos
+toeval
+déjà vu
+gezond verstand
+de zin van het leven
+volwassen worden
+de eerste indruk
+tweede kansen
+het weekend
+de zondagsrust
+lekker niksen
+uitwaaien
+mindfulness
+bourgondisch leven
+doe maar normaal
+plaatsvervangende schaamte
+smoesjes
+bijgeloof
+compromissen
+
+# Things that happen
+de file
+jetlag
+de hik
+snurken
+oorwurmen
+zondagavond
+maandagochtend
+ongemakkelijke stiltes
+trouwfeesten
+een eerste date
+de buren
+de schoonfamilie
+de kringverjaardag
+treinvertraging
+de eerste schooldag
+de grote vakantie
+de bouwvak
+op kamers gaan
+op kot gaan
+Sinterklaas
+de schoen zetten
+Sint-Maarten
+een witte kerst
+oud en nieuw
+goede voornemens
+de nieuwjaarsduik
+de nieuwjaarsbrief
+carnaval
+Koningsdag
+de rommelmarkt
+de kermis
+de Gentse Feesten
+de klok verzetten
+
+# Sports and games
+schaken
+curling
+minigolf
+touwtrekken
+tafeltennis
+korfbal
+voetbal
+penalty's
+synchroonzwemmen
+sumoworstelen
+schaatsen op natuurijs
+de Elfstedentocht
+fierljeppen
+de Ronde van Vlaanderen
+veldrijden
+verstoppertje
+stoelendans
+steen-papier-schaar
+zaklopen
+koekhappen
+sjoelen
+klaverjassen
+kaarten
+de Olympische Spelen
+
+# Music, art and entertainment
+opera
+doedelzakken
+de blokfluit
+de triangel
+de fanfare
+de beiaard
+het draaiorgel
+smartlappen
+heavy metal
+slaapliedjes
+liftmuziek
+sinterklaasgedichten
+moderne kunst
+de Nachtwacht
+het Lam Gods
+Kuifje
+Suske en Wiske
+de Smurfen
+tekenfilms
+het circus
+poppenkast
+buikspreken
+luchtgitaar
+een toegift
+de museumnacht
+
+# Getting around
+bakfietsen
+de elektrische fiets
+een fiets met een krat
+brommers
+duikboten
+luchtballonnen
+trams
+de kusttram
+het pontje
+de ophaalbrug
+eenwielers
+tandems
+rolschaatsen
+tractoren
+de nachtbus
+roltrappen
+een plekje bij het raam
+
+# The body
+wenkbrauwen
+knieën
+verstandskiezen
+zomersproeten
+snorren
+kapsels
+nachtmerries
+rechtop zitten
+rekken en strekken
+kippenvel
+navelpluis
+zadelpijn
+blaren van de Vierdaagse
+
+# People and jobs
+loodgieters
+de strandwacht
+vuurtorenwachters
+scheidsrechters
+uitsmijters
+goochelaars
+de weerman
+hondenuitlaters
+de melkboer
+de molenaar
+de dijkgraaf
+de muskusrattenvanger
+de duivenmelker
+garnalenvissers te paard
+de meester en de juf
+opa's en oma's
+pubers
+ochtendmensen
+nachtbrakers
+betweters
+de nieuwe collega
+
+# Oddly specific
+een kroon die te groot is
+een printer die vastloopt
+een vastgelopen reuzenrad
+een verdwenen sok
+een piepklein deurtje
+flessenpost
+een draak op zolder
+een spook op kantoor
+een kat op het toetsenbord
+een wekker die niet afging
+een slak met haast
+een zenuwachtige robot
+een plant die niet doodgaat
+een fiets zonder remmen
+een lekke band
+een fiets in de gracht
+een klomp in de sloot
+een paraplu in de storm
+een verdwaalde zeehond
+één koekje bij de koffie
+een gloeiend hete bitterbal
+de laatste oliebol
+een frietkot op de maan
+een boterham zonder beleg
+de laatste trein naar huis

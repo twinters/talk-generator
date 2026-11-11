@@ -216,6 +216,19 @@ talkgenerator.com can't offer it: OpenAI only lets hosted apps in from a waitlis
 German, Spanish, Italian, Portuguese and Swedish. talkgenerator's own words on the slides ("By ...", a chart's "Yes" and "No") are in
 the talk's language too; the image searches stay in English, which the image sources handle best.
 
+The request asks for the talk as a native speaker of its language writes it: no English words left in, nothing
+translated word for word, no words that only look like English ones (a graph is a "grafiek" in Dutch, not a "graf",
+a grave), and capitals in titles as the language has them, not on every word. Its English parts say they're English:
+a slide's word to riff on (they're found in English sources, from what the topic is in English: Dutch "regen" from
+"rain", not from the English word "regen"), a real fact from Wikipedia, and the words an Advanced outline is offered,
+whose riffs are in the talk's language. How well a model writes another language is still the model's: Claude and
+Gemini write natural Dutch, where OpenRouter's free models (Basic AI on talkgenerator.com) mix in English words and
+translate word for word now and then.
+
+Each language has a list of topics of its own (`talkgenerator/data/topics.<code>.txt`): `talkgenerator check
+--random 5 --language nl` draws from the Dutch one, and talkgenerator.com's ↻ button suggests topics from the list of
+the talk's language.
+
 The classic generator only speaks English. So in such a talk, a slide that doesn't come out as the model wrote it
 becomes a picture of its subject without text, rather than an English slide, and the talk as a whole is English (and
 says so in the logs) when no model writes it. `talkgenerator check --language nl --llm openrouter` checks that the

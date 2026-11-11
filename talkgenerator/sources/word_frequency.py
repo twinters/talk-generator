@@ -6,6 +6,7 @@ whose domain no longer exists.
 
 import difflib
 import re
+import unicodedata
 from functools import cache, lru_cache
 from typing import Final
 
@@ -85,10 +86,13 @@ def _spelled(word: str, language: str) -> str:
     is about as long and is mostly the same letters ("airplain": "airplane").
 
     In another language than English, a word of that language (one it knows at least as well as English does) is
-    only taken as another word of it, never as an English one ("matare", Swedish for a feeder, isn't "mature"). In
-    a language that writes compounds as one word (Dutch, German and Swedish), a word no language knows that's two of
-    its words put together is a compound, and no near match ("tomatbok", a book of tomatoes, isn't "tomato", nor is
-    "robotarmé" "robotar"); one a single edit away from a known word is still taken as it ("kvallens": "kvällens")."""
+    only taken as the same word with its accents put right ("faglar": "fåglar"), never as another word of it, nor as
+    an English one: it's a rare word, but a word ("matare", Swedish for a feeder, isn't "mature"; and D74: "polvos",
+    Portuguese octopuses, isn't "povos", peoples, Swedish "lämlar", lemmings, isn't "lämnar", leaves, nor Dutch
+    "verkeerskegels", traffic cones, "verkeersregels", the rules of the road). In a language that writes compounds as
+    one word (Dutch, German and Swedish), a word no language knows that's two of its words put together is a compound,
+    and no near match ("tomatbok", a book of tomatoes, isn't "tomato", nor is "robotarmé" "robotar"); one a single
+    edit away from a known word is still taken as it ("kvallens": "kvällens")."""
     frequency = _frequency(word, language)
     if len(word) < 3 or frequency >= _RARE:
         return word
@@ -99,7 +103,8 @@ def _spelled(word: str, language: str) -> str:
     edited = [
         candidate
         for candidate in sorted(_edits(lowered) & known)
-        if _frequency(candidate, language) >= frequency + _MORE_FREQUENT and (not own or _own(candidate, language))
+        if _frequency(candidate, language) >= frequency + _MORE_FREQUENT
+        and (not own or (_own(candidate, language) and _unaccented(candidate) == _unaccented(lowered)))
     ]
     if edited:  # (the likest first, "joined" before "join" for "joind"; then the most frequent, "what" for "waht")
         return max(
@@ -127,6 +132,13 @@ def _own(word: str, language: str) -> bool:
     """Whether a word is one of the language's own: one it knows at least as well as English does."""
     frequency = get_frequency(word, language)
     return frequency > 0 and frequency >= get_frequency(word)
+
+
+def _unaccented(word: str) -> str:
+    """The word without its accents ("fåglar": "faglar")."""
+    return "".join(
+        character for character in unicodedata.normalize("NFKD", word) if not unicodedata.combining(character)
+    )
 
 
 def _compounding(language: str) -> bool:

@@ -405,7 +405,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--random",
         type=int,
         metavar="N",
-        help="N topics drawn from talkgenerator's topic list (data/topics.txt); the same N for the same first seed",
+        help="N topics drawn from talkgenerator's topic list of the talks' language (data/topics.txt for English, "
+        "data/topics.<language>.txt for the others); the same N for the same first seed",
     )
     parser.add_argument("--seeds", default="1", help="comma-separated seeds (default: 1)")
     parser.add_argument(
@@ -488,7 +489,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.random < 1:
             parser.error("--random needs a number of topics, 1 or more")
         with random_util.use(random_util.Rng(seeds[0]).child("topics")):
-            topics = topic_list.random_topics(args.random)
+            topics = topic_list.random_topics(args.random, args.language)
     else:
         topics = DEFAULT_TOPICS[:3] if args.quick else DEFAULT_TOPICS + MORE_TOPICS if args.all else DEFAULT_TOPICS
     if args.verbose:
