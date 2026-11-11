@@ -198,7 +198,7 @@ or a text about real-world politics in a talk that isn't about it, are in the re
 | Option | What it does |
 | --- | --- |
 | `--topics` | Topics, separated by commas (*default: a set of 10*) |
-| `--quick`, `--all`, `--random N` | The first 3 topics of that set, all 30 topics, or N topics drawn from talkgenerator's list of 736 (the same N for the same first seed) |
+| `--quick`, `--all`, `--random N` | The first 3 topics of that set, all 30 topics, or N topics drawn from talkgenerator's list in the talks' language (736 topics in English, over 400 in each of the others; the same N for the same first seed) |
 | `--seeds` | Seeds, separated by commas (*default: 1*) |
 | `--schema`, `--slides` | The format (or `random`, for one each talk's seed picks), and the slides per talk (*default: `default`, 10*); the report counts the formats and personas the talks got |
 | `--persona`, `--personas` | As for a talk |

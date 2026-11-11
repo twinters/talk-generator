@@ -77,6 +77,10 @@ class PlannedSlide:
     seed: str  # the word the slide starts from (from the schema's topic generator, or the talk's outline)
     digits: int = 1  # as many as the number of the talk's last slide has
     idea: str = ""  # what the slide does with its word, in a talk the model planned first (talkgenerator.plan.outline)
+    # Whether its word is English in a talk in another language (the related words seeds wander to are English: see
+    # talkgenerator.schema.slide_topic_generators), which the request then marks, for the model to say it in the
+    # talk's language (D74: English words such as "goaltender" and "Healing" ended up on Dutch slides as they were)
+    english: bool = False
 
     @property
     def key(self) -> str:
@@ -137,6 +141,33 @@ CONCEPT: Final = (
 )
 
 
+def concept(language: str = languages.ENGLISH.code) -> str:
+    """What to write for a slide's concept: in English words in a talk in another language too, as it's searched for
+    pictures (which the picture sources search best in English)."""
+    if language == languages.ENGLISH.code:
+        return CONCEPT
+    return CONCEPT.replace("two to five words", "two to five English words")
+
+
+def native_line(language: str) -> str | None:
+    """What a request for a talk in another language than English says of writing it (None for English): as a native
+    speaker of the language writes, for its speakers. Talks written from requests in English came out with English
+    words left in ("de geheime goaltender", "hier comes de netwerk"), word for word ("Over duizend soorten kaas
+    bestaan", for "Over a thousand types of cheese exist"), with look-alikes ("graf", a grave, for a graph) and titles
+    with a capital on every word, as English titles have them (D74)."""
+    if language == languages.ENGLISH.code:
+        return None
+    spoken = languages.language(language)
+    name = spoken.name
+    looks = f" ({spoken.false_friend})" if spoken.false_friend else ""
+    return (
+        f"Write as a native {name} speaker writes for {name} speakers: in the words and idioms they use, never word "
+        f"for word from English, with no English words left in, nor {name} words that only look like English ones"
+        f"{looks}. This request is in English, and so are its examples and the words marked (English): write your "
+        f"own, in {name}. A title has capitals as in {name}: on {spoken.capitals}, not on every word as in English."
+    )
+
+
 def talk_request(
     topics: list[str],
     planned: list[PlannedSlide],
@@ -157,9 +188,12 @@ def talk_request(
     down "penguins"). Asked again for a talk in another language whose first answer started in English
     (answered_in_english: a free model wrote a Swedish talk in English), it says so, and what's to be in the language.
     In a talk in another language than English, every text field's description says the language too, so that an
-    example of a hint's ("such as 'Outline'") is said in it: a free model copied the English ones into a German talk. For what was typed, which could be the topic or the title (see talkgenerator.titles), it says
-    what the title is to be: what was typed, with its slips fixed, or a title of the model's own on it. In a talk
-    that generates pictures (with a generation), the model writes a prompt for every image that prefers one.
+    example of a hint's ("such as 'Outline'") is said in it: a free model copied the English ones into a German talk.
+    And it asks for the talk as a native speaker of its language writes, with its English words marked (see
+    native_line and slide_lines, D74). For what was typed, which could be the topic or the title (see
+    talkgenerator.titles), it says what the title is to be: what was typed, with its slips fixed, or a title of the
+    model's own on it. In a talk that generates pictures (with a generation), the model writes a prompt for every
+    image that prefers one.
 
     With real facts for some of its slides (by slide number: see talkgenerator.facts), it says how to use them, and
     each slide's line says what the slide does with its fact (a fun fact twists it, a timeline puts it among made-up
@@ -213,7 +247,7 @@ def talk_request(
         *(f"- {field}: {description}" for field, description in fields.items()),
         "",
         "Then every slide, in order (slide 1, the title slide, is made from the spine), each with its texts, a search "
-        f"query for each of its images, and its concept: {CONCEPT}.",
+        f"query for each of its images, and its concept: {concept(language)}.",
     ]
     # The guidance per field is in the schema too, but not every model gets to read the schema's descriptions
     for slide in planned:
@@ -240,12 +274,15 @@ def header(
     language: str = "en",
 ) -> list[str]:
     """The lines a request for a talk (or its plan, or one of its slides: see talkgenerator.plan.outline) starts
-    with: what it's about (its topic and title, or what was typed), what's written in which language (written), its
-    format beyond the TED-like talks, its persona's voice and angle, and how to use real facts (with facts)."""
+    with: what it's about (its topic and title, or what was typed), what's written in which language (written), and in
+    another language than English, writing it as a native speaker would (see native_line), its format beyond the
+    TED-like talks, its persona's voice and angle, and how to use real facts (with facts)."""
     topic = topics[0] + (f" (and {', '.join(topics[1:])})" if len(topics) > 1 else "")
+    native = native_line(language)
     return [
         *(typed.lines(topic) if typed is not None else [f"Topic: {topic}", *([f"Title: {title}"] if title else [])]),
         f"Language: {written}",
+        *([native] if native else []),
         *([f"The format: {talk_format.brief}"] if talk_format is not None else []),
         *([f"The presenter: {persona.voice}", f"The angle: {persona.angle(rng)}"] if persona is not None else []),
         *([request_line(language)] if facts else []),
@@ -268,12 +305,17 @@ def slide_lines(
 ) -> list[str]:
     """What a request says of a slide it asks for: its key, what it is, its word to riff on (with its idea, in a talk
     the model planned first) and its real fact (what to do with it), then every field to write, with its description
-    (which is in the schema too, but not every model gets to read the schema's descriptions)."""
+    (which is in the schema too, but not every model gets to read the schema's descriptions). In a talk in another
+    language than English, an English word to riff on and a fact (they're in English) say they're English, for the
+    model to say them in the talk's language (D74)."""
     brief = (slide.recipe.brief or KINDS[slide.recipe.kind].description).rstrip(".")
-    fact = f". {given.line()}" if given is not None else ""
+    other = language != languages.ENGLISH.code
+    in_english = f" (in English: tell it in {languages.language(language).name})" if other else ""
+    fact = f". {given.line()}{in_english}" if given is not None else ""
     idea = f". The idea: {slide.idea.rstrip('.')}" if slide.idea else ""
+    word = f"{slide.seed} (English)" if slide.english and other else slide.seed
     return [
-        f"{slide.key}: {brief}. A word to riff on: {slide.seed}{idea}{fact}",
+        f"{slide.key}: {brief}. A word to riff on: {word}{idea}{fact}",
         *(
             f"- {text.name}: {field_description(slide.recipe, text, language)}"
             for text in slide.recipe.written_fields()
@@ -337,7 +379,7 @@ def response_schema(
 def slide_schema(
     recipe: Recipe, generation: ImageGeneration | None = None, language: str = languages.ENGLISH.code
 ) -> dict[str, Any]:
-    properties: dict[str, Any] = {"concept": {"type": "string", "description": CONCEPT}}
+    properties: dict[str, Any] = {"concept": {"type": "string", "description": concept(language)}}
     for text in recipe.written_fields():
         properties[text.name] = {"type": "string", "description": field_description(recipe, text, language)}
         if text.options:  # one of these words (or empty, when the field may stay empty)

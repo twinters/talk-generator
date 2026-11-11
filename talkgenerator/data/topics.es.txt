@@ -1,0 +1,477 @@
+# Topics for talks in Spanish (es) for talkgenerator: things a talk can be about, for suggestions (the random topic
+# button of talk-generator-web, when a visitor picks Spanish) and for checking talkgenerator on varied topics in
+# Spanish (talkgenerator check --random with --language es). About two thirds are adapted from topics.txt, only where
+# a topic says well in Spanish and never word for word; about a third comes from the Spanish-speaking world's own
+# life, in Spain and in Latin America. Each topic has the article a Spanish speaker would use (los pingüinos, la
+# siesta), is lowercase except names, and is harmless, as in topics.txt. One topic a line, mostly short (a phone
+# shows about 20 characters of the site's topic field); blank lines, comments and repeats are skipped.
+
+# Animals
+los gatos
+los perros
+los pingüinos
+las palomas
+las gaviotas
+los pulpos
+los perezosos
+los capibaras
+los mapaches
+las llamas
+los cóndores
+los búhos
+los flamencos
+los loros
+los colibríes
+las gallinas
+los burros
+los caracoles
+los ajolotes
+los chihuahuas
+los canguros
+los tiburones
+las cigüeñas
+el lince ibérico
+los jabalíes
+
+# Food and drink
+el pan
+el café
+el queso
+el chocolate
+la paella
+la tortilla de patatas
+los churros
+el gazpacho
+las tapas
+el jamón
+las patatas bravas
+la última croqueta
+las lentejas
+la merienda
+las pipas de girasol
+el turrón
+el roscón de Reyes
+la horchata
+el mate
+las empanadas
+el asado
+los alfajores
+el dulce de leche
+los tacos
+los tamales
+el guacamole
+las arepas
+el ceviche
+el pastel de choclo
+los espaguetis
+la pizza
+el sushi
+el brócoli
+las coles de Bruselas
+los aguacates
+la mayonesa
+los pepinillos
+el picante
+las palomitas
+el helado
+la tarta de cumpleaños
+las sobras
+
+# Everyday objects
+los calcetines
+los paraguas
+las cucharas
+los clips
+los patitos de goma
+los conos de tráfico
+el carrito de la compra
+las llaves
+el mando de la tele
+las pilas
+las bombillas
+los despertadores
+los espejos
+las gafas de sol
+las maletas
+las chanclas
+las alpargatas
+el abanico
+el botijo
+la fregona
+la olla exprés
+el molcajete
+los microondas
+la mesa camilla
+la hamaca
+el poncho
+la nevera portátil
+los gnomos de jardín
+las plantas de interior
+los palillos chinos
+el plástico de burbujas
+el cajón de los trastos
+
+# Places
+Bélgica
+la Luna
+Marte
+la Antártida
+el Polo Norte
+la Patagonia
+Machu Picchu
+la Alhambra
+el Camino de Santiago
+las cataratas del Iguazú
+las islas Galápagos
+el Popocatépetl
+los molinos de viento
+los castillos
+los volcanes
+la playa
+el malecón
+la piscina municipal
+la plaza del pueblo
+la farmacia de guardia
+el patio de luces
+el trastero
+los ascensores
+los aeropuertos
+las bibliotecas
+los museos
+los supermercados
+las salas de espera
+las rotondas
+los parques de atracciones
+objetos perdidos
+
+# Things people do
+la siesta
+la sobremesa
+cenar a las diez
+dar dos besos
+irse a la francesa
+tomar el fresco
+ver pasar a la gente
+hablar del tiempo
+el chisme
+hacer cola
+llegar tarde
+quedarse dormido
+la procrastinación
+quejarse
+regatear
+cantar en la ducha
+hablar con las plantas
+el karaoke
+los malabares
+la papiroflexia
+el ganchillo
+los crucigramas
+salir a correr
+aparcar a la primera
+montar muebles
+la mudanza
+hacer la maleta
+poner la lavadora
+tender la ropa
+
+# Work and the office
+los lunes
+las reuniones
+el teletrabajo
+no se te oye
+responder a todos
+la respuesta automática
+las hojas de cálculo
+la fotocopiadora
+la máquina del café
+las horas extra
+la semana de cuatro días
+los mandos intermedios
+las entrevistas de trabajo
+la letra pequeña
+el enchufe
+las oposiciones
+la cita previa
+vuelva usted mañana
+la jornada intensiva
+la paga extra
+el aguinaldo
+la cena de empresa
+
+# Technology
+la inteligencia artificial
+los robots
+internet
+el wifi
+los celulares
+el grupo de la familia
+los emojis
+el autocorrector
+las contraseñas
+los captchas
+el modo oscuro
+los coches autónomos
+los patinetes eléctricos
+los cohetes
+las máquinas de escribir
+
+# Science and nature
+la física cuántica
+la gravedad
+los agujeros negros
+el big bang
+la Vía Láctea
+los cometas
+los eclipses
+la velocidad de la luz
+los husos horarios
+los años bisiestos
+los imanes
+la electricidad estática
+los dinosaurios
+las arenas movedizas
+las setas
+los cactus
+el arcoíris
+el olor a tierra mojada
+el aguacero
+el granizo
+la nieve
+el bochorno
+la calima
+
+# History and myth
+los cavernícolas
+los mayas
+los aztecas
+los incas
+el Imperio romano
+los vikingos
+la Edad Media
+los caballeros
+Don Quijote
+los piratas
+los ninjas
+los vaqueros
+los gauchos
+la llegada a la Luna
+los viajes en el tiempo
+El Dorado
+los dragones
+los unicornios
+las sirenas
+los duendes
+las brujas
+los fantasmas
+los vampiros
+el chupacabras
+el hombre del saco
+el ratoncito Pérez
+los superhéroes
+
+# Big and small ideas
+el tiempo
+mañana
+ahorita
+el fin de semana
+la suerte
+el martes 13
+las supersticiones
+la nostalgia
+la morriña
+la pereza
+el aburrimiento
+la paciencia
+la amistad
+la soledad
+el silencio
+los secretos
+el fracaso
+las excusas
+las manías
+la rutina
+las casualidades
+el déjà vu
+el sentido común
+el libre albedrío
+el sentido de la vida
+hacerse mayor
+las primeras impresiones
+los placeres culpables
+la vergüenza ajena
+el qué dirán
+el postureo
+la buena onda
+
+# Things that happen
+los atascos
+el hipo
+los ronquidos
+las canciones pegadizas
+los silencios incómodos
+los domingos por la tarde
+el primer día de clase
+el recreo
+la vuelta al cole
+las primeras citas
+las bodas
+los suegros
+las comidas familiares
+los compañeros de piso
+la reunión de vecinos
+independizarse
+los turistas
+las maletas perdidas
+el sillón del dentista
+hacer puente
+la cuesta de enero
+los propósitos de Año Nuevo
+las uvas de Nochevieja
+los Reyes Magos
+el amigo invisible
+el Día de los Inocentes
+la Navidad en verano
+el Carnaval
+las Fallas
+la Tomatina
+las fiestas del pueblo
+el Día de Muertos
+la piñata
+la fiesta de quince años
+
+# Sports and games
+el fútbol
+el futbolín
+los penaltis
+el pádel
+la pelota vasca
+la petanca
+los bolos
+el curling
+el ping-pong
+el sumo
+la lucha libre
+la natación sincronizada
+las carreras de sacos
+echar un pulso
+los castillos humanos
+el ajedrez
+el dominó
+el parchís
+los videojuegos
+piedra papel o tijera
+el veo veo
+el escondite
+la rayuela
+
+# Music, art and entertainment
+el flamenco
+el tango
+la salsa
+la cumbia
+los mariachis
+las mañanitas
+los villancicos
+la tuna
+la ópera
+la gaita
+el acordeón
+la flauta dulce
+el triángulo
+las canciones de cuna
+la música de ascensor
+las telenovelas
+los dibujos animados
+las películas de terror
+el cine de verano
+los cómics
+Mafalda
+los grafitis
+los alebrijes
+el circo
+los payasos
+los mimos
+las marionetas
+el tren de la bruja
+
+# Getting around
+el metro
+la guagua
+el autobús nocturno
+el asiento de ventanilla
+la bici
+el mototaxi
+las trajineras
+los submarinos
+los globos aerostáticos
+los monociclos
+los tractores
+los camiones de bomberos
+las escaleras mecánicas
+las tirolinas
+
+# The body
+las cejas
+el bigote
+las pecas
+los lunares
+el ombligo
+los codos
+las muelas del juicio
+el hueso de la risa
+la piel de gallina
+las cosquillas
+las agujetas
+el corte de pelo
+los sueños
+las pesadillas
+
+# People and jobs
+los abuelos
+los cuñados
+los madrugadores
+los sabelotodo
+el compañero nuevo
+el profe de gimnasia
+el conserje
+los porteros
+los fontaneros
+el afilador
+los socorristas
+los fareros
+el hombre del tiempo
+los influencers
+los astronautas
+los magos
+los espías
+los detectives
+
+# Oddly specific
+una corona demasiado grande
+un calcetín huérfano
+un loro chismoso
+una tostadora encantada
+una grapadora sin grapas
+una gotera
+un dragón en el desván
+un fantasma en la oficina
+un gato en el teclado
+un caracol con prisa
+una planta que no se muere
+un mapa sin norte
+una llave sin coche
+el paraguas de otro
+un bocadillo sin nada
+un libro sin devolver
+un mensaje en una botella
+una paella para cuarenta
+una piñata que no se rompe
+una abuela que insiste
+un vecino que taladra
+un gazpacho caliente
+una serenata a deshoras
+un tango a solas
+un audio de cinco minutos
+un mariachi en el ascensor
+Madrid en agosto

@@ -173,21 +173,49 @@ def _searched(topic: str) -> dict[str, Any] | None:
     return None
 
 
+def english_title(topic: str, language: str) -> str | None:
+    """The title of the English Wikipedia's article about a topic typed in another language (see _english_title), such
+    as "Rain" for Dutch "regen" and "Cinnamon roll" for Swedish "kanelbullar"; None when there's none, or Wikipedia
+    can't be asked."""
+    topic = " ".join(topic.split())
+    if not topic or not available():
+        return None
+    return _english_title(topic, language)
+
+
 def _english_title(topic: str, language: str) -> str | None:
     """The English Wikipedia's title of the article that a topic leads to in its language's Wikipedia (or that a
-    search there finds first, among those with only words of the topic in their titles)."""
+    search there finds first, among those with only words of the topic in their titles). Never an English
+    disambiguation page: the article a Dutch page "Regen" links to is "Regen (disambiguation)", where the search finds
+    "Regen (neerslag)", rain (D74)."""
     links = {"prop": "langlinks|pageprops", "lllang": "en", "ppprop": "disambiguation"}
     data = _query(language, titles=topic, redirects=1, **links)
     pages = [page for page in ((data or {}).get("query") or {}).get("pages") or [] if isinstance(page, dict)]
     if not pages or pages[0].get("missing") or "disambiguation" in (pages[0].get("pageprops") or {}):
+        pages = []
+    found = _english_link(pages)
+    if found is None:
         data = _query(language, generator="search", gsrsearch=topic, gsrlimit=5, gsrnamespace=0, **links)
         hits = [page for page in ((data or {}).get("query") or {}).get("pages") or [] if isinstance(page, dict)]
         hits.sort(key=lambda page: int(page.get("index") or 0))
-        pages = [page for page in hits if titled_after(str(page.get("title") or ""), topic)][:1]
+        titled = [
+            page
+            for page in hits
+            if titled_after(str(page.get("title") or ""), topic)
+            and "disambiguation" not in (page.get("pageprops") or {})
+        ]
+        found = _english_link(titled)
+    return found
+
+
+def _english_link(pages: Iterable[dict[str, Any]]) -> str | None:
+    """The English article that the first of these pages with one links to, but a disambiguation page."""
     for page in pages:
         for link in page.get("langlinks") or []:
             if isinstance(link, dict) and link.get("lang") == "en" and link.get("title"):
-                return str(link["title"])
+                title = str(link["title"])
+                if not title.endswith("(disambiguation)"):
+                    return title
     return None
 
 

@@ -1,0 +1,474 @@
+# Topics for talks in French (fr): things a talk can be about, for suggestions (such as talk-generator-web's random
+# topic button, for a talk in French) and for checking talkgenerator on varied topics in French
+# (talkgenerator check --random 20 --language fr). About two thirds are adapted from topics.txt, where a topic says
+# well in French: as a French speaker would give it as a theme at an improv show, not word for word. About a third
+# come from the French-speaking world's own life (France, Belgium, Switzerland, Quebec), mixed into the same
+# sections. One topic a line, short (a phone shows about 20 characters of the site's topic field), with the article
+# a French speaker would use; blank lines, comments and repeats are skipped.
+
+# Animals
+les chats
+les chiens
+les pingouins
+les pigeons
+les pieuvres
+les paresseux
+les capybaras
+les ratons laveurs
+les hérissons
+les marmottes
+les lamas
+les poissons rouges
+les flamants roses
+les requins
+les fourmis
+les cigales
+les mouettes
+les escargots
+les perroquets
+les vaches
+les saint-bernard
+les chauves-souris
+les orignaux
+
+# Food and drink
+la baguette
+les croissants
+la chocolatine
+le café
+les tartines
+le fromage
+le camembert
+la raclette
+la fondue
+la tartiflette
+les cornichons
+les crêpes
+les gaufres
+les frites
+la mayonnaise
+les moules-frites
+le chocolat
+les spéculoos
+les avocats
+la soupe à l'oignon
+le croque-monsieur
+le jambon-beurre
+la quiche lorraine
+le cassoulet
+les patates
+la moutarde
+la confiture
+le sirop d'érable
+la poutine
+les restes du frigo
+les choux de Bruxelles
+le pain perdu
+le goûter
+la galette des rois
+la bûche de Noël
+la tarte Tatin
+la tarte au sucre
+la crème brûlée
+les macarons
+
+# Everyday objects
+les chaussettes
+les parapluies
+les cuillères
+les agrafeuses
+les trombones
+les clés
+la télécommande
+les chargeurs
+les ampoules
+les lacets
+les boutons
+les pense-bêtes
+le doudou
+les tongs
+les charentaises
+le béret
+la marinière
+la tuque
+le cartable
+la boîte à tartines
+le couteau suisse
+les nains de jardin
+les aspirateurs
+les grille-pain
+le frigo
+les brouettes
+le papier bulle
+le tiroir fourre-tout
+les paillassons
+le thermostat
+
+# Places
+la Belgique
+la Lune
+Mars
+les ascenseurs
+les gares
+la boulangerie
+les bibliothèques
+chez le dentiste
+la cour de récré
+le bac à sable
+la cantine
+la place du village
+la terrasse de café
+les îles désertes
+les volcans
+le pôle Nord
+les salles d'attente
+les ronds-points
+l'aire d'autoroute
+le camping
+le grenier
+les objets trouvés
+la banquette arrière
+la tour Eiffel
+les catacombes
+le Mont-Saint-Michel
+les châteaux de la Loire
+la dune du Pilat
+la Grand-Place
+le Manneken-Pis
+l'Atomium
+la baraque à frites
+le Cervin
+le lac Léman
+le jet d'eau de Genève
+la cabane à sucre
+la ville souterraine
+
+# Things people do
+la procrastination
+la sieste
+la grasse matinée
+le karaoké
+le jonglage
+le tricot
+le jardinage
+la pêche
+aller aux champignons
+le repassage
+le somnambulisme
+les potins
+râler
+la bise
+l'apéro
+tremper son croissant
+le lèche-vitrine
+la brocante
+faire la queue
+faire un créneau
+les meubles en kit
+le déménagement
+les mots croisés
+les tours de magie
+l'apiculture
+la philatélie
+chanter sous la douche
+parler aux plantes
+être en retard
+pelleter la neige
+le bricolage
+
+# Work and the office
+les réunions
+les mails
+le télétravail
+les diaporamas
+la machine à café
+l'imprimante
+l'entretien d'embauche
+l'open space
+le stagiaire
+les petits chefs
+l'entretien annuel
+le message d'absence
+répondre à tous
+les mots de passe
+les heures sup
+la pause de midi
+faire le pont
+le pot de départ
+le remue-méninges
+la paperasse
+Gaston Lagaffe
+
+# Technology
+l'IA
+les robots
+Internet
+le wifi
+les émojis
+le correcteur automatique
+les drones
+les cookies
+les mises à jour
+les podcasts
+la réalité virtuelle
+les fusées
+les calculatrices
+le fax
+les disquettes
+le micro coupé
+
+# Science and nature
+la physique quantique
+la gravité
+les trous noirs
+les glaciers
+l'odeur de la pluie
+les arcs-en-ciel
+le brouillard
+le crachin breton
+la drache
+le mistral
+la canicule
+l'hiver québécois
+les dinosaures
+les aimants
+les fuseaux horaires
+le 29 février
+les mauvaises herbes
+les sables mouvants
+les abysses
+la météo
+le big bang
+la Voie lactée
+
+# History and myth
+les pirates
+les Vikings
+la grotte de Lascaux
+la découverte du feu
+l'Égypte ancienne
+le Moyen Âge
+les chevaliers
+les châteaux forts
+les gargouilles
+les mousquetaires
+Molière
+la Belle Époque
+le Far West
+Astérix
+les dragons
+les licornes
+les loups-garous
+la chasse-galerie
+le Petit Chaperon rouge
+le Chat botté
+le marchand de sable
+le fantôme de l'Opéra
+les super-héros
+le voyage dans le temps
+les maisons hantées
+l'Atlantide
+
+# Big and small ideas
+le temps
+la chance
+la nostalgie
+la madeleine de Proust
+l'ennui
+le bonheur
+l'amitié
+la honte
+le silence
+la perfection
+l'échec
+la flemme
+le système D
+les coïncidences
+le déjà-vu
+le bon sens
+le sens de la vie
+vieillir
+la première impression
+l'esprit de l'escalier
+l'avenir
+la pleine conscience
+le minimalisme
+la politesse
+le vouvoiement
+septante et nonante
+les excuses
+les secrets
+les superstitions
+
+# Things that happen
+les embouteillages
+le décalage horaire
+le hoquet
+le dimanche soir
+le lundi matin
+les silences gênants
+les fêtes surprises
+les mariages
+le premier rendez-vous
+le repas de famille
+les voisins
+la belle-famille
+la Fête des voisins
+les souvenirs
+les vacances en août
+la colo
+la valise perdue
+les trains en retard
+les jours sans
+la rentrée
+la dictée
+le bac de philo
+les soldes
+la Chandeleur
+le poisson d'avril
+le bal des pompiers
+la désalpe
+la Saint-Nicolas
+le réveillon
+les bonnes résolutions
+le carnaval de Binche
+le carnaval de Québec
+
+# Sports and games
+la pétanque
+les échecs
+la belote
+les petits chevaux
+le curling
+le hockey
+le tir à la corde
+le ping-pong
+le baby-foot
+le foot
+le Tour de France
+le sumo
+la lutte suisse
+l'escrime
+les sports d'hiver
+cache-cache
+la marelle
+les chaises musicales
+le chifoumi
+les jeux vidéo
+les Jeux olympiques
+la course en sac
+le bras de fer
+
+# Music, art and entertainment
+l'opéra
+l'accordéon
+la cornemuse
+le cor des Alpes
+le chant tyrolien
+la danse contemporaine
+les mimes
+la flûte à bec
+le triangle
+le heavy metal
+la musique d'ascenseur
+le tube de l'été
+la Fête de la musique
+la comédie musicale
+la Joconde
+les impressionnistes
+la BD
+Tintin
+les Schtroumpfs
+le Petit Prince
+les fables de La Fontaine
+Guignol
+la téléréalité
+le cirque
+les clowns
+le match d'impro
+les boys bands
+l'air guitar
+
+# Getting around
+le vélo
+le métro
+les sous-marins
+les montgolfières
+le train de nuit
+les trottinettes
+le monocycle
+les tandems
+les rollers
+les tracteurs
+les motoneiges
+les téléphériques
+le tire-fesses
+le péage
+les nids-de-poule
+la priorité à droite
+la place côté hublot
+
+# The body
+les sourcils
+les genoux
+les coudes
+les dents de sagesse
+la petite souris
+les taches de rousseur
+la moustache
+chez le coiffeur
+les rêves
+les gauchers
+la chair de poule
+le nombril
+la crise de foie
+la cure thermale
+
+# People and jobs
+les plombiers
+les pompiers
+les maîtres-nageurs
+les astronautes
+les gardiens de phare
+les facteurs
+les arbitres
+les bouquinistes
+les garçons de café
+la concierge
+les chocolatiers
+les horlogers suisses
+les déneigeurs
+les influenceurs
+les grands-parents
+les ados
+les lève-tôt
+les couche-tard
+les je-sais-tout
+le nouveau collègue
+
+# Oddly specific
+un bourrage papier
+une chaussette orpheline
+un grille-pain hanté
+une porte minuscule
+une clé mystérieuse
+une bouteille à la mer
+un dragon au grenier
+un fantôme au bureau
+un chat sur le clavier
+une panne de réveil
+un escargot pressé
+un robot stressé
+une plante increvable
+un vélo sans freins
+le dernier métro
+la baguette sous le bras
+le dernier croissant
+la première crêpe
+trouver la fève
+la raclette en été
+les trous du gruyère
+un coucou en retard
+le coq du voisin
+le nombre de bises
+un orignal en ville

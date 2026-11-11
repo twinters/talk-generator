@@ -1,0 +1,469 @@
+# Topics for talks in German (de): things a talk can be about, for suggestions (such as talk-generator-web's random
+# topic button, for a talk in German) and for checks on varied topics (talkgenerator check --random 20 --language de).
+# About two thirds are adapted from topics.txt where a topic says well in German, in the words a German speaker would
+# call out at an improv show, never translated word for word; about a third come from the German-speaking world's own
+# life (Germany, Austria and Switzerland: food, habits, places, weather, holidays, school and work). One topic a line,
+# mostly short (a phone shows about 20 characters of the site's topic field), nouns capitalised, with an article where
+# a German speaker would say one; blank lines, comments and repeats are skipped. All harmless, as in topics.txt.
+
+# Animals
+Katzen
+Hunde
+Dackel
+Pinguine
+Tauben
+Kraken
+Faultiere
+Wasserschweine
+Waschbären
+Igel
+Alpakas
+Eichhörnchen
+Murmeltiere
+Eulen
+Flamingos
+Ameisen
+Kängurus
+Möwen
+Störche
+Nacktschnecken
+Hühner
+Wildschweine
+Axolotl
+Maulwürfe
+Siebenschläfer
+Fledermäuse
+Walrosse
+
+# Food and drink
+Brot
+Brezeln
+Kaffee
+Kaffee und Kuchen
+Tee
+Käse
+Spätzle
+Gewürzgurken
+Pfannkuchen
+Waffeln
+Schokolade
+Sachertorte
+Brokkoli
+Rosenkohl
+Kartoffeln
+Knödel
+Senf
+Currywurst
+Leberkäse
+Wiener Schnitzel
+Kaiserschmarrn
+Hafermilch
+scharfes Essen
+Reste vom Vortag
+Fondue
+Raclette
+Lebkuchen
+Gummibärchen
+die Spargelzeit
+Spaghettieis
+der Döner
+der Mettigel
+Toast Hawaii
+das Anstandsstück
+
+# Everyday objects
+Regenschirme
+Tacker
+Quietscheentchen
+Einkaufswagen
+Schlüssel
+die Fernbedienung
+Hausschuhe
+Klebezettel
+Klebeband
+Gartenzwerge
+Kuckucksuhren
+Schweizer Taschenmesser
+Zimmerpflanzen
+Staubsauger
+Waschmaschinen
+Luftpolsterfolie
+Umzugskartons
+Pfandflaschen
+der gelbe Sack
+Jutebeutel
+die Kramschublade
+Gardinen
+die Schrankwand
+Rasenmäher
+die Heizung
+die Schlummertaste
+Schultüten
+Tintenkiller
+Adventskalender
+Funktionsjacken
+Strandkörbe
+
+# Places
+Belgien
+Bielefeld
+der Mond
+der Mars
+Flughäfen
+die Autobahn
+die Raststätte
+der Kreisverkehr
+Bibliotheken
+das Bürgeramt
+das Lehrerzimmer
+Leuchttürme
+Burgen
+der Dschungel
+einsame Inseln
+Vulkane
+der Wald
+das Moor
+die Alpen
+das Matterhorn
+der Meeresgrund
+die Antarktis
+der Dachboden
+der Keller
+die WG-Küche
+das Fundbüro
+der Rücksitz
+der Schrebergarten
+der Baumarkt
+das Freibad
+der Weihnachtsmarkt
+das Wiener Kaffeehaus
+der Weißwurstäquator
+der Röstigraben
+
+# Things people do
+Aufschieberitis
+der Mittagsschlaf
+Vögel beobachten
+Karaoke
+Stricken
+Wandern
+Wattwandern
+Nordic Walking
+Sonntagsspaziergänge
+Schlafwandeln
+Tagträumen
+Smalltalk
+Lästern
+Meckern
+Schlangestehen
+Einparken
+Möbel aufbauen
+Heimwerken
+der Umzug
+Koffer packen
+Imkern
+Briefmarkensammeln
+Grillen
+Brötchen holen
+Mülltrennung
+die Kehrwoche
+Stoßlüften
+mit Pflanzen reden
+zu spät kommen
+
+# Work and the office
+Meetings
+das Homeoffice
+E-Mails
+Deadlines
+der Feierabend
+Bewerbungsgespräche
+Teambuilding
+der Betriebsausflug
+Großraumbüros
+Abwesenheitsnotizen
+Überstunden
+der Brückentag
+Allen antworten
+der Papierstau
+das Kleingedruckte
+Bürokratie
+der gelbe Schein
+die Kaffeekasse
+belegte Brötchen
+Mahlzeit
+die Weihnachtsfeier
+Wichteln
+
+# Technology
+künstliche Intelligenz
+Roboter
+Chatbots
+das WLAN
+das Funkloch
+Handys
+Emojis
+die Autokorrektur
+Gruppenchats
+Captchas
+Cookie-Banner
+Software-Updates
+Ladebalken
+Drohnen
+Raketen
+E-Scooter
+Schreibmaschinen
+Faxgeräte
+der Videotext
+der Pfandautomat
+
+# Science and nature
+Quantenphysik
+die Schwerkraft
+Schwarze Löcher
+der Urknall
+Dinosaurier
+Magnete
+statische Aufladung
+Pilze
+Moos
+Unkraut
+der Komposthaufen
+Bauernregeln
+das Wetter
+das Aprilwetter
+die Eisheiligen
+der Föhn
+Gewitter
+Nieselregen
+der Duft nach Regen
+Regenbögen
+der goldene Oktober
+Ebbe und Flut
+die Tiefsee
+der Vogelzug
+
+# History and myth
+Piraten
+Wikinger
+die Steinzeit
+Ötzi
+die Römer
+das Mittelalter
+Ritter
+Spukschlösser
+der Wilde Westen
+Goethe
+Baron Münchhausen
+Till Eulenspiegel
+Drachen
+Einhörner
+Meerjungfrauen
+Vampire
+Zauberer
+die Heinzelmännchen
+Rübezahl
+Rumpelstilzchen
+Frau Holle
+der Krampus
+der Osterhase
+Superhelden
+Zeitreisen
+Nessie
+Schatzkarten
+
+# Big and small ideas
+die Zeit
+Glück
+Nostalgie
+Geduld
+Pünktlichkeit
+Langeweile
+Freundschaft
+Gemütlichkeit
+Chaos
+Ordnung muss sein
+Perfektionismus
+Scheitern
+Verschlimmbessern
+Déjà-vu
+das Bauchgefühl
+der freie Wille
+der Sinn des Lebens
+Erwachsenwerden
+das Wochenende
+Sonntagsruhe
+die Zukunft
+Fernweh
+Schadenfreude
+Fremdschämen
+der Treppenwitz
+Ausreden
+Geheimnisse
+Aberglaube
+zu früh gratulieren
+Duzen und Siezen
+der Knigge
+
+# Things that happen
+der Stau
+Zugverspätungen
+verlorenes Gepäck
+Jetlag
+Schluckauf
+Ohrwürmer
+der Montagmorgen
+betretenes Schweigen
+falsch verbunden
+beim Zahnarzt
+Kindergeburtstage
+das erste Date
+der Polterabend
+Familienfeiern
+Schwiegereltern
+die Einschulung
+Hitzefrei
+die Klassenfahrt
+der Sperrmüll
+Karneval
+der Almabtrieb
+das Sechseläuten
+der Laternenumzug
+der Nikolaustag
+die Bescherung
+Silvester
+Bleigießen
+gute Vorsätze
+
+# Sports and games
+Schach
+Skat
+Minigolf
+Kegeln
+Tischtennis
+Federball
+Fußball
+Elfmeterschießen
+Völkerball
+die Bundesjugendspiele
+Synchronschwimmen
+Sumoringen
+Fingerhakeln
+das Schwingfest
+Skifahren
+Eisstockschießen
+Olympia
+Tauziehen
+Sackhüpfen
+Topfschlagen
+Verstecken
+Reise nach Jerusalem
+Stadt-Land-Fluss
+Schere-Stein-Papier
+Hula-Hoop
+
+# Music, art and entertainment
+die Oper
+Heavy Metal
+Schlager
+Jodeln
+Dudelsäcke
+Alphörner
+das Akkordeon
+die Blockflöte
+die Triangel
+Luftgitarre
+Fahrstuhlmusik
+der Wiener Walzer
+Ausdruckstanz
+Pantomime
+Bauchreden
+der Zirkus
+das Kasperletheater
+Hörspiele
+Seifenopern
+Tierdokus
+abstrakte Kunst
+der röhrende Hirsch
+
+# Getting around
+Fahrräder
+Lastenräder
+Tandems
+Einräder
+Straßenbahnen
+der Nachtbus
+der Fahrkartenautomat
+der Fensterplatz
+der Wackeldackel
+Klorollenhüte
+Feuerwehrautos
+das Ampelmännchen
+der Fiaker
+Fähren
+U-Boote
+Heißluftballons
+Seilbahnen
+Rolltreppen
+
+# The body
+Augenbrauen
+Schnurrbärte
+Sommersprossen
+Grübchen
+Weisheitszähne
+Bauchnabel
+Gänsehaut
+Muskelkater
+Hexenschuss
+Zugluft
+Frühjahrsmüdigkeit
+Linkshänder
+der Friseurbesuch
+Träume
+Albträume
+
+# People and jobs
+Feuerwehrleute
+Schornsteinfeger
+Astronauten
+Leuchtturmwärter
+Bibliothekare
+der Hausmeister
+Bademeister
+Schiedsrichter
+Türsteher
+Kellner
+Wetterfrösche
+Steuerberater
+Dauercamper
+Kaninchenzüchter
+Omas und Opas
+Morgenmuffel
+Nachteulen
+Besserwisser
+der neue Kollege
+
+# Oddly specific
+eine zu große Krone
+eine einzelne Socke
+Socken in Sandalen
+ein verhexter Toaster
+ein hungriges Sofa
+eine winzige Tür
+eine Riesenschlange
+eine Flaschenpost
+ein Drache im Keller
+ein Geist im Büro
+eine Katze im Meeting
+eine Taube im Zug
+eine rasende Schnecke
+Passwort vergessen
+die letzte S-Bahn
+die ewige Rotphase
+der Berliner mit Senf
+das gute Geschirr
+das Gästehandtuch
+Zettel vom Nachbarn
+Pakete für Nachbarn
+Rasenmähen am Sonntag

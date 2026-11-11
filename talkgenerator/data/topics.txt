@@ -2,7 +2,8 @@
 # checking talkgenerator on varied topics (talkgenerator check --random 20). One topic a line, mostly short (a phone
 # shows about 20 characters of the site's topic field); blank lines, comments and repeats are skipped.
 # Inspired by the improv suggestion lists of Impy and improbotics-interface: everyday things, oddly specific ones,
-# and big ideas, all harmless, so that any of them makes a fine talk on stage.
+# and big ideas, all harmless, so that any of them makes a fine talk on stage. The other languages talks can be in
+# have lists of their own beside this one (topics.nl.txt, ...): their own topics, not these translated (D74).
 
 # Animals
 cats

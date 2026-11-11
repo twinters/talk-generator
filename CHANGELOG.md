@@ -41,7 +41,12 @@ how to keep 4.x's talks. The [docs](https://github.com/twinters/talk-generator/t
   folder, and `talkgenerator login chatgpt` signs in with ChatGPT (OpenAI's sign-in for open-source apps, in
   preview); both have `--status`, and `logout`.
 - Talks in Dutch, French, German, Spanish, Italian, Portuguese and Swedish (`--language`), with talkgenerator's own
-  words on the slides in the talk's language too.
+  words on the slides in the talk's language too. The model is asked to write them as a native speaker would: no
+  English words left in, nothing word for word, no look-alikes ("graf", a grave, for a graph in Dutch), and the
+  language's own capitals in titles; the words its slides riff on come from what the topic is in English (Dutch
+  "regen" from "rain", not from the English word "regen") and say they're English, and so do real facts. Each
+  language has its own list of topics (`talkgenerator/data/topics.<code>.txt`), which `talkgenerator check --random N
+  --language` draws from.
 - The logs and the deck (`usage`) say how many requests a talk made and what they cost, and `budget=` holds a talk
   to a limit. Keys never show up in logs, error messages or decks.
 

@@ -87,6 +87,7 @@ from talkgenerator.plan.prompt import SPINE, PlannedSlide, slide_plan, talk_requ
 from talkgenerator.plan.realize import ATTEMPTS, clean_text, realize
 from talkgenerator.plan.stream import ObjectReader
 from talkgenerator.render.powerpoint import render_pptx
+from talkgenerator.schema import slide_topic_generators
 from talkgenerator.schema.slide_topic_generators import SlideSeedGenerator
 from talkgenerator.slide import slide_generator_types, slides
 from talkgenerator.slide.slide_deck import SlideDeck
@@ -1282,8 +1283,10 @@ class PresentationSchema:
         if uses and facts.on():
             # (only what its slides use: a talk without a fun fact asks for no useless fact, and so on)
             gathering = facts.gather(topics[0], language, uses=uses, rng=rng.child("facts"))
-        # Create the topic-for-each-slide generator, and every slide's topic
-        with random_util.use(rng.child("topics")):
+        # Create the topic-for-each-slide generator, and every slide's topic: in a talk in another language, seeds wander
+        # from what its topic is in English, as the related words are English (D74: Dutch "regen", rain, wandered to
+        # "renovation"), and its slides on the topic have it as typed
+        with random_util.use(rng.child("topics")), slide_topic_generators.wandering_in(language):
             seed_generator = self._seed_generator(topics, num_slides)
         logger.info("Seed generator: {}".format(seed_generator))
         seeds = []
@@ -1292,6 +1295,9 @@ class PresentationSchema:
                 seeds.append(seed_generator.get_seed(slide_nr))
         # (the words a model that plans the talk is offered for each slide: its seed first, by slide number from 1)
         offers = {slide_nr + 1: (seed, *seed_generator.alternatives(slide_nr)) for slide_nr, seed in enumerate(seeds)}
+        # (the slides whose words are English, in a talk in another language, which the language model then says in
+        # the talk's language: see PlannedSlide.english)
+        english = frozenset(slide_nr for slide_nr in range(num_slides) if seed_generator.in_english(slide_nr))
 
         # The presenter's name, unless it's given: made up in a style the talk's dice pick, by the language model
         # that writes the talk (in the same request), or else by talkgenerator (see talkgenerator.names); in one of
@@ -1336,13 +1342,16 @@ class PresentationSchema:
                 level=llm_level,
                 offers=offers,
                 listener=getattr(progress, "planning", None),  # (how far the model is, for a Progress that asks)
+                english=english,
             )
         # The time a slide may take, if its progress gives one (see _Clock), and for a talk a language model writes,
         # the pictures of its topic that its slides can have when they run out of time to find their own: looked for
         # from now on, while the model writes
         seconds = _time_limit(progress)
         if seconds is not None and talk is not None:
-            pictures = _SparePictures(topics[0], SPARE_PICTURES, rng.child("spare pictures"))
+            # (of the topic as it is in English, in a talk in another language: the picture sources search English best)
+            pictured = seed_generator.english_name(topics[0])
+            pictures = _SparePictures(pictured, SPARE_PICTURES, rng.child("spare pictures"))
             pictures.start()
         try:
             if talk is not None:
@@ -1545,6 +1554,7 @@ class PresentationSchema:
         level: str = BASIC,
         offers: Mapping[int, Sequence[str]] | None = None,
         listener: Callable[[Planning], None] | None = None,
+        english: Collection[int] = (),
     ) -> "_PlannedTalk":
         """Pick every slide's generator (as the persona weighs them, unless they're picked already), and ask the
         language model, in one request, what goes on the slides whose generators have recipes (and the presenter's
@@ -1557,7 +1567,8 @@ class PresentationSchema:
 
         At level ADVANCED, the model plans the talk first, and its slides are written in parallel as their plans come in
         (see _write_planned); the talk is a Basic one when that can't be done. A listener hears how far the model is
-        (see Planning), from now on."""
+        (see Planning), from now on. In a talk in another language, the slides whose seeds are English (english, by
+        slide number from 0) have the model say them in the talk's language (see PlannedSlide.english)."""
         num_slides = len(seeds)
         if picks is None:
             picks = self._pick_generators(num_slides, rng, language, persona)
@@ -1570,7 +1581,12 @@ class PresentationSchema:
             recipe = pick.llm.varied(rng.child("slide", slide_nr, "variant"), avoid=queried)
             queried |= frozenset(recipe.queries.values())
             planned[slide_nr] = PlannedSlide(
-                slide_nr + 1, pick.name or str(pick), recipe, seeds[slide_nr], digits=len(str(num_slides))
+                slide_nr + 1,
+                pick.name or str(pick),
+                recipe,
+                seeds[slide_nr],
+                digits=len(str(num_slides)),
+                english=slide_nr in english,
             )
         talk = _PlannedTalk(
             picks,
@@ -1736,8 +1752,9 @@ class PresentationSchema:
             idea = read_idea(value)
             if idea is not None:
                 with planning:
+                    # (a riff is in the talk's language, as the outline asks for it: see outline_request)
                     slide = talk.planned[slide_nr] = dataclasses.replace(
-                        talk.planned[slide_nr], seed=idea.riff, idea=idea.idea
+                        talk.planned[slide_nr], seed=idea.riff, idea=idea.idea, english=False
                     )
                     talk.contexts[slide_nr]["seed"] = idea.riff  # (for its notes)
                 ideas[slide.number] = idea
