@@ -591,6 +591,93 @@ fit a long label ("Hantverksföreningar", "Medeltidsentusiaster"); laid out agai
 beside their circles (`2126dc5`), both fit. The free models' Swedish has slips that no stopword check can see
 ("Erdnöten" for jordnötter, a headline that reads Norwegian).
 
+On 2026-11-11 (D74), at the user's "sometimes translations are weird, like 'graph' is translated to 'graf' in a
+Dutch one earlier, and some are literal. How come? Bad LLM? Too small?", probe talks showed where such words come
+from: 21 talks in Dutch, French and Swedish before the changes below and 16 after, on the same seeds, by the free
+router (the site's Basic AI), Claude Haiku 5.5 at both levels and Gemini 3.8 Flash, each request and answer
+recorded (about $0.10 in all):
+
+- The words slides riff on. They come from English sources (Datamuse's related words, while ConceptNet's API is
+  down), which took a topic in another language for an English word, or knew nothing of it: Dutch "regen" (rain)
+  wandered to "renovation", "redevelopment", "healing" and "reset" (Datamuse's "regen" is regeneration), "kaas"
+  (cheese) to "faas" and "aviation", "les vacances" to "primus", "opera" and "composer", and "frietjes", "fietsen" and
+  "statistiek" nowhere at all. A topic typed in English wandered in English: "penguins" to the hockey team's "flyers",
+  "hockey", "goaltender" and "lightning". Such a word ended up on a Dutch slide as it was, or as a look-alike: the free
+  model's "de geheime goaltender" and "middeleeuwse flyers", Gemini's "Vloeibare Healing" and "de Grote Reset", and
+  Haiku's Advanced talk on rain became one on soil that was "geherontwikkeld". "graf" for a graph is one of these:
+  "graph" is a word to riff on of "algorithms" and "mathematics", both on the English list that talkgenerator.com's ↻
+  button gave Dutch visitors.
+- The request, all in English: hints with English examples ("such as 'Professor of Applied Sock Theory'": the free
+  model's "Professoraat Middeleeuwse Avifauna"), the names of slide kinds ("alignment chart": Haiku's
+  "uitlijningstabel"), and the facts, which are English: the free model put "Over duizend soorten kaas bestaan,
+  geproduceerd in verscheidene landen" (English's word order) on a Dutch slide, and "There are over 58 million dogs in
+  the US" on a French one.
+- The models. On the very same requests, Haiku and Gemini told those facts in natural Dutch and French ("Er bestaan
+  meer dan duizend soorten kaas") and turned the hockey words into "IJshockeydoelman" and "pamfletten", where the free
+  router's models wrote non-words and word-for-word phrases ("Goudgebarsten", "Hoofdleraar", "Strekking van de ziel"),
+  and dots-3 mixed English into Dutch sentences ("Kijk, hier comes de netwerk!", "Wat mijn vader me always zei").
+  The free router picks between the only two free models on OpenRouter that take a strict JSON schema,
+  nvidia/nemotron-3.5-super-vl and dots-studio/dots-3-note-preview (2026-11-11). Haiku and Gemini put English Title
+  Case on Dutch and French titles ("Rijpen naar Rust: Word de Kaas van je Leven"), and Gemini once dropped French
+  apostrophes ("l accent").
+- Not talkgenerator's own words (plan.languages), which read as native, nor the content packs, which only classic
+  talks use (in English).
+
+So, D74:
+
+- A talk in another language wanders from what its topic is in English (`slide_topic_generators.english_name`): the
+  topic as typed when it reads as English (each of its words one that English knows at least as well as the
+  language), or else the title of the English article that its own Wikipedia's article links to, looked up without
+  the article it starts with first ("les vacances": Vacation; "l'escargot" as typed is Matisse's "The Snail"),
+  without brackets, never a disambiguation page (Dutch "Regen" links to one; the search finds "Regen (neerslag)",
+  Rain), within three seconds; when there's none, its seeds don't wander. "kaas" now wanders to curd, cheddar, whey
+  and crackers, "frietjes" to fryer and coleslaw, "les vacances" to resorts, beaches and cruise. The lookup is lazy (a
+  seed generator that doesn't wander asks nothing), and a slide's stand-in pictures of the topic are searched in
+  English too. Wikipedia misses now and then ("la colo", a summer camp, is Mount Colo), and Datamuse knows little of
+  some words ("fika": "fly and flop"), but a wrong English word to wander from is rarer than a wrong reading was.
+- The request says which of its words are English: a slide's word to riff on ("A word to riff on: umbrella
+  (English)"), a fact ("(in English: tell it in Dutch)", with "in your own words, as a Dutch speaker would, never in
+  English and never word for word" in the facts' line), and an Advanced outline's offered words ("Its words
+  (English)"), whose riffs it asks for in the talk's language (their ideas stay English). A slide's concept, which
+  is searched for pictures, is asked for in English words.
+- It asks for the talk as a native speaker of the language writes it for its speakers (`prompt.native_line`, in the
+  header of a Basic request, an outline and a batch): in the words and idioms they use, never word for word from
+  English, no English words left in, no look-alikes, with one of the language's own (`Language.false_friend`: "a
+  graph is a 'grafiek', never a 'graf' (a grave)", Spanish "'embarrassed' is 'avergonzado', never 'embarazada'"), the
+  request's examples and English words to be said anew, and a title's capitals as the language has them
+  (`Language.capitals`: the first word and names, and in German every noun). English requests are as they were.
+- A leading article doesn't count toward the four words that make what's typed a title (`titles.clearly_a_title`):
+  French says its topics with one ("le Tour de France", "la cabane à sucre"), and "the office coffee machine" is a
+  topic for the model to title too.
+- The spelling fixes of what's typed (`word_frequency.fix_spelling`) took rare words of a language for misspellings of
+  more frequent ones a letter away, and the model was told the typed topic meant those: "os polvos" (octopuses) was
+  "os povos" (peoples), "i polpi" "i colpi" (blows), "lämlar" (lemmings) "lämnar" (leaves), "verkeerskegels" (traffic
+  cones) "verkeersregels" (the rules of the road). In another language than English, a word the language knows now
+  only gets its accents put right ("faglar": "fåglar"); a word it doesn't know is fixed as before ("pingvner").
+  English is as it was.
+- Every language has its own topic list (`data/topics.<code>.txt`), for the ↻ button of talkgenerator.com (which gave
+  English topics in every language), `topics.random_topics(language=)` and `check --random N --language`: Dutch 427
+  topics, French 433, German 428, Spanish 436, Italian 422, Portuguese 432 and Swedish 443, written for this by Claude
+  (one language each, then read through), in the sections of English's list: about two thirds of English's topics
+  that say well in the language, in its own words and with its articles where it says them ("les pingouins"), and a
+  third from its speakers' own lives (the Netherlands and Flanders: het frietkot, pistolets op zondag, op kot gaan and
+  op kamers gaan; France, Belgium, Switzerland and Quebec: la drache, la cabane à sucre; Germany, Austria and
+  Switzerland: die Kehrwoche, der Röstigraben; Spain and Latin America; Italy and Ticino; Brazil, Portugal and a little
+  of Angola, Mozambique and Cape Verde; Sweden and Finland's Swedes), harmless as English's (no living people, brands,
+  alcohol, politics, disasters, nor anything contested such as Zwarte Piet). Each one is read as typed, as the site
+  reads a topic it suggests: none has a comma (which makes several topics), none is changed by the spelling fixes
+  (tests/test_topics.py).
+
+After, on the same seeds: Gemini's Title Case titles went from 5 in 5 talks to none in 4, Haiku's from 1 to none,
+and the English words to riff on that ended up on slides from 9 in 21 talks (flyers, hockey, goaltender, healing,
+reset...) to 3 in 16 (cheddar, ghee, whey: cheeses Dutch says so too, and the free model's "De Essentie van de
+Whey"). The talks stayed on their topics: Haiku's Advanced rain talk riffed on "neerslag", "schaduw" and "hagel". What
+stays is the free models': dots-3 still mixed English into Dutch ("niet always") and capitalised every word of its
+titles, the instructions notwithstanding. A better free model would write better Dutch, but the free router can
+pick none: Google's Gemma 4 (free, and made for many languages) takes JSON without a strict schema, so OpenRouter
+turns talkgenerator's request down for it (no endpoint for its parameters), and asked with the schema as text, its
+free endpoint answered 429 for ten minutes on end (2026-11-11).
+
 Decided: talks in Dutch, and later other languages, whenever an LLM is available. The classic engine and its
 grammars stay English: translating them would mean keeping parallel grammars in step for every language, a lot of
 upkeep for a mode that only matters when no LLM is around.
@@ -2505,9 +2592,11 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D71 | Gemini writes talks (the user's "We should add support for Gemini too", 2026-11-10): `--llm gemini` (Gemini 3.8 Flash) or `gemini:<model>`, through Google's `google-genai` SDK (the extra `talkgenerator[gemini]`, 3.0 or later, on httpx2 as the other SDKs; it doesn't install in Windows on Arm's Python, where its tests skip), with `GEMINI_API_KEY` (or `GOOGLE_API_KEY`), the key Gemini's image models take. It streams, holds the answer to the talk's JSON schema (`response_json_schema`; when Gemini finds a schema too complex, a 400 that names it, the schema goes as text, as with Claude's grammar), thinks at `low` (`TALKGENERATOR_LLM_EFFORT` sets Gemini 3's thinking levels; 2.5's models keep their own), reads pictures (so it picks its own talk's pictures), and is priced at the paid tier's list prices, checked on 2026-11-10, with the dates where Gemini 4 Argon's and 3.8 Flash's introductory prices end (`prices.PRICE_CHANGES`). Gemini's free tier is a key's (its Google Cloud project has no billing), not a model's, and talkgenerator can't tell it: a Gemini model counts as paid (Advanced by default, budgets at paid prices), and the docs say to ask for Basic on the free tier. It can't be talkgenerator.com's Basic AI: Google's terms allow only the paid tier for apps that serve people in the EEA, Switzerland or the UK, Google uses what the free tier gets to improve its products (people may read it), and its limits are per project and small (reported in October 2026: 20 requests a day on Gemini 3.8 Flash, 500 on the Flash-Lite models; the site's OpenRouter account has 1,000). The site takes a visitor's own Gemini key, as Anthropic's and OpenAI's (Advanced talks): one of AI Studio's auth keys (`AQ.`, every new key since 2026-05-28) or an older standard key (`AIza`), and `redact()` takes both. Live on 2026-11-10 (an `AQ.` key; samples in talkgenerator-update's folder 41), every slide of three 10-slide talks came as written: Gemini 3.8 Flash at Basic, one request of 2,190 tokens in and 772 out, $0.0045, 41 s; at Advanced, five requests, 6,587 in and 1,288 out, $0.0098, 36 s; Gemini 3.5 Flash-Lite at Advanced, $0.0063, 40 s. |
 | D72 | A streamed talk can tell how far it is (`stream_talk(progress=True)`, from the user's feedback of 2026-11-10; 13.1): `talk.progress` from its very start, before `talk.started`, and whenever that changes, whole each time: the talk's stage (starting; asking, until its language model's first word; planning, while the model's plan comes in; writing, while it writes the slides; composing; finishing, once every slide is in and the talk waits for generated pictures, a vision pick or a late slide), every slide's own (waiting; planned, its idea in, at the Advanced level; written, its texts in while its pictures are looked up; ready), the parts of the plan that came in (the spine's fields one by one, counted inside its object as the model writes it, and the slides' ideas: a dot each on the site), and how many slides the model writes and wrote. A model asked again takes the talk back to asking. Off by default, so the events are as before. talkgenerator.com asks for it and shows it above its loading screen's atom: the stage in words with its count, and a mark for every slide that lights up as the slide gets further, with a notch where the curtain opens; its slideshow goes back on a tap on a slide's left third on a phone (on elsewhere; a mouse's click goes on anywhere, as in PowerPoint), keeps a swipe across from the browser's back gesture, and makes 8 slides by default (7 before). |
 | D73 | Less text, more surprise (the user's feedback of 2026-11-10, section 8): half of the charts and diagrams try a picture first, in their place, under their title (`Kind.picture_first`: a real chart from the internet for a chart, a weird picture for a diagram), planned (the model writes its query) and classic (every schema wraps them: `PictureFirstSlideGenerator`), and are their text version when none is found; with a time limit per slide (D67), the text version stands in at once (before an early version, D70) and only the picture takes its place (`DISABLE_PICTURE_FIRST` switches it off). A chart's title says what it shows, never "X vs Y": a planned one that does gets the two things on its axes (`axes_from_title`), a classic one whose axes have titles a claim (`charts.chart_claim`). A problem slide's problem is a few words (60 characters, its line 60), in the hints and the TED, pitch and academic packs. A list's or a diagram's punchline breaks its pattern now and then (`PatternBreak`, the kind's, for every format): an emoji alone, a few words, or a picture in its place where the kind's layouts show one (red flags, reviews, an org chart's boss, a tier list's S tier, an alignment chart's chaotic evil: `engine._text_or_picture`), a list's 35% of the time, a diagram's a quarter (an emoji); the third of three captioned pictures 60%; classic ones as often (`slide_texts.broken`, the TED pack's short reviews and red flags, KPIs with no number, 12 of 53 three-caption rows); 42% of random-format talks have one (`DISABLE_PATTERN_BREAKS` switches them off). Slides of history (and fun facts, now and then) get a coincidence in place of the day's events: a moment of the topic's history and an event of the same year (its Wikipedia article's), side by side as if one caused the other, credited to both articles. The packs' versions: TED 8, pitch 4, academic 5. |
+| D74 | Talks in other languages read as their speakers write them, and suggest their own topics (the user's request of 2026-11-11: "the random topic list should also have suggestions from that language", and "sometimes translations are weird, like 'graph' is translated to 'graf' in a Dutch one ... How come?"; 5.9). Where the weird words came from, by 37 probe talks on the same seeds: the words slides riff on are English (Datamuse's, which took Dutch "regen", rain, for regeneration's "regen" and wandered to "renovation" and "redevelopment", and knew nothing of "frietjes"), and such an English word ended up on a slide as it was or as a look-alike ("de geheime goaltender", "Vloeibare Healing", "geherontwikkeld"; "graph" is a word to riff on of "algorithms" and "mathematics", on the English list the site's ↻ button gave every language); the request is English, with English examples, kind names and facts (the free model's "Professoraat ...", "Over duizend soorten kaas bestaan", "There are over 58 million dogs in the US" on a French slide); and the models: on the same requests Claude Haiku and Gemini 3.8 Flash wrote natural Dutch and French, where the free router's two models (nemotron-3.5-super-vl and dots-3-note-preview, the only free ones that take a strict schema) wrote word for word and mixed in English ("hier comes de netwerk"). So: a talk in another language wanders from what its topic is in English (`slide_topic_generators.english_name`: the topic as typed when it reads as English, else the English Wikipedia article its own Wikipedia's links to, without its article, never a disambiguation page, within 3 seconds; else no wandering); the request marks its English parts ("A word to riff on: umbrella (English)", a fact "(in English: tell it in Dutch)", an outline's "Its words (English)", whose riffs are in the talk's language), asks a slide's concept in English words (it's searched for pictures), and asks for the talk as a native speaker writes it (`prompt.native_line`: no English words left in, nothing word for word, no look-alikes, with the language's own example, `Language.false_friend`, and its title capitals, `Language.capitals`); English requests are as they were. A leading article doesn't count toward the four words that make what's typed a title ("le Tour de France", `titles.clearly_a_title`), and in another language the spelling fixes only put a known word's accents right (they made "os polvos", octopuses, "os povos", peoples). Every language has its own topic list (`data/topics.<code>.txt`, 422 to 443 topics: about two thirds of English's that say well in the language, in its words and with its articles, a third of its speakers' own lives, harmless as English's), which `topics.random_topics(language=)`, `check --random N --language` and talkgenerator.com's ↻ button use (the site's copies, `npm run refresh-topics`). After, on the same seeds: no Title Case titles from Gemini (5 before) or Haiku, English words to riff on on slides 3 in 16 talks (9 in 21 before), talks on their topics. What stays the models': the free models' word-for-word Dutch and English words, which the request can't fix; a better free model would (Gemma 4 isn't one the free router can pick: it takes no strict schema). Classic talks stay English (5.9). |
 
 D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, D43 to D62 on 2026-11-08, D63
-to D69 on 2026-11-09, and D70 to D73 on 2026-11-10; the others follow from the design.
+to D69 on 2026-11-09, D70 to D73 on 2026-11-10, and D74 on 2026-11-11; the others follow from the
+design.
 
 ### Open questions
 
