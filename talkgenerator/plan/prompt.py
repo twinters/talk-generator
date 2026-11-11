@@ -16,6 +16,7 @@ that name one go, and a text with a key anywhere else is a leftover, as template
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final
@@ -414,18 +415,26 @@ def _prompt_description(source: Any) -> str:
     )
 
 
+# An example in a field's description ("such as 'Live demo'"), which a request in another language says is English
+_EXAMPLE: Final = re.compile(r"(such as '[^']+')")
+
+
 def field_description(recipe: Recipe, text: TextField, language: str = languages.ENGLISH.code) -> str:
     """What to write in a slide's text field: the recipe's hint, or else the field's own description, in the talk's
     language when that's another one than English (an example of the hint's, "such as 'Outline'", is then to be said
-    in it), and its length (or the words it can be)."""
+    in it: it says it's English, as a free model put "Live demo", "Introducing: RegenMax" on a Dutch keynote's slides,
+    D74), and its length (or the words it can be)."""
     if text.options:
         limit = "one of " + ", ".join(text.options) + (", or empty for any" if text.optional else "")
     else:
         limit = f"at most {text.max_length} characters" + (", or empty for none" if text.optional else "")
+    hint = recipe.hints.get(text.name, text.description)
     written_in = ""
     if language != languages.ENGLISH.code and not text.options:
-        written_in = f", in {languages.language(language).name}"
-    return f"{recipe.hints.get(text.name, text.description)}{written_in} ({limit})"
+        name = languages.language(language).name
+        written_in = f", in {name}"
+        hint = _EXAMPLE.sub(rf"\1 (in English: yours in {name})", hint)
+    return f"{hint}{written_in} ({limit})"
 
 
 # What the model writes for a text that talkgenerator finds (a real quote, from Goodreads or Wikiquote): what to search

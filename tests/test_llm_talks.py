@@ -466,11 +466,12 @@ def test_every_text_of_a_talk_in_another_language_is_asked_for_in_it():
         prompt.PlannedSlide(3, "Fake", Recipe("quiz"), "cat"),
     ]
     request = prompt.talk_request(["cat"], planned, random_util.Rng(1), "de").messages[0].content
-    assert "- title: the slide's title, such as 'Outline', in German (at most" in request
+    # (and the example says it's English, D74: a free model still put "Live demo" on a Dutch keynote's slide)
+    assert "- title: the slide's title, such as 'Outline' (in English: yours in German), in German (at most" in request
     assert "- answer: the letter of the right option (one of" in request  # (a choice of words isn't translated)
     schema = prompt.response_schema(planned, "de")["properties"]
     assert schema["slide_2"]["properties"]["title"]["description"].startswith(
-        "the slide's title, such as 'Outline', in German ("
+        "the slide's title, such as 'Outline' (in English: yours in German), in German ("
     )
     assert "in German" in schema[prompt.SPINE]["properties"]["thesis"]["description"]
     english = prompt.talk_request(["cat"], planned, random_util.Rng(1)).messages[0].content

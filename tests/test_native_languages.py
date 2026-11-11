@@ -171,6 +171,15 @@ def test_a_request_in_another_language_asks_for_it_as_a_native_speaker_writes_it
     assert "'eventually' is 'schließlich'" in german
 
 
+def test_a_hints_example_says_its_english():
+    # (a free model put "Live demo" and "Introducing: RegenMax" on a Dutch keynote's slides, as the hints' examples)
+    keynote = prompt.PlannedSlide(4, "Fake", Recipe("image", hints={"title": "a title such as 'Live demo'"}), "demo")
+    (title,) = [line for line in prompt.slide_lines(keynote, "nl") if line.startswith("- title:")]
+    assert title.startswith("- title: a title such as 'Live demo' (in English: yours in Dutch), in Dutch (at most")
+    (english,) = [line for line in prompt.slide_lines(keynote) if line.startswith("- title:")]
+    assert english.startswith("- title: a title such as 'Live demo' (at most")
+
+
 def test_an_english_request_is_as_it_was():
     request = prompt.talk_request(["rain"], _slides(english=False), random_util.Rng(1)).messages[0].content
     assert "native" not in request and "(English)" not in request
