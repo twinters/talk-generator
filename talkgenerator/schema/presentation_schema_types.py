@@ -1,6 +1,7 @@
 """The presentation schemas: which groups of slide generators a talk is made of, and how many of each kind. And the
 format a talk's seed picks, when the talk leaves it to its seed (see pick_format)."""
 
+from collections.abc import Iterable
 from typing import TYPE_CHECKING, Final
 
 from talkgenerator.datastructures.slide_generator_data import ConstantWeightFunction, SlideGeneratorData
@@ -264,14 +265,49 @@ def format_odds(persona: "Persona | None" = None) -> dict[str, float]:
     return {name: weight / total for name, weight in weights.items()}
 
 
-def pick_format(chosen: str, rng: random_util.Rng, persona: "Persona | None" = None) -> str:
+def allowed_formats(chosen: str | Iterable[str] | None = None) -> tuple[str, ...]:
+    """The formats a talk that leaves its format to its seed picks from (stream_talk's formats), by their names (in any
+    order and case), or one string with their names separated by commas ("default,keynote"): in the order of
+    FORMAT_WEIGHTS, so the order they're given in doesn't change a talk. None gives them all. A ValueError for a name
+    that isn't one of them (random, ted, interview and test among those: ted's copyright-free images are a license
+    policy), and for none at all."""
+    if chosen is None:
+        return tuple(FORMAT_WEIGHTS)
+    parts = chosen.split(",") if isinstance(chosen, str) else list(chosen)
+    wanted = {part.strip().lower() for part in parts if part.strip()}
+    for name in sorted(wanted):  # (in a fixed order: the same names, the same error)
+        if name not in FORMAT_WEIGHTS:
+            raise ValueError(
+                f"formats names the formats a talk's seed can pick: {name!r} isn't one; they are "
+                f"{', '.join(FORMAT_WEIGHTS)}"
+            )
+    if not wanted:
+        raise ValueError("formats names at least one format to pick from (a schema's name gives a talk that format)")
+    return tuple(name for name in FORMAT_WEIGHTS if name in wanted)
+
+
+def pick_format(
+    chosen: str,
+    rng: random_util.Rng,
+    persona: "Persona | None" = None,
+    among: str | Iterable[str] | None = None,
+) -> str:
     """The talk's format, as the name of its schema: the one chosen, or for random, one the talk's dice pick (rng: the
-    talk's, whose "format" stream picks it), after its persona, by the odds that persona gives them (format_odds)."""
+    talk's, whose "format" stream picks it), after its persona, by the odds that persona gives them (format_odds),
+    among the formats it allows (among: see allowed_formats; None, all of them).
+
+    The dice pick among all the formats first, and only when that one isn't allowed, again among those that are, by
+    the same odds: so a talk whose format is allowed keeps it, whichever others aren't (decision D75, as the personas
+    and the theme families a talk allows do)."""
     if chosen != RANDOM:
         return chosen
     odds = format_odds(persona)
+    names = allowed_formats(among)
     with random_util.use(rng.child("format")):
-        return random_util.weighted_random([(odds[name], name) for name in odds]) or next(iter(odds))
+        picked = random_util.weighted_random([(odds[name], name) for name in odds]) or next(iter(odds))
+        if picked not in names:
+            picked = random_util.weighted_random([(odds[name], name) for name in names]) or names[0]
+    return picked
 
 
 def get_schema(name):
