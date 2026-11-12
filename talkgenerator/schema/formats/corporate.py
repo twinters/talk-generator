@@ -82,6 +82,7 @@ CORPORATE: Final = Format(
         "it_support": 1.5,
     },
     themes={
+        "spreadsheet": 3,
         "corporate": 5,
         "clip-art corporate": 2.5,
         "Swiss poster": 1.3,

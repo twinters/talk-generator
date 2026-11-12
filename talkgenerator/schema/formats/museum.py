@@ -1,31 +1,33 @@
-"""The museum tour (docs/v5-plan.md, section 7; D79): a guided tour of a museum's collection about the talk's topic,
-as a guide shows a group around, with hushed admiration for every exhibit, however unlikely.
+"""The museum tour (docs/v5-plan.md, section 7; D79): a guided tour of a museum's collection about the talk's topic, as
+a guide shows a group around, with hushed admiration for every exhibit, however unlikely.
 
 Its arc goes from the welcome (the museum's hall, full-bleed, the house rules, or the tour's stops as an agenda)
 through a masterpiece (a painting from a museum's collection under its label, full-bleed, or before and after a
-restoration that went wrong), the artist (their life as a timeline, a fun fact, or their post from centuries ago),
-the eras (three paintings of three periods, the art movements as a tier list, or the hierarchy of art as a pyramid)
-and an artefact behind glass (an odd object, a quiz on what it was for, or the news of its discovery) to the gift
-shop (the prices on tiles, one big price, or three souvenirs). A short tour keeps its masterpiece, the gift shop, the
-artefact and the welcome; a quarter of a talk's slides are free (D63), for memes, full-screen pictures, gifs, deep
-questions, quotes, the museum's reviews and its own provocations ("Priceless.", over a full-screen picture); a long
-tour gives the masterpiece, the artist and the eras a second slide. The museum's made-up name and its old master's
-come from the topic (see talkgenerator.schema.formats.museum_name and artist), so that a classic tour's slides name
-the same museum and the same artist.
+restoration that went wrong), the artist (their life as a timeline, a fun fact, or their post from centuries ago), the
+eras (three paintings of three periods, the art movements as a tier list, or the hierarchy of art as a pyramid) and an
+artefact behind glass (an odd object, a quiz on what it was for, or the news of its discovery) to the gift shop (the
+prices on tiles, one big price, or three souvenirs), before its closer thanks the room for visiting and points them to
+the gift shop (D76), outside its slides. A short tour keeps its masterpiece, the gift shop, the artefact and the
+welcome; a quarter of a talk's slides are free (D63), for memes, full-screen pictures, gifs, deep questions, quotes, the
+museum's reviews and its own provocations ("Priceless.", over a full-screen picture); a long tour gives the masterpiece,
+the artist and the eras a second slide. The museum's made-up name and its old master's come from the topic (see
+talkgenerator.schema.formats.museum_name and artist), so that a classic tour's slides name the same museum and the same
+artist.
 
 Its paintings are public domain art from museums (the museum look), and a painting after its restoration is a clumsy
-illustration of the same thing, so a tour needs no image that's fair use. No slide shows a portrait under the
-artist's made-up name: a museum's portrait may be of someone real.
+illustration of the same thing, so a tour needs no image that's fair use. No slide shows a portrait under the artist's
+made-up name: a museum's portrait may be of someone real.
 
 A museum guide gives a tour far more often than the other personas, a medieval historian more often, and an
-over-passionate expert, an alien anthropologist and a time traveller a little more often; its themes are vintage
-paper and clean keynotes more often.
+over-passionate expert, an alien anthropologist and a time traveller a little more often; its themes are vintage paper
+and clean keynotes more often.
 """
 
 from __future__ import annotations
 
 from typing import Any, Final
 
+from talkgenerator.closers import Closer, presenter, said
 from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
 from talkgenerator.plan.kinds import AGENDA_ITEM, Recipe, Variant, pictured
@@ -95,6 +97,8 @@ MUSEUM: Final = Format(
         "startup": 0.5,
     },
     arc=ARC,
+    # (its closer thanks the room for visiting, and points to the gift shop: D76)
+    closer=Closer(said("visiting"), said("gift_shop"), presenter),
 )
 
 

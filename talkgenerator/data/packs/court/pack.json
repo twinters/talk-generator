@@ -1,8 +1,8 @@
 {
   "format": "court",
   "about": "The classic texts of court cases (the court schema): a grammar per part of its arc, whose rules are lists of templates (see talkgenerator.sources.packs and talkgenerator.schema.formats.court)",
-  "version": 2,
-  "versions": {"1": "2026-11-12: the first texts of court cases, a part of the arc a grammar: the title, the charges, the evidence, a witness, the alibi, an objection, the closing argument and the verdict, and the free slides' provocations (D79)", "2": "2026-11-12: one crime per talk (formats.crime, as the variable crime): the charges, a witness, the alibi, the closing argument and the verdict name the same one, the title slide's subtitle may too, and the texts that made every crime a biscuit's are about any crime now (D79)"},
+  "version": 3,
+  "versions": {"1": "2026-11-12: the first texts of court cases, a part of the arc a grammar: the title, the charges, the evidence, a witness, the alibi, an objection, the closing argument and the verdict, and the free slides' provocations (D79)", "2": "2026-11-12: one crime per talk (formats.crime, as the variable crime): the charges, a witness, the alibi, the closing argument and the verdict name the same one, the title slide's subtitle may too, and the texts that made every crime a biscuit's are about any crime now (D79)", "3": "2026-11-12: the evidence's exhibits are D78's slides of a picture to explain now, so its own exhibit texts go (D79)"},
   "slots": {
     "title.talk_title": {"variables": ["seed"], "field": "title.title"},
     "title.subtitle": {"variables": ["seed", "topic", "presenter", "title", "crime"], "field": "title.subtitle"},
@@ -15,9 +15,6 @@
     "charges.count": {"variables": ["seed", "topic", "presenter", "title", "crime"], "limit": 45},
     "charges.count_punchline": {"variables": ["seed", "topic", "presenter", "title", "crime"], "limit": 45},
     "charges.case_statement": {"variables": ["seed", "topic", "presenter", "title", "crime"], "field": "statement.text"},
-    "evidence.exhibit_title": {"variables": ["seed", "topic", "presenter", "title", "crime"], "field": "image.title"},
-    "evidence.exhibits_title": {"variables": ["seed", "topic", "presenter", "title", "crime"], "field": "two_columns.title"},
-    "evidence.exhibit_pair": {"variables": ["seed", "topic", "presenter", "title", "crime"], "field": "two_columns.caption_1", "parts": 2},
     "evidence.forensics_title": {"variables": ["seed", "topic", "presenter", "title", "crime"], "field": "chart_correlation.title"},
     "evidence.forensics_x": {"variables": ["seed", "topic", "presenter", "title", "crime"], "field": "chart_correlation.x_axis"},
     "evidence.forensics_y": {"variables": ["seed", "topic", "presenter", "title", "crime"], "field": "chart_correlation.y_axis"},

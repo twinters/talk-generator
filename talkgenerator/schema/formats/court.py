@@ -4,21 +4,19 @@ comes from its topic (see talkgenerator.schema.formats.crime), so that its slide
 witness, the alibi, the closing argument and the verdict name it.
 
 Its arc goes from the charges (breaking news that the topic has been charged, the counts read out one by one, or the
-People versus the topic over a photo) through the evidence (Exhibit A, an odd photo the presenter has to explain;
-Exhibits A and B side by side; or the lab's forensic analysis as a scatter plot), a witness (their post about that
+People versus the topic over a photo) through the evidence (D78's Exhibit A, an odd picture beside its evidence tag
+that the presenter has to explain, and on a second slide Exhibit B, of the same case; or the lab's forensic analysis as
+a scatter plot), a witness (their post about that
 night, three photos of the witnesses, or a quiz for the audience on where the defendant was), the alibi (the night in
 question minute by minute, a flowchart whose every answer ends in guilt, or "Alibi not found" as an error message), an
-objection (shouted under a dramatic photo, or said over a calm one) and the closing argument (to the jury, over a
-photo; the defendant's face, filling the slide: "Is this a criminal mastermind?"; or a Venn diagram of the
-signs of guilt, with the defendant where they all meet) to the verdict (the jury's, as a pie chart; one big number,
-the vote or the sentence: "30 days without Wi-Fi"; or the audience as the jury, by a show of hands). A short trial
-keeps its evidence, its verdict, its charges and the alibi; a quarter of a talk's slides are free (D63), for memes,
-gifs, full-screen pictures, deep questions over photos, its own provocations ("Objection.", over a full-screen
-picture), a fun fact, red flags, an alignment chart and a tier list, and a long one gives the evidence a second slide.
-Every crime is harmless: nobody is hurt, and the worst sentence is community service.
-
-(The evidence's slides are kinds there are, Exhibit A an image slide under its title: the slides of a picture-first
-session's, built for "Exhibit A", can take their place once they're merged.)
+objection (shouted under a dramatic photo, or said over a calm one) and the closing argument (to the jury, over a photo;
+the defendant's face, filling the slide: "Is this a criminal mastermind?"; or a Venn diagram of the signs of guilt, with
+the defendant where they all meet) to the verdict (the jury's, as a pie chart; one big number, the vote or the sentence:
+"30 days without Wi-Fi"; or the audience as the jury, by a show of hands), before its closer adjourns the court (D76),
+outside its slides. A short trial keeps its evidence, its verdict, its charges and the alibi; a quarter of a talk's
+slides are free (D63), for memes, gifs, full-screen pictures, deep questions over photos, its own provocations
+("Objection.", over a full-screen picture), a fun fact, red flags, an alignment chart and a tier list, and a long one
+gives the evidence a second slide. Every crime is harmless: nobody is hurt, and the worst sentence is community service.
 
 A detective presents a court case more often than the other personas, a conspiracy blogger, a medieval historian and
 a game-show host a little more often; its themes are newspapers and vintage paper more often, and brutalist and dark
@@ -29,8 +27,8 @@ from __future__ import annotations
 
 from typing import Any, Final
 
+from talkgenerator.closers import Closer, presenter, said
 from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
-from talkgenerator.images.slots import ImageSlot
 from talkgenerator.plan.kinds import AGENDA_ITEM, ERROR_BUTTON, Recipe, pictured
 from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema.formats import (
@@ -82,6 +80,7 @@ COURT: Final = Format(
     "the detective on the case",
     personas={"detective": 9, "conspiracy_blogger": 2.5, "medieval_historian": 1.3, "game_show_host": 1.2},
     themes={
+        "corkboard": 3,
         "newspaper": 4,
         "vintage paper": 2,
         "brutalist": 1.5,
@@ -93,6 +92,8 @@ COURT: Final = Format(
         "startup": 0.5,
     },
     arc=ARC,
+    # (its closer adjourns the court: D76)
+    closer=Closer(said("adjourned"), presenter),
 )
 
 
@@ -126,10 +127,9 @@ def _subtitle(context: dict[str, Any]) -> str | None:
 
 
 # Images: a calm backdrop behind what's said in court, a photo of the defendant (and of the witnesses, and the one in
-# the news), the odd photos the presenter has to present as evidence, and a dramatic one for an objection
+# the news), and a dramatic one for an objection (the evidence's odd pictures are D78's exhibits')
 _BACKDROP = cg.statement_backdrop_generator
 _PHOTO = cg.copyright_free_generator
-_EXHIBIT = ImageSlot("an odd photo, presented in court as the key evidence", aesthetic="weird-stock", generate=True)
 _DRAMATIC = cg.weird_copyright_free_generator
 
 
@@ -165,26 +165,8 @@ def _the_people(context: dict[str, Any]) -> Made | None:
     return ({"text": statement}, {"background": _BACKDROP(context)}) if statement else None
 
 
-# THE EVIDENCE: Exhibit A, Exhibits A and B, or the lab's analysis
-
-
-def _exhibit_a(context: dict[str, Any]) -> Made | None:
-    title = text(PACK, "evidence.exhibit_title", _variables(context))
-    return ({"title": title}, {"image": _EXHIBIT(context)}) if title else None
-
-
-def _exhibits(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    captions = (text(PACK, "evidence.exhibit_pair", variables) or "").split("|")
-    if len(captions) != 2:
-        return None
-    first, second = photos(_EXHIBIT, context, 2)
-    texts = {
-        "title": maybe(0.7, text(PACK, "evidence.exhibits_title", variables)),
-        "caption_1": captions[0].strip(),
-        "caption_2": captions[1].strip(),
-    }
-    return texts, {"image_1": first, "image_2": second}
+# THE EVIDENCE: D78's Exhibit A (an odd picture beside its evidence tag; Exhibit B on a second slide), or the
+# lab's analysis
 
 
 def _forensics(context: dict[str, Any]) -> Made | None:
@@ -459,39 +441,6 @@ _GENERATORS: Final = [
         ),
     ),
     # The evidence
-    _part(
-        "evidence",
-        1.4,
-        "image",
-        _exhibit_a,
-        ["single_image"],
-        "Exhibit A",
-        Recipe(
-            "image",
-            (_EXHIBIT,),
-            brief="Exhibit A: an odd photo that the presenter has to present as the key evidence against the topic",
-            hints={"title": "'Exhibit A', and a few words about where it was found, or what it proves"},
-        ),
-    ),
-    _part(
-        "evidence",
-        1.1,
-        "two_columns",
-        _exhibits,
-        ["two_captions"],
-        "Exhibits A and B",
-        Recipe(
-            "two_columns",
-            (_EXHIBIT, _EXHIBIT),
-            brief="Exhibits A and B, side by side: two odd photos of the evidence, each captioned, the second the "
-            "punchline",
-            hints={
-                "title": "a title such as 'The evidence', or empty for none",
-                "caption_1": f"'Exhibit A:' and what it shows, {_FEW_WORDS}",
-                "caption_2": f"'Exhibit B:' and what it shows, {_FEW_WORDS}: the punchline",
-            },
-        ),
-    ),
     _part(
         "evidence",
         0.8,
@@ -771,6 +720,8 @@ _OTHERS: Final = {
 
 GENERATORS: Final = [
     *_GENERATORS,
+    # (its evidence's exhibits are D78's, whose second in a talk is Exhibit B, of the same case)
+    slide_generators.get("Exhibit A").weighted(InPart(ARC, "evidence", 1.6), "Exhibit A (Court)", ("evidence",)),
     *(slide_generators.get(name).weighted(Free(ARC, weight), f"{name} (Court)") for name, weight in _OTHERS.items()),
     provocation(PACK, ARC, 1.3, _variables, "Court", "as a courtroom hears them"),
 ]

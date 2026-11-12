@@ -15,7 +15,7 @@ A talk of this format goes through these parts, in this order, each with the sli
 | Part | Slides | Recipes |
 | --- | --- | --- |
 | `charges` | 1 | `breaking-news-court`, `the-charges-court`, `the-people-versus-court` |
-| `evidence` | 1 to 2 | `exhibit-a-court`, `exhibits-a-and-b-court`, `forensic-analysis-court` |
+| `evidence` | 1 to 2 | `exhibit-a-court`, `forensic-analysis-court` |
 | `witness` | 1 | `the-witnesses-court`, `where-was-the-defendant-court`, `witness-statement-court` |
 | `alibi` | 1 | `alibi-check-court`, `alibi-not-found-court`, `the-night-in-question-court` |
 | `objection` | 1 | `objection-court`, `objection-your-honour-court` |
@@ -34,7 +34,7 @@ Images: `image`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `exhibit-a-court` | Exhibit A: an odd photo that the presenter has to present as the key evidence against the topic | the default; `title`: 'Exhibit A', and a few words about where it was found, or what it proves; images: `image` weird-stock (or generated, from its prompt, with an image generator set up); tags: evidence, single_image |
+| `single-image-copyright-free` | A photo with a title | the default; images: `image` photo; tags: single_image |
 
 ## `full_image`
 
@@ -85,8 +85,7 @@ Images: `image_1`, `image_2`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `exhibits-a-and-b-court` | Exhibits A and B, side by side: two odd photos of the evidence, each captioned, the second the punchline | the default; `title`: a title such as 'The evidence', or empty for none; `caption_1`: 'Exhibit A:' and what it shows, in two to four words; `caption_2`: 'Exhibit B:' and what it shows, in two to four words: the punchline; images: `image_1` weird-stock (or generated, from its prompt, with an image generator set up), `image_2` weird-stock (or generated, from its prompt, with an image generator set up); tags: evidence, two_captions |
-| `two-captions-gifs-court` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | images: `image_1` neutral or meme-chaos, `image_2` gifs, else weird; tags: gif, multi_caption, two_captions |
+| `two-captions-gifs-court` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | the default; images: `image_1` neutral or meme-chaos, `image_2` gifs, else weird; tags: gif, multi_caption, two_captions |
 
 ## `three_columns`
 
@@ -426,3 +425,17 @@ Images: none
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
 | `alibi-not-found-court` | The defendant's alibi, as a fake error message from the court's records: it can't be found, with buttons, the last one the punchline | the default; `title`: the dialog's title, such as the court's records system; `buttons`: two or three buttons, separated by \|, each at most 20 characters: the last one the punchline, such as a confession; tags: alibi, error_message |
+
+## `exhibit`
+
+Exhibit A: one odd picture, as the evidence in a case, with an evidence tag beside it or a marker on it (talkgenerator adds 'Exhibit A' and a case number; a later exhibit in the talk is Exhibit B, of the same case), and a short note on the tag, if it has one: the presenter explains what it proves.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `note` | 40 | a few words on the evidence tag about the picture, as a police report notes where or when it was found (or empty, for none) |
+
+Images: `picture`
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `exhibit-a-court` | Exhibit A: an odd picture to do with the concept, as the evidence in a case, for the presenter to explain what it proves | the default; `picture_query`: an image search query for the odd picture that is the evidence: something concrete and surprising that the case could hinge on, in two to six plain English words; images: `picture` weird-stock (or generated, from its prompt, with an image generator set up); tags: evidence, exhibit |

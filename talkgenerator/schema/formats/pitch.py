@@ -81,6 +81,7 @@ PITCH: Final = Format(
         "infomercial_host": 1.5,
     },
     themes={
+        "sticky notes": 1.5,
         "startup": 4,
         "clean keynote": 1.6,
         "Swiss poster": 1.4,

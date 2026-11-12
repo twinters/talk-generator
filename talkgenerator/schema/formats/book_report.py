@@ -22,6 +22,7 @@ from __future__ import annotations
 
 from typing import Any, Final
 
+from talkgenerator.closers import Closer, presenter, said
 from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
 from talkgenerator.plan.kinds import Recipe, Variant, pictured
@@ -73,6 +74,8 @@ BOOK_REPORT: Final = Format(
     job_hint="their year and class at school, as a pupil gives them on a book report",
     personas={"kindergarten_teacher": 5, "influencer": 1.5, "alien_anthropologist": 1.5, "passionate_expert": 1.3},
     themes={
+        "sticky notes": 2,
+        "corkboard": 1.5,
         "kids": 4,
         "chalkboard": 3,
         "Comic Sans everywhere": 2.5,
@@ -84,6 +87,8 @@ BOOK_REPORT: Final = Format(
         "Swiss poster": 0.6,
     },
     arc=ARC,
+    # (its closer says "The End", and asks whether the pupil can sit down now: D76)
+    closer=Closer(said("the_end"), said("sit_down"), presenter),
 )
 
 

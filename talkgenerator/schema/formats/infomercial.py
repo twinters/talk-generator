@@ -4,27 +4,28 @@ television as infomercials sell theirs, played straight and over the top.
 Its arc goes from the everyday problem (a problem slide, "Tired of this?", or someone failing at it in a full-bleed
 photo under "There has to be a better way!") through the gadget (in one photo, a picture that prefers to be generated,
 or full-bleed: "As seen on TV!"), its demonstration (three photos of all it does, the last one something no gadget
-should do; how it works in a few easy steps; or the old way and the gadget's way, side by side), testimonials
-(five-star reviews, the last one glowing about the wrong thing; a happy customer's post; or before and after), the
-fine print (a wall of absurd disclaimers, or terms whose every button agrees), the price (prices that drop tile by
-tile to today's, or one big price in easy payments) and "But wait, there's more!" (a free bonus, full-bleed; twice the
-offer as one big number; or the words alone, for the presenter to say what more there is) to the call to order now
-(over a photo of operators standing by, a big made-up phone number, or the whole audience ordering at once). A short
-infomercial keeps the problem, the gadget, its demonstration and "But wait"; a quarter of its slides are free (D63),
-for memes, gifs, full-screen pictures, its own provocations ("As seen on TV!", over a full-screen picture), the press,
-a fun fact, a quiz and the like, and its fine print comes in talks of eleven slides or more. The gadget's made-up name
-comes from the topic (see talkgenerator.schema.formats.gadget), so that a classic infomercial's slides sell the
-gadget its title names.
+should do; how it works in a few easy steps; or the old way and the gadget's way, side by side), testimonials (five-star
+reviews, the last one glowing about the wrong thing; a happy customer's post; or before and after), the fine print (a
+wall of absurd disclaimers, or terms whose every button agrees), the price (prices that drop tile by tile to today's, or
+one big price in easy payments) and "But wait, there's more!" (a free bonus, full-bleed; twice the offer as one big
+number; or the words alone, for the presenter to say what more there is) to the call to order now (over a photo of
+operators standing by, a big made-up phone number, or the whole audience ordering at once), before its closer says "Call
+now!" once more, its operators standing by (D76), outside its slides. A short infomercial keeps the problem, the gadget,
+its demonstration and "But wait"; a quarter of its slides are free (D63), for memes, gifs, full-screen pictures, its own
+provocations ("As seen on TV!", over a full-screen picture), the press, a fun fact, a quiz and the like, and its fine
+print comes in talks of eleven slides or more. The gadget's made-up name comes from the topic (see
+talkgenerator.schema.formats.gadget), so that a classic infomercial's slides sell the gadget its title names.
 
 An infomercial host presents an infomercial far more often than the other personas, a motivational speaker and a
-game-show host a little more often, a startup founder and an influencer too; its themes are the loud families more
-often (1997 WordArt, neon, Comic Sans everywhere), and the quiet ones less.
+game-show host a little more often, a startup founder and an influencer too; its themes are the loud families more often
+(1997 WordArt, neon, Comic Sans everywhere), and the quiet ones less.
 """
 
 from __future__ import annotations
 
 from typing import Any, Final
 
+from talkgenerator.closers import Closer, presenter, said
 from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
 from talkgenerator.plan.kinds import ERROR_BUTTON, Recipe, Variant, pictured, problem_variants
@@ -84,6 +85,8 @@ INFOMERCIAL: Final = Format(
         "influencer": 1.5,
     },
     themes={
+        "Y2K": 1.5,
+        "70s retro": 1.5,
         "1997 WordArt": 4,
         "neon": 2.5,
         "Comic Sans everywhere": 2,
@@ -96,6 +99,8 @@ INFOMERCIAL: Final = Format(
         "blueprint": 0.6,
     },
     arc=ARC,
+    # (its closer calls the room to order now, with its operators standing by: D76)
+    closer=Closer(said("call_now"), said("standing_by"), presenter),
 )
 
 

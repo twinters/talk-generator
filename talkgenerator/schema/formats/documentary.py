@@ -8,23 +8,24 @@ really doing; two of its stages or moods side by side; or a day in its life as a
 full-bleed, as the crew's first footage of it, or the news of it), its rituals (an ancient ritual in an odd photo, or
 its courtship dance as a process), the dangers it faces (how few are left as one big number, its numbers falling as a
 trend chart, or a harmless, everyday danger told as a grave one) to a closing reflection (over a calm photo, its last
-shot at sunset under the narrator's farewell or next time's episode, or the whole room hushed, as the species is near:
-a closing that needs no picture, so a documentary always has one). A short documentary keeps its opening, its
-behaviour, the rare sighting and its closing; a fifth of a talk's slides are free (D63), for memes, full-screen pictures
-and gifs, deep questions over photos, a quiz on the species ("Which of these is Penguinus domesticus?") and its own
-provocations ("Majestic.", over a full-screen picture); a long one gives its behaviour a second slide. The species'
-made-up Latin name comes from the topic (see talkgenerator.schema.formats.species), so that a classic documentary's
-slides follow the species its title names.
+shot at sunset under the narrator's farewell or next time's episode, or the whole room hushed, as the species is near: a
+closing that needs no picture, so a documentary always has one), before its closer thanks the room for watching (D76),
+outside its slides. A short documentary keeps its opening, its behaviour, the rare sighting and its closing; a fifth of
+a talk's slides are free (D63), for memes, full-screen pictures and gifs, deep questions over photos, a quiz on the
+species ("Which of these is Penguinus domesticus?") and its own provocations ("Majestic.", over a full-screen picture);
+a long one gives its behaviour a second slide. The species' made-up Latin name comes from the topic (see
+talkgenerator.schema.formats.species), so that a classic documentary's slides follow the species its title names.
 
 A nature-documentary narrator presents a documentary more often than the other personas, an alien anthropologist
-often too, and an over-passionate expert and a time traveller a little more often; its themes are dark minimal ones
-more often, and clean keynotes.
+often too, and an over-passionate expert and a time traveller a little more often; its themes are dark minimal ones more
+often, and clean keynotes.
 """
 
 from __future__ import annotations
 
 from typing import Any, Final
 
+from talkgenerator.closers import Closer, presenter, said
 from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
 from talkgenerator.plan.kinds import Recipe, Variant, pictured
@@ -74,6 +75,7 @@ DOCUMENTARY: Final = Format(
     "or its field researcher",
     personas={"nature_narrator": 9, "alien_anthropologist": 2.5, "passionate_expert": 1.5, "time_traveller": 1.2},
     themes={
+        "glossy magazine": 2,
         "dark minimal": 4,
         "clean keynote": 2,
         "vintage paper": 1.3,
@@ -85,6 +87,8 @@ DOCUMENTARY: Final = Format(
         "kids": 0.6,
     },
     arc=ARC,
+    # (its closer thanks the room for watching: D76)
+    closer=Closer(said("watching"), presenter),
 )
 
 

@@ -1,20 +1,20 @@
 """The wedding toast (docs/v5-plan.md, section 7; D79): the best man or the maid of honour raises a glass to their best
 friend, who is marrying the talk's topic, however absurd.
 
-Its arc goes from who the speaker is (an old photo of the two friends, the best friend then and now, or "For those who
-don't know me...") through how the couple met (a photo of the topic, the day they met; their love story as a timeline;
-or the best friend's happiness since, as a line chart whose second line, their free time, falls away on a click), an
-embarrassing story (the incident, full-bleed; the red flags everyone ignored; or a post from the night they met), why
-they're perfect together (a Venn diagram of what they share, the two side by side, or the best friend's great loves
-ranked, the topic winning by far) and some marriage advice (three photos of it, a statement over a backdrop, or the
-pyramid of a happy marriage) to the toast (the whole room raising their glasses, as audience participation; the toast
-over a backdrop; or "To the happy couple!" over a photo). A short toast keeps who the speaker is, how the couple met,
-the story and the toast; a quarter of a talk's slides are free (D63), for gifs, memes, full-screen pictures, deep
-questions over photos, a quote and its own provocations ("Forever.", over a full-screen picture), and a long one gives
-how they met, the story, the couple and the advice a second slide each. The best friend's first name comes from the
-topic (see
-talkgenerator.schema.formats.friend), one that goes with anyone ("they", never "he" or "she"), so that a classic toast's
-slides name the same best friend as its title. The toasts are drink-free: glasses go up, and nothing in them is named.
+Its arc goes from who the speaker is (an old photo of the two friends, the best friend then and now, or "For those
+who don't know me...") through how the couple met (a photo of the topic, the day they met; their love story as a
+timeline; or the best friend's happiness since, as a line chart whose second line, their free time, falls away on a
+click), an embarrassing story (the incident, full-bleed; the red flags everyone ignored; or a post from the night they
+met), why they're perfect together (a Venn diagram of what they share, the two side by side, or the best friend's great
+loves ranked, the topic winning by far) and some marriage advice (three photos of it, a statement over a backdrop, or
+the pyramid of a happy marriage) to the toast (the whole room raising their glasses, as audience participation; the
+toast over a backdrop; or "To the happy couple!" over a photo), before its closer says it once more (D76), outside its
+slides. A short toast keeps who the speaker is, how the couple met, the story and the toast; a quarter of a talk's
+slides are free (D63), for gifs, memes, full-screen pictures, deep questions over photos, a quote and its own
+provocations ("Forever.", over a full-screen picture), and a long one gives how they met, the story, the couple and the
+advice a second slide each. The best friend's first name comes from the topic (see talkgenerator.schema.formats.friend),
+one that goes with anyone ("they", never "he" or "she"), so that a classic toast's slides name the same best friend as
+its title. The toasts are drink-free: glasses go up, and nothing in them is named.
 
 The best man or maid of honour gives a wedding toast far more often than the other personas, and a life coach, a
 retiree and a motivational speaker a little more often; its themes are vintage paper and clean keynotes more often.
@@ -24,6 +24,7 @@ from __future__ import annotations
 
 from typing import Any, Final
 
+from talkgenerator.closers import Closer, presenter, said
 from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
 from talkgenerator.plan.kinds import Recipe, Variant
@@ -71,6 +72,7 @@ WEDDING: Final = Format(
     "nursery school",
     personas={"best_man": 9, "life_coach": 1.5, "retiree": 1.5, "motivational_speaker": 1.3},
     themes={
+        "glossy magazine": 2.5,
         "vintage paper": 3,
         "clean keynote": 2,
         "1997 WordArt": 1.5,
@@ -82,6 +84,8 @@ WEDDING: Final = Format(
         "clip-art corporate": 0.6,
     },
     arc=ARC,
+    # (its closer is the toast's last words, to the happy couple: D76)
+    closer=Closer(said("happy_couple"), presenter),
 )
 
 

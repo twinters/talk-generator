@@ -21,7 +21,17 @@ from talkgenerator.plan.realize import clean_text, length_limit, realize
 from talkgenerator.render import shapes
 from talkgenerator.render.powerpoint import render_pptx
 from talkgenerator.schema import presentation_schema, slide_schemas
-from talkgenerator.schema.formats import academic, book_report, corporate, pitch
+from talkgenerator.schema.formats import (
+    academic,
+    book_report,
+    corporate,
+    court,
+    documentary,
+    infomercial,
+    museum,
+    pitch,
+    wedding,
+)
 from talkgenerator.slide import slides
 from talkgenerator.slide.slide_deck import SlideDeck
 from talkgenerator.sources import emoji, packs, slide_texts
@@ -327,8 +337,9 @@ def test_a_closing_slide_with_a_picture_is_laid_out_around_it(images, family):
 
 def test_every_closing_slide_ends_on_a_picture_a_last_tip_or_a_callback():
     # (D76: a talk of talkgenerator's own ends on its closer instead, so the formats have no "Questions?" anymore, and the
-    # TED-like one is a plan's recipe alone, which no talk picks; nor has D79's book report, whose closer says "The End")
-    for schema in (academic, corporate, pitch, book_report):
+    # TED-like one is a plan's recipe alone, which no talk picks; nor have D79's formats: a book report's closer says
+    # "The End")
+    for schema in (academic, corporate, pitch, infomercial, documentary, court, museum, wedding, book_report):
         assert not [generator for generator in schema.GENERATORS if generator.llm and generator.llm.kind == "questions"]
     generators = slide_schemas.slide_generators.group("structure")
     recipes = [
