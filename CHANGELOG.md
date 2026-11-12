@@ -145,6 +145,12 @@ how to keep 4.x's talks. The [docs](https://github.com/twinters/talk-generator/t
   demo that crashes, one more thing). `--schema random` leaves the format to the talk's seed, which makes 7 talks in
   10 TED-like; `stream_talk(formats=...)` limits the formats it picks from (a site leaves out a visitor's last few,
   so their talks vary).
+- Every talk ends with a closer, a slide after the ones it asks for that says the talk is over, of its format's kind
+  and in its language and look: "Thank you!" with the presenter's name and a small "Questions?" (TED-like),
+  "Questions?" with thanks (academic), "Let's talk" with a made-up contact line (pitch), "Questions?" and back to work
+  (all-hands) and "Available today" (keynote). So no format spends one of its slides on "Questions?". The deck marks
+  it (`closer`), the slides' numbers ("7/12") don't count it, and `stream_talk` sends it as one more `slide.ready`. A
+  format names its closer in its `Format` (`closer=Closer(...)`: see `talkgenerator.closers`).
 - Personas: the talk's seed picks who presents it, one of thirteen (a disgraced professor, a startup founder, a
   medieval historian, a kindergarten teacher, a retiree and their old job...), whose favourite kinds of slides,
   titles, names, themes, formats and pictures come up more often (`--persona`, `--personas`, `--persona none`;

@@ -325,15 +325,20 @@ def test_a_closing_slide_with_a_picture_is_laid_out_around_it(images, family):
     assert plain.slides[0].layout in ("v5/questions", "v5/questions-mark")
 
 
-@pytest.mark.parametrize(
-    "schema", [slide_schemas, academic, corporate, pitch], ids=["ted", "academic", "corporate", "pitch"]
-)
-def test_every_closing_slide_ends_on_a_picture_a_last_tip_or_a_callback(schema):
-    generators = slide_schemas.slide_generators.group("structure") if schema is slide_schemas else schema.GENERATORS
+def test_every_closing_slide_ends_on_a_picture_a_last_tip_or_a_callback():
+    # (D76: a talk of talkgenerator's own ends on its closer instead, so the formats have no "Questions?" anymore, and the
+    # TED-like one is a plan's recipe alone, which no talk picks)
+    for schema in (academic, corporate, pitch):
+        assert not [generator for generator in schema.GENERATORS if generator.llm and generator.llm.kind == "questions"]
+    generators = slide_schemas.slide_generators.group("structure")
     recipes = [
         generator.llm for generator in generators if generator.llm is not None and generator.llm.kind == "questions"
     ]
     assert recipes
+    questions = [
+        generator for generator in generators if generator.llm is not None and generator.llm.kind == "questions"
+    ]
+    assert all(generator.get_weight_for(slide_nr, 10) == 0 for generator in questions for slide_nr in range(10))
     for recipe in recipes:
         assert len(recipe.images) == 1 and recipe.slots()[0][0] == "photo"
         notes = [variant.note for variant in recipe.variants]

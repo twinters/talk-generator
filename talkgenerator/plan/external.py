@@ -63,10 +63,10 @@ FORMATS: Final = {
     "model, the traction, the competition, the team, the roadmap and the ask, each a part of its arc, in that order",
     "academic": "A talk at an academic conference, with affiliations on its title slide: the motivation (the problem "
     "the research is about), the outline, related work, the method, the results (with p-values), the limitations, "
-    "future work, the acknowledgements, the references and questions, each a part of its arc, in that order",
+    "future work, the acknowledgements and the references, each a part of its arc, in that order",
     "corporate": "A company's all-hands meeting or quarterly business review: the agenda, the KPIs against their "
-    "targets, the quarter's wins, the roadmap, an org change, the synergies, the ask of everyone and Q&A, each a part "
-    "of its arc, in that order",
+    "targets, the quarter's wins, the roadmap, an org change, the synergies and the ask of everyone, each a part of "
+    "its arc, in that order",
     "keynote": "A product keynote on a big stage: a big opening statement, the one idea, the reveal of the product, "
     "its features, a live demo, the price, the 'one more thing' and a closing line, each a part of its arc, in that "
     "order",
@@ -354,7 +354,7 @@ def render_plan(
         "license_policy": deck.license_policy,
         "seed": rng.root_seed,
         "summary": {
-            "deck_slides": len(deck.slides),  # the title slide too
+            "deck_slides": deck.counted(),  # the title slide too (not the closer after the slides: D76)
             "planned_slides": len(plan.slides),
             "as_planned": outcome_names.count("as planned"),
             "classic": outcome_names.count("classic"),
@@ -630,7 +630,9 @@ def catalog_markdown(schema_name: str = "default") -> str:
         "",
         "Every talk starts with a title slide, made from the plan's `title`, `presenter_job` and `presenter_name` "
         "(or the name given to render, or one talkgenerator makes up). The plan's `slides` come after it, each of "
-        "one of the kinds below. A slide's `recipe` "
+        "one of the kinds below, and the talk ends with a closer of talkgenerator's own after them, which says the "
+        'talk is over in its language and format ("Thank you!" and "Questions?", "Let\'s talk" for a pitch): '
+        "a plan needs no slide for that. A slide's `recipe` "
         "picks its look and its image sources, and makes the slide the classic way when it can't be made as "
         "planned; without one, a slide gets its kind's default recipe. The look of a recipe's images (its "
         "aesthetic profile) says what they look like and where they come from: `photo` is stock photos, `vintage` "

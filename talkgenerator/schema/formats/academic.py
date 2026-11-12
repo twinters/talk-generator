@@ -6,11 +6,12 @@ five, or else its research question over a photo) and the outline through relate
 where the fields overlap, a 2×2 matrix of earlier work, or the field's history), the method (a diagram of its steps,
 its equation, or its setup), the results (charts with suspicious p-values, or one p-value as a big number), the
 limitations (an iceberg), future work (a timeline, the research cycle, or a flowchart whose every answer leads to more
-research), the acknowledgements and the references to the questions. A short talk keeps the motivation, the method,
-the results and the questions; a quarter of a talk's slides are free (D63), for memes, real charts from the internet, Reddit's weird pictures, the talk's own
-provocations ("Peer reviewed.", over a full-screen picture), fun facts and the like, and its outline and
-acknowledgements come in talks of eleven slides or more; a long one gives the method a second slide and the results up
-to three. The method's made-up name comes from the topic (see talkgenerator.schema.formats.method).
+research), the acknowledgements and the references; its closer asks for the questions ("Questions?", with thanks,
+D76), outside the talk's slides. A short talk keeps the motivation, the method and the results; a quarter of a talk's
+slides are free (D63), for memes, real charts from the internet, Reddit's weird pictures, the talk's own provocations
+("Peer reviewed.", over a full-screen picture), fun facts and the like, and its outline and acknowledgements come in
+talks of twelve and thirteen slides or more; a long one gives the method a second slide and the results up to three.
+The method's made-up name comes from the topic (see talkgenerator.schema.formats.method).
 
 A disgraced professor presents an academic talk more often than the other personas, and an over-passionate expert, a
 medieval historian and a time traveller a little more often; its themes are the academic family's more often.
@@ -20,13 +21,13 @@ from __future__ import annotations
 
 from typing import Any, Final
 
+from talkgenerator.closers import Closer, presenter, said
 from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
 from talkgenerator.plan.kinds import (
     AGENDA_ITEM,
     Recipe,
     Variant,
-    closing_variants,
     matrix_landscape,
     pictured,
     problem_variants,
@@ -57,20 +58,19 @@ PACK: Final = "academic"
 # (D63: a quarter of its slides are free, for memes, real charts from the internet and weird pictures, and its outline
 # and acknowledgements, lists of text, wait for a talk of eleven slides or more: the user found ten-slide academic
 # talks "pretty boring with mostly boring text and a lot of superfluous slides"; D69: its motivation first, its why,
-# kept by every talk of three slides or more, as good academic talks explain their problem first, the user said, so a
-# ten-slide talk goes without future work)
+# kept by every talk of two slides or more, as good academic talks explain their problem first, the user said; D76:
+# no "Questions?" among its slides, as its closer asks for them, and the outline and acknowledgements still wait)
 ARC: Final = Arc(
     (
         Part("motivation", rank=1),
-        Part("outline", rank=8),
+        Part("outline", rank=8, shortest=12),
         Part("related_work", rank=6),
         Part("method", 1, 2, rank=2),
         Part("results", 1, 3, rank=3),
         Part("limitations", rank=4),
         Part("future_work", rank=7),
-        Part("acknowledgements", rank=9),
+        Part("acknowledgements", rank=9, shortest=13),
         Part("references", rank=5),
-        Part("questions", rank=0),
     ),
     free=0.25,
 )
@@ -78,7 +78,7 @@ ARC: Final = Arc(
 ACADEMIC: Final = Format(
     brief="a talk at an academic conference: its motivation (the problem the research is about), an outline, "
     "related work, the method, the results with their statistics (p-values, error bars), the limitations, future work, "
-    "the acknowledgements, the references and the questions. The topic is the research field, however absurd, and "
+    "the acknowledgements and the references. The topic is the research field, however absurd, and "
     "every slide is a conference talk's, played straight",
     title_hint="like a paper's title at a conference: a catchy phrase, a colon and a dry subtitle",
     job_hint="an affiliation, as on a paper, in a few words: their position and a made-up university or department",
@@ -95,6 +95,8 @@ ACADEMIC: Final = Format(
         "1997 WordArt": 0.7,
     },
     arc=ARC,
+    # (its closer asks for the questions, with thanks: D76)
+    closer=Closer(said("questions"), said("attention"), presenter, mark=True),
 )
 
 
@@ -417,13 +419,6 @@ def _references(picture: Any, caption: str) -> Any:
 
 
 _PICTURED: Final = 0.8  # of the references that show a picture of one of the works (when one can be found)
-
-
-def _questions(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    title = text(PACK, "questions.questions_title", variables)
-    subtitle = maybe(0.8, text(PACK, "questions.questions_subtitle", variables))
-    return ({"title": title, "subtitle": subtitle}, {}) if title else None
 
 
 # THE SLIDE GENERATORS
@@ -803,7 +798,7 @@ _GENERATORS: Final = [
             "more research",
         ),
     ),
-    # The acknowledgements, the references and the questions
+    # The acknowledgements and the references
     _part(
         "acknowledgements",
         1,
@@ -862,22 +857,6 @@ _GENERATORS: Final = [
             _FIGURE,
             "with a figure from one of the works: a chart",
             "which work the figure is from, by its number in the list, such as '[3], Fig. 2'",
-        ),
-        repeats=3,
-    ),
-    _part(
-        "questions",
-        1,
-        "questions",
-        _questions,
-        ["questions"],
-        "Questions",
-        Recipe(
-            "questions",
-            (cg.closing_picture_generator,),
-            brief="The closing slide, inviting the audience's questions, as at a conference",
-            hints={"subtitle": "a line under it, such as a plea to the audience"},
-            variants=closing_variants("a line under it, such as a plea to the audience"),
         ),
         repeats=3,
     ),

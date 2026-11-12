@@ -382,10 +382,12 @@ _LIVING_PEOPLE: Final = """
     Coelho, Haruki Murakami, *Banksy, Yoko Ono, Ai Weiwei, Damien Hirst, David *Hockney, Jeff Koons, *MrBeast,
     *PewDiePie
 """
-# Titles and the like, before or after a name, in the talks' languages: "Prof. Chomsky" is Noam Chomsky's real name
-_TITLES: Final = frozenset(
+# Titles and the like, before or after a name, in the talks' languages: "Prof. Chomsky" is Noam Chomsky's real name;
+# and a teacher's, in Dutch ("Juf Van Wielen"), which a kindergarten teacher's talk may have
+TITLES: Final = frozenset(
     {"dr", "drs", "prof", "professor", "doctor", "sir", "dame", "lord", "lady", "mr", "mrs", "ms", "miss", "mx", "ir"}
     | {"jr", "sr", "phd", "herr", "frau", "fru", "meneer", "mevrouw", "dhr", "mevr", "monsieur", "madame", "mme"}
+    | {"juf", "meester"}
 )
 # The classic names (tracery's full_name), whose first names and surnames are ordinary ones: none of them bends a living
 # person's name ("Cookson" isn't Cook bent)
@@ -515,7 +517,7 @@ def _living() -> _Living:
         if len(names) > 1 and surname is not None and surname != names[0]:  # (a first name and a surname)
             surnames.setdefault(names[0], set()).add(surname)
             first_names.setdefault(surname, set()).add(names[0])
-        people.append(frozenset(word for word in names if word not in _TITLES))
+        people.append(frozenset(word for word in names if word not in TITLES))
     return _Living(
         frozenset(alone),
         {first: frozenset(names) for first, names in surnames.items()},
@@ -545,7 +547,7 @@ def _real_living_name(words: Sequence[str]) -> bool:
     names = [word for word in words if len(word) > 1]  # (no initials)
     if any(surname in living.surnames.get(first, frozenset()) for first, surname in itertools.pairwise(names)):
         return True
-    plain = frozenset(word for word in names if word not in _TITLES)
+    plain = frozenset(word for word in names if word not in TITLES)
     return any(plain <= person and (plain == person or plain & living.alone) for person in living.people)
 
 

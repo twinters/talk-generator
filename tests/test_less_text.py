@@ -219,13 +219,13 @@ def classic_charts(monkeypatch, photos, pictures_first):
 
 def test_a_classic_chart_is_its_picture_when_one_is_found(classic_charts, photos):
     events, _ = _timed(4, llm="none")
-    assert [slide.type for slide in events[-1].deck.slides[1:]] == ["full_image"] * 3
+    assert [slide.type for slide in events[-1].deck.slides[1:]] == ["full_image"] * 3 + ["closer"]
     assert _texts(events[-1].deck.slides[1]) == ["Chart about cats"]
     assert "Picture first: in place of its chart" in events[-1].deck.slides[1].notes  # (and how it was made)
     assert "Generator: Trend" in events[-1].deck.slides[1].notes
     photos.none.add("cats")
     events, _ = _timed(4, llm="none")
-    assert [slide.type for slide in events[-1].deck.slides[1:]] == ["chart"] * 3
+    assert [slide.type for slide in events[-1].deck.slides[1:]] == ["chart"] * 3 + ["closer"]
 
 
 def test_a_classic_charts_picture_out_of_time_stands_in_as_its_text_version_and_comes_late(

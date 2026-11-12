@@ -91,7 +91,7 @@ def test_spares_come_while_the_talk_is_made_and_stay_out_of_its_deck():
     ready = [event for event in between if isinstance(event, SlideReady)]
     assert len(spares) + len(ready) == len(between)
     assert [event.index for event in spares] == list(range(SPARES))  # (numbered in the order they come)
-    assert [event.index for event in ready] == list(range(NUM_SLIDES))
+    assert [event.index for event in ready] == list(range(NUM_SLIDES + 1))  # (and the closer after them)
     # About the talk's topic, each of another spare generator, laid out in the talk's theme
     titles = [_texts(event.slide)[0] for event in spares]
     assert all(title.endswith("about cats") for title in titles) and len(set(titles)) == SPARES
@@ -114,6 +114,8 @@ def test_a_spare_has_no_slide_number_where_the_talks_slides_have_theirs():
     for event in events:
         if isinstance(event, SlideSpare):
             assert _numbers(event.slide) == []
+        elif isinstance(event, SlideReady) and event.slide.closer:  # (none either: none of the slides, D76)
+            assert _numbers(event.slide) == []
         elif isinstance(event, SlideReady) and event.index > 0:  # (a title slide's big title can leave no room)
             assert _numbers(event.slide) == [(event.index + 1, NUM_SLIDES)]
 
@@ -130,7 +132,8 @@ def test_a_talk_wants_no_spares_unless_it_asks_for_them():
     model = SlowModel()
     model.go_on.set()
     events = list(generator.stream_talk("fake", NUM_SLIDES, llm=model, **TALK))
-    assert [event.event for event in events] == ["talk.started", *["slide.ready"] * NUM_SLIDES, "talk.finished"]
+    # (a slide.ready for every slide, and one more for the closer after them: D76)
+    assert [event.event for event in events] == ["talk.started", *["slide.ready"] * (NUM_SLIDES + 1), "talk.finished"]
 
 
 # MAKING THEM (the spares of a talk's schema, with a Progress that notes what it's told)

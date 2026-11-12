@@ -133,7 +133,8 @@ that give the presenter something to work with, rather than finished jokes:
   fact, an acronym for a made-up method, red flags, reviews with stars), the evidence (a chart or two, a big number or
   KPI tiles, a Venn diagram, a 2×2 matrix, a pyramid, an iceberg, a flowchart whose every path leads to the same end, a
   tier list, an alignment chart, an executive summary nobody can read, with one absurd point highlighted), and
-  conclusions that call back (or "Questions?" to end on). A dare for the presenter ("present the next slide as a
+  conclusions that call back. (No need for "Questions?" or "Thank you" at the end: talkgenerator ends every talk
+  with a closer of its own, after your slides, in its language and format.) A dare for the presenter ("present the next slide as a
   haiku") works once, halfway through, as does a fake error message ("Retry, Ignore, Panic"). Mix the kinds: no two
   charts in a row, and each new kind at most once.
 - **Write image queries that find something**: one to three common English words for one subject, such as "owl",

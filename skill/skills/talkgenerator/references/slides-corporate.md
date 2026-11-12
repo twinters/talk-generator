@@ -1,8 +1,8 @@
 # The slides of a `corporate` talk
 
-A company's all-hands meeting or quarterly business review: the agenda, the KPIs against their targets, the quarter's wins, the roadmap, an org change, the synergies, the ask of everyone and Q&A, each a part of its arc, in that order.
+A company's all-hands meeting or quarterly business review: the agenda, the KPIs against their targets, the quarter's wins, the roadmap, an org change, the synergies and the ask of everyone, each a part of its arc, in that order.
 
-Every talk starts with a title slide, made from the plan's `title`, `presenter_job` and `presenter_name` (or the name given to render, or one talkgenerator makes up). The plan's `slides` come after it, each of one of the kinds below. A slide's `recipe` picks its look and its image sources, and makes the slide the classic way when it can't be made as planned; without one, a slide gets its kind's default recipe. The look of a recipe's images (its aesthetic profile) says what they look like and where they come from: `photo` is stock photos, `vintage` old photographs in black and white or sepia, `meme-chaos` Reddit's weird pictures, ShitpostBot's images, gifs and memes, and so on (`talkgenerator formats --looks` lists them all).
+Every talk starts with a title slide, made from the plan's `title`, `presenter_job` and `presenter_name` (or the name given to render, or one talkgenerator makes up). The plan's `slides` come after it, each of one of the kinds below, and the talk ends with a closer of talkgenerator's own after them, which says the talk is over in its language and format ("Thank you!" and "Questions?", "Let's talk" for a pitch): a plan needs no slide for that. A slide's `recipe` picks its look and its image sources, and makes the slide the classic way when it can't be made as planned; without one, a slide gets its kind's default recipe. The look of a recipe's images (its aesthetic profile) says what they look like and where they come from: `photo` is stock photos, `vintage` old photographs in black and white or sepia, `meme-chaos` Reddit's weird pictures, ShitpostBot's images, gifs and memes, and so on (`talkgenerator formats --looks` lists them all).
 
 Made by `talkgenerator formats --details --format corporate`.
 
@@ -21,7 +21,6 @@ A talk of this format goes through these parts, in this order, each with the sli
 | `org_change` | 1 | `before-and-after-the-reorganisation-corporate`, `new-hierarchy-corporate`, `new-structure-corporate` |
 | `synergies` | 1 | `priority-matrix-corporate`, `synergies-corporate` |
 | `ask` | 1 | `the-ask-corporate`, `the-ask-in-numbers-corporate` |
-| `qa` | 1 | `q-a-corporate` |
 
 ## `image`
 
@@ -288,22 +287,6 @@ Images: none
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
 | `agenda-corporate` | The all-hands' agenda: the parts it goes through, in order, from a welcome to Q&A | the default; `title`: the slide's title, as an all-hands deck's slide has it, such as 'Agenda'; `items`: three to five parts of the all-hands, in the order they come, separated by \|, each at most 45 characters; tags: agenda, agenda |
-
-## `questions`
-
-The closing slide, inviting the audience's questions: a question, a line under it (a last tip, say), and a picture to end on, if it has one (a funny one, or an earlier slide's, called back).
-
-| Text | At most | What to write |
-| --- | --- | --- |
-| `title` | 30 | a question that invites the audience's questions |
-| `subtitle` | 80 | a line under it (or empty, for none) |
-| `callback` | 60 | the earlier slide whose picture this one shows again, as a callback: what that picture showed, as its image search query said it (or empty, for none) |
-
-Images: `photo`
-
-| Recipe | What it's for | Notes |
-| --- | --- | --- |
-| `q-a-corporate` | The closing slide, inviting everyone's questions, as at an all-hands | the default; `subtitle`: a line under it, such as where the questions go instead; images: `photo` weird-stock (or generated, from its prompt, with an image generator set up); tags: qa, questions |
 
 ## `timeline`
 

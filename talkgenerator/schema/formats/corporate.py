@@ -6,12 +6,13 @@ the actual results falling away from the target's line, the results by region, o
 pipeline as a funnel), the quarter's wins (three photos, the CEO's post, or customers' reviews), the roadmap (a
 timeline, the new process, or the planning cycle), an org change (the new org chart, whose boss is the punchline, the
 new hierarchy as a pyramid, or the company before and after), the synergies (a Venn diagram, or a 2×2 matrix of
-priorities) and the ask of everyone (a bold statement, or a big number) to Q&A. A short all-hands keeps the KPIs, the
-wins, the roadmap and Q&A; a quarter of a talk's slides are free (D63), for memes, full-screen pictures, its own
-provocations ("Synergy.", over a full-screen picture), inspirational quotes, InspiroBot's posters, the company's values
-as an acronym, news and the like, and its agenda comes in talks of eleven slides or more; a long one gives the KPIs and
-the wins a second slide. The company's made-up name comes from the topic (see talkgenerator.schema.formats.company),
-so that a classic all-hands' slides name the same company as its title.
+priorities) to the ask of everyone (a bold statement, or a big number); its closer opens Q&A ("Questions?", and back to
+work, D76), outside the talk's slides. A short all-hands keeps the KPIs, the wins and the roadmap; a quarter of a talk's
+slides are free (D63), for memes, full-screen pictures, its own provocations ("Synergy.", over a full-screen picture),
+inspirational quotes, InspiroBot's posters, the company's values as an acronym, news and the like, and its agenda comes
+in talks of eleven slides or more; a long one gives the KPIs and the wins a second slide. The company's made-up name
+comes from the topic (see talkgenerator.schema.formats.company), so that a classic all-hands' slides name the same
+company as its title.
 
 A management consultant presents an all-hands more often than the other personas, and a startup founder, a
 motivational speaker and a life coach a little more often; its themes are the corporate families' more often.
@@ -21,9 +22,10 @@ from __future__ import annotations
 
 from typing import Any, Final
 
+from talkgenerator.closers import Closer, presenter, said
 from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
-from talkgenerator.plan.kinds import AGENDA_ITEM, Recipe, Variant, closing_variants, matrix_landscape, pictured
+from talkgenerator.plan.kinds import AGENDA_ITEM, Recipe, Variant, matrix_landscape, pictured
 from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema.formats import (
     BIG_NUMBER_PICTURES,
@@ -49,17 +51,17 @@ from talkgenerator.util import random_util
 PACK: Final = "corporate"
 
 # (D63: a quarter of its slides are free, for memes, pictures and the like, and its agenda, a list of text, waits for
-# a talk of eleven slides or more: the user found all-hands decks too textual)
+# a talk of eleven slides or more: the user found all-hands decks too textual; D76: no Q&A among its slides, as its
+# closer opens it, and the agenda still waits)
 ARC: Final = Arc(
     (
-        Part("agenda", rank=7),
+        Part("agenda", rank=7, shortest=11),
         Part("kpis", 1, 2, rank=1),
         Part("wins", 1, 2, rank=2),
         Part("roadmap", rank=3),
         Part("org_change", rank=4),
         Part("synergies", rank=5),
         Part("ask", rank=6),
-        Part("qa", rank=0),
     ),
     free=0.25,
 )
@@ -67,7 +69,7 @@ ARC: Final = Arc(
 CORPORATE: Final = Format(
     brief="a company's all-hands meeting, or its quarterly business review, presented by its leadership to "
     "everyone: the agenda, the KPIs against their targets, the quarter's wins, the roadmap, an org change, the "
-    "synergies, the ask of everyone and Q&A. The topic is what the company does, however absurd, and every slide is "
+    "synergies and the ask of everyone. The topic is what the company does, however absurd, and every slide is "
     "an all-hands deck's, played straight",
     title_hint="like an all-hands' or a quarterly business review's title: the quarter, and a corporate slogan for it",
     job_hint="their position at the company, as its org chart says it, with the company's made-up name",
@@ -85,6 +87,8 @@ CORPORATE: Final = Format(
         "Comic Sans everywhere": 0.7,
     },
     arc=ARC,
+    # (its closer opens Q&A, and sends everyone back to work: D76)
+    closer=Closer(said("questions"), said("back_to_work"), presenter, mark=True),
 )
 
 
@@ -413,7 +417,7 @@ def _priorities(context: dict[str, Any]) -> Made | None:
     }, {}
 
 
-# THE ASK, AND Q&A
+# THE ASK
 
 
 def _ask_statement(context: dict[str, Any]) -> Made | None:
@@ -432,12 +436,6 @@ def _ask_number(context: dict[str, Any]) -> Made | None:
         "label": label,
         "source": maybe(0.8, text(PACK, "ask.ask_source", variables)),
     }, behind(context, BIG_NUMBER_PICTURES)
-
-
-def _qa(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    title = text(PACK, "qa.qa_title", variables)
-    return ({"title": title, "subtitle": maybe(0.8, text(PACK, "qa.qa_subtitle", variables))}, {}) if title else None
 
 
 # THE SLIDE GENERATORS
@@ -833,7 +831,7 @@ _GENERATORS: Final = [
             variants=matrix_landscape(_INITIATIVE, "the company's initiatives"),
         ),
     ),
-    # The ask, and Q&A
+    # The ask
     # (The ask's kinds have no tags of their kinds: the free slides' quotes, earlier in a long talk, take the
     # statements' cap, and the KPIs' headline number the big numbers', as an academic talk's references keep clear of
     # its outline's agenda)
@@ -870,22 +868,6 @@ _GENERATORS: Final = [
                 "source": "the small print, such as when it starts",
             },
             variants=pictured((), "background", BIG_NUMBER_PICTURES),
-        ),
-        repeats=3,
-    ),
-    _part(
-        "qa",
-        1,
-        "questions",
-        _qa,
-        ["questions"],
-        "Q&A",
-        Recipe(
-            "questions",
-            (cg.closing_picture_generator,),
-            brief="The closing slide, inviting everyone's questions, as at an all-hands",
-            hints={"subtitle": "a line under it, such as where the questions go instead"},
-            variants=closing_variants("a line under it, such as where the questions go instead"),
         ),
         repeats=3,
     ),

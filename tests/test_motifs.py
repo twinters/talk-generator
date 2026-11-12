@@ -94,7 +94,9 @@ def test_every_family_decorates_its_slides_and_passes_the_design_checks(images, 
         # decoration's shapes or texts: a photo slide's motifs keep off it, D63's big number beside its picture and
         # D69's problem beside its photo too)
         covered = [slide for slide in deck.slides if slide.type == "full_image" or slide.layout in _SIDE_PHOTOS]
-        assert len(decorated) >= len(deck.slides) - len(covered) - 2, (family, seed)
+        # (nor a closer, which has no number: all that some families put on such a slide, as brutalist's tag, D76)
+        unnumbered = [slide for slide in deck.slides if slide.closer]
+        assert len(decorated) >= len(deck.slides) - len(covered) - len(unnumbered) - 2, (family, seed)
 
 
 # The layouts whose photo fills a side of the slide, to its edges

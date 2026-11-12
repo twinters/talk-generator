@@ -426,7 +426,8 @@ def _generate(
         "seed": deck.seed,
         "language_model": model.id if writes else None,  # None: the classic generator
         "llm_level": deck.llm_level,  # (basic or advanced, as the talk was written; None: the classic generator)
-        "summary": {"deck_slides": len(deck.slides), "written_by_language_model": written},
+        # (its slides, as many as asked if they all came: not its closer after them, D76)
+        "summary": {"deck_slides": deck.counted(), "written_by_language_model": written},
         "usage": deck.usage.model_dump(),
         "checks": [asdict(finding) for finding in check_deck(deck, slides)],
         "sources_without_keys": settings.sources_without_keys(),

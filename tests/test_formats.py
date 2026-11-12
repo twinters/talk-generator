@@ -11,9 +11,12 @@ up more often. And the process, the slide type an academic talk's method brought
 from __future__ import annotations
 
 import collections
+import io
 import json
+import zlib
 
 import pytest
+from PIL import Image, ImageDraw
 
 from talkgenerator import generator, personas
 from talkgenerator.checks.deck import check_arc, check_completeness, check_deck, check_leftovers
@@ -35,7 +38,6 @@ from talkgenerator.schema.presentation_schema_types import get_schema, schemas
 from talkgenerator.slide import slides
 from talkgenerator.sources import conceptnet
 from talkgenerator.util import image_util, random_util
-from tests.test_deck import _jpeg
 from tests.test_slide_types import _clicks, _deck, _longest, _theme
 
 FORMATS = {"pitch": pitch, "academic": academic, "corporate": corporate, "keynote": keynote}
@@ -58,17 +60,19 @@ def test_an_arc_lays_out_talks_of_every_length(name):
         layout = arc.layout(num_slides)
         assert len(layout) == num_slides and layout[0] is None
         kept = arc.kept(num_slides)
-        # The parts it keeps: the lowest ranks, in the arc's order, each with as many slides as it takes, in the room
-        # that the slides its free share keeps free leave
+        # The parts it keeps: the lowest ranks of those it's long enough for (D63's parts of text wait for long talks:
+        # Part.shortest), in the arc's order, each with as many slides as it takes, in the room that the slides its
+        # free share keeps free leave
         reserved = arc.reserved(num_slides)
-        assert set(kept) == {part.name for part in ranked[: min(len(ranked), num_slides - 1 - reserved)]}
+        eligible = [part for part in ranked if num_slides >= part.shortest]
+        assert set(kept) == {part.name for part in eligible[: min(len(eligible), num_slides - 1 - reserved)]}
         assert list(kept) == [part for part in arc.names() if part in kept]
         counts = collections.Counter(part for part in layout if part is not None)
         assert all(part.fewest <= counts[part.name] <= part.most for part in arc.parts if part.name in kept)
-        # Free slides: those its free share keeps, and more only once every part has its most slides; between parts
-        # (none after the last)
+        # Free slides: those its free share keeps, and more only once every part it's long enough for has its most
+        # slides; between parts (none after the last)
         free = arc.free_slides(num_slides)
-        assert free >= reserved and (free == reserved or all(counts[part.name] == part.most for part in arc.parts))
+        assert free >= reserved and (free == reserved or all(counts[part.name] == part.most for part in eligible))
         if free and len(kept) > 1:
             assert layout[1] is not None and layout[-1] is not None
         runs = [part for index, part in enumerate(layout[1:], 1) if part is not None and part != layout[index - 1]]
@@ -77,7 +81,8 @@ def test_an_arc_lays_out_talks_of_every_length(name):
 
 def test_ten_and_five_slide_talks_have_the_arcs_the_formats_promise():
     # (D63: two free slides of ten, for memes, gifs and pictures; a pitch's market and business model and an academic
-    # talk's outline and acknowledgements wait for longer talks)
+    # talk's outline and acknowledgements wait for longer talks. D76: no closing "Questions?" among them, as the closer
+    # after the talk's last slide asks for them: the roadmap has its slide)
     assert pitch.ARC.layout(10) == (
         None,
         "problem",
@@ -87,8 +92,8 @@ def test_ten_and_five_slide_talks_have_the_arcs_the_formats_promise():
         "competition",
         "team",
         None,
+        "roadmap",
         "ask",
-        "closing",
     )
     assert pitch.ARC.kept(5) == ("problem", "solution", "traction", "ask")
     assert pitch.ARC.kept(12) == (
@@ -99,11 +104,11 @@ def test_ten_and_five_slide_talks_have_the_arcs_the_formats_promise():
         "traction",
         "competition",
         "team",
+        "roadmap",
         "ask",
-        "closing",
     )
-    # (D69: an academic talk's motivation first, its why, so a ten-slide talk goes without future work, and a five-slide
-    # one without its limitations)
+    assert "market" not in pitch.ARC.kept(10) and "business_model" not in pitch.ARC.kept(11)
+    # (D69: an academic talk's motivation first, its why; D76: its future work where "Questions?" was)
     assert academic.ARC.layout(10) == (
         None,
         "motivation",
@@ -113,30 +118,32 @@ def test_ten_and_five_slide_talks_have_the_arcs_the_formats_promise():
         "results",
         "limitations",
         None,
+        "future_work",
         "references",
-        "questions",
     )
-    assert academic.ARC.kept(5) == ("motivation", "method", "results", "questions")
+    assert academic.ARC.kept(5) == ("motivation", "method", "results", "limitations")
     assert "outline" in academic.ARC.kept(12) and "acknowledgements" in academic.ARC.kept(13)
+    assert "outline" not in academic.ARC.kept(11) and "acknowledgements" not in academic.ARC.kept(12)
 
 
 def test_an_all_hands_and_a_keynote_have_the_arcs_they_promise():
-    # (D59: an all-hands goes from its agenda to Q&A, its KPIs two slides in longer talks; a keynote from its opening
-    # to its closing line. D63: two free slides of ten in an all-hands, whose agenda waits for longer talks, and one in
-    # a keynote)
+    # (D59: an all-hands goes from its agenda to the ask, its KPIs two slides in longer talks, and its closer opens Q&A
+    # (D76); a keynote from its opening to its closing line. D63: two free slides of ten in an all-hands, whose agenda
+    # waits for longer talks, and one in a keynote)
     assert corporate.ARC.layout(10) == (
         None,
+        "kpis",
         "kpis",
         "wins",
         None,
         "roadmap",
         "org_change",
-        "synergies",
         None,
+        "synergies",
         "ask",
-        "qa",
     )
-    assert corporate.ARC.kept(5) == ("kpis", "wins", "roadmap", "qa")
+    assert corporate.ARC.kept(5) == ("kpis", "wins", "roadmap", "org_change")
+    assert "agenda" not in corporate.ARC.kept(10)
     assert corporate.ARC.layout(12).count("kpis") == 2 and corporate.ARC.kept(12)[0] == "agenda"
     assert keynote.ARC.layout(10) == (
         None,
@@ -158,8 +165,15 @@ def test_a_long_talk_gives_its_parts_more_slides_and_then_free_ones():
     layout = pitch.ARC.layout(20)
     counts = collections.Counter(layout[1:])
     assert counts["problem"] == counts["solution"] == counts["traction"] == 2 and counts["roadmap"] == 1
-    assert counts[None] == pitch.ARC.free_slides(20) == 19 - 13
+    assert counts[None] == pitch.ARC.free_slides(20) == 19 - 12
     assert academic.ARC.layout(20).count("results") == 3 and academic.ARC.layout(20).count("method") == 2
+
+
+def test_a_part_of_text_waits_for_a_talk_long_enough_for_it():
+    # (D63's parts of text, kept waiting by D76: whatever its rank, such a part waits, and its room goes to the others)
+    arc = Arc((Part("list", rank=0, shortest=6), Part("chart", 1, 2, rank=1), Part("end", rank=2)))
+    assert arc.kept(5) == ("chart", "end") and arc.layout(5) == (None, "chart", "chart", None, "end")
+    assert arc.kept(6) == ("list", "chart", "end")
 
 
 def test_an_arc_keeps_its_free_share_of_a_talk_free():
@@ -303,14 +317,31 @@ def test_an_all_hands_company_and_a_keynotes_product_are_named_after_the_topic()
 # CLASSIC SLIDES AND TALKS, OFFLINE
 
 
+def _picture(url: str) -> bytes:
+    """A JPEG of its own for an address: light blocks on blue, in an arrangement of its own (by the address's hash)."""
+    picture = Image.new("RGB", (400, 300), (30, 120, 200))
+    draw = ImageDraw.Draw(picture)
+    bits = zlib.crc32(url.encode("utf-8"))
+    for block in range(16):
+        if bits >> block & 1:
+            x, y = block % 4 * 100, block // 4 * 75
+            draw.rectangle((x, y, x + 99, y + 74), fill=(235, 235, 235))
+    output = io.BytesIO()
+    picture.save(output, "JPEG")
+    return output.getvalue()
+
+
 @pytest.fixture
 def offline(monkeypatch):
     """Talks without the internet: images found and served from example.com (each search finds others than those to
-    avoid), and the same related words for any word."""
-    jpeg = _jpeg((400, 300))
+    avoid, and each looks like no other: one picture for all would be a near-duplicate of every other, which a slide
+    may not repeat), and the same related words for any word."""
 
     def find(slot, query, avoid=()):
-        for number in range(20):
+        # (one of a search's pictures, as the slide's dice pick it, as the finder does: a slide that tries again, as
+        # its first try repeated a picture the talk has, may find another)
+        first = random_util.randint(0, 9)
+        for number in range(first, first + 20):
             image = ImageData(
                 f"https://example.com/{slot.aesthetic}-{query}-{number}.jpg".replace(" ", "-"),
                 source="Test",
@@ -323,7 +354,7 @@ def offline(monkeypatch):
     fetch = image_util.fetch_image
     monkeypatch.setattr(finder, "find", find)
     monkeypatch.setattr(
-        image_util, "fetch_image", lambda url: jpeg if url.startswith("https://example.com/") else fetch(url)
+        image_util, "fetch_image", lambda url: _picture(url) if url.startswith("https://example.com/") else fetch(url)
     )
     monkeypatch.setattr(image_util, "probe", lambda url: url.startswith("https://example.com/"))
     words = [(1.0, "feather"), (0.9, "ice"), (0.8, "fish"), (0.7, "snow"), (0.6, "beak"), (0.5, "colony")]
@@ -361,7 +392,7 @@ def _talk(name, seed=1, parallel=True, llm="none", **options):
 def test_a_classic_talk_of_each_format_follows_its_arc_and_passes_the_checks(offline, name):
     for seed in (1, 2, 3):
         deck = _talk(name, seed, theme="random")
-        assert len(deck.slides) == 10 and deck.schema_name == name
+        assert deck.counted() == 10 and deck.schema_name == name
         assert [finding for finding in check_deck(deck, 10) if finding.severity == "error"] == [], seed
         assert check_arc(deck, 10) == []
     assert _talk(name, 4, parallel=True).to_json() == _talk(name, 4, parallel=False).to_json()

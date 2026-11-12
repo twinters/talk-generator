@@ -177,10 +177,11 @@ def test_a_classic_slide_out_of_time_gets_a_stand_in_and_nothing_waits_for_it(cl
     third = finished.deck.slides[2]
     assert _texts(third)[0].startswith("Spare ") and _texts(third)[0].endswith("about cats")  # (its own seed)
     assert "Out of time" in third.notes
-    # It's the talk's slide, where the slow one would have been: in the deck, numbered, handed over in order
+    # It's the talk's slide, where the slow one would have been: in the deck, numbered, handed over in order (and the
+    # closer after them)
     ready = [event for event in events if isinstance(event, SlideReady)]
-    assert [event.index for event in ready] == list(range(5)) and ready[2].slide == third
-    assert [_texts(slide)[0] for slide in finished.deck.slides[3:]] == ["Chart about cats"] * 2
+    assert [event.index for event in ready] == list(range(6)) and ready[2].slide == third
+    assert [_texts(slide)[0] for slide in finished.deck.slides[3:5]] == ["Chart about cats"] * 2
     assert not any(isinstance(event, SlideUpdated) for event in events)
 
 
@@ -199,7 +200,7 @@ def test_a_slide_due_while_the_threads_are_busy_with_slow_ones_starts_apart_and_
 
     assert seconds < 5
     deck = events[-1].deck
-    assert ["Out of time" in slide.notes for slide in deck.slides] == [False, False, True, True, False]
+    assert ["Out of time" in slide.notes for slide in deck.slides[:5]] == [False, False, True, True, False]
     assert _texts(deck.slides[4])[0] == "Chart about cats"
 
 
@@ -322,7 +323,7 @@ def test_waiting_for_the_model_to_write_a_slide_is_no_time_it_takes(planned, pho
 
     assert seconds >= 1.5
     assert not any("Out of time" in slide.notes for slide in events[-1].deck.slides)
-    assert all("Planned:" in slide.notes for slide in events[-1].deck.slides)
+    assert all("Planned:" in slide.notes for slide in events[-1].deck.slides if not slide.closer)
 
 
 def test_a_planned_talk_with_a_time_limit_none_of_its_slides_runs_out_of_is_the_same(planned, photos):
@@ -344,11 +345,11 @@ def test_a_classic_slide_out_of_time_comes_after_all_in_place_of_its_stand_in(cl
     events, seconds = _timed(5, llm="none", slide_seconds=SECONDS, parallel=parallel)
 
     assert seconds < 5
-    # The stand-in at once, and the slides after it without waiting for the slow one...
+    # The stand-in at once, and the slides after it without waiting for the slow one (and the closer after them)...
     ready = [event for event in events if isinstance(event, SlideReady)]
-    assert [event.index for event in ready] == list(range(5))
+    assert [event.index for event in ready] == list(range(6))
     assert _texts(ready[2].slide)[0].startswith("Spare ") and "Out of time" in ready[2].slide.notes
-    assert [_texts(event.slide)[0] for event in ready[3:]] == ["Chart about cats"] * 2
+    assert [_texts(event.slide)[0] for event in ready[3:5]] == ["Chart about cats"] * 2
     # ...and then the real slide, in its place, in the deck too
     (late,) = _late(events)
     assert late.index == 2 and events.index(late) > events.index(ready[4])
@@ -394,7 +395,7 @@ def test_the_finished_deck_has_the_slides_as_they_were_shown(classic, held):
     for event in events:
         if isinstance(event, SlideReady | SlideUpdated):
             shown[event.index] = event.slide
-    assert _late(events) and events[-1].deck.slides == tuple(shown[index] for index in range(5))
+    assert _late(events) and events[-1].deck.slides == tuple(shown[index] for index in range(6))  # (the closer too)
 
 
 def test_a_planned_slide_out_of_time_comes_after_all_with_its_own_pictures(planned, photos, held):

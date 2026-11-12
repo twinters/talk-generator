@@ -28,6 +28,7 @@ from dataclasses import dataclass, field
 from functools import cache
 from typing import Any, Final
 
+from talkgenerator.closers import Closer
 from talkgenerator.datastructures.slide_generator_data import SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
 from talkgenerator.plan.kinds import KINDS, PROBLEM_ANGLES, PROBLEM_BEHIND, Recipe, box_picture_slot
@@ -63,6 +64,9 @@ class Format:
     # Multipliers on the theme families' weights, for a talk whose theme the seed picks (with the persona's)
     themes: Mapping[str, float] = field(default_factory=dict)
     arc: Arc | None = None
+    # Its closer, the slide after its talks' last (D76: see talkgenerator.closers, which says how a format defines one);
+    # None for the TED-like talk's ("Thank you!", closers.DEFAULT)
+    closer: Closer | None = None
 
 
 def multiplied(*multipliers: Mapping[str, float] | None) -> dict[str, float] | None:

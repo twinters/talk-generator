@@ -48,8 +48,8 @@ _LEFT_TITLES: Final = frozenset({"title", "talk title", "side title", "section s
 # Slide types whose pictures a motif may frame (pictures in their own boxes; not a post's, a page's or a meme's): and
 # the closing slide's picture to end on, and the picture of one of an academic talk's references (D65)
 _FRAMED_TYPES: Final = frozenset({"image", "two_column_image", "three_column_image", "questions", "references"})
-# The slides a motif saves its big pieces for
-_BIG_TYPES: Final = frozenset({"title", "section", "questions"})
+# The slides a motif saves its big pieces for (and the closer, after a talk's last slide, D76, as its title slide has them)
+_BIG_TYPES: Final = frozenset({"title", "section", "questions", "closer"})
 # Crayon colours (the kindergarten's): red, yellow, teal, blue, green, purple, orange
 CRAYONS: Final = ("#ff5d73", "#ffbf00", "#2ec4b6", "#3a86ff", "#8ac926", "#9b5de5", "#ff8c42")
 # A synthwave sun's bands, from its top down: yellow, orange, pink
@@ -84,7 +84,8 @@ class Scene:
 
     @property
     def big(self) -> bool:
-        """Whether it's one of the slides a motif saves its big pieces for: a title, a section, "Questions?"."""
+        """Whether it's one of the slides a motif saves its big pieces for: a title, a section, "Questions?", the
+        closer."""
         return self.slide_type in _BIG_TYPES
 
     @property
@@ -696,7 +697,7 @@ def _crayon(scene: Scene) -> None:
             _frame(border, palette.text, 3, corner=corner),
             part_of=role,
         )
-    if scene.slide_type == "section" or scene.slide_type == "questions":
+    if scene.slide_type in ("section", "questions", "closer"):
         _sun(scene, Box(x=WIDTH - 330, y=40, w=280, h=280))
 
 
@@ -1012,7 +1013,7 @@ def _terminal(scene: Scene) -> None:
     for role in ("title",):
         if scene.present(role) and scene.spec(role) in _LEFT_TITLES and scene.theme.title_align == "left":
             _prompt(scene, role, prompt)
-    if scene.slide_type == "title" and scene.present("title"):
+    if scene.slide_type in ("title", "closer") and scene.present("title"):  # (a cursor after the last words too)
         lines = scene.lines("title")
         last = lines[-1]
         size = last.h / 1.2

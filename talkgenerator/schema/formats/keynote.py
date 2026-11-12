@@ -7,7 +7,8 @@ in one photo, a picture that prefers to be generated, or full-bleed), its featur
 chart it wins by far), a live demo (that crashes, as a fake error message, how it works in a few steps, or a photo that
 the presenter has to present as the demo) and the price (a big number, the models' prices on tiles, or when it ships)
 to the "one more thing" (said over a photo, or a second product, revealed full-bleed) and a closing line (over a photo,
-full-bleed, or someone's post about the keynote). A short keynote keeps the opening, the reveal, a feature and the one
+full-bleed, or someone's post about the keynote), before its closer says the product is "Available today" (D76),
+outside the keynote's slides. A short keynote keeps the opening, the reveal, a feature and the one
 more thing; a long one gives the features a second slide, and its free slides (a slide of ten at least, D63) are deep
 questions over photos, memes, gifs, its own provocations ("Revolutionary.", over a full-screen picture), quotes, the
 press and early reviews. The product's made-up name comes from the topic (see
@@ -21,6 +22,7 @@ from __future__ import annotations
 
 from typing import Any, Final
 
+from talkgenerator.closers import Closer, presenter, product_line, said
 from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
 from talkgenerator.plan.kinds import ERROR_BUTTON, Recipe, Variant, pictured
@@ -84,6 +86,8 @@ KEYNOTE: Final = Format(
         "1997 WordArt": 0.6,
     },
     arc=ARC,
+    # (its closer says the product is available today: D76)
+    closer=Closer(said("available"), product_line, presenter),
 )
 
 

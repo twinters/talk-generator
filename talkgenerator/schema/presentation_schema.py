@@ -48,7 +48,7 @@ from typing import TYPE_CHECKING, Any, Final, Protocol
 
 from pptx.presentation import Presentation
 
-from talkgenerator import facts, names, titles
+from talkgenerator import closers, facts, names, titles
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.datastructures.slide_generator_data import SlideGeneratorData, _filter_generated_elements
 from talkgenerator.images import context as image_context
@@ -478,7 +478,8 @@ class Progress(Protocol):
 
     And a Progress may want to know how far the language model that writes the talk is (planning: one without it, or
     with None, isn't told): it's told whenever that changes, from when the model is asked until its answers are all in
-    (see Planning), on whichever thread the change came on."""
+    (see Planning), on whichever thread the change came on. And it may want the talk's closer (closed: one without it
+    isn't told), as soon as its slides are all settled: the slide after its last (D76: see talkgenerator.closers)."""
 
     cancelled: threading.Event
 
@@ -1428,6 +1429,11 @@ class PresentationSchema:
                 early.stop()  # (nor an early version)
             if pictures is not None:
                 pictures.stop()
+            # Its closer, after its last slide (D76): right away, before the slides that ran out of time come after all,
+            # so a presenter at the last slide goes on to it
+            slide_deck.closer_listener = getattr(progress, "closed", None)
+            slide_deck.close(self._closer(slide_deck, topics[0]))
+            slide_deck.closer_listener = None
             # The slides that ran out of time, whose own work goes on: each comes after all, in place of what stood in
             # for it, if it does so within LATE_SECONDS (see _LateSlides)
             self._replace_late(lates, LATE_SECONDS, progress.cancelled if progress is not None else None)
@@ -1458,6 +1464,14 @@ class PresentationSchema:
             return self.render(slide_deck, debug_notes), slide_deck
 
         return None, slide_deck
+
+    def _closer(self, slide_deck: SlideDeck, topic: str) -> slides.Slide:
+        """The talk's closer (D76: see talkgenerator.closers): its format's (or the TED-like talk's), in its
+        language, from its presenter's name, its title and its topic."""
+        ending = closers.Ending.of(slide_deck.language, slide_deck.presenter, slide_deck.title, topic)
+        slide = closers.of(self.format).slide(ending)
+        slide.set_note("The closer, after the talk's last slide (D76)")
+        return slide
 
     def _title(self, topics: list[str], rng: random_util.Rng, persona: Persona | None = None) -> str:
         """A classic talk's title, from the talk's "title" stream: its persona's or the title generator's."""
@@ -2565,6 +2579,8 @@ class PresentationSchema:
                     continue
             _add_slide(slide_deck, index + 1, worked_out[0])
             _add_used(state, worked_out[1])
+        # Its closer after its last slide, as every talk has one (D76), as the title slide before its first
+        slide_deck.close(self._closer(slide_deck, plan.topic))
         _finish_picking(slide_deck)
         _finish_generating(slide_deck)
         return slide_deck, outcomes

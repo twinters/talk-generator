@@ -12,7 +12,7 @@ from pptx import Presentation
 from pptx.enum.chart import XL_CHART_TYPE
 from pptx.oxml.ns import qn
 
-from talkgenerator import generator, settings
+from talkgenerator import closers, generator, settings
 from talkgenerator.checks.deck import deck_metrics
 from talkgenerator.checks.design import check_design, check_variety
 from talkgenerator.design import color, engine, fit, fonts, themes, treatments
@@ -21,6 +21,7 @@ from talkgenerator.plan import languages
 from talkgenerator.plan.kinds import KINDS
 from talkgenerator.render import embedding, preview
 from talkgenerator.render.powerpoint import render_pptx
+from talkgenerator.schema.formats import academic
 from talkgenerator.slide import slides
 from talkgenerator.slide.slide_deck import SlideDeck
 from talkgenerator.util import os_util, random_util
@@ -414,6 +415,9 @@ def _runs(seed=1, theme=None):
         # (and, from D73, lists whose punchline is a picture or an emoji in its text's place, one kind after the
         # other, twice)
         *(_pictured_punchlines(wide) * 2),
+        # (and, from D76, closers that ask a question: beside its huge mark, or as the title slide has its title; a
+        # talk's closer comes once, after its last slide, but here a few of them try both of their layouts)
+        *(academic.ACADEMIC.closer.slide(closers.Ending.of(presenter="Ann Example")) for _ in range(3)),
     ]
     slide_deck = SlideDeck(len(runs), title="Cats", topics=["cats"], seed=seed)
     for index, slide in enumerate(runs):

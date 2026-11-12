@@ -107,6 +107,9 @@ CLASSIC_ROLES: Final[dict[str, dict[str, str]]] = {
     "section": {"kicker": "kicker", "title": "title", "subtitle": "subtitle"},
     # (the closing slide, with a picture to end on, if it has one: docs/v5-plan.md, D65)
     "questions": {"photo": "photo", "title": "title", "subtitle": "subtitle", "mark": "mark"},
+    # (the talk's closer, after its last slide: its big words, a line under them, a small note, and a huge question
+    # mark beside them for a question: D76)
+    "closer": {"title": "title", "subtitle": "subtitle", "note": "note", "mark": "mark"},
     # (native diagrams, drawn as texts on shapes too)
     "timeline": {
         "title": "title",
@@ -203,6 +206,8 @@ KARAOKE_TYPES: Final = frozenset(
 FORMAT_TYPES: Final = frozenset({"process", "references"})
 # The problem slide, a talk's why: what pitches and academic talks open on, and some TED-like talks too (D69)
 PROBLEM_TYPES: Final = frozenset({"problem"})
+# The talk's closer, the slide after its last (D76)
+CLOSER_TYPES: Final = frozenset({"closer"})
 
 # The slide types that the 2019 template has no layout for (all of milestone 6's): a classic deck draws them as a
 # themed deck does, laid out in the template's look (talkgenerator.design.themes.CLASSIC_LOOK), on its blank slide
@@ -212,6 +217,7 @@ DRAWN_TYPES: Final = frozenset(
     | KARAOKE_TYPES
     | FORMAT_TYPES
     | PROBLEM_TYPES
+    | CLOSER_TYPES
 )
 
 # The roles a slide of each type can't do without: its Slide class's required_arguments, as roles
@@ -232,6 +238,7 @@ REQUIRED_ROLES: Final[dict[str, tuple[str, ...]]] = {
     "agenda": ("item_1", "item_2", "item_3"),
     "section": ("title",),
     "questions": ("title",),
+    "closer": ("title",),
     "timeline": ("date_1", "event_1", "date_2", "event_2", "date_3", "event_3"),
     "pyramid": ("level_1", "level_2", "level_3"),
     "funnel": ("stage_1", "stage_2", "stage_3"),
