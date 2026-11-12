@@ -32,6 +32,7 @@ from talkgenerator.schema.formats import (
     documentary,
     infomercial,
     keynote,
+    museum,
     pitch,
 )
 from talkgenerator.schema.formats.arcs import PART_WEIGHT
@@ -55,6 +56,7 @@ FORMATS = {
     "Infomercial": infomercial,
     "Documentary": documentary,
     "Court": court,
+    "Museum": museum,
 }
 
 
@@ -324,7 +326,7 @@ def test_every_format_has_provocations_in_its_voice(named, stock):
 
 
 # (the formats with two free slides of ten)
-@pytest.mark.parametrize("name", ["pitch", "academic", "corporate", "infomercial", "court"])
+@pytest.mark.parametrize("name", ["pitch", "academic", "corporate", "infomercial", "court", "museum"])
 def test_ten_slide_talks_of_the_formats_have_memes_and_pictures_between_their_parts(name):
     schema, arc = get_schema(name), next(module.ARC for module in FORMATS.values() if module.PACK == name)
     free = memes = pictured_ = 0

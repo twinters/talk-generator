@@ -322,6 +322,7 @@ def test_copyright_free_formats_only_get_copyright_free_defaults():
         ("infomercial", "slides-infomercial.md"),
         ("documentary", "slides-documentary.md"),
         ("court", "slides-court.md"),
+        ("museum", "slides-museum.md"),
     ],
 )
 def test_the_skills_slide_references_are_up_to_date(format_name, file_name):

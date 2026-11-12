@@ -39,6 +39,7 @@ from talkgenerator.schema.formats import (
     documentary,
     infomercial,
     keynote,
+    museum,
     pitch,
 )
 from talkgenerator.schema.formats.arcs import PART_WEIGHT, STAND_IN, Arc, Free, InPart, Part
@@ -57,6 +58,7 @@ FORMATS = {
     "infomercial": infomercial,
     "documentary": documentary,
     "court": court,
+    "museum": museum,
 }
 FAMILIES = list(themes.FAMILIES)
 

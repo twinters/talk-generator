@@ -15,6 +15,7 @@ from talkgenerator.schema.formats import (
     documentary,
     infomercial,
     keynote,
+    museum,
     pitch,
 )
 from talkgenerator.schema.presentation_schema import PresentationSchema
@@ -286,6 +287,18 @@ court_schema = schemas.register(
         slide_generators=slide_generators.group("court"),
         max_allowed_tags=court.CAPS,
         format=court.COURT,
+        spare_generators=SPARE_GENERATORS,
+    ),
+)
+museum_schema = schemas.register(
+    "museum",
+    PresentationSchema(
+        powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
+        seed_generator=_wandering,
+        title_generator=museum.title_generator,
+        slide_generators=slide_generators.group("museum"),
+        max_allowed_tags=museum.CAPS,
+        format=museum.MUSEUM,
         spare_generators=SPARE_GENERATORS,
     ),
 )

@@ -78,6 +78,8 @@ FORMATS: Final = {
     "of its arc, in that order",
     "court": "A court case in which the topic stands trial for a harmless crime: the charges, the evidence, a "
     "witness, the alibi, an objection, the closing argument and the verdict, each a part of its arc, in that order",
+    "museum": "A guided museum tour of a collection about the topic: the welcome and the house rules, a masterpiece, "
+    "the artist, the eras, an artefact and the gift shop, each a part of its arc, in that order",
 }
 
 # The recipe a kind of slide gets when its plan doesn't name one, the first of these the format has: plain photos,

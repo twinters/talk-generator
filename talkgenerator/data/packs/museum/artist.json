@@ -1,0 +1,85 @@
+{
+  "life_title": [
+    "The life of {artist}",
+    "{artist}: a life",
+    "{artist}, in a few dates",
+    "A short life of {artist}",
+    "The artist: {artist}",
+    "{artist}, the early years and the rest"
+  ],
+  "born": [
+    "Born",
+    "Born, already sketching",
+    "Born, holding a paintbrush",
+    "Born in a broom cupboard",
+    "Born, to nobody's surprise",
+    "Born. Asks for paint at once",
+    "Born, smaller than expected"
+  ],
+  "life_event": [
+    "First {seed.bare} sketch",
+    "Paints only {seed.generic}",
+    "Expelled from art school",
+    "Discovers the colour blue",
+    "Sells one painting, to a relative",
+    "A very dark period",
+    "Paints {seed.generic} in secret",
+    "Takes up sculpture, briefly",
+    "One painting takes a whole year",
+    "Famous in one small village",
+    "The upside-down period",
+    "Moves into a windmill"
+  ],
+  "life_punchline": [
+    "Still hasn't finished the hands",
+    "Becomes {seed.one}",
+    "A painting found behind a radiator",
+    "Banned from the gift shop",
+    "Statue unveiled, wrong way up",
+    "Still painting {seed.generic}",
+    "Finally paints something else"
+  ],
+  "last_date": [
+    "Last Tuesday",
+    "Yesterday",
+    "Today",
+    "This morning",
+    "Ongoing",
+    "Next spring"
+  ],
+  "fact": [
+    "{artist} painted only {seed.generic}, and only on Tuesdays.",
+    "{artist} spent eleven years on one painting of {seed.generic}.",
+    "{artist} signed every painting with a tiny drawing of {seed.one}.",
+    "{artist} never saw {seed.one} in real life, and it shows.",
+    "{artist} was banned from three museums, including this one.",
+    "{artist} painted with a brush made of {seed.generic}.",
+    "{artist} invented the colour beige, and then regretted it.",
+    "Experts agree that {artist} could not draw hands, so every hand is hidden behind {seed.one}."
+  ],
+  "fact_source": [
+    "The museum's audio guide",
+    "A guard who has worked here forever",
+    "The back of the frame",
+    "{artist}'s diary, page 3",
+    "The gift shop's tea towel",
+    "The audio guide, unreliable since 1987"
+  ],
+  "post_title": [
+    "From the artist's diary",
+    "The artist, in their own words",
+    "Found in the archive",
+    "A letter from the artist",
+    "What the artist wrote",
+    "Overheard in the studio"
+  ],
+  "post": [
+    "Painted {seed.generic} again today. My patron wants something else. My patron does not understand art.",
+    "Day 412 of painting {seed.generic}. Still not right. Starting again tomorrow.",
+    "Finished my masterpiece. It is {seed.one}. Nobody will understand it for three hundred years.",
+    "Sold a painting today! To my mother. She asked for a refund.",
+    "The critics say there's too much {seed.bare} in my paintings. The critics are wrong.",
+    "Tried to paint a bowl of fruit. It turned into {seed.generic} again. Third time this week.",
+    "My apprentice says I'm obsessed with {seed.generic}. My apprentice is now painting the fence."
+  ]
+}

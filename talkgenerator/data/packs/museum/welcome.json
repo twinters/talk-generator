@@ -1,0 +1,81 @@
+{
+  "welcome_title": [
+    "Welcome to {museum}",
+    "Welcome to the {topic.bare} wing",
+    "Welcome, everyone. Please stay together.",
+    "This way, please. Mind the step.",
+    "Ladies and gentlemen: the {topic.bare} wing",
+    "Our tour begins here",
+    "Welcome to {museum}. No running.",
+    "Follow the little flag, everyone"
+  ],
+  "rules_title": [
+    "House rules",
+    "Before we begin",
+    "A few rules",
+    "Museum rules",
+    "Some ground rules",
+    "Please note",
+    "{topic.bare.title} wing rules"
+  ],
+  "rule": [
+    "No flash photography",
+    "Do not touch {topic.generic}",
+    "Please stay with the group",
+    "No running near {topic.generic}",
+    "Do not lick the paintings",
+    "Do not feed the exhibits",
+    "Whisper, please",
+    "Mind the velvet ropes",
+    "Do not tap on the glass",
+    "No eating near the art",
+    "Bags go in the cloakroom",
+    "No photos of the guards"
+  ],
+  "rule_punchline": [
+    "Do not take {topic.one} home",
+    "Nothing is for sale. Stop asking.",
+    "If an exhibit moves, do not panic",
+    "The guard is not an exhibit. Mostly.",
+    "Do not wake the curator",
+    "Whatever you do, don't sneeze",
+    "Never make eye contact with the statues",
+    "Don't tell the paintings they're copies"
+  ],
+  "tour_title": [
+    "Today's tour",
+    "Our route today",
+    "Where we're going",
+    "The tour, in order",
+    "What you'll see today",
+    "This way, please"
+  ],
+  "tour_first": [
+    "The entrance hall",
+    "The cloakroom, briefly",
+    "The {topic.bare} wing",
+    "The early {topic.bare} rooms",
+    "The great hall",
+    "The lift, which takes a while"
+  ],
+  "stop": [
+    "The {topic.bare} masters",
+    "A room nobody is allowed in",
+    "The basement, quickly",
+    "{artist}'s studio",
+    "The hall of mild disappointment",
+    "Sculptures of {topic.generic}",
+    "The restoration workshop",
+    "A bench, for a short rest",
+    "The room with the famous draught",
+    "The {topic.bare} vault"
+  ],
+  "tour_last": [
+    "The gift shop",
+    "The gift shop, twice",
+    "The exit, through the gift shop",
+    "The café, the real reason we came",
+    "The gift shop (the highlight)",
+    "The gift shop. There's no other way out"
+  ]
+}

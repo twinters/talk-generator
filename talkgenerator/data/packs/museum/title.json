@@ -1,0 +1,34 @@
+{
+  "talk_title": [
+    "#exhibition#",
+    "#exhibition#",
+    "#exhibition#: A Guided Tour",
+    "{museum}: #exhibition#",
+    "A Guided Tour of {museum}",
+    "{artist} and the Art of {seed.generic.title}",
+    "Highlights of {museum}"
+  ],
+  "exhibition": [
+    "The Golden Age of {seed.generic.title}",
+    "{seed.generic.title} Through the Ages",
+    "Masters of {seed.generic.title}",
+    "Treasures of {seed.generic.title}",
+    "The {seed.bare.title} Collection",
+    "{seed.generic.title}: Five Centuries",
+    "The Lost {seed.bare.title} Masterpieces",
+    "{seed.generic.title} in Art, 1400 to Now",
+    "A Gallery of {seed.generic.title}",
+    "The Art of {seed.generic.title}"
+  ],
+  "subtitle": [
+    "{presenter}, Head Guide, {museum}",
+    "A guided tour by {presenter}",
+    "{presenter}, curator of {seed.generic}",
+    "{presenter}, volunteer guide for thirty years",
+    "With {presenter}. Please stay with the group.",
+    "{presenter}, keeper of the {seed.bare} wing, {museum}",
+    "{presenter}, who has a key to the storeroom",
+    "Your guide today: {presenter}",
+    "{presenter}, the only guide allowed to touch the exhibits"
+  ]
+}
