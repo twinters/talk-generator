@@ -1377,6 +1377,24 @@ Still to come when this work is rebased onto the `v5` that has D76 to D78 (the u
 slide for each of the six formats through D76's hook, favourites among D77's theme families (a court case's corkboard,
 and the personas' of 5.2), and D78's "Exhibit A" and "Pick one" for the court case's evidence and the game-show host.
 
+Checked on 2026-11-12, without GIPHY and Unsplash: the quick set in one process (2,263 passed, 8 of them on a rerun
+without `DISABLE_GIPHY` and `DISABLE_UNSPLASH`, which those tests of the two sources need), the slow tests of the
+files the work touched (87 passed: every pack's lint, the formats' and the personas' sweeps), every commit of the branch
+on its own (before the personas came, 408 of the formats' and the personas' tests passed), ruff and mypy. Offline
+classic talks of each new format read as it: an infomercial's "It even folds fitted sheets!" and "$12.99: before our
+boss finds out!", a documentary's "Coffeus minimus can hear a biscuit packet open from two kilometres away", a court
+case's witness ("The lawyers keep asking about humming in the quiet carriage. I would like to go home."), a museum's
+"€12,000: a selfie with the guard", a toast's "Me and Jordan, back when they still called me", a book report's "Can I
+sit down now?". Six sample talks (folder 47 of the comparison decks): an infomercial and a court case by Claude Haiku
+5.5 (about $0.003 each) read as their formats ("FOOTWEAR FORCEFIELD! The Sock You Cannot Live Without!"; "The People
+v. The Office Printer: The Case of the Vanishing Stapler", whose "Alibi not found" error has the button "I Did It
+Myself"), and so did the classic documentary, museum tour, wedding toast and book report. What the checks needed: a
+documentary could lose its closing slide when its last pictures repeated an earlier one (a hushed room closes it now,
+without a picture), a court case named another crime on every slide (one now, from the topic), and the made-up book,
+museum and old master joined the topic's words ("TimeTravel at School"). Known: a classic book report's cover is a real
+book's, from Reddit, under the made-up title, and half of the charts and diagrams come out as a picture under their
+title (D73), which costs the forensic chart and the falling numbers their jokes half the time.
+
 ## 8. Slide types and variety
 
 v4's slide types stay: title, about me, history, full-screen gif, meme or photo, image with title, large quote over
