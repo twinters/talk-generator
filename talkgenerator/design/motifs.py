@@ -2431,7 +2431,7 @@ def _y2k(scene: Scene) -> None:
     if scene.numbered and not scene.placement.photo and scene.free(number, pad=4):
         scene.add(
             _rect(pill.x, pill.y, pill.w, pill.h, palette.accent, corner=pill.h / 2),
-            _rect(pill.x + 12, pill.y + 3, pill.w - 24, 5, "#ffffff", 0.55, corner=2.5),
+            _rect(pill.x + 14, pill.y + 2, pill.w - 28, 3, "#ffffff", 0.6, corner=1.5),
         )
         _slide_number(scene, number, spec="decoration centre", colour=scene.on([palette.accent]))
         scene.kept.append(pill)
