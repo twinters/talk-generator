@@ -39,6 +39,7 @@ def test_schemas_are_registered():
         "keynote",
         # (D79)
         "infomercial",
+        "documentary",
     ]
     assert get_schema("ted") is schemas.get("ted")
 

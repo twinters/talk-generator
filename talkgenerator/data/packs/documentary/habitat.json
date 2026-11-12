@@ -1,0 +1,57 @@
+{
+  "home_title": [
+    "Its natural habitat: behind the sofa",
+    "Habitat: the back of the cupboard",
+    "Found here. And in your sock drawer.",
+    "The natural habitat of {species}",
+    "Home, sweet home",
+    "Territory: everything it can see",
+    "Range: wherever you looked last",
+    "Its habitat: the third drawer down",
+    "Where it lives. Mostly."
+  ],
+  "range_question": [
+    "Where {species} is found",
+    "Sightings of {species}, by habitat",
+    "Where to look for {seed.generic}",
+    "Its range, by habitat",
+    "Where our crew found {seed.generic}",
+    "Where {species} spends the day",
+    "Known habitats of {species}"
+  ],
+  "range": [
+    "Under the sofa",
+    "Behind the fridge",
+    "Your dreams",
+    "The office kitchen",
+    "Deep forest",
+    "The last place you look",
+    "Sock drawers",
+    "Unclear",
+    "Everywhere at once",
+    "Behind the curtains",
+    "Mountain peaks",
+    "The airing cupboard",
+    "Inside a shoe",
+    "Our camera bag"
+  ],
+  "fact": [
+    "{species} can go three weeks without being noticed.",
+    "{species} has been spotted on every continent, mostly in kitchens.",
+    "No two specimens of {species} are alike. Science has only ever seen one.",
+    "{species} marks its territory by moving things slightly to the left.",
+    "A single specimen of {species} needs four square metres of sofa.",
+    "{species} can hear a biscuit packet open from two kilometres away.",
+    "In the wild, {species} lives up to 80 years. In the living room, about a weekend.",
+    "{species} has no natural predators, apart from people who tidy up."
+  ],
+  "fact_source": [
+    "Field notes, slightly smudged",
+    "Hide number 4, day 212",
+    "A wildlife survey of one volunteer",
+    "Our camera crew, who were very bored",
+    "A ranger who wishes to stay anonymous",
+    "The Journal of Things We Saw Once",
+    "Overheard at the watering hole"
+  ]
+}

@@ -11,6 +11,7 @@ from talkgenerator.schema import slide_topic_generators
 from talkgenerator.schema.formats import (
     academic,
     corporate,
+    documentary,
     infomercial,
     keynote,
     pitch,
@@ -260,6 +261,18 @@ infomercial_schema = schemas.register(
         slide_generators=slide_generators.group("infomercial"),
         max_allowed_tags=infomercial.CAPS,
         format=infomercial.INFOMERCIAL,
+        spare_generators=SPARE_GENERATORS,
+    ),
+)
+documentary_schema = schemas.register(
+    "documentary",
+    PresentationSchema(
+        powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
+        seed_generator=_wandering,
+        title_generator=documentary.title_generator,
+        slide_generators=slide_generators.group("documentary"),
+        max_allowed_tags=documentary.CAPS,
+        format=documentary.DOCUMENTARY,
         spare_generators=SPARE_GENERATORS,
     ),
 )

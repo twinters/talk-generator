@@ -73,6 +73,9 @@ FORMATS: Final = {
     "infomercial": "A late-night TV infomercial for a gadget made of the topic: the everyday problem, the gadget, its "
     "demonstration, testimonials, the fine print, the price, 'But wait, there's more!' and the call to order now, each "
     "a part of its arc, in that order",
+    "documentary": "A nature documentary about the topic as a wild species, in a hushed voice: the opening shot, its "
+    "habitat, its behaviour, a rare sighting, its rituals, the dangers it faces and a closing reflection, each a part "
+    "of its arc, in that order",
 }
 
 # The recipe a kind of slide gets when its plan doesn't name one, the first of these the format has: plain photos,

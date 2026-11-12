@@ -28,6 +28,7 @@ from talkgenerator.schema import slide_schemas
 from talkgenerator.schema.formats import (
     academic,
     corporate,
+    documentary,
     infomercial,
     keynote,
     pitch,
@@ -51,6 +52,7 @@ FORMATS = {
     "Keynote": keynote,
     # (D79)
     "Infomercial": infomercial,
+    "Documentary": documentary,
 }
 
 
