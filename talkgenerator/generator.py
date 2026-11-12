@@ -38,9 +38,9 @@ from talkgenerator.models.events import (
 )
 from talkgenerator.models.theme import Theme
 from talkgenerator.plan import languages, outline
-from talkgenerator.schema import formats
+from talkgenerator.schema import formats as talk_formats
 from talkgenerator.schema.presentation_schema import Planning, Progress, TalkCancelled
-from talkgenerator.schema.presentation_schema_types import RANDOM, get_schema, pick_format, schemas
+from talkgenerator.schema.presentation_schema_types import RANDOM, allowed_formats, get_schema, pick_format, schemas
 from talkgenerator.slide.slide_deck import SlideDeck
 from talkgenerator.sources import word_frequency
 from talkgenerator.util import image_util, os_util, random_util
@@ -139,6 +139,7 @@ def generate_presentation(
     image_budget: ImageBudget | None = None,
     persona: str | None = None,
     personas: str | Iterable[str] | None = None,
+    formats: str | Iterable[str] | None = None,
     vision_pick: bool | str | TextProvider | None = None,
     theme_families: str | Iterable[str] | None = None,
     llm_level: str | None = None,
@@ -182,6 +183,7 @@ def generate_presentation(
         image_budget=image_budget,
         persona=persona,
         personas=personas,
+        formats=formats,
         vision_pick=vision_pick,
         theme_families=theme_families,
         llm_level=llm_level,
@@ -216,6 +218,7 @@ def _generate_presentation(
     image_budget: ImageBudget | None = None,
     persona: str | None = None,
     personas: str | Iterable[str] | None = None,
+    formats: str | Iterable[str] | None = None,
     vision_pick: bool | str | TextProvider | None = None,
     theme_families: str | Iterable[str] | None = None,
     llm_level: str | None = None,
@@ -229,6 +232,12 @@ def _generate_presentation(
     disgraced professor gives academic talks), among the TED-like talk and the formats beyond it (see
     talkgenerator.schema.presentation_schema_types.pick_format). Copyright-free images go with any format: ask for
     them with license_policy "open". The deck says which format the talk had (schema_name).
+
+    formats are the formats a talk with schema random picks from: their names, as a list or one string separated by
+    commas, such as "default,keynote" (see talkgenerator.schema.presentation_schema_types.allowed_formats). None: all
+    of them. A talk whose seed picks a format among them keeps it, whichever others are left out; the others get one
+    of those, each as often as its persona's odds say among them (decision D75). A site that keeps a visitor's talks
+    varied leaves out the formats of their last few talks (all but the TED-like talk, the broadest).
 
     topic is what the talk is about (or topics, separated by commas), and title its title; without a title, it gets
     one. topic_or_title stands for both, when what's given could be either, as what someone types can be: "penguins",
@@ -333,6 +342,7 @@ def _generate_presentation(
     typed = " ".join(topic_or_title.split()) if topic_or_title and titles.normalised(topic_or_title) else None
     named = get_schema(schema) if schema != RANDOM else None  # (a KeyError for a schema there isn't)
     allowed = talk_personas.allowed(personas)  # (a ValueError for a persona there isn't)
+    format_names = allowed_formats(formats)  # (a ValueError for a format a talk's seed can't pick)
     if license_policy is not None:
         licenses.policy(license_policy)  # (a ValueError for a policy there isn't)
     if print_logs:
@@ -362,9 +372,12 @@ def _generate_presentation(
 
     # Its format: the one it asks for, or one its seed picks, which its persona favours (a startup founder pitches
     # more often: see talkgenerator.schema.presentation_schema_types.pick_format)
-    schema = pick_format(schema, rng, chosen_persona)
+    schema = pick_format(schema, rng, chosen_persona, format_names)
     if named is None:
-        logger.info("Format: {} (the talk's seed picked it, as its persona favours)".format(schema))
+        among_formats = (
+            f", one of the {len(format_names)} it allows" if len(format_names) < len(allowed_formats()) else ""
+        )
+        logger.info("Format: {} (the talk's seed picked it, as its persona favours{})".format(schema, among_formats))
     presentation_schema = named if named is not None else get_schema(schema)
     talk_format = presentation_schema.format
     policy = licenses.policy(license_policy if license_policy is not None else presentation_schema.license_policy)
@@ -373,7 +386,7 @@ def _generate_presentation(
     # allows (see talkgenerator.design.themes)
     if theme == themes.CHAOS:
         theme, style_chaos = themes.RANDOM, 1.0
-    favoured = formats.multiplied(
+    favoured = talk_formats.multiplied(
         chosen_persona.themes if chosen_persona is not None else None,
         talk_format.themes if talk_format is not None else None,
     )
@@ -529,6 +542,7 @@ def stream_talk(
     image_budget: ImageBudget | None = None,
     persona: str | None = None,
     personas: str | Iterable[str] | None = None,
+    formats: str | Iterable[str] | None = None,
     vision_pick: bool | str | TextProvider | None = None,
     theme_families: str | Iterable[str] | None = None,
     spares: int = 0,
@@ -635,6 +649,7 @@ def stream_talk(
                     image_budget=image_budget,
                     persona=persona,
                     personas=personas,
+                    formats=formats,
                     vision_pick=vision_pick,
                     theme_families=theme_families,
                     llm_level=llm_level,

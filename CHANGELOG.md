@@ -143,7 +143,8 @@ how to keep 4.x's talks. The [docs](https://github.com/twinters/talk-generator/t
   the ask), `academic` (research at a conference: the method, p-values, the limitations as an iceberg), `corporate`
   (an all-hands: the KPIs against their targets, the new org chart) and `keynote` (a product launch: the reveal, a
   demo that crashes, one more thing). `--schema random` leaves the format to the talk's seed, which makes 7 talks in
-  10 TED-like.
+  10 TED-like; `stream_talk(formats=...)` limits the formats it picks from (a site leaves out a visitor's last few,
+  so their talks vary).
 - Personas: the talk's seed picks who presents it, one of thirteen (a disgraced professor, a startup founder, a
   medieval historian, a kindergarten teacher, a retiree and their old job...), whose favourite kinds of slides,
   titles, names, themes, formats and pictures come up more often (`--persona`, `--personas`, `--persona none`;

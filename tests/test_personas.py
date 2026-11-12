@@ -645,6 +645,71 @@ def test_a_format_the_talk_names_is_its_format():
     for seed in range(30):
         assert schema_types.pick_format("academic", random_util.Rng(seed), founder) == "academic"
         assert schema_types.pick_format("ted", random_util.Rng(seed), founder) == "ted"
+        # (also when the formats a random one picks from leave it out, as a persona named goes before those allowed)
+        assert schema_types.pick_format("academic", random_util.Rng(seed), founder, ["default"]) == "academic"
+
+
+# THE FORMATS A TALK'S SEED PICKS FROM (decision D75: a site keeps a visitor's talks varied by leaving out the formats
+# of their last few talks, all but the TED-like talk)
+
+
+def _formats(persona, among=None):
+    return [schema_types.pick_format("random", random_util.Rng(seed), persona, among) for seed in range(400)]
+
+
+def test_the_seed_picks_only_among_the_formats_a_talk_allows():
+    founder = personas.persona("startup_founder")
+    three = ("default", "keynote", "corporate")
+    assert set(_formats(founder, three)) == set(three)
+    assert set(_formats(founder, ["keynote"])) == {"keynote"}
+    # Allowing all of them is allowing any: the same format as before there was a choice of them
+    every = _formats(founder)
+    assert (
+        every
+        == _formats(founder, schema_types.FORMAT_WEIGHTS)
+        == _formats(founder, ",".join(schema_types.FORMAT_WEIGHTS))
+    )
+    assert _formats(None) == _formats(None, schema_types.FORMAT_WEIGHTS)
+
+
+def test_a_talk_whose_format_is_allowed_keeps_it_whichever_others_are_left_out():
+    founder = personas.persona("startup_founder")
+    allowed = ("default", "academic", "corporate", "keynote")  # (no pitch, the founder's favourite)
+    every = _formats(founder)
+    fewer = _formats(founder, allowed)
+    for before, after in zip(every, fewer, strict=True):
+        assert after == before if before in allowed else after in allowed
+    # The founder's pitches go to the others by the founder's odds among them: mostly TED-like talks
+    moved = collections.Counter(after for before, after in zip(every, fewer, strict=True) if before == "pitch")
+    assert sum(moved.values()) > 100 and moved.most_common(1)[0][0] == "default"
+
+
+def test_the_formats_a_talk_allows_are_ones_its_seed_can_pick():
+    assert schema_types.allowed_formats() == tuple(schema_types.FORMAT_WEIGHTS)
+    assert schema_types.allowed_formats(" Keynote,default ") == ("default", "keynote")  # (in their own order)
+    assert schema_types.allowed_formats(["keynote", "default"]) == ("default", "keynote")
+    # Not ted (copyright-free images are a license policy), random, or a format there isn't
+    for wrong in ("ted", "random", "pirate"):
+        with pytest.raises(ValueError, match=f"{wrong!r} isn't one"):
+            schema_types.allowed_formats(wrong)
+    with pytest.raises(ValueError, match="at least one"):
+        schema_types.allowed_formats(" , ")
+
+
+def test_a_talk_s_format_is_one_it_allows(schema):
+    allowed = ("default", "keynote")
+    for seed in range(1, 6):
+        deck = _deck(None, int_seed=seed, schema_name="random", formats=allowed)
+        persona = personas.pick(None, random_util.Rng(seed))
+        assert deck.schema_name == schema_types.pick_format("random", random_util.Rng(seed), persona, allowed)
+        assert deck.schema_name in allowed
+    # The same in a stream
+    events = list(
+        generator.stream_talk("random", NUM_SLIDES, topic="cats", int_seed=4, llm="none", formats="corporate")
+    )
+    assert isinstance(events[-1], TalkFinished) and events[-1].deck.schema_name == "corporate"
+    with pytest.raises(ValueError, match="'pirate' isn't one"):
+        _deck(None, schema_name="random", formats="pirate")
 
 
 def test_the_same_seed_picks_the_same_persona_and_format_and_the_format_moves_nothing_else():
