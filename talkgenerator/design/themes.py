@@ -281,6 +281,23 @@ FAMILIES: Final[dict[str, Family]] = {
                     accent="#8e5ad8",
                     accent_2="#ff7a1a",
                 ),
+                # (D77: lavender and pink paper, Open Color's)
+                Palette(
+                    background="#f3f0ff",
+                    surface="#e5dbff",
+                    text="#2b2244",
+                    muted="#4f4566",
+                    accent="#12b886",
+                    accent_2="#f76707",
+                ),
+                Palette(
+                    background="#fff0f6",
+                    surface="#ffdeeb",
+                    text="#3b1d2e",
+                    muted="#5c3b4c",
+                    accent="#228be6",
+                    accent_2="#fab005",
+                ),
             ),
             fonts=(("Trebuchet MS", "Verdana"), ("Verdana", "Verdana"), ("Comic Sans MS", "Trebuchet MS")),
             open_fonts=(("Sniglet", "Mali"), ("Mali", "Mali")),

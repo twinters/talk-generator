@@ -641,20 +641,30 @@ _CIRCLE: Final = tuple(
 
 def _paints(palette: Palette) -> list[str]:
     """The colours a kindergarten's decoration is in, from its member's palette, so that its palettes show: its two
-    accents, as bright as crayons (an accent made darker to read as a text is bright again here), and its paper's own
-    hue, deep enough to show on it (a yellow paper's goes towards orange)."""
+    accents (one darker than a crayon, as an accent made darker to read as a text is, as light as a crayon again, or
+    as near that as it gets while it still shows on the paper), and its paper's own hue as a paint, as light as it
+    gets while it shows well."""
+    paper = palette.background
     paints = []
     for colour in (palette.accent, palette.accent_2):
         hue, saturation, lightness = color.to_hsl(colour)
-        paints.append(color.hsl(hue, max(saturation, 0.6), min(max(lightness, 0.5), 0.66)))
-    hue, saturation, _ = color.to_hsl(palette.background)
-    paper = color.hsl(hue, max(saturation, 0.6), 0.5)
-    for _ in range(4):
-        if color.contrast(paper, palette.background) >= 1.6:
+        paint = colour
+        for step in range(round((0.5 - lightness) / 0.02) + 1) if lightness < 0.5 else ():
+            lighter = color.hsl(hue, saturation, 0.5 - 0.02 * step)
+            if color.contrast(lighter, paper) >= _SHOWS:
+                paint = lighter
+                break
+        paints.append(paint)
+    hue = color.to_hsl(paper)[0]
+    for lightness in (0.6, 0.57, 0.54, 0.51, 0.48, 0.45, 0.42, 0.39, 0.36):
+        own = color.hsl(hue, 0.8, lightness)
+        if color.contrast(own, paper) >= _SHOWS + 0.3:
             break
-        hue = (hue - 10) % 360
-        paper = color.hsl(hue, max(saturation, 0.6), 0.5)
-    return [*paints, paper]
+    return [*paints, own]
+
+
+# How much contrast a kindergarten's paint has with its paper at least, so that it shows (as a shape, not a text)
+_SHOWS: Final = 1.5
 
 
 def _under_title(scene: Scene, title: str, most: float = 520.0) -> tuple[float, float, float]:
@@ -978,15 +988,14 @@ def _stickers(scene: Scene) -> None:
         scene.add(shadow, rim, _rect(pill.x, pill.y, pill.w, pill.h, paint, corner=corner))
         _slide_number(scene, number, spec="decoration centre", colour=scene.on([paint]))
         scene.kept.append(_grown(pill, 5))
-    big = scene.placement.layout in ("v5/kids-title", "v5/kids-section") or scene.big
     kinds = ("star", "heart", "dot", "smiley", "flower")
 
     def stick(x: float, y: float, size: float) -> None:  # (its white edge, turned, inside the spot)
         kind = random_util.choice(kinds)
         _sticker(scene, kind, x, y, size * 0.78, random_util.choice(paints), random_util.uniform(-18, 18))
 
-    count = 6 if scene.placement.layout == "v5/kids-title" else 4 if big else 2
-    sizes = (120.0, 180.0) if big else (80.0, 116.0)
+    count = 6 if scene.placement.layout == "v5/kids-title" else 4 if scene.big else 2
+    sizes = (120.0, 180.0) if scene.big else (80.0, 116.0)
     _scatter(scene, count, sizes, stick, letters=True, edges=(70.0, 120.0), rows=(76.0, 90.0))
     for role in _framed(scene):
         _sticker_picture(scene, role)

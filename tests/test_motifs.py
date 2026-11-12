@@ -328,7 +328,7 @@ def test_each_set_has_its_own_title_and_section_slides(images, motif):
 @pytest.mark.slow
 @pytest.mark.parametrize("motif", KIDS_SETS)
 def test_every_set_of_decoration_passes_the_design_checks(images, motif):
-    theme = _kids(motif, KIDS_SETS.index(motif))  # (each in another of the family's palettes)
+    theme = _kids(motif, KIDS_SETS.index(motif) + 2)  # (each in another of the family's palettes than the quick test's)
     assert check_design(_runs(2, theme).to_deck()) == [], motif
 
 
