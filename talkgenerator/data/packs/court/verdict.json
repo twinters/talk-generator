@@ -1,0 +1,52 @@
+{
+  "verdict_question": [
+    "The jury's verdict: guilty?",
+    "Guilty as charged?",
+    "Was it {topic.generic}?",
+    "Members of the jury: guilty?",
+    "Guilty of {crime}?",
+    "Should {topic.generic} go free?"
+  ],
+  "verdict_funny": [
+    "Needs a snack first",
+    "Ask again after lunch",
+    "Too cute to tell",
+    "The jury fell asleep",
+    "Objection!",
+    "Can we see Exhibit A again?"
+  ],
+  "verdict_title": [
+    "The verdict",
+    "The jury has spoken",
+    "The sentence",
+    "After four minutes of deliberation",
+    "The court's decision",
+    "And the verdict is..."
+  ],
+  "verdict_number": [
+    "GUILTY|of {crime}, and of looking smug about it",
+    "12-0|the jury's vote, after a short snack break",
+    "30 days|without Wi-Fi",
+    "200 hours|of community service: explaining {topic.generic} to toddlers",
+    "0|regrets, says the defendant. The court is not amused.",
+    "1|very long apology letter for {crime}",
+    "11-1|for guilty, and one juror who wants to hear the cat's side",
+    "3 weeks|of washing up the court's mugs"
+  ],
+  "verdict_source": [
+    "The Honourable Judge, after lunch",
+    "Court records, slightly crumpled",
+    "The jury foreman, a retired goose",
+    "Written on a napkin by the judge",
+    "The court clerk, who saw it all",
+    "A very reliable pigeon"
+  ],
+  "jury": [
+    "You are the jury. Raise your hand if you think {topic.generic} did it.",
+    "Members of the jury: if you find the defendant guilty, say 'Guilty!' on three.",
+    "Everyone who thinks the defendant did it, stand up. Everyone else, look very suspicious.",
+    "The jury will now deliberate: turn to your neighbour and decide, in ten seconds, guilty or not.",
+    "All rise! Then sit down again if you think the defendant is innocent.",
+    "Hands up, jury: who here has never been accused of {crime}?"
+  ]
+}

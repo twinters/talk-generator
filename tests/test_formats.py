@@ -32,7 +32,18 @@ from talkgenerator.plan.kinds import KINDS
 from talkgenerator.render import preview
 from talkgenerator.render.powerpoint import render_pptx
 from talkgenerator.schema import formats, presentation_schema, presentation_schema_types
-from talkgenerator.schema.formats import academic, corporate, keynote, pitch
+from talkgenerator.schema.formats import (
+    academic,
+    book_report,
+    corporate,
+    court,
+    documentary,
+    infomercial,
+    keynote,
+    museum,
+    pitch,
+    wedding,
+)
 from talkgenerator.schema.formats.arcs import PART_WEIGHT, STAND_IN, Arc, Free, InPart, Part
 from talkgenerator.schema.presentation_schema_types import get_schema, schemas
 from talkgenerator.slide import slides
@@ -40,8 +51,25 @@ from talkgenerator.sources import conceptnet
 from talkgenerator.util import image_util, random_util
 from tests.test_slide_types import _clicks, _deck, _longest, _theme
 
-FORMATS = {"pitch": pitch, "academic": academic, "corporate": corporate, "keynote": keynote}
+FORMATS = {
+    "pitch": pitch,
+    "academic": academic,
+    "corporate": corporate,
+    "keynote": keynote,
+    # (D79)
+    "infomercial": infomercial,
+    "documentary": documentary,
+    "court": court,
+    "museum": museum,
+    "wedding": wedding,
+    "book_report": book_report,
+}
 FAMILIES = list(themes.FAMILIES)
+
+
+def _format(name):
+    """A format's Format, by its module's constant of the format's name in capitals (PITCH, BOOK_REPORT)."""
+    return FORMATS[name].__dict__[name.upper()]
 
 
 def _part_of(generator_data, arc):
@@ -273,6 +301,31 @@ def test_a_formats_favourite_personas_present_it_more_often():
     assert personas.pick("none", random_util.Rng(1), pitch.PITCH.personas) is None
 
 
+# (D79: a newer format's specialist presents about 30% of its talks, as a pitch's founder does; the book report, which
+# has no specialist, is the kindergarten teacher's more often)
+NEWER_FAVOURITES = {
+    "infomercial": "infomercial_host",
+    "documentary": "nature_narrator",
+    "court": "detective",
+    "museum": "museum_guide",
+    "wedding": "best_man",
+    "book_report": "kindergarten_teacher",
+}
+
+
+@pytest.mark.parametrize("name", NEWER_FAVOURITES)
+def test_a_newer_formats_favourite_persona_presents_it_more_often(name):
+    picked = collections.Counter(
+        personas.pick(None, random_util.Rng(seed), _format(name).personas).name  # type: ignore[union-attr]
+        for seed in range(1300)
+    )
+    share = picked[NEWER_FAVOURITES[name]] / 1300
+    assert share > 2.5 / len(personas.PERSONAS), (name, share)  # (two and a half times its share without)
+    if name != "book_report":
+        assert share > 0.24, (name, share)
+    assert all(picked.get(other, 0) > 0 for other in personas.PERSONAS), name  # (every persona still presents some)
+
+
 def test_a_formats_talks_are_in_its_favourite_theme_families_more_often():
     def share(family, multipliers):
         picked = [themes.pick("random", random_util.Rng(seed).child("theme"), True, multipliers) for seed in range(800)]
@@ -312,6 +365,39 @@ def test_an_all_hands_company_and_a_keynotes_product_are_named_after_the_topic()
     topics = ("cat", "coffee", "the moon", "Belgium", "socks", "jazz", "bread", "penguins")
     assert len({formats.company(topic).replace(formats._name_word(topic), "") for topic in topics}) > 3
     assert len({formats.product(topic).replace(formats._name_word(topic), "") for topic in topics}) > 3
+
+
+# (and those of D79's formats: each at most as long as the pack lint's longest, tests/test_content_pack.LONG)
+NAMERS = {
+    "gadget": (formats.gadget, 24),
+    "species": (formats.species, 29),
+    "museum": (formats.museum_name, 33),
+    "artist": (formats.artist, 29),
+    "friend": (formats.friend, 7),
+    "book": (formats.book, 28),
+    "author": (formats.author, 21),
+    "crime": (formats.crime, 34),
+}
+
+
+@pytest.mark.parametrize("variable", NAMERS)
+def test_the_newer_formats_made_up_names_come_from_the_topic(variable):
+    namer, longest = NAMERS[variable]
+    topics = ("cat", "coffee", "the moon", "Belgium", "socks", "jazz", "bread", "penguins", "time travel")
+    assert namer("penguins") == namer("penguins")  # (the same on every slide, and in every run)
+    assert len({namer(topic) for topic in topics}) > 3
+    for topic in ("conference interpreters", "a plant that won't die", "the French Revolution", "x", "", *topics):
+        assert 0 < len(namer(topic)) <= longest, (topic, namer(topic))
+    if variable not in ("friend", "author", "crime"):  # (a name or a crime of its own; the others name the topic)
+        assert "enguin" in namer("penguins") and "Penguins" not in namer("penguins")
+
+
+def test_a_documentarys_species_is_latin_ish():
+    assert formats.species("penguins").split()[0] == "Penguinus"
+    assert formats.species("coffee").split()[0] == "Coffeus" and formats.species("a bunny").split()[0] == "Bunnius"
+    assert formats.species("Belgium").split()[0] == "Belgium"
+    assert formats.species("time travel").split()[0] == "Timetravelus"
+    assert all(formats.species(topic).split()[1].islower() for topic in ("cat", "coffee", "jazz"))
 
 
 # CLASSIC SLIDES AND TALKS, OFFLINE
@@ -403,7 +489,7 @@ def test_a_talk_that_leaves_its_format_to_its_seed_is_the_talk_of_the_format_it_
     # is the talk of the format its seed picked)
     founder = personas.persona("startup_founder")
     picked = set()
-    for seed in (1, 4, 9, 56):  # (a pitch, a keynote, a TED-like talk and an academic talk, as it happens)
+    for seed in (1, 9, 83, 5):  # (a pitch, a TED-like talk, a keynote and a court case, as it happens: D79's odds)
         deck = _talk(presentation_schema_types.RANDOM, seed, persona="startup_founder", theme="random")
         assert deck.schema_name == presentation_schema_types.pick_format("random", random_util.Rng(seed), founder)
         assert deck.to_json() == _talk(deck.schema_name, seed, persona="startup_founder", theme="random").to_json()
@@ -411,7 +497,7 @@ def test_a_talk_that_leaves_its_format_to_its_seed_is_the_talk_of_the_format_it_
         if deck.schema_name in FORMATS:
             assert check_arc(deck, 10) == []
         picked.add(deck.schema_name)
-    assert picked == {"pitch", "academic", "keynote", "default"}
+    assert picked == {"pitch", "default", "keynote", "court"}
 
 
 def test_a_classic_pitch_names_its_startup_and_an_academic_talk_its_affiliation(offline):
@@ -537,11 +623,13 @@ def test_the_formats_are_listed_with_what_they_are_and_their_slides():
             }
             for part in module.ARC.parts
         ]
-        # Its own recipes are its kinds' defaults; it borrows a TED-like talk's only for a kind it has none of
-        own = {kind["kind"] for kind in catalog["kinds"] if any(r["id"].endswith(f"-{name}") for r in kind["recipes"])}
+        # Its own recipes are its kinds' defaults; it borrows a TED-like talk's only for a kind it has none of (its own
+        # end in its name, with dashes: "-book-report")
+        ending = "-" + name.replace("_", "-")
+        own = {kind["kind"] for kind in catalog["kinds"] if any(r["id"].endswith(ending) for r in kind["recipes"])}
         for kind in catalog["kinds"]:
             default = next(recipe for recipe in kind["recipes"] if recipe["default"])
-            assert default["id"].endswith(f"-{name}") == (kind["kind"] in own), (name, kind["kind"])
+            assert default["id"].endswith(ending) == (kind["kind"] in own), (name, kind["kind"])
         assert catalog["titles"] == module.__dict__[name.upper()].title_hint
     assert "process" in {kind["kind"] for kind in external.catalog("academic")["kinds"]}
     assert "process" not in {kind["kind"] for kind in external.catalog("default")["kinds"]}

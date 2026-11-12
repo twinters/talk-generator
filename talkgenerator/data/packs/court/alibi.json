@@ -1,0 +1,127 @@
+{
+  "night_title": [
+    "The night in question",
+    "The night of the 14th",
+    "What really happened",
+    "A timeline of the crime",
+    "The defendant's evening",
+    "Minute by minute"
+  ],
+  "night_time": [
+    "19:30",
+    "20:00",
+    "20:47",
+    "21:12",
+    "21:13",
+    "21:14",
+    "21:15",
+    "22:30",
+    "23:59"
+  ],
+  "night_first": [
+    "Arrives at the party",
+    "Says 'I'll just be a minute'",
+    "Sits down, too casually",
+    "Arrives, suspiciously early",
+    "Asks where everything is kept",
+    "Arrives with an empty bag"
+  ],
+  "night_event": [
+    "Seen lurking near the scene",
+    "Footsteps in the kitchen",
+    "The lights go out",
+    "A rustling noise",
+    "{crime.cap}",
+    "A loud clatter",
+    "A suspicious silence",
+    "Seen whistling innocently"
+  ],
+  "night_punchline": [
+    "Asks if anyone has seen anything",
+    "Claims to have been asleep",
+    "Posts a photo of the evidence",
+    "Falls asleep at the scene",
+    "Blames the dog",
+    "Offers to help with the search"
+  ],
+  "flow_title": [
+    "The defendant's alibi",
+    "Checking the alibi",
+    "Alibi analysis",
+    "How the detectives think",
+    "Our method",
+    "The case, step by step"
+  ],
+  "flow_question": [
+    "Was the defendant at the scene?",
+    "Does the alibi hold up?",
+    "Did anyone see the defendant leave?",
+    "Can the defendant explain the evidence?",
+    "Is the defendant's alibi a cat?",
+    "Was the defendant seen {crime}?"
+  ],
+  "flow_yes": [
+    "Suspicious",
+    "Very suspicious",
+    "Then explain Exhibit A",
+    "A likely story",
+    "Check the pockets",
+    "Ask the cat"
+  ],
+  "flow_no": [
+    "Then where were they?",
+    "Suspiciously absent",
+    "Hiding something",
+    "Even more suspicious",
+    "That's what they want us to think",
+    "Check under the sofa"
+  ],
+  "flow_end": [
+    "Guilty",
+    "Guilty anyway",
+    "Guilty, obviously",
+    "Straight to the verdict",
+    "Arrest the cat too",
+    "Guilty. Next case."
+  ],
+  "error_title": [
+    "Alibi.exe",
+    "Alibi Checker",
+    "Court Records",
+    "Evidence Database",
+    "Alibi Finder",
+    "Case Files"
+  ],
+  "error": [
+    "The defendant's alibi could not be found.",
+    "Alibi not found. It may have been eaten.",
+    "The alibi you are looking for has been moved, or never existed.",
+    "Alibi.exe has stopped working. So has the defendant's story.",
+    "Too many alibis. Please choose one.",
+    "This alibi has expired. Please provide a new one by Friday."
+  ],
+  "error_code": [
+    "ERR_NO_ALIBI_404",
+    "0x0GUILTY",
+    "E-CASE-2113",
+    "ALIBI_NULL",
+    "ERROR 21:13",
+    "CASE_0417_FAIL"
+  ],
+  "button": [
+    "Retry",
+    "Look again",
+    "Ask the cat",
+    "Search the sofa",
+    "Call a witness",
+    "Check the pockets"
+  ],
+  "button_punchline": [
+    "Confess",
+    "Blame the dog",
+    "Plead cute",
+    "Eat the evidence",
+    "Blame the butler",
+    "Leave quietly"
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "left_title": [
+    "How many are left?",
+    "A species in trouble",
+    "The numbers",
+    "Endangered",
+    "A fragile population",
+    "The last of their kind"
+  ],
+  "left_number": ["7", "12", "3", "40", "9", "2", "17", "4"],
+  "left_label": [
+    "Specimens of {species} left in the wild",
+    "Left in the wild. Probably fewer by now.",
+    "Sightings this century, all by the same hiker",
+    "Known to science, two of them by accident",
+    "Left in the wild, give or take a sofa",
+    "Seen this year, and one of them was a hat",
+    "Left in the wild, and they know it"
+  ],
+  "left_source": [
+    "The last census, done on a napkin",
+    "A ranger who counted twice",
+    "Our camera crew, who lost count",
+    "A survey by one very patient volunteer",
+    "Wildlife census, rounded down",
+    "Counted from a helicopter, quickly"
+  ],
+  "trend_title": [
+    "Sightings of {species}, falling",
+    "{species}: numbers since the first tourist",
+    "The population of {species}, then and now",
+    "Fewer and fewer: {species} in the wild",
+    "What happened to {species}?",
+    "Sightings per year, since spring cleaning began"
+  ],
+  "trend_x": [
+    "Years since the first tourist",
+    "Decades",
+    "Springs since the vacuum cleaner",
+    "Seasons of filming",
+    "Years since anyone tidied up",
+    "Months in the hide"
+  ],
+  "trend_y": [
+    "Sightings",
+    "Specimens seen",
+    "Population",
+    "Times spotted",
+    "Footprints found",
+    "Specimens, counted twice"
+  ],
+  "trend_event": [
+    "The vacuum cleaner arrives",
+    "Tourists discover it",
+    "Someone tidied up",
+    "Mondays begin",
+    "Wi-Fi arrives",
+    "The camera crew arrives",
+    "A very loud picnic"
+  ],
+  "danger": [
+    "But danger is never far away.",
+    "Then, without warning: the vacuum cleaner.",
+    "Its greatest enemy? Spring cleaning.",
+    "But all is not well in the land of {seed.generic}.",
+    "Its natural enemies are few. But they are relentless. One of them is Mondays.",
+    "The threats are everywhere: tourists, toddlers, and people who tidy up.",
+    "Of all the dangers in the wild, none is as feared as a well-meaning tourist with a camera."
+  ]
+}

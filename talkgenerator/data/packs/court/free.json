@@ -1,0 +1,27 @@
+{
+  "provocation": [
+    "Guilty.",
+    "Objection.",
+    "Order.",
+    "Sustained.",
+    "Overruled.",
+    "Case closed.",
+    "All rise.",
+    "Exhibit A.",
+    "Suspicious.",
+    "No further questions.",
+    "Motive?",
+    "Alibi?",
+    "Hearsay.",
+    "The truth.",
+    "Beyond reasonable doubt.",
+    "Innocent?",
+    "Who did it?",
+    "Case dismissed?",
+    "{seed.generic.title}. Guilty?",
+    "Why {seed.generic}?",
+    "The People v. {seed.generic.title}.",
+    "Caught.",
+    "{crime.cap}?"
+  ]
+}

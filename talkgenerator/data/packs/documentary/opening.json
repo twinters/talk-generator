@@ -1,0 +1,25 @@
+{
+  "dawn": [
+    "Dawn breaks over the land of {seed.generic}.",
+    "Here, at the very edge of the known world...",
+    "It begins, as it always does, in silence.",
+    "This is the realm of {species}.",
+    "Few have ever ventured this far.",
+    "A land untouched by time. And by Wi-Fi.",
+    "Remote. Unforgiving. Breathtaking.",
+    "At first light, the kingdom stirs.",
+    "Somewhere out there, something is watching.",
+    "Silence. Then, the faintest rustle.",
+    "Our journey begins here. Bring snacks."
+  ],
+  "planet": [
+    "Planet Earth. Home to eight million species. And {species}.",
+    "Of all the creatures on Earth, few are as misunderstood as {species}.",
+    "To film {seed.generic}, our crew spent three years in a hide. Mostly eating crackers.",
+    "In the wild, nothing is certain. Except, perhaps, {seed.generic}.",
+    "This is the story of {species}. It has never been told. Until now.",
+    "We travelled to the ends of the Earth to find {seed.generic}. It was in the kitchen all along.",
+    "Some creatures roar. Some creatures fly. And some creatures are {seed.generic}.",
+    "For millions of years, {species} has kept to itself. Today, that changes."
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "shop_title": [
+    "The gift shop",
+    "Before you go",
+    "Take a piece of {museum} home",
+    "Souvenirs",
+    "Our best sellers",
+    "Today in the gift shop"
+  ],
+  "item": [
+    "A {seed.bare} tote bag",
+    "A pencil",
+    "A postcard of a postcard",
+    "A tea towel of the masterpiece",
+    "A {seed.bare} fridge magnet",
+    "One (1) bookmark",
+    "A very small umbrella",
+    "The audio guide, to keep",
+    "A {seed.bare} snow globe"
+  ],
+  "item_punchline": [
+    "A replica of {seed.one}",
+    "The masterpiece itself (it's a copy)",
+    "Our guide, for an afternoon",
+    "Real {seed.bare}, no refunds",
+    "The exit (it costs extra)",
+    "A selfie with the guard",
+    "The museum. Make an offer."
+  ],
+  "price": [
+    "€2",
+    "€4",
+    "€9",
+    "€12",
+    "€18",
+    "€24",
+    "€35",
+    "€45"
+  ],
+  "punchline_price": [
+    "€3,000",
+    "€12,000",
+    "Priceless",
+    "€99,999",
+    "Ask us",
+    "€1M"
+  ],
+  "big_title": [
+    "In the gift shop today",
+    "Our best seller",
+    "A souvenir",
+    "Gift shop special",
+    "Don't leave without it",
+    "On your way out"
+  ],
+  "big_amount": [
+    "€45",
+    "€89",
+    "€120",
+    "€19.99",
+    "€250",
+    "€74.50"
+  ],
+  "big_label": [
+    "for a pencil with {seed.generic} on it",
+    "for a postcard of the masterpiece, slightly blurry",
+    "for a {seed.bare} snow globe, while stocks last",
+    "for an umbrella that says 'I saw {seed.generic}'",
+    "for a bookmark. Just the one.",
+    "for a very small bag of {seed.bare} sweets"
+  ],
+  "big_source": [
+    "Gift shop prices, subject to change",
+    "Members get 5% off",
+    "Price includes one more look at the masterpiece",
+    "No refunds. No exceptions.",
+    "Tax not included. Neither is the bag.",
+    "Card only. The guard takes cash."
+  ],
+  "souvenirs_title": [
+    "Take it home",
+    "In the gift shop",
+    "Our best sellers",
+    "Souvenirs of {seed.generic}",
+    "Something to remember us by",
+    "Before you go"
+  ],
+  "souvenir": [
+    "The mug",
+    "The tote bag",
+    "The snow globe",
+    "The {seed.bare} magnet",
+    "The pencil",
+    "The tea towel",
+    "The jigsaw, 5,000 pieces"
+  ],
+  "souvenir_punchline": [
+    "The guide, for a small fee",
+    "The masterpiece (a replica)",
+    "A very expensive bookmark",
+    "The exit, sold separately",
+    "The real {seed.bare}",
+    "The guard's hat",
+    "An empty frame, for €400"
+  ]
+}

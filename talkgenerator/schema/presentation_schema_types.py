@@ -8,7 +8,18 @@ from talkgenerator.datastructures.slide_generator_data import ConstantWeightFunc
 from talkgenerator.plan.kinds import Recipe
 from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema import slide_topic_generators
-from talkgenerator.schema.formats import academic, corporate, keynote, pitch
+from talkgenerator.schema.formats import (
+    academic,
+    book_report,
+    corporate,
+    court,
+    documentary,
+    infomercial,
+    keynote,
+    museum,
+    pitch,
+    wedding,
+)
 from talkgenerator.schema.presentation_schema import PresentationSchema
 from talkgenerator.schema.registry import Registry
 from talkgenerator.schema.slide_schemas import SPARE_GENERATORS, default_max_allowed_tags, slide_generators
@@ -244,6 +255,79 @@ keynote_schema = schemas.register(
         spare_generators=SPARE_GENERATORS,
     ),
 )
+# (D79: six more, each with a specialist persona but the book report)
+infomercial_schema = schemas.register(
+    "infomercial",
+    PresentationSchema(
+        powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
+        seed_generator=_wandering,
+        title_generator=infomercial.title_generator,
+        slide_generators=slide_generators.group("infomercial"),
+        max_allowed_tags=infomercial.CAPS,
+        format=infomercial.INFOMERCIAL,
+        spare_generators=SPARE_GENERATORS,
+    ),
+)
+documentary_schema = schemas.register(
+    "documentary",
+    PresentationSchema(
+        powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
+        seed_generator=_wandering,
+        title_generator=documentary.title_generator,
+        slide_generators=slide_generators.group("documentary"),
+        max_allowed_tags=documentary.CAPS,
+        format=documentary.DOCUMENTARY,
+        spare_generators=SPARE_GENERATORS,
+    ),
+)
+court_schema = schemas.register(
+    "court",
+    PresentationSchema(
+        powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
+        seed_generator=_wandering,
+        title_generator=court.title_generator,
+        slide_generators=slide_generators.group("court"),
+        max_allowed_tags=court.CAPS,
+        format=court.COURT,
+        spare_generators=SPARE_GENERATORS,
+    ),
+)
+museum_schema = schemas.register(
+    "museum",
+    PresentationSchema(
+        powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
+        seed_generator=_wandering,
+        title_generator=museum.title_generator,
+        slide_generators=slide_generators.group("museum"),
+        max_allowed_tags=museum.CAPS,
+        format=museum.MUSEUM,
+        spare_generators=SPARE_GENERATORS,
+    ),
+)
+wedding_schema = schemas.register(
+    "wedding",
+    PresentationSchema(
+        powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
+        seed_generator=_wandering,
+        title_generator=wedding.title_generator,
+        slide_generators=slide_generators.group("wedding"),
+        max_allowed_tags=wedding.CAPS,
+        format=wedding.WEDDING,
+        spare_generators=SPARE_GENERATORS,
+    ),
+)
+book_report_schema = schemas.register(
+    "book_report",
+    PresentationSchema(
+        powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
+        seed_generator=_wandering,
+        title_generator=book_report.title_generator,
+        slide_generators=slide_generators.group("book_report"),
+        max_allowed_tags=book_report.CAPS,
+        format=book_report.BOOK_REPORT,
+        spare_generators=SPARE_GENERATORS,
+    ),
+)
 
 
 # THE FORMAT A TALK'S SEED PICKS (decisions D61 and D63): a talk that leaves its format to its seed (schema "random")
@@ -254,8 +338,24 @@ keynote_schema = schemas.register(
 # (2026-11-09), with the pitch and the academic talk the rarest. Not ted: that's the TED-like talk with copyright-free
 # images only, which is a choice of license rather than of format: a talk asks for those images with license_policy
 # "open", whatever format its seed picks (the formats' arcs need no image that's fair use). Nor interview and test.
+# With D79's six formats and eight personas (five of them specialists), the TED-like talk weighs 55 (it was 20), so
+# that 7 talks in 10 stay TED-like over all 21 personas and 8 in 10 without one, the specialists' multipliers are ×32
+# (×21 for the all-hands' and the keynote's), so their favourite still comes second, in about a third of their talks,
+# and every format keeps about 1% with every persona: the other ten formats share three talks in ten.
 RANDOM: Final = "random"
-FORMAT_WEIGHTS: Final[dict[str, float]] = {"default": 20, "pitch": 1, "academic": 1, "corporate": 1.5, "keynote": 1.5}
+FORMAT_WEIGHTS: Final[dict[str, float]] = {
+    "default": 55,
+    "pitch": 1,
+    "academic": 1,
+    "corporate": 1.5,
+    "keynote": 1.5,
+    "infomercial": 1,
+    "documentary": 1,
+    "court": 1,
+    "museum": 1,
+    "wedding": 1,
+    "book_report": 1,
+}
 
 
 def choices() -> tuple[str, ...]:

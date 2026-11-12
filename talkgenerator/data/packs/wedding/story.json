@@ -1,0 +1,81 @@
+{
+  "incident_title": [
+    "The incident of #story_year#",
+    "We don't talk about the camping trip",
+    "The {seed.bare} incident",
+    "{friend}, moments after the {seed.bare} incident",
+    "The school trip. Never forget.",
+    "Some of you were there",
+    "{friend} asked me not to show this one",
+    "There's a reason {friend} doesn't sing anymore",
+    "This is the story I promised not to tell",
+    "Exhibit A: {friend}, #story_year#"
+  ],
+  "story_year": [
+    "2009",
+    "2011",
+    "2013",
+    "2015",
+    "2016"
+  ],
+  "flags_title": [
+    "The red flags we all ignored",
+    "Red flags, in hindsight",
+    "Red flags I should have mentioned",
+    "In hindsight, there were signs",
+    "The red flags nobody mentioned",
+    "The signs were all there",
+    "Red flags, a collection"
+  ],
+  "flag": [
+    "{friend} started saving a seat for {topic.generic} at dinner",
+    "{friend} changed their phone background to {topic.generic}",
+    "{friend} cancelled game night three weeks in a row",
+    "{friend} learned a whole new language, just for {topic.generic}",
+    "{friend} started humming love songs at work",
+    "{friend} bought matching sweaters",
+    "{friend} named a houseplant after {topic.generic}",
+    "{friend} answered every question with 'we'",
+    "{friend} wrote a poem about {seed.generic}. It rhymed.",
+    "{friend} giggled at a spreadsheet",
+    "{friend} asked me what I thought of {topic.generic}. Every day."
+  ],
+  "flag_punchline": [
+    "{friend} asked me to give this speech",
+    "{friend} said yes",
+    "We're all here",
+    "There's a cake shaped like {topic.generic}",
+    "{friend} booked this venue two years ago",
+    "{friend} cried at the rehearsal",
+    "{friend} sent out the invitations",
+    "I bought a new outfit for today"
+  ],
+  "post_title": [
+    "That night",
+    "Posted that night",
+    "The post that started it all",
+    "Screenshot, for the record",
+    "Posted at 2 a.m., that night",
+    "I kept the receipts",
+    "From that night, unedited"
+  ],
+  "friend_post": [
+    "Met someone special tonight. Can't stop thinking about {topic.generic}. Is this what love feels like?",
+    "Not to be dramatic, but I think I just met the one. And it's {topic.generic}.",
+    "Okay, everyone. I need to tell you something about {topic.generic}.",
+    "Best. Night. Ever. Thank you, {topic.generic}.",
+    "Can't sleep. Thinking about {topic.generic}. Is that weird? Don't answer.",
+    "Update: {topic.generic.cap} and I are officially a thing.",
+    "Just had the best evening of my life. Details tomorrow. Maybe.",
+    "Cancelling all my plans this weekend. Something came up. Something wonderful."
+  ],
+  "speaker_post": [
+    "{friend} just met {topic.generic} and won't stop talking about it. Send help.",
+    "Lost {friend} tonight. Not literally. To {topic.generic}.",
+    "Third night in a row {friend} has cancelled on me. I'm told it's {topic.generic}.",
+    "Is it normal to be jealous of {topic.generic}? Asking for a friend. The friend is me.",
+    "{friend} keeps showing me photos of {topic.generic}. I have seen enough photos.",
+    "Called {friend}. {topic.generic.cap} answered. We need to talk.",
+    "Me: how was your evening? {friend}: {topic.generic}. Me: that's not an answer."
+  ]
+}

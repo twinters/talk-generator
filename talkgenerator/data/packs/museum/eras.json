@@ -1,0 +1,108 @@
+{
+  "periods_title": [
+    "The three periods of {artist}",
+    "Three periods",
+    "The artist's periods",
+    "{seed.generic.cap} through the ages",
+    "Five centuries, in three works",
+    "A career in three paintings"
+  ],
+  "period": [
+    "The early period",
+    "The blue period",
+    "The {seed.bare} period",
+    "The golden age",
+    "The quiet years",
+    "The dark period",
+    "The very small period",
+    "The angry period",
+    "The period with hats"
+  ],
+  "period_punchline": [
+    "The nap period",
+    "The period nobody talks about",
+    "The beige years",
+    "The gift shop period",
+    "The 'I give up' period",
+    "The {seed.bare} phase, again",
+    "The late, late period"
+  ],
+  "tiers_title": [
+    "Art movements, ranked",
+    "The great movements, ranked",
+    "Every art movement, ranked by the guide",
+    "Art history, ranked once and for all",
+    "The movements, as the guide sees them",
+    "Which movement is best? A ranking"
+  ],
+  "s_tier": [
+    "{seed.bare.title}ism",
+    "Post-{seed.bare.title}ism",
+    "Neo-{seed.bare.title}ism",
+    "Early {seed.bare.title}ism",
+    "{seed.bare.title}ism, obviously",
+    "The {seed.bare.title} School",
+    "Abstract {seed.bare.title}ism"
+  ],
+  "movement": [
+    "Impressionism",
+    "Cubism",
+    "Surrealism",
+    "Minimalism",
+    "Baroque",
+    "Pointillism",
+    "Pop art",
+    "Gothic",
+    "The Renaissance",
+    "Beige-ism",
+    "Mild Realism",
+    "Accidentalism",
+    "Napism",
+    "Sad Clownism"
+  ],
+  "f_tier": [
+    "Sad clown paintings",
+    "Gift shop magnets",
+    "Whatever is in the lobby",
+    "Motivational posters",
+    "The audio guide",
+    "Paintings of fruit",
+    "Modern art I could have made"
+  ],
+  "pyramid_title": [
+    "The hierarchy of art",
+    "What the experts value most",
+    "The art world, explained",
+    "The pyramid of fine art",
+    "How museums sort things",
+    "Art, from priceless to pointless"
+  ],
+  "pyramid_top": [
+    "{seed.generic.cap}",
+    "{seed.bare.title} art",
+    "Art of {seed.generic}",
+    "Only {seed.generic}",
+    "Pure {seed.bare}",
+    "{seed.bare.title} busts"
+  ],
+  "level": [
+    "Oil paintings",
+    "Sculpture",
+    "Old maps",
+    "Pottery",
+    "Sketches on napkins",
+    "Tapestries",
+    "Very old spoons",
+    "Watercolours",
+    "Portraits of dogs",
+    "Stained glass"
+  ],
+  "pyramid_base": [
+    "Gift shop magnets",
+    "Children's drawings",
+    "Fridge art",
+    "The lobby carpet",
+    "Motivational posters",
+    "Postcards of postcards"
+  ]
+}

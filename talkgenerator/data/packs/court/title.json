@@ -1,0 +1,38 @@
+{
+  "talk_title": [
+    "#case#",
+    "#case#",
+    "#drama#"
+  ],
+  "case": [
+    "The People v. {seed.generic.title}",
+    "The State v. {seed.generic.title}",
+    "{seed.generic.title} on Trial",
+    "The Trial of {seed.generic.title}",
+    "The Case Against {seed.generic.title}",
+    "Order in the Court: {seed.generic.title}",
+    "Exhibit A: {seed.generic.title}"
+  ],
+  "drama": [
+    "{seed.generic.title}: Guilty as Charged?",
+    "The {seed.bare.title} Files",
+    "The {seed.bare.title} Affair",
+    "Caught Red-Handed: The {seed.bare.title} Case",
+    "Guilty or Not? {seed.generic.title} on the Stand",
+    "Beyond Reasonable Doubt: {seed.generic.title}",
+    "{seed.generic.title}: The Trial of the Century",
+    "The Curious Case of {seed.generic.title}",
+    "Twelve Jurors and {seed.generic.title}"
+  ],
+  "subtitle": [
+    "{presenter}, for the prosecution",
+    "{presenter}, counsel for the defence",
+    "{presenter}, the detective on the case",
+    "{presenter}, Attorney at Law, allegedly",
+    "Case No. 0417, presented by {presenter}",
+    "{presenter}, prosecuting, in a borrowed wig",
+    "{presenter}, defending, against their better judgement",
+    "Presented by {presenter}. All rise.",
+    "{presenter}, for the prosecution, in the matter of {crime}"
+  ]
+}

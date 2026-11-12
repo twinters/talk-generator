@@ -1,0 +1,78 @@
+{
+  "outlet": [
+    "The Daily Gavel",
+    "The Evening Verdict",
+    "The Local Tattler",
+    "Courtroom Live",
+    "The Morning Crumb",
+    "The Weekly Alibi",
+    "The Gavel Gazette",
+    "Channel 7 News"
+  ],
+  "headline": [
+    "{topic.generic.cap} charged with {crime}",
+    "{topic.generic.cap} in court for {crime}",
+    "Trial of the century: the People v. {topic.generic}",
+    "Neighbours shocked: {topic.generic} accused of {crime}",
+    "{topic.generic.cap}: guilty, or just misunderstood?",
+    "{topic.generic.cap} arrested for {crime}",
+    "{crime.cap}: {topic.generic} the main suspect"
+  ],
+  "subheadline": [
+    "Neighbours 'not surprised'",
+    "Police found the scene exactly as they feared",
+    "Trial begins today. The defendant denies everything.",
+    "Witnesses describe the scene as 'a bit much'",
+    "The defence calls the charges 'a misunderstanding'",
+    "Court sketch artist already overwhelmed",
+    "Jurors asked to bring their own snacks",
+    "Experts call {crime} 'the crime of the decade'"
+  ],
+  "charges_title": [
+    "The charges",
+    "The indictment",
+    "Charges against {topic.generic}",
+    "What the defendant is accused of",
+    "The case, count by count",
+    "Charge sheet"
+  ],
+  "first_count": [
+    "{crime.cap}",
+    "{crime.cap}, twice",
+    "{crime.cap}, again",
+    "Wilfully {crime}",
+    "{crime.cap}, knowingly",
+    "Repeatedly {crime}",
+    "Allegedly {crime}"
+  ],
+  "count": [
+    "Loitering near the snack table",
+    "Leaving one sip of milk in the carton",
+    "Replying 'k' to a long message",
+    "Unauthorised napping",
+    "Whistling in the library",
+    "Reading the last page first",
+    "Wearing socks with sandals",
+    "Clapping when the plane lands",
+    "Talking during the film",
+    "Using up all the hot water",
+    "Impersonating {seed.one}"
+  ],
+  "count_punchline": [
+    "Looking guilty",
+    "Everything else",
+    "Resisting a hug",
+    "Not saying sorry to the toaster",
+    "Being {topic.generic}, in public",
+    "Excessive cuteness in a public place",
+    "Saying 'it wasn't me' too quickly"
+  ],
+  "case_statement": [
+    "All rise. The People versus {topic.generic}, for {crime}.",
+    "Case number 0417: the People versus {topic.generic}. The charge: {crime}.",
+    "Today, on trial: {topic.generic}. The crime: {crime}.",
+    "The People versus {topic.generic}. It was always going to come to this.",
+    "Order! Order in the court. The case of {topic.generic} begins now.",
+    "Members of the jury: {topic.generic}, accused of {crime}."
+  ]
+}

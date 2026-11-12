@@ -1,0 +1,79 @@
+{
+  "post_title": [
+    "Witness statement",
+    "Exhibit C: a witness's post",
+    "Posted at 21:14",
+    "The witness, in their own words",
+    "Testimony, as posted",
+    "Our key witness"
+  ],
+  "post": [
+    "I saw everything. It was {topic.generic}. I'd know that look anywhere.",
+    "Heard a noise at 21:13. Then silence. Then a very guilty silence. Not saying who. But it was {topic.generic}.",
+    "Can't believe I'm a witness in the {topic.bare} case. Wore my best jumper for it.",
+    "Me at 21:13: a quiet night in. Me at 21:14: witness to the crime of the century.",
+    "To whoever was {crime}: I know it was you. Everyone knows it was you.",
+    "Just saw {seed.one} walk past looking very guilty. Not saying anything. Just saying.",
+    "Day three of being a witness. The lawyers keep asking about {crime}. I would like to go home."
+  ],
+  "witnesses_title": [
+    "The witnesses",
+    "Who saw what",
+    "Our witnesses",
+    "The witness stand",
+    "Everyone who was there",
+    "Persons of interest"
+  ],
+  "witness": [
+    "The neighbour",
+    "The neighbour's cat",
+    "A pigeon who saw everything",
+    "Someone just passing by",
+    "The night guard",
+    "An expert in crumbs",
+    "A very nervous goose",
+    "The cleaner"
+  ],
+  "witness_punchline": [
+    "The defendant's twin",
+    "{topic.generic.cap}, in a hat",
+    "The defendant, in sunglasses",
+    "Nobody. That's suspicious too.",
+    "A witness in disguise",
+    "The judge, off duty"
+  ],
+  "quiz_question": [
+    "Where was the defendant at 21:13?",
+    "Where was the defendant on the night of the 14th?",
+    "Where was the defendant at the time of the crime?",
+    "Where was the defendant when the lights went out?",
+    "Where did the witness last see the defendant?",
+    "Where was the defendant during the quiet bit?"
+  ],
+  "quiz_option": [
+    "At home, asleep",
+    "At choir practice",
+    "At the library",
+    "In the bath",
+    "At a yoga class",
+    "At the dentist",
+    "At their nan's",
+    "On a bus to the seaside"
+  ],
+  "quiz_answer": [
+    "At the scene of the crime",
+    "Under the snack table",
+    "On top of the fridge",
+    "Behind the curtains",
+    "Right behind you",
+    "Hiding in the wardrobe"
+  ],
+  "quiz_explanation": [
+    "A witness saw the whole thing.",
+    "The security camera leaves no doubt.",
+    "The trail of evidence leads straight there.",
+    "Exhibit D, which nobody has seen yet.",
+    "The defendant left a note. It was signed.",
+    "Ask the jury. They know."
+  ]
+}

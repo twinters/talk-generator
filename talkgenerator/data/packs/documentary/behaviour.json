@@ -1,0 +1,80 @@
+{
+  "behaviour_title": [
+    "Observed behaviour",
+    "A typical day in the wild",
+    "Its habits, observed",
+    "Social behaviour",
+    "What it does all day",
+    "Behaviour, in three acts",
+    "Daily life of {species}"
+  ],
+  "activity": [
+    "Feeding",
+    "Grooming",
+    "Resting",
+    "Foraging",
+    "Stretching",
+    "Sunbathing",
+    "Hiding",
+    "Posing",
+    "Staring into the distance",
+    "Pretending to be busy",
+    "Wandering off",
+    "Napping, again"
+  ],
+  "activity_punchline": [
+    "Ignoring you",
+    "Judging you, silently",
+    "Plotting something",
+    "Absolutely nothing",
+    "Waiting for snacks",
+    "Being dramatic",
+    "Hiding from the crew",
+    "Posing for the camera",
+    "Doing its taxes",
+    "Forgetting why it came in"
+  ],
+  "pair_title": [
+    "Spot the difference",
+    "Two sides of {species}",
+    "A study in contrasts",
+    "Same {seed.bare}, different day",
+    "Side by side",
+    "A remarkable transformation",
+    "Two faces of the wild"
+  ],
+  "pair": [
+    "The young|The adult",
+    "In the wild|In captivity",
+    "Calm|Startled",
+    "Before the crew arrived|After the crew arrived",
+    "Day|Night",
+    "Hungry|Fed",
+    "Wild|Slightly less wild",
+    "Summer coat|Winter coat",
+    "Confident|Seen by the camera"
+  ],
+  "cycle_title": [
+    "A day in the life of {species}",
+    "The daily routine",
+    "Its daily cycle",
+    "Every day, without fail",
+    "The rhythm of the wild",
+    "A routine, never once broken"
+  ],
+  "cycle_step": [
+    "Wake up",
+    "Stare",
+    "Nap",
+    "Stare at nothing",
+    "Snack",
+    "Hide",
+    "Groom",
+    "Panic briefly",
+    "Forget why",
+    "Sunbathe",
+    "Wander off",
+    "Yawn",
+    "Sit very still"
+  ]
+}

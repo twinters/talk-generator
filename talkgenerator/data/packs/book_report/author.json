@@ -1,0 +1,35 @@
+{
+  "author_fact": [
+    "{author} wrote this whole book in one weekend, in pencil, on a train.",
+    "{author} got the idea for this book in the bath.",
+    "{author} wrote 46 other books. They are all about {seed.generic}.",
+    "{author} lives in a lighthouse with three cats and no internet.",
+    "{author} is very old. Maybe forty.",
+    "{author} wrote this book because nobody else would write about {seed.generic}.",
+    "{author} still has the pencil. It is in a museum now.",
+    "{author} reads every book backwards, to save time.",
+    "{author} once won a prize for the longest sentence ever written about {seed.generic}.",
+    "Before writing books, {author} was a professional {seed.bare} counter.",
+    "{author} wrote the last chapter first, and then lost it.",
+    "{author} has a pet {seed.bare} called Gerald.",
+    "{author} has never read this book. Too long, apparently."
+  ],
+  "author_source": [
+    "The back of the book",
+    "The inside of the cover",
+    "My teacher, I think",
+    "My mum, who also wasn't sure",
+    "A boy in my class",
+    "The bit at the end nobody reads",
+    "The library lady"
+  ],
+  "author_title": [
+    "About the author: {author}",
+    "This is {author}. Probably.",
+    "{author}, the author",
+    "Meet the author: {author}",
+    "{author}, who wrote all of it",
+    "The author, {author}, on a good day",
+    "{author}, at work on book 2"
+  ]
+}

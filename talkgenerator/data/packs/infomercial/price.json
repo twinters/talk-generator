@@ -1,0 +1,81 @@
+{
+  "drop_title": [
+    "How much would you pay?",
+    "But how much?",
+    "Don't answer yet!",
+    "What's it worth to you?",
+    "Guess the price!",
+    "How much? Keep guessing!"
+  ],
+  "was_price": [
+    "$999",
+    "$499",
+    "$299",
+    "$199",
+    "$149",
+    "$99",
+    "$79",
+    "$49"
+  ],
+  "was_label": [
+    "What you'd expect to pay",
+    "In fancy department stores",
+    "What the experts paid",
+    "What it cost us to make",
+    "Our price last year",
+    "Our price last week",
+    "Our price yesterday",
+    "Our price an hour ago"
+  ],
+  "today_price": [
+    "$19.99",
+    "$14.99",
+    "$9.99",
+    "3 × $19.99",
+    "$12.99",
+    "$0.99"
+  ],
+  "today_label": [
+    "Today only!",
+    "If you call right now!",
+    "For the next ten minutes!",
+    "Because we like you!",
+    "For viewers at home only!",
+    "And we're losing money!",
+    "Before our boss finds out!"
+  ],
+  "big_title": [
+    "Only",
+    "All this for just",
+    "Your price today",
+    "Not $100! Not $50!",
+    "It can be yours for",
+    "Today, just"
+  ],
+  "big_price": [
+    "$19.99",
+    "3 × $19.99",
+    "$9.99",
+    "4 × $14.99",
+    "$29.95",
+    "2 × $39.99",
+    "$12.99"
+  ],
+  "big_label": [
+    "That's less than a daily {seed.bare} habit!",
+    "in easy payments, or slightly harder ones!",
+    "and the {gadget} is yours to keep!",
+    "for the {gadget} and everything you see on this screen!",
+    "plus a free case to keep it in!",
+    "and that's not all!",
+    "for a lifetime of {seed.generic}!"
+  ],
+  "big_source": [
+    "Plus shipping and handling",
+    "Plus shipping, handling and more handling",
+    "Batteries sold separately",
+    "Plus tax, plus the stand, plus the box",
+    "Price valid on Tuesdays only",
+    "Offer ends when this slide does"
+  ]
+}

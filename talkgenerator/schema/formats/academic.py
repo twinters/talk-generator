@@ -82,7 +82,14 @@ ACADEMIC: Final = Format(
     "every slide is a conference talk's, played straight",
     title_hint="like a paper's title at a conference: a catchy phrase, a colon and a dry subtitle",
     job_hint="an affiliation, as on a paper, in a few words: their position and a made-up university or department",
-    personas={"disgraced_professor": 6, "passionate_expert": 2.5, "medieval_historian": 1.5, "time_traveller": 1.3},
+    # (×9, from ×6, since D79 brought the personas to 21: the professor still presents about 30% of the talks)
+    personas={
+        "disgraced_professor": 9,
+        "passionate_expert": 2.5,
+        "medieval_historian": 1.5,
+        "time_traveller": 1.3,
+        "alien_anthropologist": 1.3,
+    },
     themes={
         "academic": 5,
         "chalkboard": 2,

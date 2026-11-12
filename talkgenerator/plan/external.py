@@ -70,6 +70,21 @@ FORMATS: Final = {
     "keynote": "A product keynote on a big stage: a big opening statement, the one idea, the reveal of the product, "
     "its features, a live demo, the price, the 'one more thing' and a closing line, each a part of its arc, in that "
     "order",
+    "infomercial": "A late-night TV infomercial for a gadget made of the topic: the everyday problem, the gadget, its "
+    "demonstration, testimonials, the fine print, the price, 'But wait, there's more!' and the call to order now, each "
+    "a part of its arc, in that order",
+    "documentary": "A nature documentary about the topic as a wild species, in a hushed voice: the opening shot, its "
+    "habitat, its behaviour, a rare sighting, its rituals, the dangers it faces and a closing reflection, each a part "
+    "of its arc, in that order",
+    "court": "A court case in which the topic stands trial for a harmless crime: the charges, the evidence, a "
+    "witness, the alibi, an objection, the closing argument and the verdict, each a part of its arc, in that order",
+    "museum": "A guided museum tour of a collection about the topic: the welcome and the house rules, a masterpiece, "
+    "the artist, the eras, an artefact and the gift shop, each a part of its arc, in that order",
+    "wedding": "A wedding toast by the best man or the maid of honour, for their best friend, who marries the topic: "
+    "who the speaker is, how the couple met, an embarrassing story, why they're perfect together, marriage advice and "
+    "the toast, each a part of its arc, in that order",
+    "book_report": "A school book report on a book about the topic: the book, its author, the main characters, what "
+    "happens, the favourite part, the moral of the story and the rating, each a part of its arc, in that order",
 }
 
 # The recipe a kind of slide gets when its plan doesn't name one, the first of these the format has: plain photos,
@@ -623,8 +638,9 @@ def _looks(recipe: Recipe) -> dict[str, str]:
 def catalog_markdown(schema_name: str = "default") -> str:
     """The catalog as Markdown, for people and for the Skill's reference (skill/.../references/slides.md)."""
     data = catalog(schema_name)
+    article = "an" if schema_name[:1] in "aeiou" else "a"  # ("an `academic` talk", "an `infomercial` talk")
     lines = [
-        f"# The slides of a `{schema_name}` talk",
+        f"# The slides of {article} `{schema_name}` talk",
         "",
         f"{data['description']}.",
         "",

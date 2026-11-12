@@ -1,0 +1,33 @@
+{
+  "reflection": [
+    "As the sun sets on the land of {seed.generic}, we are left to wonder: who was really watching whom?",
+    "{species} has survived for millions of years. With a little help, it might even survive Tuesday.",
+    "We set out to understand {seed.generic}. In the end, perhaps, it understood us.",
+    "And so we leave {species} as we found it: completely unbothered.",
+    "In the end, perhaps we are all a little bit like {seed.generic}.",
+    "The wild is a fragile place. If you ever meet {seed.generic}, be kind. And don't touch.",
+    "Nature is not cruel. Nature is not kind. Nature is, mostly, {seed.generic}.",
+    "It is a small world. But for {species}, it is just the right size."
+  ],
+  "farewell": [
+    "Goodnight, {species}.",
+    "Next time: the secret life of the sofa",
+    "Next week: socks, and where they go",
+    "Next time: the great migration of shopping trolleys",
+    "Coming up next: what the fridge does at night",
+    "Next time: a single crumb, and its long journey",
+    "Until next time. Stay wild.",
+    "And the wild goes quiet again.",
+    "Thank you, and goodnight, {species}."
+  ],
+  "hush": [
+    "Shh. Everyone, stay very still. {species} is right behind you.",
+    "Nobody move. Not a sound. If we all hold our breath, {species} might come a little closer.",
+    "Everyone, slowly lower your phones. {species} is shy, and it has seen the flash.",
+    "On my count, everyone whisper: 'Goodnight, {species}.' One, two...",
+    "Stay in your seats, and stay very, very quiet. We are in its territory now.",
+    "Everyone, sink a little lower in your seats. It's coming this way.",
+    "Hands up, slowly, if you can see {species}. Slowly. Slower than that.",
+    "Let's all sit in silence for five seconds, as the camera crew did for nine months."
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "old_photo_title": [
+    "Me and {friend}, #year#",
+    "{friend} and me, #year#",
+    "Me and {friend}, the early years",
+    "The first photo of me and {friend}",
+    "Me and {friend}. I'm the one on the left.",
+    "{friend} and me, summer camp, #year#",
+    "Me and {friend} on our first day of school",
+    "{friend} and me, before {topic.generic}",
+    "Me and {friend}, back when they still called me",
+    "{friend} and me, inseparable since #year#"
+  ],
+  "year": [
+    "1994",
+    "1996",
+    "1998",
+    "2001",
+    "2003",
+    "2005"
+  ],
+  "then_now_title": [
+    "{friend}, then and now",
+    "How far {friend} has come",
+    "Look how far we've come",
+    "{friend}: a transformation",
+    "Some things never change",
+    "Before and after",
+    "The {friend} I knew, and the one I know"
+  ],
+  "then_now": [
+    "{friend}, #year#|{friend}, today",
+    "{friend}, before {topic.generic}|{friend}, after {topic.generic}",
+    "Young {friend}|{friend}, all grown up",
+    "{friend}, single|{friend}, taken",
+    "{friend}, #year#|{friend}, last Tuesday",
+    "The old {friend}|The new {friend}",
+    "{friend}, lonely|{friend}, with {topic.generic}",
+    "{friend}, before me|{friend}, after me"
+  ],
+  "who_am_i": [
+    "For those who don't know me: I'm the one who introduced them.",
+    "For those who don't know me, I'm {friend}'s best friend. For those who do: sorry in advance.",
+    "I've known {friend} for twenty years, and I have the photos to prove it.",
+    "When {friend} asked me to give this speech, I said yes. Then I heard about {topic.generic}.",
+    "I was told to keep this short. I was not told how short.",
+    "I've known {friend} since we were six. I knew this day would come. I did not expect {topic.generic}.",
+    "Good evening, everyone. My name is not important. What is important: {friend} and {topic.generic}.",
+    "I wrote this speech on the way here, so we're all finding out together.",
+    "Some of you know me as {friend}'s best friend. The rest of you will after this speech.",
+    "I promised {friend} I'd only tell the nice stories. So this will be short."
+  ]
+}

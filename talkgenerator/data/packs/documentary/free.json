@@ -1,0 +1,113 @@
+{
+  "provocation": [
+    "Majestic.",
+    "Extraordinary.",
+    "Patience.",
+    "Shh.",
+    "Survival.",
+    "Breathtaking.",
+    "Wild.",
+    "Instinct.",
+    "Remarkable.",
+    "Silence.",
+    "Magnificent.",
+    "Hush.",
+    "Rare.",
+    "Untamed.",
+    "Look.",
+    "{species}.",
+    "{seed.generic.title}. In the wild.",
+    "Nature.",
+    "Astonishing.",
+    "Behold.",
+    "Mysterious.",
+    "Elusive."
+  ],
+  "question_lookalike": [
+    "Which of these is {species}?",
+    "Which of these is really {species}?",
+    "Which of these did our crew film for nine months?"
+  ],
+  "options_lookalike": [
+    "A rock",
+    "A potato",
+    "A teapot",
+    "A sock",
+    "A pine cone",
+    "A loaf of bread",
+    "A slipper",
+    "A cushion",
+    "A sleeping cat",
+    "A suspicious hat"
+  ],
+  "why_lookalike": [
+    "Remarkable camouflage.",
+    "It fooled our crew for weeks.",
+    "Look closer. No, closer.",
+    "Nature's greatest disguise.",
+    "Our crew still can't tell."
+  ],
+  "question_diet": [
+    "What does {species} eat?",
+    "What does {species} eat in winter?",
+    "What is the favourite food of {species}?"
+  ],
+  "options_diet": [
+    "Crumbs",
+    "Moonlight",
+    "Other people's snacks",
+    "Only the corners of toast",
+    "Compliments",
+    "Absolutely nothing",
+    "Leaves, reluctantly",
+    "Whatever you just put down",
+    "Tiny sandwiches"
+  ],
+  "why_diet": [
+    "Observed over three long winters.",
+    "Our crew lost several sandwiches to this research.",
+    "It has expensive taste.",
+    "Nobody has ever seen it eat. We assume.",
+    "It also ate a camera strap."
+  ],
+  "question_sleep": [
+    "How long does {species} sleep each day?",
+    "How long does {species} nap at a time?",
+    "How long did {species} sleep while we filmed?"
+  ],
+  "options_sleep": [
+    "Four hours",
+    "Eleven hours",
+    "Twenty-three hours",
+    "All day, and then a nap",
+    "It is asleep right now",
+    "It never sleeps. It waits."
+  ],
+  "why_sleep": [
+    "It woke up once, briefly, last spring.",
+    "Filmed over one very long afternoon.",
+    "It needs its strength for doing nothing.",
+    "Shh. Don't wake it."
+  ],
+  "question_sound": [
+    "What sound does {species} make?",
+    "How does {species} call for help?",
+    "What does {species} say when it's happy?"
+  ],
+  "options_sound": [
+    "A quiet beep",
+    "A long sigh",
+    "Hmm.",
+    "A tiny kettle",
+    "Polite applause",
+    "Nothing, ever",
+    "A distant kazoo",
+    "Whistling, badly"
+  ],
+  "why_sound": [
+    "Recorded at three in the morning.",
+    "Our sound engineer has not been the same since.",
+    "Turn up your speakers. Actually, don't.",
+    "It only does it when nobody's recording."
+  ]
+}

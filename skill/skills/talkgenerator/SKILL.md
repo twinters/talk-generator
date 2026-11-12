@@ -45,25 +45,38 @@ by. If it's long, tell the user once that free keys give better images, and leav
    images only (its license policy, `open`, allows every image but fair use: no memes, gifs or Reddit's posts).
    Another format can keep to it too: `talkgenerator render plan.json --license_policy open`. For a startup pitch,
    use `pitch`; for a talk at an academic conference, `academic`; for a company's all-hands or quarterly business
-   review, `corporate`; and for a product keynote, `keynote`. Don't hold things up with questions: pick sensible
-   defaults and say which.
+   review, `corporate`; for a product keynote, `keynote`; for a late-night TV infomercial, `infomercial`; for a nature
+   documentary, `documentary`; for a court case, `court`; for a museum tour, `museum`; for a wedding toast, `wedding`;
+   and for a school book report, `book_report`. Don't hold things up with questions: pick sensible defaults and say
+   which.
 2. **Look up the slides you can use** in the format's reference: [references/slides.md](references/slides.md) for
    `default`, [references/slides-ted.md](references/slides-ted.md) for `ted`,
    [references/slides-pitch.md](references/slides-pitch.md) for `pitch`,
    [references/slides-academic.md](references/slides-academic.md) for `academic`,
-   [references/slides-corporate.md](references/slides-corporate.md) for `corporate` and
-   [references/slides-keynote.md](references/slides-keynote.md) for `keynote`. They list the slide kinds, their
+   [references/slides-corporate.md](references/slides-corporate.md) for `corporate`,
+   [references/slides-keynote.md](references/slides-keynote.md) for `keynote`,
+   [references/slides-infomercial.md](references/slides-infomercial.md) for `infomercial`,
+   [references/slides-documentary.md](references/slides-documentary.md) for `documentary`,
+   [references/slides-court.md](references/slides-court.md) for `court`,
+   [references/slides-museum.md](references/slides-museum.md) for `museum`,
+   [references/slides-wedding.md](references/slides-wedding.md) for `wedding` and
+   [references/slides-book_report.md](references/slides-book_report.md) for `book_report`. They list the slide kinds, their
    texts, length limits, images and recipes. (`ted` has no full-screen images and no recipes for slides about the
-   presenter: an about-me slide there is a two- or three-column slide with about-me captions.) A pitch, an academic
-   talk, an all-hands and a keynote have an arc, which their references open with: the parts their slides go
-   through, in order (a pitch's problem, solution, market, business model, traction, competition, team, roadmap and
-   ask; an academic talk's motivation, outline, related work, method, results, limitations, future work,
-   acknowledgements, references and questions; an all-hands' agenda, KPIs, wins, roadmap, org change, synergies, ask
-   and Q&A; a keynote's opening, one idea, reveal, features, demo, price, one more thing and closing line), each with
-   its recipes. A pitch's problem and an academic talk's motivation open on a `problem` slide most of the time: the
+   presenter: an about-me slide there is a two- or three-column slide with about-me captions.) The formats beyond
+   the TED-like talk have an arc, which their references open with: the parts their slides go through, in order (a
+   pitch's problem, solution, market, business model, traction, competition, team, roadmap and ask; an academic
+   talk's motivation, outline, related work, method, results, limitations, future work, acknowledgements, references
+   and questions; an all-hands' agenda, KPIs, wins, roadmap, org change, synergies, ask and Q&A; a keynote's opening,
+   one idea, reveal, features, demo, price, one more thing and closing line; an infomercial's problem, product, demo,
+   testimonials, fine print, price, "but wait" and call to order; a documentary's opening, habitat, behaviour,
+   sighting, ritual, threat and closing; a court case's charges, evidence, witness, alibi, objection, closing argument
+   and verdict; a museum tour's welcome, masterpiece, artist, eras, artefact and gift shop; a wedding toast's intro,
+   how they met, the story, the couple, advice and the toast; a book report's book, author, characters, plot,
+   favourite part, moral and rating), each with its recipes. A pitch's problem and an academic talk's motivation open on a `problem` slide most of the time: the
    talk's why, a problem that hooks the audience (weird, everyday, or real), with a picture behind it or beside it. Plan their slides in that order, each with a recipe of its part, and write the `title` and
    `presenter_job` as their references say (a pitch's title names its made-up startup; an academic talk's job is an
-   affiliation; an all-hands' title is the quarter and a slogan; a keynote's names its made-up product).
+   affiliation; an all-hands' title is the quarter and a slogan; a keynote's names its made-up product; an
+   infomercial's its gadget; a book report's the book).
    `talkgenerator formats --details --format <format>` prints the same for the version that's installed, and
    `talkgenerator schema plan` the plan's JSON Schema.
 3. **Write the plan** as a JSON file, like [references/example-plan.json](references/example-plan.json), say

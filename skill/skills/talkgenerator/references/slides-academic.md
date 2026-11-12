@@ -1,4 +1,4 @@
-# The slides of a `academic` talk
+# The slides of an `academic` talk
 
 A talk at an academic conference, with affiliations on its title slide: the motivation (the problem the research is about), the outline, related work, the method, the results (with p-values), the limitations, future work, the acknowledgements and the references, each a part of its arc, in that order.
 

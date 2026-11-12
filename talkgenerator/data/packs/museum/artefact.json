@@ -1,0 +1,75 @@
+{
+  "artefact_title": [
+    "Exhibit {number}: {seed.one}, use unknown",
+    "Artefact {number}. Origin unknown.",
+    "Object {number}: early {seed.bare}, purpose unclear",
+    "Behind this glass: {seed.one}, probably",
+    "Found in 1923, in a farmer's left boot",
+    "The oldest {seed.bare} in the world",
+    "On loan from a very confused family",
+    "Do not tap the glass. It bites.",
+    "Exhibit {number}: we think it's {seed.one}"
+  ],
+  "quiz_question": [
+    "What did people in the Middle Ages use {seed.generic} for?",
+    "Why did the ancient Romans keep {seed.generic} at home?",
+    "What is the oldest known use of {seed.generic}?",
+    "Why do museums keep {seed.generic} behind glass?",
+    "What did {artist} use the {seed.bare} jar for?",
+    "Our oldest piece of {seed.bare} history: what was it for?"
+  ],
+  "use": [
+    "Currency",
+    "Hats",
+    "Birthday parties",
+    "Telling the time",
+    "Scaring away seagulls",
+    "Very small soup",
+    "Holding doors open",
+    "Impressing the neighbours",
+    "Making big decisions",
+    "Paperweights",
+    "Weather forecasts"
+  ],
+  "right_use": [
+    "Nobody knows. Not even us.",
+    "Exactly the same as today",
+    "Decoration, mostly",
+    "We were hoping you'd know",
+    "All of the above, at once",
+    "Showing off",
+    "Still under investigation"
+  ],
+  "explanation": [
+    "Experts are still arguing about it. Loudly.",
+    "The label fell off in 1911, and nobody wrote it down.",
+    "That's the museum's official position, after a long lunch.",
+    "Three PhDs were written about it. They all disagree.",
+    "Our curator is very sure. Our curator is often sure.",
+    "It says so on the audio guide, so it must be true."
+  ],
+  "outlet": [
+    "The Museum Gazette",
+    "Art Weekly",
+    "The Morning Easel",
+    "Antiques Today",
+    "The Daily Curator",
+    "Gallery News Tonight"
+  ],
+  "headline": [
+    "Priceless {seed.bare} found in grandmother's attic",
+    "Experts baffled by ancient {seed.bare} statue",
+    "Museum admits {seed.bare} exhibit was upside down for 40 years",
+    "Ancient {seed.bare} statue turns out to be a lamp",
+    "Archaeologists find oldest {seed.bare} ever, ask for a second opinion",
+    "Local man finds {seed.one} in sofa, museum very interested"
+  ],
+  "subheadline": [
+    "The museum says it is 'very excited' and 'a little worried'",
+    "The finder has asked for a reward of one sandwich",
+    "Visitors queue around the block to see it, then leave quickly",
+    "Experts say it is either very old or from last Tuesday",
+    "The museum will show it behind three layers of glass, just in case",
+    "A spokesperson said only: 'Please stop calling.'"
+  ]
+}

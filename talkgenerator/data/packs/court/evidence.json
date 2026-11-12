@@ -1,0 +1,34 @@
+{
+  "forensics_title": [
+    "Forensic analysis: the crumbs lead one way",
+    "Lab results: the crumbs follow the defendant",
+    "The forensics don't lie",
+    "Expert analysis: this is no coincidence",
+    "The lab has spoken",
+    "What the crumbs tell us"
+  ],
+  "forensics_x": [
+    "Distance from {seed.generic}",
+    "Minutes after the incident",
+    "Time spent near the snack table",
+    "Closeness to the biscuit tin",
+    "Hours since lunch",
+    "Steps from the kitchen"
+  ],
+  "forensics_y": [
+    "Crumbs found",
+    "Biscuits missing",
+    "Socks missing",
+    "Suspicious looks",
+    "Guilt, in grams",
+    "Witnesses who gasped"
+  ],
+  "forensics_outlier": [
+    "The butler",
+    "The family dog",
+    "A suspicious goose",
+    "The judge's cousin",
+    "Someone in a fake moustache",
+    "The getaway hamster"
+  ]
+}

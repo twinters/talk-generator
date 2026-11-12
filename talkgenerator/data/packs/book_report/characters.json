@@ -1,0 +1,69 @@
+{
+  "characters_title": [
+    "The main characters",
+    "Who's in the book",
+    "The characters (the main ones)",
+    "Meet the characters",
+    "Characters I remember",
+    "The important characters"
+  ],
+  "character": [
+    "{seed.one.cap}, the hero",
+    "A wise old owl",
+    "The hero's mum",
+    "A suspicious duck",
+    "The {seed.bare} next door",
+    "A talking sandwich",
+    "Grandpa {seed.bare.title}",
+    "The villain (a goose)",
+    "The narrator (nobody knows who)",
+    "The hero's annoying sister",
+    "A secret {seed.bare} society",
+    "Mr. Grumble, the neighbour",
+    "A ghost (a nice one)"
+  ],
+  "character_punchline": [
+    "Me (I'm not in it, but I should be)",
+    "The author's cat",
+    "My dog. Not in the book. My dog.",
+    "A man in a hat (page 3 only)",
+    "The twist (I won't say)",
+    "A tree (very important)",
+    "My mum (she helped)",
+    "You, the reader",
+    "The author, sneaking in",
+    "A sandwich (it gets eaten)",
+    "The lunch lady"
+  ],
+  "org_title": [
+    "Who's who in the book",
+    "Who's in charge in the book",
+    "The characters, by how important they are",
+    "How everyone in the book is related",
+    "The book's family tree",
+    "Who bosses who around"
+  ],
+  "boss": [
+    "The author's mum",
+    "Nobody. That's the problem.",
+    "A very bossy goose",
+    "The cat (obviously)",
+    "The school librarian",
+    "Me, the reader",
+    "Whoever has the snacks",
+    "A very old tortoise",
+    "The hero's baby sister",
+    "Whoever holds the book"
+  ],
+  "report": [
+    "{seed.generic.cap}",
+    "The hero",
+    "The hero's best friend",
+    "A wise old owl",
+    "The narrator",
+    "A talking sandwich",
+    "The hero's grandpa",
+    "A suspicious duck",
+    "The villain"
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "moral": [
+    "The moral of the story: never trust {seed.generic}. Not even a little.",
+    "The moral of the story is: be kind, share your snacks, and stay away from {seed.generic}.",
+    "The moral of the story is that everyone is special. Especially {seed.generic}.",
+    "The moral of the story: don't judge a book by its cover. I did, and I was right.",
+    "What I learned: there is no such thing as too much {seed.bare}.",
+    "The moral of the story is: always read the last page first. It saves time.",
+    "The moral of the story: friends are like {seed.generic}. You can't have too many.",
+    "The lesson of the book is: if at first you don't succeed, ask {seed.generic}.",
+    "The moral of the story is: never give up, unless it's really hard. Then ask a grown-up.",
+    "The moral of the story: you can't rush {seed.generic}. You just can't.",
+    "The moral of the story is: be yourself. Unless you can be {seed.one}. Then be {seed.one}."
+  ],
+  "quiz_question": [
+    "What did we learn from this book?",
+    "Quiz! What is the moral of the story?",
+    "What is the moral of {book}?",
+    "Pop quiz: what did the book teach us?",
+    "What is the most important lesson in the book?",
+    "Quiz: what should we remember from {book}?"
+  ],
+  "quiz_option": [
+    "How to bake bread",
+    "Nothing, really",
+    "That reading is fun (I was told to say this)",
+    "How to tie a very good knot",
+    "That the author likes commas",
+    "Where the toilets are",
+    "That page 40 is the best page",
+    "How to whistle",
+    "How to say sorry to a goose",
+    "That chapter 3 is too long"
+  ],
+  "quiz_answer": [
+    "Everything about {seed.generic}",
+    "Never to trust {seed.generic}",
+    "To always share your {seed.bare}",
+    "That {seed.generic} can be anything",
+    "That friendship beats {seed.generic}",
+    "To respect {seed.generic}"
+  ],
+  "quiz_explanation": [
+    "It says so on the back of the book.",
+    "The teacher told me. I checked.",
+    "That's what the last page says, in big letters.",
+    "It's in every chapter. Even the long ones.",
+    "I asked the author. Not really. But I'm sure.",
+    "That's the whole book, really."
+  ]
+}

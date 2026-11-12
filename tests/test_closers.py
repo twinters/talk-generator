@@ -21,7 +21,18 @@ from talkgenerator.models.events import SlideReady, TalkEvent, TalkFinished
 from talkgenerator.plan import languages
 from talkgenerator.render.powerpoint import render_pptx
 from talkgenerator.schema import formats
-from talkgenerator.schema.formats import academic, corporate, keynote, pitch
+from talkgenerator.schema.formats import (
+    academic,
+    book_report,
+    corporate,
+    court,
+    documentary,
+    infomercial,
+    keynote,
+    museum,
+    pitch,
+    wedding,
+)
 from talkgenerator.schema.presentation_schema_types import get_schema, schemas
 from talkgenerator.slide.slides import TitleSlide
 from talkgenerator.util import random_util
@@ -61,7 +72,16 @@ FORMATS = {
     "pitch": pitch.PITCH.closer,
     "corporate": corporate.CORPORATE.closer,
     "keynote": keynote.KEYNOTE.closer,
+    # (D79)
+    "infomercial": infomercial.INFOMERCIAL.closer,
+    "documentary": documentary.DOCUMENTARY.closer,
+    "court": court.COURT.closer,
+    "museum": museum.MUSEUM.closer,
+    "wedding": wedding.WEDDING.closer,
+    "book_report": book_report.BOOK_REPORT.closer,
 }
+# (the words D79's formats added to every language, each the language's own)
+NEWER_WORDS = ("call_now", "standing_by", "watching", "adjourned", "visiting", "gift_shop", "happy_couple", "the_end")
 
 
 def _said(closer, code="en", presenter="Ann Example", title="Penguinly: Uber for Penguins", topic="penguins"):
@@ -87,6 +107,12 @@ def test_every_formats_closer_says_it_in_the_talks_language(code):
         "mark": "?",
     }
     assert made["keynote"] == {"title": words.available, "subtitle": "Penguinly", "note": "Ann Example"}
+    assert made["infomercial"] == {"title": words.call_now, "subtitle": words.standing_by, "note": "Ann Example"}
+    assert made["documentary"] == {"title": words.watching, "subtitle": "Ann Example"}
+    assert made["court"] == {"title": words.adjourned, "subtitle": "Ann Example"}
+    assert made["museum"] == {"title": words.visiting, "subtitle": words.gift_shop, "note": "Ann Example"}
+    assert made["wedding"] == {"title": words.happy_couple, "subtitle": "Ann Example"}
+    assert made["book_report"] == {"title": words.the_end, "subtitle": words.sit_down, "note": "Ann Example"}
     # (each language's own words, not English's: but its question mark, its exclamation mark)
     if code != "en":
         english = languages.ENGLISH
@@ -96,6 +122,7 @@ def test_every_formats_closer_says_it_in_the_talks_language(code):
             english.back_to_work,
             english.available,
         )
+        assert all(getattr(words, word) != getattr(english, word) for word in (*NEWER_WORDS, "sit_down")), code
 
 
 @pytest.mark.parametrize("name", list(CLOSERS))
@@ -111,7 +138,7 @@ def test_a_format_without_a_closer_gets_the_ted_like_talks():
     assert closers.of(None) is closers.of(formats.Format(brief="")) is closers.DEFAULT
     assert get_schema("default").format is None and CLOSERS["default"] is CLOSERS["ted"] is closers.DEFAULT
     own = {name: CLOSERS[name] is not closers.DEFAULT for name in FORMATS}
-    assert own == {"default": False, "academic": True, "pitch": True, "corporate": True, "keynote": True}
+    assert own == {name: name != "default" for name in FORMATS}
 
 
 def test_a_format_defines_its_closer_from_talkgenerators_words_its_own_or_the_talks():
@@ -122,8 +149,8 @@ def test_a_format_defines_its_closer_from_talkgenerators_words_its_own_or_the_ta
     assert _said(closers.Closer(lambda ending: ending.topic.upper()), "nl") == {"title": "PENGUINS"}
     with pytest.raises(ValueError):  # (a language left out)
         closers.in_every_language({"en": "Call now!"})
-    with pytest.raises(ValueError):  # (a word talkgenerator doesn't have)
-        closers.said("call_now")
+    with pytest.raises(ValueError):  # (a word talkgenerator doesn't have: "call_now" is an infomercial's since D79)
+        closers.said("abracadabra")
 
 
 def test_a_closer_is_marked_and_of_a_type_of_its_own():

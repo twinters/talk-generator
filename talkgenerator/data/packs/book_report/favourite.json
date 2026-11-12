@@ -1,0 +1,25 @@
+{
+  "favourite_title": [
+    "My favourite part",
+    "My favourite part (page 42)",
+    "The best bit",
+    "My favourite page",
+    "My favourite part. It has a picture.",
+    "This part. Look at it.",
+    "The bit I read twice"
+  ],
+  "favourite_statement": [
+    "My favourite part was when {seed.generic} showed up and nobody was ready.",
+    "My favourite part was the end, because then I could go outside.",
+    "My favourite part was the picture on page 12. I looked at it for a long time.",
+    "My favourite part was when everybody learned about {seed.generic}. Me too.",
+    "My favourite part was the bit with {seed.generic}. And the bit without.",
+    "My favourite part was chapter 4. I read it three times. I didn't read chapter 5.",
+    "The best part was the twist: it was the {seed.bare} all along.",
+    "My favourite part was when it ended. That's not bad. It was a long book.",
+    "My favourite part was page 87, where nothing happens. It was very relaxing.",
+    "My favourite part was the dedication. It says 'For Mum'. Same.",
+    "My favourite part was the map at the front. I didn't read the rest, but the map was great.",
+    "My favourite part was when {seed.generic} said sorry. I didn't know that could happen."
+  ]
+}

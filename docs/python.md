@@ -39,7 +39,7 @@ pixels, its license class, its license (with a link), the look it was found for,
 found.
 
 The options, after the format (`"default"`, `"ted"`, `"interview"`, `"pitch"`, `"academic"`, `"corporate"`,
-`"keynote"` or `"test"`, or `"random"` for one the talk's seed picks after its persona: see
+`"keynote"`, `"infomercial"`, `"documentary"`, `"court"`, `"museum"`, `"wedding"`, `"book_report"` or `"test"`, or `"random"` for one the talk's seed picks after its persona: see
 [`--schema random`](command-line.md#formats-and-license-policies)) and the number of slides:
 
 | Option | What it is |

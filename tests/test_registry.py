@@ -28,7 +28,23 @@ def test_registry_refuses_duplicates_and_explains_unknown_names():
 
 
 def test_schemas_are_registered():
-    assert schemas.names() == ["default", "interview", "test", "ted", "pitch", "academic", "corporate", "keynote"]
+    assert schemas.names() == [
+        "default",
+        "interview",
+        "test",
+        "ted",
+        "pitch",
+        "academic",
+        "corporate",
+        "keynote",
+        # (D79)
+        "infomercial",
+        "documentary",
+        "court",
+        "museum",
+        "wedding",
+        "book_report",
+    ]
     assert get_schema("ted") is schemas.get("ted")
 
 

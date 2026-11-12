@@ -1,0 +1,20 @@
+{
+  "objection_title": [
+    "Objection!",
+    "Objection, Your Honour!",
+    "I object!",
+    "Objection! Leading the witness!",
+    "Objection: hearsay!",
+    "Objection! That's not even evidence!",
+    "Objection! Sustained? Overruled?"
+  ],
+  "objection_statement": [
+    "Objection, Your Honour! The witness is clearly {seed.one} in a trench coat.",
+    "Objection! Counsel is badgering the {seed.bare} expert.",
+    "Objection, Your Honour: hearsay. And also, frankly, rude.",
+    "Objection! That {seed.bare} photo was taken out of context.",
+    "Objection! The defence can't just keep saying '{topic.generic}'.",
+    "Objection! Sustained. Overruled. Sustained again. The judge would like a break.",
+    "Objection, Your Honour! The prosecution is eating the evidence."
+  ]
+}

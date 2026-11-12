@@ -1,5 +1,5 @@
 import logging
-from collections.abc import Callable, Collection
+from collections.abc import Callable, Collection, Iterable
 from functools import lru_cache
 from typing import Any
 
@@ -139,19 +139,22 @@ class SlideGeneratorData:
 
                     return slide, generated_elements
 
-    def weighted(self, weight_function: Callable[[int, int], float], name: str) -> "SlideGeneratorData":
+    def weighted(
+        self, weight_function: Callable[[int, int], float], name: str, tags: Iterable[str] = ()
+    ) -> "SlideGeneratorData":
         """The same slide generator under another name, with another weight: a talk format's, which has the slides of
-        another format among its own (see talkgenerator.schema.formats)."""
+        another format among its own (see talkgenerator.schema.formats); with these tags too, such as the format's part
+        whose slides it makes (a court case's evidence, of D78's exhibits: D79)."""
         made = SlideGeneratorData(
             self._generator,
             weight_function=weight_function,
             retries=self._retries,
             allowed_repeated_elements=self._allowed_repeated_elements,
-            tags=set(self._tags),
+            tags=set(self._tags) | set(tags),
             name=name,
             llm=self.llm,
         )
-        made.text_version = self.text_version.weighted(weight_function, name) if self.text_version else None
+        made.text_version = self.text_version.weighted(weight_function, name, tags) if self.text_version else None
         return made
 
     def wrapped(self, generator: Any) -> "SlideGeneratorData":

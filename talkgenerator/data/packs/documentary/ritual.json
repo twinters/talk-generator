@@ -1,0 +1,49 @@
+{
+  "ancient": [
+    "Every spring, they gather for an ancient ritual.",
+    "The ritual has not changed in a thousand years.",
+    "Watch closely. This is the courtship dance.",
+    "The great migration begins.",
+    "Once a year, the whole colony meets here.",
+    "No outsider has ever seen this ceremony.",
+    "And now, the dance.",
+    "The ritual begins at dusk. Nobody knows why."
+  ],
+  "dance_title": [
+    "The courtship dance",
+    "How {species} makes friends",
+    "The ancient greeting",
+    "The ritual, step by step",
+    "The welcome ceremony",
+    "The great migration, explained"
+  ],
+  "dance_first": [
+    "Approach slowly",
+    "Make eye contact",
+    "Wait for the full moon",
+    "Gather at the old tree",
+    "Fluff up",
+    "Clear the throat"
+  ],
+  "dance_step": [
+    "Wiggle",
+    "Present a small gift",
+    "Stare meaningfully",
+    "Circle twice",
+    "Hum quietly",
+    "Pretend to leave",
+    "Spin, once, with dignity",
+    "Bow deeply",
+    "Compare snacks",
+    "Stand on one leg"
+  ],
+  "dance_last": [
+    "Leave abruptly",
+    "Exchange phone numbers",
+    "Repeat next spring",
+    "Share a snack, forever",
+    "Wait four hundred years",
+    "Nobody knows",
+    "Forget the whole thing"
+  ]
+}

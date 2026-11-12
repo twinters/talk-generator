@@ -243,8 +243,8 @@ of explanations, a deadpan expert voice, callbacks, and room for the presenter t
 
 **Personas** came in on 2026-11-08 (`talkgenerator.personas`, D47), after the user's idea: "having already like random
 persona loaded that only has particular types of talks, and that helps inspire llm for title (...) and maybe even for
-name (particular generators, or nudge)". The talk's seed picks one of thirteen personas (from a stream of its own,
-`persona`), before the slides are picked. `persona=` names one instead (`--persona`, the MCP server's
+name (particular generators, or nudge)". The talk's seed picks one of twenty-one personas (thirteen until D79; from a stream of
+its own, `persona`), before the slides are picked. `persona=` names one instead (`--persona`, the MCP server's
 `generate_talk`), and `none` makes the format's own talk. A persona has:
 
 - **A voice, and its kinds of talk.** The request's "The presenter:" line ("a startup founder who has pivoted eleven
@@ -306,6 +306,35 @@ name (particular generators, or nudge)". The talk's seed picks one of thirteen p
   a forest ranger's and a submarine cook's, the old job was on the title slide's job line and one or two other slides
   (with "now and then" in the voice and no word on titles, on two to four, and in every title): "Curdled Wisdom:
   What My Grandkids Taught Me About Cheese", "When Umbrellas Had Soul: A Ranger's Lament", "Patience Beneath the Hull".
+- **Eight more** (2026-11-12, D79, of the new personas, formats and looks proposed that day, which the user answered
+  "let's do all of them (unless some of them don't work out great)"): a true-crime detective (`detective`: news,
+  timelines, flowcharts and red flags; "The Case of Penguins"; newspaper and vintage paper themes, liminal spaces as
+  its weird pictures), an infomercial host (`infomercial_host`: reviews, big numbers, before and after, the fine print
+  as a wall of text; WordArt and neon; product shots as its neutral pictures), a nature-documentary narrator
+  (`nature_narrator`: full-screen pictures, life cycles and fun facts, few words; dark minimal; places and wholesome
+  animals as its pictures), a museum tour guide (`museum_guide`: history, timelines, pictures and quotes; vintage
+  paper; museum art and accidental Renaissance), the best man or maid of honour (`best_man`: anecdotes, dares, posts
+  and red flags; "To Penguins!"; old photos as its weird pictures), a game-show host (`game_show_host`: quizzes, tier
+  lists, dares, polls and D78's Pick one; neon and WordArt; prizes as product shots), an alien anthropologist
+  (`alien_anthropologist`: diagrams, charts of properties, life cycles and fun facts, as a field report from another
+  planet; old photos of everyday human life as its weird pictures, space as its neutral ones), and IT support
+  (`it_support`: error messages, flowcharts, red flags and acronyms; hacker terminal and blueprint; faces in things).
+  Five are specialists of a format of their own (section 7, D79): the detective's court case, the host's infomercial,
+  the narrator's nature documentary, the guide's museum tour and the best man's wedding toast, about a third of their
+  talks each; the game-show host gives more infomercials and keynotes, the alien more documentaries and museum tours,
+  IT support more all-hands. With 21 personas, every tag's multiplier still averages 0.91 to 1.31 over them (red flags
+  the most favoured, KPI tiles the least) and every theme family comes up 0.82 to 1.21 times as often as without; each
+  new persona's talks are in its favourite families 34 to 49% of the time (13 to 26% without). Rebased onto D76 to
+  D78 the same day, the personas favour D77's families too (the detective and the conspiracy blogger the corkboard, IT
+  support the 90s desktop, the consultant the spreadsheet, the influencer Y2K and the retiree 70s retro, as the
+  planning session had them; and a founder's and a teacher's sticky notes, a narrator's, a best man's, a motivational
+  speaker's and a life coach's glossy magazines, a game-show host's and a time traveller's 70s retro and Y2K), and
+  weigh D78's slides of a picture to explain: D78's own multipliers for the thirteen personas it knew (which it left
+  to this work: a conspiracy blogger's exhibits ×3, a kindergarten teacher's equations, an influencer's picks, a
+  motivational speaker's befores and afters), and the eight new ones' (a detective's exhibits ×3, a game-show host's
+  Pick one ×3, which takes the place of its two captioned pictures, an infomercial host's befores and afters ×3, an
+  alien's and IT support's "What do you see?"). Every tag still averages 0.91 to 1.31 over the personas, every family
+  0.82 to 1.22 times its share.
 
 A talk can also say which personas its seed picks from (`personas=`, `--personas`; talkgenerator.com's settings switch
 some off, D61): the seed picks among all of them first, and only when that one isn't allowed, again among those that
@@ -1265,6 +1294,123 @@ while Pexels was in a cooldown, deterministic when made again; all nine open on 
 three by the free models ($0), and a free model's pigeons pitch whose problem slide got "How to Repel and Keep Pigeons
 Away Naturally" to start from. No OpenAI image generation: the generated picture beside a problem is tested with a fake
 generator only.
+
+**Six more formats, and eight more personas** (2026-11-12, D79), of the personas, formats and looks proposed that day,
+which the user answered "let's do all of them (unless some of them don't work out great)" (the looks went to a
+session of their own, D77). Each is a format as the four before it: a module, a content pack, a brief and hints for
+the language model, favourite personas and themes, and an arc with a free share; no new slide type, and none advances
+by itself. Every one came out well enough to keep (below), so none was dropped.
+
+- **`infomercial`**: a late-night TV infomercial for a gadget made of the topic, with its made-up name ("Magic
+  Penguin", "InstaCoffee": `formats.gadget`). Its arc goes from the everyday problem (the problem slide, "Sound
+  familiar?" over "Spilled fish on the sofa?", or someone failing at it full-bleed under "There has to be a better
+  way!") through the gadget (a product shot, or full-bleed: "As seen on TV!"), its demonstration (three photos ending in
+  "It even folds fitted sheets!", how it works, or the old way and the new), testimonials (five-star reviews, the last
+  one absurd; a customer's post; before and after), the fine print (a wall of disclaimers, or a terms dialog whose every
+  button agrees; from eleven slides on), the price (prices dropping tile by tile to "$12.99: before our boss finds
+  out!", or "3 × $19.99") and "But wait, there's more!" (a free bonus full-bleed, or "2 for 1") to the call to order
+  (over a calm photo of a call centre, a 555 number, or the whole room pretending to dial).
+- **`documentary`**: a hushed nature documentary about the topic as a wild species with a Latin name ("Penguinus
+  giganteus", "Coffeus minimus": `formats.species`): the opening shot (a landscape under a hushed line), its habitat,
+  its behaviour (three photos, two, or a day in its life as a cycle), a rare sighting (a weird photo, or the news), its
+  rituals, the dangers it faces (everyday ones told as grave ones: "2 left in the wild, and they know it") and a
+  closing reflection, "Next time: ...", or the whole room hushed ("Shh. Everyone, stay very still. Penguinus giganteus
+  is right behind you.": a closing without a picture, so that a documentary always has one). Its parts are pictures
+  already, so a fifth of its slides are free, among them a quiz of its own ("Which of these did our crew film for nine
+  months?").
+- **`court`**: the topic on trial for one harmless crime, the same all talk ("humming in the quiet carriage",
+  "spoiling the season finale": `formats.crime`): the charges (the news, the counts, or "The People versus..."), the
+  evidence ("Exhibit A" in one photo the presenter must explain, Exhibits A and B, or a forensic correlation), a
+  witness (a post, three photos, or a quiz on where the defendant was), the alibi (the night in question as a
+  timeline, a flowchart whose every answer ends in guilt, or "Alibi not found"), an objection, the closing argument
+  ("Look at this face") and the verdict (the jury's pie chart, "GUILTY" as a big number, or the room as the jury). The
+  evidence and the verdict stay longest. Its evidence is D78's Exhibit A (an odd picture beside its evidence tag; on a
+  second slide, Exhibit B, of the same case), or the lab's forensic chart.
+- **`museum`**: a guided tour of a made-up museum and its old master ("The Penguin Gallery", "Anna van der Penguin":
+  `formats.museum_name`, `artist`): the welcome (the hall, the house rules, or the route, "The gift shop (the
+  highlight)"), a masterpiece (public domain art under its label, full-bleed, or before and after a volunteer's
+  restoration), the artist (their life as a timeline, a fun fact, or their post from centuries ago: no portrait under a
+  made-up name, as museums' portraits show real people), the eras (three periods, "The period with hats"; the
+  movements as a tier list; the hierarchy of art), an artefact (behind glass, a quiz on what it was for, or the news of
+  its discovery) and the gift shop ("€12,000: a selfie with the guard").
+- **`wedding`**: the best man's or maid of honour's toast to their best friend (a name that goes with anyone, "Robin":
+  `formats.friend`, always "they"), who marries the topic: who the speaker is ("Me and Jordan, back when they still
+  called me"), how they met (a photo, their love story as a timeline, or a happiness chart), the story ("The coffee
+  incident", full-bleed; the red flags we all ignored; a post from that night), the couple (a Venn diagram, or the two
+  side by side: "Robin: allergic to cats", "Coffee: not a cat"), advice and the toast, the whole room raising their
+  glasses (no drink is ever named).
+- **`book_report`**: a pupil's report on a made-up book ("Goodnight, Penguin" by Edith Bumbleby, "Time Travel at
+  School": `formats.book`, `author`): the book's cover, the author (from eleven slides on), the characters (three
+  photos, or who's who: "A talking sandwich", "A suspicious duck"), what happens (a process ending in "To be continued
+  (oh no)", or how exciting it is page by page), the favourite part, the moral, the rating ("4 stars: would have been
+  higher with a dragon in it"), before its closer says "The End" and asks "Can I sit down now?". The book-covers look is
+  Reddit's, so a cover falls back to illustrations under the open license policy, and is drawn in a talk that generates
+  pictures.
+
+Ten-slide talks: an infomercial's problem, product, a free slide, demo, testimonials, price, a free slide, "but wait"
+and call now; a documentary's opening, habitat, behaviour twice, sighting, a free slide, ritual, threat and closing; a
+court case's charges, evidence, a free slide, witness, alibi, objection, a free slide, closing argument and verdict; a
+museum tour's welcome, masterpiece twice, a free slide, artist, eras, a free slide, artefact and gift shop; a wedding
+toast's intro, how they met twice, a free slide, the story, the couple, a free slide, advice and the toast; a book
+report's book, characters, a free slide, plot twice, the favourite part, a free slide, the moral and the rating. Five
+slides keep an infomercial's problem, product, demo and "but wait", a documentary's opening, behaviour, sighting and
+closing, a court case's charges, evidence, alibi and verdict, a museum tour's welcome, masterpiece, artefact and gift
+shop, a toast's intro, how they met, the story and the toast, and a report's book, characters, plot and rating. Their
+content packs have 2,530 templates in 305 slots, linted as the others are. Their made-up names all come from the topic,
+the same on every slide; the museum's, its old master's and the book's keep the topic's words apart when they're short
+("The Time Travel Gallery", "Pieter de Rubber Duck").
+
+The odds, with ten formats beside the TED-like talk and nine specialists among 21 personas: `FORMAT_WEIGHTS` gives the
+TED-like talk 55 (it was 20) and every new format 1, the specialists' multipliers are ×32 (×21 for the all-hands and the
+keynote, whose weight is 1.5), and no persona's multiplier is under 0.7. So 7 talks in 10 stay TED-like over all the
+personas, as the user asked (D63), and a specialist's favourite comes second, in a third of their talks (it was two in
+five); every format keeps about 1% (one talk in a hundred) with every persona, "some chance for all possibilities" (the
+user's words for D61; it was 2%, which ten formats beside a TED-like talk at 7 in 10 can't all have):
+
+| Persona | TED-like | Their own format | Each other format |
+| --- | --- | --- | --- |
+| the nine specialists (founder, professor, consultant, motivational speaker, detective, infomercial host, narrator, museum guide, best man) | 55% to 57% | **32% to 33%** | 1% to 3% |
+| the other twelve | 76% to 83% | | 1% to 9% (a kindergarten teacher's book reports) |
+| over all 21 | **69%** (69.4% over 4,000 seeds, picked as talks pick them) | | pitch 2.8%, academic 2.9%, all-hands 3.4%, keynote 4.0%, infomercial 3.2%, documentary 3.2%, court 3.0%, museum 3.4%, wedding 3.0%, book report 1.8% |
+| without a persona | 83% | | 1.5% (all-hands and keynote 2.3%) |
+
+Pitches and academic talks stay rarer than all-hands and keynotes. The book report has no specialist: a kindergarten
+teacher gives the most of them (9% of their talks), an alien anthropologist and an influencer some more. A format named
+weights its personas as before (D56), its specialist ×9 (the founder, the professor and the consultant had ×6, the
+keynote's founder and motivational speaker ×5 and ×3.5, now ×7 and ×5), so that with 21 personas they still present
+about 30% of their format's talks. talkgenerator.com lists the personas and the formats from talkgenerator
+(`personas.catalog()`, `allowed_formats()`), so the new ones are on the site as soon as it runs this version.
+
+Rebased onto the `v5` that has D76 to D78 (the user's merge order, D79 last; the same day), each new format has its
+closer, through D76's hook (a `Closer` in its `Format`, its words in all eight languages in
+`talkgenerator.plan.languages`): an infomercial's "Call now!" with "Operators are standing by", a documentary's
+"Thanks for watching", a court case's "Court is adjourned", a museum tour's "Thank you for visiting" with "The gift
+shop is on your left", a toast's "To the happy couple!", and a book report's "The End" with "Can I sit down now?". So a
+book report's own last part, "The End" (a "Questions?" slide, which D76 took out of every format), went: its rating
+stays longest after the book and what happens, and its author waits for talks of eleven slides (D76's
+`Part.shortest`). A court case's evidence is D78's Exhibit A, its part's tag given by `SlideGeneratorData.weighted`; its
+own stand-ins, an image slide and two pictures side by side, went with their texts (its pack's version 3). The formats
+favour D77's families as the personas do (5.2): a court case the corkboard, a toast and a documentary glossy magazines,
+a book report sticky notes and the corkboard, an infomercial Y2K and 70s retro; and the all-hands the spreadsheet, a
+pitch sticky notes.
+
+Checked on 2026-11-12, without GIPHY and Unsplash: the quick set in one process (2,263 passed, 8 of them on a rerun
+without `DISABLE_GIPHY` and `DISABLE_UNSPLASH`, which those tests of the two sources need), the slow tests of the
+files the work touched (87 passed: every pack's lint, the formats' and the personas' sweeps), every commit of the branch
+on its own (before the personas came, 408 of the formats' and the personas' tests passed), ruff and mypy. Offline
+classic talks of each new format read as it: an infomercial's "It even folds fitted sheets!" and "$12.99: before our
+boss finds out!", a documentary's "Coffeus minimus can hear a biscuit packet open from two kilometres away", a court
+case's witness ("The lawyers keep asking about humming in the quiet carriage. I would like to go home."), a museum's
+"€12,000: a selfie with the guard", a toast's "Me and Jordan, back when they still called me", a book report's "Can I
+sit down now?". Six sample talks (folder 47 of the comparison decks): an infomercial and a court case by Claude Haiku
+5.5 (about $0.003 each) read as their formats ("FOOTWEAR FORCEFIELD! The Sock You Cannot Live Without!"; "The People
+v. The Office Printer: The Case of the Vanishing Stapler", whose "Alibi not found" error has the button "I Did It
+Myself"), and so did the classic documentary, museum tour, wedding toast and book report. What the checks needed: a
+documentary could lose its closing slide when its last pictures repeated an earlier one (a hushed room closes it now,
+without a picture), a court case named another crime on every slide (one now, from the topic), and the made-up book,
+museum and old master joined the topic's words ("TimeTravel at School"). Known: a classic book report's cover is a real
+book's, from Reddit, under the made-up title, and half of the charts and diagrams come out as a picture under their
+title (D73), which costs the forensic chart and the falling numbers their jokes half the time.
 
 ## 8. Slide types and variety
 
@@ -2649,9 +2795,10 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D76 | Every talk ends clearly, and spends none of its slides on "Questions?" (the user's report of 2026-11-12: at the end of a slideshow on talkgenerator.com only the "8 / 8" in the presentation's corner said so, and going on did nothing; academic talks and all-hands spent one of their N slides on "Questions?" while TED-like talks end on conclusions, so some talks had less real content; 13.1): every talk ends with a closer (`talkgenerator.closers`), a slide after the ones it asked for, of its format's kind and in its language and look: a TED-like talk's "Thank you!" with the presenter's name and a small "Questions?"; an academic talk's "Questions?" with "Thank you for your attention"; a pitch's "Let's talk" with a made-up contact line (the presenter's first name at the domain of the startup its title names before a colon, or of the classic one named after its topic: "anna@penguinly.com"); an all-hands' "Questions?" and "Back to work"; a keynote's "Available today" with its product's name. A format names its closer in its `Format` (`closer=Closer(...)`, one definition a format; a format without one, the TED-like talk among them, gets `closers.DEFAULT`): its big words, the line under them and a small note, each a function of the talk's end (`Ending`: its language's words, presenter, title and topic), and `mark=True` for big words that ask a question. Its texts are talkgenerator's own words, in every talk language (`said("thanks")`, a `Language` field), a format's own words in every talk language (`in_every_language({"en": ..., "nl": ...})`, a ValueError for one left out), the presenter's name (`presenter`), or a function of its own (`contact_line`, `product_line`); so a new format adds its closer in one line of its `Format`, and `tests/test_closers.py` checks every registered format's closer in every talk language and theme family. It's a slide type of its own (`closer`: its words, a line under them, a small note and, under a question, a huge question mark beside them), laid out as the title slide is or with the mark, with the motifs' big pieces; the deck marks it (`DeckSlide.closer`), and its slides' numbers ("7/12") and the checks' counts leave it out (`Deck.counted()`); `stream_talk` sends it as one more `slide.ready`, right after the last slide (before slides that ran out of time come after all), and the .pptx ends with it; a plan written elsewhere gets one after its slides, as it gets its title slide before them. The arcs spend no slide on questions anymore: the academic talk's questions, the all-hands' Q&A and the pitch's closing went, with their pack texts (academic 6, corporate 3, pitch 5), and the TED-like "Questions?" is a plan's recipe alone (weight 0 in talks); D63's parts of text wait for the same lengths as before (`Part.shortest`: an all-hands' agenda for 11 slides, a pitch's market and business model for 11 and 12, an academic outline and acknowledgements for 12 and 13), so the slide "Questions?" had goes to a part of content (an academic talk's future work, a pitch's roadmap, a second KPI slide). talkgenerator.com shows the closer as a slide, with "The end" where its number would be; going on from it (a click, a tap or a key) brings the curtain down, once a full-screen presentation has given way to the window (nothing can be drawn over full screen), and the curtain opens on the talk's overview, at its first slide, with Present again, Download and New; Esc leaves the presentation as before, and a talk without a closer (from a talkgenerator before it) gets the same curtain after its last slide, once it's all made. |
 | D77 | Decks of one family differ by more than their colours (the user, 2026-11-12: "now all kiddie-presentations all look the same"; section 9). A family can have several sets of decoration (`themes.Variant`: a motif, how likely a member has it, and the patterns its backgrounds can have with it), of which a member has one, from a stream of its own (so a member's colours, fonts, layouts and treatments are as they were; a family without sets keeps its one motif, `themes.variants`). `kids` has four, each as likely: crayon drawings (as before: bunting, squiggles, confetti, a sun and hills; pictures now in a box a crayon drew, the slide's number in a crayon circle), a sticker book (titles on white labels, stickers along the edges, pictures as stickers with a corner peeling off, a rainbow on the title slide, a prize rosette with a section's number, the number on a sticker), a school notebook (ruled or squared paper in its ink, a margin line that goes behind no text, punched holes or a spiral binding, a ballpoint underline or a highlighter under titles, ballpoint doodles, pictures taped in with washi tape, an exercise book's cover for the title slide, a circled number with doodled rays for a section) and paper cut-outs (construction paper a little uneven, each piece with a small shadow: a pinked strip under titles, layered quarter circles in two corners, hearts, stars, circles and leaves along the edges, pictures on paper mats turned a little, paper hills, sun and clouds around the title's card, a paper flower with a section's number). Their decoration is in the member's palette's colours (`motifs._paints`: its two accents, where one was made darker to read as a text as light as a crayon again, as far as it still shows on the paper, and its paper's own hue as a paint), where crayon drawings had a fixed rainbow of seven, so that kids' palettes show; only a sun stays yellow, a crayon drawing's hills green. And kids has two more palettes, lavender and pink paper (Open Color's), six in all, so that two crayon drawings are less often alike. A section's badge moved from the layout (`v5/kids-section`, which keeps its boxes) to the motifs, each set drawing its own. Only today's element kinds (shapes, texts; no polygon outlines, which the browser doesn't draw) and no outside assets, so PowerPoint, the previewer and talk-generator-web draw them as before. Measured: the design checks' decks (every kind of slide, and 179 slides of runs of a type) in a member of each set in each of kids' six palettes, 4,560 slides: no finding. The other families with one motif can get sets the same way. And seven new families, from the ideas of 2026-11-12 (the user: "let's do all of them"), none for laughs, each with palettes of its own: `sticky notes` (a workshop on a whiteboard: its aluminium frame and a tray with two markers on it, a marker's stroke under titles, sticky notes in Open Color's pastels with ideas scribbled on them as lines, no words, a cluster of them with dot-vote stickers on the big slides, pictures held up by magnets, the slide's number on a sticky flag), `corkboard` (cork with its grain as a pattern, in a wooden frame: the title on a pinned index card, pictures as polaroids, pinned or taped up, index cards pinned in free corners, on the big slides pins with a red string between them, where the string keeps clear of texts and pictures), `90s desktop` (every slide a window: a title bar in the accent with a document's icon, "TALK.PPT" and its three buttons drawn as shapes, bevelled edges, a taskbar with the slide's number in its tray, pictures in windows named as "PIC071.BMP", and a big slide of nothing but texts as a dialog box on the desktop, in the second accent, with a computer's, a folder's and a document's icons and the mouse's pointer: named for its decade, with no trademarked name or logo), `spreadsheet` (a grid, its rows' lines its pattern, with its columns' letters and its rows' numbers in header cells where nothing else is, the title a selected cell, pictures with selection handles, the slide's number on the open sheet's tab, in Calibri; one palette in dark mode), `Y2K` (pastel gradients from its own hues, sparkles and glossy bubbles, pictures in white rounded frames, a CD on the big slides, the slide's number on a glossy pill, and a new heading effect, `chrome`: three shades of silver in a dark outline that reads on the background, with a shadow of its accent), `70s retro` (browns, oranges and mustard on cream, avocado or brown, four rounded stripes along the top and left edges turning their corner, two stripes under titles, a sunset of stripes on the big slides where there's room, pictures as prints with round corners) and `glossy magazine` (big serif headlines, a hairline with a square of its accent along the top, a short thick rule under titles, giant quotation marks before a quote's first line or over it, pictures on an offset block of its accent's tint, the slide's number as the page's folio, an issue's roundel, "N°7", on the big slides). Their personas' favourites are D79's (`personas.py` is that branch's). Twenty-four families now, which moves the family a random theme's seed picks, as D44's five did. Measured as kids', in each of their palettes: 4,180 slides, no finding. |
 | D78 | Slides of a surprising picture that the presenter has to explain, with little or no text (the user's request of 2026-11-12, as improv suggestions and story cubes give a performer something to explain; section 8): **Exhibit A** (an odd picture as the evidence in a case, beside an evidence tag or under an evidence marker, with a made-up case number and, half the time, a note of a few words; the deck letters a talk's exhibits in turn, as it numbers sections, so a later one is Exhibit B, of the first one's case: two a talk at most), **Pick one** (two pictures without captions, under "Pick one:" or a heading of the slide's own, an "OR" between them), a **picture equation** (a thing plus another thing equals a third, on a click: each a picture or an emoji, the model writing every thing's emoji and the dice picking which are pictures too, so that a thing whose picture isn't found, or doesn't come within the slide's 8 seconds, D67, is its emoji), **What do you see?** (over a face in something, Reddit's pareidolia, in talks with fair use; or over an inkblot, which a slide without a picture is: its layout draws it, polygons and ellipses mirrored about a card's middle, by the slide's dice, a quarter of the time in `default` talks and always in `ted`) and a **before and after** (two unrelated pictures under "Before" and "After", an arrow between them, the after on a click). One to three pictures a slide, drawn with the deck's texts, pictures and shapes (D37), so talk-generator-web draws them as it is; talkgenerator's words in all eight languages. Each has a kind for plans and the language model (with what each picture's query searches for), classic texts in the TED pack (version 9: notes, headings, titles and questions) with pictures of the slide's seed and its related words, two layouts (an inkblot two of its own), and a weight in the TED-like formats' middle as the karaoke types have (0.7 to 1), but no persona's multipliers yet (the work on personas and formats that follows weighs them, and reuses the types in its formats): over 500 seeds of 10-slide talks a language model writes, each comes up in 9% to 12% of `default` talks and 11% to 18% of `ted` ones (40% and 54% of talks have one), and an Exhibit B in 0.2% (0.6% of `ted` talks); as they took memes down from 49% to 40% of talks, memes weigh 7 now, from 5 (`MEME_WEIGHT`, the user's word of 2026-11-12), which keeps them in half of the talks (50%, 0.64 a talk) (samples in talkgenerator-update's folder 44, made while personas still weighed the new types and memes weighed 5). A slide that stands in for another, or a spare, looks no picture up: its "What do you see?" is an inkblot and its equation emoji, so both are spare kinds too (D66: 15 kinds now). |
+| D79 | Six more formats and eight more personas (the user's "let's do all of them (unless some of them don't work out great)", 2026-11-12; sections 5.2 and 7): `infomercial`, `documentary` (a nature documentary), `court`, `museum`, `wedding` (a toast) and `book_report`, each an arc of parts on today's slide kinds with a content pack, a brief and hints, favourite personas and themes, and made-up names from the topic (a gadget, a Latin species, one harmless crime, a museum and its old master, the best friend who marries the topic, a book and its author); the personas `detective`, `infomercial_host`, `nature_narrator`, `museum_guide`, `best_man`, `game_show_host`, `alien_anthropologist` and `it_support`, the first five each the specialist of a new format. `FORMAT_WEIGHTS`: the TED-like talk 55 (was 20), each new format 1; specialists ×32 (×21 for the all-hands and the keynote), no multiplier under 0.7: 69% of talks TED-like over all 21 personas, 83% without one, a specialist's favourite in a third of their talks, every format about 1% with every persona (was 2%). A format named weights its specialist ×9. None dropped. Rebased onto D76 to D78: each new format has its closer, in all eight languages (an infomercial's "Call now!", a court case's "Court is adjourned", a book report's "The End", whose own last part went), the personas and the formats favour D77's families (a detective's and a court case's corkboard, IT support's 90s desktop, a consultant's spreadsheet...), a court case's evidence is D78's Exhibit A, and the personas weigh D78's slides (D78's own multipliers for the thirteen it knew, a game-show host's Pick one ×3). |
 
 D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, D43 to D62 on 2026-11-08, D63
-to D69 on 2026-11-09, D70 to D73 on 2026-11-10, D74 on 2026-11-11, and D75 to D78 on 2026-11-12; the others
+to D69 on 2026-11-09, D70 to D73 on 2026-11-10, D74 on 2026-11-11, and D75 to D79 on 2026-11-12; the others
 follow from the design.
 
 ### Open questions
