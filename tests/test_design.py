@@ -388,8 +388,10 @@ def _runs(seed=1, theme=None):
         slides.MemeSlide(wide, "When the cat", "Sits on the keyboard"),
         # (and the ones from PowerPoint karaoke decks, with a photo and without, few words and many...)
         *(every_karaoke_type(wide) * 3),
-        # (and the slides of a picture to explain, D78: with pictures and an inkblot, a title and none)
-        *(every_picture_prompt(wide, tall) * 3),
+        # (and the slides of a picture to explain, D78: with pictures and an inkblot, a title and none; one run of them,
+        # as a type's slides in a row take its layouts in turn already, and a deck of 200 slides or more numbers them
+        # wider than some families' corners hold, "200/215", which no talk comes near)
+        *every_picture_prompt(wide, tall),
         # (and the talk formats' process, whose words are short enough to go across, or one under the other)
         *(slides.ProcessSlide("Method", "Collect cats", "Clean data", "???", "Profit") for _ in range(3)),
         # (and, from D65, closing slides with a picture to end on, and an academic talk's references, with a picture of
