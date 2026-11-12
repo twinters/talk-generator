@@ -65,18 +65,22 @@ how to keep 4.x's talks. The [docs](https://github.com/twinters/talk-generator/t
 
 ### Themes and layouts
 
-- Seventeen families of themes, drawn as shapes on a 1920×1080 canvas: from `clean keynote`, `dark minimal` and
-  `Swiss poster` to `hacker terminal`, `blueprint`, `chalkboard` and `newspaper`, with `1997 WordArt`, `Comic Sans
-  everywhere` and `clip-art corporate` for laughs. By default (`--theme random`) the talk's seed picks a member of a
-  family: its colours, repaired until every text reads on its background by WCAG's contrast rules, its fonts, its
-  decoration and its layouts. `--theme` names a family or `classic` (the 2019 template), `--theme_families` limits
-  the seed's choice, `--no_extreme_themes` leaves out the ones for laughs, `--theme chaos` gives every slide a theme
-  of its own, and `TALKGENERATOR_THEME` sets another default.
+- Twenty-four families of themes, drawn as shapes on a 1920×1080 canvas: from `clean keynote`, `dark minimal` and
+  `Swiss poster` to `hacker terminal`, `blueprint`, `chalkboard`, `newspaper`, `sticky notes` (a workshop's
+  whiteboard), `corkboard`, `spreadsheet`, `90s desktop`, `Y2K`, `70s retro` and `glossy magazine`, with `1997
+  WordArt`, `Comic Sans everywhere` and `clip-art corporate` for laughs. By default (`--theme random`) the talk's
+  seed picks a member of a family: its colours, repaired until every text reads on its background by WCAG's contrast
+  rules, its fonts, its decoration and its layouts. `--theme` names a family or `classic` (the 2019 template),
+  `--theme_families` limits the seed's choice, `--no_extreme_themes` leaves out the ones for laughs, `--theme chaos`
+  gives every slide a theme of its own, and `TALKGENERATOR_THEME` sets another default.
 - About ninety layouts put every text and picture in its box, give every text the largest size at which it fits, and
   never repeat the slide before's layout when another fits.
 - Every family has its own decoration (a terminal's window bar and prompts, a blueprint's grid and title block, a
   chalkboard's wooden frame, a newspaper's masthead...), drawn with the deck's own shapes, and numbers its slides
   ("7/12") in its own style.
+- A family can have several sets of decoration, of which the seed picks one: a `kids` deck is crayon drawings, a
+  sticker book, a school notebook (ruled or squared paper, doodles, an exercise book's cover) or paper cut-outs, each
+  in the colours of its palette (of six).
 - Pictures get their theme's treatment, so that pictures from mixed sources share a look: most a gentle tint, the
   strong filters (grayscale, sepia, a duotone) only in families made for them, and rounded corners, a polaroid frame,
   grain or a vignette as PowerPoint picture effects. Some families' headings get WordArt-style effects (a rainbow in

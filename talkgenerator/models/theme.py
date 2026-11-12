@@ -20,7 +20,8 @@ FilterScope = Literal["all", "backdrops"]
 Warp = Literal["wave", "arch", "inflate", "slant"]
 # A family's own decoration, which its slides are drawn with besides their layout's shapes (see
 # talkgenerator.design.motifs): a terminal window's frame and scanlines, a blueprint's grid and title block, crayon
-# scenery and stickers, a chalkboard's wooden frame...
+# scenery, a chalkboard's wooden frame... (a family can have several, of which a member has one: a kindergarten's
+# crayon drawings, sticker book, school notebook or paper cut-outs)
 Motif = Literal[
     "none",
     "keynote",
@@ -30,6 +31,9 @@ Motif = Literal[
     "blobs",
     "ornate",
     "crayon",
+    "stickers",
+    "notebook",
+    "cutouts",
     "brutal",
     "synthwave",
     "starburst",
@@ -40,6 +44,13 @@ Motif = Literal[
     "chalkboard",
     "newsprint",
     "swiss",
+    "workshop",
+    "desktop",
+    "corkboard",
+    "spreadsheet",
+    "y2k",
+    "seventies",
+    "magazine",
 ]
 # A pattern over a slide's background: lines across it (ruled paper's, a screen's scanlines), a grid (graph paper's, a
 # blueprint's), or dots
@@ -117,8 +128,9 @@ class Theme(_Data):
     image_tint: str | None = None
     image_tint_opacity: float = 0.0
     heading_effect: TextEffect | None = None  # WordArt-style effects on its titles and statements
-    # Its family's own decoration (see talkgenerator.design.motifs), a member's variant of it (which corner its sun
-    # is in, say: the same on every slide), and the pattern over its slides' backgrounds, if any
+    # Its decoration (see talkgenerator.design.motifs: its family's, or one of its family's sets of decoration), a
+    # member's variant of it (which corner its sun is in, say: the same on every slide), and the pattern over its
+    # slides' backgrounds, if any
     motif: Motif = "none"
     motif_variant: int = 0
     pattern: BackgroundPattern | None = None

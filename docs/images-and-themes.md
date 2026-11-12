@@ -140,8 +140,9 @@ template. Every other theme draws the slides as shapes on a 1920×1080 canvas: a
 its box, and every text gets the largest size at which it fits.
 
 The themes come in families: `clean keynote`, `dark minimal`, `corporate`, `academic`, `startup`, `vintage paper`,
-`kids`, `brutalist`, `neon`, `hacker terminal`, `blueprint`, `chalkboard`, `newspaper` and `Swiss poster`, and, for
-laughs, `1997 WordArt`, `Comic Sans everywhere` and `clip-art corporate`. A family has many members, and the talk's
+`kids`, `brutalist`, `neon`, `hacker terminal`, `blueprint`, `chalkboard`, `newspaper`, `Swiss poster`, `sticky
+notes`, `90s desktop`, `corkboard`, `spreadsheet`, `Y2K`, `70s retro` and `glossy magazine`, and, for laughs, `1997
+WordArt`, `Comic Sans everywhere` and `clip-art corporate`. A family has many members, and the talk's
 seed picks one: its colours (every text reads on its background, by WCAG's contrast rules), its fonts, its
 decoration and its layouts.
 
@@ -169,8 +170,29 @@ Every family has a decoration of its own, on every slide, and saves its big piec
   between columns, red kickers and grayscale photos.
 - `Swiss poster`: a grotesk flush left on a three-column grid, a heavy black rule, one red block a slide, a big red
   circle on the title slide and black section dividers with a giant number.
-- `kids`: a kindergarten's crayon colours on cream, bunting along the top, crayon squiggles under the titles,
-  confetti, pictures as stickers, a title card with a sun, a cloud and hills, and section numbers on a sun.
+- `kids`: a kindergarten's, in bright colours on pastel paper, as one of four sets of decoration (the seed picks
+  which, and every set is in its member's colours): crayon drawings (bunting along the top, crayon squiggles under the
+  titles, confetti, a title card with a sun, a cloud and hills, section numbers on a sun), a sticker book (titles on
+  white labels, stickers, pictures as stickers peeling off, a rainbow, section numbers on a prize rosette), a school
+  notebook (ruled or squared paper with a margin line and a binding, ballpoint doodles, pictures taped in, an
+  exercise book's cover for the title slide) or paper cut-outs (construction paper with small shadows, pictures on
+  paper mats, paper hills and a paper flower).
+- `sticky notes`: a workshop on a whiteboard, in its aluminium frame with markers on its tray: marker strokes under
+  the titles, sticky notes with ideas scribbled on them (and dot-vote stickers, on the big slides), pictures held up
+  by magnets, and the slide's number on a sticky flag.
+- `90s desktop`: every slide a bevelled grey window with a title bar and its three buttons, a taskbar with the
+  slide's number in its tray, pictures in windows of their own, and a big slide of nothing but texts as a dialog box
+  on the desktop, with icons and the mouse's pointer.
+- `corkboard`: cork in a wooden frame, the title on a pinned index card, pictures as polaroids, pinned or taped up,
+  index cards pinned in free corners, and on the big slides pins with a red string between them.
+- `spreadsheet`: a grid of cells with its columns' letters and its rows' numbers, the title a selected cell,
+  pictures with selection handles, and the slide's number on the open sheet's tab, in Calibri.
+- `Y2K`: chrome headings on pastel gradients, sparkles and glossy bubbles, pictures in white rounded frames, a CD on
+  the big slides, and the slide's number on a glossy pill.
+- `70s retro`: browns, oranges and mustard on cream (or avocado, or brown), four rounded stripes turning the top
+  left corner, a sunset of stripes on the big slides, and pictures as prints with round corners.
+- `glossy magazine`: big serif headlines, hairline rules and a page's folio, giant quotation marks by a quote,
+  pictures on a block of colour, and an issue's roundel on the big slides.
 - The others too: academic's titles on a band with a row of dots counting the slides (as LaTeX's Beamer has them),
   neon's sunset over a grid floor, vintage paper's ornamented double frame, brutalist's titles on blocks with hard
   shadows, corporate's slanted panel, startup's soft blobs, Comic Sans' speech balloons and POW, WordArt's

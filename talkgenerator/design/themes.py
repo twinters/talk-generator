@@ -60,7 +60,9 @@ VIGNETTE: Final = 0.7
 # WordArt's shapes, for the 1997 WordArt family's headings
 WARPS: Final[tuple[Warp, ...]] = ("wave", "arch", "inflate", "slant")
 # The kinds of heading effects a family can have (see _heading_effect)
-HeadingEffect = Literal["none", "wordart", "glow", "hard shadow", "comic", "clip art"]
+HeadingEffect = Literal["none", "wordart", "glow", "hard shadow", "comic", "clip art", "chrome"]
+# Chrome's shades, from the top of a heading down (the year 2000's)
+CHROME: Final = ("#ffffff", "#b4c0d0", "#eef2f8")
 # How often a member of a family with open fonts has a pair of them (else a pair of the installed fonts)
 OPEN_FONT_CHANCE: Final = 2 / 3
 
@@ -77,6 +79,20 @@ class PatternSpec:
     size: float
     offset: float = 0.0
     major: int = 0
+
+
+Patterns = tuple[tuple[PatternSpec | None, float], ...]
+
+
+@dataclass(frozen=True)
+class Variant:
+    """One of the sets of decoration a family's members pick from with the seed (D77): its motif (see
+    talkgenerator.design.motifs), how likely a member has it, and the patterns its backgrounds can have with it, each
+    with how likely it is (None: none), if not the family's (a notebook's lined or squared paper)."""
+
+    motif: Motif
+    weight: float = 1.0
+    patterns: Patterns | None = None
 
 
 @dataclass(frozen=True)
@@ -119,7 +135,10 @@ class Family:
     # texts (a startup's blobs: its accent at 15%), which its texts and accents are made to read on too
     motif: Motif = "none"
     tints_under_text: tuple[tuple[str, float], ...] = ()
-    patterns: tuple[tuple[PatternSpec | None, float], ...] = ((None, 1.0),)
+    patterns: Patterns = ((None, 1.0),)
+    # Sets of decoration its members pick from instead of its motif alone (see Variant): a kindergarten's crayon
+    # drawings, sticker book, school notebook or paper cut-outs, so that its decks differ more than by their colours
+    variants: tuple[Variant, ...] = ()
     extreme: bool = False
     weight: float = 1.0  # how often the random mix picks it
     description: str = ""  # what its members look like, for a settings menu
@@ -229,8 +248,8 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "kids",
-            description="a kindergarten's: crayon colours on cream, bunting, a sun and hills, stars and confetti, "
-            "pictures as stickers",
+            description="a kindergarten's, in bright colours on pastel paper: crayon drawings with bunting and a sun, "
+            "a sticker book, a school notebook with doodles, or paper cut-outs",
             palettes=(
                 Palette(
                     background="#fff6e9",
@@ -264,6 +283,23 @@ FAMILIES: Final[dict[str, Family]] = {
                     accent="#8e5ad8",
                     accent_2="#ff7a1a",
                 ),
+                # (D77: lavender and pink paper, Open Color's)
+                Palette(
+                    background="#f3f0ff",
+                    surface="#e5dbff",
+                    text="#2b2244",
+                    muted="#4f4566",
+                    accent="#12b886",
+                    accent_2="#f76707",
+                ),
+                Palette(
+                    background="#fff0f6",
+                    surface="#ffdeeb",
+                    text="#3b1d2e",
+                    muted="#5c3b4c",
+                    accent="#228be6",
+                    accent_2="#fab005",
+                ),
             ),
             fonts=(("Trebuchet MS", "Verdana"), ("Verdana", "Verdana"), ("Comic Sans MS", "Trebuchet MS")),
             open_fonts=(("Sniglet", "Mali"), ("Mali", "Mali")),
@@ -274,6 +310,18 @@ FAMILIES: Final[dict[str, Family]] = {
             image_frames=(("rounded", 1.0),),
             motif="crayon",
             patterns=((None, 0.6), (PatternSpec("dots", "accent", 0.1, 56, 10), 0.4)),
+            variants=(
+                Variant("crayon"),
+                Variant("stickers", patterns=((None, 0.7), (PatternSpec("dots", "accent_2", 0.08, 72, 8), 0.3))),
+                Variant(
+                    "notebook",  # (ruled in its ink, or squared as a maths exercise book is)
+                    patterns=(
+                        (PatternSpec("lines", "text", 0.13, 54, 2, offset=40), 0.6),
+                        (PatternSpec("grid", "text", 0.08, 40, 1.5), 0.4),
+                    ),
+                ),
+                Variant("cutouts", patterns=((None, 1.0),)),
+            ),
         ),
         Family(
             "brutalist",
@@ -525,6 +573,251 @@ FAMILIES: Final[dict[str, Family]] = {
             image_filters=(("grayscale", 0.5), ("none", 0.5)),
             motif="swiss",
         ),
+        Family(
+            "sticky notes",
+            description="a workshop on a whiteboard: marker headings, sticky notes with ideas scribbled on them and "
+            "dot-vote stickers, pictures held up by magnets, a marker tray along the bottom",
+            palettes=(  # (a whiteboard, its markers: Open Color's)
+                Palette(
+                    background="#f8f9fa",
+                    surface="#e9ecef",
+                    text="#1c3d7a",
+                    muted="#495057",
+                    accent="#e03131",
+                    accent_2="#2f9e44",
+                ),
+                Palette(
+                    background="#fbfbf7",
+                    surface="#ecece4",
+                    text="#212529",
+                    muted="#495057",
+                    accent="#1971c2",
+                    accent_2="#e8590c",
+                ),
+                Palette(
+                    background="#f5f7fa",
+                    surface="#e3e8ef",
+                    text="#25262b",
+                    muted="#495057",
+                    accent="#7048e8",
+                    accent_2="#0c8599",
+                ),
+            ),
+            fonts=(("Trebuchet MS", "Trebuchet MS"), ("Verdana", "Verdana"), ("Arial", "Arial")),
+            open_fonts=(("Mali", "Atkinson Hyperlegible"), ("Mali", "Mali")),
+            open_font_chance=0.75,
+            uppercase=0.4,
+            alignments=("left", "center"),
+            image_tints=(("none", 0.7), ("cool", 0.3)),
+            motif="workshop",
+        ),
+        Family(
+            "90s desktop",
+            description="a 1990s computer: the slide a bevelled grey window with a title bar, a taskbar with the "
+            "slide's number in its tray, pictures in windows of their own, and big slides as a dialog box on the "
+            "desktop, with icons and the mouse's pointer",
+            palettes=(  # (a window's grey, its title bar's colour, and the desktop's)
+                Palette(
+                    background="#c0c0c0",
+                    surface="#d4d4d4",
+                    text="#000000",
+                    muted="#333333",
+                    accent="#000080",
+                    accent_2="#008080",
+                ),
+                Palette(
+                    background="#d4d0c8",
+                    surface="#e2dfd8",
+                    text="#000000",
+                    muted="#36332e",
+                    accent="#0a246a",
+                    accent_2="#3a6ea5",
+                ),
+                Palette(
+                    background="#c0c0c0",
+                    surface="#d4d4d4",
+                    text="#000000",
+                    muted="#333333",
+                    accent="#800000",
+                    accent_2="#6b6b00",
+                ),
+            ),
+            fonts=(("Arial", "Arial"), ("Verdana", "Verdana"), ("Arial", "Courier New")),
+            open_fonts=(("Space Mono", "Atkinson Hyperlegible"), ("Chakra Petch", "Barlow")),
+            open_font_chance=0.5,
+            alignments=("left", "center"),
+            motif="desktop",
+        ),
+        Family(
+            "corkboard",
+            description="a corkboard in a wooden frame: the title on a pinned index card, pictures as polaroids, pinned "
+            "or taped up, notes and a red string between pins",
+            palettes=(  # (cork, and the board's pins)
+                Palette(
+                    background="#c8a27c",
+                    surface="#d9b994",
+                    text="#2a1a0e",
+                    muted="#3d2a1a",
+                    accent="#9c2a1f",
+                    accent_2="#1e4f7a",
+                ),
+                Palette(
+                    background="#b9915f",
+                    surface="#caa575",
+                    text="#1f140a",
+                    muted="#33240f",
+                    accent="#8f1d1d",
+                    accent_2="#285e2b",
+                ),
+                Palette(
+                    background="#d6b48a",
+                    surface="#e4c7a2",
+                    text="#2b1c10",
+                    muted="#45301c",
+                    accent="#a12622",
+                    accent_2="#5f3dc4",
+                ),
+            ),
+            fonts=(("Georgia", "Georgia"), ("Courier New", "Georgia"), ("Trebuchet MS", "Trebuchet MS")),
+            open_fonts=(("Courier Prime", "Courier Prime"), ("Mali", "Courier Prime")),
+            uppercase=0.2,
+            alignments=("left", "center"),
+            image_tints=(("none", 0.6), ("warm", 0.4)),
+            motif="corkboard",
+            patterns=((PatternSpec("dots", "text", 0.07, 13, 3.5), 1.0),),  # (cork's grain)
+        ),
+        Family(
+            "spreadsheet",
+            description="a spreadsheet: a grid of cells with its columns' letters and its rows' numbers, the title a "
+            "selected cell, pictures with selection handles, the slide's number on a sheet's tab",
+            palettes=(
+                Palette(
+                    background="#ffffff",
+                    surface="#f1f3f4",
+                    text="#202124",
+                    muted="#5f6368",
+                    accent="#188038",
+                    accent_2="#1a73e8",
+                ),
+                Palette(
+                    background="#ffffff",
+                    surface="#eef1f5",
+                    text="#1f2937",
+                    muted="#4b5563",
+                    accent="#1e7145",
+                    accent_2="#c55a11",
+                ),
+                Palette(  # (in dark mode)
+                    background="#1f1f1f",
+                    surface="#2b2b2b",
+                    text="#e8eaed",
+                    muted="#bdc1c6",
+                    accent="#81c995",
+                    accent_2="#8ab4f8",
+                ),
+            ),
+            fonts=(("Calibri", "Calibri"), ("Arial", "Arial"), ("Calibri", "Arial")),
+            open_fonts=(("Lato", "Lato"),),
+            open_font_chance=0.25,
+            alignments=("left",),
+            image_tints=(("none", 1.0),),
+            motif="spreadsheet",
+            patterns=((PatternSpec("lines", "text", 0.13, 54, 1.5, offset=48), 1.0),),  # (its rows)
+        ),
+        Family(
+            "Y2K",
+            description="the year 2000's: chrome headings on pastel gradients, sparkles and glossy bubbles, a CD, "
+            "pictures in white rounded frames, the slide's number on a glossy pill",
+            hues=(170, 330),
+            harmony="analogous",
+            background_saturation=(0.55, 0.85),
+            background_lightness=(0.87, 0.92),
+            accent_saturation=(0.85, 1.0),
+            fonts=(("Trebuchet MS", "Verdana"), ("Verdana", "Verdana"), ("Arial Black", "Trebuchet MS")),
+            open_fonts=(("Chakra Petch", "Poppins"), ("Poppins", "Poppins")),
+            uppercase=0.3,
+            backgrounds=("gradient",),
+            alignments=("center",),
+            image_tints=(("none", 0.7), ("accent", 0.3)),
+            heading_effect="chrome",
+            heading_effect_chance=0.85,
+            motif="y2k",
+        ),
+        Family(
+            "70s retro",
+            description="the 1970s: browns, oranges and mustard on cream, rounded stripes turning a corner, a sunset of "
+            "stripes on the big slides, pictures as prints with round corners",
+            palettes=(
+                Palette(
+                    background="#f6e7c8",
+                    surface="#efd9ad",
+                    text="#3b2314",
+                    muted="#5a3a22",
+                    accent="#c4501b",
+                    accent_2="#d99a1e",
+                ),
+                Palette(  # (avocado)
+                    background="#efe6c6",
+                    surface="#e3d6a8",
+                    text="#2f2a14",
+                    muted="#4a4220",
+                    accent="#6b7a1f",
+                    accent_2="#c26a1b",
+                ),
+                Palette(  # (on brown)
+                    background="#3a2416",
+                    surface="#4a3020",
+                    text="#f6e7c8",
+                    muted="#e2c9a0",
+                    accent="#e8892c",
+                    accent_2="#f0c04a",
+                ),
+            ),
+            fonts=(("Georgia", "Trebuchet MS"), ("Arial Black", "Trebuchet MS"), ("Trebuchet MS", "Trebuchet MS")),
+            open_fonts=(("Abril Fatface", "Lato"), ("Archivo Black", "Lato")),
+            uppercase=0.2,
+            alignments=("left", "center"),
+            text_scale=(1.0, 1.1),
+            image_tints=(("none", 0.5), ("warm", 0.5)),
+            motif="seventies",
+        ),
+        Family(
+            "glossy magazine",
+            description="a glossy magazine: big serif headlines, a page's folio, giant quotation marks by a quote, "
+            "pictures on a block of colour, and an issue's roundel on the big slides",
+            palettes=(
+                Palette(
+                    background="#ffffff",
+                    surface="#f8f0f3",
+                    text="#141414",
+                    muted="#4a4a4a",
+                    accent="#d6336c",
+                    accent_2="#1c7ed6",
+                ),
+                Palette(
+                    background="#f7f1e8",
+                    surface="#efe5d6",
+                    text="#1c1712",
+                    muted="#4d4237",
+                    accent="#9c6b1e",
+                    accent_2="#1c1712",
+                ),
+                Palette(
+                    background="#111111",
+                    surface="#1f1f1f",
+                    text="#f5f5f5",
+                    muted="#bdbdbd",
+                    accent="#ff4d4d",
+                    accent_2="#f5f5f5",
+                ),
+            ),
+            fonts=(("Georgia", "Georgia"), ("Times New Roman", "Arial"), ("Georgia", "Verdana")),
+            open_fonts=(("Abril Fatface", "Lato"), ("Spectral", "Lato")),
+            uppercase=0.35,
+            alignments=("left", "center"),
+            text_scale=(1.05, 1.15),
+            motif="magazine",
+        ),
         # The extremes, for laughs
         Family(
             "1997 WordArt",
@@ -706,6 +999,11 @@ def pick(
         return member(family)
 
 
+def variants(family: Family) -> tuple[Variant, ...]:
+    """The sets of decoration a family's members pick from: its variants, or its motif alone, with its patterns."""
+    return family.variants or (Variant(family.motif),)
+
+
 def _draw(pool: list[Family], weights: Mapping[str, float]) -> Family:
     """One of the families, as the current random stream picks it: each as likely as its weight times its
     multiplier."""
@@ -751,11 +1049,15 @@ def member(family: Family) -> Theme:
     if random_util.random() < family.heading_effect_chance:
         effect = _heading_effect(family.heading_effect, theme)
     # The family's decoration, its pattern and its pictures' tint come from a stream of their own (one number of this
-    # one's), so that the open fonts below, whichever pair they are, take nothing from them
+    # one's), so that the open fonts below, whichever pair they are, take nothing from them; and which of its sets of
+    # decoration it has, from one of that stream's own, so that the rest is as it was before families had them
     own = random_util.Rng(random_util.randint(0, 2**31))
+    with random_util.use(own.child("variant")):
+        variant = _weighted(tuple((option, option.weight) for option in variants(family)))
     with random_util.use(own):
         motif_variant = random_util.randint(0, 9999)
-        pattern = _pattern(_weighted(family.patterns), theme.palette)
+        patterns = family.patterns if variant.patterns is None else variant.patterns
+        pattern = _pattern(_weighted(patterns), theme.palette)
         tint, tint_opacity = _tint(_weighted(family.image_tints), theme.palette)
     # And the open fonts after everything else, for the same reason: they take the place of the installed pair
     fonts = theme.fonts
@@ -778,7 +1080,7 @@ def member(family: Family) -> Theme:
             "image_tint": tint,
             "image_tint_opacity": tint_opacity,
             "heading_effect": effect,
-            "motif": family.motif,
+            "motif": variant.motif,
             "motif_variant": motif_variant,
             "pattern": pattern,
             "fonts": fonts,
@@ -928,6 +1230,17 @@ def _heading_effect(kind: HeadingEffect, theme: Theme) -> TextEffect | None:
         lightest = max((palette.text, palette.background, "#ffffff"), key=color.luminance)
         return TextEffect(
             outline=lightest, outline_width=3, shadow=palette.accent, shadow_offset=(6, 6), shadow_opacity=1.0
+        )
+    if kind == "chrome":  # (the year 2000's: chrome in a dark outline, which reads on the background, a pink shadow)
+        outline = color.readable_on(color.mix(palette.text, "#1b2a4a", 0.5), backgrounds, color.BODY_CONTRAST)
+        fills = tuple(color.readable_on(shade, [outline], color.BODY_CONTRAST) for shade in CHROME)
+        return TextEffect(
+            fill=fills,
+            outline=outline,
+            outline_width=3,
+            shadow=palette.accent,
+            shadow_offset=(6, 6),
+            shadow_opacity=0.9,
         )
     if kind == "clip art":  # a gradient from the text's colour towards the accent, with a soft shadow
         tinted = color.readable_on(color.mix(palette.text, palette.accent, 0.6), backgrounds, color.LARGE_TEXT_CONTRAST)

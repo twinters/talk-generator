@@ -89,9 +89,14 @@ def test_a_talk_whose_family_is_allowed_keeps_its_theme_whichever_others_are_lef
     fewer = _themes(among=without)
     for before, after in zip(every, fewer, strict=True):
         assert after == before if before.family in without else after.family in without
-    # And the others' themes are shared out among the allowed families as their weights say
+    # And the others' themes are shared out among the allowed families as their weights say (about as many as the left
+    # out families' share of the weights would have: 67 of 600 with 24 families)
     moved = collections.Counter(after.family for before, after in zip(every, fewer, strict=True) if before != after)
-    assert sum(moved.values()) > 60 and len(moved) >= 8
+    weights = {name: family.weight for name, family in themes.FAMILIES.items()}
+    expected = (
+        len(every) * sum(weights[name] for name in themes.FAMILIES if name not in without) / sum(weights.values())
+    )
+    assert sum(moved.values()) > 0.7 * expected and len(moved) >= 8
 
 
 def test_a_theme_the_talk_names_goes_before_the_families_it_allows():

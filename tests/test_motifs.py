@@ -2,6 +2,7 @@
 layouts, the shapes they're drawn with (polygons, turned shapes, rounded corners, outlines, background patterns) in
 PowerPoint and in previews, the design checks of what's behind a text's letters, and subtler, rarer image filters."""
 
+import dataclasses
 import io
 import itertools
 
@@ -57,13 +58,18 @@ def test_the_families_keep_their_names_and_the_new_ones_join_them():
     assert all(themes.FAMILIES[name].motif != "none" for name in FAMILIES)  # (each draws its own decoration)
     assert len({themes.FAMILIES[name].motif for name in FAMILIES}) == len(FAMILIES)
     assert not any(themes.FAMILIES[name].extreme for name in NEW_FAMILIES)
+    # (and a family's sets of decoration are its own: no two families share one)
+    sets = [variant.motif for name in FAMILIES for variant in themes.variants(themes.FAMILIES[name])]
+    assert len(sets) == len(set(sets)) and all(motif in motifs._MOTIFS for motif in sets)
 
 
 @pytest.mark.parametrize("family", FAMILIES)
 def test_a_seed_picks_a_member_and_its_decoration(family):
     assert _theme(family, 3) == _theme(family, 3)
     members = [_theme(family, seed) for seed in range(12)]
-    assert all(member.motif == themes.FAMILIES[family].motif for member in members)
+    assert all(
+        member.motif in {variant.motif for variant in themes.variants(themes.FAMILIES[family])} for member in members
+    )
     assert len({member.motif_variant for member in members}) > 6
 
 
@@ -152,8 +158,9 @@ def test_some_families_have_section_slides_of_their_own(images):
 
 @pytest.mark.slow
 def test_a_kindergartens_title_has_scenery_and_its_slides_bunting(images):
-    deck = _runs(1, _theme("kids")).to_deck()
-    first = engine.lay_out(_deck(theme=_theme("kids")).to_deck(), _theme("kids")).slides[0]
+    crayon = _kids("crayon")  # (crayon drawings: one of its sets of decoration)
+    deck = _runs(1, crayon).to_deck()
+    first = engine.lay_out(_deck(theme=crayon).to_deck(), crayon).slides[0]
     polygons = [element for element in first.elements if isinstance(element, ShapeElement) and element.points]
     assert len(polygons) > 10  # (pennants, a sun's rays, flowers...)
     assert any(element.rotation for element in polygons)  # (the pennants hang along a sagging string)
@@ -185,7 +192,7 @@ def test_a_terminals_titles_get_a_prompt_and_its_talk_title_a_cursor(images):
 
 
 def test_decoration_texts_are_not_the_talks_words(images):
-    for family in ("newspaper", "hacker terminal", "blueprint"):
+    for family in ("newspaper", "hacker terminal", "blueprint", "90s desktop"):
         deck = _deck(theme=_theme(family)).to_deck()
         decoration = [
             element.text
@@ -199,13 +206,235 @@ def test_decoration_texts_are_not_the_talks_words(images):
         assert [finding for finding in check_language(dutch) if "decoration" in finding.message] == []
 
 
+# A KINDERGARTEN'S SETS OF DECORATION (D77): crayon drawings, a sticker book, a school notebook, paper cut-outs
+
+KIDS_SETS = ["crayon", "stickers", "notebook", "cutouts"]
+
+
+def _kids(motif, palette=None):
+    """The first kids member (by seed) with that set of decoration, and that palette of its family's (if any)."""
+    family = themes.FAMILIES["kids"]
+    for seed in range(1, 1000):
+        theme = _theme("kids", seed)
+        if theme.motif == motif and (
+            palette is None or theme.palette.background == family.palettes[palette].background
+        ):
+            return theme
+    raise AssertionError(f"no kids member with {motif} and palette {palette}")
+
+
+def test_a_kids_member_has_one_of_its_familys_sets_of_decoration():
+    kids = themes.FAMILIES["kids"]
+    assert [variant.motif for variant in themes.variants(kids)] == KIDS_SETS
+    members = [_theme("kids", seed) for seed in range(60)]
+    assert {member.motif for member in members} == set(KIDS_SETS)
+    notebooks = [member for member in members if member.motif == "notebook"]
+    assert {member.pattern.kind for member in notebooks} == {"lines", "grid"}  # (ruled or squared paper)
+    assert all(member.pattern is None for member in members if member.motif == "cutouts")
+    # (which set it has comes from a stream of its own: the rest of a member is as it was before kids had sets)
+    plain = dataclasses.replace(kids, variants=())
+    for seed in range(20):
+        with random_util.use(random_util.Rng(seed)):
+            member = themes.member(kids)
+        with random_util.use(random_util.Rng(seed)):
+            before = themes.member(plain)
+        assert before.motif == "crayon"
+        same = ("name", "fonts", "title_align", "text_scale", "image_filter", "image_frame", "image_tint")
+        assert all(getattr(member, field) == getattr(before, field) for field in [*same, "motif_variant"]), seed
+        assert member.palette.background == before.palette.background
+        if member.motif == "crayon":
+            assert member == before
+    # (and a family without sets of decoration keeps its one motif)
+    assert all(
+        themes.variants(themes.FAMILIES[name]) == (themes.Variant(themes.FAMILIES[name].motif),)
+        for name in NEW_FAMILIES
+    )
+
+
+def test_a_kindergartens_decoration_is_in_its_palettes_colours(images):
+    kids = themes.FAMILIES["kids"]
+    bunting = []
+    for palette in range(len(kids.palettes)):
+        theme = _kids("crayon", palette)
+        paints = motifs._paints(theme.palette)
+        assert len(paints) == 3 and all(color.contrast(paint, theme.palette.background) >= 1.5 for paint in paints)
+        deck = _deck(theme=theme).to_deck()
+        pennants = {
+            element.color
+            for slide in deck.slides
+            for element in slide.elements
+            if isinstance(element, ShapeElement) and element.points == geometry.pennant()
+        }
+        assert pennants and pennants <= set(paints), palette  # (no rainbow of its own: the palette's colours)
+        bunting.append(frozenset(pennants))
+    assert len(set(bunting)) == len(kids.palettes)  # (each palette's bunting its own)
+
+
+def test_each_set_of_decoration_draws_its_own_pieces_and_passes_the_checks(images):
+    pieces = {}
+    for palette, motif in enumerate(KIDS_SETS):
+        theme = _kids(motif, palette)
+        deck = _deck(seed=2, theme=theme).to_deck()
+        assert check_design(deck) == [], motif
+        shapes = [
+            element
+            for slide in deck.slides
+            for element in slide.elements
+            if isinstance(element, ShapeElement) and element.role == DECORATION
+        ]
+        pieces[motif] = {element.points for element in shapes if element.points}
+        if motif == "crayon":  # (bunting)
+            assert geometry.pennant() in pieces[motif]
+        elif motif == "stickers":  # (titles on white labels, pictures as stickers with a corner peeling off)
+            assert any(element.color == "#ffffff" and element.corner > 0 for element in shapes)
+            assert ((0.0, 0.0), (1.0, 0.0), (0.0, 1.0)) in pieces[motif]
+        elif motif == "notebook":  # (ruled or squared paper, and a margin line down its left side)
+            assert theme.pattern is not None and theme.pattern.kind in ("lines", "grid")
+            assert any(element.box.x == 72.5 and element.box.w == 3 for element in shapes)
+        else:  # (a strip with a pinked edge under a title)
+            assert any(element.points == geometry.pinked(teeth, 0.4) for teeth in range(6, 15) for element in shapes)
+    assert len({frozenset(points) for points in pieces.values()}) == len(KIDS_SETS)
+
+
+@pytest.mark.parametrize("motif", KIDS_SETS)
+def test_each_set_has_its_own_title_and_section_slides(images, motif):
+    theme = _kids(motif)
+    made = [
+        slides.TitleSlide("The secret life of lighthouses", "By Prof. Anna Tomy"),
+        slides.SectionSlide("The dark years", "In which the lamp"),
+    ]
+    badges = set()
+    for seed in range(10):
+        slide_deck = SlideDeck(len(made), title="Lighthouses", topics=["lighthouses"], seed=seed)
+        for index, slide in enumerate(made):
+            slide_deck.add_slide(index, slide)
+        slide_deck.theme = theme
+        deck = slide_deck.to_deck()
+        assert check_design(deck) == [], (motif, seed)
+        title, section = deck.slides
+        assert title.layout == "v5/kids-title"
+        if section.layout == "v5/kids-section":  # (its number on a badge of its own: a sun, a rosette, a circle...)
+            kicker = section.element("kicker")
+            badges.add(kicker.style.color)
+            under = [
+                element
+                for element in section.elements
+                if isinstance(element, ShapeElement)
+                and geometry.bounds(element).x < engine.KIDS_BADGE.x + engine.KIDS_BADGE.w
+            ]
+            assert len(under) >= 2, (motif, seed)
+    assert badges, motif
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("motif", KIDS_SETS)
+def test_every_set_of_decoration_passes_the_design_checks(images, motif):
+    theme = _kids(motif, KIDS_SETS.index(motif) + 2)  # (each in another of the family's palettes than the quick test's)
+    assert check_design(_runs(2, theme).to_deck()) == [], motif
+
+
+# THE NEW FAMILIES (D77): a workshop on a whiteboard, a 1990s computer's desktop, ...
+
+
+def test_a_workshop_has_sticky_notes_on_a_whiteboard(images):
+    for seed in range(3):
+        theme = _theme("sticky notes", seed)
+        deck = _deck(seed=seed, theme=theme).to_deck()
+        assert check_design(deck) == [], seed
+        for slide in deck.slides:  # (the board's frame and its tray, on every slide)
+            shapes = [element for element in slide.elements if isinstance(element, ShapeElement)]
+            assert any(shape.box == engine.FULL and not shape.filled for shape in shapes), slide.layout
+        notes = [
+            element
+            for slide in deck.slides
+            for element in slide.elements
+            if isinstance(element, ShapeElement) and element.color in motifs.STICKIES
+        ]
+        assert notes and any(note.rotation for note in notes)  # (sticky notes, turned a little)
+
+
+def test_a_90s_desktop_has_windows_a_taskbar_and_dialogs(images):
+    theme = _theme("90s desktop", 1)
+    deck = _deck(seed=1, theme=theme).to_deck()
+    assert check_design(deck) == []
+    texts = [
+        element.text
+        for slide in deck.slides
+        for element in slide.elements
+        if element.role == DECORATION and element.kind == "text"
+    ]
+    assert "TALK.PPT" in texts and any(text.startswith("PIC") and text.endswith(".BMP") for text in texts)
+    assert any("/" in text for text in texts)  # (the slide's number, in the taskbar's tray)
+    # (a big slide of nothing but texts is a dialog box on the desktop, which has the second accent's colour)
+    made = [slides.TitleSlide("Lighthouses", "By Anna Tomy")]
+    title_deck = SlideDeck(1, title="Lighthouses", topics=["lighthouses"], seed=1)
+    title_deck.add_slide(0, made[0])
+    title_deck.theme = theme
+    (title,) = title_deck.to_deck().slides
+    assert any(
+        isinstance(element, ShapeElement) and element.box == engine.FULL and element.color == theme.palette.accent_2
+        for element in title.elements
+    )
+    assert check_design(title_deck.to_deck()) == []
+
+
+def _decoration(deck):
+    """A deck's decoration: its shapes, and its texts' words."""
+    elements = [element for slide in deck.slides for element in slide.elements if element.role == DECORATION]
+    shapes = [element for element in elements if isinstance(element, ShapeElement)]
+    return shapes, [element.text for element in elements if isinstance(element, TextElement)]
+
+
+def _big_slides(theme, seed=1):
+    """A title slide and a section slide, laid out in the theme."""
+    made = [slides.TitleSlide("Lighthouses", "By Anna Tomy"), slides.SectionSlide("The dark years", "In which")]
+    slide_deck = SlideDeck(len(made), title="Lighthouses", topics=["lighthouses"], seed=seed)
+    for index, slide in enumerate(made):
+        slide_deck.add_slide(index, slide)
+    slide_deck.theme = theme
+    return slide_deck.to_deck()
+
+
+@pytest.mark.parametrize("family", ["corkboard", "spreadsheet", "Y2K", "70s retro", "glossy magazine"])
+def test_the_new_families_draw_their_own_pieces_and_pass_the_checks(images, family):
+    theme = _theme(family, 2)
+    deck = _deck(seed=2, theme=theme).to_deck()
+    big = _big_slides(theme, 2)
+    assert check_design(deck) == [] and check_design(big) == [], family
+    shapes, texts = _decoration(deck)
+    big_shapes, big_texts = _decoration(big)
+    framed = [shape for shape in shapes if shape.part_of]  # (what frames its pictures, and comes in with them)
+    assert framed, family
+    if family == "corkboard":  # (pins, polaroids' paper, a cork's grain; a red string on its big slides)
+        assert any(shape.shape == "ellipse" and shape.color in motifs._PINS for shape in shapes)
+        assert any(shape.color == motifs._PAPER for shape in framed)
+        assert theme.pattern is not None and theme.pattern.kind == "dots"
+        assert any(shape.color == motifs._STRING for shape in big_shapes)
+    elif family == "spreadsheet":  # (its columns' letters and its rows' numbers; pictures' selection handles)
+        assert {"A", "B", "C", "1", "2", "3"} <= set(texts)
+        assert sum(shape.color == "#ffffff" and shape.box.w == 14 for shape in framed) >= 8
+        assert theme.pattern is not None and theme.pattern.kind == "lines"
+    elif family == "Y2K":  # (chrome headings on a pastel gradient, four-pointed sparkles)
+        assert theme.background == "gradient" and theme.heading_effect is not None
+        assert theme.heading_effect.outline and len(theme.heading_effect.fill) == len(themes.CHROME)
+        assert any(shape.points == geometry.star(4, 0.22) for shape in [*shapes, *big_shapes])
+    elif family == "70s retro":  # (four stripes turning the top left corner, on every slide)
+        stripes = [shape for shape in shapes if shape.shape == "polygon" and len(shape.points) > 20]
+        assert len(stripes) >= 4 * len(deck.slides) - 4
+    else:  # (a folio, giant quotation marks by a quote, the issue's roundel on its big slides)
+        assert "“" in texts and any(text.startswith("N°") for text in big_texts)
+
+
 # THE SHAPES THEY'RE DRAWN WITH
 
 
 def test_polygons_in_their_boxes():
-    for points in (geometry.star(), geometry.burst(), geometry.heart(), geometry.pennant(), geometry.wave()):
+    shapes = [geometry.star(), geometry.burst(), geometry.heart(), geometry.pennant(), geometry.wave()]
+    shapes += [geometry.scallop(), geometry.arch(), geometry.pinked(), geometry.leaf(), geometry.ribbon()]
+    for points in shapes:
         xs, ys = [x for x, _ in points], [y for _, y in points]
         assert min(xs) >= 0 and max(xs) <= 1 and min(ys) >= 0 and max(ys) <= 1
+        assert min(xs) == 0 and max(xs) == 1 and min(ys) == 0 and max(ys) == 1  # (filling it)
     assert len(geometry.star(5)) == 10 and geometry.star()[0] == (0.5, 0.0)
     box, outline = geometry.stroke([(100, 100), (300, 100)], 10)
     assert (box.x, box.y, box.w, box.h) == (100, 95, 200, 10) and len(outline) == 4
