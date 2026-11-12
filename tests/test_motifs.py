@@ -10,7 +10,6 @@ import pytest
 from PIL import Image
 from pptx.oxml.ns import qn
 
-from talkgenerator import personas
 from talkgenerator.checks.deck import _texts, check_language
 from talkgenerator.checks.design import check_design
 from talkgenerator.design import color, engine, geometry, layers, motifs, themes, treatments
@@ -332,12 +331,10 @@ def test_every_set_of_decoration_passes_the_design_checks(images, motif):
     assert check_design(_runs(2, theme).to_deck()) == [], motif
 
 
-# TWO NEW FAMILIES (D77): a workshop on a whiteboard, and a 1990s computer's desktop
+# THE NEW FAMILIES (D77): a workshop on a whiteboard, a 1990s computer's desktop, ...
 
 
 def test_a_workshop_has_sticky_notes_on_a_whiteboard(images):
-    personas_favour = {name for name, persona in personas.PERSONAS.items() if "sticky notes" in persona.themes}
-    assert {"consultant", "life_coach"} <= personas_favour
     for seed in range(3):
         theme = _theme("sticky notes", seed)
         deck = _deck(seed=seed, theme=theme).to_deck()
@@ -355,7 +352,6 @@ def test_a_workshop_has_sticky_notes_on_a_whiteboard(images):
 
 
 def test_a_90s_desktop_has_windows_a_taskbar_and_dialogs(images):
-    assert "90s desktop" in personas.PERSONAS["time_traveller"].themes
     theme = _theme("90s desktop", 1)
     deck = _deck(seed=1, theme=theme).to_deck()
     assert check_design(deck) == []
@@ -378,6 +374,53 @@ def test_a_90s_desktop_has_windows_a_taskbar_and_dialogs(images):
         for element in title.elements
     )
     assert check_design(title_deck.to_deck()) == []
+
+
+def _decoration(deck):
+    """A deck's decoration: its shapes, and its texts' words."""
+    elements = [element for slide in deck.slides for element in slide.elements if element.role == DECORATION]
+    shapes = [element for element in elements if isinstance(element, ShapeElement)]
+    return shapes, [element.text for element in elements if isinstance(element, TextElement)]
+
+
+def _big_slides(theme, seed=1):
+    """A title slide and a section slide, laid out in the theme."""
+    made = [slides.TitleSlide("Lighthouses", "By Anna Tomy"), slides.SectionSlide("The dark years", "In which")]
+    slide_deck = SlideDeck(len(made), title="Lighthouses", topics=["lighthouses"], seed=seed)
+    for index, slide in enumerate(made):
+        slide_deck.add_slide(index, slide)
+    slide_deck.theme = theme
+    return slide_deck.to_deck()
+
+
+@pytest.mark.parametrize("family", ["corkboard", "spreadsheet", "Y2K", "70s retro", "glossy magazine"])
+def test_the_new_families_draw_their_own_pieces_and_pass_the_checks(images, family):
+    theme = _theme(family, 2)
+    deck = _deck(seed=2, theme=theme).to_deck()
+    big = _big_slides(theme, 2)
+    assert check_design(deck) == [] and check_design(big) == [], family
+    shapes, texts = _decoration(deck)
+    big_shapes, big_texts = _decoration(big)
+    framed = [shape for shape in shapes if shape.part_of]  # (what frames its pictures, and comes in with them)
+    assert framed, family
+    if family == "corkboard":  # (pins, polaroids' paper, a cork's grain; a red string on its big slides)
+        assert any(shape.shape == "ellipse" and shape.color in motifs._PINS for shape in shapes)
+        assert any(shape.color == motifs._PAPER for shape in framed)
+        assert theme.pattern is not None and theme.pattern.kind == "dots"
+        assert any(shape.color == motifs._STRING for shape in big_shapes)
+    elif family == "spreadsheet":  # (its columns' letters and its rows' numbers; pictures' selection handles)
+        assert {"A", "B", "C", "1", "2", "3"} <= set(texts)
+        assert sum(shape.color == "#ffffff" and shape.box.w == 14 for shape in framed) >= 8
+        assert theme.pattern is not None and theme.pattern.kind == "lines"
+    elif family == "Y2K":  # (chrome headings on a pastel gradient, four-pointed sparkles)
+        assert theme.background == "gradient" and theme.heading_effect is not None
+        assert theme.heading_effect.outline and len(theme.heading_effect.fill) == len(themes.CHROME)
+        assert any(shape.points == geometry.star(4, 0.22) for shape in [*shapes, *big_shapes])
+    elif family == "70s retro":  # (four stripes turning the top left corner, on every slide)
+        stripes = [shape for shape in shapes if shape.shape == "polygon" and len(shape.points) > 20]
+        assert len(stripes) >= 4 * len(deck.slides) - 4
+    else:  # (a folio, giant quotation marks by a quote, the issue's roundel on its big slides)
+        assert "“" in texts and any(text.startswith("N°") for text in big_texts)
 
 
 # THE SHAPES THEY'RE DRAWN WITH

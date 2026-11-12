@@ -60,7 +60,9 @@ VIGNETTE: Final = 0.7
 # WordArt's shapes, for the 1997 WordArt family's headings
 WARPS: Final[tuple[Warp, ...]] = ("wave", "arch", "inflate", "slant")
 # The kinds of heading effects a family can have (see _heading_effect)
-HeadingEffect = Literal["none", "wordart", "glow", "hard shadow", "comic", "clip art"]
+HeadingEffect = Literal["none", "wordart", "glow", "hard shadow", "comic", "clip art", "chrome"]
+# Chrome's shades, from the top of a heading down (the year 2000's)
+CHROME: Final = ("#ffffff", "#b4c0d0", "#eef2f8")
 # How often a member of a family with open fonts has a pair of them (else a pair of the installed fonts)
 OPEN_FONT_CHANCE: Final = 2 / 3
 
@@ -646,6 +648,176 @@ FAMILIES: Final[dict[str, Family]] = {
             alignments=("left", "center"),
             motif="desktop",
         ),
+        Family(
+            "corkboard",
+            description="a corkboard in a wooden frame: the title on a pinned index card, pictures as polaroids, pinned "
+            "or taped up, notes and a red string between pins",
+            palettes=(  # (cork, and the board's pins)
+                Palette(
+                    background="#c8a27c",
+                    surface="#d9b994",
+                    text="#2a1a0e",
+                    muted="#3d2a1a",
+                    accent="#9c2a1f",
+                    accent_2="#1e4f7a",
+                ),
+                Palette(
+                    background="#b9915f",
+                    surface="#caa575",
+                    text="#1f140a",
+                    muted="#33240f",
+                    accent="#8f1d1d",
+                    accent_2="#285e2b",
+                ),
+                Palette(
+                    background="#d6b48a",
+                    surface="#e4c7a2",
+                    text="#2b1c10",
+                    muted="#45301c",
+                    accent="#a12622",
+                    accent_2="#5f3dc4",
+                ),
+            ),
+            fonts=(("Georgia", "Georgia"), ("Courier New", "Georgia"), ("Trebuchet MS", "Trebuchet MS")),
+            open_fonts=(("Courier Prime", "Courier Prime"), ("Mali", "Courier Prime")),
+            uppercase=0.2,
+            alignments=("left", "center"),
+            image_tints=(("none", 0.6), ("warm", 0.4)),
+            motif="corkboard",
+            patterns=((PatternSpec("dots", "text", 0.07, 13, 3.5), 1.0),),  # (cork's grain)
+        ),
+        Family(
+            "spreadsheet",
+            description="a spreadsheet: a grid of cells with its columns' letters and its rows' numbers, the title a "
+            "selected cell, pictures with selection handles, the slide's number on a sheet's tab",
+            palettes=(
+                Palette(
+                    background="#ffffff",
+                    surface="#f1f3f4",
+                    text="#202124",
+                    muted="#5f6368",
+                    accent="#188038",
+                    accent_2="#1a73e8",
+                ),
+                Palette(
+                    background="#ffffff",
+                    surface="#eef1f5",
+                    text="#1f2937",
+                    muted="#4b5563",
+                    accent="#1e7145",
+                    accent_2="#c55a11",
+                ),
+                Palette(  # (in dark mode)
+                    background="#1f1f1f",
+                    surface="#2b2b2b",
+                    text="#e8eaed",
+                    muted="#bdc1c6",
+                    accent="#81c995",
+                    accent_2="#8ab4f8",
+                ),
+            ),
+            fonts=(("Calibri", "Calibri"), ("Arial", "Arial"), ("Calibri", "Arial")),
+            open_fonts=(("Lato", "Lato"),),
+            open_font_chance=0.25,
+            alignments=("left",),
+            image_tints=(("none", 1.0),),
+            motif="spreadsheet",
+            patterns=((PatternSpec("lines", "text", 0.13, 54, 1.5, offset=48), 1.0),),  # (its rows)
+        ),
+        Family(
+            "Y2K",
+            description="the year 2000's: chrome headings on pastel gradients, sparkles and glossy bubbles, a CD, "
+            "pictures in white rounded frames, the slide's number on a glossy pill",
+            hues=(170, 330),
+            harmony="analogous",
+            background_saturation=(0.55, 0.85),
+            background_lightness=(0.87, 0.92),
+            accent_saturation=(0.85, 1.0),
+            fonts=(("Trebuchet MS", "Verdana"), ("Verdana", "Verdana"), ("Arial Black", "Trebuchet MS")),
+            open_fonts=(("Chakra Petch", "Poppins"), ("Poppins", "Poppins")),
+            uppercase=0.3,
+            backgrounds=("gradient",),
+            alignments=("center",),
+            image_tints=(("none", 0.7), ("accent", 0.3)),
+            heading_effect="chrome",
+            heading_effect_chance=0.85,
+            motif="y2k",
+        ),
+        Family(
+            "70s retro",
+            description="the 1970s: browns, oranges and mustard on cream, rounded stripes turning a corner, a sunset of "
+            "stripes on the big slides, pictures as prints with round corners",
+            palettes=(
+                Palette(
+                    background="#f6e7c8",
+                    surface="#efd9ad",
+                    text="#3b2314",
+                    muted="#5a3a22",
+                    accent="#c4501b",
+                    accent_2="#d99a1e",
+                ),
+                Palette(  # (avocado)
+                    background="#efe6c6",
+                    surface="#e3d6a8",
+                    text="#2f2a14",
+                    muted="#4a4220",
+                    accent="#6b7a1f",
+                    accent_2="#c26a1b",
+                ),
+                Palette(  # (on brown)
+                    background="#3a2416",
+                    surface="#4a3020",
+                    text="#f6e7c8",
+                    muted="#e2c9a0",
+                    accent="#e8892c",
+                    accent_2="#f0c04a",
+                ),
+            ),
+            fonts=(("Georgia", "Trebuchet MS"), ("Arial Black", "Trebuchet MS"), ("Trebuchet MS", "Trebuchet MS")),
+            open_fonts=(("Abril Fatface", "Lato"), ("Archivo Black", "Lato")),
+            uppercase=0.2,
+            alignments=("left", "center"),
+            text_scale=(1.0, 1.1),
+            image_tints=(("none", 0.5), ("warm", 0.5)),
+            motif="seventies",
+        ),
+        Family(
+            "glossy magazine",
+            description="a glossy magazine: big serif headlines, a page's folio, giant quotation marks by a quote, "
+            "pictures on a block of colour, and an issue's roundel on the big slides",
+            palettes=(
+                Palette(
+                    background="#ffffff",
+                    surface="#f8f0f3",
+                    text="#141414",
+                    muted="#4a4a4a",
+                    accent="#d6336c",
+                    accent_2="#1c7ed6",
+                ),
+                Palette(
+                    background="#f7f1e8",
+                    surface="#efe5d6",
+                    text="#1c1712",
+                    muted="#4d4237",
+                    accent="#9c6b1e",
+                    accent_2="#1c1712",
+                ),
+                Palette(
+                    background="#111111",
+                    surface="#1f1f1f",
+                    text="#f5f5f5",
+                    muted="#bdbdbd",
+                    accent="#ff4d4d",
+                    accent_2="#f5f5f5",
+                ),
+            ),
+            fonts=(("Georgia", "Georgia"), ("Times New Roman", "Arial"), ("Georgia", "Verdana")),
+            open_fonts=(("Abril Fatface", "Lato"), ("Spectral", "Lato")),
+            uppercase=0.35,
+            alignments=("left", "center"),
+            text_scale=(1.05, 1.15),
+            motif="magazine",
+        ),
         # The extremes, for laughs
         Family(
             "1997 WordArt",
@@ -1058,6 +1230,17 @@ def _heading_effect(kind: HeadingEffect, theme: Theme) -> TextEffect | None:
         lightest = max((palette.text, palette.background, "#ffffff"), key=color.luminance)
         return TextEffect(
             outline=lightest, outline_width=3, shadow=palette.accent, shadow_offset=(6, 6), shadow_opacity=1.0
+        )
+    if kind == "chrome":  # (the year 2000's: chrome in a dark outline, which reads on the background, a pink shadow)
+        outline = color.readable_on(color.mix(palette.text, "#1b2a4a", 0.5), backgrounds, color.BODY_CONTRAST)
+        fills = tuple(color.readable_on(shade, [outline], color.BODY_CONTRAST) for shade in CHROME)
+        return TextEffect(
+            fill=fills,
+            outline=outline,
+            outline_width=3,
+            shadow=palette.accent,
+            shadow_offset=(6, 6),
+            shadow_opacity=0.9,
         )
     if kind == "clip art":  # a gradient from the text's colour towards the accent, with a soft shadow
         tinted = color.readable_on(color.mix(palette.text, palette.accent, 0.6), backgrounds, color.LARGE_TEXT_CONTRAST)

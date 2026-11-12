@@ -138,10 +138,10 @@ class Scene:
             return "title"
         return None
 
-    def occupied(self, letters: bool = False, ignoring: Sequence[str] = ()) -> list[Box]:
-        """Where its elements (but those ignored) and its layout's shapes are (but those over the whole slide, and its
-        thin decoration, such as a title's underline): its texts' boxes, or (with letters) only where their lines'
-        letters are."""
+    def occupied(self, letters: bool = False, ignoring: Sequence[str] = (), shapes: bool = True) -> list[Box]:
+        """Where its elements (but those ignored) and its layout's shapes are (unless not shapes; but those over the
+        whole slide, and its thin decoration, such as a title's underline): its texts' boxes, or (with letters) only
+        where their lines' letters are."""
         boxes = []
         for role in self.placement.boxes:
             element = self.roles.get(role)
@@ -151,22 +151,25 @@ class Scene:
                 boxes += [_grown(line, 12) for line in self.lines(role)]
             else:
                 boxes.append(self.box(role))
-        for shape in [*self.placement.shapes, *self.placement.overlays]:
+        for shape in [*self.placement.shapes, *self.placement.overlays] if shapes else ():
             if shape.box != FULL and shape.role != "decoration":
                 boxes.append(geometry.bounds(shape))
         return boxes
 
-    def free(self, box: Box, pad: float = 16, letters: bool = False, ignoring: Sequence[str] = ()) -> bool:
+    def free(
+        self, box: Box, pad: float = 16, letters: bool = False, ignoring: Sequence[str] = (), shapes: bool = True
+    ) -> bool:
         """Whether a decoration in the box would keep clear of the slide's texts (their boxes, or with letters only
         their letters), pictures and panels (by the pad; but the elements ignored, such as a title its label goes
-        behind), and of its credit line, and stay on the slide."""
+        behind, and the layout's shapes, unless shapes: a band a text is on), and of its credit line, and stay on the
+        slide."""
         if box.x < 0 or box.y < 0 or box.x + box.w > WIDTH or box.y + box.h > HEIGHT:
             return False
         if self.credits and _overlaps(_grown(CREDITS_BOX, 2), box):
             return False
         if any(_overlaps(_grown(other, pad), box) for other in self.kept):
             return False
-        return not any(_overlaps(_grown(other, pad), box) for other in self.occupied(letters, ignoring))
+        return not any(_overlaps(_grown(other, pad), box) for other in self.occupied(letters, ignoring, shapes))
 
     def backgrounds(self) -> list[str]:
         """The colours of the slide's background where nothing's on it: both ends of a gradient, and its pattern's."""
@@ -1990,15 +1993,10 @@ def _sticky(scene: Scene, box: Box, colour: str, turn: float, votes: Sequence[st
     ink = scene.palette.text
     middle = (box.x + box.w / 2, box.y + box.h / 2)
 
-    def turned(shape: ShapeElement) -> ShapeElement:  # (where it is on the note, turned with the note)
-        x, y = geometry.turn((shape.box.x + shape.box.w / 2, shape.box.y + shape.box.h / 2), middle, turn)
-        moved = Box(x=x - shape.box.w / 2, y=y - shape.box.h / 2, w=shape.box.w, h=shape.box.h)
-        return shape.model_copy(update={"box": moved, "rotation": turn})
-
     scene.add(
         _rect(box.x + 3, box.y + 12, box.w - 4, box.h - 6, ink, 0.16, rotation=turn),
         _rect(box.x, box.y, box.w, box.h, colour, rotation=turn),
-        turned(_rect(box.x, box.y, box.w, box.h * 0.18, color.mix(colour, ink, 0.06))),
+        _turned_with(_rect(box.x, box.y, box.w, box.h * 0.18, color.mix(colour, ink, 0.06)), middle, turn),
     )
     for line in range(3):  # (three lines of scribbled idea, the last one shorter)
         y = box.y + box.h * (0.36 + 0.2 * line)
@@ -2197,6 +2195,456 @@ def _icon(scene: Scene, kind: int, x: float, y: float) -> None:
             scene.under(_rect(x + 26, y + 32 + line * 11, 36 if line < 3 else 22, 3, "#808080"))
 
 
+# A CORKBOARD (D77)
+
+_WOOD: Final = ("#9c6b3c", "#6e4826")  # a corkboard's wooden frame, and its inner edge
+_PAPER: Final = "#fffdf6"  # an index card's paper, a polaroid's
+_PINS: Final = ("#e03131", "#1c7ed6", "#2f9e44", "#f08c00", "#ae3ec9")  # push pins' heads (Open Color's)
+_STRING: Final = "#c92a2a"  # a detective's red string
+_CARD_LINES: Final = ("#e8590c", "#74c0fc")  # an index card's line along its top, and its ruled lines
+
+
+def _corkboard(scene: Scene) -> None:
+    """A corkboard: the board in a wooden frame, the title on an index card pinned to it, pictures as polaroids, pinned
+    or taped up, index cards pinned in free spots (and on its big slides, pins with a red string between them), and
+    the slide's number ("7/12") on a pinned tag."""
+    palette = scene.palette
+    start = scene.theme.motif_variant % len(_PINS)
+    pins = [*_PINS[start:], *_PINS[:start]]
+    scene.over(
+        _rect(0, 0, WIDTH, 18, _WOOD[0]),
+        _rect(0, 0, 18, HEIGHT, _WOOD[0]),
+        _rect(WIDTH - 18, 0, 18, HEIGHT, _WOOD[0]),
+        _rect(0, HEIGHT - 18, WIDTH, 18, _WOOD[0]),
+        _frame(Box(x=18, y=18, w=WIDTH - 36, h=HEIGHT - 36), _WOOD[1], 3),
+    )
+    title = scene.title()
+    if title is not None:
+        _index_card(scene, title, pins[0])
+    for index, role in enumerate(_framed(scene)):
+        _polaroid(scene, role, pins[(index + 1) % len(pins)], taped=(index + scene.number) % 3 == 2)
+    words = fonts.text_width(_count(scene), scene.theme.fonts.body, 28) + 20  # (as wide as its number needs)
+    tag, number = _plate(WIDTH - 60 - 44 - words, 44 + words)
+    if scene.numbered and not scene.placement.photo and scene.free(number, pad=4):
+        scene.over(*_shadowed(_rect(tag.x, tag.y, tag.w, tag.h, _PAPER, rotation=-1.5), palette.text, 3, 4, 0.25))
+        _pin(scene, tag.x + 20, tag.y + tag.h / 2, pins[2])
+        text = Box(x=number.x + 40, y=number.y, w=number.w - 44, h=number.h)
+        _slide_number(scene, text, spec="decoration centre", colour=palette.text)
+        scene.kept.append(_grown(tag, 4))
+    if scene.photo:
+        return
+    cards = 2 if scene.big else 1
+    for size in (170.0, 140.0):
+        spots = _corner_spots(scene, size, 60, letters=True)
+        for spot in spots[scene.number % max(1, len(spots)) :][:cards]:
+            if scene.free(spot, pad=8, letters=True):
+                _pinned_card(scene, spot, pins[(scene.number + cards) % len(pins)], random_util.uniform(-5, 5))
+                cards -= 1
+        if cards <= 0:
+            break
+    if scene.big:
+        _red_string(scene, pins)
+
+
+def _pin(scene: Scene, x: float, y: float, colour: str, part_of: str | None = None) -> None:
+    """A push pin's head, seen from above, its middle at (x, y): round, of the colour, with a shine and a shadow."""
+    scene.over(
+        _ellipse(x + 4, y + 6, 30, 30, scene.palette.text, 0.3),
+        _ellipse(x, y, 30, 30, colour),
+        _ellipse(x - 6, y - 7, 10, 7, "#ffffff", 0.7),
+        part_of=part_of,
+    )
+
+
+def _index_card(scene: Scene, title: str, pin: str) -> None:
+    """A title on an index card pinned to the board (a line along its top, the title on its white): if it has two lines
+    at most, and the card keeps clear of the slide's other elements."""
+    if len(scene.lines(title)) > 2:
+        return
+    ink = scene.ink(title)
+    card = Box(x=ink.x - 44, y=ink.y - 26, w=ink.w + 88, h=ink.h + 44)
+    if card.y < 22 or not scene.free(card, pad=8, ignoring=(title,)):
+        return
+    paper = _rect(card.x, card.y, card.w, card.h, _PAPER, corner=3)
+    scene.add(
+        *_shadowed(paper, scene.palette.text, 5, 7, 0.25),
+        _rect(card.x + 14, card.y + 12, card.w - 28, 2, _CARD_LINES[0]),
+    )
+    _pin(scene, card.x + card.w / 2, card.y + 4, pin)
+    scene.placement.colors[title] = scene.on([_PAPER], scene.palette.text, color.LARGE_TEXT_CONTRAST)
+    scene.placement.on_fill.add(title)
+    scene.kept.append(card)
+
+
+def _polaroid(scene: Scene, role: str, pin: str, taped: bool) -> None:
+    """A picture as a polaroid: on white with a wide bottom edge and a shadow, pinned at its top (or taped at two of
+    its corners)."""
+    box = scene.box(role)
+    margin, bottom = 14.0, max(30.0, round(box.h * 0.14))
+    inside = Box(x=box.x + margin, y=box.y + margin, w=box.w - 2 * margin, h=box.h - margin - bottom)
+    shown = scene.shown(role, inside)
+    paper = Box(x=shown.x - margin, y=shown.y - margin, w=shown.w + 2 * margin, h=shown.h + margin + bottom)
+    shapes = _shadowed(_rect(paper.x, paper.y, paper.w, paper.h, _PAPER), scene.palette.text, 6, 9, 0.28)
+    scene.add(*shapes, part_of=role)
+    if taped:
+        _tape(scene, role, paper, "#e8dcc0", 0.8)
+    else:
+        _pin(scene, paper.x + paper.w / 2, paper.y + 8, pin, part_of=role)
+
+
+def _turned_with(shape: ShapeElement, middle: geometry.Point, turn: float) -> ShapeElement:
+    """A shape on another (a line on a card), turned with it: moved where turning the other around its middle takes it,
+    and turned as much."""
+    x, y = geometry.turn((shape.box.x + shape.box.w / 2, shape.box.y + shape.box.h / 2), middle, turn)
+    moved = Box(x=x - shape.box.w / 2, y=y - shape.box.h / 2, w=shape.box.w, h=shape.box.h)
+    return shape.model_copy(update={"box": moved, "rotation": turn})
+
+
+def _pinned_card(scene: Scene, spot: Box, pin: str, turn: float) -> None:
+    """An index card pinned in a free spot, turned a little: a line along its top, ruled lines, a pin."""
+    ink = scene.palette.text
+    card = Box(x=spot.x, y=spot.y + spot.h * 0.18, w=spot.w, h=spot.h * 0.64)
+    middle = (card.x + card.w / 2, card.y + card.h / 2)
+    scene.add(
+        _rect(card.x + 4, card.y + 6, card.w, card.h, ink, 0.25, rotation=turn),
+        _rect(card.x, card.y, card.w, card.h, _PAPER, rotation=turn),
+        _turned_with(_rect(card.x + 10, card.y + card.h * 0.2, card.w - 20, 2, _CARD_LINES[0]), middle, turn),
+    )
+    for line in range(1, 4):
+        ruled = _rect(card.x + 10, card.y + card.h * (0.2 + 0.2 * line), card.w - 20, 1.5, _CARD_LINES[1])
+        scene.add(_turned_with(ruled, middle, turn))
+    _pin(scene, *geometry.turn((card.x + card.w / 2, card.y + 10), middle, turn), pin)
+    scene.kept.append(spot)
+
+
+def _red_string(scene: Scene, pins: Sequence[str]) -> None:
+    """Pins in free spots near each other, with a detective's red string between them, where the string keeps clear of
+    the slide's texts and pictures."""
+    spots = _corner_spots(scene, 60, 80, letters=True)
+    points = [(spot.x + 30, spot.y + 30) for spot in spots]
+    strung: list[tuple[geometry.Point, geometry.Point]] = []
+    for (x0, y0), (x1, y1) in itertools.combinations(points, 2):
+        length = math.hypot(x1 - x0, y1 - y0)
+        if length > 760 or len(strung) >= 3:
+            continue
+        steps = max(1, int(length // 36))
+        along = [(x0 + (x1 - x0) * step / steps, y0 + (y1 - y0) * step / steps) for step in range(steps + 1)]
+        if all(scene.free(Box(x=x - 7, y=y - 7, w=14, h=14), pad=4, letters=True) for x, y in along[1:-1]):
+            strung.append(((x0, y0), (x1, y1)))
+    for start, end in strung:
+        scene.add(_line([start, end], 3, _STRING, 0.9))
+    for index, point in enumerate(sorted({point for pair in strung for point in pair})):
+        _pin(scene, *point, pins[index % len(pins)])
+
+
+# A SPREADSHEET (D77)
+
+_COLUMN: Final = 192.0  # a column's width
+_ROW: Final = 54.0  # a row's height (its pattern's lines)
+_HEADERS: Final = (56.0, 48.0)  # the rows' numbers' column's width, and the columns' letters' row's height
+_SHEET_TABS: Final = 1032.0  # where the sheet's tabs start (under the credit line)
+
+
+def _spreadsheet(scene: Scene) -> None:
+    """A spreadsheet: its grid (its rows' lines are its pattern, its columns' lines shapes), a header row with its
+    columns' letters and a header column with its rows' numbers (where nothing else is), the title a selected cell
+    (outlined, with a handle in its corner), pictures with selection handles, and along the bottom the sheet's tabs,
+    the slide's number ("7/12") on the open one."""
+    palette = scene.palette
+    header = palette.surface
+    rule = color.mix(palette.background, palette.text, 0.13)  # (as its rows' lines, its pattern, are)
+    left, top = _HEADERS
+    if not scene.placement.photo:
+        for column in range(1, 10):
+            scene.under(_rect(left + column * _COLUMN, top, 1.5, _SHEET_TABS - top, rule))
+        if scene.free(Box(x=0, y=0, w=WIDTH, h=top - 14), pad=0, letters=True):  # (letters count 12 pixels bigger)
+            scene.add(_rect(0, 0, WIDTH, top, header), _rect(0, top - 1.5, WIDTH, 1.5, rule))
+            for column in range(int((WIDTH - 16 - left) // _COLUMN)):  # (its columns' letters, of those that fit)
+                place = Box(x=left + column * _COLUMN, y=16, w=_COLUMN, h=30)
+                scene.write_on(chr(ord("A") + column), place, "decoration centre", palette.muted)
+        if scene.free(Box(x=0, y=top, w=left, h=_SHEET_TABS - top), pad=2, letters=True):
+            scene.add(
+                _rect(0, top, left, _SHEET_TABS - top, header), _rect(left - 1.5, top, 1.5, _SHEET_TABS - top, rule)
+            )
+            for row in range(int((_SHEET_TABS - top) // _ROW)):  # (its rows' numbers)
+                place = Box(x=16, y=top + row * _ROW + (_ROW - 30) / 2, w=left - 22, h=30)
+                scene.write_on(str(row + 1), place, "decoration right", palette.muted)
+        scene.add(_rect(0, _SHEET_TABS, WIDTH, HEIGHT - _SHEET_TABS, header), _rect(0, _SHEET_TABS, WIDTH, 1.5, rule))
+        scene.write_on("+", Box(x=16, y=1034, w=40, h=30), "decoration centre", palette.muted)
+        tab = Box(x=72, y=_SHEET_TABS, w=196, h=HEIGHT - _SHEET_TABS)
+        for index in (1, 2):  # (the other sheets' tabs, closed)
+            other = Box(x=tab.x + index * (tab.w + 8), y=tab.y + 6, w=tab.w * 0.7, h=tab.h - 12)
+            scene.add(_frame(other, rule, 1.5, corner=4))
+        if scene.numbered:  # (the open sheet's tab, the slide's number on it)
+            scene.add(
+                _rect(tab.x, tab.y, tab.w, tab.h, palette.background),
+                _rect(tab.x, HEIGHT - 6, tab.w, 6, palette.accent),
+            )
+            _slide_number(
+                scene, Box(x=tab.x + 8, y=1034, w=tab.w - 16, h=30), spec="decoration centre", colour=palette.accent
+            )
+    title = scene.title()
+    if title is not None and len(scene.lines(title)) <= 2:  # (the selected cell)
+        ink = scene.ink(title)
+        cell_top = max(ink.y - 10, top + 3)
+        cell = Box(x=ink.x - 22, y=cell_top, w=ink.w + 44, h=ink.y + ink.h + 10 - cell_top)
+        if scene.free(cell, pad=4, ignoring=(title,)):
+            handle = _rect(cell.x + cell.w - 7, cell.y + cell.h - 7, 14, 14, palette.accent)
+            scene.add(_frame(cell, palette.accent, 4), handle)
+    for role in _framed(scene):
+        _selected_picture(scene, role)
+
+
+def _selected_picture(scene: Scene, role: str) -> None:
+    """A picture as a spreadsheet shows one that's selected: an outline, square handles at its corners and the middles
+    of its sides, and a round handle above it to turn it by."""
+    accent = scene.palette.accent_2
+    shown = scene.shown(role, _grown(scene.box(role), -14))
+    scene.over(_frame(_grown(shown, 2), accent, 2), part_of=role)
+    xs, ys = (shown.x, shown.x + shown.w / 2, shown.x + shown.w), (shown.y, shown.y + shown.h / 2, shown.y + shown.h)
+    for x, y in itertools.product(xs, ys):
+        if (x, y) == (xs[1], ys[1]):
+            continue
+        square = Box(x=x - 7, y=y - 7, w=14, h=14)
+        scene.over(_rect(square.x, square.y, square.w, square.h, "#ffffff"), _frame(square, accent, 2), part_of=role)
+    if shown.y > 40:
+        middle = shown.x + shown.w / 2
+        scene.over(
+            _rect(middle - 1, shown.y - 24, 2, 17, accent),
+            _ellipse(middle, shown.y - 30, 16, 16, "#ffffff"),
+            _ring(middle, shown.y - 30, 16, 16, accent, 2),
+            part_of=role,
+        )
+
+
+# THE YEAR 2000 (D77)
+
+_SHEEN: Final = ("#ffb3e6", "#99e9f2", "#fff3a3")  # a disc's rainbow sheen: pink, cyan, yellow
+
+
+def _y2k(scene: Scene) -> None:
+    """The year 2000's: sparkles and glossy bubbles in free spots, a sparkle by the title, pictures in white rounded
+    frames with a pastel shadow, on its big slides a CD where there's room, and the slide's number ("7/12") on a
+    glossy pill (its headings are chrome: see talkgenerator.design.themes)."""
+    palette = scene.palette
+    pill, number = _plate(WIDTH - 44 - 136, 136)
+    if scene.numbered and not scene.placement.photo and scene.free(number, pad=4):
+        scene.add(
+            _rect(pill.x, pill.y, pill.w, pill.h, palette.accent, corner=pill.h / 2),
+            _rect(pill.x + 12, pill.y + 3, pill.w - 24, 5, "#ffffff", 0.55, corner=2.5),
+        )
+        _slide_number(scene, number, spec="decoration centre", colour=scene.on([palette.accent]))
+        scene.kept.append(pill)
+    title = scene.title()
+    if title is not None:  # (a sparkle by its end)
+        ink = scene.ink(title)
+        spot = Box(x=ink.x + ink.w + 18, y=ink.y - 14, w=58, h=58)
+        if scene.free(spot, pad=6, letters=True):
+            _sparkle(scene, spot.x + 29, spot.y + 29, 58, palette.accent_2)
+    for role in _framed(scene):
+        shown = scene.shown(role, _grown(scene.box(role), -22))
+        frame = _grown(shown, 12)
+        corner = 0.08 * min(frame.w, frame.h) + 12
+        scene.add(
+            _rect(frame.x + 10, frame.y + 10, frame.w, frame.h, palette.accent_2, 0.4, corner=corner),
+            _rect(frame.x, frame.y, frame.w, frame.h, "#ffffff", corner=corner),
+            part_of=role,
+        )
+    if scene.photo and not scene.backdrop:
+        return
+    if scene.big:
+        spots = _corner_spots(scene, 280, 50, letters=True)
+        if spots:
+            _cd(scene, spots[0])
+
+    def piece(x: float, y: float, size: float) -> None:
+        if random_util.random() < 0.7:
+            _sparkle(scene, x, y, size, random_util.choice((palette.accent, palette.accent_2)))
+        else:  # (a glossy bubble)
+            scene.add(
+                _ring(x, y, size, size, "#ffffff", max(3.0, size / 14), 0.9),
+                _ellipse(x - size * 0.18, y - size * 0.2, size * 0.24, size * 0.15, "#ffffff", 0.85),
+            )
+
+    _scatter(scene, 6 if scene.big else 4, (34.0, 72.0), piece, letters=True, edges=(60.0, 110.0), rows=(60.0, 80.0))
+
+
+def _sparkle(scene: Scene, x: float, y: float, size: float, colour: str) -> None:
+    """A sparkle, its middle at (x, y): a four-pointed star of the colour, with a white one in its middle."""
+    scene.add(
+        _polygon(geometry.star(4, 0.22), x - size / 2, y - size / 2, size, size, colour),
+        _polygon(geometry.star(4, 0.22), x - size / 4, y - size / 4, size / 2, size / 2, "#ffffff", 0.9),
+    )
+
+
+def _cd(scene: Scene, box: Box) -> None:
+    """A CD in the box: a silver disc with a rainbow's sheen, its clear middle and its hole."""
+    cx, cy, radius = box.x + box.w / 2, box.y + box.h / 2, box.w / 2
+    scene.under(
+        _ellipse(cx + 6, cy + 8, 2 * radius, 2 * radius, scene.palette.text, 0.18),
+        _ellipse(cx, cy, 2 * radius, 2 * radius, "#e4e9f0"),
+    )
+    for colour, start in zip(_SHEEN, (200.0, 310.0, 60.0), strict=True):
+        sheen = geometry.arc(cx, cy, radius * 0.7, radius * 0.7, start, start + 80, 16)
+        scene.under(_line(sheen, radius * 0.3, colour, 0.6))
+    scene.under(
+        _ring(cx, cy, 2 * radius, 2 * radius, "#b4c0d0", 3),
+        _ellipse(cx, cy, 0.8 * radius, 0.8 * radius, "#d3dae4"),
+        _ellipse(cx, cy, 0.3 * radius, 0.3 * radius, scene.palette.background),
+    )
+
+
+# THE 1970s (D77)
+
+
+def _seventies(scene: Scene) -> None:
+    """The 1970s': four rounded stripes in its browns, oranges and mustard along the slide's top and left edges, turning
+    its top left corner in a curve, two rounded stripes under the title, pictures as prints with round corners in a
+    cream border, on its big slides a sunset of stripes where there's room, and the slide's number ("7/12") on a
+    rounded tag."""
+    palette = scene.palette
+    stripes = [palette.text, palette.accent, color.mix(palette.accent, palette.accent_2, 0.5), palette.accent_2]
+    for index, colour in enumerate(stripes):  # (over a picture at the slide's edge too)
+        scene.over(_area(_corner_stripe(4 + 13 * index, 9, 210), colour))
+    tag, number = _plate(WIDTH - 44 - 136, 136)
+    if scene.numbered and not scene.placement.photo and scene.free(number, pad=4):
+        scene.add(_rect(tag.x, tag.y, tag.w, tag.h, palette.text, corner=tag.h / 2))
+        _slide_number(scene, number, spec="decoration centre", colour=palette.background)
+        scene.kept.append(tag)
+    title = scene.title()
+    if title is not None:
+        x, y, width = _under_title(scene, title, 300)
+        scene.add(
+            _rect(x, y - 4, width, 8, palette.accent, corner=4),
+            _rect(x + width * 0.12, y + 10, width * 0.76, 8, palette.accent_2, corner=4),
+        )
+    for role in _framed(scene):
+        shown = scene.shown(role, _grown(scene.box(role), -18))
+        print_ = _grown(shown, 14)
+        cream = color.mix(palette.background, "#ffffff", 0.6) if not color.is_dark(palette.background) else "#f6e7c8"
+        scene.add(
+            _rect(print_.x, print_.y, print_.w, print_.h, cream, corner=30),
+            _frame(print_, palette.text if not color.is_dark(palette.background) else palette.accent, 4, corner=30),
+            part_of=role,
+        )
+    if scene.big and not scene.photo:
+        _sunset(scene, stripes)
+
+
+def _corner_stripe(inset: float, width: float, turn: float) -> list[geometry.Point]:
+    """A stripe this far in from the slide's top and left edges, this wide, along both, turning the top left corner in
+    a quarter circle around (turn, turn): its outline, on the canvas."""
+    outer: list[geometry.Point] = [(WIDTH + 4.0, inset), (turn, inset)]
+    outer += geometry.arc(turn, turn, turn - inset, turn - inset, 270, 180, 12)
+    outer += [(inset, HEIGHT + 4.0)]
+    inner: list[geometry.Point] = [(inset + width, HEIGHT + 4.0)]
+    inner += geometry.arc(turn, turn, turn - inset - width, turn - inset - width, 180, 270, 12)
+    inner += [(WIDTH + 4.0, inset + width)]
+    return [*outer, *inner]
+
+
+def _area(points: Sequence[geometry.Point], colour: str, opacity: float = 1.0) -> ShapeElement:
+    """A polygon of these corners on the canvas (as shares of the box around them)."""
+    x0, y0 = min(x for x, _ in points), min(y for _, y in points)
+    w, h = max(x for x, _ in points) - x0, max(y for _, y in points) - y0
+    shares = tuple((round((x - x0) / w, 4), round((y - y0) / h, 4)) for x, y in points)
+    return _polygon(shares, x0, y0, w, h, colour, opacity)
+
+
+def _sunset(scene: Scene, stripes: Sequence[str]) -> None:
+    """A 1970s sunset: four arches of stripes rising from the slide's bottom edge, where there's room for them (not
+    behind a text)."""
+    for middle in (WIDTH - 420.0, WIDTH / 2, 420.0):
+        spot = Box(x=middle - 330, y=HEIGHT - 330, w=660, h=330)
+        if scene.free(spot, pad=16, letters=True):
+            break
+    else:
+        return
+    for index, colour in enumerate(reversed(stripes)):
+        radius = 330 - index * 62
+        scene.under(
+            _polygon(
+                geometry.arch((radius - 44) / radius), middle - radius, HEIGHT - radius, 2 * radius, radius, colour
+            )
+        )
+    scene.kept.append(spot)
+
+
+# A GLOSSY MAGAZINE (D77)
+
+# The specs of the texts a magazine puts giant quotation marks by (a statement's, a quote's)
+_QUOTES: Final = frozenset({"statement", "left statement", "band statement", "quote"})
+
+
+def _magazine(scene: Scene) -> None:
+    """A glossy magazine's: a hairline rule across the top, with a square of its accent at its start; a short thick rule
+    under the title; giant quotation marks by a quote; pictures on a block of its accent's tint, offset; the slide's
+    number ("07 / 12") as the page's folio in the bottom right corner, after a hairline; and on its big slides a roundel
+    with the issue's number."""
+    palette = scene.palette
+    ink = palette.text
+    if not scene.placement.photo:
+        scene.add(_rect(MARGIN, 40, WIDTH - 2 * MARGIN, 1.5, ink), _rect(MARGIN, 30, 20, 20, palette.accent))
+        folio = Box(x=WIDTH - MARGIN - 180, y=1034, w=180, h=30)
+        if _slide_number(
+            scene, folio, spec=_sized("decoration heading", 28, 24, align="right"), colour=ink, padded=True
+        ):
+            scene.add(_rect(MARGIN, 1048, WIDTH - 2 * MARGIN - 200, 1.5, ink))
+    title = scene.title()
+    if title is not None:
+        x, y, width = _under_title(scene, title, 96)
+        if scene.theme.title_align == "left":
+            x = scene.ink(title).x
+        scene.add(_rect(x, y - 2, min(96.0, width), 7, palette.accent))
+    tint = color.mix(palette.accent, palette.background, 0.78)
+    for role in _framed(scene):
+        box = scene.box(role)
+        shown = scene.shown(role, Box(x=box.x, y=box.y, w=box.w - 24, h=box.h - 24))
+        scene.add(_rect(shown.x + 24, shown.y + 24, shown.w, shown.h, tint), part_of=role)
+    for role in scene.texts():
+        if scene.spec(role) in _QUOTES:
+            _quote_marks(scene, role)
+    if scene.big and not scene.photo:
+        spots = _corner_spots(scene, 200, 60, letters=True)
+        if spots:
+            _roundel(scene, spots[0])
+
+
+def _quote_marks(scene: Scene, role: str) -> None:
+    """Giant quotation marks in the accent before a quote's first line (or smaller, over it), where they keep clear of
+    the slide's texts, its other lines included, and pictures (on a band the quote is on, say), and read: in a box as
+    tall as their line, of which their glyph fills the top."""
+    lines = scene.lines(role)
+    first = lines[0]
+    big = min(260.0, max(140.0, first.h * 2.4))
+    others = [_grown(line, 8) for line in lines[1:]]
+    for size, x, y, align in (
+        (big, first.x - big * 0.6 - 8, first.y - big * 0.2, "right"),
+        (140.0, first.x, first.y - 140 * 0.62, "left"),
+    ):
+        place, glyph = Box(x=x, y=y, w=size * 0.6, h=size * 1.25), Box(x=x, y=y, w=size * 0.6, h=size * 0.62)
+        clear = scene.free(glyph, pad=4, letters=True, ignoring=(role,), shapes=False)  # (the quote's first line aside)
+        if x < MARGIN / 2 or y < 16 or not clear or any(_overlaps(other, glyph) for other in others):
+            continue
+        spec = _sized("decoration heading", size, size * 0.8, align=align, anchor="top")
+        colour = scene.reading("“", place, spec, scene.palette.accent)
+        if colour is not None:
+            scene.write("“", place, spec, colour)
+            return
+
+
+def _roundel(scene: Scene, spot: Box) -> None:
+    """A magazine's roundel in the spot: a circle of its accent with the issue's number ("N°7"), turned a little."""
+    palette = scene.palette
+    cx, cy = spot.x + spot.w / 2, spot.y + spot.h / 2
+    scene.under(
+        _ellipse(cx, cy, spot.w, spot.h, palette.accent), _ring(cx, cy, spot.w - 18, spot.h - 18, "#ffffff", 2, 0.8)
+    )
+    words = Box(x=spot.x + 30, y=spot.y + spot.h * 0.3, w=spot.w - 60, h=spot.h * 0.4)
+    scene.write_on(f"N°{scene.number + 1}", words, _sized("decoration heading", 64, 28), "#ffffff")
+    scene.kept.append(spot)
+
+
 _MOTIFS: Final[dict[str, Callable[[Scene], None]]] = {
     "keynote": _keynote,
     "minimal": _minimal,
@@ -2220,4 +2668,9 @@ _MOTIFS: Final[dict[str, Callable[[Scene], None]]] = {
     "swiss": _swiss,
     "workshop": _workshop,
     "desktop": _desktop,
+    "corkboard": _corkboard,
+    "spreadsheet": _spreadsheet,
+    "y2k": _y2k,
+    "seventies": _seventies,
+    "magazine": _magazine,
 }

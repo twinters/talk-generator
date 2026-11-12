@@ -141,7 +141,8 @@ its box, and every text gets the largest size at which it fits.
 
 The themes come in families: `clean keynote`, `dark minimal`, `corporate`, `academic`, `startup`, `vintage paper`,
 `kids`, `brutalist`, `neon`, `hacker terminal`, `blueprint`, `chalkboard`, `newspaper`, `Swiss poster`, `sticky
-notes` and `90s desktop`, and, for laughs, `1997 WordArt`, `Comic Sans everywhere` and `clip-art corporate`. A family has many members, and the talk's
+notes`, `90s desktop`, `corkboard`, `spreadsheet`, `Y2K`, `70s retro` and `glossy magazine`, and, for laughs, `1997
+WordArt`, `Comic Sans everywhere` and `clip-art corporate`. A family has many members, and the talk's
 seed picks one: its colours (every text reads on its background, by WCAG's contrast rules), its fonts, its
 decoration and its layouts.
 
@@ -182,6 +183,16 @@ Every family has a decoration of its own, on every slide, and saves its big piec
 - `90s desktop`: every slide a bevelled grey window with a title bar and its three buttons, a taskbar with the
   slide's number in its tray, pictures in windows of their own, and a big slide of nothing but texts as a dialog box
   on the desktop, with icons and the mouse's pointer.
+- `corkboard`: cork in a wooden frame, the title on a pinned index card, pictures as polaroids, pinned or taped up,
+  index cards pinned in free corners, and on the big slides pins with a red string between them.
+- `spreadsheet`: a grid of cells with its columns' letters and its rows' numbers, the title a selected cell,
+  pictures with selection handles, and the slide's number on the open sheet's tab, in Calibri.
+- `Y2K`: chrome headings on pastel gradients, sparkles and glossy bubbles, pictures in white rounded frames, a CD on
+  the big slides, and the slide's number on a glossy pill.
+- `70s retro`: browns, oranges and mustard on cream (or avocado, or brown), four rounded stripes turning the top
+  left corner, a sunset of stripes on the big slides, and pictures as prints with round corners.
+- `glossy magazine`: big serif headlines, hairline rules and a page's folio, giant quotation marks by a quote,
+  pictures on a block of colour, and an issue's roundel on the big slides.
 - The others too: academic's titles on a band with a row of dots counting the slides (as LaTeX's Beamer has them),
   neon's sunset over a grid floor, vintage paper's ornamented double frame, brutalist's titles on blocks with hard
   shadows, corporate's slanted panel, startup's soft blobs, Comic Sans' speech balloons and POW, WordArt's
