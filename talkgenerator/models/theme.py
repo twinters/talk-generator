@@ -44,6 +44,8 @@ Motif = Literal[
     "chalkboard",
     "newsprint",
     "swiss",
+    "workshop",
+    "desktop",
 ]
 # A pattern over a slide's background: lines across it (ruled paper's, a screen's scanlines), a grid (graph paper's, a
 # blueprint's), or dots

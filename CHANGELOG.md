@@ -65,9 +65,9 @@ how to keep 4.x's talks. The [docs](https://github.com/twinters/talk-generator/t
 
 ### Themes and layouts
 
-- Seventeen families of themes, drawn as shapes on a 1920×1080 canvas: from `clean keynote`, `dark minimal` and
-  `Swiss poster` to `hacker terminal`, `blueprint`, `chalkboard` and `newspaper`, with `1997 WordArt`, `Comic Sans
-  everywhere` and `clip-art corporate` for laughs. By default (`--theme random`) the talk's seed picks a member of a
+- Nineteen families of themes, drawn as shapes on a 1920×1080 canvas: from `clean keynote`, `dark minimal` and
+  `Swiss poster` to `hacker terminal`, `blueprint`, `chalkboard`, `newspaper`, `sticky notes` (a workshop's
+  whiteboard) and `90s desktop`, with `1997 WordArt`, `Comic Sans everywhere` and `clip-art corporate` for laughs. By default (`--theme random`) the talk's seed picks a member of a
   family: its colours, repaired until every text reads on its background by WCAG's contrast rules, its fonts, its
   decoration and its layouts. `--theme` names a family or `classic` (the 2019 template), `--theme_families` limits
   the seed's choice, `--no_extreme_themes` leaves out the ones for laughs, `--theme chaos` gives every slide a theme

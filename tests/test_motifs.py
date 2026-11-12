@@ -10,6 +10,7 @@ import pytest
 from PIL import Image
 from pptx.oxml.ns import qn
 
+from talkgenerator import personas
 from talkgenerator.checks.deck import _texts, check_language
 from talkgenerator.checks.design import check_design
 from talkgenerator.design import color, engine, geometry, layers, motifs, themes, treatments
@@ -190,7 +191,7 @@ def test_a_terminals_titles_get_a_prompt_and_its_talk_title_a_cursor(images):
 
 
 def test_decoration_texts_are_not_the_talks_words(images):
-    for family in ("newspaper", "hacker terminal", "blueprint"):
+    for family in ("newspaper", "hacker terminal", "blueprint", "90s desktop"):
         deck = _deck(theme=_theme(family)).to_deck()
         decoration = [
             element.text
@@ -329,6 +330,54 @@ def test_each_set_has_its_own_title_and_section_slides(images, motif):
 def test_every_set_of_decoration_passes_the_design_checks(images, motif):
     theme = _kids(motif, KIDS_SETS.index(motif))  # (each in another of the family's palettes)
     assert check_design(_runs(2, theme).to_deck()) == [], motif
+
+
+# TWO NEW FAMILIES (D77): a workshop on a whiteboard, and a 1990s computer's desktop
+
+
+def test_a_workshop_has_sticky_notes_on_a_whiteboard(images):
+    personas_favour = {name for name, persona in personas.PERSONAS.items() if "sticky notes" in persona.themes}
+    assert {"consultant", "life_coach"} <= personas_favour
+    for seed in range(3):
+        theme = _theme("sticky notes", seed)
+        deck = _deck(seed=seed, theme=theme).to_deck()
+        assert check_design(deck) == [], seed
+        for slide in deck.slides:  # (the board's frame and its tray, on every slide)
+            shapes = [element for element in slide.elements if isinstance(element, ShapeElement)]
+            assert any(shape.box == engine.FULL and not shape.filled for shape in shapes), slide.layout
+        notes = [
+            element
+            for slide in deck.slides
+            for element in slide.elements
+            if isinstance(element, ShapeElement) and element.color in motifs.STICKIES
+        ]
+        assert notes and any(note.rotation for note in notes)  # (sticky notes, turned a little)
+
+
+def test_a_90s_desktop_has_windows_a_taskbar_and_dialogs(images):
+    assert "90s desktop" in personas.PERSONAS["time_traveller"].themes
+    theme = _theme("90s desktop", 1)
+    deck = _deck(seed=1, theme=theme).to_deck()
+    assert check_design(deck) == []
+    texts = [
+        element.text
+        for slide in deck.slides
+        for element in slide.elements
+        if element.role == DECORATION and element.kind == "text"
+    ]
+    assert "TALK.PPT" in texts and any(text.startswith("PIC") and text.endswith(".BMP") for text in texts)
+    assert any("/" in text for text in texts)  # (the slide's number, in the taskbar's tray)
+    # (a big slide of nothing but texts is a dialog box on the desktop, which has the second accent's colour)
+    made = [slides.TitleSlide("Lighthouses", "By Anna Tomy")]
+    title_deck = SlideDeck(1, title="Lighthouses", topics=["lighthouses"], seed=1)
+    title_deck.add_slide(0, made[0])
+    title_deck.theme = theme
+    (title,) = title_deck.to_deck().slides
+    assert any(
+        isinstance(element, ShapeElement) and element.box == engine.FULL and element.color == theme.palette.accent_2
+        for element in title.elements
+    )
+    assert check_design(title_deck.to_deck()) == []
 
 
 # THE SHAPES THEY'RE DRAWN WITH

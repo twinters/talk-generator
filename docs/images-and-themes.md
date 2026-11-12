@@ -140,8 +140,8 @@ template. Every other theme draws the slides as shapes on a 1920×1080 canvas: a
 its box, and every text gets the largest size at which it fits.
 
 The themes come in families: `clean keynote`, `dark minimal`, `corporate`, `academic`, `startup`, `vintage paper`,
-`kids`, `brutalist`, `neon`, `hacker terminal`, `blueprint`, `chalkboard`, `newspaper` and `Swiss poster`, and, for
-laughs, `1997 WordArt`, `Comic Sans everywhere` and `clip-art corporate`. A family has many members, and the talk's
+`kids`, `brutalist`, `neon`, `hacker terminal`, `blueprint`, `chalkboard`, `newspaper`, `Swiss poster`, `sticky
+notes` and `90s desktop`, and, for laughs, `1997 WordArt`, `Comic Sans everywhere` and `clip-art corporate`. A family has many members, and the talk's
 seed picks one: its colours (every text reads on its background, by WCAG's contrast rules), its fonts, its
 decoration and its layouts.
 
@@ -176,6 +176,12 @@ Every family has a decoration of its own, on every slide, and saves its big piec
   notebook (ruled or squared paper with a margin line and a binding, ballpoint doodles, pictures taped in, an
   exercise book's cover for the title slide) or paper cut-outs (construction paper with small shadows, pictures on
   paper mats, paper hills and a paper flower).
+- `sticky notes`: a workshop on a whiteboard, in its aluminium frame with markers on its tray: marker strokes under
+  the titles, sticky notes with ideas scribbled on them (and dot-vote stickers, on the big slides), pictures held up
+  by magnets, and the slide's number on a sticky flag.
+- `90s desktop`: every slide a bevelled grey window with a title bar and its three buttons, a taskbar with the
+  slide's number in its tray, pictures in windows of their own, and a big slide of nothing but texts as a dialog box
+  on the desktop, with icons and the mouse's pointer.
 - The others too: academic's titles on a band with a row of dots counting the slides (as LaTeX's Beamer has them),
   neon's sunset over a grid floor, vintage paper's ornamented double frame, brutalist's titles on blocks with hard
   shadows, corporate's slanted panel, startup's soft blobs, Comic Sans' speech balloons and POW, WordArt's

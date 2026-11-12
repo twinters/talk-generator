@@ -1909,6 +1909,285 @@ def _swiss(scene: Scene) -> None:
                 break
 
 
+# A WORKSHOP ON A WHITEBOARD (D77)
+
+# Sticky notes' colours (Open Color's second shades): yellow, pink, blue, green, orange, violet
+STICKIES: Final = ("#ffec99", "#fcc2d7", "#a5d8ff", "#b2f2bb", "#ffd8a8", "#d0bfff")
+# A whiteboard's aluminium frame, and its edge
+_ALUMINIUM: Final = ("#c3c9cf", "#8b939b")
+
+
+def _workshop(scene: Scene) -> None:
+    """A workshop on a whiteboard: the board's aluminium frame, with a marker tray along its bottom and two markers on
+    it, a marker's stroke under the title, sticky notes with ideas scribbled on them (lines, no words) in a free
+    corner, and on the big slides a cluster of them with dot-vote stickers, pictures held up by magnets, and the
+    slide's number ("7/12") on a sticky flag in the bottom right corner."""
+    palette = scene.palette
+    ink = palette.text
+    turn = scene.theme.motif_variant % len(STICKIES)
+    notes = [*STICKIES[turn:], *STICKIES[:turn]]
+    scene.over(
+        _frame(Box(x=0, y=0, w=WIDTH, h=HEIGHT), _ALUMINIUM[0], 14),
+        _rect(14, 14, WIDTH - 28, 2, _ALUMINIUM[1]),
+        _rect(0, HEIGHT - 18, WIDTH, 18, _ALUMINIUM[0]),
+        _rect(0, HEIGHT - 18, WIDTH, 2, _ALUMINIUM[1]),
+    )
+    if not scene.placement.photo:  # (two markers resting on the tray, their caps on)
+        for index, (x, colour) in enumerate(((150.0, ink), (360.0, palette.accent))):
+            scene.over(
+                _rect(x, HEIGHT - 36, 170, 18, colour, corner=6, rotation=-1.5 + 3 * index),
+                _rect(
+                    x + 128,
+                    HEIGHT - 38,
+                    52,
+                    22,
+                    color.mix(colour, "#ffffff", 0.25),
+                    corner=6,
+                    rotation=-1.5 + 3 * index,
+                ),
+            )
+    title = scene.title()
+    if title is not None:  # (a marker's quick stroke, bowing a little, rising to its end)
+        x, y, width = _under_title(scene, title, 600)
+        stroke = [(x + width * step / 12, y + 5 * math.sin(math.pi * step / 12) - 0.6 * step) for step in range(13)]
+        scene.add(_line(stroke, 9, palette.accent))
+    flag, number = _plate(WIDTH - 60 - 136, 136)
+    if scene.numbered and not scene.placement.photo and scene.free(number, pad=4):
+        scene.add(
+            _rect(flag.x, flag.y, flag.w, flag.h, notes[0], 0.92),
+            _rect(flag.x, flag.y, 22, flag.h, color.mix(notes[0], ink, 0.25)),
+        )
+        _slide_number(
+            scene, Box(x=number.x + 22, y=number.y, w=number.w - 22, h=number.h), spec="decoration centre", colour=ink
+        )
+        scene.kept.append(flag)
+    for role in _framed(scene):
+        _held_by_magnets(scene, role, palette.accent_2 if role.endswith("2") else palette.accent)
+    if scene.photo:
+        return
+    if scene.big:
+        _sticky_cluster(scene, notes)
+    else:
+        size = random_util.uniform(130, 170)
+        spots = _corner_spots(scene, size, 54, letters=True)
+        if spots:
+            spot = spots[scene.number % len(spots)]
+            _sticky(scene, spot, notes[scene.number % len(notes)], random_util.uniform(-6, 6))
+
+
+def _sticky(scene: Scene, box: Box, colour: str, turn: float, votes: Sequence[str] = ()) -> None:
+    """A sticky note: a square of the colour, turned a little, a shade darker along its glued top edge, a shadow under
+    its curling bottom edge, ideas scribbled on it in marker (wavy lines, no words), and dot-vote stickers on it."""
+    ink = scene.palette.text
+    middle = (box.x + box.w / 2, box.y + box.h / 2)
+
+    def turned(shape: ShapeElement) -> ShapeElement:  # (where it is on the note, turned with the note)
+        x, y = geometry.turn((shape.box.x + shape.box.w / 2, shape.box.y + shape.box.h / 2), middle, turn)
+        moved = Box(x=x - shape.box.w / 2, y=y - shape.box.h / 2, w=shape.box.w, h=shape.box.h)
+        return shape.model_copy(update={"box": moved, "rotation": turn})
+
+    scene.add(
+        _rect(box.x + 3, box.y + 12, box.w - 4, box.h - 6, ink, 0.16, rotation=turn),
+        _rect(box.x, box.y, box.w, box.h, colour, rotation=turn),
+        turned(_rect(box.x, box.y, box.w, box.h * 0.18, color.mix(colour, ink, 0.06))),
+    )
+    for line in range(3):  # (three lines of scribbled idea, the last one shorter)
+        y = box.y + box.h * (0.36 + 0.2 * line)
+        width = box.w * (0.7 if line < 2 else 0.45) * random_util.uniform(0.85, 1.0)
+        scribble = geometry.squiggle(box.x + box.w * 0.14, y, width, box.h * 0.025, width / 22, 24)
+        scene.add(_line([geometry.turn(point, middle, turn) for point in scribble], max(3.0, box.w / 50), ink, 0.85))
+    for index, vote in enumerate(votes):  # (dot-vote stickers along its bottom)
+        x, y = geometry.turn((box.x + box.w * (0.22 + 0.19 * index), box.y + box.h * 0.86), middle, turn)
+        scene.add(_ellipse(x, y, box.w * 0.13, box.w * 0.13, vote))
+
+
+def _sticky_cluster(scene: Scene, notes: Sequence[str]) -> None:
+    """A cluster of sticky notes in a free corner of a big slide (an idea per note, as a workshop sorts them), two of
+    them dot-voted on."""
+    palette = scene.palette
+    for size in (170.0, 140.0, 120.0):
+        spots = _corner_spots(scene, 2 * size + 24, 50, letters=True)
+        if spots:
+            break
+    else:
+        return
+    spot = spots[0]
+    for index in range(4):
+        x = spot.x + (index % 2) * (size + 24) + random_util.uniform(-6, 6)
+        y = spot.y + (index // 2) * (size + 24) + random_util.uniform(-6, 6)
+        votes = [palette.accent, palette.accent_2, palette.accent][: (3, 0, 2, 0)[index]]
+        _sticky(scene, Box(x=x, y=y, w=size, h=size), notes[index % len(notes)], random_util.uniform(-5, 5), votes)
+    scene.kept.append(spot)
+
+
+def _held_by_magnets(scene: Scene, role: str, colour: str) -> None:
+    """A picture held up on the board by two round magnets at its top corners, with a soft shadow under it."""
+    ink = scene.palette.text
+    shown = scene.shown(role, _grown(scene.box(role), -12))
+    scene.add(_rect(shown.x + 6, shown.y + 8, shown.w, shown.h, ink, 0.16), part_of=role)
+    for x in (shown.x + 34, shown.x + shown.w - 34):
+        scene.over(
+            _ellipse(x + 2, shown.y + 6, 40, 40, ink, 0.25),
+            _ellipse(x, shown.y + 2, 40, 40, colour),
+            _ellipse(x - 7, shown.y - 6, 14, 9, "#ffffff", 0.6),
+            part_of=role,
+        )
+
+
+# A 1990s DESKTOP (D77)
+
+# A bevel's light edge, its shade and its dark edge; where the taskbar's top is (the slide's number in its tray goes
+# where every slide's number goes, under the credit line); a folder's yellow
+_BEVEL: Final = ("#ffffff", "#808080", "#202020")
+_TASKBAR: Final = 1030.0
+_FOLDER: Final = "#f2cf4a"
+# The mouse's pointer, an arrow pointing up and left
+_POINTER: Final = ((0.0, 0.0), (0.0, 0.78), (0.21, 0.6), (0.36, 0.94), (0.5, 0.88), (0.35, 0.56), (0.62, 0.56))
+
+
+def _desktop(scene: Scene) -> None:
+    """A 1990s computer's: the slide a window, with a title bar in the accent across its top (a document's name and
+    its three buttons) and bevelled edges, and a taskbar along its bottom with the slide's number ("7/12") in its
+    tray; pictures in windows of their own; on a big slide with nothing but texts, the desktop around a dialog box
+    with the texts in it, a few icons and the mouse's pointer."""
+    palette = scene.palette
+    bar = palette.accent
+    dialog = scene.big and not scene.photo and _dialog(scene)
+    if not scene.placement.photo:
+        if not dialog:  # (the window's title bar, with a document's icon, its name and its buttons, and its edges)
+            scene.add(_rect(0, 0, WIDTH, 50, bar))
+            scene.add(_rect(18, 12, 22, 27, "#ffffff"), _rect(22, 19, 14, 2, bar), _rect(22, 25, 14, 2, bar))
+            scene.write_on("TALK.PPT", Box(x=54, y=17, w=400, h=30), _sized("decoration", 24, bold=True), "#ffffff")
+            _window_buttons(scene, WIDTH - 10, 10, 30)
+            scene.over(_rect(0, 50, 3, _TASKBAR - 50, _BEVEL[0]), _rect(WIDTH - 3, 50, 3, _TASKBAR - 50, _BEVEL[1]))
+        scene.add(
+            _rect(0, _TASKBAR, WIDTH, HEIGHT - _TASKBAR, palette.background), _rect(0, _TASKBAR, WIDTH, 2, "#ffffff")
+        )
+        scene.add(*_bevelled(Box(x=8, y=_TASKBAR + 6, w=130, h=36), palette.background))
+        for index, colour in enumerate(("#d03b3b", "#3b9b3b", "#3b5bd0", "#e0b020")):  # (a button with an icon)
+            scene.add(_rect(20 + (index % 2) * 13, _TASKBAR + 12 + (index // 2) * 12, 11, 10, colour))
+        if scene.numbered:  # (the slide's number, in the tray at its right end)
+            tray = Box(x=WIDTH - 8 - 200, y=_TASKBAR + 6, w=200, h=36)
+            scene.add(*_bevelled(tray, palette.background, raised=False))
+            _slide_number(
+                scene, Box(x=tray.x + 10, y=1034, w=tray.w - 20, h=30), spec="decoration centre", colour=palette.text
+            )
+    for index, role in enumerate(_framed(scene), 1):
+        _picture_window(scene, role, index)
+
+
+def _bevelled(box: Box, face: str, raised: bool = True) -> list[ShapeElement]:
+    """A box with a bevelled edge, raised (light along its top and left, dark along its bottom and right) or sunken
+    (the other way around)."""
+    light, shade = (_BEVEL[0], _BEVEL[2]) if raised else (_BEVEL[1], _BEVEL[0])
+    return [
+        _rect(box.x, box.y, box.w, box.h, face),
+        _rect(box.x, box.y, box.w, 2, light),
+        _rect(box.x, box.y, 2, box.h, light),
+        _rect(box.x, box.y + box.h - 2, box.w, 2, shade),
+        _rect(box.x + box.w - 2, box.y, 2, box.h, shade),
+    ]
+
+
+def _window_buttons(scene: Scene, right: float, top: float, size: float, part_of: str | None = None) -> None:
+    """A window's three buttons, ending at right on its title bar: minimise, maximise and close, bevelled grey, their
+    signs drawn as shapes."""
+    face, ink = scene.palette.background, _BEVEL[2]
+    for index in range(3):
+        x = right - (3 - index) * (size + 4) + (4 if index == 2 else 0)
+        scene.add(*_bevelled(Box(x=x, y=top, w=size, h=size - 2), face), part_of=part_of)
+        if index == 0:
+            sign = [_rect(x + size * 0.25, top + size * 0.62, size * 0.42, size * 0.1, ink)]
+        elif index == 1:
+            sign = [_frame(Box(x=x + size * 0.22, y=top + size * 0.18, w=size * 0.54, h=size * 0.5), ink, 2)]
+            sign.append(_rect(x + size * 0.22, top + size * 0.18, size * 0.54, size * 0.12, ink))
+        else:
+            sign = [
+                _rect(x + size * 0.2, top + size * 0.42, size * 0.58, size * 0.11, ink, rotation=angle)
+                for angle in (45.0, -45.0)
+            ]
+        scene.add(*sign, part_of=part_of)
+
+
+def _picture_window(scene: Scene, role: str, index: int) -> None:
+    """A picture in a window of its own: a bevelled grey edge, and a title bar with its file's name and a close
+    button."""
+    palette = scene.palette
+    box = scene.box(role)
+    shown = scene.shown(role, Box(x=box.x + 6, y=box.y + 40, w=box.w - 12, h=box.h - 46))
+    window = Box(x=shown.x - 6, y=shown.y - 40, w=shown.w + 12, h=shown.h + 46)
+    scene.add(
+        *_bevelled(window, palette.background),
+        _rect(window.x + 4, window.y + 4, window.w - 8, 32, palette.accent),
+        part_of=role,
+    )
+    close = window.x + window.w - 8
+    scene.add(*_bevelled(Box(x=close - 26, y=window.y + 8, w=26, h=24), palette.background), part_of=role)
+    scene.add(
+        *(_rect(close - 21, window.y + 18, 16, 3, _BEVEL[2], rotation=angle) for angle in (45.0, -45.0)), part_of=role
+    )
+    if window.w > 300:
+        name = f"PIC{scene.number + 1:02d}{index}.BMP"
+        place = Box(x=window.x + 12, y=window.y + 5, w=window.w - 60, h=30)
+        scene.write_on(name, place, _sized("decoration", 24, bold=True), "#ffffff", part_of=role)
+
+
+def _dialog(scene: Scene) -> bool:
+    """A big slide as the desktop: its colour (the second accent) over the whole slide, a dialog box around the slide's
+    texts (a bevelled window with a title bar and a close button), a few icons down its left edge (a computer, a
+    folder, a document) and the mouse's pointer by the dialog's corner. Only on a slide of nothing but texts, whose
+    texts all fit in the dialog; whether it drew one."""
+    palette = scene.palette
+    elements = [scene.roles.get(role) for role in scene.placement.boxes]
+    if any(element is not None and not isinstance(element, TextElement) for element in elements):
+        return False
+    if scene.placement.shapes or scene.placement.texts or not scene.texts():
+        return False
+    inks = [scene.ink(role) for role in scene.texts()]
+    left, top = min(ink.x for ink in inks) - 70, min(ink.y for ink in inks) - 100
+    right, bottom = max(ink.x + ink.w for ink in inks) + 70, max(ink.y + ink.h for ink in inks) + 60
+    dialog = Box(x=max(left, 24.0), y=max(top, 24.0), w=0, h=0)
+    dialog = dialog.model_copy(update={"w": min(right, WIDTH - 40) - dialog.x, "h": min(bottom, 1000.0) - dialog.y})
+    if dialog.x > left or dialog.y > top or dialog.x + dialog.w < right or dialog.y + dialog.h < bottom:
+        return False
+    desktop = palette.accent_2
+    scene.under(_rect(0, 0, WIDTH, HEIGHT, desktop))
+    scene.under(*_bevelled(dialog, palette.background))
+    scene.under(_rect(dialog.x + 4, dialog.y + 4, dialog.w - 8, 40, palette.accent))
+    _window_buttons(scene, dialog.x + dialog.w - 10, dialog.y + 9, 28)
+    scene.kept.append(dialog)
+    for number, y in enumerate((70.0, 220.0, 370.0)):  # (icons, on the desktop beside the dialog)
+        if scene.free(Box(x=40, y=y, w=90, h=90), pad=8, letters=True) and dialog.x > 150:
+            _icon(scene, number, 40, y)
+    tip = (dialog.x + dialog.w - 90, dialog.y + dialog.h - 70)
+    pointer = Box(x=tip[0], y=tip[1], w=36, h=56)
+    if scene.free(pointer, pad=6, letters=True):
+        scene.add(
+            _polygon(_POINTER, pointer.x - 3, pointer.y - 4, pointer.w + 7, pointer.h + 8, _BEVEL[2]),
+            _polygon(_POINTER, pointer.x + 1, pointer.y + 3, pointer.w - 2, pointer.h - 4, "#ffffff"),
+        )
+    return True
+
+
+def _icon(scene: Scene, kind: int, x: float, y: float) -> None:
+    """A desktop's icon, 90 pixels square, from its top left corner: a computer (0), a folder (1) or a document (2)."""
+    ink = _BEVEL[2]
+    if kind == 0:  # (a monitor on its stand)
+        scene.under(*_bevelled(Box(x=x + 8, y=y + 6, w=74, h=56), "#c0c0c0"))
+        scene.under(_rect(x + 16, y + 14, 58, 40, "#000080"), _rect(x + 30, y + 62, 30, 8, "#808080"))
+        scene.under(*_bevelled(Box(x=x + 14, y=y + 70, w=62, h=12), "#c0c0c0"))
+    elif kind == 1:  # (a folder: its tab, and its body)
+        scene.under(_rect(x + 8, y + 16, 34, 14, _FOLDER, corner=3), _rect(x + 8, y + 24, 74, 52, _FOLDER, corner=3))
+        scene.under(_rect(x + 8, y + 74, 74, 3, color.mix(_FOLDER, ink, 0.4)))
+    else:  # (a page, its corner folded, with lines of text)
+        scene.under(
+            _polygon(((0.0, 0.0), (0.7, 0.0), (1.0, 0.24), (1.0, 1.0), (0.0, 1.0)), x + 18, y + 6, 56, 76, "#ffffff")
+        )
+        scene.under(_polygon(((0.0, 0.0), (1.0, 1.0), (0.0, 1.0)), x + 57, y + 6, 17, 18, "#c0c0c0"))
+        for line in range(4):
+            scene.under(_rect(x + 26, y + 32 + line * 11, 36 if line < 3 else 22, 3, "#808080"))
+
+
 _MOTIFS: Final[dict[str, Callable[[Scene], None]]] = {
     "keynote": _keynote,
     "minimal": _minimal,
@@ -1930,4 +2209,6 @@ _MOTIFS: Final[dict[str, Callable[[Scene], None]]] = {
     "chalkboard": _chalkboard,
     "newsprint": _newsprint,
     "swiss": _swiss,
+    "workshop": _workshop,
+    "desktop": _desktop,
 }

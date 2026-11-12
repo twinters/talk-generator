@@ -554,6 +554,81 @@ FAMILIES: Final[dict[str, Family]] = {
             image_filters=(("grayscale", 0.5), ("none", 0.5)),
             motif="swiss",
         ),
+        Family(
+            "sticky notes",
+            description="a workshop on a whiteboard: marker headings, sticky notes with ideas scribbled on them and "
+            "dot-vote stickers, pictures held up by magnets, a marker tray along the bottom",
+            palettes=(  # (a whiteboard, its markers: Open Color's)
+                Palette(
+                    background="#f8f9fa",
+                    surface="#e9ecef",
+                    text="#1c3d7a",
+                    muted="#495057",
+                    accent="#e03131",
+                    accent_2="#2f9e44",
+                ),
+                Palette(
+                    background="#fbfbf7",
+                    surface="#ecece4",
+                    text="#212529",
+                    muted="#495057",
+                    accent="#1971c2",
+                    accent_2="#e8590c",
+                ),
+                Palette(
+                    background="#f5f7fa",
+                    surface="#e3e8ef",
+                    text="#25262b",
+                    muted="#495057",
+                    accent="#7048e8",
+                    accent_2="#0c8599",
+                ),
+            ),
+            fonts=(("Trebuchet MS", "Trebuchet MS"), ("Verdana", "Verdana"), ("Arial", "Arial")),
+            open_fonts=(("Mali", "Atkinson Hyperlegible"), ("Mali", "Mali")),
+            open_font_chance=0.75,
+            uppercase=0.4,
+            alignments=("left", "center"),
+            image_tints=(("none", 0.7), ("cool", 0.3)),
+            motif="workshop",
+        ),
+        Family(
+            "90s desktop",
+            description="a 1990s computer: the slide a bevelled grey window with a title bar, a taskbar with the "
+            "slide's number in its tray, pictures in windows of their own, and big slides as a dialog box on the "
+            "desktop, with icons and the mouse's pointer",
+            palettes=(  # (a window's grey, its title bar's colour, and the desktop's)
+                Palette(
+                    background="#c0c0c0",
+                    surface="#d4d4d4",
+                    text="#000000",
+                    muted="#333333",
+                    accent="#000080",
+                    accent_2="#008080",
+                ),
+                Palette(
+                    background="#d4d0c8",
+                    surface="#e2dfd8",
+                    text="#000000",
+                    muted="#36332e",
+                    accent="#0a246a",
+                    accent_2="#3a6ea5",
+                ),
+                Palette(
+                    background="#c0c0c0",
+                    surface="#d4d4d4",
+                    text="#000000",
+                    muted="#333333",
+                    accent="#800000",
+                    accent_2="#6b6b00",
+                ),
+            ),
+            fonts=(("Arial", "Arial"), ("Verdana", "Verdana"), ("Arial", "Courier New")),
+            open_fonts=(("Space Mono", "Atkinson Hyperlegible"), ("Chakra Petch", "Barlow")),
+            open_font_chance=0.5,
+            alignments=("left", "center"),
+            motif="desktop",
+        ),
         # The extremes, for laughs
         Family(
             "1997 WordArt",
