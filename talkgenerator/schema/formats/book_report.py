@@ -71,7 +71,7 @@ BOOK_REPORT: Final = Format(
     "pupil's, played straight: short sentences, big pictures, the odd misunderstanding and an obvious wish to be done",
     title_hint="like a book report's title: 'My Book Report:' and the book's made-up title",
     job_hint="their year and class at school, as a pupil gives them on a book report",
-    personas={"kindergarten_teacher": 5, "influencer": 1.5, "passionate_expert": 1.3},
+    personas={"kindergarten_teacher": 5, "influencer": 1.5, "alien_anthropologist": 1.5, "passionate_expert": 1.3},
     themes={
         "kids": 4,
         "chalkboard": 3,

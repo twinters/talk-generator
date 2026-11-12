@@ -70,7 +70,15 @@ KEYNOTE: Final = Format(
     "huge type and big photos",
     title_hint="like a product keynote's title: the product's made-up name and a grand promise, in a few words",
     job_hint="their role at the company launching the product, as a keynote introduces them",
-    personas={"startup_founder": 5, "motivational_speaker": 3.5, "influencer": 1.5, "time_traveller": 1.2},
+    # (×7 and ×5, from ×5 and ×3.5, since D79 brought the personas to 21)
+    personas={
+        "startup_founder": 7,
+        "motivational_speaker": 5,
+        "influencer": 1.5,
+        "time_traveller": 1.2,
+        "infomercial_host": 1.3,
+        "game_show_host": 1.3,
+    },
     themes={
         "dark minimal": 5,
         "clean keynote": 2.5,

@@ -69,7 +69,7 @@ WEDDING: Final = Format(
     "promise, in a few words",
     job_hint="who they are to the couple, as a toast introduces them: best man, maid of honour, or a best friend since "
     "nursery school",
-    personas={"life_coach": 1.5, "retiree": 1.5, "motivational_speaker": 1.3},
+    personas={"best_man": 9, "life_coach": 1.5, "retiree": 1.5, "motivational_speaker": 1.3},
     themes={
         "vintage paper": 3,
         "clean keynote": 2,

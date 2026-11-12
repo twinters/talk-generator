@@ -585,6 +585,12 @@ FAVOURITES = {
     "disgraced_professor": "academic",
     "consultant": "corporate",
     "motivational_speaker": "keynote",
+    # (D79)
+    "detective": "court",
+    "infomercial_host": "infomercial",
+    "nature_narrator": "documentary",
+    "museum_guide": "museum",
+    "best_man": "wedding",
 }
 
 
@@ -596,12 +602,15 @@ def test_personas_favour_formats_a_talk_s_seed_can_pick():
     assert schema_types.choices() == ("random", *schema_types.schemas.names())
     for name, persona in personas.PERSONAS.items():
         assert persona.formats and set(persona.formats) <= set(schema_types.FORMAT_WEIGHTS), name
-        assert all(0.2 <= factor <= 15 for factor in persona.formats.values()), name
+        # (a specialist's favourite ×32 since D79, as the TED-like talk weighs 55 against the others' 1 or 1.5)
+        assert all(0.2 <= factor <= 32 for factor in persona.formats.values()), name
 
 
 def test_most_talks_are_ted_like_and_a_specialist_s_favourite_format_comes_next():
     # (decision D63: the user asked for more TED-like talks after reviewing 35, so with every persona most talks are
-    # TED-like, and a specialist's favourite format comes second, in about two of their talks in five)
+    # TED-like, and a specialist's favourite format comes second, in about two of their talks in five; a third since
+    # D79, which brought five specialists more and ten formats beside the TED-like talk, and every format keeps about
+    # one talk in a hundred with every persona: "some chance for all possibilities", as the user asked for D61)
     for name, persona in personas.PERSONAS.items():
         odds = schema_types.format_odds(persona)
         assert sum(odds.values()) == pytest.approx(1)
@@ -615,7 +624,7 @@ def test_most_talks_are_ted_like_and_a_specialist_s_favourite_format_comes_next(
                 schema_types.format_odds(other)[favourite] for other in personas.PERSONAS.values() if other != persona
             ]
             assert odds[favourite] > 3 * max(others), (name, favourite)
-        assert min(odds.values()) > 0.02, (name, odds)  # (and every format keeps some chance)
+        assert min(odds.values()) > 0.009, (name, odds)  # (and every format keeps some chance)
     # Without a persona, 8 talks in 10 are TED-like
     assert schema_types.format_odds(None)["default"] >= 0.75
 
@@ -637,7 +646,9 @@ def test_across_the_personas_most_talks_are_ted_like_and_pitches_and_academic_ta
         for name in schema_types.FORMAT_WEIGHTS
     }
     assert shares["default"] >= 0.69  # (7 talks in 10: D63)
-    assert all(0.04 < share < 0.12 for name, share in shares.items() if name != "default"), shares
+    # (the other ten formats share the rest since D79: each about three talks in a hundred, the book report, which has
+    # no specialist, two)
+    assert all(0.015 < share < 0.12 for name, share in shares.items() if name != "default"), shares
     # (the user found pitches and academic talks the most boring: they're rarer than all-hands and keynotes)
     assert max(shares["pitch"], shares["academic"]) < min(shares["corporate"], shares["keynote"]), shares
 

@@ -76,7 +76,13 @@ INFOMERCIAL: Final = Format(
     title_hint="like an infomercial's: the gadget's made-up name and a promise, with an exclamation mark",
     job_hint="their part in the infomercial (its host, the gadget's inventor, a satisfied customer), as the screen "
     "introduces them",
-    personas={"motivational_speaker": 2, "startup_founder": 1.5, "influencer": 1.5},
+    personas={
+        "infomercial_host": 9,
+        "motivational_speaker": 2,
+        "game_show_host": 2,
+        "startup_founder": 1.5,
+        "influencer": 1.5,
+    },
     themes={
         "1997 WordArt": 4,
         "neon": 2.5,

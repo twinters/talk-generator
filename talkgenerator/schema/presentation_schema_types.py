@@ -255,7 +255,7 @@ keynote_schema = schemas.register(
         spare_generators=SPARE_GENERATORS,
     ),
 )
-# (D79)
+# (D79: six more, each with a specialist persona but the book report)
 infomercial_schema = schemas.register(
     "infomercial",
     PresentationSchema(
@@ -338,8 +338,24 @@ book_report_schema = schemas.register(
 # (2026-11-09), with the pitch and the academic talk the rarest. Not ted: that's the TED-like talk with copyright-free
 # images only, which is a choice of license rather than of format: a talk asks for those images with license_policy
 # "open", whatever format its seed picks (the formats' arcs need no image that's fair use). Nor interview and test.
+# With D79's six formats and eight personas (five of them specialists), the TED-like talk weighs 55 (it was 20), so
+# that 7 talks in 10 stay TED-like over all 21 personas and 8 in 10 without one, the specialists' multipliers are ×32
+# (×21 for the all-hands' and the keynote's), so their favourite still comes second, in about a third of their talks,
+# and every format keeps about 1% with every persona: the other ten formats share three talks in ten.
 RANDOM: Final = "random"
-FORMAT_WEIGHTS: Final[dict[str, float]] = {"default": 20, "pitch": 1, "academic": 1, "corporate": 1.5, "keynote": 1.5}
+FORMAT_WEIGHTS: Final[dict[str, float]] = {
+    "default": 55,
+    "pitch": 1,
+    "academic": 1,
+    "corporate": 1.5,
+    "keynote": 1.5,
+    "infomercial": 1,
+    "documentary": 1,
+    "court": 1,
+    "museum": 1,
+    "wedding": 1,
+    "book_report": 1,
+}
 
 
 def choices() -> tuple[str, ...]:

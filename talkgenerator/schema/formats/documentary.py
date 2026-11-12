@@ -72,7 +72,7 @@ DOCUMENTARY: Final = Format(
     title_hint="like a nature documentary's title or episode: grand, hushed and a little dramatic, in a few words",
     job_hint="their part in the documentary, as its credits would put it: its narrator, its wildlife camera operator "
     "or its field researcher",
-    personas={"passionate_expert": 1.5, "time_traveller": 1.2},
+    personas={"nature_narrator": 9, "alien_anthropologist": 2.5, "passionate_expert": 1.5, "time_traveller": 1.2},
     themes={
         "dark minimal": 4,
         "clean keynote": 2,

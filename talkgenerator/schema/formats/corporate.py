@@ -73,7 +73,14 @@ CORPORATE: Final = Format(
     "an all-hands deck's, played straight",
     title_hint="like an all-hands' or a quarterly business review's title: the quarter, and a corporate slogan for it",
     job_hint="their position at the company, as its org chart says it, with the company's made-up name",
-    personas={"consultant": 6, "startup_founder": 1.5, "motivational_speaker": 1.5, "life_coach": 1.2},
+    # (×9, from ×6, since D79 brought the personas to 21: the consultant still presents about 30% of the all-hands)
+    personas={
+        "consultant": 9,
+        "startup_founder": 1.5,
+        "motivational_speaker": 1.5,
+        "life_coach": 1.2,
+        "it_support": 1.5,
+    },
     themes={
         "corporate": 5,
         "clip-art corporate": 2.5,

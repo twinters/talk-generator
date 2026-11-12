@@ -80,7 +80,7 @@ COURT: Final = Format(
     "something petty that went missing",
     job_hint="their part in the trial, as the court introduces them: the prosecutor, the counsel for the defence or "
     "the detective on the case",
-    personas={"conspiracy_blogger": 2.5, "medieval_historian": 1.3},
+    personas={"detective": 9, "conspiracy_blogger": 2.5, "medieval_historian": 1.3, "game_show_host": 1.2},
     themes={
         "newspaper": 4,
         "vintage paper": 2,

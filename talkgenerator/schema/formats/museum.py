@@ -75,7 +75,13 @@ MUSEUM: Final = Format(
     title_hint="like an exhibition's title: grand, with the museum's made-up name or a period of art",
     job_hint="their part at the museum, as the tour's leaflet introduces them (the head guide, the curator of an "
     "absurdly specific collection, a volunteer of thirty years)",
-    personas={"medieval_historian": 2.5, "passionate_expert": 1.5, "time_traveller": 1.5},
+    personas={
+        "museum_guide": 9,
+        "medieval_historian": 2.5,
+        "passionate_expert": 1.5,
+        "alien_anthropologist": 1.5,
+        "time_traveller": 1.5,
+    },
     themes={
         "vintage paper": 4,
         "clean keynote": 2.5,

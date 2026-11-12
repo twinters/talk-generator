@@ -67,6 +67,11 @@ FORMATS = {
 FAMILIES = list(themes.FAMILIES)
 
 
+def _format(name):
+    """A format's Format, by its module's constant of the format's name in capitals (PITCH, BOOK_REPORT)."""
+    return FORMATS[name].__dict__[name.upper()]
+
+
 def _part_of(generator_data, arc):
     """The part of the arc a slide generator makes slides of (None for the format's other slides)."""
     return next((tag for tag in generator_data.get_tags() if tag in arc.names()), None)
@@ -296,6 +301,31 @@ def test_a_formats_favourite_personas_present_it_more_often():
     assert personas.pick("none", random_util.Rng(1), pitch.PITCH.personas) is None
 
 
+# (D79: a newer format's specialist presents about 30% of its talks, as a pitch's founder does; the book report, which
+# has no specialist, is the kindergarten teacher's more often)
+NEWER_FAVOURITES = {
+    "infomercial": "infomercial_host",
+    "documentary": "nature_narrator",
+    "court": "detective",
+    "museum": "museum_guide",
+    "wedding": "best_man",
+    "book_report": "kindergarten_teacher",
+}
+
+
+@pytest.mark.parametrize("name", NEWER_FAVOURITES)
+def test_a_newer_formats_favourite_persona_presents_it_more_often(name):
+    picked = collections.Counter(
+        personas.pick(None, random_util.Rng(seed), _format(name).personas).name  # type: ignore[union-attr]
+        for seed in range(1300)
+    )
+    share = picked[NEWER_FAVOURITES[name]] / 1300
+    assert share > 2.5 / len(personas.PERSONAS), (name, share)  # (two and a half times its share without)
+    if name != "book_report":
+        assert share > 0.24, (name, share)
+    assert all(picked.get(other, 0) > 0 for other in personas.PERSONAS), name  # (every persona still presents some)
+
+
 def test_a_formats_talks_are_in_its_favourite_theme_families_more_often():
     def share(family, multipliers):
         picked = [themes.pick("random", random_util.Rng(seed).child("theme"), True, multipliers) for seed in range(800)]
@@ -459,7 +489,7 @@ def test_a_talk_that_leaves_its_format_to_its_seed_is_the_talk_of_the_format_it_
     # is the talk of the format its seed picked)
     founder = personas.persona("startup_founder")
     picked = set()
-    for seed in (1, 4, 9, 56):  # (a pitch, a keynote, a TED-like talk and an academic talk, as it happens)
+    for seed in (1, 9, 83, 5):  # (a pitch, a TED-like talk, a keynote and a court case, as it happens: D79's odds)
         deck = _talk(presentation_schema_types.RANDOM, seed, persona="startup_founder", theme="random")
         assert deck.schema_name == presentation_schema_types.pick_format("random", random_util.Rng(seed), founder)
         assert deck.to_json() == _talk(deck.schema_name, seed, persona="startup_founder", theme="random").to_json()
@@ -467,7 +497,7 @@ def test_a_talk_that_leaves_its_format_to_its_seed_is_the_talk_of_the_format_it_
         if deck.schema_name in FORMATS:
             assert check_arc(deck, 10) == []
         picked.add(deck.schema_name)
-    assert picked == {"pitch", "academic", "keynote", "default"}
+    assert picked == {"pitch", "default", "keynote", "court"}
 
 
 def test_a_classic_pitch_names_its_startup_and_an_academic_talk_its_affiliation(offline):

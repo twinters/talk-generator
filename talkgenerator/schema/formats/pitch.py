@@ -72,7 +72,14 @@ PITCH: Final = Format(
     "however absurd, and every slide is a pitch deck's, played straight",
     title_hint="like a startup pitch's title: the startup's made-up name and its one-line promise",
     job_hint="their role at the startup they pitch, with the startup's made-up name",
-    personas={"startup_founder": 6, "consultant": 2, "influencer": 1.5, "motivational_speaker": 1.5},
+    # (×9, from ×6, since D79 brought the personas to 21: the founder still presents about 30% of the pitches)
+    personas={
+        "startup_founder": 9,
+        "consultant": 2,
+        "influencer": 1.5,
+        "motivational_speaker": 1.5,
+        "infomercial_host": 1.5,
+    },
     themes={
         "startup": 4,
         "clean keynote": 1.6,
