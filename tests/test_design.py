@@ -29,6 +29,7 @@ from tests.test_deck import _every_kind_of_slide, _image, _pie_chart_data
 from tests.test_deck import images as images  # the fake image downloads (a fixture)
 from tests.test_karaoke_types import KARAOKE, SHORT_CELLS, _axes, every_karaoke_type
 from tests.test_karaoke_types import _longest as _karaoke_longest
+from tests.test_picture_prompts import PROMPTS, every_picture_prompt
 from tests.test_slide_types import EVERY_KIND, _built, _longest_texts
 from tests.test_slide_types import _deck as _deck_of
 from tests.test_slide_types import runs_of_new_types as _runs_of_new_types
@@ -387,6 +388,8 @@ def _runs(seed=1, theme=None):
         slides.MemeSlide(wide, "When the cat", "Sits on the keyboard"),
         # (and the ones from PowerPoint karaoke decks, with a photo and without, few words and many...)
         *(every_karaoke_type(wide) * 3),
+        # (and the slides of a picture to explain, D78: with pictures and an inkblot, a title and none)
+        *(every_picture_prompt(wide, tall) * 3),
         # (and the talk formats' process, whose words are short enough to go across, or one under the other)
         *(slides.ProcessSlide("Method", "Collect cats", "Clean data", "???", "Profit") for _ in range(3)),
         # (and, from D65, closing slides with a picture to end on, and an academic talk's references, with a picture of
@@ -475,8 +478,8 @@ def test_a_slide_gets_the_layouts_that_fit_its_elements(images):
 # (A compound, as Dutch and German have them, can be wider than a narrow box even at the box's smallest size: a free
 # model's "Mantelstromingen" didn't fit one)
 _LONG_WORD = "Brandweerkazernedeur"
-# (milestone 6's and the ones from PowerPoint karaoke decks have tests of their own)
-_OLDER_KINDS = [kind for kind in KINDS if kind not in EVERY_KIND and kind not in KARAOKE]
+# (milestone 6's, the ones from PowerPoint karaoke decks and the slides of a picture to explain have tests of their own)
+_OLDER_KINDS = [kind for kind in KINDS if kind not in EVERY_KIND and kind not in KARAOKE and kind not in PROMPTS]
 
 
 def _with_long_words(kind):

@@ -1252,6 +1252,189 @@ karaoke_slide_generators = _register(
     ],
 )
 
+# SLIDES OF A PICTURE TO EXPLAIN (docs/v5-plan.md, D78): a surprising picture that the presenter has to explain, with
+# little or no text, as improv suggestions and story cubes give a performer something to explain (the user's request
+# of 2026-11-12): Exhibit A, two pictures to pick one of, a picture equation, a picture to see something in (a face in
+# something: pareidolia, or an inkblot), and a before and after. One to three pictures a slide, as a slide has 8 seconds
+# on talkgenerator.com before something stands in for it (D67); an equation's things are emoji where their pictures
+# aren't found in time, and "What do you see?" an inkblot. Talks without fair use (ted) have no pareidolia, which only
+# Reddit has: their "What do you see?" is an inkblot
+_ODD_PICTURE = ImageSlot("an odd picture, as the evidence in a case", aesthetic="weird-stock", generate=True)
+_OPTION = ImageSlot("one of two things for the audience to pick from", aesthetic="weird-stock")
+_THING = ImageSlot("a thing in a picture equation", aesthetic="photo")
+_SURPRISE = ImageSlot("what two things make together in a picture equation: a surprise", aesthetic="weird-stock")
+# (searched for the plan's query, and then for any face: a planned search gets no subreddit's hot posts when it finds
+# none, as a classic one does, and a face in a thing to do with the topic is rare)
+_PAREIDOLIA = ImageSlot(
+    "a face in something that has none (pareidolia)", aesthetic="pareidolia", queries=("{}", "face")
+)
+_BEFORE = ImageSlot("the 'before' of a transformation", aesthetic="photo")
+_AFTER = ImageSlot(
+    "the 'after' of a transformation, which has nothing to do with its 'before'", aesthetic="weird-stock"
+)
+_WORDS = "in two to six plain English words"
+_EXHIBIT_HINTS = {
+    "picture_query": "an image search query for the odd picture that is the evidence: something concrete and "
+    f"surprising that the case could hinge on, {_WORDS}"
+}
+_PICK_ONE_HINTS = {
+    "picture_1_query": f"an image search query for the first thing to pick: something concrete, {_WORDS}",
+    "picture_2_query": "an image search query for the second thing to pick: something just as concrete, but absurdly "
+    f"different from the first, {_WORDS}",
+}
+_EQUATION_HINTS = {
+    "term_1_picture_query": "an image search query for a photo of the first thing, in one to four plain English words",
+    "term_2_picture_query": "an image search query for a photo of the second thing, in one to four plain English words",
+    "result_picture_query": f"an image search query for a picture of what the two make together, the surprise, {_WORDS}",
+}
+_PAREIDOLIA_HINTS = {
+    "picture_query": "an image search query for an everyday thing to do with the concept that could have a face in it "
+    "(pareidolia), in one or two plain English words: the thing's name"
+}
+_BEFORE_AFTER_HINTS = {
+    "before_picture_query": f"an image search query for the 'before' picture, of something to do with the concept, "
+    f"{_WORDS}",
+    "after_picture_query": "an image search query for the 'after' picture: something that has nothing to do with the "
+    f"first, as if the first became it, {_WORDS}",
+}
+_EQUATION_VARIANTS = (
+    Variant(2, frozenset({"title"}), "of three pictures (with their emoji, for a picture that isn't found)"),
+    Variant(1, frozenset({"title", "result_picture"}), "of two pictures that make an emoji"),
+    Variant(1, frozenset({"title", "term_1_picture", "term_2_picture"}), "of two emoji that make a picture"),
+    Variant(1, frozenset({"term_1_picture", "term_2_picture", "result_picture"}), "of three emoji, under a title"),
+)
+_WHAT_QUESTIONS = (
+    Variant(2, frozenset({"question"}), "under talkgenerator's 'What do you see?'"),
+    Variant(1, note="under a question of its own"),
+)
+_INKBLOT = (
+    "An inkblot that talkgenerator draws, as a Rorschach test has them, for the audience to say what they see in it and "
+    "the presenter to explain what everyone should see"
+)
+PICTURE_PROMPT_WEIGHTS: Final[dict[str, float]] = {
+    "exhibit": 1,
+    "pick_one": 0.8,
+    "equation": 0.8,
+    "what_do_you_see": 0.8,
+    "before_after": 0.7,
+}
+
+
+def _picture_prompts(pareidolia: bool, suffix: str = "") -> list[SlideGeneratorData]:
+    """The slides of a picture to explain, with pareidolia in "What do you see?" (in talks with fair use) or without
+    (an inkblot, always)."""
+    weights = PICTURE_PROMPT_WEIGHTS
+    if pareidolia:
+        seeing = Recipe(
+            "what_do_you_see",
+            (_PAREIDOLIA,),
+            brief="A picture of a face in something to do with the concept, which has none (pareidolia), for the "
+            "audience to say what they see in it and the presenter to explain what everyone should see",
+            hints=_PAREIDOLIA_HINTS,
+            variants=(
+                *_WHAT_QUESTIONS,
+                Variant(
+                    1,
+                    frozenset({"picture", "question"}),
+                    "this one an inkblot instead of a picture, which talkgenerator draws, as a Rorschach test has them",
+                ),
+            ),
+        )
+    else:
+        # (its picture left out: an inkblot, always)
+        seeing = Recipe(
+            "what_do_you_see", (_PAREIDOLIA,), brief=_INKBLOT, omit=frozenset({"picture"}), variants=_WHAT_QUESTIONS
+        )
+    return [
+        _drawn(
+            slide_texts.exhibit(_ODD_PICTURE),
+            slides.ExhibitSlide,
+            _middle(weights["exhibit"]),
+            ["exhibit"],
+            f"Exhibit A{suffix}",
+            Recipe(
+                "exhibit",
+                (_ODD_PICTURE,),
+                brief="Exhibit A: an odd picture to do with the concept, as the evidence in a case, for the "
+                "presenter to explain what it proves",
+                hints=_EXHIBIT_HINTS,
+                variants=(
+                    Variant(1, note="with a few words on its evidence tag"),
+                    Variant(1, frozenset({"note"}), "bare, without a note: the presenter says what it proves"),
+                ),
+            ),
+            repeats=1,
+        ),
+        _drawn(
+            slide_texts.pick_one(_OPTION, _OPTION),
+            slides.PickOneSlide,
+            _middle(weights["pick_one"]),
+            ["pick_one"],
+            f"Pick One{suffix}",
+            Recipe(
+                "pick_one",
+                (_OPTION, _OPTION),
+                brief="Two pictures to pick one of, without captions: two things to do with the concept that are "
+                "absurdly hard to choose between, for the audience to vote on and the presenter to explain",
+                hints=_PICK_ONE_HINTS,
+                variants=(
+                    Variant(2, frozenset({"title"}), "under talkgenerator's 'Pick one:'"),
+                    Variant(1, note="under a heading of its own"),
+                ),
+            ),
+            repeats=1,
+        ),
+        _drawn(
+            slide_texts.equation(_THING, _SURPRISE),
+            slides.EquationSlide,
+            _middle(weights["equation"]),
+            ["equation"],
+            f"Picture Equation{suffix}",
+            Recipe(
+                "equation",
+                (_THING, _THING, _SURPRISE),
+                brief="A picture equation about the concept, as story cubes tell a story: something to do with it plus "
+                "something else equals a surprise, for the presenter to explain how it adds up",
+                hints=_EQUATION_HINTS,
+                variants=_EQUATION_VARIANTS,
+            ),
+        ),
+        _drawn(
+            slide_texts.what_do_you_see(_PAREIDOLIA if pareidolia else None),
+            slides.WhatDoYouSeeSlide,
+            _middle(weights["what_do_you_see"]),
+            ["what_do_you_see"],
+            f"What Do You See{suffix}",
+            seeing,
+            repeats=1,
+        ),
+        _drawn(
+            slide_texts.before_after(_BEFORE, _AFTER),
+            slides.BeforeAfterSlide,
+            _middle(weights["before_after"]),
+            ["before_after"],
+            f"Before And After{suffix}",
+            Recipe(
+                "before_after",
+                (_BEFORE, _AFTER),
+                brief="A before and after about the concept: two pictures that have nothing to do with each other, as "
+                "a transformation, for the presenter to explain how the one became the other",
+                hints=_BEFORE_AFTER_HINTS,
+                variants=(
+                    Variant(2, frozenset({"title"}), "without a title"),
+                    Variant(1, note="under a title of its own"),
+                ),
+            ),
+            repeats=1,
+        ),
+    ]
+
+
+picture_prompt_slide_generators = _register("picture_prompts", _picture_prompts(pareidolia=True))
+picture_prompt_slide_generators_copyright_free = _register(
+    "picture_prompts_copyright_free", _picture_prompts(pareidolia=False, suffix=" (CRF)")
+)
+
 # THE TALK'S STRUCTURE: an agenda after the title, a section's divider in the middle, "Questions?" at the end
 _AGENDA_ITEMS = "three to five parts of the talk, in the order the slides after this one come, separated by |"
 _AGENDA_EMOJI = with_emoji("agenda", ("items",), {"items": _AGENDA_ITEMS}, each=True)
@@ -1489,6 +1672,7 @@ all_slide_generators = (
     + fun_fact_slide_generators
     + problem_slide_generators
     + karaoke_slide_generators
+    + picture_prompt_slide_generators
     + structure_slide_generators
     + native_diagram_slide_generators
     + conclusion_slide_generators
@@ -1517,6 +1701,10 @@ SPARE_WEIGHTS: Final[dict[str, float]] = {
     "Dare": 0.6,
     "Error Message": 0.5,
     "Wall of Text": 0.4,
+    # (and two slides of a picture to explain, which look none up when they stand in: an inkblot to see something in,
+    # and a picture equation of emoji, D78)
+    "What Do You See": 0.8,
+    "Picture Equation": 0.8,
 }
 SPARE_GENERATORS: Final = tuple((slide_generators.get(name), weight) for name, weight in SPARE_WEIGHTS.items())
 
@@ -1550,6 +1738,11 @@ default_max_allowed_tags = {
     "red_flags": 1,
     "reviews": 1,
     "error_message": 1,
+    "exhibit": 2,  # (Exhibit A, and later in the talk, now and then, Exhibit B: D78)
+    "pick_one": 1,
+    "equation": 1,
+    "what_do_you_see": 1,
+    "before_after": 1,
     "agenda": 1,
     "questions": 1,
     "timeline": 1,

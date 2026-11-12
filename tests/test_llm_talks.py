@@ -748,7 +748,9 @@ def test_every_recipe_of_the_schemas_fits_its_kind():
         assert recipe is not None, generator_.name
         kind = KINDS[recipe.kind]
         assert len(recipe.images) == len(kind.images), generator_.name
-        assert set(recipe.hints) <= {text.name for text in kind.texts}, generator_.name
+        # (its hints are for the kind's texts, and for its pictures' queries: what a picture to explain searches for)
+        queries = {f"{slot}_query" for slot in kind.images}
+        assert set(recipe.hints) <= {text.name for text in kind.texts} | queries, generator_.name
         # (their variants leave out fields the kind has, which may stay empty, or an image slot: a fun fact's photo)
         for variant in recipe.variants:
             assert variant.omit <= {text.name for text in kind.texts if text.optional} | set(kind.images), (

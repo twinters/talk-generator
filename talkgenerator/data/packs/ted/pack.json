@@ -1,7 +1,7 @@
 {
   "format": "ted",
   "about": "The classic texts of TED-like talks (the default, ted, interview and test schemas): a grammar per kind of slide, whose rules are lists of templates (see talkgenerator.sources.packs)",
-  "version": 8,
+  "version": 9,
   "versions": {
     "1": "2026-11-08: v4's templates and milestone 6's, from data/text-templates and data/memes.json, unchanged (D54)",
     "2": "2026-11-08: grown in a TED talk's voice, several times the options per slot (titles, about me, history, statements, captions, charts, diagrams, numbers, quizzes, mockups, structure, karaoke types, memes and conclusions), speaking of the topic as English does (generic, one, bare), linted by tests/test_content_pack.py",
@@ -10,7 +10,8 @@
     "5": "2026-11-08: flavour texts (D60): a dare to tell a real dad joke ({joke}), and a real piece of advice as the closing slide's line ({advice})",
     "6": "2026-11-09: livelier dares and closing slides (D65): dares that are real challenges for the presenter (an accent, a gesture, a word on every slide), dares for the whole audience (a show of hands, a call and response), and closing slides' last tips and callback lines",
     "7": "2026-11-09: problem slides, a TED-like talk's why now and then (D69): headings, and problems on five angles (weird, everyday, crossed with something else, typical, and a real how-to), each with a line under it, in a TED speaker's voice",
-    "8": "2026-11-10: less text and more surprise (D73): problems of a few words, each with a short line under it; chart claims for charts whose axes say what they compare (no more \"X vs. Y\" titles); short last reviews and red flags, an emoji alone among them, that break their slides' pattern; and three captions in a row whose third breaks the first two's"
+    "8": "2026-11-10: less text and more surprise (D73): problems of a few words, each with a short line under it; chart claims for charts whose axes say what they compare (no more \"X vs. Y\" titles); short last reviews and red flags, an emoji alone among them, that break their slides' pattern; and three captions in a row whose third breaks the first two's",
+    "9": "2026-11-12: slides of a picture to explain (D78): notes on an exhibit's evidence tag, headings over two pictures to pick one of, picture equations' titles, questions over a picture to see something in (or an inkblot), and before-and-after titles"
   },
   "slots": {
     "title.talk_title": {"variables": ["seed"], "field": "title.title"},
@@ -129,6 +130,11 @@
     "karaoke.error_message": {"variables": ["seed", "related"], "field": "error_message.message"},
     "karaoke.error_code": {"variables": [], "field": "error_message.code"},
     "karaoke.error_buttons": {"variables": [], "limit": 14, "parts": 3},
+    "pictures.exhibit_note": {"variables": ["seed", "number", "year"], "field": "exhibit.note"},
+    "pictures.pick_one_title": {"variables": ["seed"], "field": "pick_one.title"},
+    "pictures.equation_title": {"variables": ["seed"], "field": "equation.title"},
+    "pictures.what_question": {"variables": ["seed"], "field": "what_do_you_see.question"},
+    "pictures.before_after_title": {"variables": ["seed"], "field": "before_after.title"},
     "memes.*": {"variables": ["seed", "related"], "field": "meme.text_1", "parts": 0},
     "conclusions.conclusion_title": {"variables": ["seed", "topic", "presenter", "title"], "field": "two_columns.title"},
     "conclusions.two_conclusions": {"variables": ["seed", "topic", "presenter", "title"], "field": "two_columns.caption_1", "parts": 2},

@@ -233,6 +233,19 @@ SPECS: Final[dict[str, TextSpec]] = {
     "error code": TextSpec("body", 32, 24, align="left", italic=True, on_fill=True),
     "centred error code": TextSpec("body", 32, 24, align="center", italic=True, on_fill=True),
     "button": TextSpec("body", 40, 24, align="center", on_fill=True, bold=True),
+    # (slides of a picture to explain, D78: an exhibit's evidence tag and its marker, and its words under it; the "OR"
+    # on a disc between two pictures; an equation's signs and its things, an emoji as large as its card takes)
+    "tag label": TextSpec("heading", 110, 36, align="center", heading=True, on_fill=True, effect=False),
+    "tag case": TextSpec("body", 40, 24, align="center", on_fill=True),
+    "tag note": TextSpec("body", 44, 24, align="center", anchor="top", italic=True, on_fill=True),
+    "marker letter": TextSpec("heading", 150, 60, align="center", heading=True, on_fill=True, effect=False),
+    "exhibit label": TextSpec("heading", 64, 32, align="left", heading=True),
+    "exhibit case": TextSpec("body", 40, 24, color="muted", align="right"),
+    "exhibit note": TextSpec("body", 40, 24, color="muted", align="left", italic=True),
+    "either or": TextSpec("heading", 56, 28, align="center", heading=True, on_fill=True, effect=False),
+    "sign": TextSpec("heading", 180, 80, color="accent", align="center", heading=True, effect=False),
+    "thing": TextSpec("body", 240, 28, align="center", on_fill=True),
+    "big thing": TextSpec("body", 420, 32, align="center", on_fill=True),
     # (native diagrams)
     "date": TextSpec("body", 72, 28, align="center", anchor="bottom", bold=True),  # (not in capitals: too wide)
     "row date": TextSpec("body", 64, 28, align="right", bold=True),
@@ -3698,6 +3711,367 @@ def _error_message(stacked: bool) -> Callable[[dict[str, Content], Theme], Place
     return error_message
 
 
+# SLIDES OF A PICTURE TO EXPLAIN (docs/v5-plan.md, D78): the picture as large as it fits, and talkgenerator's few words
+# on shapes of their own (an evidence tag, an evidence marker, a disc, a sticker), so that they read on any picture; an
+# equation's things side by side or two stacked beside what they make, a thing that's an emoji on a card, as a story
+# cube's face has it; and for a "What do you see?" without a picture, an inkblot, drawn as polygons and ellipses
+_MANILA: Final = "#e9cf9a"  # an evidence tag's card
+_MARKER: Final = "#f6c700"  # an evidence marker's yellow
+# An evidence tag, pointing left (where its hole and its string are), and an evidence marker, a tent seen from the front
+_TAG: Final = ((0.0, 0.12), (0.1, 0.0), (1.0, 0.0), (1.0, 1.0), (0.1, 1.0), (0.0, 0.88))
+_TENT: Final = ((0.16, 0.0), (0.84, 0.0), (1.0, 1.0), (0.0, 1.0))
+_TAG_SIZE: Final = (520.0, 640.0)
+_DISC: Final = 168.0  # the disc of the "OR" between two pictures
+_SIGN: Final = 150.0  # the room of an equation's "+" and "="
+_CARD_CORNER: Final = 28.0  # (an equation's thing that's an emoji, on its card)
+_STICKER_WIDTH: Final = 320.0  # (a before's and an after's word)
+
+
+def _string(start: tuple[float, float], end: tuple[float, float], colour: str, width: float = 5.0) -> ShapeElement:
+    """A string from one point to another, as a thin rectangle turned their way."""
+    (x0, y0), (x1, y1) = start, end
+    length = math.hypot(x1 - x0, y1 - y0)
+    middle = ((x0 + x1) / 2, (y0 + y1) / 2)
+    box = Box(x=middle[0] - length / 2, y=middle[1] - width / 2, w=max(length, 1.0), h=width)
+    return ShapeElement(role="string", box=box, color=colour, rotation=math.degrees(math.atan2(y1 - y0, x1 - x0)))
+
+
+def _exhibit_tag(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The picture whole on the left, as large as it fits, and beside it an evidence tag tied to it by a string from
+    the hole at its pointed end: the exhibit's label big on the tag, a rule and its case's number under it, and its
+    note at the tag's foot."""
+    palette = theme.palette
+    placement = Placement("v5/exhibit")
+    width, height = _TAG_SIZE
+    picture = roles.get("picture")
+    area = Box(x=MARGIN, y=MARGIN, w=WIDTH - 2 * MARGIN - width - 96, h=_CONTENT_BOTTOM - MARGIN)
+    shown = _whole(picture, area) if isinstance(picture, ImageElement) else area
+    placement.boxes["picture"] = (shown, "quote")
+    middle = min(max(shown.y + shown.h / 2, MARGIN + height / 2), _CONTENT_BOTTOM - height / 2)
+    tag = Box(x=WIDTH - MARGIN - width, y=middle - height / 2, w=width, h=height)
+    hole = Box(x=tag.x + 30, y=middle - 22, w=44, h=44)
+    string = color.readable_on(palette.muted, _backgrounds(theme), LINE_CONTRAST)
+    placement.shapes += [
+        _string((shown.x + shown.w - 12, middle), (hole.x + hole.w / 2, middle), string),
+        ShapeElement(role="tag", shape="polygon", points=_TAG, box=tag, color=_MANILA),
+        ShapeElement(role="tag hole", shape="ellipse", box=hole, color=palette.background),
+    ]
+    ink = _on([_MANILA], theme)
+    inner = Box(x=tag.x + 100, y=tag.y + 48, w=tag.w - 140, h=tag.h - 96)
+    rule = inner.y + 300
+    placement.shapes.append(
+        ShapeElement(role="tag rule", box=Box(x=inner.x, y=rule, w=inner.w, h=4), color=ink, opacity=0.5)
+    )
+    for role, box, spec in (
+        ("label", Box(x=inner.x, y=inner.y, w=inner.w, h=rule - 24 - inner.y), "tag label"),
+        ("case", Box(x=inner.x, y=rule + 24, w=inner.w, h=64), "tag case"),
+        ("note", Box(x=inner.x, y=rule + 112, w=inner.w, h=inner.y + inner.h - rule - 112), "tag note"),
+    ):
+        if role in roles:
+            placement.boxes[role] = (box, spec)
+            placement.colors[role] = ink
+    return placement
+
+
+def _exhibit_marker(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The picture whole, as large as it fits above its words, with an evidence marker standing at its lower left
+    corner (a yellow tent, with the exhibit's letter); under it, the label, and the case's number at the right, and
+    the note under them."""
+    placement = Placement("v5/exhibit-marker")
+    words = _CONTENT_BOTTOM - (148 if "note" in roles else 80)
+    marker = Box(x=0, y=0, w=150, h=176)
+    area = Box(x=MARGIN + 64, y=56, w=WIDTH - 2 * MARGIN - 128, h=words - 40 - 56)
+    picture = roles.get("picture")
+    shown = _whole(picture, area) if isinstance(picture, ImageElement) else area
+    placement.boxes["picture"] = (shown, "quote")
+    marker = marker.model_copy(update={"x": shown.x - 64, "y": shown.y + shown.h + 24 - marker.h})
+    placement.overlays.append(ShapeElement(role="marker", shape="polygon", points=_TENT, box=marker, color=_MARKER))
+    placement.boxes["letter"] = (
+        Box(x=marker.x + 28, y=marker.y + 36, w=marker.w - 56, h=marker.h - 52),
+        "marker letter",
+    )
+    placement.colors["letter"] = _on([_MARKER], theme, color.LARGE_TEXT_CONTRAST)
+    placement.boxes["label"] = (Box(x=MARGIN, y=words, w=1040, h=72), "exhibit label")
+    placement.boxes["case"] = (Box(x=MARGIN + 1080, y=words, w=WIDTH - 2 * MARGIN - 1080, h=72), "exhibit case")
+    if "note" in roles:
+        placement.boxes["note"] = (Box(x=MARGIN, y=words + 80, w=WIDTH - 2 * MARGIN, h=60), "exhibit note")
+    return placement
+
+
+def _disc(placement: Placement, theme: Theme, box: Box, role: str) -> None:
+    """A short word (the "OR" between two pictures) on a disc in the theme's accent, over what it's on."""
+    accent = theme.palette.accent
+    placement.overlays.append(ShapeElement(role=f"{role} disc", shape="ellipse", box=box, color=accent))
+    placement.boxes[role] = (_inset(box, box.w * 0.18), "either or")
+    placement.colors[role] = _on([accent], theme, color.LARGE_TEXT_CONTRAST)
+
+
+def _pick_one(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The two pictures side by side, as large as they fit under the heading, with the talk's "OR" on a disc in the
+    theme's accent between them, over both."""
+    placement = Placement("v5/pick-one")
+    top = _with_title(placement, roles, theme) + 8
+    gap = 96.0
+    width, height = (WIDTH - 2 * MARGIN - gap) / 2, _CONTENT_BOTTOM - top
+    for index in (1, 2):
+        box = Box(x=MARGIN + (index - 1) * (width + gap), y=top, w=width, h=height)
+        placement.boxes[f"picture_{index}"] = (box, "quote")
+    _disc(placement, theme, Box(x=(WIDTH - _DISC) / 2, y=top + (height - _DISC) / 2, w=_DISC, h=_DISC), "or")
+    return placement
+
+
+def _band_title(placement: Placement, theme: Theme, role: str = "title") -> Box:
+    """A heading on a band across the top of pictures that fill the slide; the band."""
+    band = Box(x=0, y=0, w=WIDTH, h=170)
+    placement.overlays.append(
+        ShapeElement(role="title band", box=band, color=theme.palette.surface, opacity=BAND_OPACITY)
+    )
+    placement.boxes[role] = (Box(x=MARGIN, y=16, w=WIDTH - 2 * MARGIN, h=band.h - 32), "band title")
+    return band
+
+
+def _halves(placement: Placement, roles: dict[str, Content], theme: Theme, pictures: Sequence[str]) -> None:
+    """Two pictures filling the slide's halves, with a seam between them in the theme's surface colour, which comes
+    with the second."""
+    for index, role in enumerate(pictures):
+        placement.boxes[role] = (Box(x=index * WIDTH / 2, y=0, w=WIDTH / 2, h=HEIGHT), "quote")
+    seam = Box(x=WIDTH / 2 - 4, y=0, w=8, h=HEIGHT)
+    click = _click(roles, pictures[1])
+    placement.overlays.append(ShapeElement(role="seam", box=seam, color=theme.palette.surface, appears_on_click=click))
+
+
+def _pick_one_split(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The two pictures filling the slide's halves, the heading on a band across their top, and the "OR" on its disc in
+    the middle of them."""
+    placement = Placement("v5/pick-one-split", photo=True)  # (pictures to the slide's edges: none of a box's frame)
+    _halves(placement, roles, theme, ("picture_1", "picture_2"))
+    band = _band_title(placement, theme)
+    middle = (band.y + band.h + HEIGHT) / 2
+    _disc(placement, theme, Box(x=(WIDTH - _DISC) / 2, y=middle - _DISC / 2, w=_DISC, h=_DISC), "or")
+    return placement
+
+
+def _thing(
+    placement: Placement, roles: dict[str, Content], theme: Theme, thing: str, box: Box, spec: str = "thing"
+) -> None:
+    """An equation's thing in its box: its picture, filling it, or else its emoji (or its words) on a card in the
+    theme's surface colour, as a story cube's face, which comes with it."""
+    if isinstance(roles.get(_picture_role(thing)), ImageElement):
+        placement.boxes[_picture_role(thing)] = (box, "quote")
+        placement.cover.add(_picture_role(thing))
+        return
+    surface = theme.palette.surface
+    card = ShapeElement(
+        role=f"{thing} card", box=box, color=surface, corner=_CARD_CORNER, appears_on_click=_click(roles, thing)
+    )
+    placement.shapes.append(card)
+    placement.boxes[thing] = (_inset(box, 24), spec)
+    placement.colors[thing] = _on([surface], theme)
+
+
+def _equation_row(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The equation in a row, under its title (if any): its three things in squares of one size, a "+" and a "=" in the
+    theme's accent between them."""
+    placement = Placement("v5/equation")
+    top = _with_title(placement, roles, theme) if "title" in roles else MARGIN
+    side = (WIDTH - 2 * MARGIN - 2 * _SIGN) / 3
+    y = top + (_CONTENT_BOTTOM - top - side) / 2
+    for index, thing in enumerate(classic.EQUATION):
+        _thing(placement, roles, theme, thing, Box(x=MARGIN + index * (side + _SIGN), y=y, w=side, h=side))
+    for index, sign in enumerate(("plus", "equals")):
+        placement.boxes[sign] = (Box(x=MARGIN + side + index * (side + _SIGN), y=y, w=_SIGN, h=side), "sign")
+    return placement
+
+
+def _equation_stacked(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The equation's two things one over the other on the left, with the "+" between them, and what they make large
+    on the right, after the "=", under the title (if any)."""
+    placement = Placement("v5/equation-stacked")
+    top = _with_title(placement, roles, theme) if "title" in roles else MARGIN
+    height = _CONTENT_BOTTOM - top
+    width, gap = 540.0, 24.0
+    term = (height - _SIGN) / 2
+    _thing(placement, roles, theme, "term_1", Box(x=MARGIN, y=top, w=width, h=term))
+    placement.boxes["plus"] = (Box(x=MARGIN, y=top + term, w=width, h=_SIGN), "sign")
+    _thing(placement, roles, theme, "term_2", Box(x=MARGIN, y=top + term + _SIGN, w=width, h=term))
+    equals = MARGIN + width + gap
+    placement.boxes["equals"] = (Box(x=equals, y=top, w=_SIGN, h=height), "sign")
+    left = equals + _SIGN + gap
+    side = min(WIDTH - MARGIN - left, height)
+    result = Box(x=left + (WIDTH - MARGIN - left - side) / 2, y=top + (height - side) / 2, w=side, h=side)
+    _thing(placement, roles, theme, "result", result, "big thing")
+    return placement
+
+
+def _question_on_top(placement: Placement, theme: Theme) -> float:
+    """The question across the top, as a title is, with the theme's decoration; where what's under it can start."""
+    placement.boxes["question"] = (_TITLE, "title")
+    placement.shapes += _decoration(theme, _TITLE, gap=16)
+    return _CONTENT_TOP
+
+
+def _what_do_you_see(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The question across the top, and the picture whole under it, as large as it fits."""
+    placement = Placement("v5/what-do-you-see")
+    top = _question_on_top(placement, theme)
+    area = Box(x=MARGIN, y=top, w=WIDTH - 2 * MARGIN, h=_CONTENT_BOTTOM - top)
+    picture = roles.get("picture")
+    placement.boxes["picture"] = (_whole(picture, area) if isinstance(picture, ImageElement) else area, "quote")
+    return placement
+
+
+def _what_do_you_see_band(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The picture over the whole slide, and the question on a band across its foot."""
+    placement = Placement("v5/what-do-you-see-band", photo=True)
+    placement.boxes["picture"] = (FULL, "quote")
+    placement.cover.add("picture")
+    band = Box(x=0, y=790, w=WIDTH, h=170)
+    placement.overlays.append(
+        ShapeElement(role="question band", box=band, color=theme.palette.surface, opacity=BAND_OPACITY)
+    )
+    placement.boxes["question"] = (Box(x=MARGIN, y=band.y + 16, w=WIDTH - 2 * MARGIN, h=band.h - 32), "band title")
+    return placement
+
+
+# An inkblot's blobs, its drops, how far from its middle it reaches (a share of its card's width), and how much of the
+# card's height it takes
+_BLOBS: Final = (5, 8)
+_DROPS: Final = (3, 7)
+_REACH: Final = 0.42
+_BLOT_HEIGHT: Final = 0.76
+
+
+def _inkblot_on(placement: Placement, theme: Theme, card: Box) -> None:
+    """An inkblot on a card in the theme's surface colour, as a Rorschach test has them, by the dice (the slide's, which
+    lay it out, so that its blot is the same every time): a body of ink down the card's middle, blobs of ink on its
+    right half, mostly near the middle, the same blobs mirrored on its left half, and drops around them. In ink that
+    reads on the card."""
+    surface = theme.palette.surface
+    ink = _on([surface], theme)
+    shapes = [ShapeElement(role="inkblot card", box=card, color=surface, corner=16)]
+    axis = card.x + card.w / 2
+    reach = min(card.w * _REACH, card.h * 0.75)
+    height = card.h * _BLOT_HEIGHT
+    top = card.y + (card.h - height) / 2
+
+    def pair(box: Box, points: tuple[tuple[float, float], ...] = ()) -> None:
+        mirror = box.model_copy(update={"x": 2 * axis - box.x - box.w})
+        shape: Literal["polygon", "ellipse"] = "polygon" if points else "ellipse"
+        shapes.append(ShapeElement(role="inkblot", shape=shape, points=points, box=box, color=ink))
+        shapes.append(
+            ShapeElement(role="inkblot", shape=shape, points=geometry.mirrored(points), box=mirror, color=ink)
+        )
+
+    body = (reach * random_util.uniform(0.22, 0.36), height * random_util.uniform(0.5, 0.85))
+    body_y = top + (height - body[1]) * random_util.random()
+    shapes.append(
+        ShapeElement(
+            role="inkblot",
+            shape="ellipse",
+            box=Box(x=axis - body[0] / 2, y=body_y, w=body[0], h=body[1]),
+            color=ink,
+        )
+    )
+    for _ in range(random_util.randint(*_BLOBS)):
+        size = height * random_util.uniform(0.14, 0.36)
+        w, h = size * random_util.uniform(0.8, 1.5), size * random_util.uniform(0.7, 1.3)
+        h = min(h, height)
+        x = axis - w * 0.3 + (reach - w * 0.7) * random_util.random() ** 1.6
+        y = top + (height - h) * random_util.random()
+        wobbles = [(random_util.uniform(0.04, 0.2), random_util.random()) for _ in range(3)]
+        pair(Box(x=min(x, axis + reach - w), y=y, w=w, h=h), geometry.blob(wobbles))
+    for _ in range(random_util.randint(*_DROPS)):
+        size = height * random_util.uniform(0.02, 0.06)
+        x = axis + reach * random_util.uniform(0.3, 1.0) - size
+        y = top + (height - size) * random_util.random()
+        pair(Box(x=x, y=y, w=size, h=size))
+    placement.shapes += shapes
+
+
+def _inkblot(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The question across the top, and an inkblot on a card under it."""
+    placement = Placement("v5/inkblot")
+    top = _question_on_top(placement, theme) + 8
+    width = min(1240.0, (_CONTENT_BOTTOM - top) * 1.6)
+    _inkblot_on(placement, theme, Box(x=(WIDTH - width) / 2, y=top, w=width, h=_CONTENT_BOTTOM - top))
+    return placement
+
+
+def _inkblot_side(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The question big on the left, and an inkblot on a card on the right."""
+    placement = Placement("v5/inkblot-side")
+    title = Box(x=MARGIN, y=MARGIN, w=_SIDE_TITLE_WIDTH, h=HEIGHT - 2 * MARGIN - 100)
+    placement.boxes["question"] = (title, "side title")
+    placement.shapes += _decoration(_left_aligned(theme), title, gap=12)
+    left = MARGIN + _SIDE_TITLE_WIDTH + _SIDE_GAP
+    _inkblot_on(placement, theme, Box(x=left, y=MARGIN, w=WIDTH - MARGIN - left, h=_CONTENT_BOTTOM - MARGIN))
+    return placement
+
+
+def _inkblot_beside(roles: dict[str, Content]) -> bool:
+    """Whether a "What do you see?" slide is an inkblot (it has no picture), whose question fits beside it: no word
+    too long for the side."""
+    question = roles.get("question")
+    return (
+        "picture" not in roles
+        and isinstance(question, TextElement)
+        and all(len(word) <= 15 for word in question.text.split())
+    )
+
+
+def _word_sticker(placement: Placement, roles: dict[str, Content], theme: Theme, role: str, box: Box) -> None:
+    """A before's or an after's word on a sticker in the theme's accent, over its picture, which comes with it."""
+    accent = theme.palette.accent
+    click = _click(roles, role)
+    placement.overlays.append(ShapeElement(role=f"{role} sticker", box=box, color=accent, appears_on_click=click))
+    placement.boxes[role] = (_inset(box, 16), "sticker")
+    placement.colors[role] = _on([accent], theme, color.LARGE_TEXT_CONTRAST)
+
+
+def _arrow_to(placement: Placement, roles: dict[str, Content], theme: Theme, box: Box) -> None:
+    """An arrow in the theme's accent, pointing right, which comes with the after."""
+    colour = color.readable_on(theme.palette.accent, _backgrounds(theme), LINE_CONTRAST)
+    placement.overlays.append(
+        ShapeElement(
+            role="arrow",
+            shape="polygon",
+            points=geometry.arrow(),
+            box=box,
+            color=colour,
+            appears_on_click=_click(roles, "after"),
+        )
+    )
+
+
+def _before_after(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The before and the after side by side under the title (if any), each with its word on a sticker over its top
+    left corner, and an arrow between them, which comes with the after."""
+    placement = Placement("v5/before-after")
+    top = (_with_title(placement, roles, theme) if "title" in roles else MARGIN) + 48
+    gap = 200.0
+    width, height = (WIDTH - 2 * MARGIN - gap) / 2, _CONTENT_BOTTOM - top
+    for index, when in enumerate(("before", "after")):
+        box = Box(x=MARGIN + index * (width + gap), y=top, w=width, h=height)
+        placement.boxes[f"{when}_picture"] = (box, "quote")
+        _word_sticker(placement, roles, theme, when, Box(x=box.x - 24, y=box.y - 48, w=_STICKER_WIDTH, h=96))
+    _arrow_to(placement, roles, theme, Box(x=MARGIN + width + 36, y=top + height / 2 - 60, w=gap - 72, h=120))
+    return placement
+
+
+def _before_after_split(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The before and the after filling the slide's halves, each with its word on a sticker at its foot, the title (if
+    any) on a band across their top, and an arrow in the middle, which comes with the after."""
+    placement = Placement("v5/before-after-split", photo=True)
+    _halves(placement, roles, theme, ("before_picture", "after_picture"))
+    top = _band_title(placement, theme).h if "title" in roles else 0.0
+    for index, when in enumerate(("before", "after")):
+        x = index * WIDTH / 2 + 64
+        _word_sticker(placement, roles, theme, when, Box(x=x, y=HEIGHT - 120 - 96, w=_STICKER_WIDTH, h=96))
+    middle = (top + HEIGHT) / 2
+    _arrow_to(placement, roles, theme, Box(x=WIDTH / 2 - 90, y=middle - 70, w=180, h=140))
+    return placement
+
+
 @dataclass(frozen=True)
 class _Layout:
     """One of a slide type's layouts: its name, what places its elements, how likely it's picked (against the type's
@@ -3883,5 +4257,29 @@ _LAYOUTS: Final[dict[str, tuple[_Layout, ...]]] = {
     "error_message": (
         _Layout("v5/error-message", _error_message(stacked=False)),
         _Layout("v5/error-message-stacked", _error_message(stacked=True), 0.9),
+    ),
+    # (slides of a picture to explain: D78)
+    "exhibit": (
+        _Layout("v5/exhibit", _exhibit_tag),
+        _Layout("v5/exhibit-marker", _exhibit_marker, 0.9),
+    ),
+    "pick_one": (
+        _Layout("v5/pick-one", _pick_one),
+        _Layout("v5/pick-one-split", _pick_one_split, 0.8),
+    ),
+    "equation": (
+        _Layout("v5/equation", _equation_row),
+        _Layout("v5/equation-stacked", _equation_stacked, 0.8),
+    ),
+    # (without a picture, an inkblot)
+    "what_do_you_see": (
+        _Layout("v5/inkblot", _inkblot, fits=_without("picture")),
+        _Layout("v5/inkblot-side", _inkblot_side, 0.7, _inkblot_beside),
+        _Layout("v5/what-do-you-see", _what_do_you_see, fits=_has("picture")),
+        _Layout("v5/what-do-you-see-band", _what_do_you_see_band, 0.8, _has("picture")),
+    ),
+    "before_after": (
+        _Layout("v5/before-after", _before_after),
+        _Layout("v5/before-after-split", _before_after_split, 0.8),
     ),
 }

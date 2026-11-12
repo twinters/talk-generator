@@ -25,6 +25,7 @@ from typing import TYPE_CHECKING, Any, Final
 from pptx.chart.data import ChartData
 from pptx.enum.chart import XL_CHART_TYPE
 
+from talkgenerator.models import classic
 from talkgenerator.models.deck import VennDiagram
 from talkgenerator.models.plan import SlidePlan
 from talkgenerator.plan.languages import Language
@@ -876,6 +877,41 @@ def _problem(texts: Mapping[str, str | None], images: Mapping[str, Any], languag
     )
 
 
+# Slides of a picture to explain (D78): talkgenerator adds their words, in the talk's language ("Exhibit A" and a case's
+# number, "Pick one:" and "OR", "What do you see?", "Before" and "After"), where the model wrote no heading of its own
+
+
+def _exhibit(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    # (the deck letters a talk's later exhibits B, C..., of its first one's case)
+    case = slides.case_number(language)
+    return slides.ExhibitSlide(language.exhibit, case, images.get("picture"), texts.get("note"))
+
+
+def _pick_one(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    title = (texts.get("title") or "").strip() or language.pick_one
+    return slides.PickOneSlide(title, images.get("picture_1"), images.get("picture_2"), language.either_or)
+
+
+def _equation(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    # (a thing whose picture wasn't found, or wasn't asked for, is its emoji)
+    things = [texts.get(thing) for thing in classic.EQUATION]
+    pictures = {thing: images.get(slides.picture_role(thing)) for thing in classic.EQUATION}
+    return slides.EquationSlide(texts.get("title"), *things, pictures=pictures)
+
+
+def _what_do_you_see(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    # (without a picture, an inkblot, which its layout draws)
+    question = (texts.get("question") or "").strip() or language.what_do_you_see
+    return slides.WhatDoYouSeeSlide(question, images.get("picture"))
+
+
+def _before_after(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    before, after = language.before_after
+    return slides.BeforeAfterSlide(
+        texts.get("title"), before, images.get("before_picture"), after, images.get("after_picture")
+    )
+
+
 def _button(text: str) -> str:
     """A dialog's button as long as one may be: cut between words, without a little word left hanging at its end
     ("Become the", of "Become the plant")."""
@@ -1020,6 +1056,11 @@ PROBLEM_TEXT: Final = 60
 PROBLEM_DETAIL: Final = 60
 # What an alignment chart's description of its cells says of the punchline's
 _PUNCHLINE: Final = {"chaotic_evil": ": the punchline"}
+# How long the words on a slide of a picture to explain may be (D78): a few words on an exhibit's tag, a heading or a
+# question of a slide's own, and an equation's thing, which is an emoji (or a word or two)
+EXHIBIT_NOTE: Final = 40
+SHORT_HEADING: Final = 40
+EQUATION_TERM: Final = 16
 
 
 def _review(index: int, which: str, optional: bool = False) -> tuple[TextField, TextField, TextField]:
@@ -1804,6 +1845,88 @@ KINDS: Final[dict[str, Kind]] = {
             ("background", "photo"),
             _problem,
             optional_images=frozenset({"background", "photo"}),
+        ),
+        # Slides of a picture to explain, with little or no text (D78): the presenter explains what it proves, which one
+        # to pick, how it adds up, what everyone sees in it, or how the one became the other
+        Kind(
+            "exhibit",
+            "Exhibit A: one odd picture, as the evidence in a case, with an evidence tag beside it or a marker on it "
+            "(talkgenerator adds 'Exhibit A' and a case number; a later exhibit in the talk is Exhibit B, of the same "
+            "case), and a short note on the tag, if it has one: the presenter explains what it proves.",
+            (
+                TextField(
+                    "note",
+                    "a few words on the evidence tag about the picture, as a police report notes where or when it was "
+                    "found",
+                    EXHIBIT_NOTE,
+                    optional=True,
+                ),
+            ),
+            ("picture",),
+            _exhibit,
+        ),
+        Kind(
+            "pick_one",
+            "Pick one: two pictures side by side, without captions, with 'OR' between them, under 'Pick one:' "
+            "(talkgenerator adds both, unless the slide has a heading of its own): the audience picks, and the "
+            "presenter explains.",
+            (
+                TextField(
+                    "title",
+                    "a heading of the slide's own over the two pictures, that asks the audience to choose, in a few "
+                    "words",
+                    SHORT_HEADING,
+                    optional=True,
+                ),
+            ),
+            ("picture_1", "picture_2"),
+            _pick_one,
+        ),
+        Kind(
+            "equation",
+            "A picture equation, as story cubes tell a story: a thing plus another thing equals a third, the "
+            "punchline, which appears on a click; each thing a picture, or else an emoji (talkgenerator adds the + and "
+            "the =): the presenter explains how it adds up.",
+            (
+                TextField("title", "a title over the equation, in a few words", SHORT_HEADING, optional=True),
+                TextField("term_1", "a single emoji for the first thing", EQUATION_TERM),
+                TextField("term_2", "a single emoji for the second thing, which is added to the first", EQUATION_TERM),
+                TextField(
+                    "result", "a single emoji for what the two make together: the surprising punchline", EQUATION_TERM
+                ),
+            ),
+            tuple(slides.picture_role(thing) for thing in classic.EQUATION),
+            _equation,
+            # (a thing's picture, where its variant has one: the thing is its emoji when it isn't found in time)
+            optional_images=frozenset(slides.picture_role(thing) for thing in classic.EQUATION),
+        ),
+        Kind(
+            "what_do_you_see",
+            "What do you see?: a picture of a face in something that has none (pareidolia), or without one, an inkblot "
+            "that talkgenerator draws, as a Rorschach test has them, under the question 'What do you see?' "
+            "(talkgenerator adds it, unless the slide has a question of its own): the presenter explains what everyone "
+            "should see in it.",
+            (
+                TextField(
+                    "question",
+                    "a question of the slide's own over the picture, that asks the audience what they see in it, in a "
+                    "few words",
+                    SHORT_HEADING,
+                    optional=True,
+                ),
+            ),
+            ("picture",),
+            _what_do_you_see,
+            optional_images=frozenset({"picture"}),  # (without it, the slide is an inkblot)
+        ),
+        Kind(
+            "before_after",
+            "Before and after: two pictures that have nothing to do with each other, as a transformation, under "
+            "'Before' and 'After' (talkgenerator adds them), with an arrow between them, the after on a click: the "
+            "presenter explains how the one became the other.",
+            (TextField("title", "a title of the slide's own, in a few words", SHORT_HEADING, optional=True),),
+            ("before_picture", "after_picture"),
+            _before_after,
         ),
     )
 }

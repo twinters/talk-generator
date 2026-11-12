@@ -4,9 +4,11 @@ A language model (or an agent's plan) writes a talk in its language, and talkgen
 the title slide's "By ...", a chart's "Yes" and "No", a social media post's likes and shares, a news story's
 breaking news, the "Did you know?" over a fun fact, the "Challenge" over a dare (and "Audience participation" over a
 dare for everyone), "The problem" over a problem slide whose heading a model left empty, an alignment chart's axes
-(lawful to chaotic, good to evil) and the "Continued on next slide" under a wall of text, which this module has in
-every language. The classic generator only speaks English, so in a talk in another language, a slide that doesn't
-come out as planned becomes a picture without text instead of a classic slide. The language check reads texts with
+(lawful to chaotic, good to evil), the "Continued on next slide" under a wall of text, and the words of the slides of
+a picture to explain (an exhibit's "Exhibit A" and its case number, "Pick one:" and the "OR" between two pictures,
+"What do you see?", and "Before" and "After"), which this module has in every language. The classic generator only
+speaks English, so in a talk in another language, a slide that doesn't come out as planned becomes a picture without
+text instead of a classic slide. The language check reads texts with
 NLTK's stopword lists (and a language's words that look like English ones, which they leave out): a language model
 whose answer starts in English, for a talk in another language, is asked again (see reads_as_english), and the check
 of a deck finds a talk that reads as English. The spelling fixes of what's typed for a talk leave the compounds alone
@@ -48,6 +50,15 @@ class Language:
     lawful_to_chaotic: tuple[str, str, str] = ("Lawful", "Neutral", "Chaotic")
     good_to_evil: tuple[str, str, str] = ("Good", "Neutral", "Evil")
     continued: str = "Continued on next slide"  # under a wall of text
+    # The words of the slides of a picture to explain (D78): an exhibit's, before its letter ("Exhibit A"), and its
+    # case's number ({number}: "Case No. 4417-23"); the heading over two pictures to pick one of, and the word between
+    # them; the question over a picture to see something in; and the words over a before and an after
+    exhibit: str = "Exhibit"
+    case: str = "Case No. {number}"
+    pick_one: str = "Pick one:"
+    either_or: str = "OR"
+    what_do_you_see: str = "What do you see?"
+    before_after: tuple[str, str] = ("Before", "After")
     # Whether it writes compounds as one word ("pinguïnsekte", "Pinguinsekte", "pingvinsekt"), which the spelling
     # fixes of what's typed for a talk then leave alone (see talkgenerator.sources.word_frequency)
     compounds: bool = False
@@ -89,6 +100,12 @@ LANGUAGES: Final[dict[str, Language]] = {
             lawful_to_chaotic=("Wettig", "Neutraal", "Chaotisch"),
             good_to_evil=("Goed", "Neutraal", "Kwaad"),
             continued="Vervolg op de volgende dia",
+            exhibit="Bewijsstuk",
+            case="Zaaknr. {number}",
+            pick_one="Kies er één:",
+            either_or="OF",
+            what_do_you_see="Wat zie je?",
+            before_after=("Voor", "Na"),
             compounds=True,
             articles=("de", "het", "een", "'t"),
             false_friend="a graph is a 'grafiek', never a 'graf' (a grave)",
@@ -110,6 +127,12 @@ LANGUAGES: Final[dict[str, Language]] = {
             lawful_to_chaotic=("Loyal", "Neutre", "Chaotique"),
             good_to_evil=("Bon", "Neutre", "Mauvais"),
             continued="Suite à la diapositive suivante",
+            exhibit="Pièce à conviction",
+            case="Affaire n° {number}",
+            pick_one="Choisissez :",
+            either_or="OU",
+            what_do_you_see="Que voyez-vous ?",
+            before_after=("Avant", "Après"),
             articles=("le", "la", "les", "l'", "l’", "un", "une", "des", "du"),
             false_friend="'actually' is 'en fait', never 'actuellement' (currently)",
         ),
@@ -130,6 +153,12 @@ LANGUAGES: Final[dict[str, Language]] = {
             lawful_to_chaotic=("Rechtschaffen", "Neutral", "Chaotisch"),
             good_to_evil=("Gut", "Neutral", "Böse"),
             continued="Fortsetzung auf der nächsten Folie",
+            exhibit="Beweisstück",
+            case="Aktenzeichen {number}",
+            pick_one="Entscheide dich:",
+            either_or="ODER",
+            what_do_you_see="Was siehst du?",
+            before_after=("Vorher", "Nachher"),
             compounds=True,
             articles=("der", "die", "das", "den", "dem", "ein", "eine"),
             false_friend="'eventually' is 'schließlich', never 'eventuell' (perhaps)",
@@ -152,6 +181,12 @@ LANGUAGES: Final[dict[str, Language]] = {
             lawful_to_chaotic=("Legal", "Neutral", "Caótico"),
             good_to_evil=("Bueno", "Neutral", "Malvado"),
             continued="Continúa en la siguiente diapositiva",
+            exhibit="Prueba",
+            case="Caso n.º {number}",
+            pick_one="Elige uno:",
+            either_or="O",
+            what_do_you_see="¿Qué ves?",
+            before_after=("Antes", "Después"),
             articles=("el", "la", "los", "las", "un", "una", "unos", "unas"),
             false_friend="'embarrassed' is 'avergonzado', never 'embarazada' (pregnant)",
         ),
@@ -172,6 +207,12 @@ LANGUAGES: Final[dict[str, Language]] = {
             lawful_to_chaotic=("Legale", "Neutrale", "Caotico"),
             good_to_evil=("Buono", "Neutrale", "Malvagio"),
             continued="Continua nella prossima slide",
+            exhibit="Reperto",
+            case="Fascicolo n. {number}",
+            pick_one="Scegline uno:",
+            either_or="O",
+            what_do_you_see="Cosa vedi?",
+            before_after=("Prima", "Dopo"),
             articles=("il", "lo", "la", "i", "gli", "le", "l'", "l’", "un", "uno", "una", "un'", "un’"),
             false_friend="'actually' is 'in realtà', never 'attualmente' (currently)",
         ),
@@ -192,6 +233,12 @@ LANGUAGES: Final[dict[str, Language]] = {
             lawful_to_chaotic=("Leal", "Neutro", "Caótico"),
             good_to_evil=("Bom", "Neutro", "Mau"),
             continued="Continua no próximo slide",
+            exhibit="Prova",
+            case="Processo n.º {number}",
+            pick_one="Escolha um:",
+            either_or="OU",
+            what_do_you_see="O que você vê?",
+            before_after=("Antes", "Depois"),
             articles=("o", "a", "os", "as", "um", "uma"),
             false_friend="'to pretend' is 'fingir', never 'pretender' (to intend)",
         ),
@@ -212,6 +259,12 @@ LANGUAGES: Final[dict[str, Language]] = {
             lawful_to_chaotic=("Laglig", "Neutral", "Kaotisk"),
             good_to_evil=("God", "Neutral", "Ond"),
             continued="Fortsättning på nästa bild",
+            exhibit="Bevis",
+            case="Mål nr {number}",
+            pick_one="Välj en:",
+            either_or="ELLER",
+            what_do_you_see="Vad ser du?",
+            before_after=("Före", "Efter"),
             compounds=True,
             # (into, all, just, to ask, a village and ice)
             english_lookalikes=frozenset({"in", "all", "just", "be", "by", "is"}),

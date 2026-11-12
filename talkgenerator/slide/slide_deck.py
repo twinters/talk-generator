@@ -10,7 +10,7 @@ from talkgenerator.models.deck import Deck, Fact, TalkPersona, TopicOrTitle
 from talkgenerator.models.theme import Theme
 from talkgenerator.models.usage import Usage
 from talkgenerator.render.powerpoint import render_slide
-from talkgenerator.slide.slides import QuestionsSlide, SectionSlide, Slide
+from talkgenerator.slide.slides import ExhibitSlide, QuestionsSlide, SectionSlide, Slide
 
 logger = logging.getLogger("talkgenerator")
 
@@ -117,6 +117,9 @@ class SlideDeck:
     def _place(self, slide_index: int, slide) -> None:
         if isinstance(slide, SectionSlide):  # (numbered after the sections before it: the talk's opening is the first)
             slide.number(2 + sum(isinstance(other, SectionSlide) for other in self._slides[:slide_index]))
+        if isinstance(slide, ExhibitSlide):  # (lettered after the exhibits before it, of the first one's case: D78)
+            earlier = [other for other in self._slides[:slide_index] if isinstance(other, ExhibitSlide)]
+            slide.lettered(len(earlier) + 1, earlier[0].case if earlier else None)
         if isinstance(slide, QuestionsSlide):  # (a closing slide that calls back shows an earlier slide's picture)
             slide.call_back([other for other in self._slides[:slide_index] if other is not None])
         self._slides[slide_index] = slide

@@ -1285,6 +1285,132 @@ class ErrorMessageSlide(DrawnSlide):
         super().__init__("error_message", None, arguments)
 
 
+# SLIDES OF A PICTURE TO EXPLAIN (docs/v5-plan.md, D78): a surprising picture the presenter has to explain, with little
+# or no text, as improv suggestions and story cubes give a performer something to explain: Exhibit A, two pictures to
+# pick one of, a picture equation, a picture to see something in (or an inkblot), and a before and after
+
+
+def case_number(language: Language = ENGLISH) -> str:
+    """A made-up case's number, as the talk's language writes one ("Case No. 4417-23"), by the dice."""
+    return language.case.format(number=f"{random_util.randint(1000, 9999)}-{random_util.randint(10, 99)}")
+
+
+def exhibit_letter(number: int) -> str:
+    """The letter of a talk's number-th exhibit (from 1): A, B, C..., and after Z, AA, AB..."""
+    letters = ""
+    while number > 0:
+        number, rest = divmod(number - 1, 26)
+        letters = chr(ord("A") + rest) + letters
+    return letters or "A"
+
+
+class ExhibitSlide(DrawnSlide):
+    """A piece of evidence: one odd picture, as Exhibit A of a case (its word in the talk's language, and its letter),
+    the case's number, and a short note, if it has one, as on an evidence tag; the presenter explains what it proves.
+    The deck letters a talk's exhibits in turn: a later one is Exhibit B, of the same case (see lettered)."""
+
+    required_arguments = ("label", "picture")
+
+    def __init__(self, exhibit: str, case: str | None, picture: ImageData | None, note: str | None = None):
+        self._exhibit = exhibit  # (the word before the letter: "Exhibit", "Bewijsstuk")
+        arguments = {"picture": picture, "letter": "A", "label": f"{exhibit} A", "case": case, "note": note}
+        super().__init__("exhibit", None, arguments)
+
+    @property
+    def case(self) -> str | None:
+        """The number of the case it's evidence in, as it's written ("Case No. 4417-23")."""
+        case = self._arguments.get("case")
+        return case if isinstance(case, str) else None
+
+    def lettered(self, number: int, case: str | None = None) -> None:
+        """Make it the talk's number-th exhibit (from 1: B for the second), of the case of that number, if one is
+        given (the case of the talk's first exhibit: one case a talk)."""
+        letter = exhibit_letter(number)
+        self._arguments["letter"] = letter
+        self._arguments["label"] = f"{self._exhibit} {letter}"
+        if case:
+            self._arguments["case"] = case
+
+
+class PickOneSlide(DrawnSlide):
+    """Two pictures side by side, without captions, under "Pick one:" (or a heading of its own), with the talk's word
+    for "or" between them: the audience picks, and the presenter explains. Both are there from the start."""
+
+    required_arguments = ("title", "picture_1", "picture_2")
+
+    def __init__(
+        self, title: str | None, picture_1: ImageData | None, picture_2: ImageData | None, either_or: str = "OR"
+    ):
+        arguments = {"picture_1": picture_1, "picture_2": picture_2, "title": title, "or": either_or}
+        super().__init__("pick_one", None, arguments)
+
+
+class EquationSlide(DrawnSlide):
+    """A picture equation, as story cubes tell a story: a thing plus another thing equals a third, the punchline. Each
+    thing is its picture, if it has one, or else its emoji (or a word or two), with a "+" and a "=" between them; the
+    "=" and what the two make together appear on a click."""
+
+    required_arguments = classic.EQUATION
+
+    def __init__(
+        self,
+        title: str | None,
+        term_1: str | None,
+        term_2: str | None,
+        result: str | None,
+        pictures: Mapping[str, ImageData | None] | None = None,
+    ):
+        arguments: dict[str, Any] = {"title": title}
+        for thing, text in zip(classic.EQUATION, (term_1, term_2, result), strict=True):
+            picture = (pictures or {}).get(thing)
+            arguments[thing] = None if picture is not None else text
+            arguments[picture_role(thing)] = picture
+        arguments.update({"plus": "+", "equals": "="})
+        super().__init__("equation", None, arguments)
+
+    def clicks(self) -> dict[str, int]:
+        return self._one_by_one(("equals", "result", picture_role("result")))
+
+
+class WhatDoYouSeeSlide(DrawnSlide):
+    """What do you see?: a picture of a face in something that has none (pareidolia), under the question to the
+    audience; without a picture, an inkblot, as a Rorschach test has it, which its layout draws. The presenter explains
+    what everyone should see in it."""
+
+    required_arguments = ("question",)
+
+    def __init__(self, question: str | None, picture: ImageData | None = None):
+        super().__init__("what_do_you_see", None, {"picture": picture, "question": question})
+
+
+class BeforeAfterSlide(DrawnSlide):
+    """Before and after: two pictures as a transformation, that have nothing to do with each other, each under its
+    word ("Before", "After"), with an arrow between them, and a title, if it has one; the after appears on a click,
+    and the presenter explains how the one became the other."""
+
+    required_arguments = ("before", "before_picture", "after", "after_picture")
+
+    def __init__(
+        self,
+        title: str | None,
+        before: str | None,
+        before_picture: ImageData | None,
+        after: str | None,
+        after_picture: ImageData | None,
+    ):
+        arguments = {
+            "title": title,
+            "before_picture": before_picture,
+            "before": before,
+            "after_picture": after_picture,
+            "after": after,
+        }
+        super().__init__("before_after", None, arguments)
+
+    def clicks(self) -> dict[str, int]:
+        return self._one_by_one(("after", "after_picture"))
+
+
 class MemeSlide(DrawnSlide):
     """A meme: a template's picture (one of Imgflip's, see talkgenerator.sources.memes), with its captions as texts on
     it, each in the box the template has for it (a box that repeats another's caption gets it too). Of two captions

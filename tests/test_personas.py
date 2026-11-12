@@ -166,8 +166,10 @@ def _picked_tags(persona, seeds=range(150), slides=10, schema_name="default"):
 
 
 def test_a_persona_s_talks_favour_its_kinds_of_slides():
-    # (over 300 talks: a funnel comes up in about one talk in seventeen, so 150 left its share to chance)
-    seeds = range(300)
+    # (over 600 talks: a funnel comes up in about one talk in fifteen, so 150 left its share to chance, and 300 too
+    # once more kinds shared a talk's middle, D78: a founder's ×2.5 on funnels, among their other favourites, makes
+    # about twice as many, which 300 seeds' samples straddled, at 1.5 and 2.8 times)
+    seeds = range(600)
     historian = _picked_tags(personas.persona("medieval_historian"), seeds)
     founder = _picked_tags(personas.persona("startup_founder"), seeds)
     teacher = _picked_tags(personas.persona("kindergarten_teacher"), seeds)
@@ -175,7 +177,7 @@ def test_a_persona_s_talks_favour_its_kinds_of_slides():
     assert historian["timeline"] > 2 * plain["timeline"] and historian["timeline"] > 3 * founder["timeline"]
     assert historian["history"] > founder["history"] * 3
     assert founder["kpi"] > 2 * plain["kpi"] and founder["kpi"] > 5 * historian["kpi"]
-    assert founder["funnel"] > 2 * plain["funnel"]
+    assert founder["funnel"] > 1.5 * plain["funnel"]
     assert teacher["quiz"] > 2 * plain["quiz"] and teacher["kpi"] < plain["kpi"]
     # The format's caps still hold: at most one timeline in a talk, whoever presents it
     for seed in range(40):
