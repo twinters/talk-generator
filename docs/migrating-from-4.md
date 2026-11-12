@@ -73,9 +73,10 @@ talk, `--license_policy`:
 
 `--license_policy open` makes any talk keep to copyright-free images, and `talkgenerator formats` lists the formats
 with their policies (`--list` still lists their slide generators). The new commands for plans, `render` and
-`formats`, call the choice `--format`. Four formats are new: `pitch` (a startup pitch), `academic` (a talk at an
-academic conference), `corporate` (a company's all-hands or quarterly business review) and `keynote` (a product
-keynote). `--schema random` leaves the format to the talk's seed, which picks one that its persona favours.
+`formats`, call the choice `--format`. Ten formats are new: `pitch` (a startup pitch), `academic` (a talk at an
+academic conference), `corporate` (a company's all-hands or quarterly business review), `keynote` (a product
+keynote), `infomercial` (a late-night TV infomercial), `documentary` (a nature documentary), `court` (a court case),
+`museum` (a museum tour), `wedding` (a wedding toast) and `book_report` (a school book report). `--schema random` leaves the format to the talk's seed, which picks one that its persona favours.
 
 ## `generate_presentation()` gives way to `stream_talk()`
 

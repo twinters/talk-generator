@@ -150,22 +150,30 @@ how to keep 4.x's talks. The [docs](https://github.com/twinters/talk-generator/t
 
 ### Formats and personas
 
-- Four new formats, each going through its arc: `--schema pitch` (a startup pitched to investors, from the problem to
+- Ten new formats, each going through its arc: `--schema pitch` (a startup pitched to investors, from the problem to
   the ask), `academic` (research at a conference: the method, p-values, the limitations as an iceberg), `corporate`
-  (an all-hands: the KPIs against their targets, the new org chart) and `keynote` (a product launch: the reveal, a
-  demo that crashes, one more thing). `--schema random` leaves the format to the talk's seed, which makes 7 talks in
-  10 TED-like; `stream_talk(formats=...)` limits the formats it picks from (a site leaves out a visitor's last few,
-  so their talks vary).
+  (an all-hands: the KPIs against their targets, the new org chart), `keynote` (a product launch: the reveal, a demo
+  that crashes, one more thing), `infomercial` (a late-night TV infomercial for a gadget made of the topic: the
+  demonstration, the testimonials, the prices dropping, "But wait, there's more!"), `documentary` (a nature
+  documentary, hushed: the topic as a wild species with a Latin name, its habitat, a rare sighting, the dangers it
+  faces), `court` (the topic on trial for a harmless crime: the charges, Exhibit A, the alibi, the jury's verdict),
+  `museum` (a guided tour: a masterpiece under its label, a botched restoration, the artist's life, the gift shop),
+  `wedding` (the best man's or maid of honour's toast to their best friend, who marries the topic) and `book_report`
+  (a pupil's book report: the cover, the characters, what happens, the moral, "The End"). `--schema random` leaves
+  the format to the talk's seed, which makes 7 talks in 10 TED-like; `stream_talk(formats=...)` limits the formats it
+  picks from (a site leaves out a visitor's last few, so their talks vary).
 - Every talk ends with a closer, a slide after the ones it asks for that says the talk is over, of its format's kind
   and in its language and look: "Thank you!" with the presenter's name and a small "Questions?" (TED-like),
   "Questions?" with thanks (academic), "Let's talk" with a made-up contact line (pitch), "Questions?" and back to work
   (all-hands) and "Available today" (keynote). So no format spends one of its slides on "Questions?". The deck marks
   it (`closer`), the slides' numbers ("7/12") don't count it, and `stream_talk` sends it as one more `slide.ready`. A
   format names its closer in its `Format` (`closer=Closer(...)`: see `talkgenerator.closers`).
-- Personas: the talk's seed picks who presents it, one of thirteen (a disgraced professor, a startup founder, a
-  medieval historian, a kindergarten teacher, a retiree and their old job...), whose favourite kinds of slides,
-  titles, names, themes, formats and pictures come up more often (`--persona`, `--personas`, `--persona none`;
-  `talkgenerator.personas.catalog()`).
+- Personas: the talk's seed picks who presents it, one of twenty-one (a disgraced professor, a startup founder, a
+  medieval historian, a kindergarten teacher, a retiree and their old job, a true-crime detective, an infomercial
+  host, a nature-documentary narrator, a museum guide, the best man or maid of honour, a game-show host, an alien
+  anthropologist, IT support...), whose favourite kinds of slides, titles, names, themes, formats and pictures come up
+  more often (`--persona`, `--personas`, `--persona none`; `talkgenerator.personas.catalog()`). Nine of them give
+  their own format in about a third of their talks (the detective a court case, the narrator a documentary...).
 - What's typed can be the topic or the title (`--topic_or_title`): "penguins" as well as "Why I Joined a Penguin
   Cult", with misspelt topics fixed.
 - Made-up presenter names in styles (`--name_styles`): puns on the topic ("Prof. Anna Tomy" for medicine), fun

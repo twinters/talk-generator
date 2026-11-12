@@ -40,7 +40,7 @@ Who writes the talk depends on your settings: a language model when one is set u
 | `--num_slides`, `--slides` | How many slides, the title slide included (*default: 10*) |
 | `--presenter` | The name on the title slide. It never goes to a language model. Without it, the talk makes one up (see `--name_styles`) |
 | `--name_styles` | Without `--presenter`, the kinds of made-up names the talk's seed picks from, separated by commas: `pun` ("Prof. Anna Tomy" for a talk on medicine), `fun_surname` ("Linda Hivesworth" for bees), `famous_pun` ("Albert Einstone" for geology) and `classic` (a random first and last name, as in 2019). The language model writes the name; without one, talkgenerator has names of its own for many topics, and makes up a classic one for the others (*default: `pun,fun_surname,famous_pun`, as the talk's persona favours them*) |
-| `--persona` | Who presents the talk: `disgraced_professor`, `startup_founder`, `medieval_historian`, `conspiracy_blogger`, `kindergarten_teacher`, `consultant`, `motivational_speaker`, `influencer`, `time_traveller`, `life_coach`, `retiree`, `former_athlete` or `passionate_expert`. They favour some kinds of slides (a founder's KPI tiles and funnels, a historian's timelines), give the talk their kind of title (half of a classic talk's titles are their own: "Disrupting Penguins"), nudge the style of the presenter's made-up name (unless `--name_styles` says), give the language model a voice and an angle, favour some theme families for a random theme (a teacher's `kids` and `chalkboard`), have favourite looks for some pictures (a historian's weird medieval art), and with `--schema random` favour some formats (a founder pitches). `none` makes the format's own talk (*default: `random`, a persona the talk's seed picks*) |
+| `--persona` | Who presents the talk: `disgraced_professor`, `startup_founder`, `medieval_historian`, `conspiracy_blogger`, `kindergarten_teacher`, `consultant`, `motivational_speaker`, `influencer`, `time_traveller`, `life_coach`, `retiree`, `former_athlete`, `passionate_expert`, `detective` (a true-crime detective), `infomercial_host`, `nature_narrator` (a nature documentary's), `museum_guide`, `best_man` (the best man or maid of honour), `game_show_host`, `alien_anthropologist` or `it_support`. They favour some kinds of slides (a founder's KPI tiles and funnels, a historian's timelines), give the talk their kind of title (half of a classic talk's titles are their own: "Disrupting Penguins"), nudge the style of the presenter's made-up name (unless `--name_styles` says), give the language model a voice and an angle, favour some theme families for a random theme (a teacher's `kids` and `chalkboard`), have favourite looks for some pictures (a historian's weird medieval art), and with `--schema random` favour some formats (a founder pitches). `none` makes the format's own talk (*default: `random`, a persona the talk's seed picks*) |
 | `--personas` | The personas the talk's seed picks from, separated by commas, such as `startup_founder,consultant`. A talk whose seed picks one of them keeps it, and the others get one of them (*default: all of them*) |
 | `--language` | The language of the slides: `en`, `nl`, `fr`, `de`, `es`, `it`, `pt` or `sv`. Other languages than English need a language model: a classic talk is English, and says so in the logs (*default: `en`*) |
 
@@ -69,9 +69,15 @@ Who writes the talk depends on your settings: a language model when one is set u
 | `academic` | A talk at an academic conference, with affiliations on its title slide: the motivation (the problem the research is about), the outline, related work, the method, the results (with p-values), the limitations, future work, the acknowledgements, the references and questions | `all` |
 | `corporate` | A company's all-hands meeting or quarterly business review: the agenda, the KPIs against their targets, the quarter's wins, the roadmap, an org change, the synergies, the ask of everyone and Q&A | `all` |
 | `keynote` | A product keynote on a big stage: a big opening statement, the one idea, the reveal of the product, its features, a live demo, the price, the "one more thing" and a closing line | `all` |
+| `infomercial` | A late-night TV infomercial for a gadget made of the topic: the everyday problem, the gadget, its demonstration, testimonials, the fine print, the price, "But wait, there's more!" and the call to order now | `all` |
+| `documentary` | A nature documentary about the topic as a wild species, in a hushed voice: the opening shot, its habitat, its behaviour, a rare sighting, its rituals, the dangers it faces and a closing reflection | `all` |
+| `court` | A court case in which the topic stands trial for a harmless crime: the charges, the evidence, a witness, the alibi, an objection, the closing argument and the verdict | `all` |
+| `museum` | A guided museum tour of a collection about the topic: the welcome and the house rules, a masterpiece, the artist, the eras, an artefact and the gift shop | `all` |
+| `wedding` | A wedding toast by the best man or the maid of honour, for their best friend, who marries the topic: who the speaker is, how the couple met, an embarrassing story, why they're perfect together, marriage advice and the toast | `all` |
+| `book_report` | A school book report on a book about the topic: the book, its author, the main characters, what happens, the favourite part, the moral of the story, the rating and the end | `all` |
 | `test` | For testing talkgenerator itself | `all` |
 
-A pitch, an academic talk, an all-hands and a keynote go through the parts of their arc, in that order, whoever
+These formats beyond the TED-like talk (from `pitch` on) go through the parts of their arc, in that order, whoever
 presents them: a short talk keeps the parts that matter most (a five-slide pitch has the problem, the solution, the
 traction and the ask; a five-slide keynote its opening, the reveal, a feature and the "one more thing"), and a long one
 gives some parts more slides. Between the parts come memes, gifs, full-screen pictures under a provocative word
@@ -80,15 +86,21 @@ ten), and a few of a keynote's. Their big numbers and KPI tiles come over a pict
 time. A startup founder pitches more often
 than the other personas, a disgraced professor gives more of the academic talks, a management consultant more of the
 all-hands and a startup founder or a motivational speaker more of the keynotes; their themes are the `startup`,
-`academic`, `corporate` and `dark minimal` families more often. Their arcs' slides need no image that's fair use, so
+`academic`, `corporate` and `dark minimal` families more often. So it goes with the infomercial host's infomercials,
+the nature-documentary narrator's documentaries, the detective's court cases, the museum guide's tours and the best
+man's (or maid of honour's) wedding toasts, and a kindergarten teacher gives more of the book reports. Their arcs' slides need no image that's fair use, so
 `--license_policy open` keeps them whole. `talkgenerator formats --details --format pitch` lists a format's arc and the
 slides of each part.
 
 `--schema random` leaves the format to the talk's seed, which picks the persona first and then a format that persona
-favours: in about two of five of their talks, a startup founder pitches, a disgraced professor gives an academic talk, a
-management consultant an all-hands and a motivational speaker a keynote, and half of their talks are TED-like; the
-others give TED-like talks in 7 to 9 of 10. Every format keeps a few talks in a hundred with every persona, and over all
-the personas 7 in 10 talks are TED-like, with pitches and academic talks the rarest. Only the formats for talks take part: `default`, `pitch`, `academic`, `corporate` and `keynote`. Copyright-free images go with any of them:
+favours: in about a third of their talks, a startup founder pitches, a disgraced professor gives an academic talk, a
+management consultant an all-hands, a motivational speaker a keynote, an infomercial host an infomercial, a
+nature-documentary narrator a documentary, a detective a court case, a museum guide a tour and a best man or maid of
+honour a wedding toast, and more than half of their talks are TED-like; the others give TED-like talks in about 8 of
+10. Every format keeps about one talk in a hundred with every persona, and over all the personas 7 in 10 talks are
+TED-like, each other format about 3 in 100, with pitches and academic talks rarer than all-hands and keynotes. Only the
+formats for talks take part: `default`, `pitch`, `academic`, `corporate`, `keynote`, `infomercial`, `documentary`,
+`court`, `museum`, `wedding` and `book_report`. Copyright-free images go with any of them:
 `--schema random --license_policy open`. The deck's `schema_name` says which format the talk got.
 
 A format's license policy says which license classes its images may have. `--license_policy` sets another one:

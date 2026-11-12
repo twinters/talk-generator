@@ -60,7 +60,8 @@ NSFW mark and the finder's filters keep them safe for work. `talkgenerator forma
 A talk's persona (`--persona`) has favourite looks for some of the looks slides ask for, which are searched first: a
 medieval historian's weird pictures are weird medieval art and their neutral photos museum art, a startup founder's
 photos are office stock photos and their weird ones corporate cringe, a conspiracy blogger's weird pictures are faces
-in things. Where a favourite finds nothing, or the talk's license policy doesn't allow it, the slide's own look does.
+in things, a museum guide's are museum art and accidental Renaissance paintings, a nature-documentary narrator's are
+landscapes and wholesome animals, and an alien anthropologist's weird ones are old photos of everyday human life. Where a favourite finds nothing, or the talk's license policy doesn't allow it, the slide's own look does.
 
 The finder takes a look at its candidates' thumbnails: their brightness and colourfulness, how gray they are, how
 much detail they have where the text goes, their main colours, and a perceptual hash that keeps nearly the same
