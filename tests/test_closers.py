@@ -107,6 +107,9 @@ def test_a_pitchs_contact_line_is_the_presenters_first_name_at_its_startups_doma
     assert closers.contact("Prof. Anna Tomy", "Penguinly: Uber for Penguins", "penguins") == "anna@penguinly.com"
     assert closers.contact("Dr. Émile Zola", "Pingüino.ai: Penguins for All", "pinguinos") == "emile@pinguino.ai"
     assert closers.contact("Ann Example", "Penguin Labs: Penguins, Scaled", "penguins") == "ann@penguinlabs.com"
+    # (a name without a first name: its surname, whole, as a Dutch kindergarten teacher's "Juf Van Wielen")
+    assert closers.contact("Juf Van Wielen", "Trapzo: Fietsen Zonder Trappen", "fietsen") == "vanwielen@trapzo.com"
+    assert closers.first_name("Dr. Smith") == "smith" and closers.first_name("Prof.") is None
     # (a title that names no startup: the startup a classic pitch names after its topic, and no name: hello@)
     named = formats.startup("time travel").lower().replace(" ", "")
     assert closers.contact(None, "Why Time Travel Matters", "time travel").startswith("hello@" + named.split(".")[0])

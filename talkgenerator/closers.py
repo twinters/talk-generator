@@ -40,6 +40,11 @@ _NAME_LENGTH: Final = 24
 # A domain that a startup's name has already ("Penguin.ai"), else it gets one
 _DOMAIN: Final = re.compile(r"^[a-z0-9-]+\.[a-z]{2,6}$")
 _TLD: Final = ".com"
+# The little words a surname starts with, in the talks' languages ("Van Wielen", "de la Cruz"): a name that starts
+# with one, after its title, has no first name
+_PARTICLES: Final = frozenset(
+    {"van", "von", "de", "der", "den", "het", "ter", "ten", "la", "le", "di", "da", "du", "del", "della", "dos", "af"}
+)
 
 
 def closer(
@@ -97,13 +102,13 @@ def named(title: str | None) -> str | None:
 
 def first_name(presenter: str | None) -> str | None:
     """The presenter's first name, in lowercase letters without accents, as an e-mail address has it: their name's
-    first word that's no title ("Prof. Anna Tomy": "anna"). None for none."""
-    for word in (presenter or "").replace(".", " ").split():
-        plain = _ascii(word)
-        letters = re.sub(r"[^a-z]+", "", plain)
-        if letters and letters not in names.TITLES:
-            return letters
-    return None
+    first word that's no title ("Prof. Anna Tomy": "anna"); or for a name without one, its surname, whole ("Juf Van
+    Wielen": "vanwielen"). None for none."""
+    words = [re.sub(r"[^a-z]+", "", _ascii(word)) for word in (presenter or "").replace(".", " ").split()]
+    words = [word for word in words if word and word not in names.TITLES]
+    if not words:
+        return None
+    return "".join(words) if words[0] in _PARTICLES else words[0]
 
 
 def _ascii(text: str) -> str:

@@ -382,10 +382,12 @@ _LIVING_PEOPLE: Final = """
     Coelho, Haruki Murakami, *Banksy, Yoko Ono, Ai Weiwei, Damien Hirst, David *Hockney, Jeff Koons, *MrBeast,
     *PewDiePie
 """
-# Titles and the like, before or after a name, in the talks' languages: "Prof. Chomsky" is Noam Chomsky's real name
+# Titles and the like, before or after a name, in the talks' languages: "Prof. Chomsky" is Noam Chomsky's real name;
+# and a teacher's, in Dutch ("Juf Van Wielen"), which a kindergarten teacher's talk may have
 TITLES: Final = frozenset(
     {"dr", "drs", "prof", "professor", "doctor", "sir", "dame", "lord", "lady", "mr", "mrs", "ms", "miss", "mx", "ir"}
     | {"jr", "sr", "phd", "herr", "frau", "fru", "meneer", "mevrouw", "dhr", "mevr", "monsieur", "madame", "mme"}
+    | {"juf", "meester"}
 )
 # The classic names (tracery's full_name), whose first names and surnames are ordinary ones: none of them bends a living
 # person's name ("Cookson" isn't Cook bent)
