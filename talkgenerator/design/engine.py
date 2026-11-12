@@ -2639,12 +2639,15 @@ def _room_for(text: str, box: Box, spec_name: str, padding: float, bounds: Box) 
 # THE FAMILIES' OWN LAYOUTS: title and section slides that set a family apart (its decoration, which
 # talkgenerator.design.motifs draws, goes around them: a kindergarten's bunting and hills, a sunset)
 
-_SUN: Final = ("#ffd23f", "#ffbf00")  # a crayon sun's rays and disc
+# Where a kindergarten's section slide has its big badge (its motif draws it: a crayon sun, a sticker book's rosette,
+# a notebook's circled number, a paper flower) and the badge's middle, where the section's number goes
+KIDS_BADGE: Final = Box(x=120, y=230, w=620, h=620)
+KIDS_BADGE_MIDDLE: Final = Box(x=237.8, y=347.8, w=384.4, h=384.4)
 
 
 def _kids_title(roles: dict[str, Content], theme: Theme) -> Placement:
-    """The talk's title and subtitle on a white card in the middle (its motif puts bunting over it, a sun and a cloud
-    beside it and hills under it)."""
+    """The talk's title and subtitle on a card in the middle (its motif draws the card, and what's around it: bunting,
+    a sun, a cloud and hills; stickers; an exercise book's cover; paper hills)."""
     placement = Placement("v5/kids-title")
     placement.boxes["title"] = (Box(x=330, y=300, w=1260, h=290), "kids title")
     placement.boxes["subtitle"] = (Box(x=330, y=610, w=1260, h=100), "centred subtitle")
@@ -2652,16 +2655,11 @@ def _kids_title(roles: dict[str, Content], theme: Theme) -> Placement:
 
 
 def _kids_section(roles: dict[str, Content], theme: Theme) -> Placement:
-    """The section's number on a big crayon sun on the left, its title and subtitle beside it."""
+    """The section's number on a big badge on the left (its motif draws the badge, and colours the number for it),
+    its title and subtitle beside it."""
     placement = Placement("v5/kids-section")
-    sun = Box(x=120, y=230, w=620, h=620)
-    disc = _inset(sun, sun.w * 0.19)
-    placement.shapes += [
-        ShapeElement(role="sun rays", shape="polygon", points=geometry.burst(12, 0.62), box=sun, color=_SUN[0]),
-        ShapeElement(role="sun", shape="ellipse", box=disc, color=_SUN[1]),
-    ]
-    placement.boxes["kicker"] = (_inset(disc, disc.w * 0.16), "panel number")
-    placement.colors["kicker"] = _on([_SUN[1]], theme, color.LARGE_TEXT_CONTRAST)
+    sun = KIDS_BADGE
+    placement.boxes["kicker"] = (_inset(KIDS_BADGE_MIDDLE, KIDS_BADGE_MIDDLE.w * 0.16), "panel number")
     x = sun.x + sun.w + 60
     placement.boxes["title"] = (Box(x=x, y=300, w=WIDTH - MARGIN - x, h=330), "section side title")
     placement.boxes["subtitle"] = (Box(x=x, y=660, w=WIDTH - MARGIN - x, h=180), "left subtitle")

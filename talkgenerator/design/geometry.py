@@ -90,6 +90,45 @@ def wave(waves: float = 1.5, depth: float = 0.35, steps: int = 36) -> Points:
     return _rounded([*top, (1.0, 1.0), (0.0, 1.0)])
 
 
+def scallop(bumps: int = 12, depth: float = 0.14, steps: int = 6) -> Points:
+    """A circle whose edge is that many round bumps, this deep (as a share of its radius): a rosette's, a paper
+    flower's."""
+    corners = []
+    for index in range(bumps * steps):
+        angle = 2 * math.pi * index / (bumps * steps)
+        reach = 0.5 * (1 - depth + depth * abs(math.cos(bumps * angle / 2)))
+        corners.append((0.5 + reach * math.sin(angle), 0.5 - reach * math.cos(angle)))
+    return _rounded(_fill_box(corners))
+
+
+def arch(inner: float = 0.6, steps: int = 24) -> Points:
+    """The top half of a ring (a rainbow's band): its box twice as wide as it's tall, its hole this wide (a share of
+    its width)."""
+    turns = [math.pi * step / steps for step in range(steps + 1)]
+    outer = [(0.5 - 0.5 * math.cos(angle), 1 - math.sin(angle)) for angle in turns]
+    hole = [(0.5 + 0.5 * inner * math.cos(angle), 1 - inner * math.sin(angle)) for angle in turns]
+    return _rounded([*outer, *hole])
+
+
+def pinked(teeth: int = 12, depth: float = 0.35) -> Points:
+    """A strip with a straight top edge and a bottom edge cut in zigzags, as pinking shears cut it: that many teeth,
+    this deep (a share of its height)."""
+    bottom = [(1 - index / (2 * teeth), 1.0 if index % 2 == 0 else 1 - depth) for index in range(2 * teeth + 1)]
+    return _rounded([(0.0, 0.0), (1.0, 0.0), *bottom])
+
+
+def leaf(steps: int = 12) -> Points:
+    """A leaf (two arcs meeting at its ends), lying from its left end to its right."""
+    top = [(step / steps, 0.5 - 0.5 * math.sin(math.pi * step / steps)) for step in range(steps + 1)]
+    bottom = [(1 - step / steps, 0.5 + 0.5 * math.sin(math.pi * step / steps)) for step in range(1, steps)]
+    return _rounded([*top, *bottom])
+
+
+def ribbon() -> Points:
+    """A rosette's ribbon tail, hanging down, with a notch cut into its end."""
+    return ((0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.5, 0.8), (0.0, 1.0))
+
+
 def stroke(line: Sequence[Point], width: float) -> tuple[Box, Points]:
     """A line through the points (on the canvas) as wide as width (in canvas pixels): its box, and the polygon of
     its outline in that box (each corner mitred, up to twice the width). For a hand-drawn underline or a squiggle."""
@@ -120,6 +159,29 @@ def squiggle(x: float, y: float, width: float, amplitude: float, waves: float, s
     return [
         (x + width * index / steps, y + amplitude * math.sin(2 * math.pi * waves * index / steps))
         for index in range(steps + 1)
+    ]
+
+
+def arc(cx: float, cy: float, rx: float, ry: float, start: float, end: float, steps: int = 24) -> list[Point]:
+    """Points along an ellipse around (cx, cy), from one angle to another (in degrees, clockwise from its right, as
+    the canvas's y goes down): a hand-drawn circle's stroke, a smile."""
+    return [
+        (
+            cx + rx * math.cos(math.radians(start + (end - start) * index / steps)),
+            cy + ry * math.sin(math.radians(start + (end - start) * index / steps)),
+        )
+        for index in range(steps + 1)
+    ]
+
+
+def spiral(cx: float, cy: float, radius: float, turns: float = 2.5, steps: int = 60) -> list[Point]:
+    """A spiral from (cx, cy) out to radius, that many turns (a doodle in a notebook's margin)."""
+    return [
+        (
+            cx + radius * index / steps * math.cos(2 * math.pi * turns * index / steps),
+            cy + radius * index / steps * math.sin(2 * math.pi * turns * index / steps),
+        )
+        for index in range(1, steps + 1)
     ]
 
 

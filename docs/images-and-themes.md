@@ -169,8 +169,13 @@ Every family has a decoration of its own, on every slide, and saves its big piec
   between columns, red kickers and grayscale photos.
 - `Swiss poster`: a grotesk flush left on a three-column grid, a heavy black rule, one red block a slide, a big red
   circle on the title slide and black section dividers with a giant number.
-- `kids`: a kindergarten's crayon colours on cream, bunting along the top, crayon squiggles under the titles,
-  confetti, pictures as stickers, a title card with a sun, a cloud and hills, and section numbers on a sun.
+- `kids`: a kindergarten's, in bright colours on pastel paper, as one of four sets of decoration (the seed picks
+  which, and every set is in its member's colours): crayon drawings (bunting along the top, crayon squiggles under the
+  titles, confetti, a title card with a sun, a cloud and hills, section numbers on a sun), a sticker book (titles on
+  white labels, stickers, pictures as stickers peeling off, a rainbow, section numbers on a prize rosette), a school
+  notebook (ruled or squared paper with a margin line and a binding, ballpoint doodles, pictures taped in, an
+  exercise book's cover for the title slide) or paper cut-outs (construction paper with small shadows, pictures on
+  paper mats, paper hills and a paper flower).
 - The others too: academic's titles on a band with a row of dots counting the slides (as LaTeX's Beamer has them),
   neon's sunset over a grid floor, vintage paper's ornamented double frame, brutalist's titles on blocks with hard
   shadows, corporate's slanted panel, startup's soft blobs, Comic Sans' speech balloons and POW, WordArt's

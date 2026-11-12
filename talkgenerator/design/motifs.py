@@ -21,6 +21,7 @@ check them), and are language-neutral: numbers, symbols and code, as a talk can 
 from __future__ import annotations
 
 import dataclasses
+import itertools
 import math
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
@@ -31,6 +32,8 @@ from talkgenerator.design.engine import (
     CREDITS_BOX,
     FULL,
     HEIGHT,
+    KIDS_BADGE,
+    KIDS_BADGE_MIDDLE,
     MARGIN,
     SPECS,
     WIDTH,
@@ -50,8 +53,6 @@ _LEFT_TITLES: Final = frozenset({"title", "talk title", "side title", "section s
 _FRAMED_TYPES: Final = frozenset({"image", "two_column_image", "three_column_image", "questions", "references"})
 # The slides a motif saves its big pieces for
 _BIG_TYPES: Final = frozenset({"title", "section", "questions"})
-# Crayon colours (the kindergarten's): red, yellow, teal, blue, green, purple, orange
-CRAYONS: Final = ("#ff5d73", "#ffbf00", "#2ec4b6", "#3a86ff", "#8ac926", "#9b5de5", "#ff8c42")
 # A synthwave sun's bands, from its top down: yellow, orange, pink
 SUNSET: Final = ("#ffd319", "#ff901f", "#ff2975")
 # A photo over the whole slide, which could be anything (for what's behind a decoration's text)
@@ -137,13 +138,14 @@ class Scene:
             return "title"
         return None
 
-    def occupied(self, letters: bool = False) -> list[Box]:
-        """Where its elements and its layout's shapes are (but those over the whole slide, and its thin decoration,
-        such as a title's underline): its texts' boxes, or (with letters) only where their lines' letters are."""
+    def occupied(self, letters: bool = False, ignoring: Sequence[str] = ()) -> list[Box]:
+        """Where its elements (but those ignored) and its layout's shapes are (but those over the whole slide, and its
+        thin decoration, such as a title's underline): its texts' boxes, or (with letters) only where their lines'
+        letters are."""
         boxes = []
         for role in self.placement.boxes:
             element = self.roles.get(role)
-            if element is None:
+            if element is None or role in ignoring:
                 continue
             if letters and isinstance(element, TextElement):
                 boxes += [_grown(line, 12) for line in self.lines(role)]
@@ -154,16 +156,17 @@ class Scene:
                 boxes.append(geometry.bounds(shape))
         return boxes
 
-    def free(self, box: Box, pad: float = 16, letters: bool = False) -> bool:
+    def free(self, box: Box, pad: float = 16, letters: bool = False, ignoring: Sequence[str] = ()) -> bool:
         """Whether a decoration in the box would keep clear of the slide's texts (their boxes, or with letters only
-        their letters), pictures and panels (by the pad), and of its credit line, and stay on the slide."""
+        their letters), pictures and panels (by the pad; but the elements ignored, such as a title its label goes
+        behind), and of its credit line, and stay on the slide."""
         if box.x < 0 or box.y < 0 or box.x + box.w > WIDTH or box.y + box.h > HEIGHT:
             return False
         if self.credits and _overlaps(_grown(CREDITS_BOX, 2), box):
             return False
         if any(_overlaps(_grown(other, pad), box) for other in self.kept):
             return False
-        return not any(_overlaps(_grown(other, pad), box) for other in self.occupied(letters))
+        return not any(_overlaps(_grown(other, pad), box) for other in self.occupied(letters, ignoring))
 
     def backgrounds(self) -> list[str]:
         """The colours of the slide's background where nothing's on it: both ends of a gradient, and its pattern's."""
@@ -432,41 +435,6 @@ def _corner_spots(scene: Scene, size: float, inset: float = 40, letters: bool = 
     return spots
 
 
-def _confetti(
-    scene: Scene, colours: Sequence[str], count: int, sizes: tuple[float, float] = (22, 44), top: bool = True
-) -> None:
-    """A few pieces of confetti (dots, stars, triangles, rings) in free spots along the slide's edges (and along its
-    top, if top), each turned a little: never behind a text."""
-    candidates: list[tuple[float, float]] = []
-    for edge in (30.0, 62.0, WIDTH - 62.0, WIDTH - 30.0):
-        candidates += [(edge, float(down)) for down in range(90, HEIGHT - 80, 80)]
-    for across in range(200, WIDTH - 200, 160):
-        candidates.append((float(across), HEIGHT - 40.0))
-        if top:
-            candidates.append((float(across), 22.0))
-    random_util.shuffle(candidates)
-    placed: list[Box] = []
-    for x, y in candidates:
-        if len(placed) >= count:
-            break
-        size = random_util.uniform(*sizes)
-        spot = Box(x=x - size / 2, y=y - size / 2, w=size, h=size)
-        if not scene.free(spot, pad=12) or any(_overlaps(_grown(other, 40), spot) for other in placed):
-            continue
-        placed.append(spot)
-        colour = random_util.choice(colours)
-        kind = random_util.choice(("dot", "star", "triangle", "ring"))
-        turn = random_util.uniform(-25, 25)
-        if kind == "dot":
-            scene.under(_ellipse(x, y, size * 0.7, size * 0.7, colour))
-        elif kind == "star":
-            scene.under(_star(x, y, size, colour, turn))
-        elif kind == "triangle":
-            scene.under(_polygon(geometry.triangle(), spot.x, spot.y, size, size * 0.9, colour, rotation=turn))
-        else:
-            scene.under(_ring(x, y, size * 0.8, size * 0.8, colour, max(4.0, size / 7)))
-
-
 def _slide_number(
     scene: Scene,
     *boxes: Box,
@@ -653,51 +621,215 @@ def _ornate(scene: Scene) -> None:
         )
 
 
+# THE KINDERGARTEN'S (D77): four sets of decoration, of which a kids member has one (crayon drawings, a sticker book, a
+# school notebook, paper cut-outs), each in its member's palette's colours (see _paints), so that its palettes show:
+# only a sun stays yellow, and a crayon drawing's hills green
+
+_SUN_RAYS: Final = "#ffd23f"
+_SUN_DISC: Final = "#ffbf00"
+_HILLS: Final = ("#8ac926", "#5fb53c", "#7cc242")
+_WHITE: Final = "#ffffff"
+_PEEL: Final = "#e9e4dc"  # the back of a sticker, where it peels off
+_CARD: Final = "#fffdf8"  # a card of white paper
+# A rectangle and a circle as polygons, whose corners scissors can move a little (see _snipped)
+_RECTANGLE: Final = ((0.0, 0.0), (0.5, 0.0), (1.0, 0.0), (1.0, 0.5), (1.0, 1.0), (0.5, 1.0), (0.0, 1.0), (0.0, 0.5))
+_CIRCLE: Final = tuple(
+    (round(0.5 + 0.5 * math.cos(2 * math.pi * index / 32), 4), round(0.5 + 0.5 * math.sin(2 * math.pi * index / 32), 4))
+    for index in range(32)
+)
+
+
+def _paints(palette: Palette) -> list[str]:
+    """The colours a kindergarten's decoration is in, from its member's palette, so that its palettes show: its two
+    accents, as bright as crayons (an accent made darker to read as a text is bright again here), and its paper's own
+    hue, deep enough to show on it (a yellow paper's goes towards orange)."""
+    paints = []
+    for colour in (palette.accent, palette.accent_2):
+        hue, saturation, lightness = color.to_hsl(colour)
+        paints.append(color.hsl(hue, max(saturation, 0.6), min(max(lightness, 0.5), 0.66)))
+    hue, saturation, _ = color.to_hsl(palette.background)
+    paper = color.hsl(hue, max(saturation, 0.6), 0.5)
+    for _ in range(4):
+        if color.contrast(paper, palette.background) >= 1.6:
+            break
+        hue = (hue - 10) % 360
+        paper = color.hsl(hue, max(saturation, 0.6), 0.5)
+    return [*paints, paper]
+
+
+def _under_title(scene: Scene, title: str, most: float = 520.0) -> tuple[float, float, float]:
+    """Where a line under a title goes: its left end, its height and its width (as wide as the title's letters, at
+    most most), under their middle (or from their left end, for a title aligned left)."""
+    ink = scene.ink(title)
+    width = min(ink.w, most)
+    x = ink.x if scene.theme.title_align == "left" else ink.x + (ink.w - width) / 2
+    y = min(scene.box(title).y + scene.box(title).h + 12, ink.y + ink.h + 10)
+    return x, y, width
+
+
+def _framed(scene: Scene) -> list[str]:
+    """The roles of the slide's pictures that its decoration frames (in boxes of their own, on the slide types whose
+    pictures a motif may frame)."""
+    return scene.pictures() if scene.slide_type in _FRAMED_TYPES else []
+
+
+def _shadowed(
+    shape: ShapeElement, ink: str, right: float = 5, down: float = 7, opacity: float = 0.2
+) -> tuple[ShapeElement, ShapeElement]:
+    """A shape with a hard shadow under it (paper's, a sticker's): the shape again in ink, see-through, moved right
+    and down."""
+    box = shape.box
+    moved = Box(x=box.x + right, y=box.y + down, w=box.w, h=box.h)
+    return shape.model_copy(update={"box": moved, "color": ink, "opacity": opacity}), shape
+
+
+def _snipped(points: geometry.Points, amount: float = 0.012) -> geometry.Points:
+    """A shape's corners each moved a little (by up to amount of its box, staying in it), as scissors cut it."""
+    return tuple(
+        (
+            round(min(1.0, max(0.0, x + random_util.uniform(-amount, amount))), 4),
+            round(min(1.0, max(0.0, y + random_util.uniform(-amount, amount))), 4),
+        )
+        for x, y in points
+    )
+
+
+def _wobbly(
+    start: geometry.Point, end: geometry.Point, overshoot: float = 0.0, wobble: float = 2.0, steps: int = 6
+) -> list[geometry.Point]:
+    """A line drawn by hand from start to end (and a little past both, by overshoot), wobbling a little on its way."""
+    (x0, y0), (x1, y1) = start, end
+    length = math.hypot(x1 - x0, y1 - y0) or 1.0
+    dx, dy = (x1 - x0) / length, (y1 - y0) / length
+    points = []
+    for index in range(steps + 1):
+        along = -overshoot + (length + 2 * overshoot) * index / steps
+        off = random_util.uniform(-wobble, wobble) if 0 < index < steps else 0.0
+        points.append((x0 + dx * along - dy * off, y0 + dy * along + dx * off))
+    return points
+
+
+def _scatter(
+    scene: Scene,
+    count: int,
+    sizes: tuple[float, float],
+    draw: Callable[[float, float, float], None],
+    top: bool = True,
+    letters: bool = False,
+    edges: tuple[float, float] = (30.0, 62.0),
+    rows: tuple[float, float] = (22.0, 40.0),
+) -> None:
+    """Up to count pieces of decoration (confetti, stickers, doodles, paper shapes) in free spots along the slide's
+    sides (as far in from its left and right edges as edges says), and along its bottom (and its top, if top: as far
+    in as rows says), each of a size the seed picks between sizes, drawn by draw from its middle and its size: never
+    behind a text (its box, or with letters only its letters)."""
+    candidates: list[tuple[float, float]] = []
+    for edge in (*edges, *(WIDTH - edge for edge in reversed(edges))):
+        candidates += [(edge, float(down)) for down in range(90, HEIGHT - 80, 80)]
+    for across in range(200, WIDTH - 200, 160):
+        candidates.append((float(across), HEIGHT - rows[1]))
+        if top:
+            candidates.append((float(across), rows[0]))
+    random_util.shuffle(candidates)
+    placed: list[Box] = []
+    for x, y in candidates:
+        if len(placed) >= count:
+            break
+        size = random_util.uniform(*sizes)
+        spot = Box(x=x - size / 2, y=y - size / 2, w=size, h=size)
+        if not scene.free(spot, pad=12, letters=letters) or any(_overlaps(_grown(other, 40), spot) for other in placed):
+            continue
+        placed.append(spot)
+        draw(x, y, size)
+
+
+def _confetti(
+    scene: Scene, colours: Sequence[str], count: int, sizes: tuple[float, float] = (22, 44), top: bool = True
+) -> None:
+    """A few pieces of confetti (dots, stars, triangles, rings) in free spots along the slide's edges (and along its
+    top, if top), each turned a little: never behind a text."""
+
+    def piece(x: float, y: float, size: float) -> None:
+        colour = random_util.choice(colours)
+        kind = random_util.choice(("dot", "star", "triangle", "ring"))
+        turn = random_util.uniform(-25, 25)
+        if kind == "dot":
+            scene.under(_ellipse(x, y, size * 0.7, size * 0.7, colour))
+        elif kind == "star":
+            scene.under(_star(x, y, size, colour, turn))
+        elif kind == "triangle":
+            scene.under(
+                _polygon(geometry.triangle(), x - size / 2, y - size / 2, size, size * 0.9, colour, rotation=turn)
+            )
+        else:
+            scene.under(_ring(x, y, size * 0.8, size * 0.8, colour, max(4.0, size / 7)))
+
+    _scatter(scene, count, sizes, piece, top)
+
+
+# Crayon drawings
+
+
 def _crayon(scene: Scene) -> None:
-    """A kindergarten's: a crayon squiggle under the title, confetti along the edges (never behind a text),
-    pictures as stickers (a white border, an ink outline and a hard shadow), on its big slides, scenery; and the
-    slide's number ("7/12") on a little sticker of its own in the bottom right corner."""
+    """Crayon drawings: a crayon squiggle under the title, bunting across the top, confetti along the edges (never
+    behind a text), pictures in a box a crayon drew around them; on the title slide a sun, a cloud and hills with
+    flowers around a white card; a big sun with a section's number; and the slide's number ("7/12") in a crayon
+    circle in the bottom right corner."""
     palette = scene.palette
-    crayons = [colour for colour in CRAYONS if color.contrast(colour, palette.background) > 1.4]
+    paints = _paints(palette)
     title = scene.title()
     if title is not None:
-        ink = scene.ink(title)
-        width = min(ink.w, 520.0)
-        x = ink.x if scene.theme.title_align == "left" else ink.x + (ink.w - width) / 2
-        y = min(scene.box(title).y + scene.box(title).h + 12, ink.y + ink.h + 10)
+        x, y, width = _under_title(scene, title)
         squiggle = geometry.squiggle(x, y, width, 7, max(2.0, width / 130))
-        scene.add(_line(squiggle, 10, crayons[scene.number % len(crayons)]))
+        scene.add(_line(squiggle, 10, paints[scene.number % len(paints)]))
     if not scene.photo:
         if scene.placement.layout == "v5/kids-title":
-            _scenery(scene, crayons)
+            _scenery(scene, paints)
         else:
-            _bunting(scene, crayons, -10, WIDTH + 10, 2, 16, 34, 42)
+            _bunting(scene, paints, -10, WIDTH + 10, 2, 16, 34, 42)
     elif (span := _beside_side_photo(scene)) is not None:  # (a picture filling one side: bunting across the other)
-        _bunting(scene, crayons, *span, 2, 12, 34, 42)
-    sticker, number = _plate(WIDTH - 44 - 116, 116)
+        _bunting(scene, paints, *span, 2, 12, 34, 42)
+    if scene.placement.layout == "v5/kids-section":
+        _sun(scene, KIDS_BADGE, badge=True)
+    _, number = _plate(WIDTH - 44 - 116, 116)
     # (before the confetti, which keeps clear of it)
-    if scene.numbered and not scene.placement.photo and scene.free(number, pad=4):
-        corner = sticker.h / 2
-        scene.add(
-            _rect(sticker.x + 4, sticker.y + 4, sticker.w, sticker.h, palette.text, corner=corner),
-            _rect(sticker.x, sticker.y, sticker.w, sticker.h, "#ffffff", corner=corner),
-            _frame(sticker, palette.text, 2.5, corner=corner),
-        )
-        _slide_number(scene, number, spec="decoration centre", colour=palette.text)
-        scene.kept.append(sticker)
-    _confetti(scene, crayons, 6 if scene.big else 4, (30, 56), top=scene.photo)
-    for role in scene.pictures() if scene.slide_type in _FRAMED_TYPES else []:
-        shown = scene.shown(role, _grown(scene.box(role), -14))
-        corner = 0.08 * min(shown.w, shown.h) + 14
-        border = _grown(shown, 14)
-        scene.add(
-            _rect(border.x + 8, border.y + 8, border.w, border.h, palette.text, corner=corner),
-            _rect(border.x, border.y, border.w, border.h, "#ffffff", corner=corner),
-            _frame(border, palette.text, 3, corner=corner),
-            part_of=role,
-        )
+    if (
+        not scene.placement.photo
+        and scene.free(number, pad=4)
+        and _slide_number(scene, number, spec="decoration centre", colour=palette.text)
+    ):
+        circle = Box(x=number.x - 18, y=number.y - 2, w=number.w + 36, h=number.h + 4)
+        _crayon_circle(scene, circle, paints[(scene.number + 1) % len(paints)])
+        scene.kept.append(circle)
+    _confetti(scene, paints, 6 if scene.big else 4, (30, 56), top=scene.photo)
+    for index, role in enumerate(_framed(scene)):
+        _crayon_frame(scene, role, paints[(scene.number + index + 2) % len(paints)])
     if scene.slide_type == "section" or scene.slide_type == "questions":
         _sun(scene, Box(x=WIDTH - 330, y=40, w=280, h=280))
+
+
+def _crayon_frame(scene: Scene, role: str, colour: str) -> None:
+    """A box a crayon drew around a picture: a stroke along each of its sides, each a little past its corners."""
+    shown = scene.shown(role, _grown(scene.box(role), -18))
+    frame = _grown(shown, 9)
+    corners = [
+        (frame.x, frame.y),
+        (frame.x + frame.w, frame.y),
+        (frame.x + frame.w, frame.y + frame.h),
+        (frame.x, frame.y + frame.h),
+    ]
+    for start, end in zip(corners, [*corners[1:], corners[0]], strict=True):
+        scene.add(_line(_wobbly(start, end, 9, 2.0), 8, colour), part_of=role)
+
+
+def _crayon_circle(scene: Scene, around: Box, colour: str, width: float = 5) -> None:
+    """A circle drawn by hand around a box: two strokes, the second going on a little past where the first began."""
+    cx, cy = around.x + around.w / 2, around.y + around.h / 2
+    start = random_util.uniform(150, 210)
+    scene.add(
+        _line(geometry.arc(cx, cy, around.w / 2, around.h / 2, start, start + 200), width, colour),
+        _line(geometry.arc(cx, cy, around.w / 2 * 1.03, around.h / 2 * 1.06, start + 180, start + 380), width, colour),
+    )
 
 
 def _beside_side_photo(scene: Scene) -> tuple[float, float] | None:
@@ -716,14 +848,22 @@ def _beside_side_photo(scene: Scene) -> tuple[float, float] | None:
     return None
 
 
-def _sun(scene: Scene, box: Box) -> None:
-    """A crayon sun: a yellow disc with a burst of rays behind it, if there's room."""
-    if not scene.free(box, pad=8):
-        return
-    scene.under(
-        _polygon(geometry.burst(12, 0.62), box.x, box.y, box.w, box.h, "#ffd23f", rotation=8),
-        _ellipse(box.x + box.w / 2, box.y + box.h / 2, box.w * 0.62, box.h * 0.62, "#ffbf00"),
-    )
+def _sun(scene: Scene, box: Box, badge: bool = False) -> None:
+    """A crayon sun: a yellow disc with a burst of rays behind it, if there's room; or a section's badge, with its
+    number on the disc."""
+    disc = _grown(box, -box.w * 0.19)
+    if badge:
+        scene.add(
+            _polygon(geometry.burst(12, 0.62), box.x, box.y, box.w, box.h, _SUN_RAYS),
+            _ellipse(disc.x + disc.w / 2, disc.y + disc.h / 2, disc.w, disc.h, _SUN_DISC),
+        )
+        scene.placement.colors["kicker"] = scene.on([_SUN_DISC], minimum=color.LARGE_TEXT_CONTRAST)
+        scene.kept.append(box)
+    elif scene.free(box, pad=8):
+        scene.under(
+            _polygon(geometry.burst(12, 0.62), box.x, box.y, box.w, box.h, _SUN_RAYS, rotation=8),
+            _ellipse(box.x + box.w / 2, box.y + box.h / 2, box.w * 0.62, box.h * 0.62, _SUN_DISC),
+        )
 
 
 def _bunting(
@@ -784,35 +924,585 @@ def _flower(scene: Scene, x: float, y: float, size: float, colour: str) -> None:
                 x + math.cos(angle) * size * 0.32, y + math.sin(angle) * size * 0.32, size * 0.42, size * 0.42, colour
             )
         )
-    scene.under(_ellipse(x, y, size * 0.36, size * 0.36, "#ffbf00"))
+    scene.under(_ellipse(x, y, size * 0.36, size * 0.36, _SUN_DISC))
 
 
-def _scenery(scene: Scene, crayons: Sequence[str]) -> None:
-    """A kindergarten's title slide: bunting across the top, a sun and a cloud, rolling hills with flowers along the
+def _scenery(scene: Scene, paints: Sequence[str]) -> None:
+    """Crayon drawings' title slide: bunting across the top, a sun and a cloud, rolling hills with flowers along the
     bottom, and the title and subtitle on a white card with a thick crayon outline."""
     palette = scene.palette
-    _bunting(scene, crayons, -30, WIDTH + 30, 0, 70, 66, 84)
+    _bunting(scene, paints, -30, WIDTH + 30, 0, 70, 66, 84)
     _sun(scene, Box(x=WIDTH - 250, y=118, w=220, h=220))
     _cloud(scene, 70, 150, 230)
     scene.under(
-        _ellipse(330, 1110, 1300, 560, "#8ac926"),
-        _ellipse(1480, 1150, 1500, 600, "#5fb53c"),
-        _ellipse(900, 1220, 1500, 520, "#7cc242"),
+        _ellipse(330, 1110, 1300, 560, _HILLS[0]),
+        _ellipse(1480, 1150, 1500, 600, _HILLS[1]),
+        _ellipse(900, 1220, 1500, 520, _HILLS[2]),
     )
-    for x, y, colour in (
-        (200, 925, crayons[0]),
-        (420, 880, crayons[3 % len(crayons)]),
-        (1580, 935, crayons[5 % len(crayons)]),
-    ):
+    for x, y, colour in ((200, 925, paints[0]), (420, 880, paints[1]), (1580, 935, paints[2])):
         _flower(scene, x, y, 52, colour)
     if scene.present("title"):
         title = scene.box("title")
         card = Box(x=title.x - 50, y=title.y - 40, w=title.w + 100, h=480)
         scene.add(
             _rect(card.x + 12, card.y + 12, card.w, card.h, palette.text, corner=44),
-            _rect(card.x, card.y, card.w, card.h, "#ffffff", corner=44),
-            _frame(card, crayons[scene.theme.motif_variant % len(crayons)], 10, corner=44),
+            _rect(card.x, card.y, card.w, card.h, _WHITE, corner=44),
+            _frame(card, paints[scene.theme.motif_variant % len(paints)], 10, corner=44),
         )
+
+
+# A sticker book
+
+
+def _stickers(scene: Scene) -> None:
+    """A sticker book's: titles on white labels, stickers (stars, hearts, dots, smileys, flowers) along the edges,
+    pictures as stickers with a white edge and a corner peeling off; on the title slide, a big label, a rainbow and
+    stickers around it; a prize rosette with a section's number; and the slide's number ("7/12") on a sticker of its
+    own in the bottom right corner."""
+    palette = scene.palette
+    paints = _paints(palette)
+    title = scene.title()
+    if title is not None:
+        _label(scene, title, paints[scene.number % len(paints)])
+    if scene.placement.layout == "v5/kids-title":
+        _sticker_card(scene, paints)
+    elif scene.placement.layout == "v5/kids-section":
+        _rosette(scene, paints)
+    pill, number = _plate(WIDTH - 44 - 124, 124)
+    if scene.numbered and not scene.placement.photo and scene.free(number, pad=4):
+        paint = paints[(scene.theme.motif_variant + 1) % len(paints)]
+        corner = pill.h / 2
+        shadow, rim = _shadowed(
+            _rect(pill.x - 5, pill.y - 5, pill.w + 10, pill.h + 10, _WHITE, corner=corner + 5), palette.text, 3, 4, 0.18
+        )
+        scene.add(shadow, rim, _rect(pill.x, pill.y, pill.w, pill.h, paint, corner=corner))
+        _slide_number(scene, number, spec="decoration centre", colour=scene.on([paint]))
+        scene.kept.append(_grown(pill, 5))
+    big = scene.placement.layout in ("v5/kids-title", "v5/kids-section") or scene.big
+    kinds = ("star", "heart", "dot", "smiley", "flower")
+
+    def stick(x: float, y: float, size: float) -> None:  # (its white edge, turned, inside the spot)
+        kind = random_util.choice(kinds)
+        _sticker(scene, kind, x, y, size * 0.78, random_util.choice(paints), random_util.uniform(-18, 18))
+
+    count = 6 if scene.placement.layout == "v5/kids-title" else 4 if big else 2
+    sizes = (120.0, 180.0) if big else (80.0, 116.0)
+    _scatter(scene, count, sizes, stick, letters=True, edges=(70.0, 120.0), rows=(76.0, 90.0))
+    for role in _framed(scene):
+        _sticker_picture(scene, role)
+
+
+def _sticker(scene: Scene, kind: str, x: float, y: float, size: float, colour: str, turn: float) -> None:
+    """A sticker, its middle at (x, y): a star, a heart, a dot with a shine, a smiley or a flower, in the colour, on a
+    white edge, with a soft shadow under it (over the layout's shapes, such as a photo's shade: a sticker is stuck on
+    top)."""
+    ink = scene.palette.text
+    rim = max(6.0, size * 0.09)
+    box = Box(x=x - size / 2, y=y - size / 2, w=size, h=size)
+    edge = _grown(box, rim)
+    shapes = {"star": geometry.star(5, 0.5), "heart": geometry.heart(), "flower": geometry.scallop(6, 0.32)}
+    if kind in shapes:
+        backing = _polygon(shapes[kind], edge.x, edge.y, edge.w, edge.h, _WHITE, rotation=turn)
+        face = _polygon(shapes[kind], box.x, box.y, box.w, box.h, colour, rotation=turn)
+    else:
+        backing = _ellipse(x, y, edge.w, edge.h, _WHITE)
+        face = _ellipse(x, y, size, size, colour)
+    scene.add(*_shadowed(backing, ink, 3, 5, 0.18), face)
+    if kind == "dot":  # (a shine on it)
+        scene.add(_ellipse(x - size * 0.17, y - size * 0.19, size * 0.3, size * 0.17, _WHITE, 0.7))
+    elif kind == "flower":  # (its middle)
+        scene.add(_ellipse(x, y, size * 0.34, size * 0.34, _SUN_DISC))
+    elif kind == "smiley":  # (eyes and a smile, in ink)
+        eye = size * 0.1
+        scene.add(
+            _ellipse(x - size * 0.16, y - size * 0.1, eye, eye * 1.4, ink),
+            _ellipse(x + size * 0.16, y - size * 0.1, eye, eye * 1.4, ink),
+            _line(geometry.arc(x, y + size * 0.02, size * 0.24, size * 0.2, 25, 155, 12), max(3.0, size * 0.05), ink),
+        )
+
+
+def _label(scene: Scene, title: str, paint: str) -> None:
+    """A title on a white label (a sticker with round ends, edged in a paint): if it has two lines at most, and the
+    label keeps clear of the slide's other elements."""
+    if len(scene.lines(title)) > 2:
+        return
+    ink = scene.ink(title)
+    label = Box(x=ink.x - 36, y=ink.y - 14, w=ink.w + 72, h=ink.h + 28)
+    if not scene.free(label, pad=8, ignoring=(title,)):
+        return
+    corner = min(label.h / 2, 40.0)
+    shadow, card = _shadowed(
+        _rect(label.x, label.y, label.w, label.h, _WHITE, corner=corner), scene.palette.text, 4, 6, 0.16
+    )
+    scene.add(shadow, card, _frame(_grown(label, -7), paint, 3, corner=max(0.0, corner - 7)))
+    scene.placement.colors[title] = scene.on([_WHITE], scene.palette.text, color.LARGE_TEXT_CONTRAST)
+    scene.placement.on_fill.add(title)
+    scene.kept.append(label)
+
+
+def _sticker_picture(scene: Scene, role: str) -> None:
+    """A picture as a sticker: a white edge with round corners and a soft shadow, its bottom right corner peeling off
+    (where that keeps off the credit line)."""
+    palette = scene.palette
+    shown = scene.shown(role, _grown(scene.box(role), -16))
+    edge = _grown(shown, 12)
+    corner = 0.06 * min(shown.w, shown.h) + 12
+    backing = _rect(edge.x, edge.y, edge.w, edge.h, _WHITE, corner=corner)
+    scene.add(*_shadowed(backing, palette.text, 6, 8, 0.18), part_of=role)
+    fold = min(56.0, 0.16 * min(edge.w, edge.h))
+    peel = Box(x=edge.x + edge.w - fold, y=edge.y + edge.h - fold, w=fold, h=fold)
+    if scene.credits and _overlaps(_grown(CREDITS_BOX, 2), peel):
+        return
+    # (where its corner was, the paper under it; over that, the sticker's back, folded over along the diagonal)
+    cut = _polygon(((1.0, 0.0), (1.0, 1.0), (0.0, 1.0)), peel.x, peel.y, fold, fold, palette.background)
+    flap = _polygon(((0.0, 0.0), (1.0, 0.0), (0.0, 1.0)), peel.x, peel.y, fold, fold, _PEEL)
+    scene.over(cut, *_shadowed(flap, palette.text, 3, 3, 0.18), part_of=role)
+
+
+def _sticker_card(scene: Scene, paints: Sequence[str]) -> None:
+    """A sticker book's title slide: the title and subtitle on a big white label edged in a paint, with a rainbow
+    sticker in a free corner (and stickers around it, which _stickers scatters)."""
+    palette = scene.palette
+    if scene.present("title"):
+        title = scene.box("title")
+        card = Box(x=title.x - 50, y=title.y - 40, w=title.w + 100, h=480)
+        shadow, label = _shadowed(_rect(card.x, card.y, card.w, card.h, _WHITE, corner=48), palette.text, 8, 12, 0.16)
+        paint = paints[scene.theme.motif_variant % len(paints)]
+        scene.add(shadow, label, _frame(_grown(card, -14), paint, 6, corner=36))
+        scene.kept.append(card)
+    spots = _corner_spots(scene, 260, 40, letters=True)
+    if spots:
+        spot = spots[scene.theme.motif_variant % len(spots)]
+        _rainbow(scene, spot.x, spot.y + 60, 260, paints)
+        scene.kept.append(spot)
+
+
+def _rainbow(scene: Scene, x: float, y: float, width: float, paints: Sequence[str]) -> None:
+    """A rainbow sticker from (x, y), this wide: three bands of the paints, a shadow under them, and a white cloud at
+    each end."""
+    ink = scene.palette.text
+    band = width / 2 * 0.2
+    middle, base = x + width / 2, y + width / 2
+    for index, colour in enumerate(paints[:3]):
+        radius = width / 2 - index * band
+        inner = (radius - band) / radius
+        shape = _polygon(geometry.arch(inner), middle - radius, base - radius, 2 * radius, radius, colour)
+        if index == 0:
+            scene.under(_shadowed(shape, ink, 3, 5, 0.18)[0])
+        scene.under(shape)
+    for end in (x + band * 1.5, x + width - band * 1.5):
+        for dx, dy, size in ((-0.9, 0.1, 1.5), (0.7, 0.15, 1.3), (0.0, -0.35, 1.6)):
+            scene.under(_ellipse(end + dx * band, base + dy * band, size * band, size * band * 0.85, _WHITE))
+
+
+def _rosette(scene: Scene, paints: Sequence[str]) -> None:
+    """A section's prize rosette: two ribbon tails hanging under a scalloped badge of a paint, with a white middle,
+    where the section's number goes."""
+    palette = scene.palette
+    badge = _grown(KIDS_BADGE, -40)
+    middle = KIDS_BADGE_MIDDLE
+    across = badge.x + badge.w / 2
+    for side, turn in ((-1, 14.0), (1, -14.0)):
+        tail = _polygon(
+            geometry.ribbon(), across - 60 + side * 72, badge.y + badge.h - 190, 120, 280, paints[1], rotation=turn
+        )
+        scene.add(*_shadowed(tail, palette.text, 4, 6, 0.16))
+    rosette = _polygon(geometry.scallop(16, 0.1), badge.x, badge.y, badge.w, badge.h, paints[0])
+    ring = _grown(middle, 22)
+    scene.add(
+        *_shadowed(rosette, palette.text, 6, 8, 0.18),
+        _ring(ring.x + ring.w / 2, ring.y + ring.h / 2, ring.w, ring.h, _WHITE, 8, 0.85),
+        _ellipse(middle.x + middle.w / 2, middle.y + middle.h / 2, middle.w, middle.h, _WHITE),
+    )
+    scene.placement.colors["kicker"] = scene.on([_WHITE], palette.accent, color.LARGE_TEXT_CONTRAST)
+    scene.kept.append(Box(x=KIDS_BADGE.x, y=KIDS_BADGE.y, w=KIDS_BADGE.w, h=KIDS_BADGE.h + 90))
+
+
+# A school notebook
+
+
+def _notebook(scene: Scene) -> None:
+    """A school notebook's: ruled or squared paper (its pattern), a margin line down its left side, holes punched for
+    a ring binder (or a spiral binding) along its left edge, a ballpoint underline (or a highlighter's stroke) under
+    the title, ballpoint doodles in free spots (stars, spirals, hearts, smileys, flowers, suns, arrows), pictures
+    printed and taped in; on the title slide, an exercise book's cover with a label; a circled number for a section;
+    and the slide's number ("7/12") at the foot of the page, underlined twice. In its palette's pens: its accents and
+    its muted colour."""
+    palette = scene.palette
+    paints = _paints(palette)
+    pens = [palette.accent, palette.accent_2, palette.muted]
+    cover = scene.placement.layout == "v5/kids-title"
+    if cover:
+        _exercise_book(scene, paints)
+    elif not scene.photo:
+        _margin(scene, palette.accent_2)
+        _binding(scene)
+    title = scene.title()
+    if title is not None:
+        if scene.theme.motif_variant % 3 == 0:
+            _highlight(scene, title, paints[2])
+        else:
+            x, y, width = _under_title(scene, title, 560)
+            scene.add(
+                _line(_wobbly((x, y), (x + width, y - 3), 0, 1.5), 5, pens[0]),
+                _line(_wobbly((x + width * 0.08, y + 11), (x + width * 0.88, y + 9), 0, 1.5), 4, pens[0]),
+            )
+    if scene.placement.layout == "v5/kids-section":
+        _circled(scene, pens)
+    _, number = _plate(WIDTH - 60 - 120, 120)
+    if (
+        not cover
+        and not scene.placement.photo
+        and scene.free(number, pad=4)
+        and _slide_number(scene, number, spec="decoration centre", colour=pens[0])
+    ):
+        middle = number.x + number.w / 2
+        scene.add(
+            _line(
+                _wobbly((middle - 40, number.y + number.h + 3), (middle + 40, number.y + number.h + 2), 0, 1),
+                3,
+                pens[1],
+            ),
+            _line(
+                _wobbly((middle - 32, number.y + number.h + 9), (middle + 36, number.y + number.h + 8), 0, 1),
+                3,
+                pens[1],
+            ),
+        )
+        scene.kept.append(Box(x=number.x, y=number.y, w=number.w, h=HEIGHT - number.y))
+    elif cover and scene.numbered:  # (on the cover, in white)
+        _slide_number(scene, number, spec="decoration centre", colour=_WHITE)
+    if not scene.photo:
+        doodles = ("star", "spiral", "heart", "smiley", "flower", "sun", "arrow")
+        inks = [_WHITE] if cover else pens
+
+        def doodle(x: float, y: float, size: float) -> None:
+            _doodle(scene, random_util.choice(doodles), x, y, size, random_util.choice(inks))
+
+        count = 5 if cover else 4 if scene.big else 2
+        _scatter(scene, count, (64.0, 104.0), doodle, letters=True, edges=(140.0, 100.0), rows=(70.0, 90.0))
+    for index, role in enumerate(_framed(scene)):
+        _taped_in(scene, role, paints[(scene.number + index) % len(paints)])
+
+
+def _margin(scene: Scene, colour: str) -> None:
+    """A notebook's margin line down its left side, but where something's in the way there (a text's letters, a
+    picture): it goes behind no text."""
+    x = 74.0
+    blocked = sorted(
+        (box for box in scene.occupied(letters=True) if box.x < x + 6 and box.x + box.w > x - 4),
+        key=lambda box: box.y,
+    )
+    top = 0.0
+    for box in [*blocked, Box(x=x, y=HEIGHT, w=1, h=1)]:
+        if box.y - top > 24:
+            scene.under(_rect(x - 1.5, top, 3, box.y - top, colour, 0.7))
+        top = max(top, box.y + box.h)
+
+
+def _binding(scene: Scene) -> None:
+    """Along a notebook's left edge, three holes punched for a ring binder, or a spiral binding's coils (one or the
+    other, the same on all of a member's slides), where nothing else is."""
+    palette = scene.palette
+    hole = color.mix(palette.background, palette.text, 0.22)
+    if scene.theme.motif_variant % 2:
+        for y in (HEIGHT / 2 - 330, HEIGHT / 2, HEIGHT / 2 + 330):
+            if scene.free(Box(x=22, y=y - 17, w=34, h=34), pad=4, letters=True):
+                scene.under(_ellipse(39, y, 34, 34, hole))
+        return
+    metal = color.mix(palette.text, _WHITE, 0.5)
+    for y in range(46, HEIGHT - 30, 50):
+        if scene.free(Box(x=0, y=y - 14, w=56, h=28), pad=4, letters=True):
+            scene.under(_ellipse(40, y, 14, 14, hole), _rect(-12, y - 6, 56, 12, metal, corner=6, rotation=-12))
+
+
+def _highlight(scene: Scene, title: str, colour: str) -> None:
+    """A highlighter's stroke across the lower part of each of a title's lines (two at most), as see-through as the
+    title over it allows."""
+    lines = scene.lines(title)[:2]
+    behind = scene.backgrounds()
+    opacity = 0.4
+    title_colour = scene.palette.text
+    while opacity > 0.1 and any(
+        color.contrast(title_colour, color.mix(background, colour, opacity)) < color.BODY_CONTRAST
+        for background in behind
+    ):
+        opacity = round(opacity - 0.05, 2)
+    if opacity <= 0.1:
+        return
+    for line in lines:
+        size = line.h / 1.2
+        scene.add(
+            _polygon(
+                geometry.slanted(0.02),
+                line.x - 12,
+                line.y + size * 0.55,
+                line.w + 24,
+                size * 0.55,
+                colour,
+                opacity,
+                -0.6,
+            )
+        )
+
+
+def _doodle(scene: Scene, kind: str, x: float, y: float, size: float, colour: str) -> None:
+    """A ballpoint doodle, its middle at (x, y), about size big: a star (five strokes, as children draw one), a
+    spiral, a heart, a smiley, a flower, a sun, or a wavy arrow."""
+    width = max(3.5, size * 0.05)
+    half = size / 2
+    if kind == "star":
+        corners = [
+            (
+                x + half * math.sin(math.radians(144 * index)),
+                y - half * math.cos(math.radians(144 * index)) + size * 0.05,
+            )
+            for index in range(6)
+        ]
+        scene.under(*(_line([start, end], width, colour) for start, end in itertools.pairwise(corners)))
+    elif kind == "spiral":
+        scene.under(_line(geometry.spiral(x, y, half, 2.6), width, colour))
+    elif kind == "heart":
+        outline = [(x - half + px * size, y - half + py * size * 0.9) for px, py in geometry.heart()]
+        scene.under(_line(outline[:21], width, colour), _line([*outline[20:], outline[0]], width, colour))
+    elif kind == "smiley":
+        scene.under(
+            _ring(x, y, size, size, colour, width),
+            _ellipse(x - size * 0.16, y - size * 0.12, size * 0.08, size * 0.12, colour),
+            _ellipse(x + size * 0.16, y - size * 0.12, size * 0.08, size * 0.12, colour),
+            _line(geometry.arc(x, y + size * 0.04, size * 0.24, size * 0.18, 25, 155, 12), width, colour),
+        )
+    elif kind == "flower":
+        for index in range(5):
+            angle = 2 * math.pi * index / 5 - math.pi / 2
+            px, py = x + math.cos(angle) * size * 0.3, y + math.sin(angle) * size * 0.3
+            scene.under(_ring(px, py, size * 0.36, size * 0.36, colour, width))
+        scene.under(_ellipse(x, y, size * 0.2, size * 0.2, colour))
+    elif kind == "sun":
+        scene.under(_ring(x, y, size * 0.5, size * 0.5, colour, width))
+        for index in range(8):
+            angle = 2 * math.pi * index / 8
+            start = (x + math.cos(angle) * size * 0.34, y + math.sin(angle) * size * 0.34)
+            scene.under(_line([start, (x + math.cos(angle) * half, y + math.sin(angle) * half)], width, colour))
+    else:  # (a wavy arrow, pointing right)
+        shaft = geometry.squiggle(x - half, y, size * 0.92, size * 0.08, 1.2, 16)
+        tip = shaft[-1]
+        scene.under(
+            _line(shaft, width, colour),
+            _line([(tip[0] - size * 0.2, tip[1] - size * 0.16), tip], width, colour),
+            _line([(tip[0] - size * 0.2, tip[1] + size * 0.16), tip], width, colour),
+        )
+
+
+def _taped_in(scene: Scene, role: str, tape: str) -> None:
+    """A picture printed with a white edge and a thin shadow, taped in with two strips of washi tape across its top
+    corners (or its bottom ones)."""
+    shown = scene.shown(role, _grown(scene.box(role), -14))
+    edge = _grown(shown, 10)
+    scene.add(*_shadowed(_rect(edge.x, edge.y, edge.w, edge.h, _WHITE), scene.palette.text, 3, 4, 0.16), part_of=role)
+    _tape(scene, role, shown, tape, 0.8)
+
+
+def _tape(scene: Scene, role: str, shown: Box, colour: str, opacity: float) -> None:
+    """Two strips of tape holding a picture up: across its top corners, or else its bottom ones (a little higher up
+    them if they'd reach the credit line), where they're clear of the texts' letters."""
+    letters = [_grown(line, 8) for text in scene.texts() for line in scene.lines(text)]
+    floor = CREDITS_BOX.y - 4 if scene.credits else HEIGHT  # (tape stays off the credit line)
+    for y, turns in ((shown.y, (-35.0, 35.0)), (shown.y + shown.h, (35.0, -35.0))):
+        tapes = [
+            _rect(corner - 55, y - 17, 110, 34, colour, opacity, rotation=turn)
+            for corner, turn in zip((shown.x, shown.x + shown.w), turns, strict=True)
+        ]
+        lift = max(geometry.bounds(tape).y + geometry.bounds(tape).h for tape in tapes) - floor
+        if lift > 40:
+            continue
+        if lift > 0:
+            tapes = [_moved(tape, -lift) for tape in tapes]
+        if not any(_overlaps(geometry.bounds(tape), area) for tape in tapes for area in letters):
+            scene.over(*tapes, part_of=role)
+            return
+
+
+def _exercise_book(scene: Scene, paints: Sequence[str]) -> None:
+    """A notebook's title slide, its cover: a cover of a paint over the whole slide, a cloth spine along its left edge
+    with a seam, and the title and subtitle on a white label with a double edge (doodles on the cover in white come
+    later)."""
+    palette = scene.palette
+    cover = paints[scene.theme.motif_variant % len(paints)]
+    scene.under(_rect(0, 0, WIDTH, HEIGHT, cover), _rect(0, 0, 110, HEIGHT, color.mix(cover, palette.text, 0.35)))
+    for y in range(28, HEIGHT - 20, 46):  # (the seam's stitches)
+        scene.under(_rect(124, y, 4, 22, _WHITE, 0.7))
+    if scene.present("title"):
+        title = scene.box("title")
+        label = Box(x=title.x - 60, y=title.y - 50, w=title.w + 120, h=470)
+        scene.add(
+            *_shadowed(_rect(label.x, label.y, label.w, label.h, _WHITE, corner=28), palette.text, 6, 9, 0.22),
+            _frame(_grown(label, -12), cover, 4, corner=18),
+            _frame(_grown(label, -22), cover, 1.5, corner=10),
+        )
+        scene.kept.append(label)
+
+
+def _circled(scene: Scene, pens: Sequence[str]) -> None:
+    """A section's number circled in ballpoint, with rays doodled around the circle (a sun)."""
+    middle = KIDS_BADGE_MIDDLE
+    cx, cy, radius = middle.x + middle.w / 2, middle.y + middle.h / 2, middle.w / 2
+    start = random_util.uniform(200, 250)
+    scene.add(
+        _line(geometry.arc(cx, cy, radius, radius * 0.96, start, start + 210, 40), 9, pens[0]),
+        _line(geometry.arc(cx, cy, radius * 1.04, radius, start + 190, start + 390, 40), 9, pens[0]),
+    )
+    for index in range(12):
+        angle = 2 * math.pi * (index + 0.5) / 12
+        inner, outer = radius + 36, radius + (96 if index % 2 == 0 else 68)
+        ray = [(cx + inner * math.cos(angle), cy + inner * math.sin(angle))]
+        ray.append((cx + outer * math.cos(angle), cy + outer * math.sin(angle)))
+        scene.add(_line(ray, 8, pens[1]))
+    scene.placement.colors["kicker"] = scene.on(scene.backgrounds(), scene.palette.accent, color.LARGE_TEXT_CONTRAST)
+    scene.kept.append(KIDS_BADGE)
+
+
+# Paper cut-outs
+
+
+def _cutouts(scene: Scene) -> None:
+    """Paper cut-outs': shapes cut from construction paper in its palette's colours, a little uneven as scissors cut
+    them, each with a small shadow: a strip with a pinked edge under the title, layered paper in two of the slide's
+    corners, shapes (hearts, stars, circles, leaves, triangles) along its edges, pictures on paper mats turned a
+    little; on the title slide, paper hills, a sun and clouds around a paper card; a paper flower with a section's
+    number; and the slide's number ("7/12") on a paper tag in the bottom right corner."""
+    palette = scene.palette
+    paints = _paints(palette)
+    ink = palette.text
+    title = scene.title()
+    if title is not None:
+        x, y, width = _under_title(scene, title, 460)
+        strip = _polygon(geometry.pinked(max(6, int(width // 36)), 0.4), x, y - 6, width, 22, paints[scene.number % 3])
+        scene.add(*_shadowed(strip, ink, 3, 4, 0.2))
+    if scene.placement.layout == "v5/kids-title":
+        _paper_landscape(scene, paints)
+    elif scene.placement.layout == "v5/kids-section":
+        _paper_flower(scene, paints)
+    tag, number = _plate(WIDTH - 44 - 124, 124)
+    if scene.numbered and not scene.placement.photo and scene.free(number, pad=4):
+        paint = paints[(scene.theme.motif_variant + 1) % len(paints)]
+        shape = _polygon(_snipped(_RECTANGLE, 0.03), tag.x, tag.y, tag.w, tag.h, paint, rotation=-2)
+        scene.add(*_shadowed(shape, ink, 3, 4, 0.2))
+        _slide_number(scene, number, spec="decoration centre", colour=scene.on([paint]))
+        scene.kept.append(_grown(tag, 4))
+    if not scene.photo and scene.placement.layout not in ("v5/kids-title", "v5/kids-section"):
+        for corner in _CORNER_PAIRS[scene.theme.motif_variant % len(_CORNER_PAIRS)]:
+            _paper_corner(scene, corner, paints)
+    kinds = {"heart": geometry.heart(), "star": geometry.star(5, 0.5), "circle": _CIRCLE, "leaf": geometry.leaf()}
+
+    def cut(x: float, y: float, size: float) -> None:
+        kind = random_util.choice(tuple(kinds))
+        height = size * (0.5 if kind == "leaf" else 1.0)
+        shape = _polygon(
+            _snipped(kinds[kind], 0.02),
+            x - size / 2,
+            y - height / 2,
+            size,
+            height,
+            random_util.choice(paints),
+            rotation=random_util.uniform(-30, 30),
+        )
+        scene.under(*_shadowed(shape, ink, 3, 5, 0.2))
+
+    count = 5 if scene.big else 3
+    _scatter(scene, count, (46.0, 74.0), cut, letters=True, edges=(60.0, 110.0), rows=(60.0, 80.0))
+    for index, role in enumerate(_framed(scene)):
+        turn = 1.6 if (index + scene.theme.motif_variant) % 2 else -1.6
+        _matted(scene, role, paints[(scene.number + index) % len(paints)], turn)
+    if scene.slide_type == "questions":
+        spots = _corner_spots(scene, 200, 50, letters=True)
+        if spots:
+            spot = spots[0]
+            star = _polygon(
+                _snipped(geometry.star(5, 0.48), 0.015), spot.x, spot.y, spot.w, spot.h, paints[0], rotation=-12
+            )
+            scene.under(*_shadowed(star, ink, 5, 7, 0.2))
+
+
+# Which corners of a slide cut-outs layer paper in (0: the top left, 1: the top right, 2: the bottom left; the bottom
+# right is the slide's number's)
+_CORNER_PAIRS: Final = ((0, 1), (0, 2), (1, 2))
+
+
+def _paper_corner(scene: Scene, corner: int, paints: Sequence[str]) -> None:
+    """Layered paper in a corner of the slide: quarter circles, each smaller and of another paint, with a hole of the
+    paper's own colour in their middle, as large as there's room for."""
+    palette = scene.palette
+    for radius in (220.0, 170.0, 130.0):
+        spot = Box(
+            x=WIDTH - radius if corner == 1 else 0.0, y=HEIGHT - radius if corner == 2 else 0.0, w=radius, h=radius
+        )
+        if scene.free(spot, pad=16, letters=True):
+            break
+    else:
+        return
+    cx, cy = (WIDTH if corner == 1 else 0.0), (HEIGHT if corner == 2 else 0.0)
+    layers = ((1.0, paints[0]), (0.76, paints[1]), (0.54, paints[2]), (0.32, palette.background))
+    for share, colour in layers:
+        size = radius * share
+        disc = _polygon(_snipped(_CIRCLE, 0.008), cx - size, cy - size, 2 * size, 2 * size, colour)
+        scene.under(*_shadowed(disc, palette.text, 5, 7, 0.18))
+    scene.kept.append(spot)
+
+
+def _matted(scene: Scene, role: str, paint: str, turn: float) -> None:
+    """A picture on a mat of construction paper a little bigger than it, turned a little, with a shadow."""
+    shown = scene.shown(role, _grown(scene.box(role), -26))
+    mat = _grown(shown, 15)
+    shape = _polygon(_snipped(_RECTANGLE, 0.006), mat.x, mat.y, mat.w, mat.h, paint, rotation=turn)
+    scene.add(*_shadowed(shape, scene.palette.text, 6, 8, 0.2), part_of=role)
+
+
+def _paper_landscape(scene: Scene, paints: Sequence[str]) -> None:
+    """Paper cut-outs' title slide: layered paper hills along the bottom, a paper sun and a cloud, and the title and
+    subtitle on a card of white paper with a strip of tape across its top."""
+    palette = scene.palette
+    ink = palette.text
+    hills = (
+        (330, 1130, 1300, 560, color.mix(paints[2], _WHITE, 0.25)),
+        (1480, 1160, 1500, 600, paints[1]),
+        (900, 1235, 1500, 520, paints[0]),
+    )
+    for cx, cy, width, height, colour in hills:
+        hill = _polygon(_snipped(_CIRCLE, 0.004), cx - width / 2, cy - height / 2, width, height, colour)
+        scene.under(*_shadowed(hill, ink, 0, -9, 0.18))
+    sun = Box(x=WIDTH - 300, y=70, w=230, h=230)
+    rays = _polygon(_snipped(geometry.burst(12, 0.6), 0.01), sun.x, sun.y, sun.w, sun.h, _SUN_RAYS, rotation=8)
+    disc = _polygon(_snipped(_CIRCLE, 0.01), sun.x + 44, sun.y + 44, sun.w - 88, sun.h - 88, _SUN_DISC)
+    scene.under(*_shadowed(rays, ink, 4, 6, 0.18), *_shadowed(disc, ink, 3, 4, 0.18))
+    for px, py, size in ((70, 170, 120), (150, 130, 150), (240, 175, 110)):
+        puff = _polygon(_snipped(_CIRCLE, 0.01), px, py, size, size * 0.8, _WHITE)
+        scene.under(*_shadowed(puff, ink, 3, 5, 0.12))
+    if scene.present("title"):
+        title = scene.box("title")
+        card = Box(x=title.x - 50, y=title.y - 40, w=title.w + 100, h=480)
+        paper = _polygon(_snipped(_RECTANGLE, 0.004), card.x, card.y, card.w, card.h, _CARD)
+        tape = _rect(card.x + card.w / 2 - 90, card.y - 22, 180, 44, paints[0], 0.8, rotation=-3)
+        scene.add(*_shadowed(paper, ink, 8, 12, 0.18), tape)
+        scene.kept.append(card)
+
+
+def _paper_flower(scene: Scene, paints: Sequence[str]) -> None:
+    """A section's paper flower: petals cut from one paint, its middle a circle of another, where the section's number
+    goes; a stem and a leaf under it."""
+    palette = scene.palette
+    ink = palette.text
+    badge = _grown(KIDS_BADGE, -20)
+    middle = KIDS_BADGE_MIDDLE
+    across = middle.x + middle.w / 2
+    stem = _rect(across - 14, badge.y + badge.h - 60, 28, HEIGHT - badge.y - badge.h + 80, paints[2])
+    leaf = _polygon(_snipped(geometry.leaf(), 0.01), across + 4, HEIGHT - 170, 170, 76, paints[2], rotation=-28)
+    petals = _polygon(_snipped(geometry.scallop(8, 0.42), 0.006), badge.x, badge.y, badge.w, badge.h, paints[0])
+    heart = _polygon(_snipped(_CIRCLE, 0.008), middle.x, middle.y, middle.w, middle.h, paints[1])
+    for shape in (stem, leaf, petals, heart):
+        scene.add(*_shadowed(shape, ink, 5, 7, 0.18))
+    scene.placement.colors["kicker"] = scene.on([paints[1]], minimum=color.LARGE_TEXT_CONTRAST)
+    scene.kept.append(Box(x=KIDS_BADGE.x, y=KIDS_BADGE.y, w=KIDS_BADGE.w, h=HEIGHT - KIDS_BADGE.y))
 
 
 def _brutal(scene: Scene) -> None:
@@ -1158,25 +1848,8 @@ def _chalkboard(scene: Scene) -> None:
                 scene.under(_polygon(geometry.arrow(), spot.x, spot.y + 30, 120, 60, colour, 0.85, -20))
             else:
                 scene.under(_ring(spot.x + 60, spot.y + 60, 110, 90, colour, 6, 0.85))
-    letters = [_grown(line, 8) for role in scene.texts() for line in scene.lines(role)]
-    floor = CREDITS_BOX.y - 4 if scene.credits else HEIGHT  # (tape stays off the credit line)
-    for role in scene.pictures() if scene.slide_type in _FRAMED_TYPES else []:
-        shown = scene.shown(role, _grown(scene.box(role), -10))
-        # (tape across its top corners, or else its bottom ones, a little higher up them if they'd reach the credit
-        # line: where it's clear of the texts' letters)
-        for y, turns in ((shown.y, (-35.0, 35.0)), (shown.y + shown.h, (35.0, -35.0))):
-            tapes = [
-                _rect(corner - 55, y - 17, 110, 34, "#e8dcc0", 0.75, rotation=turn)
-                for corner, turn in zip((shown.x, shown.x + shown.w), turns, strict=True)
-            ]
-            lift = max(geometry.bounds(tape).y + geometry.bounds(tape).h for tape in tapes) - floor
-            if lift > 40:
-                continue
-            if lift > 0:
-                tapes = [_moved(tape, -lift) for tape in tapes]
-            if not any(_overlaps(geometry.bounds(tape), area) for tape in tapes for area in letters):
-                scene.over(*tapes, part_of=role)
-                break
+    for role in _framed(scene):  # (masking tape holding them up)
+        _tape(scene, role, scene.shown(role, _grown(scene.box(role), -10)), "#e8dcc0", 0.75)
 
 
 def _newsprint(scene: Scene) -> None:
@@ -1244,6 +1917,9 @@ _MOTIFS: Final[dict[str, Callable[[Scene], None]]] = {
     "blobs": _blobs,
     "ornate": _ornate,
     "crayon": _crayon,
+    "stickers": _stickers,
+    "notebook": _notebook,
+    "cutouts": _cutouts,
     "brutal": _brutal,
     "synthwave": _synthwave,
     "starburst": _starburst,

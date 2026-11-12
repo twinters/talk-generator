@@ -79,6 +79,20 @@ class PatternSpec:
     major: int = 0
 
 
+Patterns = tuple[tuple[PatternSpec | None, float], ...]
+
+
+@dataclass(frozen=True)
+class Variant:
+    """One of the sets of decoration a family's members pick from with the seed (D77): its motif (see
+    talkgenerator.design.motifs), how likely a member has it, and the patterns its backgrounds can have with it, each
+    with how likely it is (None: none), if not the family's (a notebook's lined or squared paper)."""
+
+    motif: Motif
+    weight: float = 1.0
+    patterns: Patterns | None = None
+
+
 @dataclass(frozen=True)
 class Family:
     name: str
@@ -119,7 +133,10 @@ class Family:
     # texts (a startup's blobs: its accent at 15%), which its texts and accents are made to read on too
     motif: Motif = "none"
     tints_under_text: tuple[tuple[str, float], ...] = ()
-    patterns: tuple[tuple[PatternSpec | None, float], ...] = ((None, 1.0),)
+    patterns: Patterns = ((None, 1.0),)
+    # Sets of decoration its members pick from instead of its motif alone (see Variant): a kindergarten's crayon
+    # drawings, sticker book, school notebook or paper cut-outs, so that its decks differ more than by their colours
+    variants: tuple[Variant, ...] = ()
     extreme: bool = False
     weight: float = 1.0  # how often the random mix picks it
     description: str = ""  # what its members look like, for a settings menu
@@ -229,8 +246,8 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "kids",
-            description="a kindergarten's: crayon colours on cream, bunting, a sun and hills, stars and confetti, "
-            "pictures as stickers",
+            description="a kindergarten's, in bright colours on pastel paper: crayon drawings with bunting and a sun, "
+            "a sticker book, a school notebook with doodles, or paper cut-outs",
             palettes=(
                 Palette(
                     background="#fff6e9",
@@ -274,6 +291,18 @@ FAMILIES: Final[dict[str, Family]] = {
             image_frames=(("rounded", 1.0),),
             motif="crayon",
             patterns=((None, 0.6), (PatternSpec("dots", "accent", 0.1, 56, 10), 0.4)),
+            variants=(
+                Variant("crayon"),
+                Variant("stickers", patterns=((None, 0.7), (PatternSpec("dots", "accent_2", 0.08, 72, 8), 0.3))),
+                Variant(
+                    "notebook",  # (ruled in its ink, or squared as a maths exercise book is)
+                    patterns=(
+                        (PatternSpec("lines", "text", 0.13, 54, 2, offset=40), 0.6),
+                        (PatternSpec("grid", "text", 0.08, 40, 1.5), 0.4),
+                    ),
+                ),
+                Variant("cutouts", patterns=((None, 1.0),)),
+            ),
         ),
         Family(
             "brutalist",
@@ -706,6 +735,11 @@ def pick(
         return member(family)
 
 
+def variants(family: Family) -> tuple[Variant, ...]:
+    """The sets of decoration a family's members pick from: its variants, or its motif alone, with its patterns."""
+    return family.variants or (Variant(family.motif),)
+
+
 def _draw(pool: list[Family], weights: Mapping[str, float]) -> Family:
     """One of the families, as the current random stream picks it: each as likely as its weight times its
     multiplier."""
@@ -751,11 +785,15 @@ def member(family: Family) -> Theme:
     if random_util.random() < family.heading_effect_chance:
         effect = _heading_effect(family.heading_effect, theme)
     # The family's decoration, its pattern and its pictures' tint come from a stream of their own (one number of this
-    # one's), so that the open fonts below, whichever pair they are, take nothing from them
+    # one's), so that the open fonts below, whichever pair they are, take nothing from them; and which of its sets of
+    # decoration it has, from one of that stream's own, so that the rest is as it was before families had them
     own = random_util.Rng(random_util.randint(0, 2**31))
+    with random_util.use(own.child("variant")):
+        variant = _weighted(tuple((option, option.weight) for option in variants(family)))
     with random_util.use(own):
         motif_variant = random_util.randint(0, 9999)
-        pattern = _pattern(_weighted(family.patterns), theme.palette)
+        patterns = family.patterns if variant.patterns is None else variant.patterns
+        pattern = _pattern(_weighted(patterns), theme.palette)
         tint, tint_opacity = _tint(_weighted(family.image_tints), theme.palette)
     # And the open fonts after everything else, for the same reason: they take the place of the installed pair
     fonts = theme.fonts
@@ -778,7 +816,7 @@ def member(family: Family) -> Theme:
             "image_tint": tint,
             "image_tint_opacity": tint_opacity,
             "heading_effect": effect,
-            "motif": family.motif,
+            "motif": variant.motif,
             "motif_variant": motif_variant,
             "pattern": pattern,
             "fonts": fonts,
