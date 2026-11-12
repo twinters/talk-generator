@@ -894,9 +894,9 @@ def _pick_one(texts: Mapping[str, str | None], images: Mapping[str, Any], langua
 
 def _equation(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
     # (a thing whose picture wasn't found, or wasn't asked for, is its emoji)
-    things = [texts.get(thing) for thing in classic.EQUATION]
+    term_1, term_2, result = (texts.get(thing) for thing in classic.EQUATION)
     pictures = {thing: images.get(slides.picture_role(thing)) for thing in classic.EQUATION}
-    return slides.EquationSlide(texts.get("title"), *things, pictures=pictures)
+    return slides.EquationSlide(texts.get("title"), term_1, term_2, result, pictures=pictures)
 
 
 def _what_do_you_see(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
