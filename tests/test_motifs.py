@@ -10,6 +10,7 @@ import pytest
 from PIL import Image
 from pptx.oxml.ns import qn
 
+from talkgenerator import closers
 from talkgenerator.checks.deck import _texts, check_language
 from talkgenerator.checks.design import check_design
 from talkgenerator.design import color, engine, geometry, layers, motifs, themes, treatments
@@ -385,6 +386,11 @@ def _decoration(deck):
     return shapes, [element.text for element in elements if isinstance(element, TextElement)]
 
 
+def _is_issue(element):
+    """Whether it's a magazine roundel's issue number ("N°7")."""
+    return isinstance(element, TextElement) and element.text.startswith("N°")
+
+
 def _big_slides(theme, seed=1):
     """A title slide and a section slide, laid out in the theme."""
     made = [slides.TitleSlide("Lighthouses", "By Anna Tomy"), slides.SectionSlide("The dark years", "In which")]
@@ -423,6 +429,16 @@ def test_the_new_families_draw_their_own_pieces_and_pass_the_checks(images, fami
         assert len(stripes) >= 4 * len(deck.slides) - 4
     else:  # (a folio, giant quotation marks by a quote, the issue's roundel on its big slides)
         assert "“" in texts and any(text.startswith("N°") for text in big_texts)
+        # (the member's issue, the same on each big slide, the closer's too, which has no slide number: D76)
+        closer = closers.DEFAULT.slide(closers.Ending.of(presenter="Anna Tomy")).to_deck_slide()
+        title = slides.TitleSlide("Lighthouses", "By Anna Tomy").to_deck_slide()
+        closing = engine.lay_out(Deck(generator="test", seed=2, slides=(title, closer)), theme)
+        assert check_design(closing) == []
+        issues = [
+            [element.text for element in slide.elements if element.role == DECORATION and _is_issue(element)]
+            for slide in (*big.slides, *closing.slides)
+        ]
+        assert all(issues) and len({text for texts in issues for text in texts}) == 1, issues
 
 
 # THE SHAPES THEY'RE DRAWN WITH
