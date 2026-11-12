@@ -2576,6 +2576,8 @@ def _sunset(scene: Scene, stripes: Sequence[str]) -> None:
 
 # The specs of the texts a magazine puts giant quotation marks by (a statement's, a quote's)
 _QUOTES: Final = frozenset({"statement", "left statement", "band statement", "quote"})
+# How many issues a magazine has had (its roundel's number, N°1 to N°60)
+_ISSUES: Final = 60
 
 
 def _magazine(scene: Scene) -> None:
@@ -2636,14 +2638,16 @@ def _quote_marks(scene: Scene, role: str) -> None:
 
 
 def _roundel(scene: Scene, spot: Box) -> None:
-    """A magazine's roundel in the spot: a circle of its accent with the issue's number ("N°7"), turned a little."""
+    """A magazine's roundel in the spot: a circle of its accent with the issue's number ("N°7"): the member's, the
+    same on each of its big slides, the closer's too (which has no slide number: D76)."""
     palette = scene.palette
     cx, cy = spot.x + spot.w / 2, spot.y + spot.h / 2
     scene.under(
         _ellipse(cx, cy, spot.w, spot.h, palette.accent), _ring(cx, cy, spot.w - 18, spot.h - 18, "#ffffff", 2, 0.8)
     )
     words = Box(x=spot.x + 30, y=spot.y + spot.h * 0.3, w=spot.w - 60, h=spot.h * 0.4)
-    scene.write_on(f"N°{scene.number + 1}", words, _sized("decoration heading", 64, 28), "#ffffff")
+    issue = scene.theme.motif_variant % _ISSUES + 1
+    scene.write_on(f"N°{issue}", words, _sized("decoration heading", 64, 28), "#ffffff")
     scene.kept.append(spot)
 
 
