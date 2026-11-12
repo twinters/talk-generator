@@ -314,6 +314,39 @@ def test_an_all_hands_company_and_a_keynotes_product_are_named_after_the_topic()
     assert len({formats.product(topic).replace(formats._name_word(topic), "") for topic in topics}) > 3
 
 
+# (and those of D79's formats: each at most as long as the pack lint's longest, tests/test_content_pack.LONG)
+NAMERS = {
+    "gadget": (formats.gadget, 24),
+    "species": (formats.species, 29),
+    "museum": (formats.museum_name, 33),
+    "artist": (formats.artist, 29),
+    "friend": (formats.friend, 7),
+    "book": (formats.book, 28),
+    "author": (formats.author, 21),
+    "crime": (formats.crime, 34),
+}
+
+
+@pytest.mark.parametrize("variable", NAMERS)
+def test_the_newer_formats_made_up_names_come_from_the_topic(variable):
+    namer, longest = NAMERS[variable]
+    topics = ("cat", "coffee", "the moon", "Belgium", "socks", "jazz", "bread", "penguins", "time travel")
+    assert namer("penguins") == namer("penguins")  # (the same on every slide, and in every run)
+    assert len({namer(topic) for topic in topics}) > 3
+    for topic in ("conference interpreters", "a plant that won't die", "the French Revolution", "x", "", *topics):
+        assert 0 < len(namer(topic)) <= longest, (topic, namer(topic))
+    if variable not in ("friend", "author", "crime"):  # (a name or a crime of its own; the others name the topic)
+        assert "enguin" in namer("penguins") and "Penguins" not in namer("penguins")
+
+
+def test_a_documentarys_species_is_latin_ish():
+    assert formats.species("penguins").split()[0] == "Penguinus"
+    assert formats.species("coffee").split()[0] == "Coffeus" and formats.species("a bunny").split()[0] == "Bunnius"
+    assert formats.species("Belgium").split()[0] == "Belgium"
+    assert formats.species("time travel").split()[0] == "Timetravelus"
+    assert all(formats.species(topic).split()[1].islower() for topic in ("cat", "coffee", "jazz"))
+
+
 # CLASSIC SLIDES AND TALKS, OFFLINE
 
 

@@ -9,9 +9,12 @@ talkgenerator.sources.packs), so a format works without a language model too.
 
 Each format has a module here, with its arc, its slide generators and its tag caps, which
 talkgenerator.schema.presentation_schema_types registers: `pitch` (a startup pitch to investors), `academic` (a talk
-at an academic conference), `corporate` (a company's all-hands, or its quarterly business review) and `keynote` (a
-product keynote on a big stage). Another format would follow the same pattern: a module with a Format and its slide
-generators, a content pack, a line in plan.external.FORMATS, and the schema registered.
+at an academic conference), `corporate` (a company's all-hands, or its quarterly business review), `keynote` (a
+product keynote on a big stage), and since D79 `infomercial` (a late-night TV infomercial), `documentary` (a nature
+documentary), `court` (a court case), `museum` (a museum tour), `wedding` (a wedding toast) and `book_report` (a
+school book report). Another format would follow the same pattern: a module with a Format and its slide generators,
+a content pack, a line in plan.external.FORMATS, a weight in presentation_schema_types.FORMAT_WEIGHTS, and the schema
+registered.
 
 A format's slides reuse the slide types there are (a big number for a pitch's ask, a funnel for its market, a 2×2
 matrix for its competition; charts for an academic talk's results, an iceberg for its limitations; KPI tiles against
@@ -368,3 +371,188 @@ def company(topic: str) -> str:
 def product(topic: str) -> str:
     """The made-up name of the product that a keynote launches, from the talk's topic: the same on every slide."""
     return _stable(topic, _PRODUCT_FORMS).format(_name_word(topic))
+
+
+# The made-up names of the formats of D79, from a talk's topic, the same on every slide and in every run: what an
+# infomercial sells ("Penguin-Matic"), the species a nature documentary follows ("Penguinus domesticus"), the museum
+# a tour is of ("The Penguin Museum") and the old master whose work hangs there ("Jan van Penguin"), the best friend a
+# wedding toast is for (who marries the topic: "Robin"), and the book a school book report is on ("The Secret
+# Penguin") with its author ("Agnes Puddleworth"). Each 33 characters at most with a topic's word of 16 letters, the
+# longest _name_word gives (see tests/test_content_pack.LONG)
+_GADGET_FORMS = (
+    "{}-Matic",
+    "{} Buddy",
+    "{}Master",
+    "{}-O-Rama",
+    "{} Wizard",
+    "{} Genie",
+    "Magic {}",
+    "Insta{}",
+    "{}inator",
+    "{} Blaster",
+    "{} 3000",
+    "Ultra{}",
+)
+# (Latin-ish epithets of ten letters at most)
+_EPITHETS = (
+    "vulgaris",
+    "domesticus",
+    "magnificus",
+    "maximus",
+    "ridiculus",
+    "nocturnus",
+    "giganteus",
+    "minimus",
+    "elegans",
+    "confusus",
+    "curiosus",
+    "dramaticus",
+)
+_MUSEUM_FORMS = (
+    "The {} Museum",
+    "Museum of Modern {}",
+    "The {} Gallery",
+    "The Royal {} Museum",
+    "The {} Institute",
+    "The {} Collection",
+    "The Museum of {}",
+    "The {} Hall of Fame",
+)
+_ARTIST_FORMS = (
+    "Jan van {}",
+    "Pieter de {}",
+    "Anna van der {}",
+    "Giovanni da {}",
+    "Clara {}",
+    "Hendrik {}",
+    "Sofia del {}",
+    "Master {}",
+)
+# (first names that go with anyone, so the best friend is "they" in every template)
+_FRIENDS = (
+    "Alex",
+    "Sam",
+    "Jamie",
+    "Robin",
+    "Charlie",
+    "Frankie",
+    "Kim",
+    "Max",
+    "Jordan",
+    "Casey",
+    "Riley",
+    "Morgan",
+    "Taylor",
+    "Dana",
+    "Jesse",
+    "Chris",
+)
+_BOOK_FORMS = (
+    "{} and Me",
+    "The Little {}",
+    "The Secret {}",
+    "The Last {}",
+    "Goodnight, {}",
+    "The {} Diaries",
+    "{} of Doom",
+    "The Curious {}",
+    "{} at School",
+    "The Lonely {}",
+)
+_AUTHOR_FIRST_NAMES = ("Agnes", "Harold", "Edith", "Walter", "Mildred", "Bernard", "Gerald", "Margaret")
+_AUTHOR_SURNAMES = (
+    "Puddleworth",
+    "Higginbottom",
+    "Fairweather",
+    "Pumpernickel",
+    "Crumbleton",
+    "Wigglesworth",
+    "Bumbleby",
+    "Thistlewood",
+)
+
+
+def gadget(topic: str) -> str:
+    """The made-up name of the gadget an infomercial sells, from the talk's topic: the same on every slide."""
+    return _stable(topic, _GADGET_FORMS).format(_name_word(topic))
+
+
+def species(topic: str) -> str:
+    """The made-up Latin name of the species a nature documentary follows, from the talk's topic: "Penguinus
+    domesticus", the same on every slide (a word that ends in a vowel loses it, and one in "y" ends in "ius": "Coffeus",
+    "Bunnius"; one in "us", "um" or "is" keeps its ending)."""
+    word = _name_word(topic)
+    genus = word[:1].upper() + word[1:].lower()
+    if genus.endswith(("us", "um", "is")):
+        pass
+    elif genus.endswith("y"):
+        genus = genus[:-1] + "ius"
+    elif genus[-1:] in ("a", "e", "i", "o", "u"):
+        genus = genus[:-1] + "us"
+    else:
+        genus += "us"
+    return f"{genus} {_stable(topic, _EPITHETS)}"
+
+
+def _title_words(topic: str) -> str:
+    """The topic in a made-up title: one of it in words without articles, capitalised and spaced ("Time Travel"), when
+    that's 16 characters at most, and else as one word, as _name_word has it ("PlantThatWontDie", "Intelligence")."""
+    one = language_util.bare(topic) if topic.strip() else topic
+    kept = [word for word in one.replace("-", " ").split() if word.lower() not in ("the", "a", "an")]
+    spaced = " ".join(word[:1].upper() + word[1:] for word in kept)
+    return spaced if 0 < len(spaced) <= _LONGEST_NAME else _name_word(topic)
+
+
+def museum_name(topic: str) -> str:
+    """The made-up name of the museum a tour is of, from the talk's topic: the same on every slide ("The Time Travel
+    Museum")."""
+    return _stable(topic, _MUSEUM_FORMS).format(_title_words(topic))
+
+
+def artist(topic: str) -> str:
+    """The made-up name of the old master whose work a museum tour shows, from the talk's topic: the same on every
+    slide."""
+    return _stable(topic, _ARTIST_FORMS).format(_name_word(topic))
+
+
+def friend(topic: str) -> str:
+    """The first name of the best friend a wedding toast is for (who marries the topic), from the talk's topic: the
+    same on every slide, and a name that goes with anyone."""
+    return _stable(topic, _FRIENDS)
+
+
+def book(topic: str) -> str:
+    """The made-up title of the book a school book report is on, from the talk's topic: the same on every slide ("Time
+    Travel at School")."""
+    return _stable(topic, _BOOK_FORMS).format(_title_words(topic))
+
+
+# The harmless crimes a court case's defendant stands trial for, as what they did ("accused of taking the last
+# biscuit"): 40 characters at most
+_CRIMES = (
+    "taking the last biscuit",
+    "stealing one sock from every pair",
+    "hiding the TV remote",
+    "eating a colleague's yoghurt",
+    "leaving one square of toilet paper",
+    "taking the good pen",
+    "humming in the quiet carriage",
+    "spoiling the season finale",
+    "parking across two spaces",
+    "turning the thermostat up",
+    "putting the empty milk back",
+    "double-dipping at the party",
+)
+
+
+def crime(topic: str) -> str:
+    """The harmless crime a court case's defendant (the talk's topic) stands trial for, as what they did ("taking the
+    last biscuit"), from the talk's topic: the same on every slide."""
+    return _stable(topic, _CRIMES)
+
+
+def author(topic: str) -> str:
+    """The made-up name of the author of the book a school book report is on, from the talk's topic: the same on
+    every slide."""
+    first = _stable(topic, _AUTHOR_FIRST_NAMES)
+    return f"{first} {_stable(topic + ' ' + first, _AUTHOR_SURNAMES)}"

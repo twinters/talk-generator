@@ -59,6 +59,17 @@ LONG: dict[str, tuple[str, ...]] = {
     "method": ("OverinterpretingFormer",),
     "company": ("Overinterpreting Holdings",),
     "product": ("Overinterpreting Studio",),
+    # (and those of D79's formats, at their longest: an infomercial's gadget, a documentary's species, a museum tour's
+    # museum and artist, a wedding toast's friend, a book report's book and author, a court case's crime; see
+    # talkgenerator.schema.formats)
+    "gadget": ("Overinterpreting Blaster",),
+    "species": ("Overinterpretingus domesticus",),
+    "museum": ("Museum of Modern Overinterpreting",),
+    "artist": ("Anna van der Overinterpreting",),
+    "friend": ("Charlie",),
+    "book": ("The Curious Overinterpreting",),
+    "author": ("Margaret Wigglesworth",),
+    "crime": ("leaving one square of toilet paper",),
     # (a real dad joke and a real piece of advice, at the longest talkgenerator.facts takes them)
     "joke": ("Why did the scarecrow win an award at the big harvest fair? He was outstanding in it.",),
     "advice": ("Always double check you actually attached the file to emails",),
@@ -95,6 +106,14 @@ COMMON = {
     "method": "PenguinNet",
     "company": "Penguin Corp",
     "product": "Penguin Pro",
+    "gadget": "Penguin-Matic",
+    "species": "Penguinus domesticus",
+    "museum": "The Penguin Museum",
+    "artist": "Jan van Penguin",
+    "friend": "Robin",
+    "book": "The Secret Penguin",
+    "author": "Agnes Puddleworth",
+    "crime": "taking the last biscuit",
     "joke": "What do you call a penguin in the desert? Lost.",
     "advice": "Don't eat non-snow-coloured snow.",
     "figure": "3",
