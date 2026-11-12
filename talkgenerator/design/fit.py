@@ -7,6 +7,7 @@ where a pixel is half a point in PowerPoint), and the same text in the same box 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import Final
 
 from talkgenerator.design.fonts import text_width
@@ -15,6 +16,10 @@ from talkgenerator.design.fonts import text_width
 LINE_HEIGHT: Final = 1.2
 # Font sizes go down in steps of this many pixels (a point)
 STEP: Final = 2
+# How many fits and line breaks are remembered (each): a slide's texts are fitted and broken into lines again and again
+# (for each layout the engine tries, each spot a motif tries for its decoration, the design checks), and each time
+# measures the text word by word (a fit at every size from the largest down)
+FITS_KEPT: Final = 4096
 
 
 @dataclass(frozen=True)
@@ -26,6 +31,11 @@ class Fit:
 
 def wrap(text: str, width: float, font: str, size: float, bold: bool = False) -> list[str]:
     """The text's lines at the size, each as wide as fits (a word wider than the box gets a line of its own)."""
+    return list(_wrapped(text, width, font, size, bold))
+
+
+@lru_cache(maxsize=FITS_KEPT)
+def _wrapped(text: str, width: float, font: str, size: float, bold: bool) -> tuple[str, ...]:
     lines: list[str] = []
     for paragraph in text.splitlines() or [""]:
         line = ""
@@ -37,9 +47,10 @@ def wrap(text: str, width: float, font: str, size: float, bold: bool = False) ->
                 lines.append(line)
                 line = word
         lines.append(line)
-    return lines
+    return tuple(lines)
 
 
+@lru_cache(maxsize=FITS_KEPT)
 def fit(
     text: str,
     width: float,
