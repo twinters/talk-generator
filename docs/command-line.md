@@ -74,7 +74,7 @@ Who writes the talk depends on your settings: a language model when one is set u
 | `court` | A court case in which the topic stands trial for a harmless crime: the charges, the evidence, a witness, the alibi, an objection, the closing argument and the verdict | `all` |
 | `museum` | A guided museum tour of a collection about the topic: the welcome and the house rules, a masterpiece, the artist, the eras, an artefact and the gift shop | `all` |
 | `wedding` | A wedding toast by the best man or the maid of honour, for their best friend, who marries the topic: who the speaker is, how the couple met, an embarrassing story, why they're perfect together, marriage advice and the toast | `all` |
-| `book_report` | A school book report on a book about the topic: the book, its author, the main characters, what happens, the favourite part, the moral of the story, the rating and the end | `all` |
+| `book_report` | A school book report on a book about the topic: the book, its author, the main characters, what happens, the favourite part, the moral of the story and the rating | `all` |
 | `test` | For testing talkgenerator itself | `all` |
 
 These formats beyond the TED-like talk (from `pitch` on) go through the parts of their arc, in that order, whoever

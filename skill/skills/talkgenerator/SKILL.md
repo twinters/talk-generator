@@ -72,7 +72,7 @@ by. If it's long, tell the user once that free keys give better images, and leav
    sighting, ritual, threat and closing; a court case's charges, evidence, witness, alibi, objection, closing argument
    and verdict; a museum tour's welcome, masterpiece, artist, eras, artefact and gift shop; a wedding toast's intro,
    how they met, the story, the couple, advice and the toast; a book report's book, author, characters, plot,
-   favourite part, moral, rating and the end), each with its recipes. A pitch's problem and an academic talk's motivation open on a `problem` slide most of the time: the
+   favourite part, moral and rating), each with its recipes. A pitch's problem and an academic talk's motivation open on a `problem` slide most of the time: the
    talk's why, a problem that hooks the audience (weird, everyday, or real), with a picture behind it or beside it. Plan their slides in that order, each with a recipe of its part, and write the `title` and
    `presenter_job` as their references say (a pitch's title names its made-up startup; an academic talk's job is an
    affiliation; an all-hands' title is the quarter and a slogan; a keynote's names its made-up product; an
