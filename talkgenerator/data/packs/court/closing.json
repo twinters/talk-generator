@@ -1,0 +1,46 @@
+{
+  "closing_statement": [
+    "Ladies and gentlemen of the jury: {crime} is no laughing matter.",
+    "Ask yourselves one question. If not {topic.generic}, then who?",
+    "Look at the evidence. Look at {topic.generic}. Now look back at the evidence.",
+    "The defence rests. Mostly because it's very tired.",
+    "Members of the jury, I rest my case. And my feet.",
+    "You've seen the photos. You've heard the witnesses. The rest is up to you.",
+    "{crime.cap}. In this town. On my watch."
+  ],
+  "face_title": [
+    "Look at this face. Is this a criminal mastermind?",
+    "Does this look innocent to you?",
+    "The defendant, moments after the incident",
+    "Exhibit Z: this face",
+    "Members of the jury: look closely",
+    "Would this face lie to you?"
+  ],
+  "venn_title": [
+    "The case against {topic.generic}",
+    "How we know",
+    "The evidence, summed up",
+    "Why it all adds up",
+    "It all points one way",
+    "Draw your own conclusions"
+  ],
+  "venn_circle": [
+    "Motive",
+    "Opportunity",
+    "Had nothing better to do",
+    "Was nearby",
+    "Owns a spoon",
+    "Has sticky fingers",
+    "No alibi",
+    "Looked guilty",
+    "Seen in a disguise"
+  ],
+  "venn_overlap": [
+    "{topic.generic.cap}",
+    "The defendant",
+    "Only one suspect",
+    "Guess who",
+    "Still {topic.generic}",
+    "Guilty as charged"
+  ]
+}

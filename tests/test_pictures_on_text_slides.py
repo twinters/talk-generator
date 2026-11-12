@@ -28,6 +28,7 @@ from talkgenerator.schema import slide_schemas
 from talkgenerator.schema.formats import (
     academic,
     corporate,
+    court,
     documentary,
     infomercial,
     keynote,
@@ -53,6 +54,7 @@ FORMATS = {
     # (D79)
     "Infomercial": infomercial,
     "Documentary": documentary,
+    "Court": court,
 }
 
 
@@ -322,7 +324,7 @@ def test_every_format_has_provocations_in_its_voice(named, stock):
 
 
 # (the formats with two free slides of ten)
-@pytest.mark.parametrize("name", ["pitch", "academic", "corporate", "infomercial"])
+@pytest.mark.parametrize("name", ["pitch", "academic", "corporate", "infomercial", "court"])
 def test_ten_slide_talks_of_the_formats_have_memes_and_pictures_between_their_parts(name):
     schema, arc = get_schema(name), next(module.ARC for module in FORMATS.values() if module.PACK == name)
     free = memes = pictured_ = 0

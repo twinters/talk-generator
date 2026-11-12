@@ -1,0 +1,62 @@
+{
+  "exhibit_title": [
+    "Exhibit A",
+    "Exhibit A: found at the scene",
+    "Exhibit A, Your Honour",
+    "Exhibit A: {seed.one}, found at the scene",
+    "Exhibit A: we found this behind the sofa",
+    "Exhibit A. Please take your time.",
+    "Exhibit A: don't ask how we got it",
+    "Exhibit A: the moment it all went wrong"
+  ],
+  "exhibits_title": [
+    "The evidence",
+    "Exhibits A and B",
+    "The evidence, Your Honour",
+    "Exhibits for the prosecution",
+    "Evidence, side by side",
+    "Spot the difference"
+  ],
+  "exhibit_pair": [
+    "Exhibit A: the tin|Exhibit B: the empty tin",
+    "Exhibit A: a sock|Exhibit B: the other sock",
+    "Exhibit A: before|Exhibit B: after",
+    "Exhibit A: a footprint|Exhibit B: {seed.one}",
+    "Exhibit A: the crumbs|Exhibit B: more crumbs",
+    "Exhibit A: the alibi|Exhibit B: the truth",
+    "Exhibit A: a smile|Exhibit B: the same smile, closer",
+    "Exhibit A: the scene|Exhibit B: a suspect"
+  ],
+  "forensics_title": [
+    "Forensic analysis: the crumbs lead one way",
+    "Lab results: the crumbs follow the defendant",
+    "The forensics don't lie",
+    "Expert analysis: this is no coincidence",
+    "The lab has spoken",
+    "What the crumbs tell us"
+  ],
+  "forensics_x": [
+    "Distance from {seed.generic}",
+    "Minutes after the incident",
+    "Time spent near the snack table",
+    "Closeness to the biscuit tin",
+    "Hours since lunch",
+    "Steps from the kitchen"
+  ],
+  "forensics_y": [
+    "Crumbs found",
+    "Biscuits missing",
+    "Socks missing",
+    "Suspicious looks",
+    "Guilt, in grams",
+    "Witnesses who gasped"
+  ],
+  "forensics_outlier": [
+    "The butler",
+    "The family dog",
+    "A suspicious goose",
+    "The judge's cousin",
+    "Someone in a fake moustache",
+    "The getaway hamster"
+  ]
+}

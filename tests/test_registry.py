@@ -40,6 +40,7 @@ def test_schemas_are_registered():
         # (D79)
         "infomercial",
         "documentary",
+        "court",
     ]
     assert get_schema("ted") is schemas.get("ted")
 

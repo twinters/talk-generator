@@ -76,6 +76,8 @@ FORMATS: Final = {
     "documentary": "A nature documentary about the topic as a wild species, in a hushed voice: the opening shot, its "
     "habitat, its behaviour, a rare sighting, its rituals, the dangers it faces and a closing reflection, each a part "
     "of its arc, in that order",
+    "court": "A court case in which the topic stands trial for a harmless crime: the charges, the evidence, a "
+    "witness, the alibi, an objection, the closing argument and the verdict, each a part of its arc, in that order",
 }
 
 # The recipe a kind of slide gets when its plan doesn't name one, the first of these the format has: plain photos,

@@ -11,6 +11,7 @@ from talkgenerator.schema import slide_topic_generators
 from talkgenerator.schema.formats import (
     academic,
     corporate,
+    court,
     documentary,
     infomercial,
     keynote,
@@ -273,6 +274,18 @@ documentary_schema = schemas.register(
         slide_generators=slide_generators.group("documentary"),
         max_allowed_tags=documentary.CAPS,
         format=documentary.DOCUMENTARY,
+        spare_generators=SPARE_GENERATORS,
+    ),
+)
+court_schema = schemas.register(
+    "court",
+    PresentationSchema(
+        powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
+        seed_generator=_wandering,
+        title_generator=court.title_generator,
+        slide_generators=slide_generators.group("court"),
+        max_allowed_tags=court.CAPS,
+        format=court.COURT,
         spare_generators=SPARE_GENERATORS,
     ),
 )

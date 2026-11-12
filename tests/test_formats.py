@@ -35,6 +35,7 @@ from talkgenerator.schema import formats, presentation_schema, presentation_sche
 from talkgenerator.schema.formats import (
     academic,
     corporate,
+    court,
     documentary,
     infomercial,
     keynote,
@@ -55,6 +56,7 @@ FORMATS = {
     # (D79)
     "infomercial": infomercial,
     "documentary": documentary,
+    "court": court,
 }
 FAMILIES = list(themes.FAMILIES)
 
