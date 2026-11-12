@@ -187,9 +187,6 @@ PERSONAS: Final[dict[str, Persona]] = {
                 "red_flags": 0.5,
                 "reviews": 0.5,
                 "error_message": 1.5,
-                "equation": 2,
-                "what_do_you_see": 1.3,
-                "pick_one": 0.6,
             },
             "like a lecture the university tried to cancel",
             (
@@ -231,9 +228,6 @@ PERSONAS: Final[dict[str, Persona]] = {
                 "fun_fact": 0.5,
                 "reviews": 2,
                 "error_message": 1.3,
-                "pick_one": 1.5,
-                "before_after": 1.5,
-                "exhibit": 0.5,
             },
             "like a startup's pitch, promising to disrupt something",
             (
@@ -274,8 +268,6 @@ PERSONAS: Final[dict[str, Persona]] = {
                 "wall_of_text": 1.3,
                 "reviews": 0.5,
                 "error_message": 0.3,
-                "exhibit": 1.3,
-                "equation": 0.5,
             },
             "one that drags the topic back into the Middle Ages",
             (
@@ -317,10 +309,6 @@ PERSONAS: Final[dict[str, Persona]] = {
                 "error_message": 2,
                 "wall_of_text": 1.5,
                 "reviews": 0.6,
-                "exhibit": 3,
-                "what_do_you_see": 2,
-                "equation": 1.3,
-                "pick_one": 0.5,
             },
             "one that promises to reveal what they don't want you to know",
             (
@@ -367,11 +355,6 @@ PERSONAS: Final[dict[str, Persona]] = {
                 "error_message": 0.5,
                 "red_flags": 0.6,
                 "reviews": 1.5,
-                "equation": 2,
-                "pick_one": 1.5,
-                "what_do_you_see": 1.5,
-                "exhibit": 0.4,
-                "before_after": 0.5,
             },
             "one as simple and cheerful as a children's book",
             (
@@ -417,9 +400,6 @@ PERSONAS: Final[dict[str, Persona]] = {
                 "wall_of_text": 3,
                 "red_flags": 0.6,
                 "alignment_chart": 0.7,
-                "before_after": 1.5,
-                "equation": 1.3,
-                "what_do_you_see": 0.4,
             },
             "like a consultancy's report: a framework, a roadmap or a strategy",
             (
@@ -458,9 +438,6 @@ PERSONAS: Final[dict[str, Persona]] = {
                 "reviews": 2.5,
                 "red_flags": 1.5,
                 "wall_of_text": 0.4,
-                "before_after": 2,
-                "pick_one": 1.3,
-                "exhibit": 0.5,
             },
             "like a self-help bestseller's promise",
             (
@@ -502,9 +479,6 @@ PERSONAS: Final[dict[str, Persona]] = {
                 "red_flags": 2,
                 "reviews": 1.5,
                 "wall_of_text": 0.3,
-                "pick_one": 2,
-                "before_after": 1.5,
-                "equation": 0.6,
             },
             "like clickbait for a video",
             (
@@ -541,9 +515,6 @@ PERSONAS: Final[dict[str, Persona]] = {
                 "funnel": 0.5,
                 "error_message": 3,
                 "reviews": 1.3,
-                "before_after": 1.5,
-                "exhibit": 1.3,
-                "what_do_you_see": 0.7,
             },
             "one that lets slip a little too much about the future",
             (
@@ -584,9 +555,6 @@ PERSONAS: Final[dict[str, Persona]] = {
                 "red_flags": 3,
                 "error_message": 0.4,
                 "wall_of_text": 0.5,
-                "what_do_you_see": 2,
-                "pick_one": 1.5,
-                "exhibit": 0.4,
             },
             "like a retreat's promise of inner peace",
             (
@@ -631,9 +599,6 @@ PERSONAS: Final[dict[str, Persona]] = {
                 "wall_of_text": 0.5,
                 "alignment_chart": 0.6,
                 "reviews": 0.8,
-                "before_after": 1.3,
-                "pick_one": 0.6,
-                "equation": 0.5,
             },
             "like an old-timer's yarn, about the topic rather than the old job (the title slide has that)",
             (
@@ -693,9 +658,6 @@ PERSONAS: Final[dict[str, Persona]] = {
                 "red_flags": 1.5,
                 "alignment_chart": 1.3,
                 "wall_of_text": 0.5,
-                "before_after": 1.3,
-                "pick_one": 1.3,
-                "equation": 0.6,
             },
             "like a locker-room speech that turns deep",
             (
@@ -734,9 +696,6 @@ PERSONAS: Final[dict[str, Persona]] = {
                 "alignment_chart": 1.5,
                 "wall_of_text": 1.5,
                 "red_flags": 0.8,
-                "exhibit": 1.5,
-                "equation": 1.3,
-                "what_do_you_see": 1.3,
             },
             "one that shows far too much passion for the topic",
             (
