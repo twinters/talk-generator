@@ -17,6 +17,7 @@ from talkgenerator.schema.formats import (
     keynote,
     museum,
     pitch,
+    wedding,
 )
 from talkgenerator.schema.presentation_schema import PresentationSchema
 from talkgenerator.schema.registry import Registry
@@ -299,6 +300,18 @@ museum_schema = schemas.register(
         slide_generators=slide_generators.group("museum"),
         max_allowed_tags=museum.CAPS,
         format=museum.MUSEUM,
+        spare_generators=SPARE_GENERATORS,
+    ),
+)
+wedding_schema = schemas.register(
+    "wedding",
+    PresentationSchema(
+        powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
+        seed_generator=_wandering,
+        title_generator=wedding.title_generator,
+        slide_generators=slide_generators.group("wedding"),
+        max_allowed_tags=wedding.CAPS,
+        format=wedding.WEDDING,
         spare_generators=SPARE_GENERATORS,
     ),
 )

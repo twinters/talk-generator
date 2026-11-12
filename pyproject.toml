@@ -163,6 +163,7 @@ module = [
     "talkgenerator.schema.formats.keynote",
     "talkgenerator.schema.formats.museum",
     "talkgenerator.schema.formats.pitch",
+    "talkgenerator.schema.formats.wedding",
     "talkgenerator.schema.registry",
     "talkgenerator.settings",
     "talkgenerator.sources.art_institute",

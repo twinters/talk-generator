@@ -80,6 +80,9 @@ FORMATS: Final = {
     "witness, the alibi, an objection, the closing argument and the verdict, each a part of its arc, in that order",
     "museum": "A guided museum tour of a collection about the topic: the welcome and the house rules, a masterpiece, "
     "the artist, the eras, an artefact and the gift shop, each a part of its arc, in that order",
+    "wedding": "A wedding toast by the best man or the maid of honour, for their best friend, who marries the topic: "
+    "who the speaker is, how the couple met, an embarrassing story, why they're perfect together, marriage advice and "
+    "the toast, each a part of its arc, in that order",
 }
 
 # The recipe a kind of slide gets when its plan doesn't name one, the first of these the format has: plain photos,

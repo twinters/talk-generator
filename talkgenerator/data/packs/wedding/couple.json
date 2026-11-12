@@ -1,0 +1,85 @@
+{
+  "venn_title": [
+    "A perfect match",
+    "Why it works",
+    "Made for each other",
+    "What they have in common",
+    "The science of true love",
+    "Two of a kind",
+    "Where the magic happens"
+  ],
+  "third_circle": [
+    "Me",
+    "Their families",
+    "The neighbours",
+    "Everyone here",
+    "The cat",
+    "Snacks",
+    "Mondays"
+  ],
+  "overlap": [
+    "Snacks",
+    "Terrible at karaoke",
+    "Afraid of geese",
+    "Love a long nap",
+    "Hate Mondays",
+    "Cake",
+    "Bad puns",
+    "Cold feet",
+    "Me, the third wheel",
+    "Always late"
+  ],
+  "side_title": [
+    "They complete each other",
+    "Opposites attract",
+    "A match made in heaven",
+    "Two halves of a whole",
+    "Perfectly matched",
+    "{friend} and {topic.generic}, side by side"
+  ],
+  "pair": [
+    "{friend}: always cold|{topic.generic.cap}: even colder",
+    "{friend}: never on time|{topic.generic.cap}: never in a rush",
+    "{friend}: up at six|{topic.generic.cap}: up at noon",
+    "{friend}: loves to talk|{topic.generic.cap}: a good listener",
+    "{friend}: can't cook|{topic.generic.cap}: doesn't eat",
+    "{friend}: hates surprises|{topic.generic.cap}: a surprise",
+    "{friend}: owns forty mugs|{topic.generic.cap}: needs a mug",
+    "{friend}: snores|{topic.generic.cap}: doesn't mind",
+    "{friend}: allergic to cats|{topic.generic.cap}: not a cat",
+    "{friend}: talks to plants|{topic.generic.cap}: listens"
+  ],
+  "loves_title": [
+    "{friend}'s great loves, ranked",
+    "Everything {friend} has ever loved",
+    "{friend}'s true loves, by devotion",
+    "Who {friend} loves most",
+    "{friend}'s heart, in numbers",
+    "{friend}'s past loves, honestly ranked"
+  ],
+  "old_love": [
+    "Pizza",
+    "Naps",
+    "Their old bike",
+    "Their first car",
+    "The cat next door",
+    "Karaoke",
+    "Me, briefly",
+    "Cheese",
+    "Sunday mornings",
+    "A very good sandwich",
+    "Their duvet",
+    "Online quizzes",
+    "Cardigans",
+    "Their phone",
+    "Holidays in the rain"
+  ],
+  "loves_axis": [
+    "Love",
+    "Devotion",
+    "Heart eyes",
+    "Hours spent together",
+    "Times mentioned per day",
+    "Photos on their phone"
+  ]
+}

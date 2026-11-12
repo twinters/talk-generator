@@ -1,0 +1,30 @@
+{
+  "talk_title": [
+    "To {friend} and {seed.generic.title}",
+    "{friend} and {seed.generic.title}: A Love Story",
+    "A Toast to {friend} and {seed.generic.title}",
+    "{friend} and {seed.generic.title}: Happily Ever After",
+    "The Day {friend} Met {seed.generic.title}",
+    "Why {friend} Married {seed.generic.title}",
+    "{friend} and {seed.generic.title}, Finally",
+    "The Speech I Promised {friend} I Wouldn't Give",
+    "How {friend} Fell for {seed.generic.title}",
+    "Raise Your Glasses to {friend} and {seed.generic.title}",
+    "{friend} and {seed.generic.title}: Who Saw This Coming?",
+    "Ladies, Gentlemen and {seed.generic.title}",
+    "Everything I Know About {friend} and {seed.generic.title}"
+  ],
+  "subtitle": [
+    "{presenter}, best man",
+    "{presenter}, maid of honour",
+    "{presenter}, best man or maid of honour, depending on who you ask",
+    "{presenter}, best friend since nursery school",
+    "{presenter}, who has known {friend} far too long",
+    "{presenter}, who wrote this speech last night",
+    "{presenter}, best friend and official witness",
+    "A few words from {presenter}, {friend}'s best friend",
+    "{presenter}, who introduced them, and regrets nothing",
+    "{presenter}, {friend}'s oldest friend, with notes",
+    "Spoken by {presenter}, who promised to keep it short"
+  ]
+}

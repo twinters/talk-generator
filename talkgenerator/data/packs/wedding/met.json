@@ -1,0 +1,127 @@
+{
+  "day_title": [
+    "The day {friend} met {topic.generic}",
+    "Love at first sight",
+    "The moment {friend} first saw {topic.generic}",
+    "Where it all began",
+    "{friend} had never seen anything like it",
+    "It was love at first sight. For {friend}.",
+    "The day everything changed for {friend}",
+    "Their very first date",
+    "The first photo of {friend}'s true love"
+  ],
+  "story_title": [
+    "Their love story",
+    "{friend} and {topic.generic}: a timeline",
+    "How it happened",
+    "A love story, briefly",
+    "The road to today",
+    "How we got here",
+    "A whirlwind romance",
+    "{friend}'s love life, abridged"
+  ],
+  "moment": [
+    "Day 1",
+    "Day 2",
+    "Week 3",
+    "Month 2",
+    "Month 6",
+    "Year 1",
+    "Year 2",
+    "Year 3"
+  ],
+  "today": [
+    "Today",
+    "Tonight",
+    "This evening",
+    "Right now",
+    "Now",
+    "At last"
+  ],
+  "first_event": [
+    "First glance across a crowded room",
+    "{friend} spots {topic.generic}",
+    "A shy hello",
+    "They meet at a barbecue",
+    "Trips over {topic.generic}",
+    "{friend} says 'wow' out loud",
+    "Eyes meet over the snack table",
+    "{friend} asks for directions"
+  ],
+  "event": [
+    "First date: a picnic in the rain",
+    "{friend} cancels game night. Again.",
+    "They move in together",
+    "Matching sweaters",
+    "Their first argument (about socks)",
+    "{friend} meets the parents",
+    "A weekend away",
+    "{friend} learns to cook for two",
+    "A holiday photo nobody asked for",
+    "{friend} stops returning my calls",
+    "They adopt a houseplant",
+    "The first 'I love you'",
+    "{friend} buys a ring",
+    "{friend} gets down on one knee"
+  ],
+  "last_event": [
+    "This speech. Sorry.",
+    "Free cake for everyone",
+    "We're all here, somehow",
+    "I'm asked to give a speech. Oh no.",
+    "The wedding. Yes, really.",
+    "You're all invited. Somehow.",
+    "They said yes. Both of them.",
+    "Nobody objects. Yet."
+  ],
+  "chart_title": [
+    "{friend}'s happiness since meeting {topic.generic}",
+    "{friend}, since {topic.generic}",
+    "Life with {topic.generic}, as {friend} tells it",
+    "{friend}'s mood, by year",
+    "The {friend} happiness index",
+    "How {friend} has been doing lately"
+  ],
+  "chart_x": [
+    "Years since they met",
+    "Months since the first date",
+    "Time",
+    "Weeks since the barbecue",
+    "Days since that first hello",
+    "Years together"
+  ],
+  "chart_y": [
+    "Happiness",
+    "Smiles per day",
+    "Times {friend} said 'we'",
+    "Songs sung in the shower",
+    "Heart emojis sent",
+    "Love, measured"
+  ],
+  "chart_line": [
+    "{friend}'s happiness",
+    "{friend}",
+    "Joy",
+    "Smiles",
+    "{friend}'s mood",
+    "Love"
+  ],
+  "chart_second": [
+    "{friend}'s free time",
+    "Game nights with me",
+    "{friend}'s savings",
+    "Calls returned to me",
+    "Hours of sleep",
+    "Invitations to me",
+    "Our group chat"
+  ],
+  "chart_event": [
+    "The day they met",
+    "First date",
+    "First hello",
+    "The barbecue",
+    "The first 'wow'",
+    "They meet",
+    "Love at first sight"
+  ]
+}

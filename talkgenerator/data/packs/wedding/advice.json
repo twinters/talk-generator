@@ -1,0 +1,77 @@
+{
+  "advice_title": [
+    "My advice for the happy couple",
+    "Three secrets of a happy marriage",
+    "Some advice, from someone single",
+    "What I've learned about love",
+    "Rules for a happy home",
+    "Tips for the newlyweds",
+    "Words of wisdom, from me"
+  ],
+  "tip": [
+    "Never go to bed angry",
+    "Always share dessert",
+    "Laugh at each other's jokes",
+    "Take turns with the remote",
+    "Say sorry first",
+    "Let them win at board games",
+    "Never skip date night",
+    "Hide the good biscuits",
+    "Agree on the thermostat",
+    "Keep a spare charger",
+    "Learn to love naps",
+    "Always say good morning"
+  ],
+  "tip_punchline": [
+    "Always share {topic.generic}",
+    "Call me if it goes wrong",
+    "Never let me give a speech again",
+    "Invite me over. Often.",
+    "Never mention the camping trip",
+    "Ignore all of this advice",
+    "Name your first pet after me"
+  ],
+  "marriage_is": [
+    "Marriage is like {seed.generic}: nobody fully understands it, but everybody wants some.",
+    "Love is patient. Love is kind. Love is, apparently, {topic.generic}.",
+    "Find someone who looks at you the way {friend} looks at {topic.generic}.",
+    "The secret to a long marriage? Patience, kindness and {seed.generic}.",
+    "{friend} found the one. The rest of us are still looking. Mostly at {topic.generic}.",
+    "They say you just know. {friend} knew in four minutes.",
+    "May your love be like {seed.generic}: a little strange, and here to stay.",
+    "Marriage is a long journey. Pack snacks.",
+    "A happy marriage is two people who never stop choosing each other. And {topic.generic}."
+  ],
+  "pyramid_title": [
+    "The secret to a happy marriage",
+    "What a marriage is built on",
+    "The pyramid of true love",
+    "What holds a marriage together",
+    "Love, layer by layer",
+    "The foundations of forever"
+  ],
+  "pyramid_top": [
+    "{topic.generic.cap}",
+    "A spare phone charger",
+    "Separate blankets",
+    "Snacks, hidden well",
+    "Earplugs",
+    "A second fridge",
+    "Agreeing on pizza",
+    "Me, on speed dial"
+  ],
+  "pyramid_level": [
+    "Trust",
+    "Patience",
+    "Laughter",
+    "Snacks",
+    "Listening",
+    "Kindness",
+    "Shared playlists",
+    "Saying sorry",
+    "Honesty",
+    "Naps",
+    "Respect",
+    "Inside jokes"
+  ]
+}
