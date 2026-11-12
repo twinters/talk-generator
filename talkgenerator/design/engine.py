@@ -3935,7 +3935,7 @@ def _what_do_you_see_band(roles: dict[str, Content], theme: Theme) -> Placement:
 
 # An inkblot's blobs, its drops, how far from its middle it reaches (a share of its card's width), and how much of the
 # card's height it takes
-_BLOBS: Final = (5, 8)
+_BLOBS: Final = (6, 9)
 _DROPS: Final = (3, 7)
 _REACH: Final = 0.42
 _BLOT_HEIGHT: Final = 0.76
@@ -3962,7 +3962,7 @@ def _inkblot_on(placement: Placement, theme: Theme, card: Box) -> None:
             ShapeElement(role="inkblot", shape=shape, points=geometry.mirrored(points), box=mirror, color=ink)
         )
 
-    body = (reach * random_util.uniform(0.22, 0.36), height * random_util.uniform(0.5, 0.85))
+    body = (reach * random_util.uniform(0.3, 0.46), height * random_util.uniform(0.6, 0.9))
     body_y = top + (height - body[1]) * random_util.random()
     shapes.append(
         ShapeElement(
@@ -3973,10 +3973,10 @@ def _inkblot_on(placement: Placement, theme: Theme, card: Box) -> None:
         )
     )
     for _ in range(random_util.randint(*_BLOBS)):
-        size = height * random_util.uniform(0.14, 0.36)
+        size = height * random_util.uniform(0.16, 0.4)
         w, h = size * random_util.uniform(0.8, 1.5), size * random_util.uniform(0.7, 1.3)
         h = min(h, height)
-        x = axis - w * 0.3 + (reach - w * 0.7) * random_util.random() ** 1.6
+        x = axis - w * 0.35 + (reach - w * 0.65) * random_util.random() ** 2.2  # (most of them near the middle)
         y = top + (height - h) * random_util.random()
         wobbles = [(random_util.uniform(0.04, 0.2), random_util.random()) for _ in range(3)]
         pair(Box(x=min(x, axis + reach - w), y=y, w=w, h=h), geometry.blob(wobbles))
