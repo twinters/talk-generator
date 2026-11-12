@@ -136,7 +136,7 @@ how to keep 4.x's talks. The [docs](https://github.com/twinters/talk-generator/t
   (`DISABLE_PATTERN_BREAKS=1` switches the breaks off). A chart's title says what it shows, never "X vs Y": what it
   compares goes on its axes.
 - Slides of a surprising picture that the presenter has to explain, with hardly any words, in TED-like talks: Exhibit
-  A (an odd picture on an evidence tag, with a case number; a later exhibit in the talk is Exhibit B, of the same
+  A (an odd picture tagged as evidence, with a case number; a later exhibit in the talk is Exhibit B, of the same
   case), two pictures to pick one of, a picture equation (picture + picture = surprise, as story cubes, or emoji
   where a picture doesn't come in time), "What do you see?" over a face in something (pareidolia) or an inkblot that
   talkgenerator draws, and a before and after, whose after comes on a click.
