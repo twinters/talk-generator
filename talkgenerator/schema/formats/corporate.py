@@ -22,6 +22,7 @@ from __future__ import annotations
 
 from typing import Any, Final
 
+from talkgenerator.closers import Closer, presenter, said
 from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
 from talkgenerator.plan.kinds import AGENDA_ITEM, Recipe, Variant, matrix_landscape, pictured
@@ -86,7 +87,8 @@ CORPORATE: Final = Format(
         "Comic Sans everywhere": 0.7,
     },
     arc=ARC,
-    closer="corporate",
+    # (its closer opens Q&A, and sends everyone back to work: D76)
+    closer=Closer(said("questions"), said("back_to_work"), presenter, mark=True),
 )
 
 

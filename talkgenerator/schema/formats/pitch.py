@@ -19,6 +19,7 @@ from __future__ import annotations
 
 from typing import Any, Final
 
+from talkgenerator.closers import Closer, contact_line, presenter, said
 from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
 from talkgenerator.plan.kinds import Recipe, Variant, matrix_landscape, pictured, problem_variants
@@ -84,7 +85,8 @@ PITCH: Final = Format(
         "kids": 0.6,
     },
     arc=ARC,
-    closer="pitch",
+    # (its closer invites the investors to talk, with a made-up contact line: D76)
+    closer=Closer(said("lets_talk"), contact_line, presenter),
 )
 
 

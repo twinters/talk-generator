@@ -22,7 +22,7 @@ from talkgenerator.plan import languages
 from talkgenerator.render.powerpoint import render_pptx
 from talkgenerator.schema import formats
 from talkgenerator.schema.formats import academic, corporate, keynote, pitch
-from talkgenerator.schema.presentation_schema_types import get_schema
+from talkgenerator.schema.presentation_schema_types import get_schema, schemas
 from talkgenerator.slide.slides import TitleSlide
 from talkgenerator.util import random_util
 from tests.test_llm_talks import NUM_SLIDES, FakeModel, _talk, fake_schema, images  # noqa: F401
@@ -53,18 +53,26 @@ def _numbers(slide):
 
 # WHAT A CLOSER SAYS
 
+# Every format's closer, by the name of its schema (a schema without a format of its own: the TED-like talk's)
+CLOSERS = {name: closers.of(get_schema(name).format) for name in schemas.names()}
+FORMATS = {
+    "default": closers.DEFAULT,
+    "academic": academic.ACADEMIC.closer,
+    "pitch": pitch.PITCH.closer,
+    "corporate": corporate.CORPORATE.closer,
+    "keynote": keynote.KEYNOTE.closer,
+}
+
+
+def _said(closer, code="en", presenter="Ann Example", title="Penguinly: Uber for Penguins", topic="penguins"):
+    return _texts(closer.slide(closers.Ending.of(code, presenter, title, topic)).to_deck_slide())
+
 
 @pytest.mark.parametrize("code", languages.LANGUAGES)
-def test_every_kind_of_closer_says_it_in_the_talks_language(code):
+def test_every_formats_closer_says_it_in_the_talks_language(code):
     words = languages.language(code)
-    title = "Penguinly: Uber for Penguins"
-    made = {
-        kind: _texts(
-            closers.closer(kind, presenter="Ann Example", title=title, topic="penguins", language=code).to_deck_slide()
-        )
-        for kind in closers.KINDS
-    }
-    assert made["ted"] == {"title": words.thanks, "subtitle": "Ann Example", "note": words.questions}
+    made = {name: _said(closer, code) for name, closer in FORMATS.items()}
+    assert made["default"] == {"title": words.thanks, "subtitle": "Ann Example", "note": words.questions}
     assert made["academic"] == {
         "title": words.questions,
         "subtitle": words.attention,
@@ -90,17 +98,45 @@ def test_every_kind_of_closer_says_it_in_the_talks_language(code):
         )
 
 
+@pytest.mark.parametrize("name", list(CLOSERS))
+def test_every_formats_closer_says_something_in_every_talk_language(name):
+    # (a new format's closer included: one it doesn't define is the TED-like talk's)
+    for code in languages.LANGUAGES:
+        texts = _said(CLOSERS[name], code)
+        assert texts.get("title", "").strip(), (name, code)
+        assert all(text.strip() for text in texts.values()), (name, code)
+
+
+def test_a_format_without_a_closer_gets_the_ted_like_talks():
+    assert closers.of(None) is closers.of(formats.Format(brief="")) is closers.DEFAULT
+    assert get_schema("default").format is None and CLOSERS["default"] is CLOSERS["ted"] is closers.DEFAULT
+    own = {name: CLOSERS[name] is not closers.DEFAULT for name in FORMATS}
+    assert own == {"default": False, "academic": True, "pitch": True, "corporate": True, "keynote": True}
+
+
+def test_a_format_defines_its_closer_from_talkgenerators_words_its_own_or_the_talks():
+    # (as a new format would, here an infomercial's: words of its own in every talk language, and the presenter's name)
+    call_now = {code: f"Call now! ({code})" for code in languages.LANGUAGES}
+    infomercial = closers.Closer(closers.in_every_language(call_now), closers.presenter, closers.said("questions"))
+    assert _said(infomercial, "sv") == {"title": "Call now! (sv)", "subtitle": "Ann Example", "note": "Frågor?"}
+    assert _said(closers.Closer(lambda ending: ending.topic.upper()), "nl") == {"title": "PENGUINS"}
+    with pytest.raises(ValueError):  # (a language left out)
+        closers.in_every_language({"en": "Call now!"})
+    with pytest.raises(ValueError):  # (a word talkgenerator doesn't have)
+        closers.said("call_now")
+
+
 def test_a_closer_is_marked_and_of_a_type_of_its_own():
-    slide = closers.closer(presenter="Ann Example").to_deck_slide()
+    slide = closers.DEFAULT.slide(closers.Ending.of(presenter="Ann Example")).to_deck_slide()
     assert (slide.type, slide.layout, slide.closer) == ("closer", "classic/closer", True)
     assert not TitleSlide("A title", "By Ann").to_deck_slide().closer  # (no other slide is)
     with pytest.raises(ValueError):
-        closers.closer("eulogy")
+        closers.Ending.of("tlh")  # (a language talkgenerator doesn't know)
 
 
 def test_a_closer_without_a_presenter_still_says_it_is_over():
-    assert _texts(closers.closer(presenter=None).to_deck_slide()) == {"title": "Thank you!", "note": "Questions?"}
-    assert _texts(closers.closer("academic", presenter="  ").to_deck_slide())["title"] == "Questions?"
+    assert _said(closers.DEFAULT, presenter=None) == {"title": "Thank you!", "note": "Questions?"}
+    assert _said(FORMATS["academic"], presenter="  ")["title"] == "Questions?"
 
 
 def test_a_pitchs_contact_line_is_the_presenters_first_name_at_its_startups_domain():
@@ -123,10 +159,7 @@ def test_a_keynotes_closer_names_the_product_its_title_names():
     assert closers.named(None) is None and closers.named("No colon") is None
 
 
-def test_every_format_has_its_kind_of_closer():
-    assert (academic.ACADEMIC.closer, corporate.CORPORATE.closer) == ("academic", "corporate")
-    assert (pitch.PITCH.closer, keynote.KEYNOTE.closer) == ("pitch", "keynote")
-    assert get_schema("default").format is None and formats.Format(brief="").closer == closers.TED
+def test_no_format_spends_a_slide_of_its_arc_on_questions():
     assert {module.ARC.names()[-1] for module in (academic, corporate, pitch)} == {"references", "ask"}
     for module in (academic, corporate, pitch):  # (no "Questions?" among a format's slides anymore)
         assert not {"questions", "qa", "closing"} & set(module.ARC.names())
@@ -140,10 +173,11 @@ def test_every_family_lays_a_closer_out_as_a_title_slide_without_a_number(family
     rng = random_util.Rng(7)
     for member in range(2):
         theme = themes.pick(family, rng.child("theme", member), True, None, None)
-        for kind in ("ted", "academic", "pitch"):
+        for kind in ("default", "academic", "pitch"):
+            ending = closers.Ending.of(presenter="Dr. Anna Tomy", title="Penguinly: Uber for Penguins")
             slides = (
                 TitleSlide("Penguinly: Uber for Penguins", "By Dr. Anna Tomy").to_deck_slide(),
-                closers.closer(kind, presenter="Dr. Anna Tomy", title="Penguinly: Uber for Penguins").to_deck_slide(),
+                FORMATS[kind].slide(ending).to_deck_slide(),
             )
             deck = engine.lay_out(Deck(generator="test", seed=member, slides=slides), theme)
             closer = deck.slides[-1]
@@ -152,6 +186,21 @@ def test_every_family_lays_a_closer_out_as_a_title_slide_without_a_number(family
             assert _numbers(closer) == [], (family, kind)  # (none of the slides' numbers count it)
             assert all(int(_COUNT.match(text).group(2)) == 1 for text in _numbers(deck.slides[0])), family
             assert check_design(deck) == [], (family, kind)
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("family", list(themes.FAMILIES))
+def test_every_closer_in_every_language_fits_and_reads_in_every_family(family):
+    # (the longest name a talk takes, 45 characters, and a title that names a long startup and product)
+    name = "Prof. Dr. Maximiliane Oberbergmeister-Hoffmann"[:45]
+    title = "Sauerteigmanufaktur: Brot, Neu Gedacht"
+    theme = themes.pick(family, random_util.Rng(1).child("theme"), True, None, None)
+    for code in languages.LANGUAGES:
+        for kind, closer in CLOSERS.items():  # (every format's, a new one's too)
+            slide = closer.slide(closers.Ending.of(code, name, title, "Sauerteig"))
+            for seed in range(2):  # (both layouts, for a question)
+                deck = engine.lay_out(Deck(generator="test", seed=seed, slides=(slide.to_deck_slide(),)), theme)
+                assert check_design(deck) == [], (family, code, kind, seed)
 
 
 # IN A TALK

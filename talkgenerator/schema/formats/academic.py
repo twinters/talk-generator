@@ -21,6 +21,7 @@ from __future__ import annotations
 
 from typing import Any, Final
 
+from talkgenerator.closers import Closer, presenter, said
 from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
 from talkgenerator.plan.kinds import (
@@ -94,7 +95,8 @@ ACADEMIC: Final = Format(
         "1997 WordArt": 0.7,
     },
     arc=ARC,
-    closer="academic",
+    # (its closer asks for the questions, with thanks: D76)
+    closer=Closer(said("questions"), said("attention"), presenter, mark=True),
 )
 
 

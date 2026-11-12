@@ -22,6 +22,7 @@ from __future__ import annotations
 
 from typing import Any, Final
 
+from talkgenerator.closers import Closer, presenter, product_line, said
 from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
 from talkgenerator.plan.kinds import ERROR_BUTTON, Recipe, Variant, pictured
@@ -85,7 +86,8 @@ KEYNOTE: Final = Format(
         "1997 WordArt": 0.6,
     },
     arc=ARC,
-    closer="keynote",
+    # (its closer says the product is available today: D76)
+    closer=Closer(said("available"), product_line, presenter),
 )
 
 

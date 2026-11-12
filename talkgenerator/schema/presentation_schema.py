@@ -1466,13 +1466,11 @@ class PresentationSchema:
         return None, slide_deck
 
     def _closer(self, slide_deck: SlideDeck, topic: str) -> slides.Slide:
-        """The talk's closer (D76: see talkgenerator.closers): of its format's kind, in its language, from its
-        presenter's name, its title and its topic."""
-        kind = self.format.closer if self.format is not None else closers.TED
-        slide = closers.closer(
-            kind, presenter=slide_deck.presenter, title=slide_deck.title, topic=topic, language=slide_deck.language
-        )
-        slide.set_note(f"The closer, after the talk's last slide: the {kind} kind (D76)")
+        """The talk's closer (D76: see talkgenerator.closers): its format's (or the TED-like talk's), in its
+        language, from its presenter's name, its title and its topic."""
+        ending = closers.Ending.of(slide_deck.language, slide_deck.presenter, slide_deck.title, topic)
+        slide = closers.of(self.format).slide(ending)
+        slide.set_note("The closer, after the talk's last slide (D76)")
         return slide
 
     def _title(self, topics: list[str], rng: random_util.Rng, persona: Persona | None = None) -> str:
