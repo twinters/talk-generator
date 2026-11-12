@@ -917,5 +917,151 @@ def generate_error_message(presentation_context: dict[str, Any]) -> tuple[str | 
     return title, message, code, *buttons.split("|")
 
 
+# SLIDES OF A PICTURE TO EXPLAIN (docs/v5-plan.md, D78): pictures from the slide's image sources, of its seed and of the
+# words related to it, with the TED pack's few words (pictures.exhibit_note...) now and then, and else talkgenerator's
+# ("Pick one:", "What do you see?"). A slide that stands in for another, or a spare, looks no picture up (STANDING_IN):
+# its equation is emoji, and its "What do you see?" an inkblot; the others need their pictures, and don't come out then.
+
+EXHIBIT_NOTES: Final = 0.5  # of the classic exhibits with a note on their tag
+OWN_HEADINGS: Final = 0.4  # of the classic slides with a heading of the pack's, not talkgenerator's ("Pick one:")
+EQUATION_TITLES: Final = 0.5
+BEFORE_AFTER_TITLES: Final = 0.5
+INKBLOTS: Final = 0.25  # of the classic "What do you see?" slides that are an inkblot, where a picture could be found
+# How a classic picture equation's things come out (as a planned one's variants have them): pictures (True) or emoji
+EQUATION_PICTURES: Final = (
+    (2.0, (True, True, True)),
+    (1.0, (True, True, False)),
+    (1.0, (False, False, True)),
+    (1.0, (False, False, False)),
+)
+
+
+def _standing_in(presentation_context: dict[str, Any]) -> bool:
+    return bool(presentation_context.get(slides.STANDING_IN))
+
+
+def exhibit(picture: ImageSource) -> Generator:
+    """A generator of exhibits about the seed: talkgenerator's "Exhibit A" (the deck letters a talk's later exhibits B,
+    C... of its first one's case) and a case's number, an odd picture of the seed from the image source, and a note on
+    its tag from the pack's templates, half the time (EXHIBIT_NOTES)."""
+
+    @_unless_sensitive
+    def generate(presentation_context: dict[str, Any]) -> tuple[Any, ...] | None:
+        if _standing_in(presentation_context):
+            return None
+        found = picture(dict(presentation_context))
+        if found is None:
+            return None
+        variables = {**_context(presentation_context), **_numbers()}
+        note = _maybe(EXHIBIT_NOTES, _template("pictures.exhibit_note")(variables))
+        return ENGLISH.exhibit, slides.case_number(), found, note
+
+    return generate
+
+
+def pick_one(picture: ImageSource, other: ImageSource) -> Generator:
+    """A generator of two pictures to pick one of: one of the seed (from the first image source) and one of a word
+    related to it (from the other, or of the seed again, when it has none), in either order, under talkgenerator's
+    "Pick one:" or, now and then (OWN_HEADINGS), a heading of the pack's, with talkgenerator's "OR" between them."""
+
+    @_unless_sensitive
+    def generate(presentation_context: dict[str, Any]) -> tuple[Any, ...] | None:
+        if _standing_in(presentation_context):
+            return None
+        related = related_words(presentation_context["seed"])
+        first = picture(dict(presentation_context))
+        if first is None:
+            return None
+        word = random_util.choice(related) if related else presentation_context["seed"]
+        second = other({**presentation_context, "seed": word})
+        if second is None:
+            return None
+        title = _maybe(OWN_HEADINGS, _template("pictures.pick_one_title")(_context(presentation_context)))
+        pictures = (first, second) if random_util.random() < 0.5 else (second, first)
+        return title or ENGLISH.pick_one, *pictures, ENGLISH.either_or
+
+    return generate
+
+
+def _thing_emoji(word: str) -> str:
+    """A thing's emoji in a picture equation: its own, by a word of it, or else the word itself, capitalised."""
+    return emoji.own(word) or _capitalised(word)
+
+
+def equation(picture: ImageSource, result: ImageSource) -> Generator:
+    """A generator of picture equations about the seed: the seed plus a word related to it equals another one, a
+    surprise. Its things are pictures or emoji, as the dice say (EQUATION_PICTURES): a thing's picture from an image
+    source (the result's from its own), or else its emoji (the result's a surprising one, of the emoji list's mood;
+    a thing without one of its own is its word), and a thing whose picture isn't found is its emoji too; and a title of
+    the pack's half the time (EQUATION_TITLES). A slide that stands in looks nothing up: its things are emoji."""
+
+    @_unless_sensitive
+    def generate(presentation_context: dict[str, Any]) -> tuple[Any, ...] | None:
+        seed = str(presentation_context["seed"])
+        related = related_words(seed)
+        if len(related) < 2:
+            return None
+        # (things whose emoji isn't the seed's, where there are: no 🐱 + 🐱 for a cat and its cat food)
+        others = [word for word in related if emoji.own(word) is None or emoji.own(word) != emoji.own(seed)]
+        second, third = random_util.sample(others if len(others) >= 2 else related, 2)
+        words = (seed, second, third)
+        texts = [_thing_emoji(seed), _thing_emoji(second), emoji.pick(third, "surprise")]
+        shapes = random_util.weighted_random(list(EQUATION_PICTURES)) or EQUATION_PICTURES[0][1]
+        title = _maybe(EQUATION_TITLES, _template("pictures.equation_title")(_context(presentation_context)))
+        found: list[tuple[str, Any]] = []
+        if not _standing_in(presentation_context):
+            sources = (picture, picture, result)
+            for thing, word, source, pictured in zip(classic.EQUATION, words, sources, shapes, strict=True):
+                image = source({**presentation_context, "seed": word}) if pictured else None
+                # (a picture that another thing has already is its emoji instead: a slide shows a picture once)
+                if image is not None and all(image != other for _, other in found):
+                    found.append((thing, image))
+        generated = (title, *texts)
+        return (*generated, slides.Pictures(tuple(found))) if found else generated
+
+    return generate
+
+
+def what_do_you_see(picture: ImageSource | None = None) -> Generator:
+    """A generator of "What do you see?" slides: talkgenerator's question or, now and then (OWN_HEADINGS), one of the
+    pack's, over a picture of the seed from the image source (of a face in something: pareidolia), or an inkblot,
+    which the slide's layout draws: always without an image source (for talks without fair use, as only Reddit has
+    pareidolia), now and then (INKBLOTS), when the source finds none, and for a slide that stands in."""
+
+    @_unless_sensitive
+    def generate(presentation_context: dict[str, Any]) -> tuple[Any, ...] | None:
+        question = _maybe(OWN_HEADINGS, _template("pictures.what_question")(_context(presentation_context)))
+        inkblot = picture is None or _standing_in(presentation_context) or random_util.random() < INKBLOTS
+        found = None if inkblot or picture is None else picture(dict(presentation_context))
+        return question or ENGLISH.what_do_you_see, found
+
+    return generate
+
+
+def before_after(before: ImageSource, after: ImageSource) -> Generator:
+    """A generator of befores and afters: a picture of the seed (from the first image source) before, and one of a word
+    related to it (from the other) after, under talkgenerator's "Before" and "After", and a title of the pack's half
+    the time (BEFORE_AFTER_TITLES)."""
+
+    @_unless_sensitive
+    def generate(presentation_context: dict[str, Any]) -> tuple[Any, ...] | None:
+        if _standing_in(presentation_context):
+            return None
+        related = related_words(presentation_context["seed"])
+        if not related:
+            return None
+        first = before(dict(presentation_context))
+        if first is None:
+            return None
+        second = after({**presentation_context, "seed": random_util.choice(related)})
+        if second is None:
+            return None
+        title = _maybe(BEFORE_AFTER_TITLES, _template("pictures.before_after_title")(_context(presentation_context)))
+        said_before, said_after = ENGLISH.before_after
+        return title, said_before, first, said_after, second
+
+    return generate
+
+
 def _capitalised(text: str) -> str:
     return text[:1].upper() + text[1:]

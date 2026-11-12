@@ -135,7 +135,14 @@ how to keep 4.x's talks. The [docs](https://github.com/twinters/talk-generator/t
   S tier, an alignment chart's chaotic evil), and the third of three pictures in a row doesn't follow the first two
   (`DISABLE_PATTERN_BREAKS=1` switches the breaks off). A chart's title says what it shows, never "X vs Y": what it
   compares goes on its axes.
-- A talk has at most one of most kinds (memes: two), and a list's things appear a click each, the punchline last.
+- Slides of a surprising picture that the presenter has to explain, with hardly any words, in TED-like talks: Exhibit
+  A (an odd picture tagged as evidence, with a case number; a later exhibit in the talk is Exhibit B, of the same
+  case), two pictures to pick one of, a picture equation (picture + picture = surprise, as story cubes, or emoji
+  where a picture doesn't come in time), "What do you see?" over a face in something (pareidolia) or an inkblot that
+  talkgenerator draws, and a before and after, whose after comes on a click. Memes weigh more, so that they still
+  come up in half of the talks.
+- A talk has at most one of most kinds (memes and exhibits: two), and a list's things appear a click each, the
+  punchline last.
 
 ### Formats and personas
 

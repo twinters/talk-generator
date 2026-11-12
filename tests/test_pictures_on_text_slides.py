@@ -273,7 +273,7 @@ def test_reddits_weird_pictures_and_the_live_caption_memes_come_up_more_often():
     still = {use.source: use.weight for use in profiles.profile("meme-chaos-still").sources}
     assert still["reddit:weird"] > still["shitpostbot"]
     assert "reddit:weird" in {use.source for use in profiles.profile("weird-stock").sources}
-    assert slide_schemas.MEME_WEIGHT == 5
+    assert slide_schemas.MEME_WEIGHT == 7  # (5 until D78, whose five slide types took memes down to 40% of talks)
 
 
 # THE FORMATS' FREE SLIDES: MEMES, PICTURES AND PROVOCATIONS

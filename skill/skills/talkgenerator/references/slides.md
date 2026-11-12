@@ -724,3 +724,76 @@ Images: `background`, `photo`
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
 | `problem` | The problem the talk is about, early on, as a TED speaker opens with one to hook the audience: a problem with the concept that the talk's thesis will answer | the default; `kicker`: a short heading over the problem, as a TED speaker would open with it, such as 'Picture this' or 'Sound familiar?'; images: `background` calm-backdrop or backdrop, `photo` weird-stock (or generated, from its prompt, with an image generator set up); tags: problem_slide |
+
+## `exhibit`
+
+Exhibit A: one odd picture, as the evidence in a case, with an evidence tag beside it or a marker on it (talkgenerator adds 'Exhibit A' and a case number; a later exhibit in the talk is Exhibit B, of the same case), and a short note on the tag, if it has one: the presenter explains what it proves.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `note` | 40 | a few words on the evidence tag about the picture, as a police report notes where or when it was found (or empty, for none) |
+
+Images: `picture`
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `exhibit-a` | Exhibit A: an odd picture to do with the concept, as the evidence in a case, for the presenter to explain what it proves | the default; `picture_query`: an image search query for the odd picture that is the evidence: something concrete and surprising that the case could hinge on, in two to six plain English words; images: `picture` weird-stock (or generated, from its prompt, with an image generator set up); tags: exhibit |
+
+## `pick_one`
+
+Pick one: two pictures side by side, without captions, with 'OR' between them, under 'Pick one:' (talkgenerator adds both, unless the slide has a heading of its own): the audience picks, and the presenter explains.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `title` | 40 | a heading of the slide's own over the two pictures, that asks the audience to choose, in a few words (or empty, for none) |
+
+Images: `picture_1`, `picture_2`
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `pick-one` | Two pictures to pick one of, without captions: two things to do with the concept that are absurdly hard to choose between, for the audience to vote on and the presenter to explain | the default; `picture_1_query`: an image search query for the first thing to pick: something concrete, in two to six plain English words; `picture_2_query`: an image search query for the second thing to pick: something just as concrete, but absurdly different from the first, in two to six plain English words; images: `picture_1` weird-stock, `picture_2` weird-stock; tags: pick_one |
+
+## `equation`
+
+A picture equation, as story cubes tell a story: a thing plus another thing equals a third, the punchline, which appears on a click; each thing a picture, or else an emoji (talkgenerator adds the + and the =): the presenter explains how it adds up.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `title` | 40 | a title over the equation, in a few words (or empty, for none) |
+| `term_1` | 16 | a single emoji for the first thing |
+| `term_2` | 16 | a single emoji for the second thing, which is added to the first |
+| `result` | 16 | a single emoji for what the two make together: the surprising punchline |
+
+Images: `term_1_picture`, `term_2_picture`, `result_picture`
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `picture-equation` | A picture equation about the concept, as story cubes tell a story: something to do with it plus something else equals a surprise, for the presenter to explain how it adds up | the default; `term_1_picture_query`: an image search query for a photo of the first thing, in one to four plain English words; `term_2_picture_query`: an image search query for a photo of the second thing, in one to four plain English words; `result_picture_query`: an image search query for a picture of what the two make together, the surprise, in two to six plain English words; images: `term_1_picture` photo, `term_2_picture` photo, `result_picture` weird-stock; tags: equation |
+
+## `what_do_you_see`
+
+What do you see?: a picture of a face in something that has none (pareidolia), or without one, an inkblot that talkgenerator draws, as a Rorschach test has them, under the question 'What do you see?' (talkgenerator adds it, unless the slide has a question of its own): the presenter explains what everyone should see in it.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `question` | 40 | a question of the slide's own over the picture, that asks the audience what they see in it, in a few words (or empty, for none) |
+
+Images: `picture`
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `what-do-you-see` | A picture of a face in something to do with the concept, which has none (pareidolia), for the audience to say what they see in it and the presenter to explain what everyone should see | the default; `picture_query`: an image search query for an everyday thing to do with the concept that could have a face in it (pareidolia), in one or two plain English words: the thing's name; images: `picture` pareidolia; tags: what_do_you_see |
+
+## `before_after`
+
+Before and after: two pictures that have nothing to do with each other, as a transformation, under 'Before' and 'After' (talkgenerator adds them), with an arrow between them, the after on a click: the presenter explains how the one became the other.
+
+| Text | At most | What to write |
+| --- | --- | --- |
+| `title` | 40 | a title of the slide's own, in a few words (or empty, for none) |
+
+Images: `before_picture`, `after_picture`
+
+| Recipe | What it's for | Notes |
+| --- | --- | --- |
+| `before-and-after` | A before and after about the concept: two pictures that have nothing to do with each other, as a transformation, for the presenter to explain how the one became the other | the default; `before_picture_query`: an image search query for the 'before' picture, of something to do with the concept, in two to six plain English words; `after_picture_query`: an image search query for the 'after' picture: something that has nothing to do with the first, as if the first became it, in two to six plain English words; images: `before_picture` photo, `after_picture` weird-stock; tags: before_after |

@@ -38,6 +38,7 @@ DEFAULT_GROUPS = (
     "fun_fact",
     "problem",
     "karaoke",
+    "picture_prompts",
     "structure",
     "conclusion",
 )
@@ -55,6 +56,7 @@ COPYRIGHT_FREE_GROUPS = (
     "fun_fact_copyright_free",
     "problem",
     "karaoke",
+    "picture_prompts_copyright_free",
     "structure",
     "conclusion_copyright_free",
 )
@@ -155,6 +157,11 @@ ted_schema = schemas.register(
             "red_flags": 1,
             "reviews": 1,
             "error_message": 1,
+            "exhibit": 2,
+            "pick_one": 1,
+            "equation": 1,
+            "what_do_you_see": 1,
+            "before_after": 1,
             "agenda": 1,
             "questions": 1,
             "timeline": 1,

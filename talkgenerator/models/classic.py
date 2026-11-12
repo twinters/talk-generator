@@ -21,6 +21,10 @@ ALIGNMENTS: Final = (
 )
 
 
+# A picture equation's things, in order: the first, the second, and what the two make together, the punchline (D78)
+EQUATION: Final = ("term_1", "term_2", "result")
+
+
 def _pictures(*boxes: str) -> dict[str, str]:
     """The roles of the pictures of a diagram's boxes (docs/v5-plan.md, D64), by the roles of the boxes' texts."""
     return {f"{box}_picture": f"{box}_picture" for box in boxes}
@@ -195,6 +199,23 @@ CLASSIC_ROLES: Final[dict[str, dict[str, str]]] = {
         "code": "code",
         **{f"button_{number}": f"button_{number}" for number in range(1, 4)},
     },
+    # (slides of a surprising picture the presenter has to explain, with little or no text: D78. An exhibit's label is
+    # its word and its letter, "Exhibit A", where an evidence marker shows its letter alone; an equation's things are
+    # pictures, or else emoji, with a "+" and a "=" between them; without a picture, "What do you see?" is an inkblot,
+    # which its layout draws)
+    "exhibit": {"picture": "picture", "letter": "letter", "label": "label", "case": "case", "note": "note"},
+    "pick_one": {"picture_1": "picture_1", "picture_2": "picture_2", "title": "title", "or": "or"},
+    "equation": {
+        "title": "title",
+        **{role: role for thing in EQUATION for role in (thing, f"{thing}_picture")},
+        "plus": "plus",
+        "equals": "equals",
+    },
+    "what_do_you_see": {"picture": "picture", "question": "question"},
+    "before_after": {
+        "title": "title",
+        **{role: role for when in ("before", "after") for role in (f"{when}_picture", when)},
+    },
 }
 
 # The slide types that came from real PowerPoint karaoke decks (docs/v5-plan.md, section 8)
@@ -208,6 +229,9 @@ FORMAT_TYPES: Final = frozenset({"process", "references"})
 PROBLEM_TYPES: Final = frozenset({"problem"})
 # The talk's closer, the slide after its last (D76)
 CLOSER_TYPES: Final = frozenset({"closer"})
+# The slides of a surprising picture that the presenter has to explain, with little or no text, as improv suggestions
+# and story cubes give a performer something to explain (D78)
+PICTURE_PROMPT_TYPES: Final = frozenset({"exhibit", "pick_one", "equation", "what_do_you_see", "before_after"})
 
 # The slide types that the 2019 template has no layout for (all of milestone 6's): a classic deck draws them as a
 # themed deck does, laid out in the template's look (talkgenerator.design.themes.CLASSIC_LOOK), on its blank slide
@@ -218,6 +242,7 @@ DRAWN_TYPES: Final = frozenset(
     | FORMAT_TYPES
     | PROBLEM_TYPES
     | CLOSER_TYPES
+    | PICTURE_PROMPT_TYPES
 )
 
 # The roles a slide of each type can't do without: its Slide class's required_arguments, as roles
@@ -259,15 +284,24 @@ REQUIRED_ROLES: Final[dict[str, tuple[str, ...]]] = {
     "red_flags": ("flag_1", "flag_2", "flag_3"),
     "reviews": ("stars_1", "review_1", "stars_2", "review_2"),  # (a review's stars read as "4/5" beside them)
     "error_message": ("message", "button_1", "button_2"),
+    # (an equation's thing is its picture or else its emoji: a required role is there with either, D78)
+    "exhibit": ("label", "picture"),
+    "pick_one": ("title", "picture_1", "picture_2"),
+    "equation": EQUATION,
+    "what_do_you_see": ("question",),
+    "before_after": ("before", "before_picture", "after", "after_picture"),
 }
 
-# The roles of the pictures in diagrams' boxes (docs/v5-plan.md, D64), and by a trend's named point
+# The roles of the pictures in diagrams' boxes (docs/v5-plan.md, D64), and by a trend's named point (and an equation's
+# things', a before's and an after's, D78)
 PICTURE_ROLES: Final = frozenset(
     role for roles in CLASSIC_ROLES.values() for role in roles.values() if role.endswith("_picture")
 )
+# The pictures to pick from, and the picture to explain, as evidence or to see something in (D78)
+PROMPT_PICTURES: Final = frozenset({"picture", "picture_1", "picture_2"})
 # The roles of drawn slides that hold pictures: a post's or a story's photo, a meme's template, a work's figure (D65),
-# the picture behind a big number or KPI tiles (D63), a box's picture
-IMAGE_ROLES: Final = frozenset({"photo", "template", "figure", "background"}) | PICTURE_ROLES
+# the picture behind a big number or KPI tiles (D63), a box's picture, and the pictures to explain (D78)
+IMAGE_ROLES: Final = frozenset({"photo", "template", "figure", "background"}) | PICTURE_ROLES | PROMPT_PICTURES
 
 # Roles that only ever hold text, even when the text looks like an image's file name
 TEXT_ROLES: Final = frozenset(
@@ -275,8 +309,9 @@ TEXT_ROLES: Final = frozenset(
     | {role for slide_type in DRAWN_TYPES for role in CLASSIC_ROLES[slide_type].values() if role not in IMAGE_ROLES}
 )
 
-# Images that fill their frame (cropped where needed) instead of being shown whole
-COVER_ROLES: Final = frozenset({"background", "photo"}) | PICTURE_ROLES
+# Images that fill their frame (cropped where needed) instead of being shown whole (two pictures to pick from too, in
+# boxes of one size; the picture to explain shows whole, in a box its layout makes as tall as it is: D78)
+COVER_ROLES: Final = frozenset({"background", "photo", "picture_1", "picture_2"}) | PICTURE_ROLES
 
 
 def layout_id(slide_type: str) -> str:

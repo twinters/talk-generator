@@ -71,6 +71,26 @@ def arrow() -> Points:
     return ((0.0, 0.32), (0.58, 0.32), (0.58, 0.0), (1.0, 0.5), (0.58, 1.0), (0.58, 0.68), (0.0, 0.68))
 
 
+def blob(wobbles: Sequence[tuple[float, float]], corners: int = 28) -> Points:
+    """A rounded, irregular blob, as a drop of ink spreads (an inkblot's: D78): a circle whose radius wobbles, by each
+    of the wobbles (an amount, as a share of the radius, and where it starts, as a share of a turn), the first one
+    twice around, the next three times, and so on, stretched to fill its box."""
+    points = []
+    for index in range(corners):
+        angle = 2 * math.pi * index / corners
+        reach = 1 + sum(
+            amount * math.cos((number + 2) * angle + 2 * math.pi * start)
+            for number, (amount, start) in enumerate(wobbles)
+        )
+        points.append((max(reach, 0.2) * math.cos(angle), max(reach, 0.2) * math.sin(angle)))
+    return _rounded(_fill_box(points))
+
+
+def mirrored(points: Sequence[Point]) -> Points:
+    """A polygon's corners, mirrored left to right in its box (an inkblot's other half)."""
+    return tuple((round(1.0 - x, 4), y) for x, y in points)
+
+
 def slanted(by: float = 0.12) -> Points:
     """A parallelogram leaning right: its top edge this share of its width further right than its bottom edge."""
     return ((by, 0.0), (1.0, 0.0), (1.0 - by, 1.0), (0.0, 1.0))

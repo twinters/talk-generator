@@ -373,12 +373,13 @@ def test_memes_are_in_talks_that_allow_fair_use_twice_at_most():
 
 
 def test_memes_come_up_in_most_talks_but_never_all_over_them():
-    # (the user loves them: five times the weight of the other middle slides, from the third slide to the one before
-    # the conclusions; four until the user asked for more of them after reviewing 35 talks, D63)
+    # (the user loves them: seven times the weight of the other middle slides, from the third slide to the one before
+    # the conclusions; four until the user asked for more of them after reviewing 35 talks, D63, and five until the
+    # pictures to explain shared the middle of a talk, D78, as the user wanted memes to keep their half of the talks)
     default = get_schema("default")
     by_name = {generator.name: generator for generator in default.slide_generators}
     meme, quiz = by_name["Meme"], by_name["Quiz"]
-    assert meme.get_weight_for(5, 10) == 5 * quiz.get_weight_for(5, 10)
+    assert meme.get_weight_for(5, 10) == 7 * quiz.get_weight_for(5, 10)
     assert meme.get_weight_for(1, 10) == 0 == meme.get_weight_for(9, 10)
     counts = []
     for seed in range(1, 121):

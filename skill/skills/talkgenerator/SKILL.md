@@ -134,9 +134,12 @@ that give the presenter something to work with, rather than finished jokes:
   KPI tiles, a Venn diagram, a 2×2 matrix, a pyramid, an iceberg, a flowchart whose every path leads to the same end, a
   tier list, an alignment chart, an executive summary nobody can read, with one absurd point highlighted), and
   conclusions that call back. (No need for "Questions?" or "Thank you" at the end: talkgenerator ends every talk
-  with a closer of its own, after your slides, in its language and format.) A dare for the presenter ("present the next slide as a
-  haiku") works once, halfway through, as does a fake error message ("Retry, Ignore, Panic"). Mix the kinds: no two
-  charts in a row, and each new kind at most once.
+  with a closer of its own, after your slides, in its language and format.) A dare for the presenter ("present the
+  next slide as a haiku") works once, halfway through, as does a fake error message ("Retry, Ignore, Panic").
+  Slides of a surprising picture with hardly any words give the presenter the most to explain: Exhibit A (an odd
+  picture as evidence; a later Exhibit B can call back to it), two pictures to pick one of, a picture equation
+  (picture + picture = surprise, or emoji), "What do you see?" (a face in something, or an inkblot) and a before
+  and after. Mix the kinds: no two charts in a row, and each new kind at most once.
 - **Write image queries that find something**: one to three common English words for one subject, such as "owl",
   "ficus", "old watering can" or "dense tropical jungle". Scenes with several parts ("plant on reception desk"),
   actions and moods ("waiting", "alone"), and words that are photo subjects themselves ("camera", "photo") find the
