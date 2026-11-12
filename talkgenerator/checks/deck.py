@@ -222,10 +222,11 @@ def check_language(deck: Deck) -> list[Finding]:
 
 
 def check_completeness(deck: Deck, expected_slides: int | None = None) -> list[Finding]:
-    """Every slide is there, and has what its type needs."""
+    """Every slide is there (as many as the talk asked for: its closer is none of them, D76), and has what its type
+    needs."""
     findings = []
-    if expected_slides is not None and len(deck.slides) != expected_slides:
-        findings.append(Finding("completeness", "error", f"{len(deck.slides)} of the {expected_slides} slides"))
+    if expected_slides is not None and deck.counted() != expected_slides:
+        findings.append(Finding("completeness", "error", f"{deck.counted()} of the {expected_slides} slides"))
     if deck.slides and deck.slides[0].type != "title":
         findings.append(
             Finding(
@@ -361,7 +362,7 @@ def check_arc(deck: Deck, expected_slides: int | None = None) -> list[Finding]:
                 )
             )
     parts = {part for _, part in seen}
-    for part in arc.kept(expected_slides or len(deck.slides)):
+    for part in arc.kept(expected_slides or deck.counted()):
         if part not in parts:
             findings.append(Finding("arc", "warning", f"it has no slide of its {part.replace('_', ' ')} part"))
     return findings
@@ -570,7 +571,7 @@ def deck_metrics(deck: Deck) -> dict[str, Any]:
     """Numbers to follow from one milestone to the next, which aren't right or wrong on their own."""
     types = [slide.type for slide in deck.slides]
     return {
-        "slides": len(deck.slides),
+        "slides": deck.counted(),  # (as many as the talk asked for, if they all came: not its closer, D76)
         # The slides a language model wrote (their notes say what it planned); the classic generator made the others
         "written_by_language_model": sum(
             1 for slide in deck.slides if any(line.startswith("Planned:") for line in slide.notes.splitlines())

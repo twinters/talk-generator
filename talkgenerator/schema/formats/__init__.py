@@ -63,6 +63,9 @@ class Format:
     # Multipliers on the theme families' weights, for a talk whose theme the seed picks (with the persona's)
     themes: Mapping[str, float] = field(default_factory=dict)
     arc: Arc | None = None
+    # The kind of its closer, the slide after its talks' last (D76: one of talkgenerator.closers.KINDS); the TED-like
+    # talk's ("Thank you!") for a format without one of its own
+    closer: str = "ted"
 
 
 def multiplied(*multipliers: Mapping[str, float] | None) -> dict[str, float] | None:

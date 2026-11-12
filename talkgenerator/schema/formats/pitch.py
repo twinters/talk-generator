@@ -1,14 +1,15 @@
 """The startup pitch (docs/v5-plan.md, section 7; D56): a startup about the talk's topic, pitched to investors as at a
 demo day.
 
-Its arc goes from the problem (a problem slide in three pitches in four, its why: D69) to the solution, the market
-(TAM, SAM and SOM, as a funnel), the business model, the traction (a hockey stick), the competition (a 2×2 matrix with
-the startup alone in its best corner), the team and the roadmap to the ask (a big number) and the closing
-"Questions?". A short pitch keeps the problem, the solution, the traction and the ask; a quarter of a pitch's
-slides are free (D63), for memes, gifs, Reddit's weird pictures, its own provocations ("Disrupt.", over a full-screen
-picture), press and the like, and its market and business model come in pitches of eleven slides or more; a long one
-gives the problem, the solution and the traction a second slide. The startup's made-up name comes from the topic (see
-talkgenerator.schema.formats.startup), so that a classic pitch's slides name the same startup as its title.
+Its arc goes from the problem (a problem slide in three pitches in four, its why: D69) to the solution, the market (TAM,
+SAM and SOM, as a funnel), the business model, the traction (a hockey stick), the competition (a 2×2 matrix with the
+startup alone in its best corner), the team and the roadmap to the ask (a big number); its closer invites the investors
+to talk ("Let's talk", with a made-up contact line, D76), outside the pitch's slides. A short pitch keeps the problem,
+the solution, the traction and the ask; a quarter of a pitch's slides are free (D63), for memes, gifs, Reddit's weird
+pictures, its own provocations ("Disrupt.", over a full-screen picture), press and the like, and its market and business
+model come in pitches of eleven slides or more; a long one gives the problem, the solution and the traction a second
+slide. The startup's made-up name comes from the topic (see talkgenerator.schema.formats.startup), so that a classic
+pitch's slides name the same startup as its title.
 
 A startup founder presents a pitch more often than the other personas, and a consultant, an influencer and a
 motivational speaker a little more often; its themes are the startup family's more often.
@@ -20,7 +21,7 @@ from typing import Any, Final
 
 from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
-from talkgenerator.plan.kinds import Recipe, Variant, closing_variants, matrix_landscape, pictured, problem_variants
+from talkgenerator.plan.kinds import Recipe, Variant, matrix_landscape, pictured, problem_variants
 from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema.formats import (
     BIG_NUMBER_PICTURES,
@@ -47,19 +48,19 @@ PACK: Final = "pitch"
 
 # (D63: a quarter of its slides are free, for memes, gifs and pictures, and its market and business model, figures
 # on shapes, wait for a talk of eleven slides or more: a ten-slide pitch had all its slides in its parts, too many of
-# them text)
+# them text; D76: no closing "Questions?" among its slides, as its closer invites the investors to talk, and
+# the market and business model still wait)
 ARC: Final = Arc(
     (
         Part("problem", 1, 2, rank=1),
         Part("solution", 1, 2, rank=2),
-        Part("market", rank=7),
-        Part("business_model", rank=8),
+        Part("market", rank=7, shortest=11),
+        Part("business_model", rank=8, shortest=12),
         Part("traction", 1, 2, rank=3),
         Part("competition", rank=4),
         Part("team", rank=6),
         Part("roadmap", rank=9),
         Part("ask", rank=0),
-        Part("closing", rank=5),
     ),
     free=0.25,
 )
@@ -83,6 +84,7 @@ PITCH: Final = Format(
         "kids": 0.6,
     },
     arc=ARC,
+    closer="pitch",
 )
 
 
@@ -435,16 +437,6 @@ def _ask(context: dict[str, Any]) -> Made | None:
         "label": label,
         "source": maybe(0.8, text(PACK, "ask.ask_source", variables)),
     }, behind(context, BIG_NUMBER_PICTURES)
-
-
-def _closing(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    title = text(PACK, "closing.closing_title", variables)
-    return (
-        ({"title": title, "subtitle": maybe(0.8, text(PACK, "closing.closing_subtitle", variables))}, {})
-        if title
-        else None
-    )
 
 
 # THE SLIDE GENERATORS
@@ -846,7 +838,7 @@ _GENERATORS: Final = [
             },
         ),
     ),
-    # The roadmap, the ask and the closing
+    # The roadmap and the ask
     _part(
         "roadmap",
         1,
@@ -881,22 +873,6 @@ _GENERATORS: Final = [
                 "source": "the round and its terms, as a pitch deck says them",
             },
             variants=pictured((), "background", BIG_NUMBER_PICTURES),
-        ),
-        repeats=3,
-    ),
-    _part(
-        "closing",
-        1,
-        "questions",
-        _closing,
-        ["questions"],
-        "Closing",
-        Recipe(
-            "questions",
-            (cg.closing_picture_generator,),
-            brief="The closing slide, after the ask: inviting the investors' questions (and their money)",
-            hints={"subtitle": "a line under it, about investing"},
-            variants=closing_variants("a line under it, about investing"),
         ),
         repeats=3,
     ),

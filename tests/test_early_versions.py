@@ -101,11 +101,11 @@ def test_a_slide_that_cant_be_made_gets_its_early_version_instead_of_being_left_
     without, _ = _timed(5, llm="none")
     with_early, _ = _timed(5, llm="none", early=3)
 
-    assert len(without[-1].deck.slides) == 4  # (left out)
+    assert without[-1].deck.counted() == 4  # (left out)
     deck = with_early[-1].deck
-    assert len(deck.slides) == 5 and _texts(deck.slides[2])[0].startswith("Spare ")
+    assert deck.counted() == 5 and _texts(deck.slides[2])[0].startswith("Spare ")
     assert "Couldn't be made" in deck.slides[2].notes
-    assert [event.index for event in _ready(with_early)] == list(range(5))
+    assert [event.index for event in _ready(with_early)] == list(range(6))  # (and the closer)
 
 
 def test_a_talk_wants_no_early_versions_unless_it_asks_for_them(classic, held):

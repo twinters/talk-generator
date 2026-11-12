@@ -75,8 +75,10 @@ def render_pptx(
     _fetch_pictures(deck, images)
     if presentation is None:
         presentation = creator.create_new_powerpoint()
+    total = deck.counted()  # (the closer, if any, has no number: D76)
     for number, slide in enumerate(deck.slides, 1):
-        render_slide(presentation, slide, debug_notes=debug_notes, images=images, number=number, total=len(deck.slides))
+        shown = None if slide.closer else number
+        render_slide(presentation, slide, debug_notes=debug_notes, images=images, number=shown, total=total)
     return presentation
 
 

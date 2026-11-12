@@ -121,7 +121,7 @@ from talkgenerator.models.events import TalkFinished
 from talkgenerator.render.powerpoint import render_pptx
 
 for event in generator.stream_talk("default", 8, topic="peanuts", theme="random"):
-    print(event.event)  # talk.started, slide.ready (8 times), talk.finished
+    print(event.event)  # talk.started, slide.ready (8 times, and once more for the closer), talk.finished
     if isinstance(event, TalkFinished):
         render_pptx(event.deck).save("peanuts.pptx")
 ```

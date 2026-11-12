@@ -553,7 +553,7 @@ def test_a_clear_title_keeps_its_words_with_its_slips_fixed(schema):
     assert deck.title == deck.slides[0].elements[0].text == FIXED_TITLE
     assert deck.topic_or_title == TopicOrTitle(text=TYPED_TITLE, read_as="title")
     assert deck.topics == ("penguin",)  # (a misspelling isn't the topic)
-    assert all("Planned:" in slide.notes for slide in deck.slides)
+    assert all("Planned:" in slide.notes for slide in deck.slides if not slide.closer)
 
 
 def test_a_clear_title_the_model_rewrites_stays_as_typed_with_talkgenerator_s_fixes(schema):

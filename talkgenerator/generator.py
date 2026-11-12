@@ -554,7 +554,9 @@ def stream_talk(
     """Make a talk as generate_presentation does (the same deck, for the same options, seed and answers), handing
     over what's ready while it's made (see talkgenerator.models.events): talk.started once its title is known (the
     one it settles on, and for a topic_or_title, how that was read), a slide.ready for every slide as soon as it's
-    settled, in order and laid out in the talk's theme, and talk.finished with the whole deck. Meanwhile, the slides
+    settled, in order and laid out in the talk's theme, one more for its closer once they're all in (the slide
+    after its last, marked as the closer, and numbered as none of them: D76, see talkgenerator.closers), and
+    talk.finished with the whole deck. Meanwhile, the slides
     after it are being made: a language model's while it writes them.
 
     With spares, it also makes that many spare slides, for a presenter who goes on before the next slide is in: as
@@ -830,6 +832,19 @@ class _Following:
             if self._layout is not None:
                 deck_slide = self._layout.early(index, deck_slide)
             self.hand_over(SlideEarly(index=index, slide=deck_slide))
+
+    def closed(self, slide_deck: SlideDeck, slide: Any) -> None:
+        """The talk's closer (D76), made once its slides are all settled: hand it over as a slide.ready after them,
+        marked as the closer, and laid out as the deck lays it out (as its next slide, but without a number)."""
+        self._go_on()
+        with self._lock:
+            deck_slide = slide.to_deck_slide().model_copy(update={"closer": True})
+            if self._layout is not None:
+                deck_slide = self._layout.next(deck_slide)
+            index = self._handed_over
+            self._shown[index] = deck_slide
+            self.hand_over(SlideReady(index=index, slide=deck_slide))
+            self._handed_over += 1
 
     def _go_on(self) -> None:
         if self.cancelled.is_set():

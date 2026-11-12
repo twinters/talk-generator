@@ -229,7 +229,7 @@ def test_the_language_model_of_the_settings_writes_the_talk(schema, server, tmp_
     for key in ("pptx", "deck_json", "contact_sheet"):
         assert Path(report[key]).is_file() and _inside(report[key], tmp_path / "talks"), key
     deck = _deck(report)
-    assert (deck.seed, len(deck.slides)) == (report["seed"], 5)
+    assert (deck.seed, deck.counted()) == (report["seed"], 5)
 
 
 def _deck(report):

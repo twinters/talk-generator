@@ -76,6 +76,10 @@ class SlideDeck:
         # And about a slide that took the place of another (a slide that ran out of time, come after all in place of
         # what stood in for it: see talkgenerator.schema.presentation_schema._LateSlides)
         self.replace_listener: Callable[[SlideDeck, int, Slide], None] | None = None
+        # The talk's closer (D76: see talkgenerator.closers), once its slides are in: after its last, outside its size
+        # (none of the slides' numbers count it), and who wants to know about it once it's there
+        self._closer: Slide | None = None
+        self.closer_listener: Callable[[SlideDeck, Slide], None] | None = None
 
     @property
     def title(self) -> str | None:
@@ -99,8 +103,19 @@ class SlideDeck:
 
     @property
     def size(self) -> int:
-        """How many slides the talk is to have (a slide that can't be made is left out)."""
+        """How many slides the talk is to have (a slide that can't be made is left out), its closer not counted."""
         return self._size
+
+    @property
+    def closer(self) -> Slide | None:
+        """The talk's closer, once it has one: the slide after its last (D76)."""
+        return self._closer
+
+    def close(self, slide: Slide) -> None:
+        """End the talk with its closer (D76), after its slides: the closer_listener hears of it."""
+        self._closer = slide
+        if self.closer_listener is not None:
+            self.closer_listener(self, slide)
 
     def add_slide(self, slide_index: int, slide):
         self._place(slide_index, slide)
@@ -141,15 +156,26 @@ class SlideDeck:
             self._slides = [slide for slide in self._slides if slide is not None]
         deck = self.to_deck()
         images = self.image_store()  # (after the deck, which settles how its images show: as a video, say)
-        total = len(deck.slides)  # (each numbered of them: "7/12")
+        total = deck.counted()  # (each numbered of them, "7/12": all but the closer, which has no number)
         return [
-            render_slide(prs_template, deck_slide, debug_notes=debug_notes, images=images, number=number, total=total)
+            render_slide(
+                prs_template,
+                deck_slide,
+                debug_notes=debug_notes,
+                images=images,
+                number=None if deck_slide.closer else number,
+                total=total,
+            )
             for number, deck_slide in enumerate(deck.slides, 1)
         ]
 
     def to_deck(self, schema_name: str | None = None) -> Deck:
         """The talk as a deck: plain data that renders the same PowerPoint, and that can be saved as JSON. Its schema
-        is the talk's format (schema_name), unless one is given."""
+        is the talk's format (schema_name), unless one is given. Its closer, if it has one, is its last slide, marked
+        as the closer (D76)."""
+        slides = [slide.to_deck_slide() for slide in self._slides if slide is not None]
+        if self._closer is not None:
+            slides.append(self._closer.to_deck_slide().model_copy(update={"closer": True}))
         deck = Deck(
             generator=f"talkgenerator {__version__}",
             title=self._title,
@@ -164,7 +190,7 @@ class SlideDeck:
             llm_level=self.llm_level,
             vision_model=self.vision_model,
             license_policy=self.license_policy,
-            slides=tuple(slide.to_deck_slide() for slide in self._slides if slide is not None),
+            slides=tuple(slides),
             usage=self.usage,
             facts=self._facts() or None,
         )

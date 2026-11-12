@@ -743,7 +743,9 @@ def test_a_talks_deck_keeps_its_policy_and_its_images_licenses_and_looks(slot_sc
     images = [element.image for slide in deck.slides for element in slide.elements if isinstance(element, ImageElement)]
     assert images and all(image.license_class == "stock" for image in images)
     assert all(image.look in ("fake-photo", "fake-vintage") for image in images)
-    assert not any(slide.notes and "Memes" in slide.notes.split("\n")[1] for slide in deck.slides[1:])
+    assert not any(
+        slide.notes and "Memes" in slide.notes.split("\n")[1] for slide in deck.slides[1:-1]
+    )  # (not its closer)
     assert check_licenses(deck) == []
     assert deck_metrics(deck)["license_classes"] == {"stock": len(images)}
 

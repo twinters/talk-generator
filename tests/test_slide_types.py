@@ -532,7 +532,8 @@ def test_every_format_has_the_new_types_once_at_most(format_name):
     assert caps["section"] == 0.1  # (none in a talk of fewer than ten slides)
     assert caps["diagram"] == 0.2  # (two in a talk of ten slides, Venn diagrams and matrices included)
     assert kinds["agenda"].get_weight_for(1, 10) > 0 == kinds["agenda"].get_weight_for(5, 10)
-    assert kinds["questions"].get_weight_for(9, 10) > 0 == kinds["questions"].get_weight_for(5, 10)
+    # (D76: no talk picks "Questions?" anymore, as its closer asks for them: it's a plan's recipe alone)
+    assert kinds["questions"].get_weight_for(9, 10) == 0 == kinds["questions"].get_weight_for(5, 10)
     assert kinds["section"].get_weight_for(5, 10) > 0 == kinds["section"].get_weight_for(1, 10)
     choices = external.recipes_of(schema)
     assert {external.default_recipe(choices, kind).recipe.kind for kind in EVERY_KIND} == set(EVERY_KIND)
@@ -556,6 +557,7 @@ def test_the_new_types_are_drawn_types():
         *classic.KARAOKE_TYPES,
         *classic.FORMAT_TYPES,
         *classic.PROBLEM_TYPES,
+        *classic.CLOSER_TYPES,  # (the talk's closer, after its last slide: D76)
     }
     for kind in EVERY_KIND:
         slide = _built(kind, _longest_texts(kind), {"photo": ImageData("https://example.com/wide.jpg")})

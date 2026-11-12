@@ -13,13 +13,13 @@ every renderer starts from one.
 from talkgenerator import generator
 
 for event in generator.stream_talk("default", 8, topic="peanuts", int_seed=42):
-    print(event.event)  # talk.started, slide.ready (8 times), talk.finished
+    print(event.event)  # talk.started, slide.ready (8 times, and once more for the closer), talk.finished
 ```
 
 | Event | When | What it holds |
 | --- | --- | --- |
 | `talk.started` (`TalkStarted`) | once the title is known | the title, presenter, topics, language, seed, how many slides there will be, the theme's name and its tokens (`style`), and which language model writes the talk |
-| `slide.ready` (`SlideReady`) | for every slide, in order | its `index` and the `slide`, laid out in the talk's theme |
+| `slide.ready` (`SlideReady`) | for every slide, in order, and once more for the talk's closer, after them | its `index` and the `slide`, laid out in the talk's theme; the closer's `slide.closer` is true (the slide after the talk's last, which says it's over, and which none of the slides' numbers count) |
 | `slide.updated` (`SlideUpdated`) | a slide again, before `talk.finished`: with a picture that came in later (an AI picture, or the vision pick's), or with `slide_seconds`, the real slide that came after all | its `index` and the `slide`, laid out in its place; `late` is true for the real slide that came after all, in place of what stood in for it (see [A time limit per slide](#a-time-limit-per-slide)) |
 | `slide.early` (`SlideEarly`) | with `early`, early on, once each is made, before its slide | the place of the slide it's an early version of (`index`) and the `slide`, laid out there and numbered as that slide: none of the talk's slides, unless it stands in for it (see [Early versions](#early-versions)) |
 | `slide.spare` (`SlideSpare`) | with `spares`, early on, once each is made | which spare it is (`index`, from 0) and the `slide`, laid out in the talk's theme without a slide number: none of the talk's slides (see [Spare slides](#spare-slides)) |

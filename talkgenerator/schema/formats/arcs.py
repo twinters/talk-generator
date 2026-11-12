@@ -3,10 +3,11 @@ length (docs/v5-plan.md, section 7; D56).
 
 A startup pitch goes from the problem to the solution, the market, the business model, its traction, the competition
 and the team to the ask; an academic talk from its outline through related work, the method, the results, the
-limitations, future work, the acknowledgements and the references to the questions. A part has the fewest and the
-most slides it takes, and a rank: a talk too short for all of its parts keeps the parts of the lowest ranks (a pitch of
-five slides has its problem, its solution, its traction and the ask), and a longer talk gives the parts it keeps more
-slides, by rank too, up to their most. Free slides go between the parts, for the format's other slides (memes, gifs,
+limitations, future work and the acknowledgements to the references (and the questions are its closer's, after its
+last slide: D76). A part has the fewest and the most slides it takes, and a rank: a talk too short for all of its parts
+keeps the parts of the lowest ranks (a pitch of five slides has its problem, its solution, its traction and the ask),
+and a longer talk gives the parts it keeps more slides, by rank too, up to their most; a part of text may wait for a
+talk long enough for it, whatever its rank (D63's agenda of an all-hands). Free slides go between the parts, for the format's other slides (memes, gifs,
 full-screen pictures...): an arc keeps a share of a talk's slides free first (its free share: two of a ten-slide
 pitch's, D63), and a long talk has the slides that are left after its parts have their most free too.
 
@@ -33,12 +34,15 @@ STAND_IN: Final = 0.01
 @dataclass(frozen=True)
 class Part:
     """A part of an arc: its name ("problem"), the fewest and the most slides it has in a talk that keeps it, and its
-    rank (a short talk keeps the parts of the lowest ranks, and a long one gives them more slides first)."""
+    rank (a short talk keeps the parts of the lowest ranks, and a long one gives them more slides first); and the
+    shortest talk that keeps it, if it waits for a long one (D63's parts of text: an all-hands' agenda waits for a talk
+    of eleven slides, and kept waiting once "Questions?" left the arcs, D76, which would have made room for it)."""
 
     name: str
     fewest: int = 1
     most: int = 1
     rank: int = 0
+    shortest: int = 0  # (slides, the title slide counted)
 
     def __post_init__(self) -> None:
         if not 1 <= self.fewest <= self.most:
@@ -91,10 +95,10 @@ def _layout(arc: Arc, num_slides: int) -> tuple[str | None, ...]:
     reserved = arc.reserved(num_slides)  # (free slides, whatever the parts: see Arc.free)
     room -= reserved
     by_rank = sorted(range(len(arc.parts)), key=lambda index: (arc.parts[index].rank, index))
-    # The parts the talk has room for, the lowest ranks first, each with its fewest slides
+    # The parts the talk has room for (and is long enough for), the lowest ranks first, each with its fewest slides
     counts: dict[int, int] = {}
     for index in by_rank:
-        if arc.parts[index].fewest <= room:
+        if arc.parts[index].fewest <= room and num_slides >= arc.parts[index].shortest:
             counts[index] = arc.parts[index].fewest
             room -= arc.parts[index].fewest
     # More slides for the parts that take more, a slide each in turn, the lowest ranks first

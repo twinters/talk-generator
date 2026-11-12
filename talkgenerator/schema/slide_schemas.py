@@ -1252,7 +1252,9 @@ karaoke_slide_generators = _register(
     ],
 )
 
-# THE TALK'S STRUCTURE: an agenda after the title, a section's divider in the middle, "Questions?" at the end
+# THE TALK'S STRUCTURE: an agenda after the title, a section's divider in the middle; and "Questions?", which no talk
+# of talkgenerator's own has among its slides anymore (D76: its closer asks for them, after its last slide, so that every
+# slide it asked for is one of its content), only a plan written elsewhere that asks for one (its recipe)
 _AGENDA_ITEMS = "three to five parts of the talk, in the order the slides after this one come, separated by |"
 _AGENDA_EMOJI = with_emoji("agenda", ("items",), {"items": _AGENDA_ITEMS}, each=True)
 
@@ -1292,7 +1294,7 @@ structure_slide_generators = _register(
         _drawn(
             slide_texts.questions(cg.closing_picture_generator),
             slides.QuestionsSlide,
-            PeakedWeight((-1,), 1800, 0),
+            ConstantWeightFunction(0),  # (D76: a plan's alone, see above)
             ["questions"],
             "Questions",
             Recipe(

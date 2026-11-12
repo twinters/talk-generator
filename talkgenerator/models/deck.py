@@ -10,6 +10,10 @@ picture or shape can appear on a click of its slide instead of with it (`appears
 a renderer that plays no clicks shows it from the start. A shape or text of a theme's decoration that belongs to an
 element (a frame around a picture) names it (`part_of`), and appears with it.
 
+A talk's deck ends with its closer (D76): a slide after its last, outside the slides it asked for, which says that the
+talk is over in its language, look and format ("Thank you!", "Questions?", "Let's talk"...). It's marked (`closer`),
+and the slides' numbers ("7/12") count the others.
+
 In a deck with a theme other than the classic one, every element also has its place (a box on a 1920×1080
 canvas) and every text its style, as the layout engine (`talkgenerator.design.engine`) put them: so every
 renderer draws such a deck the same way. A classic deck's elements go in the 2019 template's placeholders.
@@ -383,6 +387,9 @@ class DeckSlide(_Data):
     credits_box: Box | None = None  # where the credit line goes, and how it looks (in a themed deck)
     credits_style: TextStyle | None = None
     style: Theme | None = None  # the slide's own theme, when it differs from the deck's (a chaos deck)
+    # True for the talk's closer (D76): the slide after its last, which none of its numbers count ("7/12"), in its
+    # language and look and of its format's kind ("Thank you!", "Questions?", "Let's talk"...); none for the others
+    closer: bool | None = None
 
     def element(self, role: str) -> Content | None:
         return next((element for element in self.elements if element.role == role), None)
@@ -452,6 +459,10 @@ class Deck(_Data):
     # The real facts it was given (see talkgenerator.facts): in its language model's request, and on its classic
     # slides; none for a talk without them
     facts: tuple[Fact, ...] | None = None
+
+    def counted(self) -> int:
+        """How many of its slides its numbers count ("7/12"): all of them but its closer, if it has one (D76)."""
+        return sum(1 for slide in self.slides if not slide.closer)
 
     def to_json(self, indent: int | None = 2) -> str:
         """The deck as JSON. The same deck always gives the same text: no timestamps, fields in a fixed order, and

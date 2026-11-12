@@ -759,7 +759,7 @@ def test_a_talk_made_again_in_a_check_gets_the_facts_the_first_one_got(web, sche
 def test_a_wikipedia_that_is_down_makes_a_talk_without_facts(web, schema):
     web.down = True
     deck = _talk(FakeModel())
-    assert deck.facts is None and len(deck.slides) == 5
+    assert deck.facts is None and deck.counted() == 5
 
 
 def test_a_talk_on_a_living_person_gets_no_facts_about_them(web, schema):
@@ -1107,7 +1107,7 @@ def test_a_talk_s_dare_dares_its_presenter_to_tell_a_real_dad_joke(web, monkeypa
     monkeypatch.setattr(generator, "get_schema", lambda name: made)
     model = FakeModel()
     deck = _talk(model, slides=3)
-    assert [slide.type for slide in deck.slides] == ["title", "dare", "questions"]
+    assert [slide.type for slide in deck.slides] == ["title", "dare", "questions", "closer"]
     request = model.requests[0].messages[0].content
     joke = JOKES["penguin"][0][1]
     assert f'tell this real dad joke, word for word, and say how (a voice, a pause, a pose): "{joke}"' in request

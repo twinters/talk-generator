@@ -99,9 +99,9 @@ def test_a_basic_talk_is_asked_for_planned_written_and_composed():
     assert progress[-1].writes == progress[-1].written == NUM_SLIDES - 1
     assert _slide(progress, 0) == ["waiting", "ready"]  # (the title slide comes from the spine)
     assert all(_slide(progress, slide_nr) == ["waiting", "written", "ready"] for slide_nr in range(1, NUM_SLIDES))
-    # The last one says every slide is in, before talk.finished
+    # The last one says every slide is in, before the closer after them (D76: none of them) and talk.finished
     assert progress[-1].stage == "finishing" and progress[-1].slides == ("ready",) * NUM_SLIDES
-    assert events[-2] == progress[-1] and isinstance(events[-1], TalkFinished)
+    assert events[-3] == progress[-1] and events[-2].slide.closer and isinstance(events[-1], TalkFinished)
 
 
 def test_a_slide_is_ready_in_the_progress_once_it_s_handed_over():
@@ -174,7 +174,8 @@ def test_telling_how_far_a_talk_is_never_stops_it(monkeypatch, where):
     events = _streamed(FakeModel())
 
     assert isinstance(events[-1], TalkFinished)
-    assert all("Planned:" in slide.notes for slide in events[-1].deck.slides)  # (the model's slides, every one)
+    # (the model's slides, every one, and the closer after them)
+    assert all("Planned:" in slide.notes for slide in events[-1].deck.slides if not slide.closer)
 
 
 def test_a_model_that_fails_leaves_a_classic_talk_that_s_composed():

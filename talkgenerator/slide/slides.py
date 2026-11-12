@@ -762,6 +762,24 @@ def _words(text: str) -> set[str]:
 _LITTLE: Final = frozenset("a an the of and or in on at to for with by from its it is are this that".split())
 
 
+class CloserSlide(DrawnSlide):
+    """The talk's closer (docs/v5-plan.md, D76): the slide after its last, which says the talk is over, outside the
+    slides it asked for (its deck marks it, and none of its numbers count it). Its big words ("Thank you!",
+    "Questions?", "Let's talk"...), a line under them (the presenter's name, a made-up contact line...), a small note,
+    if any, and for big words that ask a question, a huge question mark beside them, in a layout of its own (see
+    talkgenerator.closers, which makes them)."""
+
+    required_arguments = ("title",)
+
+    def __init__(self, title: str | None, subtitle: str | None = None, note: str | None = None, mark: bool = False):
+        super().__init__(
+            "closer", None, {"title": title, "subtitle": subtitle, "note": note, "mark": "?" if mark else None}
+        )
+
+    def to_deck_slide(self) -> model.DeckSlide:
+        return super().to_deck_slide().model_copy(update={"closer": True})
+
+
 # NATIVE DIAGRAMS, drawn as texts on shapes too (Venn diagrams and 2×2 matrices have their own drawing: DiagramSlide)
 
 

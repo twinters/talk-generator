@@ -1,8 +1,8 @@
 # The slides of a `academic` talk
 
-A talk at an academic conference, with affiliations on its title slide: the motivation (the problem the research is about), the outline, related work, the method, the results (with p-values), the limitations, future work, the acknowledgements, the references and questions, each a part of its arc, in that order.
+A talk at an academic conference, with affiliations on its title slide: the motivation (the problem the research is about), the outline, related work, the method, the results (with p-values), the limitations, future work, the acknowledgements and the references, each a part of its arc, in that order.
 
-Every talk starts with a title slide, made from the plan's `title`, `presenter_job` and `presenter_name` (or the name given to render, or one talkgenerator makes up). The plan's `slides` come after it, each of one of the kinds below. A slide's `recipe` picks its look and its image sources, and makes the slide the classic way when it can't be made as planned; without one, a slide gets its kind's default recipe. The look of a recipe's images (its aesthetic profile) says what they look like and where they come from: `photo` is stock photos, `vintage` old photographs in black and white or sepia, `meme-chaos` Reddit's weird pictures, ShitpostBot's images, gifs and memes, and so on (`talkgenerator formats --looks` lists them all).
+Every talk starts with a title slide, made from the plan's `title`, `presenter_job` and `presenter_name` (or the name given to render, or one talkgenerator makes up). The plan's `slides` come after it, each of one of the kinds below, and the talk ends with a closer of talkgenerator's own after them, which says the talk is over in its language and format ("Thank you!" and "Questions?", "Let's talk" for a pitch): a plan needs no slide for that. A slide's `recipe` picks its look and its image sources, and makes the slide the classic way when it can't be made as planned; without one, a slide gets its kind's default recipe. The look of a recipe's images (its aesthetic profile) says what they look like and where they come from: `photo` is stock photos, `vintage` old photographs in black and white or sepia, `meme-chaos` Reddit's weird pictures, ShitpostBot's images, gifs and memes, and so on (`talkgenerator formats --looks` lists them all).
 
 Made by `talkgenerator formats --details --format academic`.
 
@@ -23,7 +23,6 @@ A talk of this format goes through these parts, in this order, each with the sli
 | `future_work` | 1 | `future-work-academic`, `future-work-flowchart-academic`, `research-cycle-academic` |
 | `acknowledgements` | 1 | `acknowledgements-academic`, `acknowledgements-list-academic` |
 | `references` | 1 | `references-academic`, `references-figure-academic` |
-| `questions` | 1 | `questions-academic` |
 
 ## `image`
 
@@ -279,22 +278,6 @@ Images: none
 | --- | --- | --- |
 | `outline-academic` | The talk's outline, as a conference talk has it: the parts it goes through, in order | the default; `title`: the slide's title, as a conference talk's slide has it, such as 'Outline'; `items`: three to five parts of the talk, in the order they come, separated by \|, each at most 45 characters; tags: agenda, outline |
 | `acknowledgements-list-academic` | The acknowledgements, as a list of who and what made the work possible (made up, never real people) | `title`: the slide's title, as a conference talk's slide has it, such as 'Acknowledgements'; `items`: three to five who or what to thank, each in a few words, separated by \|, each at most 45 characters; tags: acknowledgements |
-
-## `questions`
-
-The closing slide, inviting the audience's questions: a question, a line under it (a last tip, say), and a picture to end on, if it has one (a funny one, or an earlier slide's, called back).
-
-| Text | At most | What to write |
-| --- | --- | --- |
-| `title` | 30 | a question that invites the audience's questions |
-| `subtitle` | 80 | a line under it (or empty, for none) |
-| `callback` | 60 | the earlier slide whose picture this one shows again, as a callback: what that picture showed, as its image search query said it (or empty, for none) |
-
-Images: `photo`
-
-| Recipe | What it's for | Notes |
-| --- | --- | --- |
-| `questions-academic` | The closing slide, inviting the audience's questions, as at a conference | the default; `subtitle`: a line under it, such as a plea to the audience; images: `photo` weird-stock (or generated, from its prompt, with an image generator set up); tags: questions, questions |
 
 ## `timeline`
 

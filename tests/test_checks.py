@@ -304,6 +304,7 @@ def test_the_required_roles_are_what_the_slide_classes_require():
         slides.AgendaSlide: "agenda",
         slides.SectionSlide: "section",
         slides.QuestionsSlide: "questions",
+        slides.CloserSlide: "closer",
         slides.TimelineSlide: "timeline",
         slides.PyramidSlide: "pyramid",
         slides.FunnelSlide: "funnel",
@@ -452,7 +453,7 @@ def test_the_command_can_save_every_deck(fake_schema, tmp_path, capsys):
     assert benchmark.main(arguments) == 0
     (saved,) = (tmp_path / "decks").iterdir()
     assert saved.name == "time-travel-1.deck.json"
-    assert len(Deck.model_validate_json(saved.read_text(encoding="utf-8")).slides) == test_seeds.NUM_SLIDES
+    assert Deck.model_validate_json(saved.read_text(encoding="utf-8")).counted() == test_seeds.NUM_SLIDES
 
 
 def test_errors_fail_the_command(fake_schema, tmp_path, monkeypatch):

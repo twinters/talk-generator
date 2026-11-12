@@ -98,7 +98,8 @@ def test_events_are_json_that_reads_back():
     events = _streamed(llm=FakeModel(), theme="neon")
     adapter = TypeAdapter(TalkEvent)
     assert [adapter.validate_json(event.to_json()) for event in events] == events
-    assert [event.event for event in events] == ["talk.started", *["slide.ready"] * NUM_SLIDES, "talk.finished"]
+    # (a slide.ready for every slide, and one more for the closer after them: D76)
+    assert [event.event for event in events] == ["talk.started", *["slide.ready"] * (NUM_SLIDES + 1), "talk.finished"]
 
 
 class SlowModel(FakeModel):
@@ -137,8 +138,8 @@ def test_slides_come_while_the_model_still_writes():
 
     model.go_on.set()
     *ready, finished = list(stream)
-    assert [event.index for event in ready] == list(range(2, NUM_SLIDES))
-    assert all("Planned:" in slide.notes for slide in finished.deck.slides)
+    assert [event.index for event in ready] == list(range(2, NUM_SLIDES + 1))  # (and the closer, D76)
+    assert all("Planned:" in slide.notes for slide in finished.deck.slides if not slide.closer)
 
 
 class AlphabeticalModel(SlowModel):
@@ -172,7 +173,7 @@ def test_a_model_that_writes_in_alphabetical_order_streams_the_talk_made_at_once
 
     # Every slide as the model wrote it (slide_10 doesn't sort before slide_2, which would have been taken for
     # skipped), and the model's title from the start (its spine sorts before its slides)
-    assert all("Planned:" in event.slide.notes for event in ready)
+    assert all("Planned:" in event.slide.notes for event in ready if not event.slide.closer)
     assert started.title == deck.title == "The title"
     assert deck.to_json() == _at_once(AlphabeticalModel(), slides).to_json()
     keys = [key for key, _ in ObjectReader().feed(model.complete(model.requests[0]).text)]
@@ -190,7 +191,7 @@ def _flat(answer):
 def test_a_model_that_writes_the_spine_field_by_field_streams_the_talk_made_at_once():
     started, ready, deck = _while_the_model_writes(SlowModel(change=_flat), theme="neon")
     assert started.title == deck.title == "The title"
-    assert all("Planned:" in event.slide.notes for event in ready)
+    assert all("Planned:" in event.slide.notes for event in ready if not event.slide.closer)
     assert deck.to_json() == _at_once(SlowModel(change=_flat), theme="neon").to_json()
 
 
@@ -217,7 +218,7 @@ def test_a_streamed_talk_that_a_model_wrongly_finds_unsafe_is_the_second_answers
 
     started, ready, deck = _parts(_streamed(llm=model()))
     assert started.title == deck.title == "Take 2"
-    assert all("Planned:" in event.slide.notes for event in ready)
+    assert all("Planned:" in event.slide.notes for event in ready if not event.slide.closer)
     assert deck.to_json() == _made_at_once(llm=model()).to_json()
 
 

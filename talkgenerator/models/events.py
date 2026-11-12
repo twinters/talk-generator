@@ -1,5 +1,6 @@
 """The events of a talk while it's made (talkgenerator.generator.stream_talk), in this order: talk.started, a
-slide.ready for every slide, and talk.finished, with the whole deck. In a talk that generates pictures, a slide can
+slide.ready for every slide, one more for its closer (the slide after its last, marked as the closer: D76), and
+talk.finished, with the whole deck. In a talk that generates pictures, a slide can
 come again, as slide.updated, once a generated picture takes the place of its stock photo: whenever that comes in,
 after the slide's slide.ready and before talk.finished; in a talk with a time limit per slide, a slide that ran out of
 time can come after all (a slide.updated that's late) in place of what stood in for it. A talk that asks for spares
@@ -43,7 +44,7 @@ class TalkStarted(_Event):
     topic_or_title: TopicOrTitle | None = None
     language: str = "en"
     seed: int | None = None
-    slides: int  # how many slides it's to have (a slide that can't be made is left out)
+    slides: int  # how many slides it's to have (a slide that can't be made is left out), not counting its closer
     theme: str = "classic"  # the theme's name: "classic" (the 2019 template), or one of a family's
     style: Theme | None = None  # the theme's tokens (none for the classic theme)
     # The language model that writes it, as "provider:model" (the one asked; the finished deck names the one that
@@ -52,7 +53,8 @@ class TalkStarted(_Event):
 
 
 class SlideReady(_Event):
-    """A slide, settled, and in a themed talk laid out (every element in its box, as in the finished deck)."""
+    """A slide, settled, and in a themed talk laid out (every element in its box, as in the finished deck). The last
+    one is the talk's closer (its slide's closer is true: D76), after the slides it asked for."""
 
     event: Literal["slide.ready"] = "slide.ready"
     index: int  # its place in the deck, from 0

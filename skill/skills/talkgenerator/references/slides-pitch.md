@@ -2,7 +2,7 @@
 
 A startup pitch to investors: the problem, the solution, the market (TAM, SAM and SOM), the business model, the traction, the competition, the team, the roadmap and the ask, each a part of its arc, in that order.
 
-Every talk starts with a title slide, made from the plan's `title`, `presenter_job` and `presenter_name` (or the name given to render, or one talkgenerator makes up). The plan's `slides` come after it, each of one of the kinds below. A slide's `recipe` picks its look and its image sources, and makes the slide the classic way when it can't be made as planned; without one, a slide gets its kind's default recipe. The look of a recipe's images (its aesthetic profile) says what they look like and where they come from: `photo` is stock photos, `vintage` old photographs in black and white or sepia, `meme-chaos` Reddit's weird pictures, ShitpostBot's images, gifs and memes, and so on (`talkgenerator formats --looks` lists them all).
+Every talk starts with a title slide, made from the plan's `title`, `presenter_job` and `presenter_name` (or the name given to render, or one talkgenerator makes up). The plan's `slides` come after it, each of one of the kinds below, and the talk ends with a closer of talkgenerator's own after them, which says the talk is over in its language and format ("Thank you!" and "Questions?", "Let's talk" for a pitch): a plan needs no slide for that. A slide's `recipe` picks its look and its image sources, and makes the slide the classic way when it can't be made as planned; without one, a slide gets its kind's default recipe. The look of a recipe's images (its aesthetic profile) says what they look like and where they come from: `photo` is stock photos, `vintage` old photographs in black and white or sepia, `meme-chaos` Reddit's weird pictures, ShitpostBot's images, gifs and memes, and so on (`talkgenerator formats --looks` lists them all).
 
 Made by `talkgenerator formats --details --format pitch`.
 
@@ -23,7 +23,6 @@ A talk of this format goes through these parts, in this order, each with the sli
 | `team` | 1 | `team-org-chart-pitch`, `team-pitch` |
 | `roadmap` | 1 | `roadmap-pitch` |
 | `ask` | 1 | `the-ask-pitch` |
-| `closing` | 1 | `closing-pitch` |
 
 ## `image`
 
@@ -277,22 +276,6 @@ Images: `photo`
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
 | `news-headline-pitch` | A made-up news story about the concept, as breaking news | the default; images: `photo` neutral (or generated, from its prompt, with an image generator set up); tags: news |
-
-## `questions`
-
-The closing slide, inviting the audience's questions: a question, a line under it (a last tip, say), and a picture to end on, if it has one (a funny one, or an earlier slide's, called back).
-
-| Text | At most | What to write |
-| --- | --- | --- |
-| `title` | 30 | a question that invites the audience's questions |
-| `subtitle` | 80 | a line under it (or empty, for none) |
-| `callback` | 60 | the earlier slide whose picture this one shows again, as a callback: what that picture showed, as its image search query said it (or empty, for none) |
-
-Images: `photo`
-
-| Recipe | What it's for | Notes |
-| --- | --- | --- |
-| `closing-pitch` | The closing slide, after the ask: inviting the investors' questions (and their money) | the default; `subtitle`: a line under it, about investing; images: `photo` weird-stock (or generated, from its prompt, with an image generator set up); tags: closing, questions |
 
 ## `timeline`
 

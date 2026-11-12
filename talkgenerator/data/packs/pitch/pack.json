@@ -1,12 +1,13 @@
 {
   "format": "pitch",
   "about": "The classic texts of startup pitches (the pitch schema): a grammar per part of its arc, whose rules are lists of templates (see talkgenerator.sources.packs and talkgenerator.schema.formats.pitch)",
-  "version": 4,
+  "version": 5,
   "versions": {
     "1": "2026-11-08: the first texts of startup pitches, a part of the arc a grammar: the title, the problem, the solution, the market, the business model, the traction, the competition, the team, the roadmap, the ask and the closing (D56)",
     "2": "2026-11-09: the free slides' own provocations: a word or two over a full-screen picture, in the format's voice (D63)",
     "3": "2026-11-09: the problem slide, the pitch's why: its headings, and problems on five angles (weird, everyday, crossed with something else, typical, and a real how-to), each with a line under it (D69)",
-    "4": "2026-11-10: problems of a few words, each with a short line under it (D73)"
+    "4": "2026-11-10: problems of a few words, each with a short line under it (D73)",
+    "5": "2026-11-12: the closing's texts went: a pitch's closer invites the investors to talk now, after its last slide and in its language (\"Let's talk\", with a made-up contact line: D76)"
   },
   "slots": {
     "title.talk_title": {"variables": ["seed", "startup"], "field": "title.title"},
@@ -80,8 +81,6 @@
     "ask.ask_title": {"variables": ["seed", "topic", "presenter", "title", "startup"], "field": "big_number.title"},
     "ask.amount": {"variables": [], "field": "big_number.number"},
     "ask.ask_label": {"variables": ["seed", "topic", "presenter", "title", "startup"], "field": "big_number.label"},
-    "ask.ask_source": {"variables": ["seed", "topic", "presenter", "title", "startup"], "field": "big_number.source"},
-    "closing.closing_title": {"variables": ["seed", "topic", "presenter", "title", "startup"], "field": "questions.title"},
-    "closing.closing_subtitle": {"variables": ["seed", "topic", "presenter", "title", "startup"], "field": "questions.subtitle"}
+    "ask.ask_source": {"variables": ["seed", "topic", "presenter", "title", "startup"], "field": "big_number.source"}
   }
 }

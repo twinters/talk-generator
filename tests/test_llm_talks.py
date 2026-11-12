@@ -222,9 +222,14 @@ def _talk(model, int_seed=1, parallel=True, **options):
     return slide_deck.to_deck()
 
 
+def _slides(deck):
+    """The talk's slides, without its closer after them (D76)."""
+    return [slide for slide in deck.slides if not slide.closer]
+
+
 def _planned(deck):
-    """Which slides the language model wrote (the others are classic)."""
-    return ["Planned:" in slide.notes for slide in deck.slides]
+    """Which slides the language model wrote (the others are classic; the closer after them is none of them)."""
+    return ["Planned:" in slide.notes for slide in deck.slides if not slide.closer]
 
 
 # TALKS
@@ -289,7 +294,7 @@ def test_slides_whose_images_cant_be_found_are_classic(schema):
 
     deck = _talk(FakeModel(change=unfindable))
     # Only slides without images (the title and charts) kept what the model wrote; the others are classic
-    planned_types = {slide.type for slide, planned in zip(deck.slides, _planned(deck), strict=True) if planned}
+    planned_types = {slide.type for slide, planned in zip(_slides(deck), _planned(deck), strict=True) if planned}
     assert planned_types <= {"title", "chart"}
     assert not all(_planned(deck))
     assert check_deck(deck, NUM_SLIDES) == []
@@ -307,7 +312,7 @@ def test_a_callback_loses_the_brackets_that_name_its_slide_by_its_key(schema):
         answer[last]["caption_2"] = f"Waddling [see {first} and {second}] wins"
 
     deck = _talk(FakeModel(change=cite))
-    conclusions = deck.slides[-1]
+    conclusions = _slides(deck)[-1]
     assert conclusions.type == "three_column_image" and all(_planned(deck))
     assert _texts_of(conclusions)["caption_1"] == "Huddling scales trust"
     assert _texts_of(conclusions)["caption_2"] == "Waddling wins"
@@ -321,9 +326,9 @@ def test_a_slide_with_a_key_of_the_answer_elsewhere_in_a_text_is_classic(schema)
         answer[last]["caption_1"] = f"As {first} showed, huddling scales"
 
     deck = _talk(FakeModel(change=cite))
-    assert deck.slides[-1].type == "three_column_image"
+    assert _slides(deck)[-1].type == "three_column_image"
     assert _planned(deck) == [True] * (NUM_SLIDES - 1) + [False]
-    assert _texts_of(deck.slides[-1])["caption_1"] == "One"  # (the classic conclusions')
+    assert _texts_of(_slides(deck)[-1])["caption_1"] == "One"  # (the classic conclusions')
     assert check_deck(deck, NUM_SLIDES) == []
 
 
@@ -331,7 +336,7 @@ def test_a_model_that_fails_makes_a_classic_talk(schema):
     deck = _talk(FakeModel(fail=llm.RateLimited("free quota used up")))
     assert deck.title.startswith("A classic title")
     assert not any(_planned(deck))
-    assert len(deck.slides) == NUM_SLIDES
+    assert deck.counted() == NUM_SLIDES
     assert (deck.usage.requests, deck.usage.failed_requests) == (1, 1)
 
 
@@ -339,7 +344,7 @@ def test_a_model_that_crashes_makes_a_classic_talk(schema):
     deck = _talk(FakeModel(fail=RuntimeError("a bug in a provider")))
     assert deck.title.startswith("A classic title")
     assert not any(_planned(deck))
-    assert len(deck.slides) == NUM_SLIDES
+    assert deck.counted() == NUM_SLIDES
 
 
 def test_a_topic_the_model_finds_unsafe_makes_a_classic_talk(schema):
@@ -489,7 +494,7 @@ def test_a_slide_of_a_talk_in_another_language_that_doesnt_come_out_becomes_a_pi
     spoiled = deck.slides[1]
     assert spoiled.type == "full_image"
     assert [element for element in spoiled.elements if element.kind == "text"] == []  # no English classic slide
-    assert len(deck.slides) == NUM_SLIDES
+    assert deck.counted() == NUM_SLIDES
 
 
 def test_a_dutch_talk_gets_no_slides_that_find_english_texts(monkeypatch):
@@ -625,7 +630,7 @@ def test_a_talk_claude_declines_halfway_is_classic(schema):
     # What Claude wrote before it declined isn't used: not the title, nor the slides it got to
     assert deck.title.startswith("A classic title")
     assert not any(_planned(deck))
-    assert len(deck.slides) == NUM_SLIDES
+    assert deck.counted() == NUM_SLIDES
     assert deck.usage.requests == 1
 
 
@@ -847,4 +852,4 @@ def test_a_deck_from_an_llm_talk_renders(schema):
     from talkgenerator.render.powerpoint import render_pptx
 
     deck = Deck.from_json(_talk(FakeModel()).to_json())
-    assert len(render_pptx(deck).slides) == NUM_SLIDES
+    assert len(render_pptx(deck).slides) == NUM_SLIDES + 1  # (and its closer)

@@ -177,6 +177,9 @@ SPECS: Final[dict[str, TextSpec]] = {
     "left title": TextSpec("heading", 140, 60, align="left", anchor="bottom", heading=True),
     "left subtitle": TextSpec("body", 52, 30, color="muted", align="left", anchor="top"),
     "mark": TextSpec("heading", 900, 320, color="accent", align="center", heading=True),
+    # (the closer's small note under its line: D76)
+    "closer note": TextSpec("body", 44, 26, color="accent", anchor="top"),
+    "left closer note": TextSpec("body", 44, 26, color="accent", align="left", anchor="top"),
     # (a meme's captions: white Impact in capitals with a black outline, over anything; or plain black text, on the
     # template's own even area)
     "meme": TextSpec(
@@ -295,8 +298,8 @@ def lay_out(
     """The deck with its elements placed and styled in the theme; with style_chaos, some slides (that share of
     them, picked by the seed) in themes of their own, of the families the talk allows (see
     talkgenerator.design.themes.allowed; None, all of them). Every slide knows how many the deck has, for its number
-    ("7/12")."""
-    layout = DeckLayout(deck.seed, theme, style_chaos, extremes, families, total=len(deck.slides))
+    ("7/12"): all of them but its closer (D76), which has no number."""
+    layout = DeckLayout(deck.seed, theme, style_chaos, extremes, families, total=deck.counted())
     slides = tuple(layout.next(slide) for slide in deck.slides)
     return deck.model_copy(update={"theme": theme.name, "style": theme, "slides": slides})
 
@@ -305,7 +308,8 @@ class DeckLayout:
     """Lays a deck's slides out one at a time, in order, as lay_out does all at once: a slide's layout depends on the
     deck's seed, the slide's place, and the layouts of the slides before it, so slides can be laid out as they come
     in (talkgenerator.generator.stream_talk). The total is how many slides the deck has, which a talk knows from its
-    start (for a slide's number, "7/12"; None: the number alone)."""
+    start (for a slide's number, "7/12"; None: the number alone). Its closer (D76), after its last slide, is laid out
+    as the next one, but without a number: the total doesn't count it."""
 
     def __init__(
         self,
@@ -362,7 +366,8 @@ class DeckLayout:
         self, slide: DeckSlide, number: int, previous: str | None, used: Counter[str], stream: str = "slide"
     ) -> DeckSlide:
         slide_rng = self._rng.child(stream, number)
-        spare = stream == "spare"  # (a spare has no slide number: it's none of the deck's slides)
+        # (a spare has no slide number: it's none of the deck's slides; nor has the closer, which none of them count)
+        spare = stream == "spare" or bool(slide.closer)
         own = None
         if self.style_chaos > 0:
             with random_util.use(slide_rng.child("chaos")):
@@ -2086,6 +2091,31 @@ def _questions_mark(roles: dict[str, Content], theme: Theme) -> Placement:
     return placement
 
 
+def _closer(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The talk's closer (D76) as its title slide has its title: its big words in the middle, as the theme aligns its
+    titles, with the theme's decoration under them, the line under that, and the small note under the line."""
+    placement = Placement("v5/closer")
+    title = Box(x=160, y=190, w=1600, h=420)
+    placement.boxes["title"] = (title, "talk title")
+    placement.shapes += _decoration(theme, title, gap=22)
+    placement.boxes["subtitle"] = (Box(x=160, y=660, w=1600, h=150), "subtitle")
+    placement.boxes["note"] = (Box(x=160, y=830, w=1600, h=90), "closer note")
+    return placement
+
+
+def _closer_mark(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The closer's question ("Questions?") and the line under it on the left, the note under them, and a huge question
+    mark in the theme's accent on the right, as a "Questions?" slide has it."""
+    placement = Placement("v5/closer-mark")
+    placement.boxes["mark"] = (Box(x=1080, y=40, w=760, h=940), "mark")
+    title = Box(x=MARGIN, y=190, w=960, h=420)
+    placement.boxes["title"] = (title, "left title")
+    placement.shapes += _decoration(_left_aligned(theme), title, gap=16)
+    placement.boxes["subtitle"] = (Box(x=MARGIN, y=660, w=960, h=150), "left subtitle")
+    placement.boxes["note"] = (Box(x=MARGIN, y=830, w=960, h=90), "left closer note")
+    return placement
+
+
 def _references(left: bool) -> Callable[[dict[str, Content], Theme], Placement]:
     """An academic talk's references: its works one under the other, each after its number as cited ("[1]"), and a
     picture of one of them (a book's cover, a paper's figure), if it has one, beside them (on the right, or left), as
@@ -3800,6 +3830,11 @@ _LAYOUTS: Final[dict[str, tuple[_Layout, ...]]] = {
         _Layout("v5/questions-mark", _questions_mark, 0.8, _without("photo")),
         _Layout("v5/questions-photo", _questions_photo, fits=_photo_beside_title),
         _Layout("v5/questions-banner", _questions_banner, 0.7, _has("photo")),
+    ),
+    # (the talk's closer, after its last slide: D76; a closer that asks a question has the huge mark more often)
+    "closer": (
+        _Layout("v5/closer", _closer),
+        _Layout("v5/closer-mark", _closer_mark, 1.5, _has("mark")),
     ),
     "timeline": (
         _Layout("v5/timeline", _timeline),
