@@ -157,6 +157,7 @@ module = [
     "talkgenerator.schema.formats.academic",
     "talkgenerator.schema.formats.arcs",
     "talkgenerator.schema.formats.corporate",
+    "talkgenerator.schema.formats.infomercial",
     "talkgenerator.schema.formats.keynote",
     "talkgenerator.schema.formats.pitch",
     "talkgenerator.schema.registry",

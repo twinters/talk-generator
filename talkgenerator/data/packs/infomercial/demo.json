@@ -1,0 +1,100 @@
+{
+  "features_title": [
+    "Watch this!",
+    "It does it all!",
+    "Look how easy!",
+    "Just watch!",
+    "See it in action!",
+    "One gadget. Endless uses!",
+    "It's not magic. It's the {gadget}!"
+  ],
+  "feature": [
+    "It slices!",
+    "It dices!",
+    "It folds {seed.generic}!",
+    "It sorts {seed.generic}!",
+    "It polishes {seed.generic}!",
+    "It cleans!",
+    "It sings!",
+    "It fits in your pocket!",
+    "It works in the dark!",
+    "It's dishwasher safe!",
+    "No more sticky {seed.bare}!",
+    "It even works on Mondays!",
+    "It glows!",
+    "It massages {seed.generic}!"
+  ],
+  "feature_punchline": [
+    "It even walks the dog!",
+    "It even does your taxes!",
+    "It even remembers birthdays!",
+    "It even talks back!",
+    "It even loves you back!",
+    "It even folds fitted sheets!",
+    "It even finds your keys!",
+    "It even apologises!",
+    "It even makes {seed.generic}!"
+  ],
+  "how_title": [
+    "How it works",
+    "Easy as 1, 2, 3!",
+    "So simple, a child could do it!",
+    "Three easy steps!",
+    "Easy as pie!",
+    "No experience needed!"
+  ],
+  "how_first": [
+    "Unbox your {gadget}",
+    "Plug it in",
+    "Point it at {seed.generic}",
+    "Open the lid",
+    "Add your {seed.bare}",
+    "Read the manual (optional)"
+  ],
+  "how_step": [
+    "Twist!",
+    "Press the big button",
+    "Shake gently",
+    "Wait three seconds",
+    "Hum the jingle",
+    "Say its name out loud",
+    "Close your eyes",
+    "Wiggle it a little",
+    "Turn it twice",
+    "Stand well back"
+  ],
+  "how_last": [
+    "Forget {seed.generic} forever!",
+    "Enjoy!",
+    "Done! Forever!",
+    "Wait for the applause!",
+    "Cancel your weekend plans!",
+    "Tell all your friends!",
+    "Order another one!",
+    "Become a legend!"
+  ],
+  "ways_title": [
+    "There's a better way!",
+    "Old way. New way!",
+    "See the difference!",
+    "Out with the old!",
+    "No contest!",
+    "Which would you choose?"
+  ],
+  "old_way": [
+    "The old way",
+    "Without the {gadget}",
+    "Before: misery",
+    "The hard way",
+    "Struggling with {seed.generic}",
+    "Life before today"
+  ],
+  "new_way": [
+    "The {gadget} way!",
+    "With the {gadget}!",
+    "After: pure joy!",
+    "The easy way!",
+    "Effortless {seed.bare} fun!",
+    "Life, starting today!"
+  ]
+}

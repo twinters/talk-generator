@@ -1,0 +1,21 @@
+{
+  "introducing": [
+    "Introducing the {gadget}!",
+    "Meet the {gadget}!",
+    "Say hello to the {gadget}!",
+    "Presenting: the {gadget}!",
+    "It's the {gadget}!",
+    "The {gadget}! It's finally here!",
+    "Behold: the {gadget}!"
+  ],
+  "as_seen": [
+    "The {gadget}. As seen on TV!",
+    "The {gadget}! Not sold in stores!",
+    "The {gadget}: a total game changer!",
+    "The {gadget}! For {seed.generic}!",
+    "The amazing {gadget}!",
+    "One {gadget}. Endless possibilities!",
+    "The {gadget}. Patent pending!",
+    "The incredible {gadget}!"
+  ]
+}

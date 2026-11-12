@@ -32,7 +32,13 @@ from talkgenerator.plan.kinds import KINDS
 from talkgenerator.render import preview
 from talkgenerator.render.powerpoint import render_pptx
 from talkgenerator.schema import formats, presentation_schema, presentation_schema_types
-from talkgenerator.schema.formats import academic, corporate, keynote, pitch
+from talkgenerator.schema.formats import (
+    academic,
+    corporate,
+    infomercial,
+    keynote,
+    pitch,
+)
 from talkgenerator.schema.formats.arcs import PART_WEIGHT, STAND_IN, Arc, Free, InPart, Part
 from talkgenerator.schema.presentation_schema_types import get_schema, schemas
 from talkgenerator.slide import slides
@@ -40,7 +46,14 @@ from talkgenerator.sources import conceptnet
 from talkgenerator.util import image_util, random_util
 from tests.test_slide_types import _clicks, _deck, _longest, _theme
 
-FORMATS = {"pitch": pitch, "academic": academic, "corporate": corporate, "keynote": keynote}
+FORMATS = {
+    "pitch": pitch,
+    "academic": academic,
+    "corporate": corporate,
+    "keynote": keynote,
+    # (D79)
+    "infomercial": infomercial,
+}
 FAMILIES = list(themes.FAMILIES)
 
 
@@ -570,11 +583,13 @@ def test_the_formats_are_listed_with_what_they_are_and_their_slides():
             }
             for part in module.ARC.parts
         ]
-        # Its own recipes are its kinds' defaults; it borrows a TED-like talk's only for a kind it has none of
-        own = {kind["kind"] for kind in catalog["kinds"] if any(r["id"].endswith(f"-{name}") for r in kind["recipes"])}
+        # Its own recipes are its kinds' defaults; it borrows a TED-like talk's only for a kind it has none of (its own
+        # end in its name, with dashes: "-book-report")
+        ending = "-" + name.replace("_", "-")
+        own = {kind["kind"] for kind in catalog["kinds"] if any(r["id"].endswith(ending) for r in kind["recipes"])}
         for kind in catalog["kinds"]:
             default = next(recipe for recipe in kind["recipes"] if recipe["default"])
-            assert default["id"].endswith(f"-{name}") == (kind["kind"] in own), (name, kind["kind"])
+            assert default["id"].endswith(ending) == (kind["kind"] in own), (name, kind["kind"])
         assert catalog["titles"] == module.__dict__[name.upper()].title_hint
     assert "process" in {kind["kind"] for kind in external.catalog("academic")["kinds"]}
     assert "process" not in {kind["kind"] for kind in external.catalog("default")["kinds"]}

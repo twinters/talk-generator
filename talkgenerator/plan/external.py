@@ -70,6 +70,9 @@ FORMATS: Final = {
     "keynote": "A product keynote on a big stage: a big opening statement, the one idea, the reveal of the product, "
     "its features, a live demo, the price, the 'one more thing' and a closing line, each a part of its arc, in that "
     "order",
+    "infomercial": "A late-night TV infomercial for a gadget made of the topic: the everyday problem, the gadget, its "
+    "demonstration, testimonials, the fine print, the price, 'But wait, there's more!' and the call to order now, each "
+    "a part of its arc, in that order",
 }
 
 # The recipe a kind of slide gets when its plan doesn't name one, the first of these the format has: plain photos,
@@ -623,8 +626,9 @@ def _looks(recipe: Recipe) -> dict[str, str]:
 def catalog_markdown(schema_name: str = "default") -> str:
     """The catalog as Markdown, for people and for the Skill's reference (skill/.../references/slides.md)."""
     data = catalog(schema_name)
+    article = "an" if schema_name[:1] in "aeiou" else "a"  # ("an `academic` talk", "an `infomercial` talk")
     lines = [
-        f"# The slides of a `{schema_name}` talk",
+        f"# The slides of {article} `{schema_name}` talk",
         "",
         f"{data['description']}.",
         "",

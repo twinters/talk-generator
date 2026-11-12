@@ -1,0 +1,84 @@
+{
+  "terms_title": [
+    "Terms and conditions",
+    "Important information",
+    "The fine print",
+    "Please read carefully",
+    "Some restrictions apply",
+    "Legal stuff (please skip)"
+  ],
+  "disclaimer": [
+    "Results not typical; most customers experience results that are, frankly, more typical than this, and should adjust their expectations",
+    "The {gadget} is not a toy, not a pet, not a hat and not a substitute for {seed.generic}, whatever our presenter may have said on screen",
+    "Offer valid only while supplies last, and supplies are expected to run out shortly before you call, so please call earlier than planned",
+    "Shipping and handling are charged separately; handling includes being held, admired and now and then talked to by our warehouse staff",
+    "Do not use the {gadget} near water, near fire, near {seed.generic} or near anyone who has not signed the second set of terms",
+    "Batteries not included; batteries were never included; we are not sure the {gadget} uses batteries, and our engineers have stopped answering",
+    "Satisfaction guaranteed or your money back, minus a small restocking fee equal to the price of the product, plus shipping and handling",
+    "Some assembly required; please allow four to six weekends for assembly, and a fifth for finding the part that rolled under the sofa",
+    "Not available in all areas, including the area you live in, the area next to it, and any area with a postcode",
+    "Testimonials given by real customers who were asked very nicely and given a free {gadget}, which they are still learning to operate",
+    "The {gadget} has not been evaluated by any authority on {seed.generic}, mostly because no such authority would return our calls",
+    "Colours may vary; sizes may vary; the {gadget} itself may vary, especially at night, which is normal and covered by the warranty",
+    "The warranty covers manufacturing defects only, and does not cover enthusiasm, excessive use, or using the {gadget} as intended",
+    "Operators are standing by because their chairs are still on order, which says nothing about the quality of our customer service",
+    "Payments are due monthly until the {gadget} is paid off, or until the sun runs out, whichever comes first",
+    "Keep out of reach of children, pets, neighbours and anyone who asks too many questions about how the {gadget} works",
+    "The product shown may differ from the product you receive, which may differ from the product you were hoping for",
+    "Dramatisation: no animals were harmed in the making of this programme, though {seed.generic} looked mildly surprised",
+    "Calls may be recorded for training purposes, and the best ones may be played at our office party",
+    "By reading this, you agree to everything above, everything below, and anything else we think of later"
+  ],
+  "highlight": [
+    "The {gadget} may become self-aware; if this happens, please be polite to it.",
+    "If you can read this, you are standing too close to the television.",
+    "The {gadget} is legally a member of your family after thirty days.",
+    "This offer is void if you think about it for more than ten seconds.",
+    "Side effects include joy, confidence and talking about {seed.generic} at parties.",
+    "Our lawyers asked us to remove this sentence, so we made it bigger.",
+    "In rare cases, owners have gone on to present an infomercial of their own.",
+    "Not to be used for its intended purpose."
+  ],
+  "dialog_title": [
+    "Terms and conditions",
+    "Before you order",
+    "Important!",
+    "One small thing",
+    "Legal notice",
+    "Please accept"
+  ],
+  "clause": [
+    "By ordering the {gadget}, you agree to tell at least twelve people about it, loudly.",
+    "You agree that the {gadget} now makes every {seed.bare} decision in your home.",
+    "The {gadget} may play its theme tune at any moment. You agree to sing along.",
+    "Clause 7: the {gadget} always gets the window seat.",
+    "Your order includes a lifetime subscription to the {gadget} newsletter. It comes hourly.",
+    "You agree to treat the {gadget} like a member of the family, birthdays included."
+  ],
+  "clause_code": [
+    "Clause 47(b)",
+    "Section 12, line 9",
+    "Clause 3.14",
+    "Paragraph 404",
+    "Rule 7, part 2",
+    "Clause 99(z)"
+  ],
+  "agree": [
+    "I agree",
+    "Accept",
+    "Yes",
+    "OK",
+    "Sure",
+    "Fine",
+    "Agree"
+  ],
+  "agree_punchline": [
+    "Accept forever",
+    "Agree, sadly",
+    "Yes to all",
+    "I agree (no choice)",
+    "Accept and order",
+    "Agree twice",
+    "I agree, I agree"
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "kicker": [
+    "Tired of this?",
+    "Sound familiar?",
+    "Does this happen to you?",
+    "Are you tired of this?",
+    "Not again!",
+    "Ever had this happen?",
+    "We've all been there!",
+    "Every. Single. Time."
+  ],
+  "weird": [
+    "Is your {seed.bare} secretly judging you?|Studies say: probably!",
+    "{seed.generic.cap} in your socks? Again?|It happens more than you think!",
+    "Strange noises from your {seed.bare} at night?|Every night at 2 a.m.!",
+    "Your {seed.bare}, staring at you over breakfast?|Millions suffer in silence!",
+    "Humming from the {seed.bare} drawer?|You're not alone!",
+    "{seed.generic.cap} on the ceiling? Again?|Your neighbours have noticed!",
+    "Your {seed.bare} glows in the dark. Why?|Nobody knows. Until now!"
+  ],
+  "everyday": [
+    "Lost your {seed.bare} again?|Every. Single. Morning.",
+    "{seed.generic.cap} all over the kitchen floor?|Not anymore!",
+    "Can't open the {seed.bare} jar?|You and millions of others!",
+    "Tangled {seed.bare} cables, again?|We've all been there!",
+    "{seed.generic.cap} everywhere but where you need it?|Happens to everyone!",
+    "Spilled {seed.generic} on the sofa?|For the third time this week?",
+    "Waiting forever for {seed.generic}?|Life's too short!",
+    "Late again, because of {seed.generic}?|Your boss has noticed!"
+  ],
+  "crossed": [
+    "{seed.generic.cap} and #crossing#?|A recipe for disaster!",
+    "{seed.generic.cap}, meet #crossing#.|Chaos. Every time.",
+    "{seed.generic.cap} plus #crossing#?|Nobody can handle both!",
+    "Juggling {seed.generic} and #crossing#?|There's a better way!",
+    "{seed.generic.cap} during #crossing#?|Not on our watch!",
+    "#crossing.capitalize#. And {seed.generic}.|At the same time!"
+  ],
+  "crossing": [
+    "laundry day",
+    "the school run",
+    "a family barbecue",
+    "Monday mornings",
+    "the weekly shop",
+    "flat-pack furniture",
+    "a birthday party",
+    "the morning commute",
+    "a camping trip",
+    "a rainy picnic",
+    "spring cleaning",
+    "a power cut",
+    "a long car trip",
+    "your in-laws"
+  ],
+  "typical": [
+    "Hours wasted on {seed.generic}!|Every single week!",
+    "The {seed.bare} drawer: total chaos!|Sound familiar?",
+    "Old-fashioned {seed.bare} hassle?|Those days are over!",
+    "{seed.generic.cap}: messy, slow and confusing!|Until now!",
+    "Still doing {seed.generic} by hand?|In this day and age?",
+    "Nobody has time for {seed.generic}!|Nobody!",
+    "Frustrated with {seed.generic}?|Of course you are!"
+  ],
+  "real": [
+    "Can't {seed.wikihow_action.lower}?|You're not alone!",
+    "Struggling to {seed.wikihow_action.lower}?|There's an easier way!",
+    "Still trying to {seed.wikihow_action.lower}?|Stop right there!",
+    "Tired of failing to {seed.wikihow_action.lower}?|Millions are!",
+    "How do you {seed.wikihow_action.lower}?|With the {gadget}!",
+    "Need to {seed.wikihow_action.lower}? Fast?|We've got you!"
+  ],
+  "better_way": [
+    "There has to be a better way!",
+    "There MUST be a better way!",
+    "Does this look familiar?",
+    "Every day, the same {seed.bare} struggle!",
+    "Stop the {seed.bare} madness!",
+    "This could be you!",
+    "Ugh. {seed.generic.cap}. Again.",
+    "Life with {seed.generic}, before today!",
+    "Not like this!"
+  ]
+}

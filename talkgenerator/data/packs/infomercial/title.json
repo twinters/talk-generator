@@ -1,0 +1,45 @@
+{
+  "talk_title": [
+    "#named#",
+    "#named#",
+    "#named#",
+    "#shout#",
+    "#shout#"
+  ],
+  "named": [
+    "The {gadget}: #promise#",
+    "{gadget}! #promise#"
+  ],
+  "shout": [
+    "Introducing the {gadget}!",
+    "The Amazing {gadget}!",
+    "The All-New {gadget}!",
+    "It's the {gadget}!",
+    "Meet the {gadget}, As Seen on TV!",
+    "The {gadget}: Order Now!"
+  ],
+  "promise": [
+    "Never Struggle With {seed.generic.title} Again!",
+    "{seed.generic.title} Made Easy!",
+    "{seed.generic.title} in Seconds!",
+    "Say Goodbye to {seed.bare.title} Hassle!",
+    "{seed.generic.title}, Without the Mess!",
+    "The Only {seed.bare.title} Gadget You Need!",
+    "Upgrade Your {seed.bare.title} Routine!",
+    "{seed.generic.title}, Like Never Before!",
+    "{seed.generic.title} Shouldn't Be This Hard!",
+    "{seed.generic.title}, in Three Easy Steps!"
+  ],
+  "subtitle": [
+    "With your host, {presenter}",
+    "{presenter}, inventor of the {gadget}",
+    "Presented by {presenter}, who has never been this excited",
+    "{presenter}, live from a very bright studio",
+    "{presenter}, satisfied customer and now spokesperson",
+    "{presenter}, who uses the {gadget} every single day",
+    "Presented by {presenter}. Operators are standing by!",
+    "{presenter}, Chief Gadget Officer",
+    "Starring {presenter} and the {gadget}",
+    "{presenter}, former skeptic"
+  ]
+}

@@ -25,7 +25,13 @@ from talkgenerator.plan.kinds import KINDS, Recipe, Variant, pictured
 from talkgenerator.plan.realize import realize
 from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema import slide_schemas
-from talkgenerator.schema.formats import academic, corporate, keynote, pitch
+from talkgenerator.schema.formats import (
+    academic,
+    corporate,
+    infomercial,
+    keynote,
+    pitch,
+)
 from talkgenerator.schema.formats.arcs import PART_WEIGHT
 from talkgenerator.schema.presentation_schema_types import get_schema
 from talkgenerator.schema.slide_schemas import slide_generators
@@ -38,7 +44,14 @@ from tests.test_generated_images import FakePainter
 from tests.test_slide_types import _deck, _theme, every_pictured_figure
 from tests.test_slide_types import related as related  # (fake ConceptNet: words related to a cat)
 
-FORMATS = {"Pitch": pitch, "Academic": academic, "Corporate": corporate, "Keynote": keynote}
+FORMATS = {
+    "Pitch": pitch,
+    "Academic": academic,
+    "Corporate": corporate,
+    "Keynote": keynote,
+    # (D79)
+    "Infomercial": infomercial,
+}
 
 
 class _Stock:
@@ -263,8 +276,14 @@ def test_statements_take_their_backdrops_from_a_mix_of_looks():
         recipe = slide_generators.get(name).llm
         assert recipe is not None and recipe.images == (mix,), name
         assert external._looks(recipe) == {"background": "calm-backdrop or backdrop"}
-    for module in FORMATS.values():
-        assert getattr(module, "_BACKDROP", getattr(module, "_STAGE", None)) is mix
+    # (every statement a format has: over the mix too, its own as its free slides, or over a calm picture of something
+    # of its own, as an infomercial's call centre; a museum tour has none of its own)
+    for named, module in FORMATS.items():
+        statements = [each for each in module.GENERATORS if each.llm is not None and each.llm.kind == "statement"]
+        assert statements, named
+        for each in statements:
+            (image,) = each.llm.images  # type: ignore[union-attr]
+            assert image is mix or getattr(image, "aesthetic", None) == "calm-backdrop", each.name
 
 
 def test_reddits_weird_pictures_and_the_live_caption_memes_come_up_more_often():
@@ -300,9 +319,10 @@ def test_every_format_has_provocations_in_its_voice(named, stock):
     assert isinstance(picture, ImageElement) and picture.image.url.startswith("https://images/cats")
 
 
-@pytest.mark.parametrize("name", ["pitch", "academic", "corporate"])
+# (the formats with two free slides of ten)
+@pytest.mark.parametrize("name", ["pitch", "academic", "corporate", "infomercial"])
 def test_ten_slide_talks_of_the_formats_have_memes_and_pictures_between_their_parts(name):
-    schema, arc = get_schema(name), FORMATS[name.capitalize()].ARC
+    schema, arc = get_schema(name), next(module.ARC for module in FORMATS.values() if module.PACK == name)
     free = memes = pictured_ = 0
     for seed in range(150):
         picks = schema._pick_generators(10, random_util.Rng(seed), "en", None)
