@@ -83,6 +83,8 @@ FORMATS: Final = {
     "wedding": "A wedding toast by the best man or the maid of honour, for their best friend, who marries the topic: "
     "who the speaker is, how the couple met, an embarrassing story, why they're perfect together, marriage advice and "
     "the toast, each a part of its arc, in that order",
+    "book_report": "A school book report on a book about the topic: the book, its author, the main characters, what "
+    "happens, the favourite part, the moral of the story and the rating, each a part of its arc, in that order",
 }
 
 # The recipe a kind of slide gets when its plan doesn't name one, the first of these the format has: plain photos,

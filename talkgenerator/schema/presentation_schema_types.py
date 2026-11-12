@@ -10,6 +10,7 @@ from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema import slide_topic_generators
 from talkgenerator.schema.formats import (
     academic,
+    book_report,
     corporate,
     court,
     documentary,
@@ -312,6 +313,18 @@ wedding_schema = schemas.register(
         slide_generators=slide_generators.group("wedding"),
         max_allowed_tags=wedding.CAPS,
         format=wedding.WEDDING,
+        spare_generators=SPARE_GENERATORS,
+    ),
+)
+book_report_schema = schemas.register(
+    "book_report",
+    PresentationSchema(
+        powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
+        seed_generator=_wandering,
+        title_generator=book_report.title_generator,
+        slide_generators=slide_generators.group("book_report"),
+        max_allowed_tags=book_report.CAPS,
+        format=book_report.BOOK_REPORT,
         spare_generators=SPARE_GENERATORS,
     ),
 )

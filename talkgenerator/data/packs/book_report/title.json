@@ -1,0 +1,35 @@
+{
+  "talk_title": [
+    "#report_title#",
+    "#report_title#",
+    "#report_title#",
+    "#other_title#"
+  ],
+  "report_title": [
+    "My Book Report: {book}",
+    "Book Report: {book}, by {author}",
+    "My Book Report on {book}",
+    "{book}: My Book Report",
+    "A Book Report on {book}, by {author}",
+    "My Report on {book} (I Read Most of It)",
+    "Book Report: {book}. Due Friday."
+  ],
+  "other_title": [
+    "What I Read This Summer: {book}",
+    "{book}: Why Everyone Should Read It",
+    "{book}: A Book About {seed.generic.title}",
+    "What {book} Taught Me About {seed.generic.title}",
+    "Everything I Learned From {book}",
+    "The Best Book About {seed.generic.title} I Have Ever Read"
+  ],
+  "subtitle": [
+    "{presenter}, Year 4",
+    "By {presenter}, Mrs. Bellweather's class",
+    "{presenter}, Year 5, the only one who read the whole book",
+    "A book report by {presenter}, age 9 and three quarters",
+    "{presenter}, Mr. Pennyfeather's class (it was due last Friday)",
+    "Presented by {presenter}, Year 4, back row",
+    "{presenter}, who picked this book because of the cover",
+    "By {presenter}. My mum helped with the cover."
+  ]
+}

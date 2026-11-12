@@ -34,6 +34,7 @@ from talkgenerator.render.powerpoint import render_pptx
 from talkgenerator.schema import formats, presentation_schema, presentation_schema_types
 from talkgenerator.schema.formats import (
     academic,
+    book_report,
     corporate,
     court,
     documentary,
@@ -61,6 +62,7 @@ FORMATS = {
     "court": court,
     "museum": museum,
     "wedding": wedding,
+    "book_report": book_report,
 }
 FAMILIES = list(themes.FAMILIES)
 

@@ -1,0 +1,83 @@
+{
+  "rating_title": [
+    "My rating",
+    "My rating of {book}",
+    "How good is it?",
+    "Final score",
+    "My verdict",
+    "My score, out of ten"
+  ],
+  "score": [
+    "7/10",
+    "8/10",
+    "6/10",
+    "9/10",
+    "11/10",
+    "6.5/10",
+    "4 stars",
+    "10/10",
+    "3 stars",
+    "7.5/10"
+  ],
+  "rating_label": [
+    "Would read again if my mum made me",
+    "Two points off: not enough pictures",
+    "Would recommend to anyone who likes {seed.generic}",
+    "It lost a point for being so long",
+    "Better than the film. I didn't see the film.",
+    "The cover alone gets a ten",
+    "Minus one point because the dog in it never comes back",
+    "It would be a ten, but it made me cry on the bus",
+    "Would have been higher with a dragon in it",
+    "Half a point off for all the long words"
+  ],
+  "rating_source": [
+    "Me, age 9",
+    "Me and my best friend (she didn't read it)",
+    "My official rating, in pen",
+    "Me, after a good night's sleep",
+    "Me (my teacher agrees, probably)",
+    "Me, in my reading diary"
+  ],
+  "reviews_title": [
+    "What my class thinks",
+    "Reviews from my class",
+    "What others said",
+    "Reviews (I asked around)",
+    "My class's reviews",
+    "What people say about {book}"
+  ],
+  "review_good": [
+    "I didn't read it but the cover is great.",
+    "Best book about {seed.generic} I ever read. Also the only one.",
+    "It made me want my own {seed.bare}.",
+    "Good book. I read it twice because I lost my place.",
+    "My mum read it to me. She did all the voices.",
+    "Five stars. It was short.",
+    "I liked the pictures. All three of them.",
+    "I read it in one go. Then I read it in another go.",
+    "Best book I've read this week. It's Tuesday.",
+    "My cat sat on it. She liked it too."
+  ],
+  "review_bad": [
+    "Too many words.",
+    "One star. Our dog ate page 40, and it was the best page.",
+    "It was okay. The end was at the end.",
+    "I fell asleep on page 3. Good pillow, though.",
+    "The library wants it back.",
+    "There was no {seed.bare} on the cover. I checked twice.",
+    "The pictures were nice but there weren't enough of them.",
+    "Too long. I read the back instead.",
+    "I wanted a dragon and there was no dragon."
+  ],
+  "reviewer": [
+    "Tom, who sits next to me",
+    "Mrs. Bellweather, my teacher",
+    "My dog, Biscuit",
+    "Ava, Year 4",
+    "My little brother",
+    "Grandma, who read the back",
+    "The school librarian",
+    "Leo, my best friend"
+  ]
+}

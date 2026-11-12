@@ -1,0 +1,52 @@
+{
+  "cover_title": [
+    "My Book Report: {book}",
+    "The book: {book}",
+    "{book}, by {author}",
+    "Today's book: {book}",
+    "I read {book}. Most of it.",
+    "{book} (the cover is the best part)",
+    "This is the book. It is called {book}."
+  ],
+  "cover_full_title": [
+    "{book}",
+    "{book}, by {author}",
+    "{book}. Judge it by its cover.",
+    "The cover of {book}",
+    "{book}. I picked it for the cover.",
+    "Behold: {book}",
+    "{book}. Front cover. Very shiny."
+  ],
+  "numbers_title": [
+    "The book in numbers",
+    "{book}, in numbers",
+    "Some numbers about the book",
+    "Facts and figures (I counted)",
+    "The book, by the numbers",
+    "How big is the book?"
+  ],
+  "stat": [
+    "212|pages",
+    "3|pictures",
+    "14|chapters",
+    "1|bookmark (lost)",
+    "9|new words I learned",
+    "4|days to read it",
+    "2|cups of cocoa",
+    "0|dragons (sadly)",
+    "1|{seed.bare} on the cover",
+    "6|times I fell asleep",
+    "37|pages about the weather",
+    "5|times someone says 'Hmm'",
+    "11|exclamation marks"
+  ],
+  "stat_punchline": [
+    "40|pages I actually read",
+    "0|times I'll read it again",
+    "1|very tired reader",
+    "100%|of my weekend",
+    "3|crumbs still inside",
+    "1|page our dog ate",
+    "7|questions I still have"
+  ]
+}

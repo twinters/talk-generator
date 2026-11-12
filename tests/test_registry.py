@@ -43,6 +43,7 @@ def test_schemas_are_registered():
         "court",
         "museum",
         "wedding",
+        "book_report",
     ]
     assert get_schema("ted") is schemas.get("ted")
 

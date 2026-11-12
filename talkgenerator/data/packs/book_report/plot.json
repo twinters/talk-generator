@@ -1,0 +1,145 @@
+{
+  "process_title": [
+    "What happens in the book",
+    "The plot",
+    "The story, in steps",
+    "What happens (the short version)",
+    "The plot (I skipped some)",
+    "How the story goes"
+  ],
+  "plot_first": [
+    "We meet {seed.generic}",
+    "Chapter 1: {seed.generic}",
+    "A new {seed.bare} arrives",
+    "Somebody finds {seed.one}",
+    "It's a normal day",
+    "Everyone is happy",
+    "Once upon a time..."
+  ],
+  "plot_step": [
+    "Something happens",
+    "Something else happens",
+    "A big storm",
+    "Nobody listens",
+    "It gets confusing",
+    "A lot of talking",
+    "Everyone goes on a trip",
+    "A secret map!",
+    "Chapter 7 (I skipped it)",
+    "Lunch",
+    "A long bit about the weather",
+    "The {seed.bare} mystery",
+    "A song about {seed.generic}",
+    "A party",
+    "Someone gets lost",
+    "It rains for 40 pages",
+    "A dog appears",
+    "They build a raft",
+    "A very long dinner"
+  ],
+  "plot_last": [
+    "The end",
+    "It was all a dream",
+    "Everyone learns a lesson",
+    "They all have a picnic",
+    "Then I fell asleep",
+    "A twist! (I won't say)",
+    "The end? There's a book 2",
+    "Everyone hugs",
+    "The last page is missing",
+    "Everyone goes home",
+    "To be continued (oh no)"
+  ],
+  "chart_title": [
+    "How exciting the book is, page by page",
+    "How much I liked the book, chapter by chapter",
+    "How exciting {book} is, by page",
+    "The book got really good on page 80",
+    "Excitement levels in {book}",
+    "The best bits of the book, measured"
+  ],
+  "chart_x": [
+    "Page",
+    "Chapter",
+    "Pages I read",
+    "Minutes of reading",
+    "Page (I skipped some)",
+    "Time in the bath"
+  ],
+  "chart_y": [
+    "Excitement",
+    "How awake I was",
+    "How much I liked it",
+    "Excitement (out of 10)",
+    "{seed.generic.cap}, per page",
+    "Gasps per page"
+  ],
+  "chart_line": [
+    "Excitement",
+    "Me",
+    "The story",
+    "My interest",
+    "How awake I was",
+    "The plot"
+  ],
+  "chart_second": [
+    "My little brother",
+    "My teacher",
+    "The author",
+    "My dog",
+    "Everyone else",
+    "My mum, reading it to me"
+  ],
+  "chart_event": [
+    "The twist",
+    "The {seed.bare} chapter",
+    "A picture!",
+    "The sad bit",
+    "Lunch break",
+    "The big reveal",
+    "I fell asleep",
+    "The end (finally)",
+    "Someone sneezes"
+  ],
+  "timeline_title": [
+    "The story, page by page",
+    "What happens when",
+    "The plot, in order",
+    "The timeline of the book",
+    "How long it took me",
+    "The story so far"
+  ],
+  "page": [
+    "Page 1",
+    "Page 7",
+    "Page 23",
+    "Page 40",
+    "Page 88",
+    "Page 121",
+    "Page 160",
+    "Page 199",
+    "Page 212"
+  ],
+  "timeline_event": [
+    "We meet {seed.generic}",
+    "Something happens",
+    "A big storm",
+    "Everyone goes camping",
+    "A secret map!",
+    "A very long bit",
+    "The {seed.bare} chapter",
+    "A surprise picnic",
+    "Nobody talks for 30 pages",
+    "A song about {seed.generic}",
+    "Someone gets lost"
+  ],
+  "timeline_punchline": [
+    "I stopped reading here",
+    "The end (I think)",
+    "Someone cries. Me.",
+    "The twist!",
+    "Everyone is fine",
+    "Back to page 1",
+    "The library wants it back"
+  ]
+}
