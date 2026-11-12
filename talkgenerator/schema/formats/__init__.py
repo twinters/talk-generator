@@ -495,8 +495,9 @@ def species(topic: str) -> str:
 
 
 def _title_words(topic: str) -> str:
-    """The topic in a made-up title: one of it in words without articles, capitalised and spaced ("Time Travel"), when
-    that's 16 characters at most, and else as one word, as _name_word has it ("PlantThatWontDie", "Intelligence")."""
+    """The topic in a made-up title or an old master's name: one of it in words without articles, capitalised and
+    spaced ("Time Travel"), when that's 16 characters at most, and else as one word, as _name_word has it
+    ("PlantThatWontDie", "Intelligence")."""
     one = language_util.bare(topic) if topic.strip() else topic
     kept = [word for word in one.replace("-", " ").split() if word.lower() not in ("the", "a", "an")]
     spaced = " ".join(word[:1].upper() + word[1:] for word in kept)
@@ -511,8 +512,8 @@ def museum_name(topic: str) -> str:
 
 def artist(topic: str) -> str:
     """The made-up name of the old master whose work a museum tour shows, from the talk's topic: the same on every
-    slide."""
-    return _stable(topic, _ARTIST_FORMS).format(_name_word(topic))
+    slide ("Pieter de Rubber Duck")."""
+    return _stable(topic, _ARTIST_FORMS).format(_title_words(topic))
 
 
 def friend(topic: str) -> str:

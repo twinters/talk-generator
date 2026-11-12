@@ -1349,8 +1349,8 @@ keep an infomercial's problem, product, demo and "but wait", a documentary's ope
 a court case's charges, evidence, alibi and verdict, a museum tour's welcome, masterpiece, artefact and gift shop, a
 toast's intro, how they met, the story and the toast, and a report's book, characters, plot and the end. Their content
 packs have 2,530 templates in 305 slots, linted as the others are. Their made-up names all come from the topic, the
-same on every slide; the museum's and the book's keep the topic's words apart when they're short ("The Time Travel
-Gallery").
+same on every slide; the museum's, its old master's and the book's keep the topic's words apart when they're short
+("The Time Travel Gallery", "Pieter de Rubber Duck").
 
 The odds, with ten formats beside the TED-like talk and nine specialists among 21 personas: `FORMAT_WEIGHTS` gives the
 TED-like talk 55 (it was 20) and every new format 1, the specialists' multipliers are ×32 (×21 for the all-hands and the
