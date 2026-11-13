@@ -392,23 +392,32 @@ def test_the_persona_says_how_the_presenter_goes_by(schema):
 
 @pytest.mark.slow
 def test_the_persona_s_name_styles_come_up_more_often():
+    # (more often than without the persona; but names that could be a real person's still come first, as the user
+    # asked on 2026-11-13, D80: a historian's famous-name puns twice as often, not more often than the others)
     historian = personas.persona("medieval_historian")
-    asked = collections.Counter(
-        names.Naming.of(names.DEFAULT_STYLES, ["cats"], random_util.Rng(seed), True, historian.nudge).style
-        for seed in range(200)
-    )
-    assert asked["famous_pun"] > 1.5 * max(asked["pun"], asked["fun_surname"])
-    assert set(asked) == set(names.DEFAULT_STYLES)  # (the others come up too)
-    # And so with talkgenerator's own names, in a classic talk (the pack has names in every style for cats)
-    styles = collections.Counter(
-        next(
-            entry.style
-            for entry in names.pack()
-            if names.from_pack(["cats"], names.DEFAULT_STYLES, random_util.Rng(seed), historian.nudge) in entry.names
+
+    def asked(nudge):
+        return collections.Counter(
+            names.Naming.of(names.DEFAULT_STYLES, ["cats"], random_util.Rng(seed), True, nudge).style
+            for seed in range(400)
         )
-        for seed in range(200)
-    )
-    assert styles["famous_pun"] > 1.5 * max(styles["pun"], styles["fun_surname"])
+
+    nudged, plain = asked(historian.nudge), asked(None)
+    assert nudged["famous_pun"] > 1.5 * plain["famous_pun"]
+    assert set(nudged) == set(names.DEFAULT_STYLES)  # (the others come up too)
+
+    # And so with talkgenerator's own names, in a classic talk (the pack has names in every style for cats)
+    def styles(nudge):
+        return collections.Counter(
+            next(
+                entry.style
+                for entry in names.pack()
+                if names.from_pack(["cats"], names.DEFAULT_STYLES, random_util.Rng(seed), nudge) in entry.names
+            )
+            for seed in range(400)
+        )
+
+    assert styles(historian.nudge)["famous_pun"] > 1.5 * styles(None)["famous_pun"]
 
 
 def test_a_talk_that_says_which_name_styles_it_may_have_goes_by_those_alone(schema):
