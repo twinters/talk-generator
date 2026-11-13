@@ -8,7 +8,7 @@ A slide has a type and a layout. Its content is a list of elements, each with a 
 put ("title", "caption_1", "content_1", ...), so a layout or theme can change without changing the content. A text,
 picture or shape can appear on a click of its slide instead of with it (`appears_on_click`), such as a quiz's answer:
 a renderer that plays no clicks shows it from the start. A shape or text of a theme's decoration that belongs to an
-element (a frame around a picture) names it (`part_of`), and appears with it. In a theme that moves (D82), an element
+element (a frame around a picture) names it (`part_of`), and appears with it. In a theme that moves (D83), an element
 can come in with one of PowerPoint's entrance effects (`entrance`), as its slide comes up or on its click.
 
 A talk's deck ends with its closer (D76): a slide after its last, outside the slides it asked for, which says that the
@@ -184,7 +184,7 @@ ENTRANCE_DURATIONS: Final[dict[str, int]] = {
 
 
 class Entrance(_Data):
-    """How an element comes in as its slide is presented (D82): with one of PowerPoint's entrance effects, this many
+    """How an element comes in as its slide is presented (D83): with one of PowerPoint's entrance effects, this many
     milliseconds after the slide comes up, or after the click it appears on (or its column comes in on). Where it's
     shown without clicks (the editor, a preview), it's simply there. An element without one is there from the start,
     or fades in on its click."""

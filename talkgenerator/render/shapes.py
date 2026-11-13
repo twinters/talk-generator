@@ -113,7 +113,7 @@ def draw_elements(ppt_slide: Slide, slide: DeckSlide, theme: Theme, *, images: I
     for with this too, on the template's blank slide.)"""
     drawn: dict[str, list[Any]] = {}  # the shapes each element is drawn with (and what belongs to it), by its role
     clicks: dict[int, list[Any]] = {}  # the shapes that appear on each click
-    entrances: dict[int, Entrance] = {}  # how shapes come in, by their ids, where they have an entrance effect (D82)
+    entrances: dict[int, Entrance] = {}  # how shapes come in, by their ids, where they have an entrance effect (D83)
     entering: list[tuple[Any, Entrance]] = []  # the shapes that come in so as the slide comes up
     for element in slide.elements:
         before = {shape.shape_id for shape in ppt_slide.shapes}
@@ -158,7 +158,7 @@ def draw_elements(ppt_slide: Slide, slide: DeckSlide, theme: Theme, *, images: I
                 later.append(clicks[number])
         if later:
             animation.reveal_clicks(ppt_slide, later, entrances)
-    animation.enter(ppt_slide, entering)  # (what comes in as the slide comes up, before its first click: D82)
+    animation.enter(ppt_slide, entering)  # (what comes in as the slide comes up, before its first click: D83)
 
 
 def _own_clicks(element: Any) -> int:

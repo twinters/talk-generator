@@ -141,7 +141,7 @@ class Family:
     # Sets of decoration its members pick from instead of its motif alone (see Variant): a kindergarten's crayon
     # drawings, sticker book, school notebook or paper cut-outs, so that its decks differ more than by their colours
     variants: tuple[Variant, ...] = ()
-    # How much its members' slides move as they're presented (D82: see talkgenerator.design.entrances), each with how
+    # How much its members' slides move as they're presented (D83: see talkgenerator.design.entrances), each with how
     # likely it is (a calm family's not at all, a family for laughs' often everything), and the entrance effects they
     # use when they do
     motion: tuple[tuple[Motion, float], ...] = (("none", 1.0),)
@@ -1110,7 +1110,7 @@ def member(family: Family) -> Theme:
         patterns = family.patterns if variant.patterns is None else variant.patterns
         pattern = _pattern(_weighted(patterns), theme.palette)
         tint, tint_opacity = _tint(_weighted(family.image_tints), theme.palette)
-    # How much its slides move, from a stream of its own too (D82), which takes nothing from the rest
+    # How much its slides move, from a stream of its own too (D83), which takes nothing from the rest
     with random_util.use(own.child("motion")):
         motion = _weighted(family.motion) if family.entrances else "none"
     # And the open fonts after everything else, for the same reason: they take the place of the installed pair

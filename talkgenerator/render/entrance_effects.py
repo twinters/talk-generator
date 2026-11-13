@@ -1,4 +1,4 @@
-"""PowerPoint's entrance effects (D82), as PowerPoint 365 writes them in a slide's timing: copied from a deck in which
+"""PowerPoint's entrance effects (D83), as PowerPoint 365 writes them in a slide's timing: copied from a deck in which
 each was set on a shape by hand (2026-11-13), with the shape, its build group, its node type (on a click, with or
 after the previous effect) and its delay as the placeholders. Drop and Flip come in as a whole, where PowerPoint sets
 a shape with text to come in letter by letter. talk-generator-web plays the same motions (src/app/deck/entrances.ts).

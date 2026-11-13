@@ -1,4 +1,4 @@
-"""Entrances (D82): which of a slide's elements come in with one of PowerPoint's entrance effects as the slide is
+"""Entrances (D83): which of a slide's elements come in with one of PowerPoint's entrance effects as the slide is
 presented, with which effect, and when.
 
 A theme moves as much as its family has it (`Theme.motion`, see talkgenerator.design.themes): a calm one not at all

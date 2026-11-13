@@ -540,7 +540,7 @@ def lay_out_slide(
             ),
         }
     )
-    # (what comes in with an entrance effect, in a theme that moves: D82; from a stream of its own, which takes nothing
+    # (what comes in with an entrance effect, in a theme that moves: D83; from a stream of its own, which takes nothing
     # from the layout's)
     return entrances.assign(laid_out, theme, rng.child("entrances"))
 

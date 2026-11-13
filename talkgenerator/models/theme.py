@@ -18,10 +18,10 @@ ImageFrame = Literal["none", "rounded", "polaroid"]
 FilterScope = Literal["all", "backdrops"]
 # WordArt's shapes for a heading: a wave, an arch, inflated in the middle, or slanting up
 Warp = Literal["wave", "arch", "inflate", "slant"]
-# How much a theme's slides move as they're presented (D82): not at all, a picture or a text now and then, or
+# How much a theme's slides move as they're presented (D83): not at all, a picture or a text now and then, or
 # everything on every slide (for laughs)
 Motion = Literal["none", "some", "lots"]
-# PowerPoint's entrance effects that a slide's elements can come in with (D82): as PowerPoint names them, from the
+# PowerPoint's entrance effects that a slide's elements can come in with (D83): as PowerPoint names them, from the
 # subtle to the exciting (talkgenerator.render.animation writes them as PowerPoint does, talk-generator-web plays them)
 EntranceEffect = Literal[
     "fade",
@@ -156,7 +156,7 @@ class Theme(_Data):
     motif: Motif = "none"
     motif_variant: int = 0
     pattern: BackgroundPattern | None = None
-    # How much its slides move as they're presented (D82, see talkgenerator.design.entrances): not at all, now and then
+    # How much its slides move as they're presented (D83, see talkgenerator.design.entrances): not at all, now and then
     # a picture or a text that comes in with one of PowerPoint's entrance effects, or everything on every slide; and
     # the effects its members use
     motion: Motion = "none"

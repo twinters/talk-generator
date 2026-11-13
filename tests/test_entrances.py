@@ -1,4 +1,4 @@
-"""Offline tests of entrances (D82): in a theme that moves, a slide's things come in with PowerPoint's entrance effects
+"""Offline tests of entrances (D83): in a theme that moves, a slide's things come in with PowerPoint's entrance effects
 as it's presented (talkgenerator.design.entrances), in PowerPoint as PowerPoint writes them
 (talkgenerator.render.entrance_effects); a calm theme's slides stay as they were."""
 
