@@ -31,7 +31,6 @@ import contextvars
 import copy
 import functools
 import logging
-import re
 import threading
 from collections.abc import Callable, Collection, Sequence
 from concurrent.futures import ThreadPoolExecutor
@@ -39,7 +38,7 @@ from dataclasses import dataclass
 from typing import Final, TypeVar
 
 from talkgenerator.datastructures.image_data import ImageData
-from talkgenerator.images import analysis, catalog, context, licenses, profiles
+from talkgenerator.images import analysis, catalog, context, licenses, profiles, safety
 from talkgenerator.images.analysis import Area
 from talkgenerator.images.profiles import Preferences, Profile, SourceUse
 from talkgenerator.images.slots import ImageSlot
@@ -53,8 +52,6 @@ PALETTE_LOOKS: Final = 3  # candidates looked at in a themed talk, for colours t
 # The runners-up an image for a planned slide keeps in a talk with a vision pick (it shows three: these leave room for
 # those without a thumbnail, or on another slide)
 RUNNERS_UP: Final = 6
-# What a candidate's description may not say (beside the sources' own filters, such as Reddit's NSFW mark)
-_UNSAFE: Final = re.compile(r"\b(?:nsfw|nude|nudity|porn|porno|gore|hentai)\b", re.IGNORECASE)
 _THREADS: Final = 16
 _pool: ThreadPoolExecutor | None = None
 _pool_lock = threading.Lock()
@@ -236,7 +233,7 @@ def _candidates(
                 continue
             if not _fits(image.declared_size, orientation, slot.min_pixels):
                 continue
-            if image.description and _UNSAFE.search(image.description):
+            if safety.unsafe_description(image.description):
                 continue
             kept.append((rating, image))
         if planned:

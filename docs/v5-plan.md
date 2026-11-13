@@ -1782,6 +1782,11 @@ breaking it", and too much text, "which makes it harder for the presenter, who h
   language ("trapzo-is-echt-een-bedrijf.biz": `closers._SILLY_DOMAINS`).
 - *A layout bug.* A historical figure's quote no longer zig-zags into the corner opposite its portrait (the rows
   layout is for two pictures).
+- *A picture no slide should show.* A sample talk by the kindergarten teacher got r/OldSchoolCool's "Isaac Hayes
+  Eating Fried Chicken Off of a Naked Woman" as a portrait: Reddit didn't mark it NSFW, and the finder's filter of
+  descriptions didn't know "naked". A description, or a post's title, that speaks of nudity, sex or gore now keeps a
+  picture out, at the finder and at Reddit's search alike, the classic generators' too
+  (`safety.unsafe_description`), but for a naked mole-rat or the naked eye.
 - *Generated pictures where they matter.* A slot can have its picture generated first (`ImageSlot.generate_first`):
   a talk that generates pictures keeps a picture of its budget for each such slot its plan has
   (`ImageGeneration.reserve`), so a book report's cover, whose made-up title only a generated picture shows, isn't

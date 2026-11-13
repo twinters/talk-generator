@@ -160,9 +160,10 @@ how to keep 4.x's talks. The [docs](https://github.com/twinters/talk-generator/t
   as "Penn Quinn" for penguins), with their job on a line of its own; e-mail addresses at domains that read as made
   up; shorter real quotes; two real things of the same year only on slides that show them side by side (old photos,
   a timeline), as a quote or a fun fact that tied them in one sentence read as a riddle; a recurring character in one
-  talk in five at most; and in a talk that generates pictures,
-  a book report's cover first, as only a generated cover shows its made-up title. The prompts were tuned in a prompt
-  lab (`scripts/prompt_lab`): talks Claude Opus wrote, judged blind and pairwise by Claude and GPT.
+  talk in five at most; and in a talk that generates pictures, a book report's cover first, as only a generated cover
+  shows its made-up title. A picture whose description or post title speaks of nudity, sex or gore stays out, also
+  where Reddit doesn't mark it NSFW. The prompts were tuned in a prompt lab (`scripts/prompt_lab`): talks Claude Opus
+  wrote, judged blind and pairwise by Claude and GPT.
 
 ### Formats and personas
 

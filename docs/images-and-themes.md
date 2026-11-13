@@ -4,7 +4,8 @@
 
 Every image a slide asks for is a slot: what it's for, what to search for, its look, and the license classes it may
 have. The image finder searches the look's sources a few at a time, in parallel, filters what they find (license,
-size, orientation, descriptions that say NSFW, images the talk already has), takes a look at the thumbnails of a few,
+size, orientation, descriptions that say NSFW or speak of nudity, sex or gore, images the talk already has), takes a
+look at the thumbnails of a few,
 and picks with the talk's seed: the same seed finds the same images, whichever search comes back first.
 
 Credits on the slides link to the photographer's or the image's page, and name the license of openly licensed and
@@ -54,7 +55,8 @@ among the candidates.
 
 Flavour packs are looks of weird content from curated sets of subreddits: `cursed`, `wholesome`, `bad-charts`,
 `medieval`, `liminal`, `retro-futurism`, `accidental-art`, `pareidolia` and `corporate-cringe`, among others. Reddit's
-NSFW mark and the finder's filters keep them safe for work. `talkgenerator formats --looks` lists every look, and
+NSFW mark and the finder's filters keep them safe for work, and so does a post's title that says what Reddit didn't
+mark ("naked", "topless"). `talkgenerator formats --looks` lists every look, and
 `talkgenerator formats --details` names the looks of every recipe's images.
 
 A talk's persona (`--persona`) has favourite looks for some of the looks slides ask for, which are searched first: a

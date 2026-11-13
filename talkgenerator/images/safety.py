@@ -180,6 +180,20 @@ _UNSAFE: Final = frozenset(
         "fetish",
     }
 )
+# What a found picture's description (a post's title, a photo's caption) may not say, beside the sources' own filters
+# (such as Reddit's NSFW mark): nothing of nudity or sex (D80: r/OldSchoolCool's "Isaac Hayes Eating Fried Chicken Off
+# of a Naked Woman", which Reddit doesn't mark, came up on a kindergarten teacher's slide), porn or gore; but a naked
+# mole-rat may come, and a comet to the naked eye
+_UNSAFE_DESCRIPTION: Final = re.compile(
+    r"\b(?:nsfw|nudes?|nudity|naked(?![\s-]+(?:mole|eye))|topless|nipples?|boobs?|erotic\w*|porn\w*|sex|sexy"
+    r"|strippers?|playboy|hentai|gore|gory)\b",
+    re.IGNORECASE,
+)
+
+
+def unsafe_description(description: str | None) -> bool:
+    """Whether a found picture's description says it's no picture for a slide (see _UNSAFE_DESCRIPTION)."""
+    return bool(description) and _UNSAFE_DESCRIPTION.search(description or "") is not None
 
 
 def avoid(writing: bool = False) -> str:

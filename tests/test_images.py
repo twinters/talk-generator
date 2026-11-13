@@ -470,6 +470,17 @@ def test_images_described_as_unsafe_are_left_out(look, monkeypatch):
     assert all("owl" in _find(ImageSlot(aesthetic="fake"), seed=seed).get_image_url() for seed in range(6))
 
 
+def test_a_description_of_nudity_is_unsafe_but_a_naked_mole_rat_is_not():
+    from talkgenerator.images.safety import unsafe_description as unsafe
+
+    # (a post of r/OldSchoolCool that Reddit doesn't mark NSFW, on a kindergarten teacher's slide: D80)
+    assert unsafe("Isaac Hayes Eating Fried Chicken Off of a Naked Woman While Drinking Wine (1970s)")
+    assert all(unsafe(text) for text in ("Topless sunbathers, 1972", "Nudes by the lake", "Erotica shop", "NSFW"))
+    assert not unsafe("A naked mole-rat in its tunnel") and not unsafe("Naked mole rats at the zoo")
+    assert not unsafe("A comet visible to the naked eye")
+    assert not unsafe("Sussex sheep at the Essex show") and not unsafe(None)  # (words in words; no description)
+
+
 def test_a_vintage_look_prefers_black_and_white_and_sepia(look, monkeypatch):
     def old_and_new(search):
         return [(1.0, _image(f"new-{n}", f"colourful-{n}")) for n in range(5)] + [

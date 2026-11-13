@@ -28,6 +28,7 @@ from prawcore.exceptions import (
 
 from talkgenerator import settings
 from talkgenerator.datastructures.image_data import ImageData, VideoCopy
+from talkgenerator.images import safety
 from talkgenerator.models.deck import DisplayPolicy, LicenseClass
 from talkgenerator.util import http_util
 
@@ -124,14 +125,15 @@ def _search_reddit(name: str, query: str, sort: str, limit: int, animated: bool)
     submissions = subreddit.search(query, sort=sort, limit=limit) if query else subreddit.hot(limit=limit)
     images = []
     for submission in submissions:
-        if vars(submission).get("over_18"):
+        title = vars(submission).get("title")
+        # (a post Reddit marks NSFW, and one whose title says what Reddit didn't mark: D80)
+        if vars(submission).get("over_18") or (isinstance(title, str) and safety.unsafe_description(title)):
             continue
         image_url = get_image_url(submission, animated=animated)
         if image_url:
             video_url, poster_url = get_video_copy(submission) or (None, None)
             credit, post_url = get_source_name(submission), get_post_url(submission)
             thumbnail_url, size = get_preview(submission)
-            title = vars(submission).get("title")
             images.append(
                 RedditImage(
                     image_url,
