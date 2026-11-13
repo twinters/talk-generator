@@ -340,12 +340,11 @@ def test_layouts_and_sizes_come_from_the_seed(images):
 
 
 def _pictured_punchlines(image):
-    """Lists whose punchline is a picture in its text's place (a pattern break, D73): red flags and traffic-light flags
-    (three, in their rows and on their cards), reviews, an org chart's boss, a tier list's S tier and an alignment
-    chart's chaotic evil; and lists and diagrams whose punchline is an emoji alone."""
+    """Lists whose punchline is a picture in its text's place (a pattern break, D73): red flags (three, in their rows
+    and on their cards), reviews, an org chart's boss, a tier list's S tier and an alignment chart's chaotic evil; and
+    lists and diagrams whose punchline is an emoji alone."""
     return [
         slides.RedFlagsSlide("Red flags", "Hates naps", "Owns a dog", "x", pictures={"flag_3": image}),
-        slides.TrafficFlagsSlide("Flags", "Brings tuna", "Hums at night", "x", pictures={"flag_3": image}),
         slides.ReviewsSlide(
             "What people say", "5", "Purrfect.", "Ann", "4", "Fine.", "Bo", "1", "", "Cy", pictures={"review_3": image}
         ),
@@ -422,15 +421,33 @@ def _runs(seed=1, theme=None):
         # (and, from D76, closers that ask a question: beside its huge mark, or as the title slide has its title; a
         # talk's closer comes once, after its last slide, but here a few of them try both of their layouts)
         *(academic.ACADEMIC.closer.slide(closers.Ending.of(presenter="Ann Example")) for _ in range(3)),
-        # (and, from D80, a section's divider and a dare over a picture of what they're about: over a picture, each
-        # fits one layout, so it comes before the one without, which then takes another)
-        slides.SectionSlide("The dark years", "In which the cat finds the laser pointer", background=wide),
-        slides.SectionSlide("The dark years", "In which the cat finds the laser pointer"),
-        slides.DareSlide("Challenge", "Present the next slide as a haiku.", background=wide),
-        slides.DareSlide("Challenge", "Present the next slide as a haiku."),
     ]
-    slide_deck = SlideDeck(len(runs), title="Cats", topics=["cats"], seed=seed)
-    for index, slide in enumerate(runs):
+    return _slide_deck_of(runs, seed, theme)
+
+
+def _d80_slides(image):
+    """D80's slides over a picture, or with one in a punchline's place: a section's divider and a dare over a picture
+    of what they're about (each fits one layout then, so it comes before the one without, which then takes another),
+    and green, orange and red flags whose red one is a picture, or an emoji alone."""
+    return [
+        slides.SectionSlide("The dark years", "In which the cat finds the laser pointer", background=image),
+        slides.SectionSlide("The dark years", "In which the cat finds the laser pointer"),
+        slides.DareSlide("Challenge", "Present the next slide as a haiku.", background=image),
+        slides.DareSlide("Challenge", "Present the next slide as a haiku."),
+        slides.TrafficFlagsSlide("Flags", "Brings tuna", "Hums at night", "x", pictures={"flag_3": image}),
+        slides.TrafficFlagsSlide("Flags", "Brings tuna", "Hums at night", "🦖"),
+    ]
+
+
+def _d80_runs(seed=1, theme=None):
+    """A deck of D80's slides, twice: one of its own, as _runs's slides would number past 199 with them, wider than
+    some families' corners hold."""
+    return _slide_deck_of([*_d80_slides(_image("wide")), *_d80_slides(_image("wide"))], seed, theme)
+
+
+def _slide_deck_of(made, seed, theme):
+    slide_deck = SlideDeck(len(made), title="Cats", topics=["cats"], seed=seed)
+    for index, slide in enumerate(made):
         slide.add_source("Ann (via Pexels)", "https://www.pexels.com/photo/cat-123/")  # (credits on every layout)
         slide_deck.add_slide(index, slide)
     slide_deck.theme = theme
@@ -441,25 +458,29 @@ def _runs(seed=1, theme=None):
 @pytest.mark.slow
 def test_no_layout_comes_twice_in_a_row_and_every_one_passes_the_design_checks(images, family):
     for seed in range(3):
-        deck = _runs(seed, _theme(family, seed)).to_deck()
-        layouts = [slide.layout for slide in deck.slides]
-        assert all(before != after for before, after in itertools.pairwise(layouts)), layouts
-        assert check_design(deck) == [], (family, seed)
+        for made in (_runs, _d80_runs):
+            deck = made(seed, _theme(family, seed)).to_deck()
+            layouts = [slide.layout for slide in deck.slides]
+            assert all(before != after for before, after in itertools.pairwise(layouts)), layouts
+            assert check_design(deck) == [], (family, seed, made.__name__)
 
 
 @pytest.mark.slow
 def test_the_layouts_pass_the_design_checks_in_random_themes(images):
     for seed in range(20):
         theme = themes.pick(themes.RANDOM, random_util.Rng(seed))  # (extremes included)
-        assert check_design(_runs(seed, theme).to_deck()) == [], (seed, theme.name)
+        for made in (_runs, _d80_runs):
+            assert check_design(made(seed, theme).to_deck()) == [], (seed, theme.name, made.__name__)
 
 
 @pytest.mark.slow
 def test_every_layout_comes_up(images):
     seen = set()
     for seed in range(12):
-        seen |= {slide.layout for slide in _runs(seed, _theme(seed=seed)).to_deck().slides}
-    # (the deck has no title or diagram; and a clean keynote theme, none of another family's own layouts)
+        seen |= {
+            slide.layout for made in (_runs, _d80_runs) for slide in made(seed, _theme(seed=seed)).to_deck().slides
+        }
+    # (the decks have no title or diagram; and a clean keynote theme, none of another family's own layouts)
     assert set(engine.layout_names(_theme())) - {"v5/title", "v5/diagram"} <= seen
 
 

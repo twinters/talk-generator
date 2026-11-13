@@ -63,7 +63,7 @@ def every_karaoke_type(image):
         slides.WallOfTextSlide("Key takeaways", "Ask the cat", "Continued on next slide", *POINTS[:6]),
         slides.AlignmentChartSlide("The cat alignment chart", *_axes(), *LONG_CELLS),
         slides.AlignmentChartSlide("Cats", *_axes(), *SHORT_CELLS),
-        slides.RedFlagsSlide("Red flags", "Hates naps", "Owns a dog", "Says 'meow' wrong"),
+        # (one red flag slide: three flags, which both its layouts take)
         slides.RedFlagsSlide("Red flags in a cat person", "Hates naps", "Owns a dog", "Is a dog"),
         slides.TrafficFlagsSlide("Flags in a cat person", "Brings tuna", "Hums at night", "Owns a dog"),
         slides.TrafficFlagsSlide(None, "Naps", "Tuna", "Dogs"),

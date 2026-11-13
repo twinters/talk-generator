@@ -158,7 +158,9 @@ how to keep 4.x's talks. The [docs](https://github.com/twinters/talk-generator/t
   a picture in every step of most processes; a trend's picture there from the start; strong image filters on
   backdrops alone, so pictures keep their colours; names a real person could have (the name pack's examples too, such
   as "Penn Quinn" for penguins), with their job on a line of its own; e-mail addresses at domains that read as made
-  up; shorter real quotes; a recurring character in one talk in five at most; and in a talk that generates pictures,
+  up; shorter real quotes; two real things of the same year only on slides that show them side by side (old photos,
+  a timeline), as a quote or a fun fact that tied them in one sentence read as a riddle; a recurring character in one
+  talk in five at most; and in a talk that generates pictures,
   a book report's cover first, as only a generated cover shows its made-up title. The prompts were tuned in a prompt
   lab (`scripts/prompt_lab`): talks Claude Opus wrote, judged blind and pairwise by Claude and GPT.
 
@@ -206,9 +208,9 @@ how to keep 4.x's talks. The [docs](https://github.com/twinters/talk-generator/t
   twice, and never far from the topic, so no "Volcanoes vs. eruptive" on a scatter plot. A real quote is searched for
   a theme the language model picks for it.
 - Real facts: a talk a language model writes gets up to three facts from Wikipedia (the topic's article) for its
-  slides of history, fun facts, quizzes and big numbers, which the model keeps true and twists; slides of history,
-  and fun facts now and then, get a coincidence: a moment of the topic's history and something else that happened the
-  same year (from the year's article), side by side as if one caused the other.
+  slides of history, fun facts, quizzes and big numbers, which the model keeps true and twists; slides that show two
+  moments of history side by side (old photos, a timeline) get a coincidence: a moment of the topic's history and
+  something else that happened the same year (from the year's article), side by side as if one caused the other.
   Classic talks get half of their fun facts from Wikipedia and half of their quizzes from Open Trivia DB, and now and
   then a useless fact, a real dad joke to tell or a piece of advice (the Advice Slip). No fact names a living
   person, or is about death, war, disasters, crime, politics, race or faiths. A slide that uses one credits it, and

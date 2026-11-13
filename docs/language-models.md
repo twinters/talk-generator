@@ -45,10 +45,12 @@ At both levels, a slide with a real quote has the model say what it's to be abou
 Some slides get a real fact to build on, in the same request: up to three of a talk's slides of history (a made-up
 historical figure, old photos, a timeline), fun facts, quizzes and big numbers, from the first sentences of the
 topic's English Wikipedia article. The model keeps what a fact says and twists it: "Only one species, the Galapagos
-penguin, lives at the equator" becomes a fun fact about why. Slides of history, and fun facts now and then, get a
-coincidence instead: a moment of the topic's history (a sentence of its article with its year) and something else
-that happened that year, from Wikipedia's article on the year ("1886"), which the slide puts side by side as if one
-caused the other ("In 1938, nylon came to socks" and "1938: the ballpoint pen is patented"). No fact names a living
+penguin, lives at the equator" becomes a fun fact about why. Slides that put two moments of history side by side (two
+old photos, a timeline) get a coincidence instead: a moment of the topic's history (a sentence of its article with its
+year) and something else that happened that year, from Wikipedia's article on the year ("1886"), which the slide puts
+side by side as if one caused the other ("In 1938, nylon came to socks" and "1938: the ballpoint pen is patented"). A
+made-up historical figure's quote and a fun fact build on one real thing (in one sentence, two read as a riddle), and
+the quote's title names its moment, so that the quote is the figure's line alone. No fact names a living
 person, and none is about death, war, disasters, crime, politics, race or faiths. A slide that builds on its fact
 credits the article (CC BY-SA 4.0), a coincidence both of its articles, in its credit line ("Sources: ..."), and the
 deck lists every fact a talk got (`facts`).

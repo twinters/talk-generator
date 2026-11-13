@@ -7,11 +7,14 @@ Wikipedia article. The model keeps what a fact says true where its slide states 
 the Galapagos penguin, lives at the equator" becomes a fun fact about why. A slide that builds on its fact credits its
 article (CC BY-SA 4.0).
 
-Slides of history, and fun facts now and then, get a coincidence first (D73, in place of D60's events of the day the
-talk is made on, which the user found confusing, and the same in talk after talk): a moment of the topic's history (a
-sentence of its article with its year, the lead's or else the rest's) and something else that happened the same year,
-from the year's article ("1886"), which the slide puts side by side as if one caused the other: "In 1886, Karl Benz
-patented the motor car" and "1886: Coca-Cola is first sold in Atlanta". Its slide credits both articles.
+Slides that put two moments of history side by side (two old photos, a timeline) get a coincidence first (D73, in
+place of D60's events of the day the talk is made on, which the user found confusing, and the same in talk after
+talk): a moment of the topic's history (a sentence of its article with its year, the lead's or else the rest's) and
+something else that happened the same year, from the year's article ("1886"), which the slide puts side by side as if
+one caused the other: "In 1886, Karl Benz patented the motor car" and "1886: Coca-Cola is first sold in Atlanta". Its
+slide credits both articles. A made-up figure's quote and a fun fact, which would say both in one sentence, get one
+real thing (D80: the user found such sentences really weird, a riddle for the presenter to read first), and a quote
+puts it in its title, so that the quote is the figure's line alone.
 
 No fact about a living person goes on a slide: none for a topic that is one (English Wikipedia's "Category:Living
 people"), and none that names one (an article its sentence names, of the articles the lead links to, or a name a
@@ -86,7 +89,9 @@ _ASKS: Final = {
     "big_number": "Start from this real fact: its number can be the big one, with an absurd twist in what it counts",
     "timeline": "Put this real moment among the made-up ones, in its place by year (oldest first), with its year "
     "and a few words of your own",
-    "history_quote": "The made-up figure lived through this real moment, or speaks of it, in a few words",
+    "history_quote": "The made-up figure lived through this real moment: the title names it in a few words of your "
+    "own (with its year if it gives one, and never a year it doesn't), and the quote is what the figure said then, "
+    "without explaining it",
     "history": "One of the moments is this real one, in a few words of your own",
     # (flavour texts: see talkgenerator.sources.flavour)
     "dare": "Dare the presenter to tell this real dad joke, word for word, and say how (a voice, a pause, a pose)",
@@ -96,14 +101,11 @@ _ASKS: Final = {
     "people need it at all, in your own words",
 }
 # What a slide does with a coincidence (D73): two real things of the same year, the topic's and another, side by side
-# as if one caused the other
+# as if one caused the other (only on the slides that show them side by side: in one sentence, a quote's or a fun
+# fact's, they read as a riddle, D80)
 _COINCIDENCE_ASKS: Final = {
-    "fun_fact": "Build it on these two real things that happened in the same year: keep both true, in a few words "
-    "each, and state as certain that the first caused the second, all in one short sentence",
     "timeline": "Put these two real moments of the same year among the made-up ones, next to each other, as if the "
     "first caused the second, each with its year and a few words of your own",
-    "history_quote": "The made-up figure lived through these two real moments of the same year, and is sure that the "
-    "first caused the second, in a few words",
     "history": "Its two moments are these two real ones of the same year, in a few words of your own each, the second "
     "as if the first caused it",
 }
@@ -111,8 +113,8 @@ COINCIDENCE_YEARS: Final = 2  # years of the topic's history whose events a talk
 LIVING_SINCE: Final = 1910  # (the year from which a year's events may name someone alive today: none before it can)
 # The uses of flavour texts, which a talk has besides its facts (MOST counts the facts alone)
 _FLAVOUR_USES: Final = frozenset({"dare", "questions", "problem"})
-# The uses that would rather have a coincidence (or else a moment of history, with its year) than another sentence of
-# the topic's article
+# The uses that would rather have a moment of history, with its year (a coincidence first, where their slide shows it
+# side by side), than another sentence of the topic's article
 _HISTORY: Final = frozenset({"timeline", "history_quote", "history"})
 # Words of facts a talk shouldn't make light of, besides the slides' (slide_texts.sensitive), which history is full
 # of: death, war, disasters, crime and accusations, politics and race (a word ending in "*" stands for every word it
@@ -687,14 +689,15 @@ def _rank(candidate: Candidate, use: str) -> int | None:
             return None
         # (a how-to that says what it fixes makes a plainer problem: D69)
         return 1 if wanted == "howto" and not _FIXING.match(candidate.text.removeprefix("How to ")) else 0
+    # (a big number counts something, a quiz asks one thing, and a quote or a fun fact would tie the two in a sentence)
+    if candidate.coincidence and use not in _COINCIDENCE_USES:
+        return None
     if use in _HISTORY:
         return 0 if candidate.coincidence else 1 if candidate.dated else 2 if not candidate.first else 3
-    if candidate.coincidence and use not in _COINCIDENCE_USES:  # (a big number counts something, a quiz asks one thing)
-        return None
     if use == "big_number":
         return 0 if candidate.figure else 1
     if use == "fun_fact":
-        return 0 if candidate.surprising or candidate.coincidence else 1 if not candidate.first else 2
+        return 0 if candidate.surprising else 1 if not candidate.first else 2
     return 0  # (a quiz)
 
 

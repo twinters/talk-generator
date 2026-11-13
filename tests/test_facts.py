@@ -938,8 +938,7 @@ def test_a_coincidence_says_both_real_things_and_that_one_caused_the_other():
     assert line.endswith(""": "In 1895, the first penguin was exhibited at London Zoo.", and the same year, "1895: \
 Wilhelm Röntgen discovers 'X-rays'.\"""")
     assert "as if the first caused the second" in line
-    for use in ("fun_fact", "history_quote", "history"):
-        assert "same year" in facts.Given(use, moment, other).line()
+    assert "same year" in facts.Given("history", moment, other).line()
     assert (
         facts.Given("timeline", moment).line().endswith(': "In 1895, the first penguin was exhibited at London Zoo."')
     )
@@ -1052,11 +1051,16 @@ def test_a_talk_in_another_language_gets_no_dad_joke_or_advice(web):
     assert set(facts.assign(german, slides, random_util.Rng(1))) <= {3}
 
 
-def test_a_fun_fact_builds_on_the_topics_facts_a_coincidence_or_a_useless_fact(web):
+def test_a_fun_fact_builds_on_the_topics_facts_or_a_useless_fact(web):
     sheet = facts.look_up("penguins", "en", DAY)
     picks = [facts.assign(sheet, [(3, "fun_fact")], random_util.Rng(seed))[3] for seed in range(40)]
     assert {given.fact.source for given in picks} == {"Wikipedia", "Useless Facts"}
-    assert any(given.also is not None for given in picks) and any(given.also is None for given in picks)
+    # (one real thing, never a coincidence, whose two halves one sentence would tie in a riddle: D80; a made-up
+    # figure's quote neither, while a slide of two old photos takes one)
+    assert all(given.also is None for given in picks)
+    quotes = [facts.assign(sheet, [(3, "history_quote")], random_util.Rng(seed))[3] for seed in range(10)]
+    assert all(given.also is None for given in quotes)
+    assert facts.assign(sheet, [(3, "history")], random_util.Rng(1))[3].also is not None
 
 
 def test_each_kind_of_text_goes_to_its_own_slides(web):
