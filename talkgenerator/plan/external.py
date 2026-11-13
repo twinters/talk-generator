@@ -401,7 +401,9 @@ def render_plan(
         }
     for text_field in (TALK_TITLE, PRESENTER_JOB):
         if len(" ".join(getattr(plan, text_field.name).split())) > length_limit(text_field):
-            notes.append(f"the {text_field.name} has more than {text_field.max_length} characters, so it was cut off")
+            # (a job is cut where a phrase of it ends, or left out: D81)
+            done = "shortened where a phrase ends, or left out" if text_field.phrases else "cut off"
+            notes.append(f"the {text_field.name} has more than {text_field.max_length} characters, so it was {done}")
     if notes:
         report["notes"] = notes
     return report

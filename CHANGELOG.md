@@ -167,6 +167,12 @@ how to keep 4.x's talks. The [docs](https://github.com/twinters/talk-generator/t
   without one. A talk in another language whose model writes no slide asks it once more before it comes out classic,
   and so in English. The prompts were tuned in a prompt lab (`scripts/prompt_lab`): talks Claude Opus and the site's
   free models wrote, judged blind and pairwise by Claude and GPT, and measured.
+- The title slide's photo of the talk's world is never one person alone, who would pass for the presenter (by the
+  photo's description); a couple, a class or a crowd still comes. A keynote's world is a conference hall's stage, a
+  motivational speaker's an arena's stage lights and a conspiracy blogger's a conspiracy board, as their old words
+  found one person in most photos. The presenter's job is kept whole up to 112 characters, which every title layout
+  holds (a kids' title card makes room for a third line), and a longer one ends where a phrase of it does, never with
+  an ellipsis, or the title slide goes without it.
 
 ### Formats and personas
 

@@ -1348,7 +1348,9 @@ def _exercise_book(scene: Scene, paints: Sequence[str]) -> None:
         scene.under(_rect(124, y, 4, 22, _WHITE, 0.7))
     if scene.present("title"):
         title = scene.box("title")
-        label = Box(x=title.x - 60, y=title.y - 50, w=title.w + 120, h=470)
+        # (down to where the other kids' cards end: its double edge kept clear of the subtitle's second line, the
+        # presenter's job, D81)
+        label = Box(x=title.x - 60, y=title.y - 50, w=title.w + 120, h=490)
         scene.add(
             *_shadowed(_rect(label.x, label.y, label.w, label.h, _WHITE, corner=28), palette.text, 6, 9, 0.22),
             _frame(_grown(label, -12), cover, 4, corner=18),

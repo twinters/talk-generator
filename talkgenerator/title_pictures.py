@@ -6,7 +6,8 @@ picture there already").
 A talk's world is its format's (a wedding toast's wedding, a court case's courtroom), or else its persona's (a
 detective's, a kindergarten teacher's classroom): a few plain English words, a scene, which the picture is searched for
 with the talk's topic first ("penguins wedding") and then alone ("wedding"). A TED-like talk without a persona has none,
-and its title slide is as it was.
+and its title slide is as it was. A photo of one person is left out (by its description: see alone), as beside the
+title they'd pass for the presenter (D81); a couple, a class or a crowd may come.
 
 The search starts with the talk, in the background (as its real facts are looked up: see talkgenerator.facts), as it
 needs nothing the language model writes: by the time the title slide is made, from the model's spine, the picture is
@@ -19,6 +20,7 @@ from __future__ import annotations
 
 import contextvars
 import logging
+import re
 import threading
 import time
 from typing import TYPE_CHECKING, Final
@@ -35,17 +37,54 @@ logger = logging.getLogger("talkgenerator")
 
 DEADLINE: Final = 8.0  # seconds from the talk's start that its title slide waits for its picture, at most
 
-SLOT: Final = ImageSlot("a photo of the talk's world, beside its title, which says what kind of talk it is")
+# A photo of one grown-up beside the title passes for the presenter (D81: the user found a keynote speaker's portrait
+# on a keynote's title slide, "then it looks like the presenter isn't the person presenting"), but a couple, a class or
+# a crowd is a scene of the talk's world (a wedding's couple). Who a description is of: one of these first, ...
+_ONE: Final = (
+    r"man|woman|person|guy|lady(?! justice)|gentleman|male|female|businessman|businesswoman|businessperson|"
+    r"business professional|speaker|presenter|lecturer|professor|teacher|student|doctor|scientist|researcher|"
+    r"detective|investigator|chef|barista|athlete|model|influencer|blogger|vlogger|youtuber|worker|employee|bride|"
+    r"groom|host|hostess|reporter|journalist|judge|lawyer|attorney|officer|policeman|policewoman|senior|retiree|"
+    r"pensioner|grandfather|grandmother|grandpa|grandma|astronaut|pilot|soldier|monk|entrepreneur|founder|ceo|"
+    r"executive|manager|boss|coach|consultant|technician|engineer|programmer|developer|hacker|nurse|surgeon|tourist|"
+    r"traveler|traveller|hiker|singer|performer|musician|guitarist|pianist|dancer|ballerina|comedian|magician|artist|"
+    r"actor|actress|priest|husband|wife|mother|father|teenager|adult|graduate|salesman|saleswoman|customer|someone|"
+    r"somebody|individual|he|she"
+)
+# ... and nobody else of theirs ("speaker addressing a large audience" is one person, as an audience is no subject of
+# a photo's; "people attending a conference", "bride and groom" and "couple, wedding" are not)
+_MORE: Final = (
+    r"people|persons|couples?|newlyweds?|group|groups|crowd|crowds|audience|audiences|men|women|children|kids|students|"
+    r"pupils|classmates|team|teams|family|families|friends|colleagues|coworkers|guests|spectators|fans|players|"
+    r"employees|workers|businessmen|businesswomen|businesspeople|partners|teammates|scientists|doctors|teachers|"
+    r"visitors|tourists|participants|attendees|seniors|parents|grandparents|siblings|twins|dancers|musicians|singers|"
+    r"performers|band|choir|staff|crew|adults|boys|girls|ladies|two|three|four|several|they|them"
+)
+# (a couple and a class anywhere make it a scene of people)
+_TOGETHER: Final = re.compile(
+    r"\b(?:couples?|newlyweds?|famil(?:y|ies)|friends|together|kiss(?:es|ing)?|hug(?:s|ging)?|embrac(?:e|es|ing)|"
+    r"children|kids|students|pupils|classmates|team|group|colleagues|coworkers|parents|siblings|twins|partners)\b",
+    re.IGNORECASE,
+)
+# (and a child in a caption: a child is nobody's presenter; but Pixabay tags a woman a girl as well)
+_CHILD: Final = re.compile(r"\b(?:child|kid|girl|boy|baby|toddler|son|daughter)\b", re.IGNORECASE)
+_PERSON: Final = re.compile(rf"\b(?:(?P<one>{_ONE})|(?P<more>{_MORE}))\b(?!['’]s)", re.IGNORECASE)
+_ONE_TAG: Final = re.compile(rf"(?:[\w-]+ )*(?:{_ONE})", re.IGNORECASE)
+_MORE_TAG: Final = re.compile(rf"(?:[\w-]+ )*(?:{_MORE})", re.IGNORECASE)
+_PAIRS: Final = ({"man", "woman"}, {"bride", "groom"}, {"husband", "wife"}, {"mother", "father"})
+_FIRST_TAGS: Final = 4  # (a list of tags names its subject first: "speaker, speech, presentation, keynote, ...")
 
-# The worlds of the personas' talks (a format's is its own: Format.scene), as a stock photo site finds them
+# The worlds of the personas' talks (a format's is its own: Format.scene), as a stock photo site finds them: places
+# and things, rather than the people in them (D81: "motivational speaker stage" found one speaker in most of its photos,
+# and "tinfoil hat" someone wearing one)
 PERSONA_SCENES: Final[dict[str, str]] = {
     "disgraced_professor": "lecture hall",
     "startup_founder": "startup office",
     "medieval_historian": "medieval castle",
-    "conspiracy_blogger": "tinfoil hat",
+    "conspiracy_blogger": "conspiracy board",
     "kindergarten_teacher": "kindergarten classroom",
     "consultant": "business meeting",
-    "motivational_speaker": "motivational speaker stage",
+    "motivational_speaker": "arena stage lights",
     "influencer": "selfie",
     "time_traveller": "time machine",
     "life_coach": "meditation",
@@ -74,6 +113,36 @@ def scene(talk_format: Format | None, persona: Persona | None) -> str | None:
 def queries(topic: str, world: str) -> list[str]:
     """What the picture is searched for, in order: the topic in its world, and then the world alone."""
     return [f"{topic} {world}".strip(), world]
+
+
+def alone(description: str) -> bool:
+    """Whether a found picture's description is of one grown-up, with nobody else of theirs (see _ONE): beside the
+    title, they'd pass for the presenter. A caption is, when the first person it names is one ("A woman giving a speech
+    on stage", "Speaker addressing a large audience"), and it names no other ("Bride walking towards the groom") nor a
+    scene of people ("A teacher with her pupils"); a list of tags (Pixabay's) is, when one of its first few names one
+    ("speaker, speech, keynote") and none of them names more, nor any a couple or a class ("couple"; "man, woman")."""
+    tags = [tag.strip() for tag in description.split(",")]
+    if len(tags) >= 3 and all(len(tag.split()) <= 4 for tag in tags):
+        first_tags = tags[:_FIRST_TAGS]
+        words = {word.lower() for tag in tags for word in tag.split()}
+        if any(_MORE_TAG.fullmatch(tag) for tag in first_tags) or any(_TOGETHER.search(tag) for tag in tags):
+            return False
+        return not any(pair <= words for pair in _PAIRS) and any(_ONE_TAG.fullmatch(tag) for tag in first_tags)
+    first = _PERSON.search(description)
+    if first is None or first.group("more") or _TOGETHER.search(description) or _CHILD.search(description):
+        return False
+    named, end = {first.group("one").lower(), "he", "she"}, first.end()
+    for match in _PERSON.finditer(description, first.end()):
+        # (another one, but not the same one again, in other words: "Female judge", "a woman speaker"; "she")
+        if match.group("one") and match.group("one").lower() not in named and match.start() > end + 1:
+            return False
+        end = match.end()
+    return True
+
+
+SLOT: Final = ImageSlot(
+    "a photo of the talk's world, beside its title, which says what kind of talk it is", unwanted=alone
+)
 
 
 class Lookup:

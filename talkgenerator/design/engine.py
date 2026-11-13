@@ -2860,8 +2860,15 @@ def _kids_title(roles: dict[str, Content], theme: Theme) -> Placement:
     """The talk's title and subtitle on a card in the middle (its motif draws the card, and what's around it: bunting,
     a sun, a cloud and hills; stickers; an exercise book's cover; paper hills)."""
     placement = Placement("v5/kids-title")
-    placement.boxes["title"] = (Box(x=330, y=300, w=1260, h=290), "kids title")
-    placement.boxes["subtitle"] = (Box(x=330, y=610, w=1260, h=100), "centred subtitle")
+    title, subtitle = Box(x=330, y=300, w=1260, h=290), Box(x=330, y=610, w=1260, h=100)
+    element = roles.get("subtitle")
+    if isinstance(element, TextElement):
+        style, lines = text_lines(element.text, subtitle, "centred subtitle", theme)
+        if fit.text_height(len(lines), style.size) > subtitle.h:
+            # (a long job on a line of its own takes a third: the title gives it room on the card, D81)
+            title, subtitle = Box(x=330, y=300, w=1260, h=250), Box(x=330, y=570, w=1260, h=128)
+    placement.boxes["title"] = (title, "kids title")
+    placement.boxes["subtitle"] = (subtitle, "centred subtitle")
     return placement
 
 

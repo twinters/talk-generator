@@ -48,6 +48,9 @@ class TextField:
     # field's slides held before D80 asked for less (see _ROOM), as a text cut off mid-sentence is worse than one that's
     # a little long (the user, 2026-11-13). See talkgenerator.plan.realize.length_limit
     room: int = 0
+    # Whether a text longer than that is only ever cut where a phrase of it ends, without an ellipsis, or else left
+    # out: a presenter's job (D81: "Hoofdrondleider van de Verzameling Buitenaardse…" reads as a mistake)
+    phrases: bool = False
 
 
 # Builds the slide from its texts (None where a field stays empty), its images (whatever the sources found), and the
@@ -1083,10 +1086,17 @@ QUIZ_OPTION: Final = 36
 _OPTIONAL_TITLE = TextField("title", "the slide's title", TITLE, optional=True)
 
 # The talk's own texts, on its title slide: "By <presenter>", and their job on the line under it. The name is a made-up
-# one, when nobody gives theirs (see talkgenerator.names), and it isn't cut when it's too long: half a name is no name
+# one, when nobody gives theirs (see talkgenerator.names), and it isn't cut when it's too long: half a name is no name.
+# Nor is a job cut off mid-phrase: it's kept whole up to what every title layout holds (two lines of it, on a kids'
+# card: D81), and a longer one ends where a phrase of it does ("Senior Vice President of Applied Sock Theory", of "...
+# at the Department of Mismatched Footwear"), or else the slide goes without it
 TALK_TITLE: Final = TextField("title", "the talk's title", 50, room=60)
 PRESENTER_JOB: Final = TextField(
-    "presenter_job", "the presenter's grand, made-up job, such as 'Professor of Applied Sock Theory'", 40, room=56
+    "presenter_job",
+    "the presenter's grand, made-up job, such as 'Professor of Applied Sock Theory'",
+    40,
+    room=100,
+    phrases=True,
 )
 PRESENTER_NAME: Final = TextField("presenter_name", "a made-up name for the presenter", 40)
 AGENDA_ITEM: Final = 36  # how long an item of an agenda may be (they're written as one text)

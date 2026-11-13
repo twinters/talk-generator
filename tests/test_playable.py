@@ -141,6 +141,38 @@ def test_a_talks_world_is_its_formats_or_else_its_personas():
     assert title_pictures.queries("penguins", "wedding") == ["penguins wedding", "wedding"]
 
 
+def test_a_title_photo_of_one_person_is_left_out_but_a_couple_or_a_crowd_is_not():
+    # (one grown-up beside the title passes for the presenter: D81, the user's keynote speaker; the descriptions are
+    # Pexels' captions and Pixabay's tags, as found for the talks' worlds)
+    alone = title_pictures.alone
+    assert title_pictures.SLOT.unwanted is alone
+    for one in (
+        "A woman giving a presentation on stage with a microphone and laptop.",
+        "Speaker addressing large audience with phones lit up at night event.",  # (an audience is no one's own)
+        "Female judge in a courtroom setting, focusing on legal documents with a gavel.",  # (one, in two words)
+        "A male speaker wearing blue raises his fist in enthusiasm while speaking into a microphone indoors.",
+        "Woman with red glasses and tinfoil hat in a thoughtful pose indoors.",
+        "speaker, speech, presentation, keynote, present, success, lecture, business man, powerpoint",
+        "woman, dark, light, shadow, art",
+    ):
+        assert alone(one), one
+    for more in (
+        "A beautiful bride and groom embracing on their wedding day indoors.",
+        "Bride walking towards the groom in a lively indoor wedding setting with diverse guests celebrating.",
+        "People attending a business conference in a modern indoor setting, featuring banners and a speaker.",
+        "A teacher reading to her pupils in a colourful kindergarten classroom.",
+        "Close-up of a wooden gavel on a judge's desk, symbolizing justice.",  # (a judge's desk is no judge)
+        "Detailed image of Lady Justice statue, symbolizing fairness and impartiality.",
+        "An empty conference room setup with podium and rows of chairs, ready for an event.",
+        "A young boy with eyeglasses sits on the library floor, engrossed in a book.",  # (a child is no presenter)
+        "bride, couple, groom, hands, holding hands, wedding, wedding rings",
+        "wedding, beach, sea, nature, together, romance, love, woman, man",
+        "audience, backlit, concert, crowd, evening, festival, light, outdoors, party, people",
+        "gavel, auction, law, hammer, symbol, judge, legal, justice",  # (its subject comes first)
+    ):
+        assert not alone(more), more
+
+
 def test_a_title_slide_shows_its_worlds_photo_beside_its_title(images, monkeypatch):
     monkeypatch.delenv("DISABLE_TITLE_PICTURES")
     asked = []
@@ -171,16 +203,31 @@ def test_a_title_slide_shows_its_worlds_photo_beside_its_title(images, monkeypat
 @pytest.mark.slow
 def test_the_longest_title_and_job_fit_every_title_layout(images, family):
     # (a talk's title and the presenter's job as long as they're kept whole, TextField.room: D80, as a free model's
-    # jobs of 58 and 59 characters were cut, "Hoofdrondleider van de Verzameling Buitenaardse…")
+    # jobs of 58 and 59 characters were cut, "Hoofdrondleider van de Verzameling Buitenaardse…"; a job of up to 112, D81)
     from talkgenerator.plan.kinds import PRESENTER_JOB, TALK_TITLE
     from talkgenerator.plan.realize import length_limit
 
     title = " ".join(["Expectation"] * 9)[: length_limit(TALK_TITLE)].strip()
-    job = " ".join(["Brandweer"] * 8)[: length_limit(PRESENTER_JOB)].strip()
+    job = " ".join(["Brandweer"] * 12)[: length_limit(PRESENTER_JOB)].strip()
+    assert len(job) >= length_limit(PRESENTER_JOB) - 1
     for seed in range(3):
         for picture in (None, _image("wide")):
             deck = _laid_out([slides.TitleSlide(title, f"By Ann Wells\n{job}", picture)], family, seed)
             assert check_design(deck) == [], (family, seed, deck.slides[0].layout)
+
+
+def test_a_kids_title_card_holds_a_long_job_on_a_third_line_in_each_of_its_motifs(images):
+    # (the kids' title card holds two lines of subtitle: a long job takes a third, from the title's room, and stays
+    # clear of an exercise book's double edge, which a job on the second line crossed: D81)
+    from talkgenerator.plan.kinds import PRESENTER_JOB
+    from talkgenerator.plan.realize import length_limit
+
+    title = " ".join(["Expectation"] * 9)[:67].strip()
+    for job in ("Brandweer", " ".join(["Brandweer"] * 12)[: length_limit(PRESENTER_JOB)].strip()):
+        for seed in (0, 2, 3, 7):  # (crayon, stickers, cutouts and notebook)
+            deck = _laid_out([slides.TitleSlide(title, f"By Ann Wells\n{job}")], "kids", seed)
+            assert deck.slides[0].layout == "v5/kids-title"
+            assert check_design(deck) == [], (seed, job)
 
 
 @pytest.mark.parametrize("family", list(themes.FAMILIES))

@@ -96,7 +96,8 @@ KEYNOTE: Final = Format(
     arc=ARC,
     # (its closer says the product is available today: D76)
     closer=Closer(said("available"), product_line, presenter),
-    scene="keynote stage",
+    # (a hall and its stage, not "keynote stage", whose photos are mostly of one speaker: D81)
+    scene="conference hall stage",
 )
 
 

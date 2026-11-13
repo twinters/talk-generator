@@ -731,6 +731,31 @@ def test_a_cut_at_a_comma_or_a_clause_leaves_no_bracket_open_either():
     assert realize._cut("Q3 (the quarter we prefer not to discuss, at all)", 45, "en").startswith("Q3 (")
 
 
+def test_a_presenters_job_is_kept_whole_or_ends_where_a_phrase_does_without_an_ellipsis():
+    # (the user, of talkgenerator.com's title slides: a job cut off with "…" is dumb; D81)
+    from talkgenerator.plan.kinds import PRESENTER_JOB
+
+    whole = "Hoofdrondleider van de Verzameling Buitenaardse Voorwerpen en Andere Ongeïdentificeerde Zaken"  # (95)
+    assert realize.clean_text(whole, PRESENTER_JOB, "nl") == whole
+    long = (
+        "Senior Vice President of Applied Sock Theory and Interdimensional Laundry Logistics at the Department of "
+        "Mismatched Footwear and Other Unexplained Phenomena"
+    )
+    assert realize.clean_text(long, PRESENTER_JOB) == (
+        "Senior Vice President of Applied Sock Theory and Interdimensional Laundry Logistics at the Department"
+    )
+    assert realize._at_phrase(long, 60, "en") == "Senior Vice President of Applied Sock Theory"  # (not "... and")
+    assert realize._at_phrase("Chief Officer, Department of Calm, University of Tranquil Grounds", 40, "en") == (
+        "Chief Officer, Department of Calm"
+    )
+    assert realize._at_phrase("Kaito Tanaka (Head of Temporal Planning)", 30, "en") == "Kaito Tanaka"
+    # Where no phrase ends in time, the slide goes without it
+    assert realize.clean_text("Brandweercommandant " * 8, PRESENTER_JOB, "nl") is None
+    assert not any(
+        text.endswith("…") for text in (realize.clean_text(long[:n], PRESENTER_JOB) or "" for n in range(150))
+    )
+
+
 def test_a_title_slide_names_its_presenter_once():
     # (a free model wrote the presenter's name into their job: "By Dr. Chronos Vance, Dr. Chronos Vance, Founder...")
     _, texts = presentation_schema._title_slide(

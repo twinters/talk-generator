@@ -6,8 +6,8 @@
    finds only what it found before, from its caches.
 2. Search them a few at a time (the look's breadth), in parallel, with v4's caches of answers and its cooldowns.
 3. Filter the candidates: their license (one by one, for sources whose images each have their own), their size and
-   orientation (as the sources tell them), what they're described as (nothing unsafe), the same image found twice,
-   and the images the slide has already.
+   orientation (as the sources tell them), what they're described as (nothing unsafe, nor what the slot doesn't
+   want: a title photo's one person), the same image found twice, and the images the slide has already.
 4. Score them: for a look that prefers something (black and white, little detail where the text goes, ...), and in
    a themed talk for colours that go with its theme, a few get a look at their thumbnails
    (talkgenerator.images.analysis). A look without preferences picks among the first source's candidates at random,
@@ -234,6 +234,8 @@ def _candidates(
             if not _fits(image.declared_size, orientation, slot.min_pixels):
                 continue
             if safety.unsafe_description(image.description):
+                continue
+            if slot.unwanted is not None and image.description and slot.unwanted(image.description):
                 continue
             kept.append((rating, image))
         if planned:

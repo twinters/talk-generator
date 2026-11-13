@@ -52,6 +52,9 @@ _CLAUSE_START: Final = re.compile(
 _COMMA: Final = re.compile(r",(?=\s)")
 # A bracket that a cut would leave open ("Kaito Tanaka (Head of Temporal"): the cut ends before it instead
 _OPEN_BRACKET: Final = re.compile(r"\s*[(\[][^)\]]*$")
+# (and where a phrase may end besides, for a text that's only cut there: before a bracket, or before a word)
+_BRACKET: Final = re.compile(r"\s*[(\[]")
+_WORD: Final = re.compile(r"(?<=\s)\S+")
 # A backslash before a quote mark, as some models escape one where their JSON needn't (what\'s)
 _STRAY_ESCAPE: Final = re.compile(r"\\(?=['\"’])")
 
@@ -69,7 +72,8 @@ def clean_text(value: Any, text_field: TextField, language: str = "en") -> str |
     """The text as it goes on a slide: on one line, without wrapping quote marks or brackets that name a slide by its
     key in the model's answer ("(from slide_03)"), and cut to the field's length when it's longer than its
     length_limit (between words, and not after a little word of its language, such as "the"; a list, between its
-    things), or the option it names when the field is a choice. Its emoji count as two characters each, however many
+    things; a presenter's job only where a phrase of it ends, or else not at all: see TextField.phrases), or the
+    option it names when the field is a choice. Its emoji count as two characters each, however many
     characters they're written with (a joined one, "🕵️‍♂️", is five). None when it's empty, names no option, or holds
     bits of templates or code (a slide's key elsewhere in it too: see talkgenerator.checks.deck)."""
     if not isinstance(value, str):
@@ -84,6 +88,8 @@ def clean_text(value: Any, text_field: TextField, language: str = "en") -> str |
         text = _folded(text)
     extra = len(text) - emoji_util.room(text)  # (the characters its emoji are written with, beyond their room)
     if len(text) > length_limit(text_field) + extra:
+        if text_field.phrases:  # (a presenter's job: where a phrase of it ends, or not at all, D81)
+            return _at_phrase(text, length_limit(text_field) + extra, language)
         cut = _cut_list if "|" in text else _cut
         text = cut(text, max(text_field.max_length, text_field.room) + extra, language)
     return text
@@ -195,6 +201,28 @@ def _cut(text: str, length: int, language: str) -> str:
         return text[:length]
     # (but a part before a bracket is a part: "Kaito Tanaka")
     return closed if closed != cut else f"{closed.rstrip('.!?…')}…"
+
+
+def _at_phrase(text: str, length: int, language: str) -> str | None:
+    """The text cut to its length where a phrase of it ends, the longest that fits: where a sentence or a clause
+    ends, after a comma, before a bracket, or before a little word of its language that starts the next phrase
+    ("Senior Vice President of Applied Sock Theory", of "Senior Vice President of Applied Sock Theory at the
+    Department of Mismatched Footwear"), and never after a little word ("Head of"), nor with an ellipsis; None where
+    there's no such place (D81: for a presenter's job, which reads as a mistake when it's cut off mid-phrase)."""
+    head = text[: length + 1]
+    little = _little_words(language)
+    places = {end.start() + (1 if end.group(0) in ".!?" else 0) for end in _CLAUSE_END.finditer(head)}
+    places |= {comma.start() for comma in _COMMA.finditer(head)}
+    places |= {bracket.start() for bracket in _BRACKET.finditer(head)}
+    places |= {
+        word.start() for word in _WORD.finditer(head) if word.group(0).strip(_DANGLING + _QUOTE_MARKS).lower() in little
+    }
+    for at in sorted(places, reverse=True):
+        phrase = head[:at].rstrip(_DANGLING)
+        last = phrase.rsplit(" ", 1)[-1].strip(_DANGLING + _QUOTE_MARKS + ".!?").lower()
+        if phrase and last and last not in little and _OPEN_BRACKET.search(phrase) is None:
+            return phrase
+    return None
 
 
 def _closed(cut: str, length: int) -> str:

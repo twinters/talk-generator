@@ -470,6 +470,24 @@ def test_images_described_as_unsafe_are_left_out(look, monkeypatch):
     assert all("owl" in _find(ImageSlot(aesthetic="fake"), seed=seed).get_image_url() for seed in range(6))
 
 
+def test_images_described_as_a_slot_doesnt_want_are_left_out(look, monkeypatch):
+    # (a title photo's one person, who'd pass for the presenter: D81)
+    def described(search):
+        return [
+            (1.0, _image("speaker", "colourful-1", description="A woman giving a speech on stage")),
+            (1.0, _image("hall", "colourful-2", description="An empty conference hall")),
+        ]
+
+    monkeypatch.setitem(
+        catalog.SOURCES, "fake-d", catalog.Source("fake-d", "", frozenset({"stock"}), described, lambda: True)
+    )
+    look("fake", [SourceUse("fake-d")])
+    picky = ImageSlot(aesthetic="fake", unwanted=lambda description: "woman" in description)
+    assert all("hall" in _find(picky, seed=seed).get_image_url() for seed in range(6))
+    found = {_find(ImageSlot(aesthetic="fake"), seed=seed).get_image_url() for seed in range(12)}
+    assert "https://images/speaker.jpg" in found  # (a slot without a filter of its own takes either)
+
+
 def test_a_description_of_nudity_is_unsafe_but_a_naked_mole_rat_is_not():
     from talkgenerator.images.safety import unsafe_description as unsafe
 

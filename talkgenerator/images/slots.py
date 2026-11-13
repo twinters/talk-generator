@@ -18,7 +18,7 @@ once it's in. Left room for: an image a vision model picks among the candidates 
 from __future__ import annotations
 
 import dataclasses
-from collections.abc import Collection, Mapping
+from collections.abc import Callable, Collection, Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -46,6 +46,9 @@ class ImageSlot:
     # And its picture comes first, where a talk's budget can't generate them all: the talk keeps a picture of its
     # budget for each such slot it has (a book report's cover, whose made-up title only a generated one shows: D80)
     generate_first: bool = False
+    # What a picture's description may not be, for this slot, beside what no slide shows (see safety): a title photo
+    # of one person, who could pass for the presenter (D81: see talkgenerator.title_pictures.alone)
+    unwanted: Callable[[str], bool] | None = None
 
     def __post_init__(self) -> None:
         for look in (self.aesthetic, *self.backups):

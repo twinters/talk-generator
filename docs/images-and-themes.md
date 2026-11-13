@@ -4,7 +4,8 @@
 
 Every image a slide asks for is a slot: what it's for, what to search for, its look, and the license classes it may
 have. The image finder searches the look's sources a few at a time, in parallel, filters what they find (license,
-size, orientation, descriptions that say NSFW or speak of nudity, sex or gore, images the talk already has), takes a
+size, orientation, descriptions that say NSFW or speak of nudity, sex or gore, images the talk already has, and for
+the photo beside a talk's title, a description of one person alone, who would pass for the presenter), takes a
 look at the thumbnails of a few,
 and picks with the talk's seed: the same seed finds the same images, whichever search comes back first.
 
