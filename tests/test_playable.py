@@ -169,6 +169,22 @@ def test_a_title_slide_shows_its_worlds_photo_beside_its_title(images, monkeypat
 
 @pytest.mark.parametrize("family", list(themes.FAMILIES))
 @pytest.mark.slow
+def test_the_longest_title_and_job_fit_every_title_layout(images, family):
+    # (a talk's title and the presenter's job as long as they're kept whole, TextField.room: D80, as a free model's
+    # jobs of 58 and 59 characters were cut, "Hoofdrondleider van de Verzameling Buitenaardse…")
+    from talkgenerator.plan.kinds import PRESENTER_JOB, TALK_TITLE
+    from talkgenerator.plan.realize import length_limit
+
+    title = " ".join(["Expectation"] * 9)[: length_limit(TALK_TITLE)].strip()
+    job = " ".join(["Brandweer"] * 8)[: length_limit(PRESENTER_JOB)].strip()
+    for seed in range(3):
+        for picture in (None, _image("wide")):
+            deck = _laid_out([slides.TitleSlide(title, f"By Ann Wells\n{job}", picture)], family, seed)
+            assert check_design(deck) == [], (family, seed, deck.slides[0].layout)
+
+
+@pytest.mark.parametrize("family", list(themes.FAMILIES))
+@pytest.mark.slow
 def test_a_title_slide_with_its_photo_passes_the_design_checks_in_every_theme(images, family):
     # (a talk's title as long as one gets, and one with a compound, as Dutch and German have them; a byline with the
     # presenter's job on a line of its own, as long as a job gets)

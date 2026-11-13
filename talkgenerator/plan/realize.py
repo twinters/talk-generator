@@ -59,8 +59,10 @@ _STRAY_ESCAPE: Final = re.compile(r"\\(?=['\"’])")
 def length_limit(text_field: TextField) -> int:
     """How long a text of the field may be before it's cut: a little longer than the field's length (by an eighth,
     or at least four characters), as a few characters too many rarely spoil a slide, and a phrase cut off always
-    does."""
-    return text_field.max_length + max(4, text_field.max_length // 8)
+    does; or than its room, where its slides hold more than the model is asked for (TextField.room: D80 asked for
+    less, and the user would rather have a text a little long than cut off mid-sentence)."""
+    longest = max(text_field.max_length, text_field.room)
+    return longest + max(4, longest // 8)
 
 
 def clean_text(value: Any, text_field: TextField, language: str = "en") -> str | None:
@@ -83,7 +85,7 @@ def clean_text(value: Any, text_field: TextField, language: str = "en") -> str |
     extra = len(text) - emoji_util.room(text)  # (the characters its emoji are written with, beyond their room)
     if len(text) > length_limit(text_field) + extra:
         cut = _cut_list if "|" in text else _cut
-        text = cut(text, text_field.max_length + extra, language)
+        text = cut(text, max(text_field.max_length, text_field.room) + extra, language)
     return text
 
 
@@ -154,23 +156,33 @@ def _unquoted(text: str) -> str:
 
 
 def _cut(text: str, length: int, language: str) -> str:
-    """The text cut to its length: where a sentence or a clause in it ends, if that keeps at least half of it ("Your
-    plants are not decorations", of "Your plants are not decorations—they're coworkers who need feedback"), or in
-    English before a word that opens the next clause ("The mountain breathes", of "The mountain breathes when prayers
-    are whispered"), or else after a comma ("Professor of Serenity Studies", of a long affiliation), or else between
-    words, without the little words and punctuation that a cut leaves hanging at its end (as in "Cats were the true
-    scholars of the"); and each of them before a bracket it would leave open, if that keeps a third of it ("Kaito
-    Tanaka", of "Kaito Tanaka (Head of Temporal Planning)"; "Arctic Expansion", of "Arctic Expansion (High Impact,
-    Low Urgency)")."""
+    """The text cut to its length: where a sentence or a clause in it ends, if that keeps at least a third of it ("Your
+    plants are not decorations", of "Your plants are not decorations—they're coworkers who need feedback"; "The Data
+    Is Clear", of "The Data Is Clear: Coffee Correlates with Alertness"), or in English before a word that opens the
+    next clause, if that keeps half ("The mountain breathes", of "The mountain breathes when prayers are whispered"),
+    or else after a comma, if that keeps a third ("Professor of Serenity Studies", of a long affiliation; "Wim Fietsen",
+    of "Wim Fietsen, de enige die ooit een fiets repareerde met een broodjespunt"), or else between words, without the
+    little words and punctuation that a cut leaves hanging at its end (as in "Cats were the true scholars of the"),
+    and with an ellipsis, so that it reads as meant (D80: the user finds a text cut off mid-sentence worse than one
+    that's too long, which TextField.room makes rare); and each of them before a bracket it would leave open, if that
+    keeps a third of it ("Kaito Tanaka", of "Kaito Tanaka (Head of Temporal Planning)"; "Arctic Expansion", of "Arctic
+    Expansion (High Impact, Low Urgency)")."""
     head = text[: length + 1]
     little = _little_words(language)
     ends = [end.start() + (1 if end.group(0) in ".!?" else 0) for end in _CLAUSE_END.finditer(head)]
     starts = [start.start() for start in _CLAUSE_START.finditer(head)] if language == "en" else []
     commas = [comma.start() for comma in _COMMA.finditer(head)]
-    for at in (*reversed(ends), *reversed(starts), *reversed(commas)):
+    # (a whole sentence or clause, or a part before a comma, reads as one even when it's short: "Wim Fietsen", of "Wim
+    # Fietsen, de enige die ooit een fiets repareerde"; a clause before a word that opens the next one less so)
+    places = [
+        *((at, length // 3) for at in reversed(ends)),
+        *((at, length // 2) for at in reversed(starts)),
+        *((at, length // 3) for at in reversed(commas)),
+    ]
+    for at, least in places:
         clause = head[:at].rstrip(_DANGLING)
         last = clause.rsplit(" ", 1)[-1].strip(_DANGLING + _QUOTE_MARKS + ".!?").lower()
-        if len(clause) >= length // 2 and last not in little:
+        if len(clause) >= least and last not in little:
             return _closed(clause, length)
     if " " not in head:  # one long word
         return text[:length]
@@ -178,7 +190,11 @@ def _cut(text: str, length: int, language: str) -> str:
     while len(words) > 1 and words[-1].strip(_DANGLING + _QUOTE_MARKS + ".!?").lower() in little | {""}:
         words.pop()
     cut = " ".join(words).rstrip(_DANGLING)
-    return _closed(cut, length) or text[:length]
+    closed = _closed(cut, length)
+    if not closed:
+        return text[:length]
+    # (but a part before a bracket is a part: "Kaito Tanaka")
+    return closed if closed != cut else f"{closed.rstrip('.!?…')}…"
 
 
 def _closed(cut: str, length: int) -> str:

@@ -1649,7 +1649,9 @@ class PresentationSchema:
                     logger.info("The language model wrote %s of the %s slides", len(talk.plans), num_slides)
                     return
                 given = self._facts_for(talk, gathering, rng)
-                # The model is asked once more for a topic it found unsafe, or for a talk it started in English
+                # The model is asked once more for a topic it found unsafe, for a talk it started in English, and for a
+                # talk in another language that it wrote no slide of (it failed, or its answer couldn't be read: D80,
+                # three Dutch talks in ten of the site's free models, which a classic talk would have made English)
                 why_again: str | None = None
                 for asked_again in (False, True):
                     if talk.cancelled.is_set():  # (while its facts came in, say)
@@ -1683,6 +1685,13 @@ class PresentationSchema:
                         why_again = "english"
                         logger.info(
                             "The language model started the talk in English, not %s: asking once more",
+                            languages.language(language).name,
+                        )
+                    elif not talk.plans and language != "en" and not asked_again:
+                        why_again = "nothing"
+                        logger.info(
+                            "The language model wrote no slide of this talk in %s: asking once more, as its classic "
+                            "slides would be English",
                             languages.language(language).name,
                         )
                     else:

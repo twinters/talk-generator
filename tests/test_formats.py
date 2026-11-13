@@ -715,10 +715,10 @@ def test_a_cut_ends_after_a_comma_or_before_a_bracket_it_would_leave_open():
     # A clause's end still comes first, a closed bracket stays, and a comma that keeps too little gives way to words
     decorations = "Your plants are not decorations—they are coworkers who need feedback"
     assert realize._cut(decorations, 40, "en") == "Your plants are not decorations"
-    assert realize._cut("Dr. Elara Myles (CTO) leads the whole team now", 30, "en") == "Dr. Elara Myles (CTO) leads"
+    assert realize._cut("Dr. Elara Myles (CTO) leads the whole team now", 30, "en") == "Dr. Elara Myles (CTO) leads…"
     assert (
         realize._cut("Penguins, the tuxedoed overlords of the frozen south", 40, "en")
-        == "Penguins, the tuxedoed overlords"
+        == "Penguins, the tuxedoed overlords…"
     )
 
 

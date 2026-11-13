@@ -44,6 +44,10 @@ class TextField:
     max_length: int = 80
     optional: bool = False  # may stay empty, and the slide then shows nothing there
     options: tuple[str, ...] = ()  # the words it can be, when it's a choice (such as how a trend line goes)
+    # How long a text may be before it's cut, when that's more than the model is asked for (max_length): what the
+    # field's slides held before D80 asked for less (see _ROOM), as a text cut off mid-sentence is worse than one that's
+    # a little long (the user, 2026-11-13). See talkgenerator.plan.realize.length_limit
+    room: int = 0
 
 
 # Builds the slide from its texts (None where a field stays empty), its images (whatever the sources found), and the
@@ -69,6 +73,8 @@ class Variant:
     queries: Mapping[str, str] = field(default_factory=dict)
     facts: bool = True
     emoji: Mapping[str, str] = field(default_factory=dict)
+    # (and per field with a limit: how long a text may be before it's cut, if more: see Recipe.rooms)
+    rooms: Mapping[str, int] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -274,11 +280,16 @@ class Recipe:
     emoji: Mapping[str, str] = field(default_factory=dict)
     # Whether its slide tries a picture first, in its place (its kind's: see PictureFirst), as the dice say (D73)
     picture_first: bool = False
+    # Per text field with a limit: how long a text may be before it's cut, when its slide holds more than the model is
+    # asked for (a meme's box, whose limit is what it holds at a comfortable size: TextField.room); else its limit
+    rooms: Mapping[str, int] = field(default_factory=dict)
 
     def text_field(self, text: TextField) -> TextField:
         """A text field of the kind as this slide has it: as long as its limit here allows."""
         limit = self.limits.get(text.name)
-        return dataclasses.replace(text, max_length=limit) if limit and limit < text.max_length else text
+        if not limit or limit >= text.max_length:
+            return text
+        return dataclasses.replace(text, max_length=limit, room=self.rooms.get(text.name, 0))
 
     def written_fields(self) -> list[TextField]:
         """The text fields the language model writes for this slide."""
@@ -397,6 +408,7 @@ class Recipe:
                     queries={**self.queries, **variant.queries},
                     facts=self.facts and variant.facts,
                     emoji={**self.emoji, **variant.emoji},
+                    rooms={**self.rooms, **variant.rooms},
                     variants=(),
                 )
         if kind.pictures is None:
@@ -680,7 +692,7 @@ def _news_headline(texts: Mapping[str, str | None], images: Mapping[str, Any], l
 
 
 def _agenda(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
-    items = [_shortened(part.strip(), AGENDA_ITEM) for part in (texts["items"] or "").split("|") if part.strip()]
+    items = [_shortened(part.strip(), AGENDA_ITEM_ROOM) for part in (texts["items"] or "").split("|") if part.strip()]
     if len(items) < 3:
         raise ValueError("an agenda needs three items or more")
     return slides.AgendaSlide(texts["title"], *items[:5])
@@ -740,7 +752,7 @@ def _process(texts: Mapping[str, str | None], images: Mapping[str, Any], languag
 
 def _references(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
     # (a picture of one of the works, a book's cover or a paper's figure, as its recipe searches for it)
-    works = [_shortened(part.strip(), AGENDA_ITEM) for part in (texts["items"] or "").split("|") if part.strip()]
+    works = [_shortened(part.strip(), AGENDA_ITEM_ROOM) for part in (texts["items"] or "").split("|") if part.strip()]
     if len(works) < 3:
         raise ValueError("references need three works or more")
     return slides.ReferencesSlide(
@@ -1059,12 +1071,13 @@ _OPTIONAL_TITLE = TextField("title", "the slide's title", TITLE, optional=True)
 
 # The talk's own texts, on its title slide: "By <presenter>", and their job on the line under it. The name is a made-up
 # one, when nobody gives theirs (see talkgenerator.names), and it isn't cut when it's too long: half a name is no name
-TALK_TITLE: Final = TextField("title", "the talk's title", 50)
+TALK_TITLE: Final = TextField("title", "the talk's title", 50, room=60)
 PRESENTER_JOB: Final = TextField(
-    "presenter_job", "the presenter's grand, made-up job, such as 'Professor of Applied Sock Theory'", 40
+    "presenter_job", "the presenter's grand, made-up job, such as 'Professor of Applied Sock Theory'", 40, room=56
 )
 PRESENTER_NAME: Final = TextField("presenter_name", "a made-up name for the presenter", 40)
 AGENDA_ITEM: Final = 36  # how long an item of an agenda may be (they're written as one text)
+AGENDA_ITEM_ROOM: Final = 45  # (and how long one is kept whole: as long as one could be before D80)
 
 
 def _figure(index: int, which: str, optional: bool = False) -> tuple[TextField, TextField]:
@@ -1999,6 +2012,63 @@ KINDS: Final[dict[str, Kind]] = {
         ),
     )
 }
+
+
+# How long the texts of the fields that D80 asked for less of could be before (2026-11-13: v5 at 4769664), by kind and
+# field: their slides' layouts hold that much in every theme, so a text that long is kept whole, and one longer still
+# is cut (see TextField.room; traffic-light flags are red flags in three colours)
+_ROOM: Final[Mapping[str, Mapping[str, int]]] = {
+    "image": {"title": 60},
+    "full_image": {"title": 60},
+    "statement": {"text": 140},
+    "two_columns": {"title": 60},
+    "three_columns": {"title": 60},
+    "history_quote": {"title": 60, "name": 60, "quote": 160},
+    "chart_yes_no": {"question": 90},
+    "chart_categories": {"question": 90, "categories": 120},
+    "chart_trend": {"title": 90},
+    "chart_bars": {"title": 90, "bars": 160},
+    "venn": {"title": 60},
+    "matrix": {"title": 60},
+    "big_number": {"title": 60, "label": 90},
+    "kpi": {"title": 60, "label_1": 40, "label_2": 40, "label_3": 40, "label_4": 40},
+    "quiz": {"question": 90, "option_a": 50, "option_b": 50, "option_c": 50, "option_d": 50, "explanation": 90},
+    "social_post": {"title": 60, "text": 160},
+    "news_headline": {"headline": 90, "subheadline": 100},
+    "agenda": {"items": 200},
+    "section": {"title": 50, "subtitle": 90},
+    "questions": {"subtitle": 80},
+    "timeline": {"title": 60, "event_1": 40, "event_2": 40, "event_3": 40, "event_4": 40, "event_5": 40},
+    "pyramid": {"title": 60},
+    "funnel": {"title": 60},
+    "cycle": {"title": 60},
+    "org_chart": {"title": 60},
+    "iceberg": {"title": 60},
+    "process": {"title": 60},
+    "fun_fact": {"fact": 150},
+    "acronym": {"title": 60},
+    "dare": {"dare": 130, "audience": 130},
+    "flowchart": {"title": 60, "question": 70},
+    "tier_list": {"title": 60, "s_tier": 70, "a_tier": 70, "b_tier": 70, "c_tier": 70, "f_tier": 70},
+    "wall_of_text": {"title": 60},
+    "alignment_chart": {
+        "title": 60,
+        **dict.fromkeys(("lawful_good", "neutral_good", "chaotic_good", "lawful_neutral", "true_neutral"), 60),
+        **dict.fromkeys(("chaotic_neutral", "lawful_evil", "neutral_evil", "chaotic_evil"), 60),
+    },
+    "red_flags": {"title": 60, "flag_1": 90, "flag_2": 90, "flag_3": 90},
+    "traffic_flags": {"title": 60, "flag_1": 90, "flag_2": 90, "flag_3": 90},
+    "reviews": {"title": 60, "review_1": 110, "review_2": 110, "review_3": 110},
+    "error_message": {"title": 30, "message": 120, "code": 24, "buttons": 66},
+}
+for _kind, _rooms in _ROOM.items():
+    KINDS[_kind] = dataclasses.replace(
+        KINDS[_kind],
+        texts=tuple(
+            dataclasses.replace(text, room=_rooms[text.name]) if text.name in _rooms else text
+            for text in KINDS[_kind].texts
+        ),
+    )
 
 
 # EMOJI (docs/v5-plan.md, D65): some lists have them now and then, one in front of each thing, where a variant of

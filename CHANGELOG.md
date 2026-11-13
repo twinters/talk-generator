@@ -162,8 +162,11 @@ how to keep 4.x's talks. The [docs](https://github.com/twinters/talk-generator/t
   a timeline), as a quote or a fun fact that tied them in one sentence read as a riddle; a recurring character in one
   talk in five at most; and in a talk that generates pictures, a book report's cover first, as only a generated cover
   shows its made-up title. A picture whose description or post title speaks of nudity, sex or gore stays out, also
-  where Reddit doesn't mark it NSFW. The prompts were tuned in a prompt lab (`scripts/prompt_lab`): talks Claude Opus
-  wrote, judged blind and pairwise by Claude and GPT.
+  where Reddit doesn't mark it NSFW. A text a model writes too long is kept whole as far as its slide holds it, and
+  cut, when it must be, where a sentence, a clause or a comma ends, or else with an ellipsis: never mid-sentence
+  without one. A talk in another language whose model writes no slide asks it once more before it comes out classic,
+  and so in English. The prompts were tuned in a prompt lab (`scripts/prompt_lab`): talks Claude Opus and the site's
+  free models wrote, judged blind and pairwise by Claude and GPT, and measured.
 
 ### Formats and personas
 

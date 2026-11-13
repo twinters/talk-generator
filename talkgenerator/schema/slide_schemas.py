@@ -11,6 +11,7 @@ from talkgenerator.images.slots import ImageSlot
 from talkgenerator.plan.kinds import (
     CLUSTERED,
     EMOJI_NOTE,
+    KINDS,
     TREND_PICTURE_ODDS,
     Recipe,
     Variant,
@@ -911,6 +912,8 @@ mockup_slide_generators_copyright_free = _register(
 # and two memes of any kind in ten slides, Reddit's too (meme)
 _MEME_BRIEF = "A meme about the concept"
 MEME_WEIGHT = 7
+MEME_ROOM_SIZE = 30  # (the font size, in canvas pixels, at which a box's room is how long a caption is kept whole)
+_MEME_CAPTION = max(max(text.max_length, text.room) for text in KINDS["meme"].texts)  # (a caption's own room at most)
 
 
 def _meme_variants() -> tuple[Variant, ...]:
@@ -926,6 +929,12 @@ def _meme_variants() -> tuple[Variant, ...]:
                 note=f"as the '{template.name}' meme ({template.about})",
                 hints={field: f"{box.says}, in a few words" for field, box in zip(fields, written, strict=True)},
                 limits={field: max(12, template.room(box)) for field, box in zip(fields, written, strict=True)},
+                # (a caption that's longer is kept whole as far as its box holds it at a smaller size: a meme's
+                # captions shrink to 28 pixels, and a caption cut off mid-sentence spoils the joke, D80)
+                rooms={
+                    field: min(_MEME_CAPTION, max(12, template.room(box, MEME_ROOM_SIZE)))
+                    for field, box in zip(fields, written, strict=True)
+                },
                 queries={"template": template.id},
             )
         )

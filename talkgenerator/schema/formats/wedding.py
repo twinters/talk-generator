@@ -64,7 +64,8 @@ WEDDING: Final = Format(
     brief="a wedding toast by the best man or the maid of honour, for their best friend, who is marrying the topic, "
     "however absurd: who the speaker is, how the couple met, an embarrassing story, why they're perfect together, "
     "some marriage advice and the toast itself, with the whole room raising their glasses. The best friend has a "
-    "first name that goes with anyone and is 'they', the topic is the one they marry, played straight as a beloved "
+    "first name of your choosing that suits anyone (never the word 'they' as a name), and the toast speaks of them "
+    "as 'they'; the topic is the one they marry, played straight as a beloved "
     "partner, and the speech is warm, rambling and a little too honest; glasses are raised, but no drink is named",
     title_hint="like a wedding toast's title: the best friend and the topic as a couple, or a fond and embarrassing "
     "promise, in a few words",

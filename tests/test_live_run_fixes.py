@@ -158,18 +158,19 @@ def test_a_cut_ends_where_a_clause_does():
         # prayers" and "Seamounts grow in silence, but scream")
         "The mountain breathes when prayers are whispered into it": "The mountain breathes",
         "Seamounts grow in silence, but scream when they wake up": "Seamounts grow in silence",
-        "The secret history of salt and pepper in old monasteries": "The secret history of salt and pepper",
-        # (without a clause that keeps half of it, between words, as before: a comma ends no clause)
-        "Even the clumsiest waddle carries a lesson in quiet grace": "Even the clumsiest waddle carries",
-        "Cats, as it turns out, were always the true rulers of the night": "Cats, as it turns out, were always",
-        "Trust it: lighthouses have opinions about every single ship": "Trust it: lighthouses have opinions",
+        "The secret history of salt and pepper in old monasteries": "The secret history of salt and pepper…",
+        # (without a clause that keeps a third of it, between words, with an ellipsis that says so (D80): a comma ends
+        # no clause)
+        "Even the clumsiest waddle carries a lesson in quiet grace": "Even the clumsiest waddle carries…",
+        "Cats, as it turns out, were always the true rulers of the night": "Cats, as it turns out, were always…",
+        "Trust it: lighthouses have opinions about every single ship": "Trust it: lighthouses have opinions…",
         # (a range is no clause)
         "The keepers of 1890–1920 were all cats, every last one of them": "The keepers of 1890–1920 were all cats",
     }
     assert {text: clean_text(text, caption) for text in cases} == cases
     # (not in another language, whose words that open clauses aren't known: between words)
     assert clean_text("The mountain breathes when prayers are whispered into it", caption, "nl") == (
-        "The mountain breathes when prayers are"
+        "The mountain breathes when prayers are…"
     )
     assert clean_text("Lighthouses talk, and seagulls listen to them", caption) == (
         "Lighthouses talk, and seagulls listen to them"  # (no longer than an eighth too long: whole)

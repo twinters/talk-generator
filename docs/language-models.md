@@ -231,6 +231,7 @@ Each language has a list of topics of its own (`talkgenerator/data/topics.<code>
 the talk's language.
 
 The classic generator only speaks English. So in such a talk, a slide that doesn't come out as the model wrote it
-becomes a picture of its subject without text, rather than an English slide, and the talk as a whole is English (and
-says so in the logs) when no model writes it. `talkgenerator check --language nl --llm openrouter` checks that the
-talks read as Dutch.
+becomes a picture of its subject without text, rather than an English slide; a model that writes no slide at all (it
+failed, broke off or declined, or its answer couldn't be read) is asked once more; and the talk as a whole is English
+(and says so in the logs) only when no model writes it then either. `talkgenerator check --language nl --llm
+openrouter` checks that the talks read as Dutch.

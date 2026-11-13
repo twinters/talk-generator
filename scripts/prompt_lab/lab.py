@@ -73,10 +73,47 @@ SETUPS: list[dict[str, Any]] = [
         "language": "nl",
     },
 ]
+# Talks in Dutch (2026-11-13: the user found the site's free models writing English in a Dutch talk now and then), of
+# every format, by personas that fit them
+NL_SETUPS: list[dict[str, Any]] = [
+    {"id": "nl-regen-influencer", "topic": "regen", "schema": "default", "persona": "influencer", "seed": 21},
+    {"id": "nl-fietsen-pitch", "topic": "fietsen", "schema": "pitch", "persona": "startup_founder", "seed": 22},
+    {"id": "nl-kaas-documentary", "topic": "kaas", "schema": "documentary", "persona": "nature_narrator", "seed": 23},
+    {"id": "nl-kabouters-museum", "topic": "tuinkabouters", "schema": "museum", "persona": "museum_guide", "seed": 24},
+    {
+        "id": "nl-stofzuiger-infomercial",
+        "topic": "de stofzuiger",
+        "schema": "infomercial",
+        "persona": "infomercial_host",
+        "seed": 25,
+    },
+    {"id": "nl-verjaardagen-wedding", "topic": "verjaardagen", "schema": "wedding", "persona": "best_man", "seed": 26},
+    {"id": "nl-huiswerk-court", "topic": "huiswerk", "schema": "court", "persona": "detective", "seed": 27},
+    {"id": "nl-trein-keynote", "topic": "de trein", "schema": "keynote", "persona": "passionate_expert", "seed": 28},
+    {
+        "id": "nl-drop-book-report",
+        "topic": "drop",
+        "schema": "book_report",
+        "persona": "kindergarten_teacher",
+        "seed": 29,
+    },
+    {
+        "id": "nl-vergaderen-corporate",
+        "topic": "vergaderen",
+        "schema": "corporate",
+        "persona": "consultant",
+        "seed": 30,
+    },
+]
+for _setup in NL_SETUPS:
+    _setup["language"] = "nl"
+SETS = {"main": SETUPS, "nl": NL_SETUPS}
+ALL_SETUPS = [*SETUPS, *NL_SETUPS]
 MODELS = {
     "opus": "anthropic:claude-opus-5-5",
     "sonnet": "anthropic:claude-sonnet-5-5",
     "haiku": "anthropic:claude-haiku-5-5",
+    "free": "openrouter",  # (OpenRouter's free router, which picks a free model a request: the site's Basic AI)
 }
 
 _count = 0
@@ -122,10 +159,59 @@ def without_searches() -> None:
     finder.find = lambda slot, query, avoid=(): stand_in(query)  # type: ignore[assignment]
 
 
+# The texts realize cut to their fields' lengths in this process's talk: the text as written, its length, the cut, and
+# where it was cut ("clause": where a sentence or a clause ends; "comma"; "words": between words, mid-sentence)
+CUTS: list[dict[str, Any]] = []
+
+
+def _where_cut(text: str, cut: str) -> str:
+    rest = text[len(cut) :].lstrip(" \"'”’)")
+    if cut.rstrip().endswith((".", "!", "?")) or rest[:1] in tuple(".!?;:—–-"):
+        return "clause"
+    return "comma" if rest[:1] == "," else "words"
+
+
+def record_cuts() -> None:
+    """Record every cut that realize makes (see CUTS)."""
+    from talkgenerator.plan import realize
+
+    def recording(cut: Any) -> Any:
+        def recorded(text: str, length: int, language: str) -> str:
+            made = cut(text, length, language)
+            if made != text:
+                CUTS.append({"text": text, "length": length, "cut": made, "where": _where_cut(text, made)})
+            return made
+
+        return recorded
+
+    realize._cut = recording(realize._cut)  # type: ignore[assignment]
+    realize._cut_list = recording(realize._cut_list)  # type: ignore[assignment]
+
+
+# The models that answered this process's talk's requests (OpenRouter's free router picks one a request)
+ANSWERED_BY: list[str] = []
+
+
+def record_models() -> None:
+    from talkgenerator.llm import openrouter
+
+    streamed = openrouter.OpenRouterProvider._stream
+
+    def recorded(self: Any, *arguments: Any) -> Any:
+        response = streamed(self, *arguments)
+        ANSWERED_BY.append(response.model)
+        return response
+
+    openrouter.OpenRouterProvider._stream = recorded  # type: ignore[method-assign]
+
+
 def make_talk(setup: dict[str, Any], model: str, level: str, folder: Path) -> dict[str, Any]:
-    """Make the setup's talk with the model at the level, without searches; save its deck; return what it cost."""
+    """Make the setup's talk with the model at the level, without searches; save its deck and the cuts its texts got;
+    return what it cost, and who wrote it."""
     os.environ.setdefault("DISABLE_FACTS", "1")  # (real facts change with the day: a lab compares prompts)
     without_searches()
+    record_cuts()
+    record_models()
     from talkgenerator import generator
 
     _, slide_deck, _ = generator._generate_presentation(
@@ -145,8 +231,16 @@ def make_talk(setup: dict[str, Any], model: str, level: str, folder: Path) -> di
     )
     deck = slide_deck.to_deck(schema_name=setup["schema"])
     (folder / f"{setup['id']}.deck.json").write_text(deck.to_json(), encoding="utf-8")
+    (folder / f"{setup['id']}.cuts.json").write_text(json.dumps(CUTS, indent=1, ensure_ascii=False), encoding="utf-8")
     usage = deck.usage
-    return {"id": setup["id"], "cost": getattr(usage, "cost_usd", None), "level": deck.llm_level}
+    return {
+        "id": setup["id"],
+        "cost": getattr(usage, "cost_usd", None),
+        "level": deck.llm_level,
+        "model": deck.language_model,
+        "answered_by": ANSWERED_BY,
+        "cuts": len(CUTS),
+    }
 
 
 # READING A DECK
@@ -232,6 +326,7 @@ def metrics(deck: dict[str, Any]) -> dict[str, Any]:
         found = set(re.findall(r"\b([A-Z][a-z]{2,})\b", " ".join(slide_texts(slide))))
         names.update(name for name in found if name.lower() in first_names() and not _common(name))
     presenter = (deck.get("presenter") or "").replace("Dr.", "").replace("Prof.", "").split()
+    english = english_words(deck)
     return {
         "words_mean": round(statistics.mean(words), 1) if words else 0,
         "words_max": max(words, default=0),
@@ -240,4 +335,54 @@ def metrics(deck: dict[str, Any]) -> dict[str, Any]:
         "long_titles": sum(len(title) > 45 for title in titles),
         "recurring": max(names.values(), default=0),
         "real_first_name": bool(presenter) and presenter[0].lower() in first_names(),
+        "english_words": sum(len(found) for found in english.values()),
+        "english_slides": sum(len(found) >= 2 for found in english.values()),
+        "language_findings": len(language_findings(deck)),
+        "classic": deck.get("language_model") is None,
     }
+
+
+# ENGLISH IN A TALK IN ANOTHER LANGUAGE
+
+_WORDS = re.compile(r"[^\W\d_]+(?:['’][^\W\d_]+)?")
+
+
+def english_words(deck: dict[str, Any]) -> dict[int, list[str]]:
+    """The English words on each slide of a talk in another language (by the slide's number): common in English
+    (wordfreq's Zipf frequency of 3 or more) and a hundred times rarer in the talk's language, which keeps loanwords
+    such as "team", "live" or "deadline" out; a capitalised word inside a text is a name, and none."""
+    language = deck.get("language") or "en"
+    if language == "en":
+        return {}
+    from wordfreq import zipf_frequency
+
+    found: dict[int, list[str]] = {}
+    for number, slide in enumerate(deck.get("slides", []), 1):
+        words = [
+            word
+            for text in slide_texts(slide)
+            for index, word in enumerate(_WORDS.findall(text))
+            if not (index > 0 and word[:1].isupper()) and len(word) > 2
+        ]
+        english = [
+            word
+            for word in words
+            if (zipf := zipf_frequency(word.lower(), "en")) >= 3 and zipf - zipf_frequency(word.lower(), language) >= 2
+        ]
+        if english:
+            found[number] = english
+    return found
+
+
+def language_findings(deck: dict[str, Any]) -> list[Any]:
+    """talkgenerator's own check of a talk's language (talkgenerator.checks.deck.check_language)."""
+    from talkgenerator.checks.deck import check_language
+    from talkgenerator.models.deck import Deck
+
+    return check_language(Deck.from_json(json.dumps(deck)))
+
+
+def cuts(tag: str, setup_id: str) -> list[dict[str, Any]]:
+    """The cuts a talk's texts got (see make_talk), or none recorded."""
+    path = WORK / tag / f"{setup_id}.cuts.json"
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else []

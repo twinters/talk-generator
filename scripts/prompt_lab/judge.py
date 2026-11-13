@@ -95,7 +95,7 @@ def main() -> int:
     args = parser.parse_args()
     judges = args.judges.split(",")
     pairs = []
-    for setup in lab.SETUPS:
+    for setup in lab.ALL_SETUPS:
         a, b = lab.load(args.a, setup["id"]), lab.load(args.b, setup["id"])
         if a is not None and b is not None:
             pairs.append((setup, a, b))
@@ -153,7 +153,7 @@ def main() -> int:
         lines.append(f"| {judge} | {len(rows)} | " + " | ".join(score(question, rows) for question in QUESTIONS) + " |")
     lines += ["", "## Metrics (mean over setups)", ""]
     for tag in (args.a, args.b):
-        measured = [lab.metrics(deck) for setup in lab.SETUPS if (deck := lab.load(tag, setup["id"])) is not None]
+        measured = [lab.metrics(deck) for setup in lab.ALL_SETUPS if (deck := lab.load(tag, setup["id"])) is not None]
         if measured:
             keys = measured[0].keys()
             lines.append(

@@ -340,6 +340,26 @@ def test_a_model_that_fails_makes_a_classic_talk(schema):
     assert (deck.usage.requests, deck.usage.failed_requests) == (1, 1)
 
 
+class _FailsOnce(FakeModel):
+    """A model whose first answer fails (as a free model timed out on three Dutch talks in ten, D80)."""
+
+    def complete(self, request):
+        self.fail = llm.ProviderUnavailable("timed out") if not self.requests else None
+        return super().complete(request)
+
+
+def test_a_talk_in_another_language_that_the_model_fails_is_asked_once_more(schema):
+    # (its classic slides would be English: D80)
+    model = _FailsOnce()
+    deck = _talk(model, language="nl")
+    assert len(model.requests) == 2 and all(_planned(deck)) and deck.language == "nl"
+    # (an answer without a slide that can be read, too; but an English talk is classic at once, in its language)
+    unreadable = FakeModel(change=lambda answer: answer.clear() if len(unreadable.requests) == 1 else None)
+    assert all(_planned(_talk(unreadable, language="nl"))) and len(unreadable.requests) == 2
+    english = _FailsOnce()
+    assert not any(_planned(_talk(english))) and len(english.requests) == 1
+
+
 def test_a_model_that_crashes_makes_a_classic_talk(schema):
     deck = _talk(FakeModel(fail=RuntimeError("a bug in a provider")))
     assert deck.title.startswith("A classic title")
@@ -794,7 +814,7 @@ def test_a_value_that_doesnt_parse_is_left_out():
 def test_slide_texts_are_cleaned_up():
     field = TextField("caption", "a caption", 20)
     assert clean_text('  "Expectation"\n', field) == "Expectation"
-    assert clean_text("A caption that is far too long to fit", field) == "A caption"  # not "A caption that is"
+    assert clean_text("A caption that is far too long to fit", field) == "A caption…"  # not "A caption that is"
     assert clean_text("About {seed.plural}", field) is None
     assert clean_text("   ", field) is None
     assert clean_text(42, field) is None
@@ -815,13 +835,13 @@ def test_a_text_thats_cut_ends_on_a_word_that_matters():
     caption = TextField("caption", "a caption", 40)
     # A little too long is fine: up to an eighth more (here 45 characters) stays whole
     assert clean_text("Cats were the true scholars of the abbey", caption) == "Cats were the true scholars of the abbey"
-    assert clean_text("Cats were the true scholars of the Middle Ages", caption) == "Cats were the true scholars"
+    assert clean_text("Cats were the true scholars of the Middle Ages", caption) == "Cats were the true scholars…"
     assert (
         clean_text("The abbot was the first time traveler, obviously so", caption)
         == "The abbot was the first time traveler"
     )
     dutch = "De kat was de ware geleerde van de Middeleeuwen"
-    assert clean_text(dutch, TextField("caption", "a caption", 35), "nl") == "De kat was de ware geleerde"
+    assert clean_text(dutch, TextField("caption", "a caption", 35), "nl") == "De kat was de ware geleerde…"
     assert clean_text("Supercalifragilisticexpialidocious", TextField("word", "a word", 10)) == "Supercalif"
 
 

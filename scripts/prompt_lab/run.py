@@ -27,24 +27,26 @@ def main() -> int:
     parser.add_argument("--model", default="opus", help=f"one of {', '.join(lab.MODELS)}, or provider:model")
     parser.add_argument("--level", default="advanced")
     parser.add_argument("--only", default="")
+    parser.add_argument("--set", default="main", help=f"one of {', '.join(lab.SETS)}")
     parser.add_argument("--jobs", type=int, default=4)
     parser.add_argument("--one", default="", help=argparse.SUPPRESS)  # (a child process: one setup)
     args = parser.parse_args()
     model = lab.MODELS.get(args.model, args.model)
     folder = lab.WORK / args.tag
     folder.mkdir(parents=True, exist_ok=True)
-    setups = {setup["id"]: setup for setup in lab.SETUPS}
+    setups = {setup["id"]: setup for setup in lab.ALL_SETUPS}
     if args.one:
         result = lab.make_talk(setups[args.one], model, args.level, folder)
         print("RESULT " + json.dumps(result))
         return 0
-    wanted = [name for name in args.only.split(",") if name] or list(setups)
+    wanted = [name for name in args.only.split(",") if name] or [setup["id"] for setup in lab.SETS[args.set]]
 
     def run(name: str) -> dict:
         started = time.monotonic()
         command = [sys.executable, *(["-P"] if sys.flags.safe_path else []), __file__, "--tag", args.tag]
         command += ["--model", model, "--level", args.level, "--one", name]
         done = subprocess.run(command, capture_output=True, text=True, encoding="utf-8", errors="replace")
+        (folder / f"{name}.log").write_text(done.stderr, encoding="utf-8")  # (why a talk came out classic, say)
         line = next((line for line in done.stdout.splitlines() if line.startswith("RESULT ")), None)
         result = json.loads(line[7:]) if line else {"id": name, "error": done.stderr[-2000:]}
         result["seconds"] = round(time.monotonic() - started)

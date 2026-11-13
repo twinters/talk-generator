@@ -156,9 +156,13 @@ def test_no_theme_treats_a_memes_picture(pictures, family):
 
 
 def _longest(template, number, word="Expectation"):
-    """A caption as long as its box is said to hold, of words."""
-    room = max(12, template.room(template.written()[number - 1]))
-    limit = min(KINDS["meme"].texts[number - 1].max_length, room)
+    """A caption as long as its box keeps one whole (its recipe's room, and a cut's leeway: D80), of words."""
+    from talkgenerator.plan.realize import length_limit
+    from talkgenerator.schema.slide_schemas import _meme_variants
+
+    variant = next(variant for variant in _meme_variants() if variant.queries["template"] == template.id)
+    field = Recipe("meme", limits=variant.limits, rooms=variant.rooms).text_field(KINDS["meme"].texts[number - 1])
+    limit = length_limit(field)
     return " ".join([word] + ["Expectation"] * (limit // 11 + 1))[:limit].strip()
 
 
