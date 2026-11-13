@@ -188,7 +188,7 @@ Every family has a decoration of its own, on every slide, and saves its big piec
   slide's number in its tray, pictures in windows of their own, and a big slide of nothing but texts as a dialog box
   on the desktop, with icons and the mouse's pointer.
 - `corkboard`: cork in a wooden frame, the title on a pinned index card, pictures as polaroids, pinned or taped up,
-  index cards pinned in free corners, and on the big slides pins with a red string between them.
+  and on the big slides pins with a red string between them.
 - `spreadsheet`: a grid of cells with its columns' letters and its rows' numbers, the title a selected cell,
   pictures with selection handles, and the slide's number on the open sheet's tab, in Calibri.
 - `Y2K`: chrome headings on pastel gradients, sparkles and glossy bubbles, pictures in white rounded frames, a CD on

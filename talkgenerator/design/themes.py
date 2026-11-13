@@ -651,7 +651,7 @@ FAMILIES: Final[dict[str, Family]] = {
         Family(
             "corkboard",
             description="a corkboard in a wooden frame: the title on a pinned index card, pictures as polaroids, pinned "
-            "or taped up, notes and a red string between pins",
+            "or taped up, and a red string between pins",
             palettes=(  # (cork, and the board's pins)
                 Palette(
                     background="#c8a27c",

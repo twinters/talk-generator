@@ -2210,8 +2210,8 @@ _CARD_LINES: Final = ("#e8590c", "#74c0fc")  # an index card's line along its to
 
 def _corkboard(scene: Scene) -> None:
     """A corkboard: the board in a wooden frame, the title on an index card pinned to it, pictures as polaroids, pinned
-    or taped up, index cards pinned in free spots (and on its big slides, pins with a red string between them), and
-    the slide's number ("7/12") on a pinned tag."""
+    or taped up, on its big slides pins with a red string between them, and the slide's number ("7/12") on a pinned
+    tag."""
     palette = scene.palette
     start = scene.theme.motif_variant % len(_PINS)
     pins = [*_PINS[start:], *_PINS[:start]]
@@ -2235,18 +2235,9 @@ def _corkboard(scene: Scene) -> None:
         text = Box(x=number.x + 40, y=number.y, w=number.w - 44, h=number.h)
         _slide_number(scene, text, spec="decoration centre", colour=palette.text)
         scene.kept.append(_grown(tag, 4))
-    if scene.photo:
-        return
-    cards = 2 if scene.big else 1
-    for size in (170.0, 140.0):
-        spots = _corner_spots(scene, size, 60, letters=True)
-        for spot in spots[scene.number % max(1, len(spots)) :][:cards]:
-            if scene.free(spot, pad=8, letters=True):
-                _pinned_card(scene, spot, pins[(scene.number + cards) % len(pins)], random_util.uniform(-5, 5))
-                cards -= 1
-        if cards <= 0:
-            break
-    if scene.big:
+    # (no blank index cards pinned in free corners any more: the user found an empty card on many slides distracting,
+    # 2026-11-14)
+    if scene.big and not scene.photo:
         _red_string(scene, pins)
 
 
@@ -2302,23 +2293,6 @@ def _turned_with(shape: ShapeElement, middle: geometry.Point, turn: float) -> Sh
     x, y = geometry.turn((shape.box.x + shape.box.w / 2, shape.box.y + shape.box.h / 2), middle, turn)
     moved = Box(x=x - shape.box.w / 2, y=y - shape.box.h / 2, w=shape.box.w, h=shape.box.h)
     return shape.model_copy(update={"box": moved, "rotation": turn})
-
-
-def _pinned_card(scene: Scene, spot: Box, pin: str, turn: float) -> None:
-    """An index card pinned in a free spot, turned a little: a line along its top, ruled lines, a pin."""
-    ink = scene.palette.text
-    card = Box(x=spot.x, y=spot.y + spot.h * 0.18, w=spot.w, h=spot.h * 0.64)
-    middle = (card.x + card.w / 2, card.y + card.h / 2)
-    scene.add(
-        _rect(card.x + 4, card.y + 6, card.w, card.h, ink, 0.25, rotation=turn),
-        _rect(card.x, card.y, card.w, card.h, _PAPER, rotation=turn),
-        _turned_with(_rect(card.x + 10, card.y + card.h * 0.2, card.w - 20, 2, _CARD_LINES[0]), middle, turn),
-    )
-    for line in range(1, 4):
-        ruled = _rect(card.x + 10, card.y + card.h * (0.2 + 0.2 * line), card.w - 20, 1.5, _CARD_LINES[1])
-        scene.add(_turned_with(ruled, middle, turn))
-    _pin(scene, *geometry.turn((card.x + card.w / 2, card.y + 10), middle, turn), pin)
-    scene.kept.append(spot)
 
 
 def _red_string(scene: Scene, pins: Sequence[str]) -> None:
