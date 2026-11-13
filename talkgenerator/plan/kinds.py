@@ -83,6 +83,9 @@ class BoxPictures:
     odds: float = slides.PICTURE_ODDS
     most: int = 2
     aside: str = ""  # what else the model is told of a slide with pictures (a matrix's: where its dot goes)
+    # The share of slides that have a picture in every box they have, each appearing with its box (D80: a process's
+    # every step, the user's "each step should reveal a picture, or be one")
+    every: float = 0.0
 
     @staticmethod
     def slot(box: str) -> str:
@@ -90,9 +93,10 @@ class BoxPictures:
         return slides.picture_role(box)
 
     def pick(self, rng: random_util.Rng) -> list[str]:
-        """The boxes that get a picture, by the dice: none most of the time."""
+        """The boxes that get a picture, by the dice: none most of the time (of the first three, where every box can
+        have one: the others may not be there)."""
         with random_util.use(rng):
-            return slides.picked_boxes(list(self.boxes), self.most, self.odds)
+            return slides.picked_boxes(list(self.boxes)[: 3 if self.every else None], self.most, self.odds)
 
 
 @functools.cache
@@ -144,7 +148,7 @@ PATTERN_BREAK_ODDS: Final = 0.35  # of the lists' slides whose punchline breaks 
 # What the model writes for each way, after the field's own description (a list in one field: its last thing)
 _BREAKS: Final = {
     "emoji": "a single emoji, nothing else",
-    "short": "one to three words, where the others are whole sentences",
+    "short": "one to three words, shorter than the others",
     "number": "a word, a symbol or an emoji instead of a number",
     "off": "something that has nothing to do with the talk, in a few words",
 }
@@ -164,7 +168,7 @@ class PatternBreak:
     listed: bool = False
 
 
-_FLAGS: Final = ("flag_5", "flag_4", "flag_3")
+_FLAGS: Final = ("flag_3",)
 _LIST_BREAKS: Final = {"short": 1.0, "emoji": 0.7, "picture": 1.3}
 _DIAGRAM_ODDS: Final = 0.25
 
@@ -398,10 +402,14 @@ class Recipe:
         if kind.pictures is None:
             return varied
         boxes = [box for box in kind.pictures.pick(rng.child("pictures")) if box not in varied.omit]
+        with random_util.use(rng.child("every picture")):
+            every = kind.pictures.every > 0 and random_util.random() < kind.pictures.every
+        if every:  # (a picture in every box the slide has, each appearing with it: D80)
+            boxes = [box for box in kind.pictures.boxes if box not in varied.omit]
         if not boxes:
             return varied
         brief = (varied.brief or kind.description).rstrip(".")
-        which = " and ".join(kind.pictures.boxes[box] for box in boxes)
+        which = "every one of them" if every else " and ".join(kind.pictures.boxes[box] for box in boxes)
         note = (
             f"with a weird but related picture in the box of {which}: the {'queries' if len(boxes) > 1 else 'query'}"
             f" for {'them' if len(boxes) > 1 else 'it'}, something odd that the box's words make one think of"
@@ -540,11 +548,15 @@ def _chart_trend(texts: Mapping[str, str | None], images: Mapping[str, Any], lan
 def _chart_bars(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
     # (Bars that are only numbers are scores a model put between the names: "Druids | 6 | Priests | 4")
     parts = [part.strip() for part in (texts["bars"] or "").split("|")]
-    bars = [part for part in parts if part and not _NUMBER.fullmatch(part)][:6]
+    bars = [part for part in parts if part and not _NUMBER.fullmatch(part)][: chart.RANKING_BARS]
     if len(bars) < 3:
         raise ValueError("a ranking needs three bars or more")
     return slides.ChartSlide(
-        texts["title"], XL_CHART_TYPE.BAR_CLUSTERED, chart.ranking_chart_data(bars), y_title=texts.get("value_axis")
+        texts["title"],
+        XL_CHART_TYPE.BAR_CLUSTERED,
+        chart.ranking_chart_data(bars),
+        y_title=texts.get("value_axis"),
+        reveal="categories",  # (a bar a click, from the top down: the tiny ones, then the punchline, D80)
     )
 
 
@@ -643,7 +655,7 @@ def _quiz(texts: Mapping[str, str | None], images: Mapping[str, Any], language: 
         if len(named) == 1 and named[0] != slides.LETTERS.index(answer):
             answer = slides.LETTERS[named[0]]
     first, second, third, fourth = options
-    return slides.QuizSlide(texts["question"], first, second, third, fourth, answer, explanation)
+    return slides.QuizSlide(texts["question"], first, second, third, fourth, answer, explanation, language)
 
 
 def _social_post(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
@@ -675,7 +687,7 @@ def _agenda(texts: Mapping[str, str | None], images: Mapping[str, Any], language
 
 
 def _section(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
-    return slides.SectionSlide(texts["title"], texts.get("subtitle"))
+    return slides.SectionSlide(texts["title"], texts.get("subtitle"), background=images.get("background"))
 
 
 def _questions(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
@@ -810,7 +822,10 @@ def _dare(texts: Mapping[str, str | None], images: Mapping[str, Any], language: 
     dare, everyone = texts.get("dare"), texts.get("audience")
     if not dare and not everyone:
         raise ValueError("the dare has no task, for the presenter or for the audience")
-    return slides.DareSlide(language.dare, dare) if dare else slides.DareSlide(language.audience, everyone)
+    background = images.get("background")  # (a picture behind it, if it has one: D80)
+    if dare:
+        return slides.DareSlide(language.dare, dare, background)
+    return slides.DareSlide(language.audience, everyone, background)
 
 
 def _flowchart(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
@@ -850,6 +865,17 @@ def _alignment_chart(texts: Mapping[str, str | None], images: Mapping[str, Any],
 def _red_flags(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
     flags = _numbered(texts, "flag", slides.RED_FLAGS)
     return slides.RedFlagsSlide(texts["title"], *flags, pictures=_box_pictures(images))  # (D73)
+
+
+def _traffic_flags(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
+    colours = ("green", "orange", "red")
+    flags = [texts.get(f"{colour}_flag") for colour in colours]
+    # (the red one may be a picture in its words' place, the pattern break: by its number, as a red flag's)
+    boxed = _box_pictures(images)
+    pictures = {
+        f"flag_{index}": boxed[f"{colour}_flag"] for index, colour in enumerate(colours, 1) if f"{colour}_flag" in boxed
+    }
+    return slides.TrafficFlagsSlide(texts["title"], *flags, pictures=pictures)
 
 
 def _reviews(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
@@ -954,6 +980,9 @@ def _things(corner: str, ends: str) -> TextField:
 
 # The first three steps of a process or a cycle, which every one of them has: the boxes that can have a picture
 _STEPS: Final = {"step_1": "the first step", "step_2": "the second step", "step_3": "the third step"}
+# And all of a process's, which can each have one (D80)
+_EVERY_STEP: Final = {**_STEPS, "step_4": "the fourth step", "step_5": "the fifth step"}
+PROCESS_PICTURES: Final = 0.6  # of the processes with a picture in every step
 
 
 def matrix_landscape(thing: str, things: str) -> tuple[Variant, Variant]:
@@ -1019,16 +1048,23 @@ _NOT_VERSUS: Final = (
 _NUMBER: Final = re.compile(r"[-+]?\d+(?:[.,]\d+)?\s*%?")
 _LETTERED: Final = re.compile(r"^\(?[A-Da-d]\s*[).:]\s*")  # a quiz option's own letter, as in "A) Yes"
 _SPELLED: Final = re.compile(r"^[A-Za-z]\s*[-–—:.)=]\s+")  # an acronym's word's own letter, as in "S - Synergy"
-_OPTIONAL_TITLE = TextField("title", "the slide's title", 60, optional=True)
+# How long a slide's words may be, so that the presenter takes them in at a glance (the user, 2026-11-13: "too much
+# text makes it harder for the presenter, who has to read it first"): a slide's title, a tier's one thing, a red
+# flag and a quiz's option
+TITLE: Final = 45
+TIER: Final = 28
+FLAG: Final = 50
+QUIZ_OPTION: Final = 36
+_OPTIONAL_TITLE = TextField("title", "the slide's title", TITLE, optional=True)
 
-# The talk's own texts, on its title slide: "By <presenter>, <job>" under the title. The name is a made-up one, when
-# nobody gives theirs (see talkgenerator.names), and it isn't cut when it's too long: half a name is no name
-TALK_TITLE: Final = TextField("title", "the talk's title", 80)
+# The talk's own texts, on its title slide: "By <presenter>", and their job on the line under it. The name is a made-up
+# one, when nobody gives theirs (see talkgenerator.names), and it isn't cut when it's too long: half a name is no name
+TALK_TITLE: Final = TextField("title", "the talk's title", 50)
 PRESENTER_JOB: Final = TextField(
-    "presenter_job", "the presenter's grand, made-up job, such as 'Professor of Applied Sock Theory'", 50
+    "presenter_job", "the presenter's grand, made-up job, such as 'Professor of Applied Sock Theory'", 40
 )
 PRESENTER_NAME: Final = TextField("presenter_name", "a made-up name for the presenter", 40)
-AGENDA_ITEM: Final = 45  # how long an item of an agenda may be (they're written as one text)
+AGENDA_ITEM: Final = 30  # how long an item of an agenda may be (they're written as one text)
 
 
 def _figure(index: int, which: str, optional: bool = False) -> tuple[TextField, TextField]:
@@ -1041,14 +1077,14 @@ def _figure(index: int, which: str, optional: bool = False) -> tuple[TextField, 
 def _moment(index: int, which: str, optional: bool = False) -> tuple[TextField, TextField]:
     return (
         TextField(f"date_{index}", f"the {which} moment's date (a year, say, or a day)", 12, optional),
-        TextField(f"event_{index}", f"what happened at the {which} moment", 40, optional),
+        TextField(f"event_{index}", f"what happened at the {which} moment, in a few words", 32, optional),
     )
 
 
 WALL_TEXT: Final = 2600  # how long a wall of text's points may be, together (they're written as one text)
-DARE: Final = 130  # how long a dare may be, for the presenter or for the audience
+DARE: Final = 90  # how long a dare may be, for the presenter or for the audience
 CALLBACK: Final = 60  # how long the closing slide's note of which earlier picture it calls back to may be
-ERROR_BUTTON: Final = 20  # how long a fake error message's button may be (they're written as one text)
+ERROR_BUTTON: Final = 14  # how long a fake error message's button may be (they're written as one text)
 # How long a problem slide's heading, its problem and the line under it may be (D69): a few words, which the user
 # found much funnier than a sentence or two (2026-11-10, D73)
 PROBLEM_KICKER: Final = 28
@@ -1066,8 +1102,10 @@ EQUATION_TERM: Final = 16
 def _review(index: int, which: str, optional: bool = False) -> tuple[TextField, TextField, TextField]:
     return (
         TextField(f"stars_{index}", f"how many stars the {which} reviewer gives, from 1 to 5", 1, optional, STARS),
-        TextField(f"review_{index}", f"what the {which} reviewer wrote", 110, optional),
-        TextField(f"reviewer_{index}", f"who the {which} reviewer is: a made-up first name, and a detail", 30, True),
+        TextField(f"review_{index}", f"what the {which} reviewer wrote, in one short sentence", 70, optional),
+        TextField(
+            f"reviewer_{index}", f"who the {which} reviewer is: a real first name, a comma, and a detail", 30, True
+        ),
     )
 
 
@@ -1092,7 +1130,7 @@ KINDS: Final[dict[str, Kind]] = {
             (),
             _title,
         ),
-        Kind("image", "An image with a title.", (TextField("title", "the slide's title", 60),), ("image",), _image),
+        Kind("image", "An image with a title.", (TextField("title", "the slide's title", TITLE),), ("image",), _image),
         Kind(
             "full_image",
             "An image filling the slide, with an optional title.",
@@ -1103,7 +1141,7 @@ KINDS: Final[dict[str, Kind]] = {
         Kind(
             "statement",
             "A big text over a photo.",
-            (TextField("text", "the big text over the photo", 140),),
+            (TextField("text", "the big text over the photo: one short sentence", 90),),
             ("background",),
             _statement,
         ),
@@ -1134,9 +1172,13 @@ KINDS: Final[dict[str, Kind]] = {
             "history_quote",
             "A made-up historical figure's portrait, next to their quote.",
             (
-                TextField("title", "a title about history", 60),
-                TextField("name", "a made-up historical figure (never a real person): name and title", 60),
-                TextField("quote", "what this made-up figure once said", 160),
+                TextField("title", "a title about history", TITLE),
+                TextField(
+                    "name",
+                    "a made-up historical figure (never a real person): their name, a comma, and their title",
+                    50,
+                ),
+                TextField("quote", "what this made-up figure once said, in one short sentence", 100),
             ),
             ("portrait",),
             _history_quote,
@@ -1145,7 +1187,7 @@ KINDS: Final[dict[str, Kind]] = {
             "chart_yes_no",
             "A chart of answers to a yes-or-no question: yes, no, and a funny third answer.",
             (
-                TextField("question", "a yes-or-no question, as the chart's title", 90),
+                TextField("question", "a yes-or-no question, as the chart's title", 60),
                 # (Examples here get copied: with "such as 'Only on Tuesdays'", half the charts said that)
                 TextField(
                     "funny_answer", "a third answer, besides yes and no: an odd one of your own for this question", 30
@@ -1159,8 +1201,8 @@ KINDS: Final[dict[str, Kind]] = {
             "chart_categories",
             "A pie chart of made-up shares.",
             (
-                TextField("question", "the question the pie chart answers, as its title", 90),
-                TextField("categories", "two to five answers, separated by |", 120),
+                TextField("question", "the question the pie chart answers, as its title", 60),
+                TextField("categories", "two to five short answers, separated by |", 80),
             ),
             (),
             _chart_categories,
@@ -1204,7 +1246,7 @@ KINDS: Final[dict[str, Kind]] = {
             "A line chart of a made-up trend along two odd axes; a second line, if any, draws itself across it on a "
             "click, as the punchline.",
             (
-                TextField("title", f"the chart's claim, as its title, in a few words{_NOT_VERSUS}", 90),
+                TextField("title", f"the chart's claim, as its title, in a few words{_NOT_VERSUS}", 60),
                 TextField(
                     "x_axis", "what the chart goes along, such as 'Hours since the meeting started'", 40, optional=True
                 ),
@@ -1239,11 +1281,15 @@ KINDS: Final[dict[str, Kind]] = {
         ),
         Kind(
             "chart_bars",
-            "A ranking in bars, whose last bar, the punchline, wins by far.",
+            "A ranking in bars, which appear one by one, a click each, from the top down: the first ones tiny, and the "
+            "last one, the punchline, wins by far.",
             (
-                TextField("title", "the question the ranking answers, as its title", 90),
+                TextField("title", "the question the ranking answers, as its title", TITLE),
                 TextField(
-                    "bars", "three to six things (only their names), separated by |, the last one the punchline", 160
+                    "bars",
+                    "three or four things (only their names), separated by |: ordinary ones first, the last one "
+                    "the punchline",
+                    100,
                 ),
                 TextField("value_axis", "what the bars measure, such as 'Danger level'", 40, optional=True),
             ),
@@ -1257,7 +1303,7 @@ KINDS: Final[dict[str, Kind]] = {
             "A Venn diagram: two or three circles of things, each with a label, and what's in all of them at once, "
             "the punchline, which appears on a click.",
             (
-                TextField("title", "the diagram's title", 60),
+                TextField("title", "the diagram's title", TITLE),
                 TextField("circle_1", "the first circle's label: a group of things", 30),
                 TextField(
                     "circle_2",
@@ -1279,7 +1325,7 @@ KINDS: Final[dict[str, Kind]] = {
             "a short name in each quadrant (or familiar things as dots where they belong, or neither), and one dot "
             "with a name, the punchline, which appears on a click.",
             (
-                TextField("title", "the matrix's title", 60),
+                TextField("title", "the matrix's title", TITLE),
                 TextField("x_left", "the left end of the axis along the bottom: a word or two", 24),
                 TextField("x_right", "the right end of that axis, a word or two: the opposite of the left end", 24),
                 TextField("y_bottom", "the bottom end of the axis going up: a word or two", 24),
@@ -1323,7 +1369,7 @@ KINDS: Final[dict[str, Kind]] = {
                 TextField(
                     "number", "the big number, with its unit if it has one: a percentage, an amount or a count", 12
                 ),
-                TextField("label", "what the number counts or measures, in a few words", 90),
+                TextField("label", "what the number counts or measures, in a few words", 50),
                 TextField("source", "a made-up, unreliable source for the number", 60, optional=True),
             ),
             ("background",),
@@ -1336,7 +1382,7 @@ KINDS: Final[dict[str, Kind]] = {
             "appear one by one, a click each, the last one the punchline; over a picture of what they're about, if "
             "it has one.",
             (
-                TextField("title", "the dashboard's title", 60),
+                TextField("title", "the dashboard's title", TITLE),
                 *_figure(1, "first"),
                 *_figure(2, "second"),
                 *_figure(3, "third"),
@@ -1352,13 +1398,13 @@ KINDS: Final[dict[str, Kind]] = {
             "A quiz question for the audience, with three or four options (A to D), which appear one by one, a click "
             "each; the answer, and why, appear on the click after them.",
             (
-                TextField("question", "the quiz question", 90),
-                TextField("option_a", "option A (without its letter)", 50),
-                TextField("option_b", "option B", 50),
-                TextField("option_c", "option C", 50),
-                TextField("option_d", "option D", 50, optional=True),
+                TextField("question", "the quiz question, in one short sentence", 70),
+                TextField("option_a", "option A (without its letter), in a few words", QUIZ_OPTION),
+                TextField("option_b", "option B", QUIZ_OPTION),
+                TextField("option_c", "option C", QUIZ_OPTION),
+                TextField("option_d", "option D", QUIZ_OPTION, optional=True),
                 TextField("answer", "the letter of the right option", 1, options=tuple(slides.LETTERS)),
-                TextField("explanation", "why that's the answer, shown with it", 90, optional=True),
+                TextField("explanation", "why that's the answer, shown with it, in a few words", 60, optional=True),
             ),
             (),
             _quiz,
@@ -1369,9 +1415,11 @@ KINDS: Final[dict[str, Kind]] = {
             "likes and shares).",
             (
                 _OPTIONAL_TITLE,
-                TextField("author", "the made-up name of who posted it (never a real person)", 30),
+                TextField("author", "the made-up name of who posted it: a real first name and a surname", 30),
                 TextField("handle", "their made-up username, without the @", 24),
-                TextField("text", "the post: what they wrote, without hashtags or emoji", 160),
+                TextField(
+                    "text", "the post: what they wrote, in one or two short sentences, without hashtags or emoji", 90
+                ),
             ),
             ("photo",),
             _social_post,
@@ -1381,8 +1429,8 @@ KINDS: Final[dict[str, Kind]] = {
             "A made-up news story with a photo, as breaking news on television or on a newspaper's front page.",
             (
                 TextField("outlet", "the made-up name of the newspaper or the channel", 30),
-                TextField("headline", "the headline", 90),
-                TextField("subheadline", "a line under the headline, with more of the story", 100, optional=True),
+                TextField("headline", "the headline", 70),
+                TextField("subheadline", "a line under the headline, with more of the story", 70, optional=True),
             ),
             ("photo",),
             _news_headline,
@@ -1392,7 +1440,7 @@ KINDS: Final[dict[str, Kind]] = {
             "The talk's agenda: three to five items it will cover, numbered, which appear one by one, a click each.",
             (
                 TextField("title", "the agenda's title", 40),
-                TextField("items", f"three to five items, separated by |, each at most {AGENDA_ITEM} characters", 200),
+                TextField("items", f"three to five items, separated by |, each at most {AGENDA_ITEM} characters", 150),
             ),
             (),
             _agenda,
@@ -1402,11 +1450,12 @@ KINDS: Final[dict[str, Kind]] = {
             "section",
             "A section's divider, opening a new part of the talk: its title, under its number (talkgenerator adds it).",
             (
-                TextField("title", "the new section's title", 50),
-                TextField("subtitle", "a line under it", 90, optional=True),
+                TextField("title", "the new section's title", 40),
+                TextField("subtitle", "a line under it", 60, optional=True),
             ),
-            (),
+            ("background",),
             _section,
+            optional_images=frozenset({"background"}),
         ),
         Kind(
             "questions",
@@ -1414,7 +1463,7 @@ KINDS: Final[dict[str, Kind]] = {
             "a picture to end on, if it has one (a funny one, or an earlier slide's, called back).",
             (
                 TextField("title", "a question that invites the audience's questions", 30),
-                TextField("subtitle", "a line under it", 80, optional=True),
+                TextField("subtitle", "a line under it", 60, optional=True),
                 TextField(
                     "callback",
                     "the earlier slide whose picture this one shows again, as a callback: what that picture showed, "
@@ -1432,7 +1481,7 @@ KINDS: Final[dict[str, Kind]] = {
             "A timeline of three to five moments, oldest first, each a date and what happened; they appear one by "
             "one, a click each, the last one the punchline.",
             (
-                TextField("title", "the timeline's title", 60),
+                TextField("title", "the timeline's title", TITLE),
                 *_moment(1, "first"),
                 *_moment(2, "second"),
                 *_moment(3, "third"),
@@ -1451,7 +1500,7 @@ KINDS: Final[dict[str, Kind]] = {
             "A pyramid of three or four levels, from its top (the rarest, the punchline) down to its base; they "
             "appear one by one, a click each, from the base up.",
             (
-                TextField("title", "the pyramid's title", 60),
+                TextField("title", "the pyramid's title", TITLE),
                 *_items(
                     "level",
                     30,
@@ -1478,7 +1527,7 @@ KINDS: Final[dict[str, Kind]] = {
             "A funnel of three to five stages, from its widest at the top to its narrowest at the bottom, the "
             "punchline; they appear one by one, a click each.",
             (
-                TextField("title", "the funnel's title", 60),
+                TextField("title", "the funnel's title", TITLE),
                 *_items(
                     "stage",
                     30,
@@ -1504,7 +1553,7 @@ KINDS: Final[dict[str, Kind]] = {
             "A cycle of three to five steps around a circle, each leading to the next, and the last back to the first; "
             "they appear one by one, a click each.",
             (
-                TextField("title", "the cycle's title", 60),
+                TextField("title", "the cycle's title", TITLE),
                 *_items(
                     "step", 24, "the first step", "the second step", "the third step", "a fourth step", "a fifth step"
                 ),
@@ -1519,7 +1568,7 @@ KINDS: Final[dict[str, Kind]] = {
             "A small org chart: who's in charge (the punchline), over two to four people or things, who appear one "
             "by one, a click each, and who's in charge on the click after them.",
             (
-                TextField("title", "the org chart's title", 60),
+                TextField("title", "the org chart's title", TITLE),
                 TextField("boss", "who's in charge: the punchline", 30),
                 *_items(
                     "report",
@@ -1541,7 +1590,7 @@ KINDS: Final[dict[str, Kind]] = {
             "An iceberg: what everyone sees, on its tip above the water, and two or three things under the water that "
             "nobody sees, which appear one by one, a click each.",
             (
-                TextField("title", "the iceberg's title", 60),
+                TextField("title", "the iceberg's title", TITLE),
                 TextField("tip", "what everyone sees, on the tip", 30),
                 *_items(
                     "hidden",
@@ -1570,7 +1619,7 @@ KINDS: Final[dict[str, Kind]] = {
             "A process of three to five steps, each leading to the next by an arrow, from the first to the last, the "
             "punchline; they appear one by one, a click each.",
             (
-                TextField("title", "the process's title", 60),
+                TextField("title", "the process's title", TITLE),
                 *_items(
                     "step",
                     40,
@@ -1583,7 +1632,9 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             (),
             _process,
-            pictures=BoxPictures(_STEPS),
+            # (now and then one or two of its first three steps with a picture, as other diagrams have them; and most
+            # of the time every step, each picture appearing with its step, D80)
+            pictures=BoxPictures(_EVERY_STEP, every=PROCESS_PICTURES),
             picture_first=_DIAGRAM_PICTURE,
             pattern_break=PatternBreak(("step_5", "step_4", "step_3"), {"emoji": 1.0}, "the last step", _DIAGRAM_ODDS),
         ),
@@ -1632,7 +1683,9 @@ KINDS: Final[dict[str, Kind]] = {
             "A fun fact: one absurd fact, stated as certain, under a heading such as 'Did you know?' (talkgenerator "
             "adds it), with a made-up source, and a photo if it has one.",
             (
-                TextField("fact", "the fact: one sentence, stated as certain, that the presenter has to back up", 150),
+                TextField(
+                    "fact", "the fact: one short sentence, stated as certain, that the presenter has to back up", 100
+                ),
                 TextField("source", "a made-up, unreliable source for the fact", 60, optional=True),
             ),
             ("photo",),
@@ -1643,7 +1696,7 @@ KINDS: Final[dict[str, Kind]] = {
             "A made-up method, as an acronym: its letters down the slide, each with the word it stands for; the words "
             "appear one by one, a click each, the last one the punchline.",
             (
-                TextField("title", "the method's title, which names the acronym", 60),
+                TextField("title", "the method's title, which names the acronym", TITLE),
                 TextField(
                     "acronym", "the acronym the words spell: their first letters in order, three to six capitals", 6
                 ),
@@ -1684,8 +1737,9 @@ KINDS: Final[dict[str, Kind]] = {
                     optional=True,
                 ),
             ),
-            (),
+            ("background",),
             _dare,
+            optional_images=frozenset({"background"}),
         ),
         Kind(
             "flowchart",
@@ -1694,7 +1748,7 @@ KINDS: Final[dict[str, Kind]] = {
             "the No).",
             (
                 _OPTIONAL_TITLE,
-                TextField("question", "the yes-or-no question at the top", 70),
+                TextField("question", "the yes-or-no question at the top", 50),
                 TextField("yes_step", "where Yes leads: a short step", 48),
                 TextField("no_step", "where No leads: another short step", 48),
                 TextField("end", "where both steps lead: the same end, the punchline", 48),
@@ -1709,15 +1763,15 @@ KINDS: Final[dict[str, Kind]] = {
         ),
         Kind(
             "tier_list",
-            "A tier list: things ranked in tiers from S (the best) to F (the worst), one to three in a tier; the tiers "
+            "A tier list: things ranked in tiers from S (the best) to F (the worst), one thing in a tier; the tiers "
             "fill one by one, a click each, from the worst up to the S tier, the punchline.",
             (
-                TextField("title", "the tier list's title", 60),
-                TextField("s_tier", "the S tier, the very best: one surprising thing, the punchline", 70),
-                TextField("a_tier", "the A tier: one to three things, separated by |", 70),
-                TextField("b_tier", "the B tier: one to three things, separated by |", 70, optional=True),
-                TextField("c_tier", "the C tier: one to three things, separated by |", 70, optional=True),
-                TextField("f_tier", "the F tier, the worst: one to three things, separated by |", 70, optional=True),
+                TextField("title", "the tier list's title", TITLE),
+                TextField("s_tier", "the S tier, the very best: one surprising thing, the punchline", TIER),
+                TextField("a_tier", "the A tier: one thing", TIER),
+                TextField("b_tier", "the B tier: one thing", TIER, optional=True),
+                TextField("c_tier", "the C tier: one thing", TIER, optional=True),
+                TextField("f_tier", "the F tier, the worst: one thing", TIER, optional=True),
             ),
             (),
             _tier_list,
@@ -1729,7 +1783,7 @@ KINDS: Final[dict[str, Kind]] = {
             "more point hidden among them, the punchline, which a marker highlights on a click (talkgenerator adds "
             "'Continued on next slide' under it).",
             (
-                TextField("title", "the slide's title, as if it were all perfectly clear", 60),
+                TextField("title", "the slide's title, as if it were all perfectly clear", TITLE),
                 TextField(
                     "points",
                     "twelve to sixteen points of dense jargon, separated by |, each a long sentence of fifteen to "
@@ -1752,12 +1806,12 @@ KINDS: Final[dict[str, Kind]] = {
             "lawful to chaotic across and from good to evil down (talkgenerator adds the axes' words), which appear "
             "one by one, a click each, in reading order: chaotic evil, the punchline, last.",
             (
-                TextField("title", "the alignment chart's title", 60),
+                TextField("title", "the alignment chart's title", TITLE),
                 *(
                     TextField(
                         alignment,
                         f"the {alignment.replace('_', ' ')} one, in a few words{_PUNCHLINE.get(alignment, '')}",
-                        60,
+                        32,
                     )
                     for alignment in slides.ALIGNMENTS
                 ),
@@ -1768,30 +1822,44 @@ KINDS: Final[dict[str, Kind]] = {
         ),
         Kind(
             "red_flags",
-            "Red flags: three to five warning signs, each beside a red flag, appearing one by one, a click each, each "
-            "more alarming than the last: the last one is the punchline.",
+            "Red flags: three warning signs, each beside a red flag, appearing one by one, a click each, each more "
+            "alarming than the last: the last one is the punchline.",
             (
-                TextField("title", "the slide's title, which says these are red flags (of what)", 60),
+                TextField("title", "the slide's title, which says these are red flags (of what)", TITLE),
                 *_items(
                     "flag",
-                    90,
-                    "the first red flag",
-                    "the second red flag",
-                    "the third red flag (the punchline, if it's the last)",
-                    "a fourth red flag",
-                    "a fifth red flag",
+                    FLAG,
+                    "the first red flag, in a few words",
+                    "the second red flag, in a few words",
+                    "the third red flag, the punchline, in a few words",
                 ),
             ),
             (),
             _red_flags,
             pattern_break=PatternBreak(_FLAGS, _LIST_BREAKS, "the last red flag"),
         ),
+        # (the user's variation on red flags, 2026-11-13: a green, an orange and a red flag)
+        Kind(
+            "traffic_flags",
+            "A green flag, an orange flag and a red flag, as in dating advice: a good sign, a doubtful one and an "
+            "alarming one, each beside a flag of its colour, appearing one by one, a click each: the red one is the "
+            "punchline.",
+            (
+                TextField("title", "the slide's title, which says what these flags are about", TITLE),
+                TextField("green_flag", "the green flag: a good sign, in a few words", FLAG),
+                TextField("orange_flag", "the orange flag: a doubtful sign, in a few words", FLAG),
+                TextField("red_flag", "the red flag: an alarming sign, the punchline, in a few words", FLAG),
+            ),
+            (),
+            _traffic_flags,
+            pattern_break=PatternBreak(("red_flag",), _LIST_BREAKS, "the red flag"),
+        ),
         Kind(
             "reviews",
             "Made-up reviews, with stars: two or three reviewers' ratings (one to five stars) and what they wrote, "
             "appearing one by one, a click each; the last one, the punchline, is a one-star review most of the time.",
             (
-                TextField("title", "the slide's title, such as what people are saying", 60, optional=True),
+                TextField("title", "the slide's title, such as what people are saying", TITLE, optional=True),
                 *(
                     field
                     for index, which in enumerate(("first", "second", "third"), 1)
@@ -1804,12 +1872,13 @@ KINDS: Final[dict[str, Kind]] = {
         ),
         Kind(
             "error_message",
-            "A fake error message, as if the talk itself crashed: a dialog with a title, an absurd message, an error "
-            "code and two or three buttons, the last one the punchline (talkgenerator adds the warning sign).",
+            "A fake error message, as if the talk itself crashed: a dialog with a title, a short, absurd message, "
+            "maybe an error code, and two or three buttons, the last one the punchline (talkgenerator adds the "
+            "warning sign).",
             (
-                TextField("title", "the dialog's title, as in its title bar", 30, optional=True),
-                TextField("message", "the error message", 120),
-                TextField("code", "an error code, made up and absurdly precise", 24, optional=True),
+                TextField("title", "the dialog's title, as in its title bar", 24, optional=True),
+                TextField("message", "the error message, in a few words, as short as real ones are", 60),
+                TextField("code", "an error code, made up and absurdly precise", 16, optional=True),
                 TextField(
                     "buttons",
                     f"two or three of the dialog's buttons, separated by |, each at most {ERROR_BUTTON} characters: "

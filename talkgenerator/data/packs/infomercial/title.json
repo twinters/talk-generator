@@ -32,14 +32,14 @@
   ],
   "subtitle": [
     "With your host, {presenter}",
-    "{presenter}, inventor of the {gadget}",
-    "Presented by {presenter}, who has never been this excited",
-    "{presenter}, live from a very bright studio",
-    "{presenter}, satisfied customer and now spokesperson",
-    "{presenter}, who uses the {gadget} every single day",
+    "{presenter}\ninventor of the {gadget}",
+    "Presented by {presenter}\nwho has never been this excited",
+    "{presenter}\nlive from a very bright studio",
+    "{presenter}\nsatisfied customer and now spokesperson",
+    "{presenter}\nwho uses the {gadget} every single day",
     "Presented by {presenter}. Operators are standing by!",
-    "{presenter}, Chief Gadget Officer",
+    "{presenter}\nChief Gadget Officer",
     "Starring {presenter} and the {gadget}",
-    "{presenter}, former skeptic"
+    "{presenter}\nformer skeptic"
   ]
 }

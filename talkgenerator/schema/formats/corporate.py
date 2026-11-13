@@ -97,6 +97,7 @@ CORPORATE: Final = Format(
     arc=ARC,
     # (its closer opens Q&A, and sends everyone back to work: D76)
     closer=Closer(said("questions"), said("back_to_work"), presenter, mark=True),
+    scene="office meeting",
 )
 
 

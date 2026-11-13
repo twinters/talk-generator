@@ -28,7 +28,7 @@ An image with a title.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title |
+| `title` | 45 | the slide's title |
 
 Images: `image`
 
@@ -43,7 +43,7 @@ An image filling the slide, with an optional title.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title (or empty, for none) |
+| `title` | 45 | the slide's title (or empty, for none) |
 
 Images: `image`
 
@@ -61,7 +61,7 @@ A big text over a photo.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `text` | 140 | the big text over the photo |
+| `text` | 90 | the big text over the photo: one short sentence |
 
 Images: `background`
 
@@ -77,7 +77,7 @@ Two captioned images side by side.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title (or empty, for none) |
+| `title` | 45 | the slide's title (or empty, for none) |
 | `caption_1` | 40 | the left caption |
 | `caption_2` | 40 | the right caption |
 
@@ -93,7 +93,7 @@ Three captioned images side by side.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title (or empty, for none) |
+| `title` | 45 | the slide's title (or empty, for none) |
 | `caption_1` | 40 | the left caption |
 | `caption_2` | 40 | the middle caption |
 | `caption_3` | 40 | the right caption |
@@ -110,9 +110,9 @@ A made-up historical figure's portrait, next to their quote.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | a title about history |
-| `name` | 60 | a made-up historical figure (never a real person): name and title |
-| `quote` | 160 | what this made-up figure once said |
+| `title` | 45 | a title about history |
+| `name` | 50 | a made-up historical figure (never a real person): their name, a comma, and their title |
+| `quote` | 100 | what this made-up figure once said, in one short sentence |
 
 Images: `portrait`
 
@@ -126,7 +126,7 @@ A line chart of a made-up trend along two odd axes; a second line, if any, draws
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 90 | the chart's claim, as its title, in a few words: what it shows, such as a headline would say it, never 'X vs Y' (the two things it compares go on its axes) |
+| `title` | 60 | the chart's claim, as its title, in a few words: what it shows, such as a headline would say it, never 'X vs Y' (the two things it compares go on its axes) |
 | `x_axis` | 40 | what the chart goes along, such as 'Hours since the meeting started' (or empty, for none) |
 | `y_axis` | 40 | what the line measures, such as 'Times someone said synergy' (or empty, for none) |
 | `shape` | 20 | how the line goes: `rising`, `falling`, `exponential`, `diminishing`, `hockey stick`, `peak`, `crash`, `plateau`, `rollercoaster`, `dip`, `flat` (or empty, for any) |
@@ -147,9 +147,9 @@ A big, made-up number, with what it counts under it: a figure the presenter has 
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title (or empty, for none) |
+| `title` | 45 | the slide's title (or empty, for none) |
 | `number` | 12 | the big number, with its unit if it has one: a percentage, an amount or a count |
-| `label` | 90 | what the number counts or measures, in a few words |
+| `label` | 50 | what the number counts or measures, in a few words |
 | `source` | 60 | a made-up, unreliable source for the number (or empty, for none) |
 
 Images: `background`
@@ -164,7 +164,7 @@ Three or four made-up figures on tiles, as on a dashboard, each a number and wha
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the dashboard's title |
+| `title` | 45 | the dashboard's title |
 | `number_1` | 10 | the first figure's number, with its unit if it has one |
 | `label_1` | 40 | what the first figure measures |
 | `number_2` | 10 | the second figure's number, with its unit if it has one |
@@ -186,13 +186,13 @@ A quiz question for the audience, with three or four options (A to D), which app
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `question` | 90 | the quiz question |
-| `option_a` | 50 | option A (without its letter) |
-| `option_b` | 50 | option B |
-| `option_c` | 50 | option C |
-| `option_d` | 50 | option D (or empty, for none) |
+| `question` | 70 | the quiz question, in one short sentence |
+| `option_a` | 36 | option A (without its letter), in a few words |
+| `option_b` | 36 | option B |
+| `option_c` | 36 | option C |
+| `option_d` | 36 | option D (or empty, for none) |
 | `answer` | 1 | the letter of the right option: `A`, `B`, `C`, `D` |
-| `explanation` | 90 | why that's the answer, shown with it (or empty, for none) |
+| `explanation` | 60 | why that's the answer, shown with it, in a few words (or empty, for none) |
 
 Images: none
 
@@ -206,17 +206,17 @@ A timeline of three to five moments, oldest first, each a date and what happened
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the timeline's title |
+| `title` | 45 | the timeline's title |
 | `date_1` | 12 | the first moment's date (a year, say, or a day) |
-| `event_1` | 40 | what happened at the first moment |
+| `event_1` | 32 | what happened at the first moment, in a few words |
 | `date_2` | 12 | the second moment's date (a year, say, or a day) |
-| `event_2` | 40 | what happened at the second moment |
+| `event_2` | 32 | what happened at the second moment, in a few words |
 | `date_3` | 12 | the third moment's date (a year, say, or a day) |
-| `event_3` | 40 | what happened at the third moment |
+| `event_3` | 32 | what happened at the third moment, in a few words |
 | `date_4` | 12 | the fourth moment's date (a year, say, or a day) (or empty, for none) |
-| `event_4` | 40 | what happened at the fourth moment (or empty, for none) |
+| `event_4` | 32 | what happened at the fourth moment, in a few words (or empty, for none) |
 | `date_5` | 12 | the fifth moment's date (a year, say, or a day) (or empty, for none) |
-| `event_5` | 40 | what happened at the fifth moment (or empty, for none) |
+| `event_5` | 32 | what happened at the fifth moment, in a few words (or empty, for none) |
 
 Images: none
 
@@ -230,7 +230,7 @@ A small org chart: who's in charge (the punchline), over two to four people or t
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the org chart's title |
+| `title` | 45 | the org chart's title |
 | `boss` | 30 | who's in charge: the punchline |
 | `report_1` | 30 | the first one under them |
 | `report_2` | 30 | the second one under them |
@@ -249,7 +249,7 @@ A process of three to five steps, each leading to the next by an arrow, from the
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the process's title |
+| `title` | 45 | the process's title |
 | `step_1` | 40 | the first step |
 | `step_2` | 40 | the second step |
 | `step_3` | 40 | the third step (the last, the punchline, if there are no more) |
@@ -285,7 +285,7 @@ A fun fact: one absurd fact, stated as certain, under a heading such as 'Did you
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `fact` | 150 | the fact: one sentence, stated as certain, that the presenter has to back up |
+| `fact` | 100 | the fact: one short sentence, stated as certain, that the presenter has to back up |
 | `source` | 60 | a made-up, unreliable source for the fact (or empty, for none) |
 
 Images: `photo`
@@ -297,16 +297,16 @@ Images: `photo`
 
 ## `tier_list`
 
-A tier list: things ranked in tiers from S (the best) to F (the worst), one to three in a tier; the tiers fill one by one, a click each, from the worst up to the S tier, the punchline.
+A tier list: things ranked in tiers from S (the best) to F (the worst), one thing in a tier; the tiers fill one by one, a click each, from the worst up to the S tier, the punchline.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the tier list's title |
-| `s_tier` | 70 | the S tier, the very best: one surprising thing, the punchline |
-| `a_tier` | 70 | the A tier: one to three things, separated by \| |
-| `b_tier` | 70 | the B tier: one to three things, separated by \| (or empty, for none) |
-| `c_tier` | 70 | the C tier: one to three things, separated by \| (or empty, for none) |
-| `f_tier` | 70 | the F tier, the worst: one to three things, separated by \| (or empty, for none) |
+| `title` | 45 | the tier list's title |
+| `s_tier` | 28 | the S tier, the very best: one surprising thing, the punchline |
+| `a_tier` | 28 | the A tier: one thing |
+| `b_tier` | 28 | the B tier: one thing (or empty, for none) |
+| `c_tier` | 28 | the C tier: one thing (or empty, for none) |
+| `f_tier` | 28 | the F tier, the worst: one thing (or empty, for none) |
 
 Images: none
 
@@ -320,16 +320,16 @@ Made-up reviews, with stars: two or three reviewers' ratings (one to five stars)
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title, such as what people are saying (or empty, for none) |
+| `title` | 45 | the slide's title, such as what people are saying (or empty, for none) |
 | `stars_1` | 1 | how many stars the first reviewer gives, from 1 to 5: `1`, `2`, `3`, `4`, `5` |
-| `review_1` | 110 | what the first reviewer wrote |
-| `reviewer_1` | 30 | who the first reviewer is: a made-up first name, and a detail (or empty, for none) |
+| `review_1` | 70 | what the first reviewer wrote, in one short sentence |
+| `reviewer_1` | 30 | who the first reviewer is: a real first name, a comma, and a detail (or empty, for none) |
 | `stars_2` | 1 | how many stars the second reviewer gives, from 1 to 5: `1`, `2`, `3`, `4`, `5` |
-| `review_2` | 110 | what the second reviewer wrote |
-| `reviewer_2` | 30 | who the second reviewer is: a made-up first name, and a detail (or empty, for none) |
+| `review_2` | 70 | what the second reviewer wrote, in one short sentence |
+| `reviewer_2` | 30 | who the second reviewer is: a real first name, a comma, and a detail (or empty, for none) |
 | `stars_3` | 1 | how many stars the third reviewer gives, from 1 to 5: `1`, `2`, `3`, `4`, `5` (or empty, for any) |
-| `review_3` | 110 | what the third reviewer wrote (or empty, for none) |
-| `reviewer_3` | 30 | who the third reviewer is: a made-up first name, and a detail (or empty, for none) |
+| `review_3` | 70 | what the third reviewer wrote, in one short sentence (or empty, for none) |
+| `reviewer_3` | 30 | who the third reviewer is: a real first name, a comma, and a detail (or empty, for none) |
 
 Images: none
 

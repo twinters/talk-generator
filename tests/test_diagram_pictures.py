@@ -46,7 +46,10 @@ TEXTS = {
     "funnel": {"title": "Funnel", "stage_1": "Everyone", "stage_2": "Some", "stage_3": "Me"},
     "cycle": {"title": "Cycle", "step_1": "Wake", "step_2": "Coffee", "step_3": "Panic", "step_4": "Nap"},
     "iceberg": {"title": "Iceberg", "tip": "Cats", "hidden_1": "Plots", "hidden_2": "Lasers"},
-    "process": {"title": "Method", "step_1": "Ask", "step_2": "Guess", "step_3": "Publish"},
+    "process": {
+        "title": "Method",
+        **{f"step_{index}": step for index, step in enumerate(("Ask", "Guess", "Publish", "Nap", "Profit"), 1)},
+    },
     "flowchart": {"question": "Hungry?", "yes_step": "Eat cake", "no_step": "Eat cake anyway", "end": "Nap"},
 }
 
@@ -88,11 +91,13 @@ def test_a_diagram_has_pictures_in_some_of_its_boxes_now_and_then(kind):
     pictured = [version for version in varied if version.pictures]
     # (a matrix's pictures go in its named quadrants: the variant with names in them)
     share = len(pictured) / len(varied)
-    expected = pictures.odds * (0.4 if kind == "matrix" else 1)
+    # (and a process has a picture in every step most of the time, each appearing with it: D80)
+    expected = pictures.every + (1 - pictures.every) * pictures.odds * (0.4 if kind == "matrix" else 1)
     assert expected - 0.08 <= share <= expected + 0.08
-    assert all(
-        len(version.pictures) <= pictures.most and set(version.pictures) <= set(pictures.boxes) for version in varied
-    )
+    every = [version for version in pictured if len(version.pictures) > pictures.most]
+    assert all(set(version.pictures) <= set(pictures.boxes) for version in varied)
+    assert all(set(version.pictures) == set(pictures.boxes) - version.omit for version in every)
+    assert (len(every) / len(varied) > pictures.every - 0.08) if pictures.every else not every
     assert any(len(version.pictures) == 2 for version in pictured) == (pictures.most == 2)
     for version in pictured[:5]:
         slots = [BoxPictures.slot(box) for box in version.pictures]
@@ -337,14 +342,15 @@ def test_a_trend_has_a_picture_by_its_named_point_now_and_then():
 
 
 @pytest.mark.parametrize("second_line", ["", "My cat"])
-def test_the_picture_comes_on_a_click_of_its_own(second_line, picture):
+def test_the_picture_is_there_from_the_start(second_line, picture):
+    # (the odd picture is what the presenter starts explaining: the user found it came too late at the end, D80)
     slide = _trend({"event_picture": picture()}, second_line=second_line).to_deck_slide()
     shown = slide.element("point_picture")
-    assert isinstance(shown, ImageElement) and shown.appears_on_click == (2 if second_line else 1)
-    assert reveal.clicks(slide) == shown.appears_on_click
+    assert isinstance(shown, ImageElement) and shown.appears_on_click is None
+    assert reveal.clicks(slide) == (1 if second_line else 0)  # (the second line's click, if it has one)
     theme = themes.pick("clean keynote", random_util.Rng(2))
     (placed,) = engine.lay_out(Deck(generator="test", slides=(slide,)), theme).slides
-    assert placed.element("point_picture").appears_on_click == shown.appears_on_click  # (after the second line's)
+    assert placed.element("point_picture").appears_on_click is None
     # Without a named point, there's no picture
     assert _trend({"event_picture": picture()}, event="").to_deck_slide().element("point_picture") is None
 
@@ -402,13 +408,13 @@ def test_a_pinned_trend_has_its_plot_where_every_renderer_has_it(picture):
     assert not frame.chart._chartSpace.xpath(".//c:plotArea/c:layout/c:manualLayout")
 
 
-def test_a_classic_trend_shows_its_picture_on_a_click_after_its_second_line(picture):
+def test_a_classic_trend_shows_its_picture_from_the_start_and_its_second_line_on_a_click(picture):
     slide = _trend({"event_picture": picture()}, second_line="My cat").to_deck_slide()
     presentation = render_pptx(Deck(generator="test", slides=(slide,)))
     ppt_slide = presentation.slides[0]
     assert len([shape for shape in ppt_slide.shapes if shape.shape_type == 13]) == 1
     clicks = ppt_slide.element.xpath(".//p:timing//p:cond[@delay='indefinite']")
-    assert len(clicks) == 2  # (the second line, then the picture)
+    assert len(clicks) == 1  # (the second line; the picture is there from the start: D80)
 
 
 def test_axis_top_is_a_round_number_above_the_largest_value():
@@ -449,4 +455,4 @@ def test_a_classic_trend_has_a_picture_by_its_moment_now_and_then(monkeypatch, p
     generator = slide_generator_types.ChartSlideGenerator(lambda context: pictured[0])
     slide, generated = generator.generate_slide({"seed": "cats"}, (set(), 0))
     shown = slide.to_deck_slide().element("point_picture")
-    assert isinstance(shown, ImageElement) and shown.appears_on_click == 1
+    assert isinstance(shown, ImageElement) and shown.appears_on_click is None  # (there from the start: D80)

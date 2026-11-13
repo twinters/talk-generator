@@ -80,6 +80,17 @@ _SERIES_BUILD: Final = (
     '<p:bldGraphic spid="{spid}" grpId="0"><p:bldSub><a:bldChart bld="series" animBg="0"/></p:bldSub></p:bldGraphic>'
 )
 
+# A chart's category (a ranking's bar, with its name: D80), as an animation target (seriesIdx -3: every series; bldStep:
+# a category at a time), and the chart built so, its background (the axes and their titles) there from the start
+_CATEGORY_TARGET: Final = (
+    '<p:tgtEl><p:spTgt spid="{spid}"><p:graphicEl>'
+    '<a:chart seriesIdx="-3" categoryIdx="{category}" bldStep="category"/>'
+    "</p:graphicEl></p:spTgt></p:tgtEl>"
+)
+_CATEGORY_BUILD: Final = (
+    '<p:bldGraphic spid="{spid}" grpId="0"><p:bldSub><a:bldChart bld="category" animBg="0"/></p:bldSub></p:bldGraphic>'
+)
+
 # SHAPES
 
 # The shape appears, fading in in half a second (PowerPoint's preset 10, "Fade")
@@ -146,6 +157,27 @@ def reveal_chart_series(slide: Any, chart_frame: Any, series_count: int) -> None
         _sequence(timing).append(_parsed(_STEP.format(start=_ON_A_CLICK, effects=_WIPE_IN.format(target=target))))
     _builds(timing).append(_parsed(_SERIES_BUILD.format(spid=chart_frame.shape_id)))
     _settle(slide)
+
+
+def reveal_chart_categories(slide: Any, chart_frame: Any, category_count: int) -> None:
+    """Have the chart's categories (a ranking's bars) appear on clicks, one by one, from the first, each wiping in
+    from the left as it grows (D80)."""
+    if category_count < 1:
+        return
+    timing = _timing(slide)
+    for category in range(category_count):
+        target = _CATEGORY_TARGET.format(spid=chart_frame.shape_id, category=category)
+        _sequence(timing).append(_parsed(_STEP.format(start=_ON_A_CLICK, effects=_WIPE_IN.format(target=target))))
+    _builds(timing).append(_parsed(_CATEGORY_BUILD.format(spid=chart_frame.shape_id)))
+    _settle(slide)
+
+
+def reveal_chart(slide: Any, chart_frame: Any, spec: Any) -> None:
+    """Have the chart's parts appear on clicks as its spec says (its series after the first, or its categories)."""
+    if spec.reveal == "series":
+        reveal_chart_series(slide, chart_frame, len(spec.series))
+    elif spec.reveal == "categories":
+        reveal_chart_categories(slide, chart_frame, len(spec.categories))
 
 
 def reveal_shapes(slide: Any, shapes: Sequence[Any]) -> None:

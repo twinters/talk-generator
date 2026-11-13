@@ -19,9 +19,9 @@
     "Eventually"
   ],
   "milestone": [
-    "Launch {seed.bare} 3.0",
+    "Ship {seed.bare} 3.0",
     "Align on the roadmap",
-    "Hire a {seed.bare} lead",
+    "Hire {seed.one}",
     "Open a second office",
     "Migrate to the new system",
     "Pilot with two customers",
@@ -36,7 +36,7 @@
     "Start the roadmap",
     "Another reorg",
     "Revisit this roadmap",
-    "Become a {seed.bare} company",
+    "Become {seed.one}",
     "World domination, phase one"
   ],
   "process_title": [

@@ -55,7 +55,7 @@
     "y = {seed.bare} × x + error (the error does most of the work)",
     "P({seed.bare}, given coffee) > P(coffee, given {seed.bare})",
     "Success = (grants × {seed.bare}) / reviewers²",
-    "Everything = {seed.bare} + {seed.bare}² + {seed.bare}³ (it converges, trust us)",
+    "Everything = {seed.bare} + {seed.bare}² (it converges, trust us)",
     "f({seed.bare}) = f({seed.bare}) + 1",
     "Impact = citations × {seed.bare} ÷ sleep"
   ],

@@ -1,9 +1,10 @@
 {
   "format": "infomercial",
   "about": "The classic texts of late-night TV infomercials (the infomercial schema): a grammar per part of its arc, whose rules are lists of templates (see talkgenerator.sources.packs and talkgenerator.schema.formats.infomercial)",
-  "version": 1,
+  "version": 2,
   "versions": {
-    "1": "2026-11-12: the first texts of infomercials, a part of the arc a grammar: the title, the problem, the gadget, its demonstration, the testimonials, the fine print, the price, 'But wait, there's more!' and the call to order now, and the free slides' provocations (D79)"
+    "1": "2026-11-12: the first texts of infomercials, a part of the arc a grammar: the title, the problem, the gadget, its demonstration, the testimonials, the fine print, the price, 'But wait, there's more!' and the call to order now, and the free slides' provocations (D79)",
+    "2": "2026-11-13: shorter texts for the lower field limits (D80): the fine print's clauses, the testimonials, the order dares, the titles over the gadget, and the price's and 'But wait!' labels; and the presenter's job on a line of its own under their name"
   },
   "slots": {
     "title.talk_title": {"variables": ["seed", "gadget"], "field": "title.title"},

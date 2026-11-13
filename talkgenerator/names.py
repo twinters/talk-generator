@@ -63,6 +63,9 @@ class Style:
     # models make a pun instead of a name that only fits
     plays_on: str = ""
     default: bool = True  # whether talks that don't say which styles they may have get it
+    # How likely the talk's dice pick it, against the others (times its persona's nudge): names that could be a real
+    # person's come first (D80)
+    weight: float = 1.0
 
 
 STYLES: Final[dict[str, Style]] = {
@@ -72,27 +75,30 @@ STYLES: Final[dict[str, Style]] = {
             PUN,
             "Pun names",
             "a pun on the topic, such as Prof. Anna Tomy for a talk on medicine",
-            "a made-up name for the presenter that, read aloud, sounds like a word or phrase about the talk's topic "
-            "(a pun on the whole name, not just a surname that fits)",
+            "a made-up name for the presenter that could be a real person's, if an unlikely one: a real first name "
+            "(an unusual one is fine) and a surname that could be real, which together, read aloud, sound a little "
+            "like a word or phrase about the talk's topic; subtle, never words that are no names",
             "the word or phrase about the talk's topic that the presenter's name will sound like",
         ),
         Style(
             FUN_SURNAME,
             "Fun surnames",
             "an ordinary first name with a surname that fits the topic too well, such as Linda Hivesworth for bees",
-            "a made-up name for the presenter: an ordinary first name with a surname that fits the talk's topic a "
-            "little too well",
+            "a made-up name for the presenter: an ordinary first name with a surname that could be real and fits "
+            "the talk's topic a little too well",
             "the word about the talk's topic that the presenter's surname will be made from",
+            weight=1.5,
         ),
         Style(
             FAMOUS_PUN,
             "Famous-name puns",
             "a historical figure's name bent to fit the topic, such as Albert Einstone for geology",
             "a made-up name for the presenter: the name of one famous person that everyone knows, from history or "
-            "today, with a part of it changed into a word about the talk's topic, so that both still show; never "
-            "the real name as it is, and never a dictator's or a criminal's",
+            "today, with a part of it changed into a word about the talk's topic, so that both still show and it "
+            "still reads as a name; never the real name as it is, and never a dictator's or a criminal's",
             "the famous person whose name the presenter's name will bend, and the word about the talk's topic "
             "that goes into it",
+            weight=0.5,
         ),
         Style(CLASSIC, "Random names", "a first and a last name at random, as in 2019", "", default=False),
     )
@@ -139,11 +145,11 @@ class Nudge:
 
 
 def _pick_style(options: Sequence[str], nudge: Nudge | None) -> str:
-    """One of the styles, as the current random stream picks it: by the nudge's weights, if there's a nudge, and
-    else each as likely (as before there were personas)."""
-    if nudge is None or not nudge.weights:
-        return random_util.choice(options)
-    picked = random_util.weighted_random([(nudge.weight(style), style) for style in options])
+    """One of the styles, as the current random stream picks it: by their weights (names that could be a real
+    person's first: D80), times the nudge's, if there's a nudge."""
+    picked = random_util.weighted_random(
+        [(STYLES[style].weight * (nudge.weight(style) if nudge is not None else 1.0), style) for style in options]
+    )
     return picked if picked is not None else options[-1]
 
 

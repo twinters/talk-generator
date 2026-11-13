@@ -89,6 +89,7 @@ BOOK_REPORT: Final = Format(
     arc=ARC,
     # (its closer says "The End", and asks whether the pupil can sit down now: D76)
     closer=Closer(said("the_end"), said("sit_down"), presenter),
+    scene="school classroom book",
 )
 
 

@@ -99,7 +99,8 @@ def test_every_formats_closer_says_it_in_the_talks_language(code):
         "note": "Ann Example",
         "mark": "?",
     }
-    assert made["pitch"] == {"title": words.lets_talk, "subtitle": "ann@penguinly.com", "note": "Ann Example"}
+    contact = closers.contact("Ann Example", "Penguinly: Uber for Penguins", "penguins", code)  # (in its language)
+    assert made["pitch"] == {"title": words.lets_talk, "subtitle": contact, "note": "Ann Example"}
     assert made["corporate"] == {
         "title": words.questions,
         "subtitle": words.back_to_work,
@@ -166,17 +167,27 @@ def test_a_closer_without_a_presenter_still_says_it_is_over():
     assert _said(FORMATS["academic"], presenter="  ")["title"] == "Questions?"
 
 
-def test_a_pitchs_contact_line_is_the_presenters_first_name_at_its_startups_domain():
-    assert closers.contact("Prof. Anna Tomy", "Penguinly: Uber for Penguins", "penguins") == "anna@penguinly.com"
-    assert closers.contact("Dr. Émile Zola", "Pingüino.ai: Penguins for All", "pinguinos") == "emile@pinguino.ai"
-    assert closers.contact("Ann Example", "Penguin Labs: Penguins, Scaled", "penguins") == "ann@penguinlabs.com"
-    # (a name without a first name: its surname, whole, as a Dutch kindergarten teacher's "Juf Van Wielen")
-    assert closers.contact("Juf Van Wielen", "Trapzo: Fietsen Zonder Trappen", "fietsen") == "vanwielen@trapzo.com"
+def test_a_pitchs_contact_line_is_the_presenters_first_name_at_a_made_up_domain_of_its_startup():
+    # (a domain that reads as made up, of the startup's name and words no real company's domain has: D80)
+    assert closers.contact("Prof. Anna Tomy", "Penguinly: Uber for Penguins", "penguins") == (
+        "anna@real-penguinly-not-a-scam.net"
+    )
+    assert closers.contact("Dr. Émile Zola", "Pingüino.ai: Penguins for All", "pinguinos", "fr") == (
+        "emile@pas-une-arnaque-pinguinoai.biz"
+    )
+    assert closers.contact("Ann Example", "Penguin Labs: Penguins, Scaled", "penguins").startswith("ann@")
+    assert "penguinlabs" in closers.contact("Ann Example", "Penguin Labs: Penguins, Scaled", "penguins")
+    # (a name without a first name: its surname, whole, as a Dutch kindergarten teacher's "Juf Van Wielen"; in Dutch)
+    assert closers.contact("Juf Van Wielen", "Trapzo: Fietsen Zonder Trappen", "fietsen", "nl") == (
+        "vanwielen@trapzo-is-echt-een-bedrijf.biz"
+    )
     assert closers.first_name("Dr. Smith") == "smith" and closers.first_name("Prof.") is None
     # (a title that names no startup: the startup a classic pitch names after its topic, and no name: hello@)
-    named = formats.startup("time travel").lower().replace(" ", "")
-    assert closers.contact(None, "Why Time Travel Matters", "time travel").startswith("hello@" + named.split(".")[0])
-    assert re.fullmatch(r"hello@[a-z0-9]+\.[a-z]+", closers.contact(None, None, "time travel"))
+    named = re.sub(r"[^a-z0-9]", "", formats.startup("time travel").lower())
+    assert named in closers.contact(None, "Why Time Travel Matters", "time travel")
+    assert re.fullmatch(r"hello@[a-z0-9-]+\.(biz|info|net)", closers.contact(None, None, "time travel"))
+    for language in languages.LANGUAGES:  # (every talk language has its own)
+        assert "@" in closers.contact("Ann", "Penguinly: Uber for Penguins", "penguins", language)
 
 
 def test_a_keynotes_closer_names_the_product_its_title_names():

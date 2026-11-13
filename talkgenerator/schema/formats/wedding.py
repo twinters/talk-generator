@@ -86,6 +86,7 @@ WEDDING: Final = Format(
     arc=ARC,
     # (its closer is the toast's last words, to the happy couple: D76)
     closer=Closer(said("happy_couple"), presenter),
+    scene="wedding",
 )
 
 

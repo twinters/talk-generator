@@ -104,6 +104,7 @@ ACADEMIC: Final = Format(
     arc=ARC,
     # (its closer asks for the questions, with thanks: D76)
     closer=Closer(said("questions"), said("attention"), presenter, mark=True),
+    scene="lecture hall",
 )
 
 

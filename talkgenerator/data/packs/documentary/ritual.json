@@ -1,7 +1,7 @@
 {
   "ancient": [
-    "Every spring, they gather for an ancient ritual.",
-    "The ritual has not changed in a thousand years.",
+    "Each spring, they meet for an ancient ritual.",
+    "The ritual: unchanged for a thousand years.",
     "Watch closely. This is the courtship dance.",
     "The great migration begins.",
     "Once a year, the whole colony meets here.",
@@ -11,7 +11,7 @@
   ],
   "dance_title": [
     "The courtship dance",
-    "How {species} makes friends",
+    "{species} makes friends",
     "The ancient greeting",
     "The ritual, step by step",
     "The welcome ceremony",

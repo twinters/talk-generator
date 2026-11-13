@@ -2,20 +2,20 @@
   "cover_title": [
     "My Book Report: {book}",
     "The book: {book}",
-    "{book}, by {author}",
+    "A book by {author}",
     "Today's book: {book}",
-    "I read {book}. Most of it.",
-    "{book} (the cover is the best part)",
-    "This is the book. It is called {book}."
+    "I read {book}. Mostly.",
+    "{book} (cover: 10/10)",
+    "It is called {book}."
   ],
   "cover_full_title": [
     "{book}",
-    "{book}, by {author}",
-    "{book}. Judge it by its cover.",
+    "{author}'s masterpiece",
+    "Judge it by its cover.",
     "The cover of {book}",
-    "{book}. I picked it for the cover.",
+    "{book}. Great cover.",
     "Behold: {book}",
-    "{book}. Front cover. Very shiny."
+    "{book}. Very shiny."
   ],
   "numbers_title": [
     "The book in numbers",

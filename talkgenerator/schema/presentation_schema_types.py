@@ -166,6 +166,7 @@ ted_schema = schemas.register(
             "wall_of_text": 1,
             "alignment_chart": 1,
             "red_flags": 1,
+            "traffic_flags": 1,
             "reviews": 1,
             "error_message": 1,
             "exhibit": 2,

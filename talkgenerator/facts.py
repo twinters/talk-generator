@@ -80,13 +80,13 @@ HOWTO_LONGEST: Final = 90  # characters in a wikiHow how-to's title, at most ("H
 
 # What a slide of each kind does with its fact, as the request says it on the slide's line
 _ASKS: Final = {
-    "fun_fact": "Build it on this real fact: keep what it says true, and add an absurd twist of your own, so that the "
-    "slide says more than the fact",
+    "fun_fact": "Build it on this real fact: keep what it says true, in a few words of your own, with an absurd twist "
+    "of your own, all in one short sentence (the presenter reads it at a glance)",
     "quiz": "Ask about this real fact: what it says is the right option's, and the other options are made up",
     "big_number": "Start from this real fact: its number can be the big one, with an absurd twist in what it counts",
     "timeline": "Put this real moment among the made-up ones, in its place by year (oldest first), with its year "
     "and a few words of your own",
-    "history_quote": "The made-up figure lived through this real moment, or speaks of it",
+    "history_quote": "The made-up figure lived through this real moment, or speaks of it, in a few words",
     "history": "One of the moments is this real one, in a few words of your own",
     # (flavour texts: see talkgenerator.sources.flavour)
     "dare": "Dare the presenter to tell this real dad joke, word for word, and say how (a voice, a pause, a pose)",
@@ -98,12 +98,12 @@ _ASKS: Final = {
 # What a slide does with a coincidence (D73): two real things of the same year, the topic's and another, side by side
 # as if one caused the other
 _COINCIDENCE_ASKS: Final = {
-    "fun_fact": "Build it on these two real things that happened in the same year: keep both true, and state as "
-    "certain that the first caused the second",
+    "fun_fact": "Build it on these two real things that happened in the same year: keep both true, in a few words "
+    "each, and state as certain that the first caused the second, all in one short sentence",
     "timeline": "Put these two real moments of the same year among the made-up ones, next to each other, as if the "
     "first caused the second, each with its year and a few words of your own",
     "history_quote": "The made-up figure lived through these two real moments of the same year, and is sure that the "
-    "first caused the second",
+    "first caused the second, in a few words",
     "history": "Its two moments are these two real ones of the same year, in a few words of your own each, the second "
     "as if the first caused it",
 }

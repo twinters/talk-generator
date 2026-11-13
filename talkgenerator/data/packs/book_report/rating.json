@@ -22,11 +22,11 @@
   "rating_label": [
     "Would read again if my mum made me",
     "Two points off: not enough pictures",
-    "Would recommend to anyone who likes {seed.generic}",
+    "Would recommend to fans of {seed.generic}",
     "It lost a point for being so long",
     "Better than the film. I didn't see the film.",
     "The cover alone gets a ten",
-    "Minus one point because the dog in it never comes back",
+    "Minus one point: the dog in it never comes back",
     "It would be a ten, but it made me cry on the bus",
     "Would have been higher with a dragon in it",
     "Half a point off for all the long words"
@@ -45,11 +45,11 @@
     "What others said",
     "Reviews (I asked around)",
     "My class's reviews",
-    "What people say about {book}"
+    "Reviews of {book}"
   ],
   "review_good": [
     "I didn't read it but the cover is great.",
-    "Best book about {seed.generic} I ever read. Also the only one.",
+    "Best book on {seed.generic} I ever read. Also the only one.",
     "It made me want my own {seed.bare}.",
     "Good book. I read it twice because I lost my place.",
     "My mum read it to me. She did all the voices.",

@@ -30,7 +30,7 @@ An image with a title.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title |
+| `title` | 45 | the slide's title |
 
 Images: `image`
 
@@ -45,7 +45,7 @@ An image filling the slide, with an optional title.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title (or empty, for none) |
+| `title` | 45 | the slide's title (or empty, for none) |
 
 Images: `image`
 
@@ -61,7 +61,7 @@ A big text over a photo.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `text` | 140 | the big text over the photo |
+| `text` | 90 | the big text over the photo: one short sentence |
 
 Images: `background`
 
@@ -77,7 +77,7 @@ Two captioned images side by side.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title (or empty, for none) |
+| `title` | 45 | the slide's title (or empty, for none) |
 | `caption_1` | 40 | the left caption |
 | `caption_2` | 40 | the right caption |
 
@@ -95,7 +95,7 @@ Three captioned images side by side.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title (or empty, for none) |
+| `title` | 45 | the slide's title (or empty, for none) |
 | `caption_1` | 40 | the left caption |
 | `caption_2` | 40 | the middle caption |
 | `caption_3` | 40 | the right caption |
@@ -112,9 +112,9 @@ A made-up historical figure's portrait, next to their quote.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | a title about history |
-| `name` | 60 | a made-up historical figure (never a real person): name and title |
-| `quote` | 160 | what this made-up figure once said |
+| `title` | 45 | a title about history |
+| `name` | 50 | a made-up historical figure (never a real person): their name, a comma, and their title |
+| `quote` | 100 | what this made-up figure once said, in one short sentence |
 
 Images: `portrait`
 
@@ -128,8 +128,8 @@ A pie chart of made-up shares.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `question` | 90 | the question the pie chart answers, as its title |
-| `categories` | 120 | two to five answers, separated by \| |
+| `question` | 60 | the question the pie chart answers, as its title |
+| `categories` | 80 | two to five short answers, separated by \| |
 
 Images: none
 
@@ -143,7 +143,7 @@ A line chart of a made-up trend along two odd axes; a second line, if any, draws
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 90 | the chart's claim, as its title, in a few words: what it shows, such as a headline would say it, never 'X vs Y' (the two things it compares go on its axes) |
+| `title` | 60 | the chart's claim, as its title, in a few words: what it shows, such as a headline would say it, never 'X vs Y' (the two things it compares go on its axes) |
 | `x_axis` | 40 | what the chart goes along, such as 'Hours since the meeting started' (or empty, for none) |
 | `y_axis` | 40 | what the line measures, such as 'Times someone said synergy' (or empty, for none) |
 | `shape` | 20 | how the line goes: `rising`, `falling`, `exponential`, `diminishing`, `hockey stick`, `peak`, `crash`, `plateau`, `rollercoaster`, `dip`, `flat` (or empty, for any) |
@@ -160,12 +160,12 @@ Images: none
 
 ## `chart_bars`
 
-A ranking in bars, whose last bar, the punchline, wins by far.
+A ranking in bars, which appear one by one, a click each, from the top down: the first ones tiny, and the last one, the punchline, wins by far.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 90 | the question the ranking answers, as its title |
-| `bars` | 160 | three to six things (only their names), separated by \|, the last one the punchline |
+| `title` | 45 | the question the ranking answers, as its title |
+| `bars` | 100 | three or four things (only their names), separated by \|: ordinary ones first, the last one the punchline |
 | `value_axis` | 40 | what the bars measure, such as 'Danger level' (or empty, for none) |
 
 Images: none
@@ -180,7 +180,7 @@ A 2×2 matrix: two axes of everyday opposites that cross in the middle, with a w
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the matrix's title |
+| `title` | 45 | the matrix's title |
 | `x_left` | 24 | the left end of the axis along the bottom: a word or two |
 | `x_right` | 24 | the right end of that axis, a word or two: the opposite of the left end |
 | `y_bottom` | 24 | the bottom end of the axis going up: a word or two |
@@ -208,9 +208,9 @@ A big, made-up number, with what it counts under it: a figure the presenter has 
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title (or empty, for none) |
+| `title` | 45 | the slide's title (or empty, for none) |
 | `number` | 12 | the big number, with its unit if it has one: a percentage, an amount or a count |
-| `label` | 90 | what the number counts or measures, in a few words |
+| `label` | 50 | what the number counts or measures, in a few words |
 | `source` | 60 | a made-up, unreliable source for the number (or empty, for none) |
 
 Images: `background`
@@ -227,7 +227,7 @@ Three or four made-up figures on tiles, as on a dashboard, each a number and wha
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the dashboard's title |
+| `title` | 45 | the dashboard's title |
 | `number_1` | 10 | the first figure's number, with its unit if it has one |
 | `label_1` | 40 | what the first figure measures |
 | `number_2` | 10 | the second figure's number, with its unit if it has one |
@@ -250,10 +250,10 @@ A made-up social media post with a photo: who posted it, and what they wrote (ta
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title (or empty, for none) |
-| `author` | 30 | the made-up name of who posted it (never a real person) |
+| `title` | 45 | the slide's title (or empty, for none) |
+| `author` | 30 | the made-up name of who posted it: a real first name and a surname |
 | `handle` | 24 | their made-up username, without the @ |
-| `text` | 160 | the post: what they wrote, without hashtags or emoji |
+| `text` | 90 | the post: what they wrote, in one or two short sentences, without hashtags or emoji |
 
 Images: `photo`
 
@@ -268,8 +268,8 @@ A made-up news story with a photo, as breaking news on television or on a newspa
 | Text | At most | What to write |
 | --- | --- | --- |
 | `outlet` | 30 | the made-up name of the newspaper or the channel |
-| `headline` | 90 | the headline |
-| `subheadline` | 100 | a line under the headline, with more of the story (or empty, for none) |
+| `headline` | 70 | the headline |
+| `subheadline` | 70 | a line under the headline, with more of the story (or empty, for none) |
 
 Images: `photo`
 
@@ -283,17 +283,17 @@ A timeline of three to five moments, oldest first, each a date and what happened
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the timeline's title |
+| `title` | 45 | the timeline's title |
 | `date_1` | 12 | the first moment's date (a year, say, or a day) |
-| `event_1` | 40 | what happened at the first moment |
+| `event_1` | 32 | what happened at the first moment, in a few words |
 | `date_2` | 12 | the second moment's date (a year, say, or a day) |
-| `event_2` | 40 | what happened at the second moment |
+| `event_2` | 32 | what happened at the second moment, in a few words |
 | `date_3` | 12 | the third moment's date (a year, say, or a day) |
-| `event_3` | 40 | what happened at the third moment |
+| `event_3` | 32 | what happened at the third moment, in a few words |
 | `date_4` | 12 | the fourth moment's date (a year, say, or a day) (or empty, for none) |
-| `event_4` | 40 | what happened at the fourth moment (or empty, for none) |
+| `event_4` | 32 | what happened at the fourth moment, in a few words (or empty, for none) |
 | `date_5` | 12 | the fifth moment's date (a year, say, or a day) (or empty, for none) |
-| `event_5` | 40 | what happened at the fifth moment (or empty, for none) |
+| `event_5` | 32 | what happened at the fifth moment, in a few words (or empty, for none) |
 
 Images: none
 
@@ -307,7 +307,7 @@ A funnel of three to five stages, from its widest at the top to its narrowest at
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the funnel's title |
+| `title` | 45 | the funnel's title |
 | `stage_1` | 30 | the widest stage, at the top |
 | `stage_2` | 30 | the next stage, narrower |
 | `stage_3` | 30 | the next stage (the narrowest, if there are no more) |
@@ -326,7 +326,7 @@ A cycle of three to five steps around a circle, each leading to the next, and th
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the cycle's title |
+| `title` | 45 | the cycle's title |
 | `step_1` | 24 | the first step |
 | `step_2` | 24 | the second step |
 | `step_3` | 24 | the third step |
@@ -345,7 +345,7 @@ A small org chart: who's in charge (the punchline), over two to four people or t
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the org chart's title |
+| `title` | 45 | the org chart's title |
 | `boss` | 30 | who's in charge: the punchline |
 | `report_1` | 30 | the first one under them |
 | `report_2` | 30 | the second one under them |
@@ -364,7 +364,7 @@ A process of three to five steps, each leading to the next by an arrow, from the
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the process's title |
+| `title` | 45 | the process's title |
 | `step_1` | 40 | the first step |
 | `step_2` | 40 | the second step |
 | `step_3` | 40 | the third step (the last, the punchline, if there are no more) |
@@ -400,7 +400,7 @@ A fun fact: one absurd fact, stated as certain, under a heading such as 'Did you
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `fact` | 150 | the fact: one sentence, stated as certain, that the presenter has to back up |
+| `fact` | 100 | the fact: one short sentence, stated as certain, that the presenter has to back up |
 | `source` | 60 | a made-up, unreliable source for the fact (or empty, for none) |
 
 Images: `photo`
@@ -415,7 +415,7 @@ A made-up method, as an acronym: its letters down the slide, each with the word 
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the method's title, which names the acronym |
+| `title` | 45 | the method's title, which names the acronym |
 | `acronym` | 6 | the acronym the words spell: their first letters in order, three to six capitals |
 | `word_1` | 24 | the word the first letter stands for (one word for one letter) |
 | `word_2` | 24 | the second letter's word |

@@ -1074,33 +1074,41 @@ karaoke_slide_generators = _register(
             ),
         ),
         _drawn(
-            slide_texts.generate_dare,
+            # (over a picture of what it's about, now and then: D80)
+            slide_texts.with_backdrop(
+                slide_texts.generate_dare, cg.words_backdrop_generator, slide_texts.DARE_PICTURES
+            ),
             slides.DareSlide,
             _middle(0.6),
             ["dare"],
             "Dare",
             Recipe(
                 "dare",
+                (cg.words_backdrop_generator,),
                 brief="A dare, halfway through the talk",
                 # (a real challenge for the presenter, or the audience joining in, from the user's look at the dares of
                 # 2026-11-09, D65; and in an English talk, now and then a real dad joke to tell: see
                 # talkgenerator.facts)
-                variants=(
-                    Variant(
-                        2,
-                        frozenset({"audience"}),
-                        "a real challenge for the presenter, which they have to keep up from now on: the audience "
-                        "will watch them try",
-                        facts=False,
+                variants=pictured(
+                    (
+                        Variant(
+                            2,
+                            frozenset({"audience"}),
+                            "a real challenge for the presenter, which they have to keep up from now on: the audience "
+                            "will watch them try",
+                            facts=False,
+                        ),
+                        Variant(
+                            2,
+                            frozenset({"dare"}),
+                            "for the whole audience: the presenter gets everyone to join in, as a show of hands or a call "
+                            "and response",
+                            facts=False,
+                        ),
+                        Variant(1, frozenset({"audience"}), "for the presenter, on the next slide or from now on"),
                     ),
-                    Variant(
-                        2,
-                        frozenset({"dare"}),
-                        "for the whole audience: the presenter gets everyone to join in, as a show of hands or a call "
-                        "and response",
-                        facts=False,
-                    ),
-                    Variant(1, frozenset({"audience"}), "for the presenter, on the next slide or from now on"),
+                    "background",
+                    slide_texts.DARE_PICTURES,
                 ),
             ),
             repeats=1,
@@ -1195,18 +1203,32 @@ karaoke_slide_generators = _register(
                 picture=box_picture_slot(),
             ),
             slides.RedFlagsSlide,
-            _middle(0.8),
+            _middle(0.5),
             ["red_flags"],
             "Red Flags",
             Recipe(
                 "red_flags",
-                brief="Red flags about the concept, as in dating advice: warning signs that someone or something "
-                "around it is trouble, each more alarming than the last",
-                variants=(
-                    Variant(1, frozenset({"flag_4", "flag_5"}), "with three red flags"),
-                    Variant(1, frozenset({"flag_5"}), "with four red flags"),
-                    Variant(1, note="with five red flags"),
-                ),
+                brief="Three red flags about the concept, as in dating advice: warning signs that someone or "
+                "something around it is trouble, each more alarming than the last",
+            ),
+        ),
+        # (the user's variation, 2026-11-13: a green, an orange and a red flag; one of the two kinds a talk, at most)
+        _drawn(
+            slide_texts.broken(
+                slide_texts.generate_traffic_flags,
+                slide_texts.last("flag"),
+                {"picture": 1.0},
+                _LATE_PICTURES,
+                picture=box_picture_slot(),
+            ),
+            slides.TrafficFlagsSlide,
+            _middle(0.4),
+            ["red_flags", "traffic_flags"],
+            "Traffic Flags",
+            Recipe(
+                "traffic_flags",
+                brief="A green flag, an orange flag and a red flag about the concept, as in dating advice: a good "
+                "sign, a doubtful one and an alarming one, the punchline",
             ),
         ),
         _drawn(
@@ -1239,15 +1261,15 @@ karaoke_slide_generators = _register(
         _drawn(
             slide_texts.generate_error_message,
             slides.ErrorMessageSlide,
-            _middle(0.5),
+            _middle(0.25),
             ["error_message"],
             "Error Message",
             Recipe(
                 "error_message",
                 brief="A fake error message about the concept, as if the talk itself just crashed: a dialog with a "
-                "playful, absurd message about the concept, worded as computers word them, and buttons, the last one "
+                "short, absurd message about the concept, worded as computers word them, and buttons, the last one "
                 "the punchline",
-                variants=(Variant(2), Variant(1, frozenset({"code"}), "without an error code")),
+                variants=(Variant(1), Variant(2, frozenset({"code"}), "without an error code")),
             ),
         ),
     ],
@@ -1460,7 +1482,10 @@ structure_slide_generators = _register(
             ),
         ),
         _drawn(
-            slide_texts.generate_section,
+            # (over a picture of what it's about, now and then: D80)
+            slide_texts.with_backdrop(
+                slide_texts.generate_section, cg.words_backdrop_generator, slide_texts.SECTION_PICTURES, slots=1
+            ),
             slides.SectionSlide,
             # (one per ten slides, by its cap: and none in a shorter talk, where a part would be a slide or two)
             BetweenWeight(0.8, after=3, before=2, shortest=10),
@@ -1468,11 +1493,16 @@ structure_slide_generators = _register(
             "Section Divider",
             Recipe(
                 "section",
+                (cg.words_backdrop_generator,),
                 brief="A section's divider, opening the next part of the talk",
                 hints={
                     "title": "the title of the part of the talk that starts here, without a number (the slide has it)"
                 },
-                variants=(Variant(1), Variant(1, frozenset({"subtitle"}), "without a subtitle")),
+                variants=pictured(
+                    (Variant(1), Variant(1, frozenset({"subtitle"}), "without a subtitle")),
+                    "background",
+                    slide_texts.SECTION_PICTURES,
+                ),
             ),
         ),
         _drawn(
@@ -1738,7 +1768,8 @@ default_max_allowed_tags = {
     "tier_list": 1,
     "wall_of_text": 1,
     "alignment_chart": 1,
-    "red_flags": 1,
+    "red_flags": 1,  # (of either kind: red flags, or a green, an orange and a red flag)
+    "traffic_flags": 1,
     "reviews": 1,
     "error_message": 1,
     "exhibit": 2,  # (Exhibit A, and later in the talk, now and then, Exhibit B: D78)

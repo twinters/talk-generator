@@ -64,14 +64,14 @@
     "$2.4T"
   ],
   "market_label": [
-    "the global {seed.bare} market by 2035, conservatively",
-    "spent on {seed.generic} worldwide, every year",
-    "the market for {seed.generic}, if everyone buys two",
-    "what the world would pay to never think about {seed.generic} again",
-    "the total addressable market for {seed.generic} (we rounded up)",
-    "the {seed.bare} economy, give or take a few billion",
-    "the market our competitors are too scared to go after",
-    "what {seed.generic} will be worth once we're done with it"
+    "the global market by 2035, conservatively",
+    "spent on {seed.generic} every year",
+    "for {seed.generic}, if everyone buys two",
+    "to never think of {seed.generic} again",
+    "the {seed.bare} market (we rounded up)",
+    "the {seed.bare} economy, give or take",
+    "the market our rivals are too scared to go after",
+    "what we'll make {seed.generic} worth"
   ],
   "market_source": [
     "Source: an analyst we met at a party",

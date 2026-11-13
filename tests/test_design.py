@@ -462,8 +462,11 @@ def test_a_slide_gets_the_layouts_that_fit_its_elements(images):
     def fitting(slide):
         return engine.layouts_for(slide.to_deck_slide())
 
+    # (a quote beside a picture never zig-zags into opposite corners: D80; two pictures may)
     two = slides.TwoColumnImageSlide("Cats", "Expectation", _image("wide"), "Reality", "A quote, not a picture")
-    assert fitting(two) == ["v5/columns-2", "v5/columns-2-headed", "v5/columns-2-rows", "v5/columns-2-split"]
+    assert fitting(two) == ["v5/columns-2", "v5/columns-2-headed", "v5/columns-2-split"]
+    both = slides.TwoColumnImageSlide("Cats", "Expectation", _image("wide"), "Reality", _image("wide"))
+    assert fitting(both) == ["v5/columns-2", "v5/columns-2-headed", "v5/columns-2-rows", "v5/columns-2-split"]
     assert fitting(slides.FullImageSlide(None, _image("wide"))) == ["v5/full-image", "v5/full-image-framed"]
     titled = slides.FullImageSlide("Look at this", _image("wide"))
     assert fitting(titled) == ["v5/full-image", "v5/full-image-low", "v5/full-image-corner"]
@@ -636,12 +639,15 @@ def test_families_treat_their_pictures():
 
 
 def test_a_themed_picture_gets_its_themes_treatment(images):
+    # (its gentle touches: a picture of the slide's own keeps its colours, and only a backdrop gets the filter: D80)
     deck, _, theme = _treated(filter="duotone", frame="rounded", grain=0.14, vignette=0.7)
     (picture,) = [element for element in deck.slides[0].elements if isinstance(element, ImageElement)]
     look = picture.treatment
-    assert (look.filter, look.frame, look.grain, look.vignette) == ("duotone", "rounded", 0.14, 0.7)
-    assert (look.dark, look.light) == treatments.duotone(theme.palette)
+    assert (look.filter, look.frame, look.grain, look.vignette) == ("none", "rounded", 0.14, 0.7)
     assert Deck.from_json(deck.to_json()) == deck
+    backdrop, _, theme = _treated(_statement(), filter="duotone")
+    look = backdrop.slides[0].elements[0].treatment
+    assert look.filter == "duotone" and (look.dark, look.light) == treatments.duotone(theme.palette)
     classic = _deck().to_deck()
     assert all(
         element.treatment is None
@@ -651,23 +657,23 @@ def test_a_themed_picture_gets_its_themes_treatment(images):
     )
 
 
-def test_a_picture_over_the_whole_slide_gets_its_filter_but_no_frame(images):
+def test_a_picture_over_the_whole_slide_gets_no_frame_and_keeps_its_colours(images):
     deck, _, _ = _treated(slides.FullImageSlide("Look at this", _image("wide")), filter="sepia", frame="polaroid")
     (picture,) = [element for element in deck.slides[0].elements if isinstance(element, ImageElement)]
-    assert (picture.treatment.filter, picture.treatment.frame) == ("sepia", "none")
-    assert (picture.treatment.dark, picture.treatment.light) == treatments.SEPIA
+    assert picture.treatment is None or (picture.treatment.filter, picture.treatment.frame) == ("none", "none")
+
+
+def _statement():
+    """A slide of a big text over a picture, a backdrop: what a theme's filter is for (D80)."""
+    return slides.LarqeQuoteSlide(None, "Cats run the internet", _image("wide"))
 
 
 @pytest.mark.parametrize("name", ["grayscale", "sepia", "duotone", "black and white"])
 def test_a_filter_is_a_picture_effect_in_powerpoint(images, name):
-    deck, ppt_slide, theme = _treated(filter=name)
+    deck, ppt_slide, theme = _treated(_statement(), filter=name)
     blip = _blip(_the_picture(ppt_slide))
-    if name == "grayscale":
-        assert blip.find(qn("a:grayscl")) is not None
-    elif name == "black and white":
-        threshold = int(blip.find(qn("a:biLevel")).get("thresh"))
-        low, high = treatments.THRESHOLDS
-        assert round(low * 100000) <= threshold <= round(high * 100000)
+    if name in ("grayscale", "black and white"):  # (black and white is too harsh behind a text: grey, D80)
+        assert blip.find(qn("a:grayscl")) is not None and blip.find(qn("a:biLevel")) is None
     else:
         colours = [element.get("val").lower() for element in blip.find(qn("a:duotone"))]
         expected = treatments.SEPIA if name == "sepia" else treatments.duotone(theme.palette)
@@ -708,7 +714,7 @@ def test_a_polaroid_is_a_tilted_white_frame_around_its_picture(images):
 
 
 def test_previews_show_the_treatments(images):
-    deck, _, theme = _treated(filter="grayscale")
+    deck, _, theme = _treated(_statement(), filter="grayscale")
     slide = deck.slides[0]
     (element,) = [element for element in slide.elements if isinstance(element, ImageElement)]
     picture = preview.slide_image(slide, theme, width=1920)

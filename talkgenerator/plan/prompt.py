@@ -16,6 +16,7 @@ that name one go, and a text with a key anywhere else is a leftover, as template
 
 from __future__ import annotations
 
+import dataclasses
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -47,8 +48,9 @@ So write slides that give the presenter something to work with, rather than fini
 laughs at the presenter making sense of it, not at puns on the slides.
 - Leave gaps. A good slide raises a question the presenter has to answer: an odd juxtaposition, a suspiciously \
 specific claim, something that needs backing up. Don't explain the joke, or the image.
-- Build one talk. The slides follow one thread, the talk's thesis. Later slides call back to earlier ones (a running \
-gag, a recurring character, a strange claim from before), and the conclusions call back to several of them.
+- Build one talk. The slides follow one thread, the talk's thesis. A later slide may call back to an earlier one (a \
+strange claim, a thing from before), and the conclusions call back to a few of them; but nothing comes back on more \
+than two slides, and no made-up person recurs unless the request says so.
 - Wander and come back. Every slide gets a word to riff on, which may wander away from the topic: take it as a \
 starting point (not as the slide's title), and tie it back to the talk's thread.
 - Fit the slide. Write every field the way its description asks, within its length.
@@ -82,6 +84,9 @@ class PlannedSlide:
     # talkgenerator.schema.slide_topic_generators), which the request then marks, for the model to say it in the
     # talk's language (D74: English words such as "goaltender" and "Healing" ended up on Dutch slides as they were)
     english: bool = False
+    # What it does for the talk's agenda, if anything (see agenda_cues): the agenda's own announcements, or which item
+    # of it announced this slide
+    cue: str = ""
 
     @property
     def key(self) -> str:
@@ -286,8 +291,32 @@ def header(
         *([native] if native else []),
         *([f"The format: {talk_format.brief}"] if talk_format is not None else []),
         *([f"The presenter: {persona.voice}", f"The angle: {persona.angle(rng)}"] if persona is not None else []),
+        callbacks_line(rng),
         *([request_line(language)] if facts else []),
     ]
+
+
+# RUNNING GAGS (D80): a made-up person who keeps coming back, now and then, on two slides at most (the user, 2026-11-13:
+# "many talks have a character they cite who comes back later, but we do that a bit too much": a sourdough talk had its
+# Gerald on five of its ten slides)
+RECURRING_CHARACTER_ODDS: Final = 0.2
+
+
+def recurring_character(rng: random_util.Rng) -> bool:
+    """Whether the talk's running gag may be a made-up person (that share of talks, by a stream of its own)."""
+    with random_util.use(rng.child("running gag")):
+        return random_util.random() < RECURRING_CHARACTER_ODDS
+
+
+def callbacks_line(rng: random_util.Rng) -> str:
+    """What a request says of the talk's callbacks: a made-up person who turns up on two slides, now and then, or else
+    callbacks to things and claims, with no recurring person."""
+    if recurring_character(rng):
+        return "Callbacks: one made-up person may come back as a running gag, on two slides at most."
+    return (
+        "Callbacks: a thing or a claim of an earlier slide may come back once; no recurring characters (no made-up "
+        "person on more than one slide)."
+    )
 
 
 def spine_language(language: str, name: NameRequest | None = None, typed: TitleRequest | None = None) -> str:
@@ -315,8 +344,9 @@ def slide_lines(
     fact = f". {given.line()}{in_english}" if given is not None else ""
     idea = f". The idea: {slide.idea.rstrip('.')}" if slide.idea else ""
     word = f"{slide.seed} (English)" if slide.english and other else slide.seed
+    cue = f". {slide.cue}" if slide.cue else ""
     return [
-        f"{slide.key}: {brief}. A word to riff on: {word}{idea}{fact}",
+        f"{slide.key}: {brief}. A word to riff on: {word}{idea}{fact}{cue}",
         *(
             f"- {text.name}: {field_description(slide.recipe, text, language)}"
             for text in slide.recipe.written_fields()
@@ -325,6 +355,53 @@ def slide_lines(
         *(f"- {name}: {FOUND_QUERY}" for name in found_queries(slide.recipe)),
         *(f"- {prompt_field(slot)}: {about}" for slot, about in generated(slide.recipe, generation)),
     ]
+
+
+# AGENDA (D80): an agenda's items announce slides of the talk, which pick them up, so that what the agenda promises comes
+# back (the user, 2026-11-13: "there are overview slides of 'what we'll do', but those topics never come back")
+AGENDA_KIND: Final = "agenda"
+ANNOUNCED: Final = 3  # how many slides an agenda announces, at most
+# The kinds of slide an agenda doesn't announce: what isn't a slide of the talk's matter
+_UNANNOUNCED: Final = frozenset({"agenda", "section", "questions", "closer", "title"})
+
+
+def agenda_cues(planned: Mapping[int, PlannedSlide]) -> dict[int, PlannedSlide]:
+    """The planned slides (by their index), with the talk's agenda, if it has one, announcing up to three of the slides
+    after it, spread over them (the first, one in the middle and the last but the talk's last slide, which ends it),
+    each by its word to riff on, and those slides each picking up their item: so that what the agenda promises comes
+    back, as the presenter can then point out. Without an agenda, they're as they were."""
+    slides = dict(planned)
+    agenda = next((slide for slide in slides.values() if slide.recipe.kind == AGENDA_KIND), None)
+    if agenda is None:
+        return slides
+    last = max(slide.number for slide in slides.values())
+    later = sorted(
+        (
+            slide
+            for slide in slides.values()
+            if agenda.number < slide.number < last and slide.recipe.kind not in _UNANNOUNCED
+        ),
+        key=lambda slide: slide.number,
+    )
+    if not later:
+        return slides
+    count = min(ANNOUNCED, len(later))
+    picked = list(dict.fromkeys(later[round(index * (len(later) - 1) / max(1, count - 1))] for index in range(count)))
+    words = ", ".join(f"{slide.key}'s {slide.seed!r}" for slide in picked)
+    announcing = (
+        f"Its first {len(picked)} items announce, in order, slides that come after it, each by its word ({words}): "
+        "an agenda item of a few words about it; a last item may be your own"
+    )
+    for key, slide in slides.items():
+        if slide is agenda:
+            slides[key] = dataclasses.replace(slide, cue=announcing)
+        elif slide in picked:
+            slides[key] = dataclasses.replace(
+                slide,
+                cue=f"The agenda announced this slide as its item {picked.index(slide) + 1} (by the word "
+                f"{slide.seed!r}): its title picks that item up",
+            )
+    return slides
 
 
 def title_hint(

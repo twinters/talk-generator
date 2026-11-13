@@ -9,7 +9,7 @@
   ],
   "left_number": ["7", "12", "3", "40", "9", "2", "17", "4"],
   "left_label": [
-    "Specimens of {species} left in the wild",
+    "{species} left in the wild",
     "Left in the wild. Probably fewer by now.",
     "Sightings this century, all by the same hiker",
     "Known to science, two of them by accident",
@@ -27,8 +27,8 @@
   ],
   "trend_title": [
     "Sightings of {species}, falling",
-    "{species}: numbers since the first tourist",
-    "The population of {species}, then and now",
+    "{species}, since the first tourist",
+    "Population of {species}, then and now",
     "Fewer and fewer: {species} in the wild",
     "What happened to {species}?",
     "Sightings per year, since spring cleaning began"

@@ -1,8 +1,8 @@
 {
   "format": "wedding",
   "about": "The classic texts of wedding toasts (the wedding schema): a grammar per part of its arc, whose rules are lists of templates (see talkgenerator.sources.packs and talkgenerator.schema.formats.wedding)",
-  "version": 1,
-  "versions": {"1": "2026-11-12: the first texts of wedding toasts, a part of the arc a grammar: the title, who the speaker is, how the couple met, the story, the couple, the advice and the toast, and the free slides' provocations (D79)"},
+  "version": 2,
+  "versions": {"1": "2026-11-12: the first texts of wedding toasts, a part of the arc a grammar: the title, who the speaker is, how the couple met, the story, the couple, the advice and the toast, and the free slides' provocations (D79)", "2": "2026-11-13: shorter texts for the lower field limits (D80): who the speaker is, the red flags, the posts, the toasts to the audience, the timeline's events and the titles over the couple; and the presenter's job on a line of its own under their name"},
   "slots": {
     "title.talk_title": {"variables": ["seed", "friend"], "field": "title.title"},
     "title.subtitle": {"variables": ["seed", "topic", "presenter", "title", "friend"], "field": "title.subtitle"},

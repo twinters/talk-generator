@@ -1,7 +1,7 @@
 {
   "format": "ted",
   "about": "The classic texts of TED-like talks (the default, ted, interview and test schemas): a grammar per kind of slide, whose rules are lists of templates (see talkgenerator.sources.packs)",
-  "version": 9,
+  "version": 10,
   "versions": {
     "1": "2026-11-08: v4's templates and milestone 6's, from data/text-templates and data/memes.json, unchanged (D54)",
     "2": "2026-11-08: grown in a TED talk's voice, several times the options per slot (titles, about me, history, statements, captions, charts, diagrams, numbers, quizzes, mockups, structure, karaoke types, memes and conclusions), speaking of the topic as English does (generic, one, bare), linted by tests/test_content_pack.py",
@@ -11,7 +11,8 @@
     "6": "2026-11-09: livelier dares and closing slides (D65): dares that are real challenges for the presenter (an accent, a gesture, a word on every slide), dares for the whole audience (a show of hands, a call and response), and closing slides' last tips and callback lines",
     "7": "2026-11-09: problem slides, a TED-like talk's why now and then (D69): headings, and problems on five angles (weird, everyday, crossed with something else, typical, and a real how-to), each with a line under it, in a TED speaker's voice",
     "8": "2026-11-10: less text and more surprise (D73): problems of a few words, each with a short line under it; chart claims for charts whose axes say what they compare (no more \"X vs. Y\" titles); short last reviews and red flags, an emoji alone among them, that break their slides' pattern; and three captions in a row whose third breaks the first two's",
-    "9": "2026-11-12: slides of a picture to explain (D78): notes on an exhibit's evidence tag, headings over two pictures to pick one of, picture equations' titles, questions over a picture to see something in (or an inkblot), and before-and-after titles"
+    "9": "2026-11-12: slides of a picture to explain (D78): notes on an exhibit's evidence tag, headings over two pictures to pick one of, picture equations' titles, questions over a picture to see something in (or an inkblot), and before-and-after titles",
+    "10": "2026-11-13: green, orange and red flags (D80): their titles, and the green and the orange flags; and shorter texts for the lower field limits (D80): big-number labels, timeline events, alignment cells, red flags, reviews, error messages, last tips, chart questions and claims, and titles, without the talk's title in the conclusions' titles; the joke dare and the advice line keep to limits of their own (130 and 80), as they read a real joke or piece of advice whole; and the presenter's job on a line of its own under their name"
   },
   "slots": {
     "title.talk_title": {"variables": ["seed"], "field": "title.title"},
@@ -94,7 +95,7 @@
     "structure.questions_subtitle": {"variables": ["seed"], "field": "questions.subtitle"},
     "structure.last_tip": {"variables": ["seed"], "field": "questions.subtitle"},
     "structure.callback_line": {"variables": ["seed"], "field": "questions.subtitle"},
-    "structure.advice_line": {"variables": ["advice"], "field": "questions.subtitle"},
+    "structure.advice_line": {"variables": ["advice"], "limit": 80},
     "karaoke.fun_fact": {"variables": ["seed", "related", "number", "percent", "year"], "field": "fun_fact.fact"},
     "karaoke.fun_fact_years": {"variables": [], "limit": 4},
     "karaoke.fun_fact_twist": {"variables": [], "limit": 40},
@@ -104,7 +105,7 @@
     "karaoke.absurd_*": {"variables": [], "field": "acronym.word_1"},
     "karaoke.dare": {"variables": ["seed", "related"], "field": "dare.dare"},
     "karaoke.audience_dare": {"variables": ["seed", "related"], "field": "dare.audience"},
-    "karaoke.joke_dare": {"variables": ["joke"], "field": "dare.dare"},
+    "karaoke.joke_dare": {"variables": ["joke"], "limit": 130},
     "karaoke.flowchart_title": {"variables": ["seed"], "field": "flowchart.title"},
     "karaoke.flowchart_question": {"variables": ["seed"], "field": "flowchart.question"},
     "karaoke.flowchart_yes": {"variables": ["seed", "related"], "field": "flowchart.yes_step"},
@@ -121,6 +122,9 @@
     "karaoke.red_flag": {"variables": ["seed", "related"], "field": "red_flags.flag_1"},
     "karaoke.red_flag_last": {"variables": ["seed", "related"], "field": "red_flags.flag_3"},
     "karaoke.red_flag_short": {"variables": ["seed", "related"], "field": "red_flags.flag_3"},
+    "karaoke.traffic_flags_title": {"variables": ["seed"], "field": "traffic_flags.title"},
+    "karaoke.green_flag": {"variables": ["seed", "related"], "field": "traffic_flags.green_flag"},
+    "karaoke.orange_flag": {"variables": ["seed", "related"], "field": "traffic_flags.orange_flag"},
     "karaoke.reviews_title": {"variables": ["seed"], "field": "reviews.title"},
     "karaoke.review_glowing": {"variables": ["seed", "related"], "field": "reviews.review_1"},
     "karaoke.review_one_star": {"variables": ["seed", "related"], "field": "reviews.review_3"},

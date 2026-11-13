@@ -521,11 +521,14 @@ def trend_boxes(generated: tuple[Any, ...]) -> dict[str, str]:
     return {"event": str(label)} if (label := next((name for _, _, name in labels if name), None)) else {}
 
 
-# RANKINGS: bars, the last of which, the punchline, wins by far
+# RANKINGS: bars, the last of which, the punchline, wins by far. They come a click each, from the top down: two or
+# three that come to next to nothing, then the punchline's, far longer (the user, 2026-11-13: "better 2-3 things of
+# nothing, and then at the bottom the biggest bar with a punchline, nicely animated"; D80)
+RANKING_BARS = 4  # the most bars a ranking has
 
 
 def ranking_chart_data(bars: list[str]) -> ChartData:
-    values = sorted(random_util.uniform(10, 40) for _ in bars[:-1]) + [random_util.uniform(80, 100)]
+    values = sorted(random_util.uniform(2, 12) for _ in bars[:-1]) + [random_util.uniform(85, 100)]
     chart_data = ChartData()
     chart_data.categories = bars
     chart_data.add_series("", values)
@@ -542,5 +545,5 @@ def generate_ranking_bars(presentation_context: dict[str, Any]) -> tuple[Any, ..
     title = ranking_title_generator(presentation_context)
     if not title:
         return None
-    bars = [*random_util.sample(words, 3), seed]
-    return title, XL_CHART_TYPE.BAR_CLUSTERED, ranking_chart_data(bars), None
+    bars = [*random_util.sample(words, random_util.choice((2, 3))), seed]
+    return title, XL_CHART_TYPE.BAR_CLUSTERED, ranking_chart_data(bars), None, None, None, "categories"

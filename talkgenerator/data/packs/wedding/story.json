@@ -3,7 +3,7 @@
     "The incident of #story_year#",
     "We don't talk about the camping trip",
     "The {seed.bare} incident",
-    "{friend}, moments after the {seed.bare} incident",
+    "{friend}'s {seed.bare} incident",
     "The school trip. Never forget.",
     "Some of you were there",
     "{friend} asked me not to show this one",
@@ -28,17 +28,17 @@
     "Red flags, a collection"
   ],
   "flag": [
-    "{friend} started saving a seat for {topic.generic} at dinner",
-    "{friend} changed their phone background to {topic.generic}",
+    "{friend} saved a seat for {topic.generic}",
+    "{friend}'s lock screen: {topic.generic}",
     "{friend} cancelled game night three weeks in a row",
-    "{friend} learned a whole new language, just for {topic.generic}",
+    "{friend} learned French for {topic.generic}",
     "{friend} started humming love songs at work",
     "{friend} bought matching sweaters",
-    "{friend} named a houseplant after {topic.generic}",
+    "Named a houseplant after {topic.generic}",
     "{friend} answered every question with 'we'",
-    "{friend} wrote a poem about {seed.generic}. It rhymed.",
+    "{friend}'s {seed.bare} poem. It rhymed.",
     "{friend} giggled at a spreadsheet",
-    "{friend} asked me what I thought of {topic.generic}. Every day."
+    "Asked my view on {topic.generic}. Daily."
   ],
   "flag_punchline": [
     "{friend} asked me to give this speech",
@@ -60,7 +60,7 @@
     "From that night, unedited"
   ],
   "friend_post": [
-    "Met someone special tonight. Can't stop thinking about {topic.generic}. Is this what love feels like?",
+    "Met someone tonight. Can't stop thinking about {topic.generic}. Is this love?",
     "Not to be dramatic, but I think I just met the one. And it's {topic.generic}.",
     "Okay, everyone. I need to tell you something about {topic.generic}.",
     "Best. Night. Ever. Thank you, {topic.generic}.",
@@ -73,7 +73,7 @@
     "{friend} just met {topic.generic} and won't stop talking about it. Send help.",
     "Lost {friend} tonight. Not literally. To {topic.generic}.",
     "Third night in a row {friend} has cancelled on me. I'm told it's {topic.generic}.",
-    "Is it normal to be jealous of {topic.generic}? Asking for a friend. The friend is me.",
+    "Is it normal to envy {topic.generic}? Asking for a friend. The friend is me.",
     "{friend} keeps showing me photos of {topic.generic}. I have seen enough photos.",
     "Called {friend}. {topic.generic.cap} answered. We need to talk.",
     "Me: how was your evening? {friend}: {topic.generic}. Me: that's not an answer."

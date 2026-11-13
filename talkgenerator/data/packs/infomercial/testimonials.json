@@ -50,13 +50,13 @@
     "Going viral!"
   ],
   "post": [
-    "Just got my {gadget} and used it eleven times before breakfast. My family is worried. I've never been happier.",
-    "Day 3 with the {gadget}: I've sorted all my {seed.bare} stuff by colour, then by mood. Who even am I?",
-    "Told my book club about the {gadget}. Now it's a {seed.bare} club. No regrets.",
-    "Ordered one {gadget}. Got two. Called back to order a third. They said I have a problem. They're right!",
-    "Before the {gadget}, I thought {seed.generic} would always be a pain. I was wrong. So wrong.",
-    "My {gadget} arrived today and I've already given it a name, a birthday and a little hat.",
-    "Can't stop watching the infomercial. Can't stop using the {gadget}. Can't stop. Send help. Five stars."
+    "Used my {gadget} 11 times before breakfast. My family is worried. I'm not.",
+    "Day 3 with the {gadget}: socks sorted by colour, then mood. Who even am I?",
+    "Told my book club about the {gadget}. Now it's a fan club. No regrets.",
+    "Ordered one {gadget}. Got two. Ordered a third. I may have a problem!",
+    "Before the {gadget}, I hated {seed.generic}. I was so wrong.",
+    "My {gadget} arrived. It already has a name, a birthday and a little hat.",
+    "Can't stop using the {gadget}. Can't stop. Send help. Five stars."
   ],
   "results_title": [
     "Results in just three days!",

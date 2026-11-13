@@ -318,14 +318,17 @@ def test_a_punchline_breaks_as_an_emoji_a_few_words_or_a_picture_in_its_place(br
     }
     assert ways == {"emoji", "short", "picture"}
     picture = next(recipe for recipe in broken if recipe.pictures)
-    assert picture.pictures == ("flag_5",) and "flag_5_picture" in picture.image_queries()
+    # (three red flags, the third the punchline: D80)
+    assert picture.pictures == ("flag_3",) and "flag_3_picture" in picture.image_queries()
     lines = prompt.slide_lines(prompt.PlannedSlide(5, "Red Flags", picture, "geese"))
     assert any(
-        line.startswith("- flag_5_picture_query: an image search query for a surprising picture") for line in lines
+        line.startswith("- flag_3_picture_query: an image search query for a surprising picture") for line in lines
     )
     emoji = next(recipe for recipe in broken if "a single emoji" in recipe.brief)
-    assert emoji.hints["flag_5"] == "a fifth red flag: a single emoji, nothing else (the pattern break)"
-    # (the last red flag the slide has: by its variant, the third or the fourth)
+    assert emoji.hints["flag_3"] == (
+        "the third red flag, the punchline, in a few words: a single emoji, nothing else (the pattern break)"
+    )
+    # (the last red flag the slide has)
     flags = slide_generators.get("Red Flags").llm
     _, broken = _broken("red_flags", recipe=flags)
     for recipe in broken:
@@ -337,7 +340,7 @@ def test_a_punchline_breaks_as_an_emoji_a_few_words_or_a_picture_in_its_place(br
     assert all("the last of them" in recipe.hints["items"] for recipe in broken)
     # (a picture in a thing's place only where the kind's layouts show one: a diagram's punchline is an emoji alone)
     pictured = {kind for kind, made in KINDS.items() if made.pattern_break and "picture" in made.pattern_break.ways}
-    assert pictured == {"red_flags", "reviews", "org_chart", "tier_list", "alignment_chart"}
+    assert pictured == {"red_flags", "traffic_flags", "reviews", "org_chart", "tier_list", "alignment_chart"}
     _, broken = _broken("pyramid")
     assert broken and all(
         recipe.hints["level_1"].endswith("a single emoji, nothing else (the pattern break)") for recipe in broken
@@ -357,7 +360,7 @@ def _picture(name="https://example.com/goose.jpg"):
 @pytest.mark.parametrize(
     ("slide", "role"),
     [
-        (lambda p: slides.RedFlagsSlide("Flags", "One", "Two", "Three", "Four", pictures={"flag_4": p}), "flag_4"),
+        (lambda p: slides.RedFlagsSlide("Flags", "One", "Two", "Three", pictures={"flag_3": p}), "flag_3"),
         (lambda p: slides.RedFlagsSlide("Flags", "One", "Two", "Three", pictures={"flag_3": p}), "flag_3"),
         (
             lambda p: slides.ReviewsSlide("Said", "5", "Great.", "Ann", "1", "Bad.", "Bob", pictures={"review_2": p}),

@@ -8,7 +8,7 @@
     "Scientists are still arguing about this one.",
     "Do not make any sudden movements.",
     "There. Look closely.",
-    "The first footage of {species}.",
+    "First footage: {species}.",
     "A young one, it seems, out on its own."
   ],
   "outlet": [
@@ -32,10 +32,10 @@
   "subheadline": [
     "Experts urge the public not to make eye contact",
     "Camera crew 'very tired' but 'deeply moved'",
-    "Footage shows it doing almost nothing, which experts call 'extraordinary'",
+    "Footage shows it doing almost nothing. Experts call it 'extraordinary'",
     "Residents asked to keep their biscuits indoors",
     "'It looked right at me,' says a ranger, still shaken",
     "Sighting confirmed by two birdwatchers and a confused dog",
-    "Scientists hope to learn what it wants, and why it wants our sandwiches"
+    "Scientists hope to learn what it wants and why it wants our sandwiches"
   ]
 }

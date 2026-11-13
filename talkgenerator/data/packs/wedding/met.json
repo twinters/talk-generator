@@ -2,7 +2,7 @@
   "day_title": [
     "The day {friend} met {topic.generic}",
     "Love at first sight",
-    "The moment {friend} first saw {topic.generic}",
+    "{friend} first sees {topic.generic}",
     "Where it all began",
     "{friend} had never seen anything like it",
     "It was love at first sight. For {friend}.",
@@ -12,7 +12,7 @@
   ],
   "story_title": [
     "Their love story",
-    "{friend} and {topic.generic}: a timeline",
+    "{friend} + {topic.generic}: a timeline",
     "How it happened",
     "A love story, briefly",
     "The road to today",
@@ -39,21 +39,21 @@
     "At last"
   ],
   "first_event": [
-    "First glance across a crowded room",
-    "{friend} spots {topic.generic}",
+    "A glance across a crowded room",
+    "Spots {topic.generic}",
     "A shy hello",
     "They meet at a barbecue",
-    "Trips over {topic.generic}",
+    "Trips on {topic.generic}",
     "{friend} says 'wow' out loud",
     "Eyes meet over the snack table",
     "{friend} asks for directions"
   ],
   "event": [
     "First date: a picnic in the rain",
-    "{friend} cancels game night. Again.",
+    "{friend} skips game night. Again.",
     "They move in together",
     "Matching sweaters",
-    "Their first argument (about socks)",
+    "Their first fight (about socks)",
     "{friend} meets the parents",
     "A weekend away",
     "{friend} learns to cook for two",
@@ -68,7 +68,7 @@
     "This speech. Sorry.",
     "Free cake for everyone",
     "We're all here, somehow",
-    "I'm asked to give a speech. Oh no.",
+    "I'm asked for a speech. Oh no.",
     "The wedding. Yes, really.",
     "You're all invited. Somehow.",
     "They said yes. Both of them.",

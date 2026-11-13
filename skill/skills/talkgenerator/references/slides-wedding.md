@@ -27,7 +27,7 @@ An image with a title.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title |
+| `title` | 45 | the slide's title |
 
 Images: `image`
 
@@ -42,7 +42,7 @@ An image filling the slide, with an optional title.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title (or empty, for none) |
+| `title` | 45 | the slide's title (or empty, for none) |
 
 Images: `image`
 
@@ -60,7 +60,7 @@ A big text over a photo.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `text` | 140 | the big text over the photo |
+| `text` | 90 | the big text over the photo: one short sentence |
 
 Images: `background`
 
@@ -78,7 +78,7 @@ Two captioned images side by side.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title (or empty, for none) |
+| `title` | 45 | the slide's title (or empty, for none) |
 | `caption_1` | 40 | the left caption |
 | `caption_2` | 40 | the right caption |
 
@@ -96,7 +96,7 @@ Three captioned images side by side.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title (or empty, for none) |
+| `title` | 45 | the slide's title (or empty, for none) |
 | `caption_1` | 40 | the left caption |
 | `caption_2` | 40 | the middle caption |
 | `caption_3` | 40 | the right caption |
@@ -113,9 +113,9 @@ A made-up historical figure's portrait, next to their quote.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | a title about history |
-| `name` | 60 | a made-up historical figure (never a real person): name and title |
-| `quote` | 160 | what this made-up figure once said |
+| `title` | 45 | a title about history |
+| `name` | 50 | a made-up historical figure (never a real person): their name, a comma, and their title |
+| `quote` | 100 | what this made-up figure once said, in one short sentence |
 
 Images: `portrait`
 
@@ -129,7 +129,7 @@ A line chart of a made-up trend along two odd axes; a second line, if any, draws
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 90 | the chart's claim, as its title, in a few words: what it shows, such as a headline would say it, never 'X vs Y' (the two things it compares go on its axes) |
+| `title` | 60 | the chart's claim, as its title, in a few words: what it shows, such as a headline would say it, never 'X vs Y' (the two things it compares go on its axes) |
 | `x_axis` | 40 | what the chart goes along, such as 'Hours since the meeting started' (or empty, for none) |
 | `y_axis` | 40 | what the line measures, such as 'Times someone said synergy' (or empty, for none) |
 | `shape` | 20 | how the line goes: `rising`, `falling`, `exponential`, `diminishing`, `hockey stick`, `peak`, `crash`, `plateau`, `rollercoaster`, `dip`, `flat` (or empty, for any) |
@@ -146,12 +146,12 @@ Images: none
 
 ## `chart_bars`
 
-A ranking in bars, whose last bar, the punchline, wins by far.
+A ranking in bars, which appear one by one, a click each, from the top down: the first ones tiny, and the last one, the punchline, wins by far.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 90 | the question the ranking answers, as its title |
-| `bars` | 160 | three to six things (only their names), separated by \|, the last one the punchline |
+| `title` | 45 | the question the ranking answers, as its title |
+| `bars` | 100 | three or four things (only their names), separated by \|: ordinary ones first, the last one the punchline |
 | `value_axis` | 40 | what the bars measure, such as 'Danger level' (or empty, for none) |
 
 Images: none
@@ -166,7 +166,7 @@ A Venn diagram: two or three circles of things, each with a label, and what's in
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the diagram's title |
+| `title` | 45 | the diagram's title |
 | `circle_1` | 30 | the first circle's label: a group of things |
 | `circle_2` | 30 | the second circle's label: a group of things that seems to have nothing to do with the first |
 | `circle_3` | 30 | a third circle's label: another such group (or empty, for none) |
@@ -184,10 +184,10 @@ A made-up social media post with a photo: who posted it, and what they wrote (ta
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title (or empty, for none) |
-| `author` | 30 | the made-up name of who posted it (never a real person) |
+| `title` | 45 | the slide's title (or empty, for none) |
+| `author` | 30 | the made-up name of who posted it: a real first name and a surname |
 | `handle` | 24 | their made-up username, without the @ |
-| `text` | 160 | the post: what they wrote, without hashtags or emoji |
+| `text` | 90 | the post: what they wrote, in one or two short sentences, without hashtags or emoji |
 
 Images: `photo`
 
@@ -201,17 +201,17 @@ A timeline of three to five moments, oldest first, each a date and what happened
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the timeline's title |
+| `title` | 45 | the timeline's title |
 | `date_1` | 12 | the first moment's date (a year, say, or a day) |
-| `event_1` | 40 | what happened at the first moment |
+| `event_1` | 32 | what happened at the first moment, in a few words |
 | `date_2` | 12 | the second moment's date (a year, say, or a day) |
-| `event_2` | 40 | what happened at the second moment |
+| `event_2` | 32 | what happened at the second moment, in a few words |
 | `date_3` | 12 | the third moment's date (a year, say, or a day) |
-| `event_3` | 40 | what happened at the third moment |
+| `event_3` | 32 | what happened at the third moment, in a few words |
 | `date_4` | 12 | the fourth moment's date (a year, say, or a day) (or empty, for none) |
-| `event_4` | 40 | what happened at the fourth moment (or empty, for none) |
+| `event_4` | 32 | what happened at the fourth moment, in a few words (or empty, for none) |
 | `date_5` | 12 | the fifth moment's date (a year, say, or a day) (or empty, for none) |
-| `event_5` | 40 | what happened at the fifth moment (or empty, for none) |
+| `event_5` | 32 | what happened at the fifth moment, in a few words (or empty, for none) |
 
 Images: none
 
@@ -225,7 +225,7 @@ A pyramid of three or four levels, from its top (the rarest, the punchline) down
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the pyramid's title |
+| `title` | 45 | the pyramid's title |
 | `level_1` | 30 | the top of the pyramid: the punchline |
 | `level_2` | 30 | the level under the top |
 | `level_3` | 30 | the level under that (the base, if there's no fourth) |
@@ -260,7 +260,7 @@ A fun fact: one absurd fact, stated as certain, under a heading such as 'Did you
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `fact` | 150 | the fact: one sentence, stated as certain, that the presenter has to back up |
+| `fact` | 100 | the fact: one short sentence, stated as certain, that the presenter has to back up |
 | `source` | 60 | a made-up, unreliable source for the fact (or empty, for none) |
 
 Images: `photo`
@@ -275,8 +275,8 @@ A dare, on a card: a real challenge for the presenter for the rest of the talk (
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `dare` | 130 | the challenge, said to the presenter, for the rest of the talk or the next few slides: an accent or a voice, a gesture on every slide, a word to work into every slide, a rule such as speaking only in questions; hard to keep up, harmless, and for the presenter alone (or empty, for none) |
-| `audience` | 130 | what the presenter has the whole audience do, said to them: a show of hands, a call and response (when the presenter says a word, everyone answers with another), the front row standing up, a sound everyone makes; harmless, fun to join in, and singling nobody out (or empty, for none) |
+| `dare` | 90 | the challenge, said to the presenter, for the rest of the talk or the next few slides: an accent or a voice, a gesture on every slide, a word to work into every slide, a rule such as speaking only in questions; hard to keep up, harmless, and for the presenter alone (or empty, for none) |
+| `audience` | 90 | what the presenter has the whole audience do, said to them: a show of hands, a call and response (when the presenter says a word, everyone answers with another), the front row standing up, a sound everyone makes; harmless, fun to join in, and singling nobody out (or empty, for none) |
 
 Images: none
 
@@ -286,16 +286,14 @@ Images: none
 
 ## `red_flags`
 
-Red flags: three to five warning signs, each beside a red flag, appearing one by one, a click each, each more alarming than the last: the last one is the punchline.
+Red flags: three warning signs, each beside a red flag, appearing one by one, a click each, each more alarming than the last: the last one is the punchline.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title, which says these are red flags (of what) |
-| `flag_1` | 90 | the first red flag |
-| `flag_2` | 90 | the second red flag |
-| `flag_3` | 90 | the third red flag (the punchline, if it's the last) |
-| `flag_4` | 90 | a fourth red flag (or empty, for none) |
-| `flag_5` | 90 | a fifth red flag (or empty, for none) |
+| `title` | 45 | the slide's title, which says these are red flags (of what) |
+| `flag_1` | 50 | the first red flag, in a few words |
+| `flag_2` | 50 | the second red flag, in a few words |
+| `flag_3` | 50 | the third red flag, the punchline, in a few words |
 
 Images: none
 
@@ -309,16 +307,16 @@ Made-up reviews, with stars: two or three reviewers' ratings (one to five stars)
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title, such as what people are saying (or empty, for none) |
+| `title` | 45 | the slide's title, such as what people are saying (or empty, for none) |
 | `stars_1` | 1 | how many stars the first reviewer gives, from 1 to 5: `1`, `2`, `3`, `4`, `5` |
-| `review_1` | 110 | what the first reviewer wrote |
-| `reviewer_1` | 30 | who the first reviewer is: a made-up first name, and a detail (or empty, for none) |
+| `review_1` | 70 | what the first reviewer wrote, in one short sentence |
+| `reviewer_1` | 30 | who the first reviewer is: a real first name, a comma, and a detail (or empty, for none) |
 | `stars_2` | 1 | how many stars the second reviewer gives, from 1 to 5: `1`, `2`, `3`, `4`, `5` |
-| `review_2` | 110 | what the second reviewer wrote |
-| `reviewer_2` | 30 | who the second reviewer is: a made-up first name, and a detail (or empty, for none) |
+| `review_2` | 70 | what the second reviewer wrote, in one short sentence |
+| `reviewer_2` | 30 | who the second reviewer is: a real first name, a comma, and a detail (or empty, for none) |
 | `stars_3` | 1 | how many stars the third reviewer gives, from 1 to 5: `1`, `2`, `3`, `4`, `5` (or empty, for any) |
-| `review_3` | 110 | what the third reviewer wrote (or empty, for none) |
-| `reviewer_3` | 30 | who the third reviewer is: a made-up first name, and a detail (or empty, for none) |
+| `review_3` | 70 | what the third reviewer wrote, in one short sentence (or empty, for none) |
+| `reviewer_3` | 30 | who the third reviewer is: a real first name, a comma, and a detail (or empty, for none) |
 
 Images: none
 

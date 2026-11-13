@@ -65,7 +65,7 @@
     "My {seed.bare.title.dashes} Accident",
     "My story about {seed.generic}",
     "A funny thing that once happened to me and {seed.generic}",
-    "My {seed.bare.title} Experience: how I learned not to {seed.wikihow_action.lower}...",
+    "My {seed.bare.title} Experience: why I never {seed.wikihow_action.lower}...",
     "My experience with {seed.generic}",
     "How did I get into {topic.generic}? Because of {seed.generic}!",
     "A funny story about why I first learned how to {seed.wikihow_action.2_to_1_pronouns.lower}",

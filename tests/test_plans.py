@@ -99,7 +99,7 @@ def test_a_plan_becomes_a_deck(schema, tmp_path):
     deck = Deck.from_json(Path(report["deck_json"]).read_text(encoding="utf-8"))
     title, subtitle = (element.text for element in deck.slides[0].elements)
     assert title == "The Secret Life of Cats"
-    assert subtitle.endswith("Ann Example, Professor of Applied Napping")
+    assert subtitle.endswith("Ann Example\nProfessor of Applied Napping")  # (its own line: D80)
     assert [element.text for element in deck.slides[1].elements if hasattr(element, "text")] == [
         "Then and now",
         "Expectation",
@@ -162,7 +162,7 @@ def test_nothing_is_saved_over_the_plan(schema, tmp_path, capsys):
 def test_a_title_or_job_thats_too_long_is_cut(schema, tmp_path):
     plan = _plan(CHART).model_copy(update={"presenter_job": "Professor " * 10})
     report = _render(plan, tmp_path)
-    assert report["notes"] == ["the presenter_job has more than 50 characters, so it was cut off"]
+    assert report["notes"] == ["the presenter_job has more than 40 characters, so it was cut off"]
 
 
 def _title_slide_text(report):
@@ -175,7 +175,7 @@ def test_a_plan_can_name_the_presenter(schema, tmp_path):
     report = external.render_plan(plan, output_folder=tmp_path, int_seed=1)
     subtitle, presenter = _title_slide_text(report)
     assert report["presenter"] == presenter == "Dr. Tabby Cattington"
-    assert subtitle.endswith("Dr. Tabby Cattington, Professor of Applied Napping")
+    assert subtitle.endswith("Dr. Tabby Cattington\nProfessor of Applied Napping")
     assert "notes" not in report
 
 

@@ -1,9 +1,10 @@
 {
   "format": "book_report",
   "about": "The classic texts of school book reports (the book_report schema): a grammar per part of its arc, whose rules are lists of templates (see talkgenerator.sources.packs and talkgenerator.schema.formats.book_report)",
-  "version": 1,
+  "version": 2,
   "versions": {
-    "1": "2026-11-12: the first texts of school book reports, a part of the arc a grammar: the title, the book, its author, the main characters, what happens, the favourite part, the moral of the story and the rating (its closer says \"The End\": D76), and the free slides' provocations (D79)"
+    "1": "2026-11-12: the first texts of school book reports, a part of the arc a grammar: the title, the book, its author, the main characters, what happens, the favourite part, the moral of the story and the rating (its closer says \"The End\": D76), and the free slides' provocations (D79)",
+    "2": "2026-11-13: shorter texts for the lower field limits (D80): the cover's titles, the author's title and fact, the favourite part, the morals and the quiz's options, the timeline's events, and the rating's labels, title and reviews; and the presenter's job on a line of its own under their name"
   },
   "slots": {
     "title.talk_title": {"variables": ["seed", "book", "author"], "field": "title.title"},

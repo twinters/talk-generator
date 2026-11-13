@@ -153,20 +153,20 @@
   ],
   "share_label": [
     "of target, once we lowered the target",
-    "of the {seed.bare} target, which is nearly all of it",
+    "of the target, which is nearly all of it",
     "of our goal, a record for a third quarter",
     "of plan, against a very ambitious plan",
     "of the forecast, adjusted for everything",
     "of what we promised the board",
-    "of the target we set for {seed.generic} in January"
+    "of our January target for {seed.generic}"
   ],
   "growth_label": [
     "growth year over year, adjusted for everything",
-    "growth in {seed.bare} sales, our best quarter since the last one",
+    "growth, our best quarter since the last one",
     "growth, which is still growth",
     "change in revenue, rounded generously",
     "growth in customers who stayed",
-    "year-over-year growth in {seed.bare} output",
+    "yearly growth in {seed.bare} output",
     "growth, if you count the way we count"
   ],
   "number_source": [

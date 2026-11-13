@@ -32,15 +32,15 @@
     "Name your first pet after me"
   ],
   "marriage_is": [
-    "Marriage is like {seed.generic}: nobody fully understands it, but everybody wants some.",
+    "Marriage is like {seed.generic}: nobody understands it, but everybody wants some.",
     "Love is patient. Love is kind. Love is, apparently, {topic.generic}.",
     "Find someone who looks at you the way {friend} looks at {topic.generic}.",
     "The secret to a long marriage? Patience, kindness and {seed.generic}.",
-    "{friend} found the one. The rest of us are still looking. Mostly at {topic.generic}.",
+    "{friend} found the one. The rest of us keep looking. Mostly at {topic.generic}.",
     "They say you just know. {friend} knew in four minutes.",
     "May your love be like {seed.generic}: a little strange, and here to stay.",
     "Marriage is a long journey. Pack snacks.",
-    "A happy marriage is two people who never stop choosing each other. And {topic.generic}."
+    "Marriage is two people who never stop choosing each other. And {topic.generic}."
   ],
   "pyramid_title": [
     "The secret to a happy marriage",

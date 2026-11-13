@@ -1,7 +1,7 @@
 import logging
 import warnings
 from collections.abc import Callable, Sequence
-from typing import Final
+from typing import Any, Final
 
 from talkgenerator import __version__
 from talkgenerator.datastructures.image_data import ImageData
@@ -10,7 +10,7 @@ from talkgenerator.models.deck import Deck, Fact, TalkPersona, TopicOrTitle
 from talkgenerator.models.theme import Theme
 from talkgenerator.models.usage import Usage
 from talkgenerator.render.powerpoint import render_slide
-from talkgenerator.slide.slides import ExhibitSlide, QuestionsSlide, SectionSlide, Slide
+from talkgenerator.slide.slides import ExhibitSlide, QuestionsSlide, SectionSlide, Slide, TitleSlide
 
 logger = logging.getLogger("talkgenerator")
 
@@ -73,6 +73,9 @@ class SlideDeck:
         # about a slide that changed after it was added (a generated picture in its stock photo's place)
         self.listener: Callable[[SlideDeck, int, Slide], None] | None = None
         self.update_listener: Callable[[SlideDeck, int, Slide], None] | None = None
+        # The photo of the talk's world that its title slide shows beside the title, being looked up (D80: see
+        # talkgenerator.title_pictures), or None for none
+        self.title_picture: Any = None
         # And about a slide that took the place of another (a slide that ran out of time, come after all in place of
         # what stood in for it: see talkgenerator.schema.presentation_schema._LateSlides)
         self.replace_listener: Callable[[SlideDeck, int, Slide], None] | None = None
@@ -130,6 +133,8 @@ class SlideDeck:
             self.replace_listener(self, slide_index, slide)
 
     def _place(self, slide_index: int, slide) -> None:
+        if isinstance(slide, TitleSlide) and self.title_picture is not None:  # (its world's photo beside it: D80)
+            slide.show(self.title_picture.result())
         if isinstance(slide, SectionSlide):  # (numbered after the sections before it: the talk's opening is the first)
             slide.number(2 + sum(isinstance(other, SectionSlide) for other in self._slides[:slide_index]))
         if isinstance(slide, ExhibitSlide):  # (lettered after the exhibits before it, of the first one's case: D78)

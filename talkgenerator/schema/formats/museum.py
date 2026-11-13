@@ -99,6 +99,7 @@ MUSEUM: Final = Format(
     arc=ARC,
     # (its closer thanks the room for visiting, and points to the gift shop: D76)
     closer=Closer(said("visiting"), said("gift_shop"), presenter),
+    scene="museum gallery",
 )
 
 

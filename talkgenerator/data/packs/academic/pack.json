@@ -1,14 +1,15 @@
 {
   "format": "academic",
   "about": "The classic texts of academic conference talks (the academic schema): a grammar per part of its arc, whose rules are lists of templates (see talkgenerator.sources.packs and talkgenerator.schema.formats.academic)",
-  "version": 6,
+  "version": 7,
   "versions": {
     "1": "2026-11-08: the first texts of academic conference talks, a part of the arc a grammar: the title with its affiliations, the outline, related work, the method, the results, the limitations, future work, the acknowledgements, the references and the questions (D56)",
     "2": "2026-11-09: a picture of one of the references, a book's cover or a paper's figure, with a caption that says which (D65)",
     "3": "2026-11-09: the free slides' own provocations: a word or two over a full-screen picture, in the format's voice (D63)",
     "4": "2026-11-09: the motivation, the talk's why: a problem slide's headings and problems on five angles (weird, everyday, crossed with something else, typical, and a real how-to), each with a line under it, and research questions over a photo (D69)",
     "5": "2026-11-10: motivations of a few words, each with a short line under it (D73)",
-    "6": "2026-11-12: the questions' texts went: a talk's closer asks for its questions now, after its last slide and in its language (\"Questions?\", with thanks: D76)"
+    "6": "2026-11-12: the questions' texts went: a talk's closer asks for its questions now, after its last slide and in its language (\"Questions?\", with thanks: D76)",
+    "7": "2026-11-13: shorter texts for the lower field limits (D80): the results' titles and p-value labels, the equation, future work's and related work's timeline events and titles, and the flowchart's question; and the presenter's job on a line of its own under their name"
   },
   "slots": {
     "title.talk_title": {"variables": ["seed", "method"], "field": "title.title"},

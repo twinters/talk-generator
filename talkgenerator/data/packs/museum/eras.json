@@ -1,6 +1,6 @@
 {
   "periods_title": [
-    "The three periods of {artist}",
+    "{artist}'s three periods",
     "Three periods",
     "The artist's periods",
     "{seed.generic.cap} through the ages",
@@ -37,12 +37,12 @@
   ],
   "s_tier": [
     "{seed.bare.title}ism",
-    "Post-{seed.bare.title}ism",
-    "Neo-{seed.bare.title}ism",
-    "Early {seed.bare.title}ism",
-    "{seed.bare.title}ism, obviously",
-    "The {seed.bare.title} School",
-    "Abstract {seed.bare.title}ism"
+    "Post-{seed.bare.title.dashes}ism",
+    "Neo-{seed.bare.title.dashes}ism",
+    "{seed.bare.title}core",
+    "Pure {seed.bare.title}",
+    "{seed.bare.title} Art",
+    "{seed.bare.title}wave"
   ],
   "movement": [
     "Impressionism",

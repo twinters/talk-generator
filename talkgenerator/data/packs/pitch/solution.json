@@ -2,17 +2,17 @@
   "solution_title": [
     "Introducing {startup}",
     "Meet {startup}",
-    "{startup}: {seed.generic} on demand",
+    "{seed.generic.cap} on demand",
     "The solution: {startup}",
     "Say hello to {startup}",
-    "{startup} fixes {seed.generic}",
+    "We fix {seed.generic}",
     "There's an app for that now",
     "{startup}: it just works",
     "Our solution",
     "{seed.generic.cap}, solved",
     "This changes everything",
-    "One app for every {seed.bare} problem",
-    "{startup}, the {seed.bare} app"
+    "{seed.bare.cap} problems? One app.",
+    "The {seed.bare} app"
   ],
   "before_after_title": [
     "Before and after {startup}",

@@ -327,7 +327,8 @@ def _drop_animation(layout):
         layout.element.remove(timing)
 
 
-def create_title_slide(prs, title, subtitle):
+def create_title_slide(prs, title, subtitle, picture=None):
+    # (the 2019 template's title slide has no room for a photo of the talk's world: D80's picture is a themed deck's)
     slide = _create_slide(prs, LAYOUT_TITLE_SLIDE)
     _add_title(slide, title)
     _add_text(slide, 1, subtitle)

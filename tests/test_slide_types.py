@@ -163,6 +163,8 @@ def test_long_words_fit_in_every_theme(images, family):
 def test_every_new_layout_comes_up_and_needs_what_it_says(images):
     seen = set()
     pictured = [slides.QuestionsSlide("Questions?", "Remember this one?", _image("wide")) for _ in range(3)]
+    # (a section over a picture of what it's about: D80)
+    pictured += [slides.SectionSlide("The dark years", "In which the cat sleeps", None, _image("wide"))]
     for seed in range(12):
         made = [*runs_of_new_types(_image("wide")), *pictured]  # (a closing slide with a picture to end on: D65)
         seen |= {slide.layout for slide in _deck(made, _theme(seed=seed), seed).slides}

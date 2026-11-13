@@ -45,13 +45,13 @@
     "Explaining {seed.generic.title} Simply"
   ],
   "subtitle": [
-    "{presenter}, #department#, #university#",
-    "{presenter}, #department#",
-    "{presenter}, #position#, #university#",
+    "{presenter}\n#department#, #university#",
+    "{presenter}\n#department#",
+    "{presenter}\n#position#, #university#",
     "{presenter} et al., #university#",
     "{presenter} (presenting) and fourteen co-authors, #university#",
-    "{presenter}, #position#, #department#",
-    "{presenter}, #university#"
+    "{presenter}\n#position#, #department#",
+    "{presenter}\n#university#"
   ],
   "department": [
     "Department of {seed.bare.title} Studies",

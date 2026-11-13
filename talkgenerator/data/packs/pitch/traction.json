@@ -121,7 +121,7 @@
     "Signed up by accident. Still here. Four stars.",
     "I told my therapist about {startup}. She signed up too.",
     "Not sure what {startup} does, but I love it.",
-    "Before {startup}: {seed.generic}. After {startup}: also {seed.generic}, but faster.",
+    "Before {startup}: {seed.generic}. After: the same, but faster.",
     "Cancelled my subscription, came back the next morning. Can't explain it."
   ]
 }

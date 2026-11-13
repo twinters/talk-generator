@@ -102,7 +102,7 @@
     "Our corner"
   ],
   "timeline_title": [
-    "A brief history of {seed.bare} research",
+    "A brief history of {seed.generic}",
     "The field so far",
     "Prior work, in order",
     "How we got here",
@@ -129,7 +129,7 @@
     "At last"
   ],
   "milestone": [
-    "{seed.generic.cap}, first described",
+    "{seed.generic.cap}, defined",
     "A grant is awarded",
     "The field's first conference",
     "Someone gets it wrong",
@@ -147,7 +147,7 @@
     "Our paper (under review)",
     "This talk",
     "Us, finally",
-    "The {method} breakthrough",
+    "{method} arrives",
     "We fix everything"
   ]
 }

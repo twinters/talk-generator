@@ -39,7 +39,7 @@ def _boxes(prefix: str, most: int) -> dict[str, str]:
 
 # slide type -> {Slide argument: element role}, in the order the elements appear on the slide
 CLASSIC_ROLES: Final[dict[str, dict[str, str]]] = {
-    "title": {"title": "title", "subtitle": "subtitle"},
+    "title": {"title": "title", "subtitle": "subtitle", "picture": "title_picture"},
     "large_quote": {"title": "title", "text": "text", "background_image": "background"},
     "image": {"title": "title", "image_url": "content"},
     "full_image": {"title": "title", "image_url": "content"},
@@ -108,7 +108,8 @@ CLASSIC_ROLES: Final[dict[str, dict[str, str]]] = {
         "title": "title",
         **{f"{part}_{number}": f"{part}_{number}" for number in range(1, 6) for part in ("number", "item")},
     },
-    "section": {"kicker": "kicker", "title": "title", "subtitle": "subtitle"},
+    # (a section and a dare over a picture of what they're about, if they have one: D80)
+    "section": {"background": "background", "kicker": "kicker", "title": "title", "subtitle": "subtitle"},
     # (the closing slide, with a picture to end on, if it has one: docs/v5-plan.md, D65)
     "questions": {"photo": "photo", "title": "title", "subtitle": "subtitle", "mark": "mark"},
     # (the talk's closer, after its last slide: its big words, a line under them, a small note, and a huge question
@@ -154,7 +155,7 @@ CLASSIC_ROLES: Final[dict[str, dict[str, str]]] = {
         "title": "title",
         **{f"{part}_{number}": f"{part}_{number}" for number in range(1, 7) for part in ("letter", "word")},
     },
-    "dare": {"kicker": "kicker", "dare": "dare"},
+    "dare": {"background": "background", "kicker": "kicker", "dare": "dare"},
     "flowchart": {
         "title": "title",
         **{role: role for role in ("question", "yes", "no", "yes_step", "no_step", "end")},
@@ -184,6 +185,7 @@ CLASSIC_ROLES: Final[dict[str, dict[str, str]]] = {
         **_pictures(*ALIGNMENTS),
     },
     "red_flags": {"title": "title", **_boxes("flag", 5)},
+    "traffic_flags": {"title": "title", **_boxes("flag", 3)},  # (a green, an orange and a red flag)
     "reviews": {
         "title": "title",
         **{
@@ -222,6 +224,7 @@ CLASSIC_ROLES: Final[dict[str, dict[str, str]]] = {
 KARAOKE_TYPES: Final = frozenset(
     {"fun_fact", "acronym", "dare", "flowchart", "tier_list"}
     | {"wall_of_text", "alignment_chart", "red_flags", "reviews", "error_message"}
+    | {"traffic_flags"}
 )
 # The slide types that the talk formats beyond TED-like talks brought (docs/v5-plan.md, section 7)
 FORMAT_TYPES: Final = frozenset({"process", "references"})
@@ -282,6 +285,7 @@ REQUIRED_ROLES: Final[dict[str, tuple[str, ...]]] = {
     "wall_of_text": ("title", *(f"point_{number}" for number in range(1, 6)), "highlight"),
     "alignment_chart": ALIGNMENTS,
     "red_flags": ("flag_1", "flag_2", "flag_3"),
+    "traffic_flags": ("flag_1", "flag_2", "flag_3"),
     "reviews": ("stars_1", "review_1", "stars_2", "review_2"),  # (a review's stars read as "4/5" beside them)
     "error_message": ("message", "button_1", "button_2"),
     # (an equation's thing is its picture or else its emoji: a required role is there with either, D78)
@@ -311,7 +315,7 @@ TEXT_ROLES: Final = frozenset(
 
 # Images that fill their frame (cropped where needed) instead of being shown whole (two pictures to pick from too, in
 # boxes of one size; the picture to explain shows whole, in a box its layout makes as tall as it is: D78)
-COVER_ROLES: Final = frozenset({"background", "photo", "picture_1", "picture_2"}) | PICTURE_ROLES
+COVER_ROLES: Final = frozenset({"background", "photo", "picture_1", "picture_2", "title_picture"}) | PICTURE_ROLES
 
 
 def layout_id(slide_type: str) -> str:

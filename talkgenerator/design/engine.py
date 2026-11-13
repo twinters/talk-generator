@@ -476,7 +476,7 @@ def lay_out_slide(
     backdrop: list[Content] = []  # a photo behind everything, and the shapes behind the content
     if isinstance(background, ImageElement):
         with random_util.use(rng.child("treatment", background.role)):
-            look = treatments.for_look(treatments.treatment(theme, framed=False), background.image, theme)
+            look = treatments.for_look(treatments.treatment(theme, framed=False, behind=True), background.image, theme)
         backdrop.append(background.model_copy(update={"box": FULL, "fit": "cover", "treatment": look}))
     backdrop += [*placement.under, *placement.shapes, *placement.decor]
     content: list[Content] = []  # pictures, charts and diagrams; the bands over them; then the texts, on top
@@ -619,9 +619,9 @@ def _far_apart(colour: str, other: str) -> bool:
 
 def _own_clicks(element: Content) -> int:
     """The clicks a chart or a diagram takes for itself: a chart's series after the first, one each, when they appear
-    on clicks; a diagram's punchline, when it does."""
-    if isinstance(element, ChartElement) and element.chart.reveal == "series":
-        return max(0, len(element.chart.series) - 1)
+    on clicks (or its categories, a ranking's bars: D80); a diagram's punchline, when it does."""
+    if isinstance(element, ChartElement):
+        return element.chart.clicks()
     if isinstance(element, DiagramElement) and element.diagram.reveal == "punchline":
         return 1
     return 0
@@ -894,7 +894,26 @@ _SIDE_GAP: Final = 48
 _GAP: Final = 48  # between columns
 
 
+# THE TITLE SLIDE'S PICTURE (D80): a photo of the talk's world beside its title, which says what kind of talk it is
+# (see talkgenerator.title_pictures); a family's own title layout keeps its design, and places it where it has room
+TITLE_PICTURE: Final = "title_picture"
+
+
+def _title_beside_picture(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The title and who presents it on the left, flush left with the theme's decoration, and a photo of the talk's
+    world on the right, framed as the theme frames its pictures."""
+    placement = Placement("v5/title-picture")
+    title = Box(x=MARGIN, y=200, w=930, h=440)
+    placement.boxes["title"] = (title, "left title")
+    placement.boxes["subtitle"] = (Box(x=MARGIN, y=690, w=930, h=220), "left subtitle")
+    placement.shapes += _decoration(_left_aligned(theme), title, gap=22)
+    placement.boxes[TITLE_PICTURE] = (Box(x=1124, y=190, w=700, h=700), "caption")
+    return placement
+
+
 def _title_slide(roles: dict[str, Content], theme: Theme) -> Placement:
+    if TITLE_PICTURE in roles:  # (beside a photo of the talk's world: D80)
+        return _title_beside_picture(roles, theme)
     title = Box(x=160, y=230, w=1600, h=420)
     placement = Placement(f"v5/title-{theme.title_align}")
     placement.boxes["title"] = (title, "talk title")
@@ -1067,6 +1086,13 @@ def _rows(roles: dict[str, Content], theme: Theme) -> Placement:
         placement.boxes[f"content_{index}"] = (Box(x=content_x, y=y, w=content_width, h=height), spec)
         placement.boxes[f"caption_{index}"] = (Box(x=caption_x, y=y, w=caption_width, h=height), caption_spec)
     return placement
+
+
+def _pictures_both(roles: dict[str, Content]) -> bool:
+    """Whether both of a two-column slide's contents are pictures: a zig-zag of rows leaves a quote beside a historical
+    figure's portrait in the opposite corner, under a caption box that stays empty (the user's report of 2026-11-13: "a
+    photo of a historical person top left and the quote bottom right, with a lot of odd empty space"; D80)."""
+    return all(isinstance(roles.get(f"content_{index}"), ImageElement) for index in (1, 2))
 
 
 def _split(roles: dict[str, Content], theme: Theme) -> Placement:
@@ -2083,6 +2109,18 @@ def _section_panel(roles: dict[str, Content], theme: Theme) -> Placement:
     return placement
 
 
+def _section_photo(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The section over its picture, shaded (D80: slides of big text alone get a picture behind them): its number big,
+    in the theme's accent made light enough to read on the shade, its title and its subtitle under it, light."""
+    placement = Placement("v5/section-photo")
+    _backdrop(placement, roles)
+    placement.boxes["kicker"] = (Box(x=160, y=130, w=1600, h=280), "photo number")
+    placement.colors["kicker"] = color.readable_on(theme.palette.accent, _SHADED, color.LARGE_TEXT_CONTRAST)
+    placement.boxes["title"] = (Box(x=160, y=430, w=1600, h=300), "statement")
+    placement.boxes["subtitle"] = (Box(x=160, y=760, w=1600, h=170), "photo label")
+    return placement
+
+
 def _questions(roles: dict[str, Content], theme: Theme) -> Placement:
     """The question big in the middle, with the theme's decoration under it, and the subtitle below."""
     placement = Placement("v5/questions")
@@ -2583,7 +2621,9 @@ def _process_across(roles: dict[str, Content], theme: Theme) -> Placement:
     steps, ink, fill, last = _process_steps(roles, theme)
     gap = 64.0
     width = (WIDTH - 2 * MARGIN - gap * (len(steps) - 1)) / len(steps)
-    height = min(340.0, _CONTENT_BOTTOM - top - 48)
+    # (taller where every step has a picture, which then fills most of its box over a caption: D80)
+    pictured = all(_has_picture(roles, f"step_{index}") for index in steps)
+    height = min(620.0 if pictured else 340.0, _CONTENT_BOTTOM - top - 48)
     y = top + (_CONTENT_BOTTOM - top - height) / 2
     for position, index in enumerate(steps):
         click = _click(roles, f"step_{index}")
@@ -2595,10 +2635,12 @@ def _process_across(roles: dict[str, Content], theme: Theme) -> Placement:
         box = Box(x=x, y=y, w=width, h=height)
         placement.shapes.append(ShapeElement(role=f"step {index} box", box=box, color=colour, appears_on_click=click))
         text = _inset(box, 18)
-        if _has_picture(roles, f"step_{index}"):  # (a step's picture in the top half of its box, its text under it)
-            upper = Box(x=text.x, y=text.y, w=text.w, h=(text.h - _PICTURE_GAP) / 2)
-            if _place_picture(placement, f"step_{index}", _picture_box(upper)):
-                text = Box(x=text.x, y=upper.y + upper.h + _PICTURE_GAP, w=text.w, h=upper.h)
+        if _has_picture(roles, f"step_{index}"):  # (a step's picture in the top of its box, its text under it)
+            share = 0.68 if pictured else 0.5  # (most of it, where every step has one: D80)
+            upper = Box(x=text.x, y=text.y, w=text.w, h=(text.h - _PICTURE_GAP) * share)
+            if _place_picture(placement, f"step_{index}", _picture_box(upper, 1.0 if pictured else _PICTURE_SHAPE)):
+                lower = upper.y + upper.h + _PICTURE_GAP
+                text = Box(x=text.x, y=lower, w=text.w, h=text.y + text.h - lower)
         placement.boxes[f"step_{index}"] = (text, "box")
         placement.colors[f"step_{index}"] = _on([colour], theme)
     return placement
@@ -2771,7 +2813,10 @@ def _newspaper_title(roles: dict[str, Content], theme: Theme) -> Placement:
     grey = color.mix(palette.background, palette.text, 0.22)
     gap = 56
     column = (width - 2 * gap) / 3
-    for index in range(3):
+    pictured = TITLE_PICTURE in roles  # (the front page's photo, of the talk's world, in its last two columns: D80)
+    if pictured:
+        placement.boxes[TITLE_PICTURE] = (Box(x=MARGIN + column + gap, y=596, w=2 * column + gap, h=384), "caption")
+    for index in range(1 if pictured else 3):
         x = MARGIN + index * (column + gap)
         if index:
             placement.shapes.append(
@@ -2808,6 +2853,8 @@ def _corporate_title(roles: dict[str, Content], theme: Theme) -> Placement:
     title = Box(x=MARGIN + 40, y=260, w=980, h=400)
     placement.boxes["title"] = (title, "left title")
     placement.boxes["subtitle"] = (Box(x=MARGIN + 40, y=700, w=900, h=170), "left subtitle")
+    if TITLE_PICTURE in roles:  # (a photo of the talk's world on its panel: D80)
+        placement.boxes[TITLE_PICTURE] = (Box(x=1340, y=230, w=480, h=600), "caption")
     placement.shapes += _decoration(_left_aligned(theme), title, gap=12)
     return placement
 
@@ -3065,7 +3112,8 @@ def _few_short_words(roles: dict[str, Content]) -> bool:
 
 
 def _dare_card(roles: dict[str, Content], theme: Theme) -> Placement:
-    """The dare big on a card in the theme's surface colour, edged in its accent, under its heading on a sticker."""
+    """The dare big on a card in the theme's surface colour, edged in its accent, under its heading on a sticker; over
+    its picture, shaded, if it has one (D80)."""
     palette = theme.palette
     card = Box(x=260, y=250, w=1400, h=640)
     placement = Placement(
@@ -3075,6 +3123,7 @@ def _dare_card(roles: dict[str, Content], theme: Theme) -> Placement:
             ShapeElement(role="card", box=card, color=palette.surface),
         ],
     )
+    _backdrop(placement, roles)
     _sticker(placement, theme, Box(x=(WIDTH - 640) / 2, y=card.y - 70, w=640, h=120))
     placement.boxes["dare"] = (Box(x=card.x + 80, y=card.y + 90, w=card.w - 160, h=card.h - 150), "dare")
     placement.colors["dare"] = _on([palette.surface], theme)
@@ -3436,11 +3485,21 @@ def _short_cells(most: int) -> Callable[[dict[str, Content]], bool]:
 # A red flag's red, and its shape: a flag with a swallowtail, on a pole
 _RED: Final = "#e53935"
 _SWALLOWTAIL: Final = ((0.0, 0.0), (1.0, 0.0), (0.78, 0.5), (1.0, 1.0), (0.0, 1.0))
+# The cloths of a green, an orange and a red flag, in that order (D80)
+_TRAFFIC: Final = ("#43a047", "#fb8c00", _RED)
 
 
-def _flag(placement: Placement, role: str, box: Box, theme: Theme, under: Sequence[str], click: int | None) -> None:
-    """A red flag in the box, on its pole (both appearing with its text, on its click), in colours that show on what's
-    under them."""
+def _flag(
+    placement: Placement,
+    role: str,
+    box: Box,
+    theme: Theme,
+    under: Sequence[str],
+    click: int | None,
+    cloth: str = _RED,
+) -> None:
+    """A flag in the box (red, or the cloth's colour), on its pole (both appearing with its text, on its click), in
+    colours that show on what's under them."""
     pole = max(6.0, box.w * 0.09)
     name = role.replace("_", " ")  # ("flag 1")
     placement.shapes += [
@@ -3455,33 +3514,44 @@ def _flag(placement: Placement, role: str, box: Box, theme: Theme, under: Sequen
             shape="polygon",
             points=_SWALLOWTAIL,
             box=Box(x=box.x + pole, y=box.y, w=box.w - pole, h=box.h * 0.62),
-            color=color.readable_on(_RED, under, LINE_CONTRAST),
+            color=color.readable_on(cloth, under, LINE_CONTRAST),
             appears_on_click=click,
         ),
     ]
 
 
-def _red_flags(roles: dict[str, Content], theme: Theme) -> Placement:
-    """The red flags one under the other, each beside a red flag on its pole."""
-    placement = Placement("v5/red-flags")
+def _cloth(colours: Sequence[str], position: int) -> str:
+    """The colour of a slide's position-th flag (from 0): its own (a green, an orange and a red flag's), or red."""
+    return colours[position] if position < len(colours) else _RED
+
+
+def _red_flags(
+    roles: dict[str, Content], theme: Theme, name: str = "v5/red-flags", colours: Sequence[str] = ()
+) -> Placement:
+    """The red flags one under the other, each beside a red flag on its pole (or a flag of its colour)."""
+    placement = Placement(name)
     top = (_with_title(placement, roles, theme) if "title" in roles else MARGIN) + 16
     flags = _numbered(roles, "flag", 5)
     y, height = _spread(top, _CONTENT_BOTTOM, len(flags), 20, 150)
     icon_h = min(110.0, height - 16)
-    for index in flags:
+    for position, index in enumerate(flags):
         role = f"flag_{index}"
         icon = Box(x=MARGIN + 24, y=y + (height - icon_h) / 2, w=0.85 * icon_h, h=icon_h)
-        _flag(placement, role, icon, theme, _slide_colours(theme), _item_click(roles, role))
+        under = _slide_colours(theme)
+        _flag(placement, role, icon, theme, under, _item_click(roles, role), _cloth(colours, position))
         x = icon.x + icon.w + 48
         _text_or_picture(placement, roles, role, Box(x=x, y=y, w=WIDTH - MARGIN - x, h=height), "flag", beside=True)
         y += height + 20
     return placement
 
 
-def _red_flags_cards(roles: dict[str, Content], theme: Theme) -> Placement:
-    """The red flags side by side on cards in the theme's surface colour, each card with its red flag on top."""
+def _red_flags_cards(
+    roles: dict[str, Content], theme: Theme, name: str = "v5/red-flags-cards", colours: Sequence[str] = ()
+) -> Placement:
+    """The red flags side by side on cards in the theme's surface colour, each card with its red flag (or a flag of
+    its colour) on top."""
     palette = theme.palette
-    placement = Placement("v5/red-flags-cards")
+    placement = Placement(name)
     top = (_with_title(placement, roles, theme) if "title" in roles else MARGIN) + 24
     flags = _numbered(roles, "flag", 5)
     gap = 40.0
@@ -3496,12 +3566,22 @@ def _red_flags_cards(roles: dict[str, Content], theme: Theme) -> Placement:
             ShapeElement(role=f"flag {index} card", box=card, color=palette.surface, appears_on_click=click)
         )
         icon = Box(x=x + (width - 128) / 2, y=y + 40, w=128, h=150)
-        _flag(placement, role, icon, theme, [palette.surface], click)
+        _flag(placement, role, icon, theme, [palette.surface], click, _cloth(colours, position))
         text_top = icon.y + icon.h + 32
         under = Box(x=x + 28, y=text_top, w=width - 56, h=y + height - 28 - text_top)
         _text_or_picture(placement, roles, role, under, "card flag")
         placement.colors[role] = _on([palette.surface], theme)
     return placement
+
+
+def _traffic_flags(roles: dict[str, Content], theme: Theme) -> Placement:
+    """A green, an orange and a red flag one under the other, each beside its flag (D80)."""
+    return _red_flags(roles, theme, "v5/traffic-flags", _TRAFFIC)
+
+
+def _traffic_flags_cards(roles: dict[str, Content], theme: Theme) -> Placement:
+    """A green, an orange and a red flag side by side on cards, each with its flag on top (D80)."""
+    return _red_flags_cards(roles, theme, "v5/traffic-flags-cards", _TRAFFIC)
 
 
 def _at_most(prefix: str, most: int) -> Callable[[dict[str, Content]], bool]:
@@ -4121,11 +4201,12 @@ _LAYOUTS: Final[dict[str, tuple[_Layout, ...]]] = {
     # (the generic title's named for the theme's alignment: v5/title-left or -center; a family's own comes first)
     "title": (
         _Layout("v5/title", _title_slide),
-        _Layout("v5/kids-title", _kids_title, 50, families=frozenset({"kids"})),
-        _Layout("v5/neon-title", _neon_title, 50, families=frozenset({"neon"})),
-        _Layout("v5/swiss-title", _swiss_title, 50, families=frozenset({"Swiss poster"})),
+        # (a family's own that has no room for a photo of the talk's world gives way to the one beside it: D80)
+        _Layout("v5/kids-title", _kids_title, 50, _without(TITLE_PICTURE), frozenset({"kids"})),
+        _Layout("v5/neon-title", _neon_title, 50, _without(TITLE_PICTURE), frozenset({"neon"})),
+        _Layout("v5/swiss-title", _swiss_title, 50, _without(TITLE_PICTURE), frozenset({"Swiss poster"})),
         _Layout("v5/newspaper-title", _newspaper_title, 50, families=frozenset({"newspaper"})),
-        _Layout("v5/beamer-title", _beamer_title, 50, families=frozenset({"academic"})),
+        _Layout("v5/beamer-title", _beamer_title, 50, _without(TITLE_PICTURE), frozenset({"academic"})),
         _Layout("v5/corporate-title", _corporate_title, 50, families=frozenset({"corporate"})),
     ),
     "large_quote": (
@@ -4147,7 +4228,7 @@ _LAYOUTS: Final[dict[str, tuple[_Layout, ...]]] = {
     "two_column_image": (
         _Layout("v5/columns-2", _columns(2)),
         _Layout("v5/columns-2-headed", _headed_columns(2), 0.8),
-        _Layout("v5/columns-2-rows", _rows, 0.8),
+        _Layout("v5/columns-2-rows", _rows, 0.8, _pictures_both),
         _Layout("v5/columns-2-split", _split, 0.8),
     ),
     "three_column_image": (
@@ -4190,12 +4271,14 @@ _LAYOUTS: Final[dict[str, tuple[_Layout, ...]]] = {
         _Layout("v5/agenda-steps", _agenda_steps, 0.8),
         _Layout("v5/agenda-side", _agenda_side, 0.6, _beside_title),
     ),
+    # (a section over a picture of what it's about has a layout of its own: D80)
     "section": (
-        _Layout("v5/section", _section),
-        _Layout("v5/section-panel", _section_panel, 0.8),
-        _Layout("v5/kids-section", _kids_section, 4, families=frozenset({"kids"})),
-        _Layout("v5/neon-section", _neon_section, 4, families=frozenset({"neon"})),
-        _Layout("v5/swiss-section", _swiss_section, 4, families=frozenset({"Swiss poster"})),
+        _Layout("v5/section", _section, fits=_without("background")),
+        _Layout("v5/section-panel", _section_panel, 0.8, _without("background")),
+        _Layout("v5/kids-section", _kids_section, 4, _without("background"), frozenset({"kids"})),
+        _Layout("v5/neon-section", _neon_section, 4, _without("background"), frozenset({"neon"})),
+        _Layout("v5/swiss-section", _swiss_section, 4, _without("background"), frozenset({"Swiss poster"})),
+        _Layout("v5/section-photo", _section_photo, fits=_has("background")),
     ),
     "questions": (
         _Layout("v5/questions", _questions, fits=_without("photo")),
@@ -4261,7 +4344,7 @@ _LAYOUTS: Final[dict[str, tuple[_Layout, ...]]] = {
     ),
     "dare": (
         _Layout("v5/dare", _dare_card),
-        _Layout("v5/dare-tape", _dare_tape, 0.9),
+        _Layout("v5/dare-tape", _dare_tape, 0.9, _without("background")),
     ),
     "flowchart": (
         _Layout("v5/flowchart", _flowchart(side=False)),
@@ -4282,6 +4365,10 @@ _LAYOUTS: Final[dict[str, tuple[_Layout, ...]]] = {
     "red_flags": (
         _Layout("v5/red-flags", _red_flags),
         _Layout("v5/red-flags-cards", _red_flags_cards, 0.9, _at_most("flag", 4)),
+    ),
+    "traffic_flags": (
+        _Layout("v5/traffic-flags", _traffic_flags),
+        _Layout("v5/traffic-flags-cards", _traffic_flags_cards, 0.9),
     ),
     "reviews": (
         _Layout("v5/reviews", _reviews),

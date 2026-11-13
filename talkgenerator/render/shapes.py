@@ -273,8 +273,17 @@ def _text_box(
     paragraph = frame.paragraphs[0]
     paragraph.alignment = _ALIGN[style.align]
     for whole, url in runs:
-        # (emoji in runs of their own, in an emoji font: no theme font has them, and an emoji font draws them in colour)
-        for text, emoji in emoji_util.runs(whole):
+        # (emoji in runs of their own, in an emoji font: no theme font has them, and an emoji font draws them in colour;
+        # and a line of its own where the text breaks it, as a line break in the paragraph: a presenter's job under
+        # their name, D80)
+        pieces: list[tuple[str, bool] | None] = []
+        for number, line in enumerate(whole.split("\n")):
+            pieces += [None] * (number > 0) + list(emoji_util.runs(line))
+        for piece in pieces:
+            if piece is None:
+                paragraph.add_line_break()
+                continue
+            text, emoji = piece
             run = paragraph.add_run()
             run.text = text
             font = run.font
@@ -549,11 +558,11 @@ def _chart(ppt_slide: Slide, element: ChartElement, theme: Theme, slide: DeckSli
     )
     charts.label_points(chart, spec, look, frame.width)
     charts.add_trendlines(chart, spec, _rgb(palette.text))
+    charts.name_bars(chart, spec, look)
     if isinstance(slide.element(engine.POINT_PICTURE), ImageElement):  # (where the layout reckons its point is)
         charts.pin_plot(chart, spec, box.w, box.h)
     charts.finish(chart, look)
-    if spec.reveal == "series":
-        animation.reveal_chart_series(ppt_slide, frame, len(spec.series))
+    animation.reveal_chart(ppt_slide, frame, spec)
 
 
 def _colour_behind(box: Box, slide: DeckSlide, theme: Theme) -> str:

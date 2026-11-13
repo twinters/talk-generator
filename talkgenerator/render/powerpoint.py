@@ -163,18 +163,16 @@ def _create_chart_slide(presentation: Presentation, slide: DeckSlide, images: Im
         pinned = engine.point_picture(spec, box, charts.CLASSIC_LOOK.font)
         if pinned is not None:
             charts.pin_plot(frame.chart, spec, box.w, box.h)
+    charts.name_bars(frame.chart, spec, charts.CLASSIC_LOOK)
     charts.finish(frame.chart, charts.CLASSIC_LOOK)
-    if spec.reveal == "series":
-        animation.reveal_chart_series(ppt_slide, frame, len(spec.series))
-    if pinned is not None and isinstance(picture, ImageElement):  # (on its click, after the second line's)
+    animation.reveal_chart(ppt_slide, frame, spec)
+    if pinned is not None and isinstance(picture, ImageElement):  # (there from the start, for the presenter: D80)
         from talkgenerator.render import shapes
 
         area, line = pinned
-        before = {shape.shape_id for shape in ppt_slide.shapes}
         if line is not None:
             shapes.draw_shape(ppt_slide, line.model_copy(update={"color": f"#{charts.PUNCHLINE_COLOUR}"}))
         shapes.draw_picture(ppt_slide, picture.model_copy(update={"box": area}), images)
-        animation.reveal_clicks(ppt_slide, [[shape for shape in ppt_slide.shapes if shape.shape_id not in before]])
     return ppt_slide
 
 

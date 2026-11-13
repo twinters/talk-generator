@@ -2,7 +2,7 @@
   "shop_title": [
     "The gift shop",
     "Before you go",
-    "Take a piece of {museum} home",
+    "Take {museum} home",
     "Souvenirs",
     "Our best sellers",
     "Today in the gift shop"
@@ -64,10 +64,10 @@
   "big_label": [
     "for a pencil with {seed.generic} on it",
     "for a postcard of the masterpiece, slightly blurry",
-    "for a {seed.bare} snow globe, while stocks last",
-    "for an umbrella that says 'I saw {seed.generic}'",
+    "for a snow globe of {seed.generic}",
+    "for an umbrella: 'I saw {seed.generic}'",
     "for a bookmark. Just the one.",
-    "for a very small bag of {seed.bare} sweets"
+    "for a tiny bag of {seed.bare} sweets"
   ],
   "big_source": [
     "Gift shop prices, subject to change",

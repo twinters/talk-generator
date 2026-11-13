@@ -277,8 +277,7 @@
     "An idea by #name_and_job#"
   ],
   "name_and_job": [
-    "{presenter}, #presenter_job#",
-    "{presenter},\n#presenter_job#"
+    "{presenter}\n#presenter_job#"
   ],
   "knowledge_person": [
     "Researcher",

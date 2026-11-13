@@ -518,7 +518,8 @@ def test_a_short_input_is_asked_for_a_funnier_title_with_classic_ones_to_pick(sc
     spine = _spine_schema(model.requests[0])
     assert list(spine)[:4] == ["unsafe_topic", "thesis", "own_title", "title"]
     assert spine["own_title"]["description"].startswith(
-        "a title of your own for the talk, in English: funnier and more specific than what the user typed"
+        "a short title of your own for the talk, in two to seven words, in English: funnier and more specific than what "
+        "the user typed"
     )
 
 
@@ -534,9 +535,13 @@ def test_a_topic_or_title_given_as_such_is_asked_for_as_before(schema):
     # (one of the model's own, like the titles of the talk's persona)
     hint = personas.persona(deck.persona.name).title_hint
     assert (
-        spine["title"]["description"] == f"a title of your own for the talk, {hint}, in English (at most 80 characters)"
+        spine["title"]["description"]
+        == f"a short title of your own for the talk, in two to seven words, {hint}, in English (at most 50 characters)"
     )
-    assert f"- title: a title of your own for the talk, {hint}, in English" in model.requests[0].messages[0].content
+    assert (
+        f"- title: a short title of your own for the talk, in two to seven words, {hint}, in English"
+        in model.requests[0].messages[0].content
+    )
 
 
 def test_a_title_given_as_such_is_the_request_s_title(schema):
@@ -544,7 +549,7 @@ def test_a_title_given_as_such_is_the_request_s_title(schema):
     deck = _talk(model, topic="penguins", title="Penguins, Explained")
     assert _lines(model.requests[0])[:2] == ["Topic: penguins", "Title: Penguins, Explained"]
     description = _spine_schema(model.requests[0])["title"]["description"]
-    assert description == "the talk's title, in English (at most 80 characters)"
+    assert description == "the talk's title, in English (at most 50 characters)"
     assert deck.title == "Penguins, Explained"
 
 

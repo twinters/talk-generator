@@ -6,7 +6,8 @@ An element is there from the start, or appears on a click of its own (`appears_o
 belongs to an element (`part_of`: a frame around a picture, the tape on it) appears with it; and a column slide's
 columns appear click by click, as the 2019 template's do: of two, the first is there from the start and the second
 comes on the first click, of three, each comes on a click; the one before dims as the next comes in. (A chart's
-series after the first, and a diagram's punchline, come on clicks of their own too: their renderers draw them so.)
+series after the first, or a ranking's bars, and a diagram's punchline, come on clicks of their own too: their
+renderers draw them so.)
 """
 
 from __future__ import annotations
@@ -58,7 +59,7 @@ def clicks(slide: DeckSlide) -> int:
     count = 0
     for element in slide.elements:
         if isinstance(element, ChartElement):
-            count = max(count, len(element.chart.series) - 1 if element.chart.reveal == "series" else 0)
+            count = max(count, element.chart.clicks())
         elif isinstance(element, DiagramElement):
             count = max(count, 1 if element.diagram.reveal == "punchline" else 0)
         else:

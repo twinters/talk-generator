@@ -169,6 +169,10 @@ def generate_big_number(presentation_context: dict[str, Any]) -> tuple[str | Non
 # user found slides of text boring)
 BIG_NUMBER_PICTURES: Final = 0.75
 KPI_PICTURES: Final = 0.5
+# Slides of big text alone get a picture of what they're about behind them now and then (D80, the user's "slides that
+# just have big text would better have a random relevant background"): sections and dares
+SECTION_PICTURES: Final = 0.7
+DARE_PICTURES: Final = 0.5
 
 
 def big_number(image: ImageSource) -> Callable[[dict[str, Any]], tuple[Any, ...] | None]:
@@ -183,6 +187,23 @@ def big_number(image: ImageSource) -> Callable[[dict[str, Any]], tuple[Any, ...]
         return (*made, picture)
 
     return generate
+
+
+def with_backdrop(
+    generate: Callable[[dict[str, Any]], tuple[Any, ...] | None], image: ImageSource, share: float, slots: int = 0
+) -> Callable[[dict[str, Any]], tuple[Any, ...] | None]:
+    """A generator of what the other one generates, with a picture of its seed from the image source after it (after
+    so many empty arguments before the slide's picture, slots), that share of the time (when it finds one): a section
+    or a dare over a picture of what it's about (D80)."""
+
+    def generated(presentation_context: dict[str, Any]) -> tuple[Any, ...] | None:
+        made = generate(presentation_context)
+        if made is None:
+            return None
+        picture = image(dict(presentation_context)) if random_util.random() < share else None
+        return (*made, *([None] * slots), picture)
+
+    return generated
 
 
 def kpi(image: ImageSource) -> Callable[[dict[str, Any]], tuple[Any, ...] | None]:
@@ -384,12 +405,29 @@ def meme(image: ImageSource) -> Callable[[dict[str, Any]], tuple[Any, ...] | Non
 @_unless_sensitive
 def generate_agenda(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
     """An agenda for a talk about the seed: a title, and three to five items (an opening, things related to the seed,
-    and an end); a third of the time, each with an emoji in front (see talkgenerator.sources.emoji)."""
+    and an end); a third of the time, each with an emoji in front (see talkgenerator.sources.emoji). In a talk whose
+    later slides' seeds it knows ("later"), its middle items announce some of them, in order, spread over them, so that
+    what it promises comes back (D80)."""
     related = related_words(presentation_context["seed"])
     variables = _context(presentation_context)
     title = _template("structure.agenda_title")(variables)
     first, last = _template("structure.agenda_first")(variables), _template("structure.agenda_last")(variables)
-    middle = _different("structure.agenda_item", presentation_context, related, random_util.randint(1, 3))
+    count = random_util.randint(1, 3)
+    later = [str(seed) for seed in presentation_context.get("later") or () if seed]
+    if later:
+        announced = [
+            later[round(index * (len(later) - 1) / max(1, count - 1))] for index in range(min(count, len(later)))
+        ]
+        templates = [template for template in _rule("structure.agenda_item") if "{related" in template]
+        middle = [
+            text_generator.apply_variables_to_template(
+                random_util.choice(templates), {"seed": presentation_context["seed"], "related": word.lower()}
+            )
+            for word in dict.fromkeys(announced)
+        ]
+        middle = [item for item in middle if item]
+    else:
+        middle = _different("structure.agenda_item", presentation_context, related, count)
     if not title or not first or not last or not middle:
         return None
     items = [first, *middle, last]
@@ -688,7 +726,7 @@ def fun_fact(image: ImageSource) -> Callable[[dict[str, Any]], tuple[Any, ...] |
     return generate
 
 
-_FACT: Final = 150  # how long a fun fact may be (the fun fact kind's length)
+_FACT: Final = 100  # how long a fun fact may be (the fun fact kind's length, shorter since D80)
 _TWIST: Final = 40  # how long its twist may be (the pack's karaoke.fun_fact_twist)
 
 
@@ -772,7 +810,9 @@ def generate_dare(presentation_context: dict[str, Any]) -> tuple[str, str] | Non
 
 _DARE: Final = 130  # how long a dare may be (the dare kind's length)
 _JOKES: Final = 0.2  # of the classic dares that dare the presenter to tell a real dad joke (when there's one)
-_CLOSING_LINE: Final = 80  # how long the line under the closing slide's title may be (the questions kind's subtitle)
+_CLOSING_LINE: Final = (
+    80  # how long the line under the closing slide's title may be (a real piece of advice, read whole)
+)
 
 
 @_unless_sensitive
@@ -856,11 +896,12 @@ def generate_alignment_chart(presentation_context: dict[str, Any]) -> tuple[Any,
 
 @_unless_sensitive
 def generate_red_flags(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
-    """Red flags about the seed: a title, two to four warning signs about it and words related to it, and a last one,
-    the punchline, which breaks their pattern now and then (PATTERN_BREAK): a few words where they're sentences."""
+    """Red flags about the seed: a title, two warning signs about it and words related to it, and a last one, the
+    punchline, which breaks their pattern now and then (PATTERN_BREAK): a few words. Three in all, which read at a
+    glance (the user, 2026-11-13: "better just three red flags")."""
     related = related_words(presentation_context["seed"])
     title = _template("karaoke.red_flags_title")(_context(presentation_context))
-    flags = _different("karaoke.red_flag", presentation_context, related, random_util.randint(2, 4))
+    flags = _different("karaoke.red_flag", presentation_context, related, 2)
     # (the last one breaking the pattern now and then, in a few words: D73)
     short = _breaking() and random_util.random() < PATTERN_BREAK
     last_rule = "karaoke.red_flag_short" if short else "karaoke.red_flag_last"
@@ -868,6 +909,23 @@ def generate_red_flags(presentation_context: dict[str, Any]) -> tuple[str | None
     if not title or len(flags) < 2 or not last:
         return None
     return title, *flags, last
+
+
+@_unless_sensitive
+def generate_traffic_flags(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
+    """A green, an orange and a red flag about the seed (D80): a title, a good sign, a doubtful one and an alarming
+    one, the punchline, which breaks the pattern now and then (PATTERN_BREAK), in a few words."""
+    related = related_words(presentation_context["seed"])
+    title = _template("karaoke.traffic_flags_title")(_context(presentation_context))
+    green = _template("karaoke.green_flag")(_context(presentation_context, related))
+    orange = _template("karaoke.orange_flag")(_context(presentation_context, related))
+    short = _breaking() and random_util.random() < PATTERN_BREAK
+    red = _template("karaoke.red_flag_short" if short else "karaoke.red_flag_last")(
+        _context(presentation_context, related)
+    )
+    if not title or not green or not orange or not red:
+        return None
+    return title, green, orange, red
 
 
 _first_names = (
@@ -903,14 +961,18 @@ def generate_reviews(presentation_context: dict[str, Any]) -> tuple[str | None, 
     return title, *reviews, "1", bad, _reviewer()
 
 
+# How often a classic error message has an error code (three times in four until D80: less to read)
+ERROR_CODES: Final = 0.35
+
+
 @_unless_sensitive
 def generate_error_message(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
     """A fake error message about the seed: its title, the message (about the seed, or a word related to it), an error
-    code three times in four, and three buttons, the last one the punchline."""
+    code a third of the time (D80: less to read), and three buttons, the last one the punchline."""
     related = related_words(presentation_context["seed"])
     title = _template("karaoke.error_title")(_context(presentation_context))
     message = _template("karaoke.error_message")(_context(presentation_context, related))
-    code = _maybe(0.75, _template("karaoke.error_code")({}))
+    code = _maybe(ERROR_CODES, _template("karaoke.error_code")({}))
     buttons = _template("karaoke.error_buttons")({})
     if not message or not buttons:
         return None

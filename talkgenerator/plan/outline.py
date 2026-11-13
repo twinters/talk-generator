@@ -78,7 +78,8 @@ presents slides they've never seen, and the fun is in watching them make it all 
 does, so that the talk is clever, funny and about its topic; the slides are written afterwards, from your plan.
 
 - One thread: a thesis, an absurd claim that the talk argues as if it were obvious, and a running gag that comes \
-back on two or three slides (their ideas say so). The talk's spine (its title, the presenter's made-up job) fits it.
+back once, on one later slide (its idea says so): two slides in all. The talk's spine (its title, the presenter's \
+made-up job) fits it.
 - Every slide riffs on a word: one of the words it's offered (the talk's dice found them, wandering away from the \
 topic: their surprise is the point), or a sharper one of your own. A thing, which a picture can show; never a word \
 another slide has.
@@ -102,9 +103,11 @@ from the plan, which holds the talk's thread. Write the slides you're asked for 
 your own: an idea is a plan, not a text, so never copy its words onto a slide; write titles and captions as the \
 fields ask, and call back to earlier slides by what they're about."""
 
+# The running gag: a made-up person now and then (prompt.recurring_character, D80), else a thing or a claim
 _RUNNING_GAG_DESCRIPTION: Final = (
-    "the running gag: something that keeps coming back (a thing, a made-up person, a claim), in a few words"
+    "the running gag: a thing or a claim (never a person) that comes back once, on one later slide, in a few words"
 )
+_RECURRING_CHARACTER: Final = "the running gag: a made-up person who turns up on two slides, in a few words"
 _RIFF: Final = (
     f"the word the slide riffs on: one of its words, or a sharper one of your own (at most {RIFF_LENGTH} characters)"
 )
@@ -192,7 +195,7 @@ def outline_request(
     is (its brief) and the words the dice offer it (offers, by slide number: its seed first, then the others that
     would have done), for its riff and its idea. In a talk in another language than English, the riffs are in that
     language too (English words offered say they're English: D74), and the ideas in English."""
-    fields = _spine_fields(language, title, name, typed, persona, talk_format)
+    fields = _spine_fields(language, title, name, typed, persona, talk_format, prompt.recurring_character(rng))
     language_name = languages.language(language).name
     other = language != languages.ENGLISH.code
     plans_in = f", every slide's riff in {language_name} too, and its idea in English" if other else ""
@@ -217,7 +220,8 @@ def outline_request(
         brief = (slide.recipe.brief or KINDS[slide.recipe.kind].description).rstrip(".")
         words = ", ".join(dict.fromkeys(word for word in offers.get(slide.number, (slide.seed,)) if word))
         marked = " (English)" if slide.english and other else ""
-        lines += ["", f"{slide.key}: {brief}. Its words{marked}: {words or slide.seed}"]
+        cue = f". {slide.cue}" if slide.cue else ""  # (the agenda's announcements, or the item it picks up: D80)
+        lines += ["", f"{slide.key}: {brief}. Its words{marked}: {words or slide.seed}{cue}"]
     return TextRequest(
         purpose=PURPOSE,
         system=OUTLINE_SYSTEM_PROMPT,
@@ -234,11 +238,14 @@ def _spine_fields(
     typed: TitleRequest | None,
     persona: Persona | None,
     talk_format: Format | None,
+    character: bool = False,
 ) -> dict[str, str]:
-    """The outline's spine: a Basic talk's (prompt.spine, as its request has it), and the running gag."""
+    """The outline's spine: a Basic talk's (prompt.spine, as its request has it), and the running gag (a made-up
+    person, with character)."""
     hint = prompt.title_hint(persona, title, typed, talk_format)
     job = prompt.job_hint(persona, talk_format)
-    return {**prompt.spine(language, name, typed, hint, job, bool(title)), RUNNING_GAG: _RUNNING_GAG_DESCRIPTION}
+    gag = _RECURRING_CHARACTER if character else _RUNNING_GAG_DESCRIPTION
+    return {**prompt.spine(language, name, typed, hint, job, bool(title)), RUNNING_GAG: gag}
 
 
 def _outline_schema(

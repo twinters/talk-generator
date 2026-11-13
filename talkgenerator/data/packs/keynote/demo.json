@@ -9,12 +9,12 @@
   ],
   "error": [
     "{product} has stopped responding.",
-    "{product} isn't sure what you meant. It never is.",
+    "{product} didn't get that. It never does.",
     "The demo could not connect to this building's Wi-Fi.",
-    "{product} needs to update before it can do anything impressive.",
+    "{product} must update to be impressive.",
     "Something went wrong. It's not you, it's the demo.",
     "This feature is coming soon. It was supposed to come today.",
-    "{product} is out of {seed.generic}. Please try again later.",
+    "Out of {seed.generic}. Please try again later.",
     "An unexpected {seed.bare} error occurred."
   ],
   "error_code": [

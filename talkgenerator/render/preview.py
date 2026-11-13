@@ -516,15 +516,16 @@ def _chart(canvas: Image.Image, element: ChartElement, scale: float, theme: Them
     count = max(1, len(series_values))
     for index, value in enumerate(series_values):
         fill = palette.accent_2 if spec.chart_type == "bar" and index == count - 1 else palette.accent
-        if spec.chart_type == "bar":  # horizontal, the first category at the bottom
+        if spec.chart_type == "bar":  # horizontal, the first category at the top (D80), each bar named by it
             height = (bottom - y0) / count
-            top = bottom - (index + 1) * height
-            draw.rectangle(
-                (left, top + height * 0.15, left + (x1 - left) * value / top_value * 0.9, top + height * 0.85),
-                fill=fill,
-            )
+            top = y0 + index * height
+            end = left + (x1 - left) * value / top_value * 0.9
+            draw.rectangle((left, top + height * 0.15, end, top + height * 0.85), fill=fill)
             name = spec.categories[index] if index < len(spec.categories) else ""
-            draw.text((left + 10 * scale, top + height / 2), name, fill=palette.background, font=label, anchor="lm")
+            inside = value > top_value / 2  # (the punchline's long bar, named inside it; a short one after it)
+            ink = palette.background if inside else palette.text
+            where = (left + 10 * scale, top + height / 2) if inside else (end + 10 * scale, top + height / 2)
+            draw.text(where, name, fill=ink, font=label, anchor="lm")
         else:  # a column, with its share on top
             span = (x1 - left) / count
             top = bottom - (bottom - y0) * value / top_value * 0.85

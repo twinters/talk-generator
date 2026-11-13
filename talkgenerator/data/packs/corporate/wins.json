@@ -41,19 +41,19 @@
   "post": [
     "Humbled to announce that our {seed.bare} team hit 98% of target. Agree?",
     "I asked our team for 110% this quarter. They gave 97%. That's what leadership looks like.",
-    "Woke up at 4 a.m., ran 10 km, read three reports on {seed.generic}. Then I hugged my team. Grateful.",
-    "Proud of everyone at {company}. We didn't hit our numbers, but we missed them together.",
-    "Unpopular opinion: {seed.generic} and quarterly targets have a lot in common. Let that sink in.",
-    "Excited to share that {company} now puts {seed.generic} first. More soon.",
-    "Five things our {seed.bare} team taught me about resilience. Number four will surprise you.",
-    "Some ask why I start every meeting with a minute of silence for our targets. Leadership is lonely.",
-    "Our intern asked me what we do. I didn't have an answer. Then I did: {seed.generic}. Thank you, intern.",
+    "Up at 4 a.m. Ran 10 km. Read up on {seed.generic}. Hugged my team. Grateful.",
+    "Proud of {company}. We didn't hit our goals, but we missed them together.",
+    "Unpopular opinion: {seed.generic} and KPIs have much in common. Let that sink in.",
+    "Excited to share: {company} puts {seed.generic} first. More soon.",
+    "5 resilience lessons from our {seed.bare} team. Number 4 will surprise you.",
+    "Why do I start meetings with a minute of silence for our targets? Leadership is lonely.",
+    "Our intern asked what we do. Then it hit me: {seed.generic}. Thank you, intern.",
     "Closed the quarter with a team hug and a spreadsheet. Both were emotional."
   ],
   "review_good": [
-    "Exactly what I needed for {seed.generic}. Fast delivery, friendly staff.",
+    "Exactly what I needed for {seed.generic}. Fast delivery.",
     "Reliable, professional, and they always pick up the phone.",
-    "Would recommend {company} to anyone who needs {seed.generic}.",
+    "Would recommend {company} for {seed.generic}.",
     "Great value. My whole department uses it now.",
     "The account manager knows my name and my birthday.",
     "Changed how our office thinks about {seed.generic}.",
@@ -67,7 +67,7 @@
     "They sent me a survey about the survey.",
     "One star. The invoice was the only thing that arrived on time.",
     "My order was escalated to a steering committee.",
-    "Customer service said they'd circle back. I've been circling since May."
+    "Support said they'd circle back. I've been circling since May."
   ],
   "reviewer": [
     "Pat, procurement",

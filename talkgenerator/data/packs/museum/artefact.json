@@ -1,21 +1,21 @@
 {
   "artefact_title": [
-    "Exhibit {number}: {seed.one}, use unknown",
+    "No. {number}: {seed.one}, use unknown",
     "Artefact {number}. Origin unknown.",
-    "Object {number}: early {seed.bare}, purpose unclear",
-    "Behind this glass: {seed.one}, probably",
+    "Old {seed.bare}, purpose unclear",
+    "This is {seed.one}. Probably.",
     "Found in 1923, in a farmer's left boot",
-    "The oldest {seed.bare} in the world",
+    "The world's oldest {seed.bare}",
     "On loan from a very confused family",
     "Do not tap the glass. It bites.",
-    "Exhibit {number}: we think it's {seed.one}"
+    "We think it's {seed.one}"
   ],
   "quiz_question": [
     "What did people in the Middle Ages use {seed.generic} for?",
     "Why did the ancient Romans keep {seed.generic} at home?",
     "What is the oldest known use of {seed.generic}?",
     "Why do museums keep {seed.generic} behind glass?",
-    "What did {artist} use the {seed.bare} jar for?",
+    "Why did {artist} hoard {seed.generic}?",
     "Our oldest piece of {seed.bare} history: what was it for?"
   ],
   "use": [
@@ -59,10 +59,10 @@
   "headline": [
     "Priceless {seed.bare} found in grandmother's attic",
     "Experts baffled by ancient {seed.bare} statue",
-    "Museum admits {seed.bare} exhibit was upside down for 40 years",
+    "Museum admits {seed.bare} exhibit upside down for 40 years",
     "Ancient {seed.bare} statue turns out to be a lamp",
-    "Archaeologists find oldest {seed.bare} ever, ask for a second opinion",
-    "Local man finds {seed.one} in sofa, museum very interested"
+    "Diggers find oldest {seed.bare}, ask for a second opinion",
+    "Local man finds {seed.one} in sofa, museum interested"
   ],
   "subheadline": [
     "The museum says it is 'very excited' and 'a little worried'",

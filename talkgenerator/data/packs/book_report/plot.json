@@ -127,10 +127,10 @@
     "Everyone goes camping",
     "A secret map!",
     "A very long bit",
-    "The {seed.bare} chapter",
+    "The {seed.bare} bit",
     "A surprise picnic",
     "Nobody talks for 30 pages",
-    "A song about {seed.generic}",
+    "{seed.generic.cap}: a song",
     "Someone gets lost"
   ],
   "timeline_punchline": [

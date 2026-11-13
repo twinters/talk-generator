@@ -1,12 +1,12 @@
 {
   "audience": [
     "Everyone, please stand and raise your glasses: to {friend} and {topic.generic}!",
-    "Everyone: raise your glasses. On three, we all say 'To {friend} and {topic.generic}!'",
-    "Everyone, glasses up! When I say '{friend}', you say '{topic.generic}'. Let's try it.",
+    "Everyone: raise your glass. On three, we all say 'To {friend} and {topic.generic}!'",
+    "Everyone, glasses up! I say '{friend}', you say '{topic.generic}'. Let's try it.",
     "Everyone: turn to your neighbour, raise your glass and say 'To true love!'",
-    "Everyone: stand up, raise your glasses, and wish {friend} and {topic.generic} a long and happy life.",
+    "Everyone: stand, raise a glass and wish {friend} and {topic.generic} a happy life.",
     "Everyone: glasses up for the happy couple. Higher. Higher! There.",
-    "Front row: raise your glasses. Back row: raise them higher. To {friend} and {topic.generic}!",
+    "Front row: glasses up. Back row: higher. To {friend} and {topic.generic}!",
     "Everyone: on three, clink glasses with someone you don't know. One, two, three!"
   ],
   "toast": [

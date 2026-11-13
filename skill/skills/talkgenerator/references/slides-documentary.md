@@ -28,7 +28,7 @@ An image with a title.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title |
+| `title` | 45 | the slide's title |
 
 Images: `image`
 
@@ -42,7 +42,7 @@ An image filling the slide, with an optional title.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title (or empty, for none) |
+| `title` | 45 | the slide's title (or empty, for none) |
 
 Images: `image`
 
@@ -62,7 +62,7 @@ A big text over a photo.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `text` | 140 | the big text over the photo |
+| `text` | 90 | the big text over the photo: one short sentence |
 
 Images: `background`
 
@@ -79,7 +79,7 @@ Two captioned images side by side.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title (or empty, for none) |
+| `title` | 45 | the slide's title (or empty, for none) |
 | `caption_1` | 40 | the left caption |
 | `caption_2` | 40 | the right caption |
 
@@ -95,7 +95,7 @@ Three captioned images side by side.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title (or empty, for none) |
+| `title` | 45 | the slide's title (or empty, for none) |
 | `caption_1` | 40 | the left caption |
 | `caption_2` | 40 | the middle caption |
 | `caption_3` | 40 | the right caption |
@@ -112,9 +112,9 @@ A made-up historical figure's portrait, next to their quote.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | a title about history |
-| `name` | 60 | a made-up historical figure (never a real person): name and title |
-| `quote` | 160 | what this made-up figure once said |
+| `title` | 45 | a title about history |
+| `name` | 50 | a made-up historical figure (never a real person): their name, a comma, and their title |
+| `quote` | 100 | what this made-up figure once said, in one short sentence |
 
 Images: `portrait`
 
@@ -128,8 +128,8 @@ A pie chart of made-up shares.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `question` | 90 | the question the pie chart answers, as its title |
-| `categories` | 120 | two to five answers, separated by \| |
+| `question` | 60 | the question the pie chart answers, as its title |
+| `categories` | 80 | two to five short answers, separated by \| |
 
 Images: none
 
@@ -143,7 +143,7 @@ A line chart of a made-up trend along two odd axes; a second line, if any, draws
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 90 | the chart's claim, as its title, in a few words: what it shows, such as a headline would say it, never 'X vs Y' (the two things it compares go on its axes) |
+| `title` | 60 | the chart's claim, as its title, in a few words: what it shows, such as a headline would say it, never 'X vs Y' (the two things it compares go on its axes) |
 | `x_axis` | 40 | what the chart goes along, such as 'Hours since the meeting started' (or empty, for none) |
 | `y_axis` | 40 | what the line measures, such as 'Times someone said synergy' (or empty, for none) |
 | `shape` | 20 | how the line goes: `rising`, `falling`, `exponential`, `diminishing`, `hockey stick`, `peak`, `crash`, `plateau`, `rollercoaster`, `dip`, `flat` (or empty, for any) |
@@ -164,9 +164,9 @@ A big, made-up number, with what it counts under it: a figure the presenter has 
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title (or empty, for none) |
+| `title` | 45 | the slide's title (or empty, for none) |
 | `number` | 12 | the big number, with its unit if it has one: a percentage, an amount or a count |
-| `label` | 90 | what the number counts or measures, in a few words |
+| `label` | 50 | what the number counts or measures, in a few words |
 | `source` | 60 | a made-up, unreliable source for the number (or empty, for none) |
 
 Images: `background`
@@ -181,13 +181,13 @@ A quiz question for the audience, with three or four options (A to D), which app
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `question` | 90 | the quiz question |
-| `option_a` | 50 | option A (without its letter) |
-| `option_b` | 50 | option B |
-| `option_c` | 50 | option C |
-| `option_d` | 50 | option D (or empty, for none) |
+| `question` | 70 | the quiz question, in one short sentence |
+| `option_a` | 36 | option A (without its letter), in a few words |
+| `option_b` | 36 | option B |
+| `option_c` | 36 | option C |
+| `option_d` | 36 | option D (or empty, for none) |
 | `answer` | 1 | the letter of the right option: `A`, `B`, `C`, `D` |
-| `explanation` | 90 | why that's the answer, shown with it (or empty, for none) |
+| `explanation` | 60 | why that's the answer, shown with it, in a few words (or empty, for none) |
 
 Images: none
 
@@ -202,8 +202,8 @@ A made-up news story with a photo, as breaking news on television or on a newspa
 | Text | At most | What to write |
 | --- | --- | --- |
 | `outlet` | 30 | the made-up name of the newspaper or the channel |
-| `headline` | 90 | the headline |
-| `subheadline` | 100 | a line under the headline, with more of the story (or empty, for none) |
+| `headline` | 70 | the headline |
+| `subheadline` | 70 | a line under the headline, with more of the story (or empty, for none) |
 
 Images: `photo`
 
@@ -217,7 +217,7 @@ A cycle of three to five steps around a circle, each leading to the next, and th
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the cycle's title |
+| `title` | 45 | the cycle's title |
 | `step_1` | 24 | the first step |
 | `step_2` | 24 | the second step |
 | `step_3` | 24 | the third step |
@@ -236,7 +236,7 @@ A process of three to five steps, each leading to the next by an arrow, from the
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the process's title |
+| `title` | 45 | the process's title |
 | `step_1` | 40 | the first step |
 | `step_2` | 40 | the second step |
 | `step_3` | 40 | the third step (the last, the punchline, if there are no more) |
@@ -272,7 +272,7 @@ A fun fact: one absurd fact, stated as certain, under a heading such as 'Did you
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `fact` | 150 | the fact: one sentence, stated as certain, that the presenter has to back up |
+| `fact` | 100 | the fact: one short sentence, stated as certain, that the presenter has to back up |
 | `source` | 60 | a made-up, unreliable source for the fact (or empty, for none) |
 
 Images: `photo`
@@ -287,8 +287,8 @@ A dare, on a card: a real challenge for the presenter for the rest of the talk (
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `dare` | 130 | the challenge, said to the presenter, for the rest of the talk or the next few slides: an accent or a voice, a gesture on every slide, a word to work into every slide, a rule such as speaking only in questions; hard to keep up, harmless, and for the presenter alone (or empty, for none) |
-| `audience` | 130 | what the presenter has the whole audience do, said to them: a show of hands, a call and response (when the presenter says a word, everyone answers with another), the front row standing up, a sound everyone makes; harmless, fun to join in, and singling nobody out (or empty, for none) |
+| `dare` | 90 | the challenge, said to the presenter, for the rest of the talk or the next few slides: an accent or a voice, a gesture on every slide, a word to work into every slide, a rule such as speaking only in questions; hard to keep up, harmless, and for the presenter alone (or empty, for none) |
+| `audience` | 90 | what the presenter has the whole audience do, said to them: a show of hands, a call and response (when the presenter says a word, everyone answers with another), the front row standing up, a sound everyone makes; harmless, fun to join in, and singling nobody out (or empty, for none) |
 
 Images: none
 

@@ -19,7 +19,7 @@
   ],
   "future_step": [
     "Replicate the results",
-    "More data on {seed.generic}",
+    "Data on {seed.generic}",
     "A bigger sample",
     "Apply for a grant",
     "Find a second participant",
@@ -36,7 +36,7 @@
     "Tenure",
     "Retire",
     "A sequel paper",
-    "{seed.generic.cap} on the Moon",
+    "{seed.generic.cap} in space",
     "A talk on the main stage",
     "Explain our results",
     "Understand our own method",
@@ -73,7 +73,7 @@
     "The decision tree"
   ],
   "flow_question": [
-    "Should we do more research on {seed.generic}?",
+    "Should we study {seed.generic} more?",
     "Did the results replicate?",
     "Is the paper accepted?",
     "Do we understand our own results?",

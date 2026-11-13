@@ -70,6 +70,9 @@ class Format:
     # Its closer, the slide after its talks' last (D76: see talkgenerator.closers, which says how a format defines one);
     # None for the TED-like talk's ("Thank you!", closers.DEFAULT)
     closer: Closer | None = None
+    # Its talks' world, in a few plain English words, for the photo beside the title (D80: see
+    # talkgenerator.title_pictures): a wedding toast's "wedding"
+    scene: str = ""
 
 
 def multiplied(*multipliers: Mapping[str, float] | None) -> dict[str, float] | None:

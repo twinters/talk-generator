@@ -24,13 +24,13 @@
     "And the verdict is..."
   ],
   "verdict_number": [
-    "GUILTY|of {crime}, and of looking smug about it",
+    "GUILTY|of {crime}, smugly",
     "12-0|the jury's vote, after a short snack break",
     "30 days|without Wi-Fi",
-    "200 hours|of community service: explaining {topic.generic} to toddlers",
-    "0|regrets, says the defendant. The court is not amused.",
-    "1|very long apology letter for {crime}",
-    "11-1|for guilty, and one juror who wants to hear the cat's side",
+    "200 hours|of explaining {topic.generic} to toddlers",
+    "0|regrets, says the defendant. Court: not amused.",
+    "1|very long apology letter, due Friday",
+    "11-1|for guilty; one juror wants to hear the cat's side",
     "3 weeks|of washing up the court's mugs"
   ],
   "verdict_source": [
@@ -45,7 +45,7 @@
     "You are the jury. Raise your hand if you think {topic.generic} did it.",
     "Members of the jury: if you find the defendant guilty, say 'Guilty!' on three.",
     "Everyone who thinks the defendant did it, stand up. Everyone else, look very suspicious.",
-    "The jury will now deliberate: turn to your neighbour and decide, in ten seconds, guilty or not.",
+    "The jury will now deliberate: turn to your neighbour. Ten seconds. Guilty or not?",
     "All rise! Then sit down again if you think the defendant is innocent.",
     "Hands up, jury: who here has never been accused of {crime}?"
   ]

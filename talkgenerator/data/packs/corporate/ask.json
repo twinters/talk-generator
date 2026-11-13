@@ -4,12 +4,12 @@
     "Our ask is simple: do more with less, and with {seed.generic}.",
     "This quarter, we ask you to think like {seed.generic}.",
     "Fill in the engagement survey. It's anonymous, and we'll know.",
-    "Please come back to the office five days a week. The {seed.bare} room is ready.",
+    "Please return to the office five days a week. The {seed.bare} room is ready.",
     "We don't need more meetings. We need better meetings, and more of them.",
     "Be the {seed.bare} you want to see in the company.",
     "Own it. Whatever it is, own it.",
     "Bring your whole self to work. And your laptop.",
-    "Every one of you is now part of the {seed.bare} strategy, whether you like it or not."
+    "You're all part of the {seed.bare} strategy now, whether you like it or not."
   ],
   "ask_title": [
     "Our ask",
@@ -33,7 +33,7 @@
     "of you, every day, until further notice",
     "of your best, plus a little extra",
     "commitment, from everyone, from Monday",
-    "more output on {seed.generic}, with the same budget",
+    "output on {seed.generic}, same budget",
     "of your time, in the office",
     "effort, now with fewer people",
     "of your energy, on {seed.generic}"

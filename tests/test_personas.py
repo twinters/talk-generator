@@ -237,9 +237,13 @@ def test_a_title_the_model_makes_up_is_like_the_persona_s(schema):
     _deck(model, persona="startup_founder")
     assert (
         _spine(model)["title"]["description"]
-        == f"a title of your own for the talk, {founder.title_hint}, in English (at most 80 characters)"
+        == f"a short title of your own for the talk, in two to seven words, {founder.title_hint}, in English (at most "
+        "50 characters)"
     )
-    assert f"- title: a title of your own for the talk, {founder.title_hint}, in English" in _prompt(model)
+    assert (
+        f"- title: a short title of your own for the talk, in two to seven words, {founder.title_hint}, in English"
+        in _prompt(model)
+    )
 
     # (and its own title, for what was typed, as the talk's topic)
     model = FakeModel()
@@ -274,7 +278,8 @@ def test_a_talk_without_a_persona_tells_the_model_none(schema):
     deck = _deck(model, persona="none")
     assert "The presenter:" not in _prompt(model) and "The angle:" not in _prompt(model)
     assert (
-        _spine(model)["title"]["description"] == "a title of your own for the talk, in English (at most 80 characters)"
+        _spine(model)["title"]["description"]
+        == "a short title of your own for the talk, in two to seven words, in English (at most 50 characters)"
     )
     assert "such as 'Professor of Applied Sock Theory'" in _spine(model)["presenter_job"]["description"]
     assert deck.persona is None

@@ -11,11 +11,11 @@
   ],
   "thing_title": [
     "One more thing: {product} Mini",
-    "One more thing: {product} for dogs",
-    "One more thing: {product}, but tiny",
-    "One more thing: the {seed.bare} edition",
-    "One more thing: {product} for cats",
-    "One more thing: it also comes in {seed.bare}",
+    "{product}. For dogs.",
+    "One more thing: tiny {product}",
+    "The {seed.bare} edition",
+    "{product}. Now for cats.",
+    "And it comes in {seed.bare}",
     "One more thing: {product} Kids"
   ]
 }

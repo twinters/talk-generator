@@ -37,7 +37,7 @@ DECORATION: Final = "decoration"
 ImageFit = Literal["contain", "cover"]
 ChartType = Literal["pie", "doughnut", "column", "bar", "line", "scatter"]
 # How a chart appears: all at once, or the series after the first on clicks, one by one
-ChartReveal = Literal["all", "series"]
+ChartReveal = Literal["all", "series", "categories"]
 # How a diagram appears: all at once, or without its punchline, which appears on a click
 DiagramReveal = Literal["all", "punchline"]
 # How a browser may show an image, as its source's terms (and its server) allow:
@@ -234,7 +234,18 @@ class ChartSpec(_Data):
     # and what it measures (its values, or its y values)
     x_title: str = ""
     y_title: str = ""
-    reveal: ChartReveal = "all"  # "series": the series after the first appear on clicks, one by one
+    # "series": the series after the first appear on clicks, one by one; "categories": every category does (a
+    # ranking's bars, from the top down, the punchline last: D80)
+    reveal: ChartReveal = "all"
+
+    def clicks(self) -> int:
+        """How many clicks the chart takes for itself, as it's presented: a click a series after the first, or a
+        click a category, when they appear on clicks."""
+        if self.reveal == "series":
+            return max(0, len(self.series) - 1)
+        if self.reveal == "categories":
+            return len(self.categories)
+        return 0
 
 
 class ChartElement(_Data):

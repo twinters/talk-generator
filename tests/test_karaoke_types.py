@@ -240,12 +240,9 @@ def test_a_tier_list_leaves_out_empty_tiers_and_fills_its_tiers_from_the_worst_u
     roles = [element.role for element in deck_slide.elements]
     assert "tier_b" not in roles and "tier_f" not in roles and {"tier_s", "tier_a", "tier_c"} <= set(roles)
     clicks = [(element.role, element.appears_on_click) for element in deck_slide.elements if element.appears_on_click]
-    assert sorted(clicks, key=lambda click: click[1]) == [
-        ("item_c_1", 1),
-        ("item_a_1", 2),
-        ("item_a_2", 2),
-        ("item_s_1", 3),
-    ]
+    # (a tier shows one thing, the first of those written, which reads at a glance: D80)
+    assert sorted(clicks, key=lambda click: click[1]) == [("item_c_1", 1), ("item_a_1", 2), ("item_s_1", 3)]
+    assert deck_slide.element("item_a_1").text == "Tuna" and deck_slide.element("item_a_2") is None
     placed = _deck([slides.TierListSlide("Ranked", "Naps", "Tuna | Sun", None, "Baths")], _theme()).slides[0]
     tiles = [element for element in placed.elements if element.role.endswith(" tile")]
     assert [tile.role for tile in tiles] == ["tier s tile", "tier a tile", "tier c tile"]
@@ -442,11 +439,8 @@ def test_planned_slides_come_out_as_planned(images):
     assert _built("acronym", plain).to_deck_slide().element("title").text == "The Lighthouse Method"
     tiers = {"title": "Ranked", "s_tier": "Naps", "a_tier": "Tuna | Sun | Yarn | Laser", "f_tier": ""}
     slide, _ = _realized("tier_list", tiers)
-    assert [element.text for element in slide.to_deck_slide().elements if element.role.startswith("item_a")] == [
-        "Tuna",
-        "Sun",
-        "Yarn",
-    ]
+    # (one thing a tier, the first the model wrote, where it wrote several: D80)
+    assert [element.text for element in slide.to_deck_slide().elements if element.role.startswith("item_a")] == ["Tuna"]
     problems = []
     assert _realized("tier_list", {**tiers, "a_tier": " | "}, problems=problems) is None
     assert problems == ["a tier list needs things in its S and A tiers"]
@@ -460,10 +454,10 @@ def test_planned_slides_come_out_as_planned(images):
     problems = []
     assert _realized("wall_of_text", {"title": "S", "points": "A | B", "highlight": "C"}, problems=problems) is None
     assert problems == ["a wall of text needs 5 points or more"]
-    buttons = "Retry|Ignore|Panic and leave the building"  # (a button too long: cut, with no "the" left hanging)
+    buttons = "Retry|Ignore|Panic and run to the hills"  # (a button too long: cut, with no "to" left hanging)
     slide, _ = _realized("error_message", {"message": "Cats not found.", "buttons": buttons})
     content = slide.to_deck_slide()
-    assert [content.element(f"button_{index}").text for index in (1, 2, 3)] == ["Retry", "Ignore", "Panic and leave"]
+    assert [content.element(f"button_{index}").text for index in (1, 2, 3)] == ["Retry", "Ignore", "Panic and run"]
     reviews = {"stars_1": "5", "review_1": "Lovely.", "reviewer_1": "Ann", "stars_2": "1", "review_2": "Bit me."}
     slide, _ = _realized("reviews", reviews)
     assert slide.to_deck_slide().element("stars_2").text == "1/5"
@@ -495,6 +489,7 @@ CLASSIC = {
     "wall_of_text": (slide_texts.generate_wall_of_text, slides.WallOfTextSlide),
     "alignment_chart": (slide_texts.generate_alignment_chart, slides.AlignmentChartSlide),
     "red_flags": (slide_texts.generate_red_flags, slides.RedFlagsSlide),
+    "traffic_flags": (slide_texts.generate_traffic_flags, slides.TrafficFlagsSlide),
     "reviews": (slide_texts.generate_reviews, slides.ReviewsSlide),
     "error_message": (slide_texts.generate_error_message, slides.ErrorMessageSlide),
 }
@@ -552,7 +547,10 @@ def test_the_next_classic_ones_are_what_their_slides_need(related):
         assert message and len(buttons) == 3 and all(len(button) <= 14 for button in buttons)
         with random_util.use(random_util.Rng(seed)):
             _, *flags = slide_texts.generate_red_flags({"seed": "cat", "topic": "cats"})
-        assert 3 <= len(flags) <= 5 and flags[-1] in last_flags  # (the punchline last)
+        assert len(flags) == 3 and flags[-1] in last_flags  # (three, the punchline last: D80)
+        with random_util.use(random_util.Rng(seed)):
+            _, green, orange, red = slide_texts.generate_traffic_flags({"seed": "cat", "topic": "cats"})
+        assert green and orange and red in last_flags
 
 
 def _spoken(template):

@@ -48,7 +48,7 @@ from typing import TYPE_CHECKING, Any, Final, Protocol
 
 from pptx.presentation import Presentation
 
-from talkgenerator import closers, facts, names, titles
+from talkgenerator import closers, facts, names, title_pictures, titles
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.datastructures.slide_generator_data import SlideGeneratorData, _filter_generated_elements
 from talkgenerator.images import context as image_context
@@ -368,7 +368,8 @@ def _title_slide(
     rng: random_util.Rng,
     language: str = "en",
 ) -> tuple[slides.Slide, list[str]]:
-    """The title slide of a planned talk ("By <presenter>, <job>", in the talk's language), with its texts."""
+    """The title slide of a planned talk ("By <presenter>" and their job on the line under it, in the talk's
+    language), with its texts."""
     with random_util.use(rng.child("subtitle")):
         by = random_util.choice(languages.language(language).by)
     if presenter and job:
@@ -381,7 +382,8 @@ def _title_slide(
             and not named[len(presenter) : len(presenter) + 1].isalnum()
         ):
             job = named[len(presenter) :].lstrip(" ,;:-–—") or None
-    subtitle = ", ".join(part for part in (f"{by} {presenter}" if presenter else "", job or "") if part) or None
+    # (the job on a line of its own, under the name: more readable than after a comma, the user found, D80)
+    subtitle = "\n".join(part for part in (f"{by} {presenter}" if presenter else "", job or "") if part) or None
     slide = slides.TitleSlide(title, subtitle)
     slide.set_note(f"Planned: the title slide\nThesis: {thesis!r}")
     return slide, [text for text in (title, subtitle) if text]
@@ -1284,6 +1286,9 @@ class PresentationSchema:
         if uses and facts.on():
             # (only what its slides use: a talk without a fun fact asks for no useless fact, and so on)
             gathering = facts.gather(topics[0], language, uses=uses, rng=rng.child("facts"))
+        # The photo of the talk's world beside its title, looked up from now on, as it needs nothing the model writes
+        # (D80: see talkgenerator.title_pictures)
+        title_picture = title_pictures.lookup(topics[0], self.format, persona, rng.child("title picture"))
         # Create the topic-for-each-slide generator, and every slide's topic: in a talk in another language, seeds wander
         # from what its topic is in English, as the related words are English (D74: Dutch "regen", rain, wandered to
         # "renovation"), and its slides on the topic have it as typed
@@ -1388,6 +1393,7 @@ class PresentationSchema:
                 language=talk_language,
             )
             slide_deck.theme, slide_deck.style_chaos, slide_deck.extreme_themes = theme, style_chaos, extreme_themes
+            slide_deck.title_picture = title_picture  # (its world's photo beside its title, when it's in: D80)
             # (the families a chaos deck's slides get their own themes of: see talkgenerator.design.themes.allowed)
             slide_deck.theme_families = tuple(theme_families) if theme_families is not None else None
             slide_deck.language_model = llm.id if planned and llm is not None else None
@@ -1412,7 +1418,14 @@ class PresentationSchema:
                 "title": title,
                 "language": talk_language,
             }
-            contexts = [create_slide_presentation_context(main_presentation_context, seed) for seed in seeds]
+            # (each with the seeds of the slides after it but the last, which a classic agenda announces: D80)
+            contexts = [
+                {
+                    **create_slide_presentation_context(main_presentation_context, seed),
+                    "later": tuple(seeds[index + 1 : -1]),
+                }
+                for index, seed in enumerate(seeds)
+            ]
             # The spare slides its progress wants, if any, made from now on while the slides are (see _Spares)
             spares = self._spares(progress, slide_deck, main_presentation_context, rng, persona)
             # And the early versions of its last slides it wants, if any (see _Early)
@@ -1602,6 +1615,8 @@ class PresentationSchema:
                 digits=len(str(num_slides)),
                 english=slide_nr in english,
             )
+        # (an agenda announces some of the slides after it, which pick its items up: D80)
+        planned = prompt.agenda_cues(planned)
         talk = _PlannedTalk(
             picks,
             planned,

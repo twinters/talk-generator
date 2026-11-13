@@ -30,7 +30,7 @@ An image with a title.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title |
+| `title` | 45 | the slide's title |
 
 Images: `image`
 
@@ -44,7 +44,7 @@ An image filling the slide, with an optional title.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title (or empty, for none) |
+| `title` | 45 | the slide's title (or empty, for none) |
 
 Images: `image`
 
@@ -60,7 +60,7 @@ A big text over a photo.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `text` | 140 | the big text over the photo |
+| `text` | 90 | the big text over the photo: one short sentence |
 
 Images: `background`
 
@@ -79,7 +79,7 @@ Two captioned images side by side.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title (or empty, for none) |
+| `title` | 45 | the slide's title (or empty, for none) |
 | `caption_1` | 40 | the left caption |
 | `caption_2` | 40 | the right caption |
 
@@ -95,7 +95,7 @@ Three captioned images side by side.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title (or empty, for none) |
+| `title` | 45 | the slide's title (or empty, for none) |
 | `caption_1` | 40 | the left caption |
 | `caption_2` | 40 | the middle caption |
 | `caption_3` | 40 | the right caption |
@@ -112,9 +112,9 @@ A made-up historical figure's portrait, next to their quote.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | a title about history |
-| `name` | 60 | a made-up historical figure (never a real person): name and title |
-| `quote` | 160 | what this made-up figure once said |
+| `title` | 45 | a title about history |
+| `name` | 50 | a made-up historical figure (never a real person): their name, a comma, and their title |
+| `quote` | 100 | what this made-up figure once said, in one short sentence |
 
 Images: `portrait`
 
@@ -149,7 +149,7 @@ A line chart of a made-up trend along two odd axes; a second line, if any, draws
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 90 | the chart's claim, as its title, in a few words: what it shows, such as a headline would say it, never 'X vs Y' (the two things it compares go on its axes) |
+| `title` | 60 | the chart's claim, as its title, in a few words: what it shows, such as a headline would say it, never 'X vs Y' (the two things it compares go on its axes) |
 | `x_axis` | 40 | what the chart goes along, such as 'Hours since the meeting started' (or empty, for none) |
 | `y_axis` | 40 | what the line measures, such as 'Times someone said synergy' (or empty, for none) |
 | `shape` | 20 | how the line goes: `rising`, `falling`, `exponential`, `diminishing`, `hockey stick`, `peak`, `crash`, `plateau`, `rollercoaster`, `dip`, `flat` (or empty, for any) |
@@ -166,12 +166,12 @@ Images: none
 
 ## `chart_bars`
 
-A ranking in bars, whose last bar, the punchline, wins by far.
+A ranking in bars, which appear one by one, a click each, from the top down: the first ones tiny, and the last one, the punchline, wins by far.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 90 | the question the ranking answers, as its title |
-| `bars` | 160 | three to six things (only their names), separated by \|, the last one the punchline |
+| `title` | 45 | the question the ranking answers, as its title |
+| `bars` | 100 | three or four things (only their names), separated by \|: ordinary ones first, the last one the punchline |
 | `value_axis` | 40 | what the bars measure, such as 'Danger level' (or empty, for none) |
 
 Images: none
@@ -186,7 +186,7 @@ A Venn diagram: two or three circles of things, each with a label, and what's in
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the diagram's title |
+| `title` | 45 | the diagram's title |
 | `circle_1` | 30 | the first circle's label: a group of things |
 | `circle_2` | 30 | the second circle's label: a group of things that seems to have nothing to do with the first |
 | `circle_3` | 30 | a third circle's label: another such group (or empty, for none) |
@@ -204,7 +204,7 @@ A 2×2 matrix: two axes of everyday opposites that cross in the middle, with a w
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the matrix's title |
+| `title` | 45 | the matrix's title |
 | `x_left` | 24 | the left end of the axis along the bottom: a word or two |
 | `x_right` | 24 | the right end of that axis, a word or two: the opposite of the left end |
 | `y_bottom` | 24 | the bottom end of the axis going up: a word or two |
@@ -232,9 +232,9 @@ A big, made-up number, with what it counts under it: a figure the presenter has 
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title (or empty, for none) |
+| `title` | 45 | the slide's title (or empty, for none) |
 | `number` | 12 | the big number, with its unit if it has one: a percentage, an amount or a count |
-| `label` | 90 | what the number counts or measures, in a few words |
+| `label` | 50 | what the number counts or measures, in a few words |
 | `source` | 60 | a made-up, unreliable source for the number (or empty, for none) |
 
 Images: `background`
@@ -249,13 +249,13 @@ A quiz question for the audience, with three or four options (A to D), which app
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `question` | 90 | the quiz question |
-| `option_a` | 50 | option A (without its letter) |
-| `option_b` | 50 | option B |
-| `option_c` | 50 | option C |
-| `option_d` | 50 | option D (or empty, for none) |
+| `question` | 70 | the quiz question, in one short sentence |
+| `option_a` | 36 | option A (without its letter), in a few words |
+| `option_b` | 36 | option B |
+| `option_c` | 36 | option C |
+| `option_d` | 36 | option D (or empty, for none) |
 | `answer` | 1 | the letter of the right option: `A`, `B`, `C`, `D` |
-| `explanation` | 90 | why that's the answer, shown with it (or empty, for none) |
+| `explanation` | 60 | why that's the answer, shown with it, in a few words (or empty, for none) |
 
 Images: none
 
@@ -270,14 +270,14 @@ The talk's agenda: three to five items it will cover, numbered, which appear one
 | Text | At most | What to write |
 | --- | --- | --- |
 | `title` | 40 | the agenda's title |
-| `items` | 200 | three to five items, separated by \|, each at most 45 characters |
+| `items` | 150 | three to five items, separated by \|, each at most 30 characters |
 
 Images: none
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `outline-academic` | The talk's outline, as a conference talk has it: the parts it goes through, in order | the default; `title`: the slide's title, as a conference talk's slide has it, such as 'Outline'; `items`: three to five parts of the talk, in the order they come, separated by \|, each at most 45 characters; tags: agenda, outline |
-| `acknowledgements-list-academic` | The acknowledgements, as a list of who and what made the work possible (made up, never real people) | `title`: the slide's title, as a conference talk's slide has it, such as 'Acknowledgements'; `items`: three to five who or what to thank, each in a few words, separated by \|, each at most 45 characters; tags: acknowledgements |
+| `outline-academic` | The talk's outline, as a conference talk has it: the parts it goes through, in order | the default; `title`: the slide's title, as a conference talk's slide has it, such as 'Outline'; `items`: three to five parts of the talk, in the order they come, separated by \|, each at most 30 characters; tags: agenda, outline |
+| `acknowledgements-list-academic` | The acknowledgements, as a list of who and what made the work possible (made up, never real people) | `title`: the slide's title, as a conference talk's slide has it, such as 'Acknowledgements'; `items`: three to five who or what to thank, each in a few words, separated by \|, each at most 30 characters; tags: acknowledgements |
 
 ## `timeline`
 
@@ -285,17 +285,17 @@ A timeline of three to five moments, oldest first, each a date and what happened
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the timeline's title |
+| `title` | 45 | the timeline's title |
 | `date_1` | 12 | the first moment's date (a year, say, or a day) |
-| `event_1` | 40 | what happened at the first moment |
+| `event_1` | 32 | what happened at the first moment, in a few words |
 | `date_2` | 12 | the second moment's date (a year, say, or a day) |
-| `event_2` | 40 | what happened at the second moment |
+| `event_2` | 32 | what happened at the second moment, in a few words |
 | `date_3` | 12 | the third moment's date (a year, say, or a day) |
-| `event_3` | 40 | what happened at the third moment |
+| `event_3` | 32 | what happened at the third moment, in a few words |
 | `date_4` | 12 | the fourth moment's date (a year, say, or a day) (or empty, for none) |
-| `event_4` | 40 | what happened at the fourth moment (or empty, for none) |
+| `event_4` | 32 | what happened at the fourth moment, in a few words (or empty, for none) |
 | `date_5` | 12 | the fifth moment's date (a year, say, or a day) (or empty, for none) |
-| `event_5` | 40 | what happened at the fifth moment (or empty, for none) |
+| `event_5` | 32 | what happened at the fifth moment, in a few words (or empty, for none) |
 
 Images: none
 
@@ -310,7 +310,7 @@ A cycle of three to five steps around a circle, each leading to the next, and th
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the cycle's title |
+| `title` | 45 | the cycle's title |
 | `step_1` | 24 | the first step |
 | `step_2` | 24 | the second step |
 | `step_3` | 24 | the third step |
@@ -329,7 +329,7 @@ An iceberg: what everyone sees, on its tip above the water, and two or three thi
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the iceberg's title |
+| `title` | 45 | the iceberg's title |
 | `tip` | 30 | what everyone sees, on the tip |
 | `hidden_1` | 40 | something under the water that nobody sees |
 | `hidden_2` | 40 | something else under the water |
@@ -347,7 +347,7 @@ A process of three to five steps, each leading to the next by an arrow, from the
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the process's title |
+| `title` | 45 | the process's title |
 | `step_1` | 40 | the first step |
 | `step_2` | 40 | the second step |
 | `step_3` | 40 | the third step (the last, the punchline, if there are no more) |
@@ -367,15 +367,15 @@ A talk's references, as an academic talk ends with them: three to five made-up w
 | Text | At most | What to write |
 | --- | --- | --- |
 | `title` | 40 | the slide's title |
-| `items` | 260 | three to five made-up works the talk cites, separated by \|, each at most 45 characters |
+| `items` | 260 | three to five made-up works the talk cites, separated by \|, each at most 30 characters |
 | `caption` | 30 | which of the works the picture is of, by its number in the list, such as 'Cover of [2]' (or empty, for none) |
 
 Images: `figure`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `references-academic` | The references: three to five made-up works that the talk cites, in a citation style | the default; `title`: the slide's title, as a conference talk's slide has it, such as 'References'; `items`: three to five short made-up references, each an author 'et al.', a year in brackets and a journal of two or three words (no paper's title), separated by \|, each at most 45 characters; `caption`: which work it's the cover of, by its number in the list, such as 'Cover of [2]'; images: `figure` book-covers, else museum, else illustration (or generated, from its prompt, with an image generator set up); tags: references |
-| `references-figure-academic` | The references: three to five made-up works that the talk cites, in a citation style | `title`: the slide's title, as a conference talk's slide has it, such as 'References'; `items`: three to five short made-up references, each an author 'et al.', a year in brackets and a journal of two or three words (no paper's title), separated by \|, each at most 45 characters; `caption`: which work the figure is from, by its number in the list, such as '[3], Fig. 2'; images: `figure` bad-charts, else museum, else illustration; tags: references |
+| `references-academic` | The references: three to five made-up works that the talk cites, in a citation style | the default; `title`: the slide's title, as a conference talk's slide has it, such as 'References'; `items`: three to five short made-up references, each an author 'et al.', a year in brackets and a journal of two or three words (no paper's title), separated by \|, each at most 30 characters; `caption`: which work it's the cover of, by its number in the list, such as 'Cover of [2]'; images: `figure` book-covers, else museum, else illustration (or generated, from its prompt, with an image generator set up); tags: references |
+| `references-figure-academic` | The references: three to five made-up works that the talk cites, in a citation style | `title`: the slide's title, as a conference talk's slide has it, such as 'References'; `items`: three to five short made-up references, each an author 'et al.', a year in brackets and a journal of two or three words (no paper's title), separated by \|, each at most 30 characters; `caption`: which work the figure is from, by its number in the list, such as '[3], Fig. 2'; images: `figure` bad-charts, else museum, else illustration; tags: references |
 
 ## `meme`
 
@@ -400,7 +400,7 @@ A fun fact: one absurd fact, stated as certain, under a heading such as 'Did you
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `fact` | 150 | the fact: one sentence, stated as certain, that the presenter has to back up |
+| `fact` | 100 | the fact: one short sentence, stated as certain, that the presenter has to back up |
 | `source` | 60 | a made-up, unreliable source for the fact (or empty, for none) |
 
 Images: `photo`
@@ -415,8 +415,8 @@ A flowchart that pretends to help decide: a yes-or-no question at the top, where
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title (or empty, for none) |
-| `question` | 70 | the yes-or-no question at the top |
+| `title` | 45 | the slide's title (or empty, for none) |
+| `question` | 50 | the yes-or-no question at the top |
 | `yes_step` | 48 | where Yes leads: a short step |
 | `no_step` | 48 | where No leads: another short step |
 | `end` | 48 | where both steps lead: the same end, the punchline |

@@ -243,7 +243,7 @@ def test_a_language_model_writes_the_talk(schema):
     assert deck.title == "The title"
     title, subtitle = (element.text for element in deck.slides[0].elements)
     assert title == "The title"
-    assert subtitle.endswith("Ann Example, The presenter job")
+    assert subtitle.endswith("Ann Example\nThe presenter job")  # (the job on a line of its own: D80)
     assert all(_planned(deck))
     assert check_deck(deck, NUM_SLIDES) == []
     assert (deck.usage.requests, deck.usage.input_tokens, deck.usage.output_tokens) == (1, 1000, 300)

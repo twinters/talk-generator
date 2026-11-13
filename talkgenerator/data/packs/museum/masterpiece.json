@@ -2,19 +2,19 @@
   "label": [
     "#painting#, {year}",
     "#painting# ({year})",
-    "#painting#. #medium#"
+    "#medium#, {year}"
   ],
   "painting": [
     "{seed.generic.cap} at Dawn",
-    "Still Life with {seed.generic}",
+    "Still Life ({seed.generic})",
     "Study of {seed.one}",
     "Untitled ({seed.generic})",
     "Allegory of {seed.generic}",
     "{seed.generic.cap} in a Storm",
     "Lady with {seed.one}",
     "The {seed.bare.title} Lesson",
-    "{seed.generic.cap}, Third Attempt",
-    "The Triumph of {seed.generic}",
+    "{seed.generic.cap}, Attempt 3",
+    "Triumph of {seed.generic}",
     "Man Ignoring {seed.generic}",
     "{seed.generic.cap} by Moonlight",
     "Portrait of {seed.one}"
@@ -35,7 +35,7 @@
     "Behold: #painting#",
     "#painting# (detail)",
     "#painting#, {year}",
-    "Note the {seed.bare} in the corner",
+    "Note the {seed.bare}, top left",
     "Take a moment with this one",
     "Look closely. Closer. Not that close."
   ],

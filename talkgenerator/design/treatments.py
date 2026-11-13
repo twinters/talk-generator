@@ -46,14 +46,17 @@ def duotone(palette: Palette) -> tuple[str, str]:
     return color.mix(darkest, palette.accent, 0.3), color.mix(lightest, palette.accent, 0.3)
 
 
-def treatment(theme: Theme, framed: bool) -> ImageTreatment | None:
+def treatment(theme: Theme, framed: bool, behind: bool = False) -> ImageTreatment | None:
     """How the theme treats a picture (in a box, if framed, else over a whole slide or half of it, where it gets no
-    frame), or None if it leaves it as it is. A theme whose filter is for backdrops leaves pictures in a box
-    unfiltered. A polaroid's tilt comes from the current random stream."""
+    frame), or None if it leaves it as it is. A picture behind a slide's texts (behind: a backdrop) gets the theme's
+    filter, a strong one too (a duotone, grayscale, sepia; black and white is too harsh behind texts, and goes grey);
+    every other picture keeps its colours (D80: the user found the strong filters made many pictures "samey", and
+    wanted them only where a picture matters little, such as a backdrop), with the theme's gentle touches (its tint,
+    grain, vignette and frame). A polaroid's tilt comes from the current random stream."""
     frame = theme.image_frame if framed else "none"
-    image_filter = theme.image_filter if theme.image_filter_scope == "all" or not framed else "none"
-    if image_filter == "black and white" and not framed:  # (too harsh behind a slide's texts: for pictures in a box)
-        image_filter = "none"
+    image_filter = theme.image_filter if behind else "none"
+    if image_filter == "black and white":  # (too harsh behind a slide's texts)
+        image_filter = "grayscale"
     tint = theme.image_tint if theme.image_tint_opacity > 0 else None
     if image_filter == "none" and frame == "none" and not (theme.image_grain or theme.image_vignette or tint):
         return None

@@ -16,12 +16,12 @@
   "subtitle": [
     "Narrated by {presenter}",
     "Narrated, in a whisper, by {presenter}",
-    "A film by {presenter}, three years in the making",
+    "A film by {presenter}\nthree years in the making",
     "Filmed from behind a bush by {presenter}",
-    "{presenter}, who has been sitting very still since dawn",
-    "Presented by {presenter}, live from a hide",
-    "{presenter}, field researcher, nine months into the wait",
-    "With {presenter}, who once waited a week for a yawn",
-    "{presenter}, wildlife camera operator, slightly damp"
+    "{presenter}\nwho has been sitting very still since dawn",
+    "Presented by {presenter}\nlive from a hide",
+    "{presenter}\nfield researcher, nine months into the wait",
+    "With {presenter}\nwho once waited a week for a yawn",
+    "{presenter}\nwildlife camera operator, slightly damp"
   ]
 }

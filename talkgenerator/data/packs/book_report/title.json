@@ -23,13 +23,13 @@
     "The Best Book About {seed.generic.title} I Have Ever Read"
   ],
   "subtitle": [
-    "{presenter}, Year 4",
-    "By {presenter}, Mrs. Bellweather's class",
-    "{presenter}, Year 5, the only one who read the whole book",
-    "A book report by {presenter}, age 9 and three quarters",
-    "{presenter}, Mr. Pennyfeather's class (it was due last Friday)",
-    "Presented by {presenter}, Year 4, back row",
-    "{presenter}, who picked this book because of the cover",
+    "{presenter}\nYear 4",
+    "By {presenter}\nMrs. Bellweather's class",
+    "{presenter}\nYear 5, the only one who read the whole book",
+    "A book report by {presenter}\nage 9 and three quarters",
+    "{presenter}\nMr. Pennyfeather's class (it was due last Friday)",
+    "Presented by {presenter}\nYear 4, back row",
+    "{presenter}\nwho picked this book because of the cover",
     "By {presenter}. My mum helped with the cover."
   ]
 }

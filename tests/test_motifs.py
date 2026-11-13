@@ -615,19 +615,22 @@ def test_most_pictures_stay_as_they_are_or_get_a_gentle_tint():
     assert tints and all(member.image_tint_opacity <= 0.12 for member in tints)
 
 
-def test_black_and_white_never_goes_behind_a_slides_texts():
+def test_black_and_white_never_goes_behind_a_slides_texts_and_greys_a_backdrop_instead():
     theme = _theme("brutalist").model_copy(update={"image_filter": "black and white", "image_filter_scope": "all"})
-    assert (
-        treatments.treatment(theme, framed=False) is None or treatments.treatment(theme, framed=False).filter == "none"
-    )
-    assert treatments.treatment(theme, framed=True).filter == "black and white"
+    assert treatments.treatment(theme, framed=False, behind=True).filter == "grayscale"
+    for framed in (False, True):  # (a picture of the slide's own keeps its colours: D80)
+        own = treatments.treatment(theme, framed=framed)
+        assert own is None or own.filter == "none"
 
 
-def test_a_backdrop_filter_leaves_pictures_in_boxes_as_they_are():
-    theme = _theme("neon").model_copy(update={"image_filter": "duotone", "image_filter_scope": "backdrops"})
-    assert treatments.treatment(theme, framed=False).filter == "duotone"
-    boxed = treatments.treatment(theme, framed=True)
-    assert boxed is None or boxed.filter == "none"
+def test_a_strong_filter_is_for_backdrops_alone_and_pictures_keep_their_colours():
+    # (the user found the strong filters made many pictures "samey": D80)
+    for scope in ("backdrops", "all"):
+        theme = _theme("neon").model_copy(update={"image_filter": "duotone", "image_filter_scope": scope})
+        assert treatments.treatment(theme, framed=False, behind=True).filter == "duotone"
+        for framed in (False, True):  # (a picture filling the slide, or in a box)
+            own = treatments.treatment(theme, framed=framed)
+            assert own is None or own.filter == "none"
 
 
 def test_a_tint_is_laid_over_a_picture_everywhere(images):

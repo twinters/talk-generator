@@ -89,6 +89,7 @@ DOCUMENTARY: Final = Format(
     arc=ARC,
     # (its closer thanks the room for watching: D76)
     closer=Closer(said("watching"), presenter),
+    scene="wildlife",
 )
 
 

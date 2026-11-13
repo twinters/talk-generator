@@ -9,12 +9,12 @@
   ],
   "post": [
     "I saw everything. It was {topic.generic}. I'd know that look anywhere.",
-    "Heard a noise at 21:13. Then silence. Then a very guilty silence. Not saying who. But it was {topic.generic}.",
-    "Can't believe I'm a witness in the {topic.bare} case. Wore my best jumper for it.",
+    "A noise at 21:13. Then a guilty silence. Not saying who. It was {topic.generic}.",
+    "Can't believe I'm a witness in the {topic.bare} case. Wore my best jumper.",
     "Me at 21:13: a quiet night in. Me at 21:14: witness to the crime of the century.",
-    "To whoever was {crime}: I know it was you. Everyone knows it was you.",
-    "Just saw {seed.one} walk past looking very guilty. Not saying anything. Just saying.",
-    "Day three of being a witness. The lawyers keep asking about {crime}. I would like to go home."
+    "To whoever was {crime}: I know it was you. Everyone knows.",
+    "Saw {seed.one} walk past looking guilty. Not saying anything. Just saying.",
+    "Witness, day 3. Still asked about {crime}. I'd like to go home."
   ],
   "witnesses_title": [
     "The witnesses",

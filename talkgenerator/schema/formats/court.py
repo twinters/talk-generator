@@ -94,6 +94,7 @@ COURT: Final = Format(
     arc=ARC,
     # (its closer adjourns the court: D76)
     closer=Closer(said("adjourned"), presenter),
+    scene="courtroom",
 )
 
 

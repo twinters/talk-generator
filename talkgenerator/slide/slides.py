@@ -215,14 +215,24 @@ def _has_content(value) -> bool:
 
 
 class TitleSlide(Slide):
+    """The talk's title slide: its title, who presents it, and a photo of the talk's world beside them, if it has one
+    (D80: see talkgenerator.title_pictures)."""
+
     required_arguments = ("title",)
 
-    def __init__(self, title: str, subtitle: str | None):
+    def __init__(self, title: str, subtitle: str | None, picture: ImageData | None = None):
         super().__init__(
             type_name="title",
             ppt_slide_creator=powerpoint_slide_creator.create_title_slide,
-            arguments={"title": title, "subtitle": subtitle},
+            arguments={"title": title, "subtitle": subtitle, "picture": picture},
         )
+
+    def show(self, picture: ImageData | None) -> None:
+        """Have the slide show the picture beside its title (credited), unless it has one already."""
+        if picture is None or self._arguments.get("picture") is not None:
+            return
+        self._arguments["picture"] = picture
+        self.add_source(picture.get_source(), picture.get_source_url(), picture.get_credit(), image=picture)
 
 
 class LarqeQuoteSlide(Slide):
@@ -365,8 +375,8 @@ class ChartSlide(Slide):
     def to_deck_slide(self) -> model.DeckSlide:
         """The chart's numbers, axis titles, named points, fitted lines and how it appears go into the deck; the
         renderer styles the chart by its type (the chart_modifier stays out: a deck holds data, not functions). A
-        picture by a trend's named point appears on a click of its own, after the second line's, if it has one (where
-        the layout puts it: see talkgenerator.design.engine.point_picture)."""
+        picture by a trend's named point is there from the start, for the presenter to start on (where the layout
+        puts it: see talkgenerator.design.engine.point_picture)."""
         elements: list[model.TextElement | model.ImageElement | model.ChartElement] = []
         title = _to_element("title", self._arguments.get("title"), "contain")
         if title is not None:
@@ -385,8 +395,7 @@ class ChartSlide(Slide):
             elements.append(model.ChartElement(role="chart", chart=chart))
             picture = _to_element(POINT_PICTURE, self._arguments.get(POINT_PICTURE), "cover")
             if isinstance(picture, model.ImageElement) and charts.named_point(chart) is not None:
-                after = len(chart.series) - 1 if chart.reveal == "series" else 0  # (the second line's click)
-                elements.append(picture.model_copy(update={"appears_on_click": after + 1}))
+                elements.append(picture)  # (there from the start: the odd picture is what the presenter starts on)
         return self._deck_slide(tuple(elements))
 
 
@@ -579,9 +588,10 @@ class QuizSlide(DrawnSlide):
         option_4: str | None,
         answer: str | None,
         explanation: str | None = None,
+        language: Language = ENGLISH,
     ):
         options = (option_1, option_2, option_3, option_4)
-        arguments: dict[str, str | None] = {"question": question}
+        arguments: dict[str, str | None] = {"question": quiz_question(question, language)}
         for index, option in enumerate(options, 1):
             arguments[f"letter_{index}"] = LETTERS[index - 1] if option else None
             arguments[f"option_{index}"] = option
@@ -595,6 +605,32 @@ class QuizSlide(DrawnSlide):
     def clicks(self) -> dict[str, int]:
         options = [(f"letter_{index}", f"option_{index}") for index in range(1, 5)]
         return self._one_by_one(*options, ("answer", "explanation"))
+
+
+def quiz_question(question: str | None, language: Language = ENGLISH) -> str | None:
+    """A quiz's question as its slide shows it: after a label in the talk's language that says it's a quiz ("Quiz:",
+    "Pop quiz:", "Test voor jullie:"), so that the presenter knows at a glance what the slide is (the user's report of
+    2026-11-13); in place of a label the question had. The label is picked by the question's own letters, which keeps
+    the talk's random streams as they were. A text that carries the fact it shows keeps it (a real quiz question)."""
+    if not question or not question.strip():
+        return question
+    bare = _QUIZ_LABEL.sub("", question.strip(), count=1).strip() or question.strip()
+    labels = language.quizzes
+    label = labels[sum(map(ord, bare)) % len(labels)]
+    labelled = f"{label} {bare[:1].upper()}{bare[1:]}"
+    fact = getattr(question, "fact", None)
+    if fact is None:
+        return labelled
+    made: Any = type(question)  # (talkgenerator.facts.CreditedText, which this module can't import)
+    return made(labelled, fact)
+
+
+# A label a model put in front of a quiz's question itself: a few words that say it's a quiz or a question, and a colon
+_QUIZ_LABEL: Final = re.compile(
+    r"^(?:[\w'’-]+\s+)?(?:quiz\w*|question|vraag|frage|pregunta|domanda|pergunta|fråga|test)\w*"
+    r"(?:\s+[\w'’-]+){0,3}?\s*:\s+",
+    re.IGNORECASE,
+)
 
 
 def initials(name: str | None) -> str | None:
@@ -689,12 +725,20 @@ class AgendaSlide(DrawnSlide):
 
 
 class SectionSlide(DrawnSlide):
-    """A section's divider: its title and subtitle, under its number (which the deck gives it: see number)."""
+    """A section's divider: its title and subtitle, under its number (which the deck gives it: see number); over a
+    picture of what it's about, if it has one (D80: slides of big text alone get a picture behind them)."""
 
     required_arguments = ("title",)
 
-    def __init__(self, title: str | None, subtitle: str | None = None, kicker: str | None = None):
-        super().__init__("section", None, {"kicker": kicker, "title": title, "subtitle": subtitle})
+    def __init__(
+        self,
+        title: str | None,
+        subtitle: str | None = None,
+        kicker: str | None = None,
+        background: ImageData | None = None,
+    ):
+        arguments = {"background": background, "kicker": kicker, "title": title, "subtitle": subtitle}
+        super().__init__("section", None, arguments)
 
     def number(self, number: int) -> None:
         """Give the section its number, as its slide shows it ("02"), unless it has a kicker of its own."""
@@ -1024,7 +1068,7 @@ class ProblemSlide(DrawnSlide):
 # The most letters an acronym has, and the tiers of a tier list, best first (as tier lists have them)
 ACRONYM_LETTERS = 6
 TIERS = ("S", "A", "B", "C", "F")
-TIER_ITEMS = 3  # the most things in a tier
+TIER_ITEMS = 1  # the most things in a tier: one, the best of them, which reads at a glance
 
 
 class AcronymSlide(DrawnSlide):
@@ -1048,12 +1092,12 @@ class AcronymSlide(DrawnSlide):
 
 class DareSlide(DrawnSlide):
     """A dare for the presenter: a playful task for the next slide or the rest of the talk, under a heading in the
-    talk's language ("Challenge")."""
+    talk's language ("Challenge"); over a picture of what it's about, if it has one (D80)."""
 
     required_arguments = ("kicker", "dare")
 
-    def __init__(self, kicker: str | None, dare: str | None):
-        super().__init__("dare", None, {"kicker": kicker, "dare": dare})
+    def __init__(self, kicker: str | None, dare: str | None, background: ImageData | None = None):
+        super().__init__("dare", None, {"background": background, "kicker": kicker, "dare": dare})
 
 
 class FlowchartSlide(DrawnSlide):
@@ -1095,13 +1139,13 @@ FLOWCHART_BOXES = ("yes_step", "no_step", "end")
 
 
 def tier_items(text: str | None) -> list[str]:
-    """The things of a tier, as written: separated by |, at most three."""
+    """The things of a tier, as written: separated by |, as many as a tier shows (the first, the best of them)."""
     return [part.strip() for part in (text or "").split("|") if part.strip()][:TIER_ITEMS]
 
 
 class TierListSlide(DrawnSlide):
-    """A tier list: things ranked in tiers, from S (the best) to F (the worst), each tier a row of one to three things
-    under its letter (each tier as written: its things separated by |). The tiers' letters are there from the start,
+    """A tier list: things ranked in tiers, from S (the best) to F (the worst), each tier a row of its thing under its
+    letter (the first of its things as written, separated by |). The tiers' letters are there from the start,
     and each tier's things appear on a click of their own, from the worst tier up to the S tier, the punchline. A tier
     without things is left out."""
 
@@ -1210,21 +1254,30 @@ class AlignmentChartSlide(DrawnSlide):
         return self._one_by_one(*(_or_its_picture(alignment) for alignment in ALIGNMENTS))
 
 
-RED_FLAGS = 5  # the most red flags a slide has
+RED_FLAGS = 3  # the most red flags a slide has
 
 
 class RedFlagsSlide(DrawnSlide):
-    """Red flags: three to five warning signs about something, each beside a red flag, appearing one by one, a click
-    each: the last one is the punchline."""
+    """Red flags: three warning signs about something, each beside a red flag, appearing one by one, a click each: the
+    last one is the punchline."""
 
     required_arguments = ("flag_1", "flag_2", "flag_3")
+    type = "red_flags"
 
     def __init__(self, title: str | None, *flags: str | None, pictures: Mapping[str, ImageData | None] | None = None):
         # (a flag may be a picture in its words' place, as the list's pattern break: the last one's, D73)
-        super().__init__("red_flags", None, {"title": title, **_instead("flag", RED_FLAGS, flags, pictures)})
+        super().__init__(self.type, None, {"title": title, **_instead("flag", RED_FLAGS, flags, pictures)})
 
     def clicks(self) -> dict[str, int]:
         return self._one_by_one(*(_or_its_picture(f"flag_{index}") for index in range(1, RED_FLAGS + 1)))
+
+
+class TrafficFlagsSlide(RedFlagsSlide):
+    """A green flag, an orange flag and a red flag about something (the user's variation on red flags, 2026-11-13):
+    a good sign, a doubtful one and an alarming one, the punchline, each beside a flag of its colour, appearing one by
+    one, a click each."""
+
+    type = "traffic_flags"
 
 
 REVIEWS = 3  # the most reviews a slide has

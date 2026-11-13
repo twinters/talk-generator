@@ -5,7 +5,7 @@
     "{artist}, in a few dates",
     "A short life of {artist}",
     "The artist: {artist}",
-    "{artist}, the early years and the rest"
+    "{artist}, then and now"
   ],
   "born": [
     "Born",
@@ -17,13 +17,13 @@
     "Born, smaller than expected"
   ],
   "life_event": [
-    "First {seed.bare} sketch",
-    "Paints only {seed.generic}",
+    "Sketches {seed.generic}",
+    "Only {seed.generic} now",
     "Expelled from art school",
     "Discovers the colour blue",
-    "Sells one painting, to a relative",
+    "Sells one painting to a relative",
     "A very dark period",
-    "Paints {seed.generic} in secret",
+    "Paints {seed.generic}",
     "Takes up sculpture, briefly",
     "One painting takes a whole year",
     "Famous in one small village",
@@ -33,10 +33,10 @@
   "life_punchline": [
     "Still hasn't finished the hands",
     "Becomes {seed.one}",
-    "A painting found behind a radiator",
+    "Painting found behind a radiator",
     "Banned from the gift shop",
     "Statue unveiled, wrong way up",
-    "Still painting {seed.generic}",
+    "{seed.generic.cap}. Still.",
     "Finally paints something else"
   ],
   "last_date": [
@@ -55,7 +55,7 @@
     "{artist} was banned from three museums, including this one.",
     "{artist} painted with a brush made of {seed.generic}.",
     "{artist} invented the colour beige, and then regretted it.",
-    "Experts agree that {artist} could not draw hands, so every hand is hidden behind {seed.one}."
+    "{artist} couldn't draw hands. Each one hides behind {seed.one}."
   ],
   "fact_source": [
     "The museum's audio guide",
@@ -74,12 +74,12 @@
     "Overheard in the studio"
   ],
   "post": [
-    "Painted {seed.generic} again today. My patron wants something else. My patron does not understand art.",
+    "Painted {seed.generic} again. My patron sighed. My patron doesn't get art.",
     "Day 412 of painting {seed.generic}. Still not right. Starting again tomorrow.",
-    "Finished my masterpiece. It is {seed.one}. Nobody will understand it for three hundred years.",
+    "Finished my masterpiece: {seed.one}. Nobody will get it for 300 years.",
     "Sold a painting today! To my mother. She asked for a refund.",
-    "The critics say there's too much {seed.bare} in my paintings. The critics are wrong.",
-    "Tried to paint a bowl of fruit. It turned into {seed.generic} again. Third time this week.",
-    "My apprentice says I'm obsessed with {seed.generic}. My apprentice is now painting the fence."
+    "Critics say there's too much {seed.bare} in my paintings. Critics are wrong.",
+    "Tried to paint a bowl of fruit. Got {seed.generic} again. Third time this week.",
+    "My apprentice says I'm obsessed with {seed.generic}. They now paint the fence."
   ]
 }

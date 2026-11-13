@@ -33,15 +33,15 @@
     "{seed.generic.title} for Everyone"
   ],
   "subtitle": [
-    "{presenter}, Chief Executive Officer",
-    "{presenter}, CEO and Chief Visionary",
-    "{presenter}, founder, on stage for the first time",
+    "{presenter}\nChief Executive Officer",
+    "{presenter}\nCEO and Chief Visionary",
+    "{presenter}\nfounder, on stage for the first time",
     "Keynote by {presenter}",
-    "{presenter}, Senior Vice President of {seed.bare.title}",
-    "{presenter}, Head of Product, {product}",
-    "{presenter}, live from the main stage",
-    "{presenter}, who has been waiting all year for this",
-    "{presenter}, Chief Product Officer and part-time visionary",
-    "Presented by {presenter}, in a very simple sweater"
+    "{presenter}\nSenior Vice President of {seed.bare.title}",
+    "{presenter}\nHead of Product, {product}",
+    "{presenter}\nlive from the main stage",
+    "{presenter}\nwho has been waiting all year for this",
+    "{presenter}\nChief Product Officer and part-time visionary",
+    "Presented by {presenter}\nin a very simple sweater"
   ]
 }

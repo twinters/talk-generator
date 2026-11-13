@@ -31,7 +31,7 @@
     "Footsteps in the kitchen",
     "The lights go out",
     "A rustling noise",
-    "{crime.cap}",
+    "The crime (allegedly)",
     "A loud clatter",
     "A suspicious silence",
     "Seen whistling innocently"
@@ -58,7 +58,7 @@
     "Did anyone see the defendant leave?",
     "Can the defendant explain the evidence?",
     "Is the defendant's alibi a cat?",
-    "Was the defendant seen {crime}?"
+    "Caught {crime}?"
   ],
   "flow_yes": [
     "Suspicious",
@@ -95,7 +95,7 @@
   "error": [
     "The defendant's alibi could not be found.",
     "Alibi not found. It may have been eaten.",
-    "The alibi you are looking for has been moved, or never existed.",
+    "The alibi you are looking for was moved, or never existed.",
     "Alibi.exe has stopped working. So has the defendant's story.",
     "Too many alibis. Please choose one.",
     "This alibi has expired. Please provide a new one by Friday."

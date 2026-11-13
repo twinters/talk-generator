@@ -277,7 +277,7 @@ def _about(title: str, topic: str) -> bool:
 # What the spine's title is, for a talk whose title the language model makes up (see talkgenerator.plan.prompt): the
 # request has no line about the title then, as Claude Haiku took its line "Title: come up with one" for the title
 # ("Come Up With One: Retrocausal Roasting in Arabica Beans", in 3 of 12 talks on 2026-11-08)
-OWN_TITLE: Final = "a title of your own for the talk"
+OWN_TITLE: Final = "a short title of your own for the talk, in two to seven words"
 
 
 @dataclass(frozen=True)

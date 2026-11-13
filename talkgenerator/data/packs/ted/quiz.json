@@ -12,11 +12,11 @@
     "Which of these can be found in {seed.generic}?",
     "What would {seed.generic} be most afraid of?",
     "Which of these is the real name of {seed.generic}?",
-    "Which of these did scientists first mistake for {seed.one}?",
+    "Which of these did scientists mistake for {seed.one}?",
     "Which of these is a type of {seed.generic}?",
     "Which of these is the national symbol of {seed.generic}?",
     "Which of these do most people confuse with {seed.generic}?",
-    "Which of these was the first word ever said about {seed.generic}?",
+    "Which of these was the first word said about {seed.generic}?",
     "Which of these would you never say to {seed.one}?",
     "Which of these explains {seed.generic} best?",
     "Which of these makes {seed.generic} better?",
@@ -26,7 +26,7 @@
     "Which of these would win in a contest with {seed.generic}?",
     "Which of these is the secret ingredient of {seed.generic}?",
     "Which of these do children associate with {seed.generic}?",
-    "Which of these does an expert on {seed.generic} carry at all times?",
+    "Which of these do {seed.bare} experts always carry?",
     "Pop quiz: which of these could be {seed.one}?"
   ],
   "quiz_explanation": [

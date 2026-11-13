@@ -12,9 +12,9 @@
     "{product}",
     "{product}. Finally.",
     "{product}. Only better.",
-    "{product}. Built for {seed.generic}.",
+    "Built for {seed.generic}.",
     "The all-new {product}",
     "{product}. Beautiful.",
-    "{product}. Nothing else comes close."
+    "{product}. Nothing comes close."
   ]
 }

@@ -204,7 +204,7 @@ def test_a_model_that_writes_the_spine_last_streams_the_talk_made_at_once():
     threading.Timer(0.5, model.go_on.set).start()  # (a while after it wrote the first slide, without the spine)
     started, ready, deck = _parts(_streamed(llm=model))
     assert started.title == deck.title == "The title"
-    assert deck.slides[0].elements[1].text.endswith("Ann Example, The presenter job")
+    assert deck.slides[0].elements[1].text.endswith("Ann Example\nThe presenter job")  # (its own line: D80)
     assert deck.to_json() == _at_once(SlowModel(change=spine_last)).to_json()
 
 

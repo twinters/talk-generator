@@ -13,8 +13,8 @@ A format's closer is a Closer, which its Format names (closer=...); a format wit
 - a TED-like talk's (DEFAULT): "Thank you!", with the presenter's name under it and a small "Questions?";
 - an academic talk's: "Questions?", with "Thank you for your attention" under it, the presenter's name, and a huge
   question mark beside them;
-- a pitch's: "Let's talk", with a made-up contact line under it (the presenter's first name at the startup's domain:
-  "anna@penguinly.com") and the presenter's name;
+- a pitch's: "Let's talk", with a made-up contact line under it (the presenter's first name at a domain made of the
+  startup's name that reads as made up: "anna@penguinly-is-a-real-company.biz", D80) and the presenter's name;
 - an all-hands': "Questions?", with "Back to work" under it, the presenter's name, and the question mark;
 - a keynote's: "Available today", with the product's name under it, and the presenter's name.
 
@@ -55,8 +55,53 @@ from talkgenerator.slide.slides import CloserSlide
 _NAME_WORDS: Final = 3
 _NAME_LENGTH: Final = 24
 # A domain that a startup's name has already ("Penguin.ai"), else it gets one
-_DOMAIN: Final = re.compile(r"^[a-z0-9-]+\.[a-z]{2,6}$")
-_TLD: Final = ".com"
+# A made-up e-mail address's domain, which reads as made up (the user, 2026-11-13: "when we show an e-mail address,
+# better see that the domain isn't real; maybe an over-the-top silly website name"; D80): the startup's name with words
+# that no real company's domain has, in the talk's language, one picked by the name's letters
+_SILLY_DOMAINS: Final[dict[str, tuple[str, ...]]] = {
+    "en": (
+        "{company}-is-a-real-company.biz",
+        "totally-legit-{company}.biz",
+        "{company}-official-website-trust-us.info",
+        "real-{company}-not-a-scam.net",
+    ),
+    "nl": (
+        "{company}-is-echt-een-bedrijf.biz",
+        "zeker-geen-oplichting-{company}.biz",
+        "{company}-officiele-website-echt-waar.info",
+        "betrouwbaar-{company}-geloof-ons.net",
+    ),
+    "fr": (
+        "{company}-vraie-entreprise.biz",
+        "pas-une-arnaque-{company}.biz",
+        "{company}-site-officiel-promis.info",
+    ),
+    "de": (
+        "{company}-echte-firma.biz",
+        "kein-betrug-{company}.biz",
+        "{company}-offizielle-seite-wirklich.info",
+    ),
+    "es": (
+        "{company}-empresa-de-verdad.biz",
+        "no-es-estafa-{company}.biz",
+        "{company}-web-oficial-lo-juro.info",
+    ),
+    "it": (
+        "{company}-azienda-vera.biz",
+        "non-e-una-truffa-{company}.biz",
+        "{company}-sito-ufficiale-davvero.info",
+    ),
+    "pt": (
+        "{company}-empresa-de-verdade.biz",
+        "nao-e-golpe-{company}.biz",
+        "{company}-site-oficial-juro.info",
+    ),
+    "sv": (
+        "{company}-riktigt-foretag.biz",
+        "inget-bedrageri-{company}.biz",
+        "{company}-officiell-sida-lovar.info",
+    ),
+}
 # The little words a surname starts with, in the talks' languages ("Van Wielen", "de la Cruz"): a name that starts
 # with one, after its title, has no first name
 _PARTICLES: Final = frozenset(
@@ -128,8 +173,8 @@ def presenter(ending: Ending) -> str | None:
 
 
 def contact_line(ending: Ending) -> str:
-    """A pitch's made-up contact line (see contact)."""
-    return contact(ending.presenter, ending.title, ending.topic)
+    """A pitch's made-up contact line (see contact), in the talk's language."""
+    return contact(ending.presenter, ending.title, ending.topic, ending.words.code)
 
 
 def product_line(ending: Ending) -> str:
@@ -148,15 +193,17 @@ def of(talk_format: Any) -> Closer:
     return own if isinstance(own, Closer) else DEFAULT
 
 
-def contact(presenter: str | None, title: str | None, topic: str) -> str:
-    """A pitch's made-up contact line: the presenter's first name (without a title such as "Dr.") at the domain of
-    the startup that the title names ("Penguinly: Uber for Penguins"), or else of the startup a classic pitch names
-    after its topic (talkgenerator.schema.formats.startup): "anna@penguinly.com"."""
+def contact(presenter: str | None, title: str | None, topic: str, language: str = "en") -> str:
+    """A pitch's made-up contact line: the presenter's first name (without a title such as "Dr.") at a domain made of
+    the name of the startup that the title names ("Penguinly: Uber for Penguins"), or else of the startup a classic
+    pitch names after its topic (talkgenerator.schema.formats.startup), with words in the talk's language that make it
+    read as made up (D80): "anna@penguinly-is-a-real-company.biz"."""
     from talkgenerator.schema.formats import startup  # (here: the formats need much that a closer doesn't)
 
-    company = _ascii(named(title) or startup(topic or "startup"))
-    domain = company if _DOMAIN.match(company.replace(" ", "")) else re.sub(r"[^a-z0-9]+", "", company) + _TLD
-    return f"{first_name(presenter) or 'hello'}@{domain.replace(' ', '')}"
+    company = re.sub(r"[^a-z0-9]+", "", _ascii(named(title) or startup(topic or "startup"))) or "startup"
+    domains = _SILLY_DOMAINS.get(language, _SILLY_DOMAINS["en"])
+    domain = domains[sum(map(ord, company)) % len(domains)].format(company=company)
+    return f"{first_name(presenter) or 'hello'}@{domain}"
 
 
 def product_name(title: str | None, topic: str) -> str:

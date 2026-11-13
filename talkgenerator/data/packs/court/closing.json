@@ -1,6 +1,6 @@
 {
   "closing_statement": [
-    "Ladies and gentlemen of the jury: {crime} is no laughing matter.",
+    "Members of the jury: {crime} is no laughing matter.",
     "Ask yourselves one question. If not {topic.generic}, then who?",
     "Look at the evidence. Look at {topic.generic}. Now look back at the evidence.",
     "The defence rests. Mostly because it's very tired.",
@@ -9,7 +9,7 @@
     "{crime.cap}. In this town. On my watch."
   ],
   "face_title": [
-    "Look at this face. Is this a criminal mastermind?",
+    "Look at this face. A criminal mastermind?",
     "Does this look innocent to you?",
     "The defendant, moments after the incident",
     "Exhibit Z: this face",

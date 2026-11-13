@@ -21,14 +21,14 @@
     "The Art of {seed.generic.title}"
   ],
   "subtitle": [
-    "{presenter}, Head Guide, {museum}",
+    "{presenter}\nHead Guide, {museum}",
     "A guided tour by {presenter}",
-    "{presenter}, curator of {seed.generic}",
-    "{presenter}, volunteer guide for thirty years",
+    "{presenter}\ncurator of {seed.generic}",
+    "{presenter}\nvolunteer guide for thirty years",
     "With {presenter}. Please stay with the group.",
-    "{presenter}, keeper of the {seed.bare} wing, {museum}",
-    "{presenter}, who has a key to the storeroom",
+    "{presenter}\nkeeper of the {seed.bare} wing, {museum}",
+    "{presenter}\nwho has a key to the storeroom",
     "Your guide today: {presenter}",
-    "{presenter}, the only guide allowed to touch the exhibits"
+    "{presenter}\nthe only guide allowed to touch the exhibits"
   ]
 }

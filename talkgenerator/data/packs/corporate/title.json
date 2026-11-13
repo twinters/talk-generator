@@ -50,16 +50,16 @@
     "Aligned on {seed.generic.title}"
   ],
   "subtitle": [
-    "{presenter}, CEO of {company}",
-    "{presenter}, Chief Executive Officer, {company}",
-    "Presented by {presenter}, for the {company} leadership team",
-    "{presenter}, SVP of {seed.bare.title} Operations, {company}",
-    "Internal only. Presented by {presenter}, {company}",
-    "{presenter}, Head of Strategy and Synergy, {company}",
+    "{presenter}\nCEO of {company}",
+    "{presenter}\nChief Executive Officer, {company}",
+    "Presented by {presenter}\nfor the {company} leadership team",
+    "{presenter}\nSVP of {seed.bare.title} Operations, {company}",
+    "Internal only. Presented by {presenter}\n{company}",
+    "{presenter}\nHead of Strategy and Synergy, {company}",
     "{company} · {presenter} · Confidential, do not forward",
-    "{presenter}, interim CEO (since Tuesday), {company}",
-    "{presenter}, Chief Alignment Officer at {company}",
-    "{presenter}, Managing Director, {company}, with the leadership team",
-    "{presenter}, VP of Everything, {company}"
+    "{presenter}\ninterim CEO (since Tuesday), {company}",
+    "{presenter}\nChief Alignment Officer at {company}",
+    "{presenter}\nManaging Director, {company}, with the leadership team",
+    "{presenter}\nVP of Everything, {company}"
   ]
 }

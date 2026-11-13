@@ -8,7 +8,7 @@
     "{author} wrote this book because nobody else would write about {seed.generic}.",
     "{author} still has the pencil. It is in a museum now.",
     "{author} reads every book backwards, to save time.",
-    "{author} once won a prize for the longest sentence ever written about {seed.generic}.",
+    "{author} once won a prize for the longest sentence ever about {seed.generic}.",
     "Before writing books, {author} was a professional {seed.bare} counter.",
     "{author} wrote the last chapter first, and then lost it.",
     "{author} has a pet {seed.bare} called Gerald.",
@@ -29,7 +29,7 @@
     "{author}, the author",
     "Meet the author: {author}",
     "{author}, who wrote all of it",
-    "The author, {author}, on a good day",
+    "{author}, on a good day",
     "{author}, at work on book 2"
   ]
 }

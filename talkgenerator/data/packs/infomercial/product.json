@@ -5,16 +5,16 @@
     "Say hello to the {gadget}!",
     "Presenting: the {gadget}!",
     "It's the {gadget}!",
-    "The {gadget}! It's finally here!",
+    "The {gadget}! Finally here!",
     "Behold: the {gadget}!"
   ],
   "as_seen": [
     "The {gadget}. As seen on TV!",
-    "The {gadget}! Not sold in stores!",
-    "The {gadget}: a total game changer!",
-    "The {gadget}! For {seed.generic}!",
+    "{gadget}! Not sold in stores!",
+    "The {gadget}: a game changer!",
+    "Made for {seed.generic}!",
     "The amazing {gadget}!",
-    "One {gadget}. Endless possibilities!",
+    "One {gadget}. Endless uses!",
     "The {gadget}. Patent pending!",
     "The incredible {gadget}!"
   ]

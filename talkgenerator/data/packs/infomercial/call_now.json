@@ -41,11 +41,11 @@
     "Not a real number. Please don't."
   ],
   "order": [
-    "Everyone: take out your phone and pretend to order the {gadget}. Right now!",
+    "Everyone: take out your phone and pretend to buy the {gadget}. Right now!",
     "On three, everyone shouts 'Call now!' One, two, three!",
     "Everyone: hold an imaginary phone to your ear and say 'I'll take five!'",
-    "Everyone who wants their own {gadget}, wave a hand in the air! Operators are watching!",
-    "Turn to your neighbour and tell them about the {gadget}, as excitedly as you can!",
+    "Want your own {gadget}? Wave a hand in the air! Operators are watching!",
+    "Tell your neighbour about the {gadget}, as excitedly as you can!",
     "Everyone: dial 555 in the air with your finger, and wait for the presenter to pick up!"
   ]
 }

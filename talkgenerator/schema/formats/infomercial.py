@@ -101,6 +101,7 @@ INFOMERCIAL: Final = Format(
     arc=ARC,
     # (its closer calls the room to order now, with its operators standing by: D76)
     closer=Closer(said("call_now"), said("standing_by"), presenter),
+    scene="tv shopping",
 )
 
 

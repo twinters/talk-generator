@@ -169,6 +169,8 @@ generate_horizontal_pixabay_image_from_word = generate_horizontal_pixabay_image.
 
 # Behind a big number or KPI tiles (D63), if one is found: a picture of what they're about, from one of many sources
 backdrop_generator = ImageSlot("a picture of what the slide's figures are about, behind them", aesthetic="backdrop")
+# (and what a slide of big text alone is about, a section or a dare, behind it: D80)
+words_backdrop_generator = ImageSlot("a picture of what the slide's words are about, behind them", aesthetic="backdrop")
 # Filling a slide, under a provocative word or two (a talk format's free slides: D63): a striking or weird picture of
 # the slide's topic, from the backdrop look's many sources
 provocation_image_generator = ImageSlot(

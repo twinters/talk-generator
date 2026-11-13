@@ -303,7 +303,7 @@ def test_the_language_model_names_the_presenter_in_the_same_request(schema):
 
     assert len(model.requests) == 1
     assert deck.presenter == "Prof. Clawdette Purrkins"
-    assert deck.slides[0].elements[1].text.endswith("Prof. Clawdette Purrkins, The presenter job")
+    assert deck.slides[0].elements[1].text.endswith("Prof. Clawdette Purrkins\nThe presenter job")
     request = model.requests[0]
     properties = _spine(request)
     spine = ["unsafe_topic", "thesis", "title", "name_plays_on", "presenter_name", "presenter_job"]

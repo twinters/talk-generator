@@ -3,7 +3,7 @@
     "Its natural habitat: behind the sofa",
     "Habitat: the back of the cupboard",
     "Found here. And in your sock drawer.",
-    "The natural habitat of {species}",
+    "The habitat of {species}",
     "Home, sweet home",
     "Territory: everything it can see",
     "Range: wherever you looked last",
@@ -42,7 +42,7 @@
     "{species} marks its territory by moving things slightly to the left.",
     "A single specimen of {species} needs four square metres of sofa.",
     "{species} can hear a biscuit packet open from two kilometres away.",
-    "In the wild, {species} lives up to 80 years. In the living room, about a weekend.",
+    "In the wild, {species} lives 80 years. In the living room, about a weekend.",
     "{species} has no natural predators, apart from people who tidy up."
   ],
   "fact_source": [

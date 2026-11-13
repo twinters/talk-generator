@@ -3,7 +3,7 @@
     "History",
     "A Short History of {seed.generic.title}",
     "Historic Background",
-    "Important Figures in {seed.bare.title} History",
+    "Big Names in {seed.bare.title} History",
     "Quick Historical Note",
     "The History of {seed.generic.title}",
     "A brief history of {seed.generic}",
@@ -34,12 +34,11 @@
     "A blast from the past",
     "Remember when?",
     "The {seed.bare} archives",
-    "Great moments in {seed.bare} history"
+    "Moments in {seed.bare} history"
   ],
   "history_person_title": [
     "Historical {seed.bare.title} Figures",
-    "The First Person to {seed.wikihow_action}",
-    "The Inventor of {seed.wikihow_action.ing}",
+    "First to {seed.wikihow_action}",
     "First Olympic \"{seed.wikihow_action.ing.dashes}\" Champion",
     "First Winner of the \"{seed.wikihow_action.ing.dashes}\" Championships",
     "The Inventor of {seed.generic}",
@@ -51,8 +50,8 @@
     "The first {seed.bare} expert",
     "A visionary of their time",
     "A great thinker on {seed.generic}",
-    "Founder of the {seed.bare} movement",
-    "The first known {seed.bare} enthusiast",
+    "{seed.bare.cap} movement founder",
+    "The first {seed.bare} enthusiast",
     "A legend in {seed.bare} circles",
     "One of the greats",
     "A giant of {seed.bare} history",
@@ -63,7 +62,7 @@
     "The original influencer",
     "A pioneer of {seed.generic}",
     "The grandparent of {seed.generic}",
-    "Founder of the {seed.bare} society",
+    "Founder, {seed.bare.title} Society",
     "A mind ahead of its time",
     "What the experts said back then"
   ],

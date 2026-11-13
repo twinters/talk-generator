@@ -25,14 +25,14 @@
     "Twelve Jurors and {seed.generic.title}"
   ],
   "subtitle": [
-    "{presenter}, for the prosecution",
-    "{presenter}, counsel for the defence",
-    "{presenter}, the detective on the case",
-    "{presenter}, Attorney at Law, allegedly",
+    "{presenter}\nfor the prosecution",
+    "{presenter}\ncounsel for the defence",
+    "{presenter}\nthe detective on the case",
+    "{presenter}\nAttorney at Law, allegedly",
     "Case No. 0417, presented by {presenter}",
-    "{presenter}, prosecuting, in a borrowed wig",
-    "{presenter}, defending, against their better judgement",
+    "{presenter}\nprosecuting, in a borrowed wig",
+    "{presenter}\ndefending, against their better judgement",
     "Presented by {presenter}. All rise.",
-    "{presenter}, for the prosecution, in the matter of {crime}"
+    "{presenter}\nfor the prosecution, in the matter of {crime}"
   ]
 }

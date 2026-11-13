@@ -48,16 +48,16 @@
     "Please accept"
   ],
   "clause": [
-    "By ordering the {gadget}, you agree to tell at least twelve people about it, loudly.",
-    "You agree that the {gadget} now makes every {seed.bare} decision in your home.",
-    "The {gadget} may play its theme tune at any moment. You agree to sing along.",
-    "Clause 7: the {gadget} always gets the window seat.",
-    "Your order includes a lifetime subscription to the {gadget} newsletter. It comes hourly.",
-    "You agree to treat the {gadget} like a member of the family, birthdays included."
+    "You agree to tell twelve people about it, loudly.",
+    "The {gadget} now makes all your decisions.",
+    "It may play its theme tune. You agree to sing along.",
+    "The {gadget} always gets the window seat.",
+    "The {gadget} newsletter: hourly, for life.",
+    "The {gadget} is family. Birthdays included."
   ],
   "clause_code": [
     "Clause 47(b)",
-    "Section 12, line 9",
+    "Sec. 12, line 9",
     "Clause 3.14",
     "Paragraph 404",
     "Rule 7, part 2",

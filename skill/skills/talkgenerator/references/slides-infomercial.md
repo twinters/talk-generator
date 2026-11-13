@@ -29,7 +29,7 @@ An image with a title.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title |
+| `title` | 45 | the slide's title |
 
 Images: `image`
 
@@ -43,7 +43,7 @@ An image filling the slide, with an optional title.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title (or empty, for none) |
+| `title` | 45 | the slide's title (or empty, for none) |
 
 Images: `image`
 
@@ -62,7 +62,7 @@ A big text over a photo.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `text` | 140 | the big text over the photo |
+| `text` | 90 | the big text over the photo: one short sentence |
 
 Images: `background`
 
@@ -78,7 +78,7 @@ Two captioned images side by side.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title (or empty, for none) |
+| `title` | 45 | the slide's title (or empty, for none) |
 | `caption_1` | 40 | the left caption |
 | `caption_2` | 40 | the right caption |
 
@@ -95,7 +95,7 @@ Three captioned images side by side.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title (or empty, for none) |
+| `title` | 45 | the slide's title (or empty, for none) |
 | `caption_1` | 40 | the left caption |
 | `caption_2` | 40 | the middle caption |
 | `caption_3` | 40 | the right caption |
@@ -112,9 +112,9 @@ A made-up historical figure's portrait, next to their quote.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | a title about history |
-| `name` | 60 | a made-up historical figure (never a real person): name and title |
-| `quote` | 160 | what this made-up figure once said |
+| `title` | 45 | a title about history |
+| `name` | 50 | a made-up historical figure (never a real person): their name, a comma, and their title |
+| `quote` | 100 | what this made-up figure once said, in one short sentence |
 
 Images: `portrait`
 
@@ -128,9 +128,9 @@ A big, made-up number, with what it counts under it: a figure the presenter has 
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title (or empty, for none) |
+| `title` | 45 | the slide's title (or empty, for none) |
 | `number` | 12 | the big number, with its unit if it has one: a percentage, an amount or a count |
-| `label` | 90 | what the number counts or measures, in a few words |
+| `label` | 50 | what the number counts or measures, in a few words |
 | `source` | 60 | a made-up, unreliable source for the number (or empty, for none) |
 
 Images: `background`
@@ -147,7 +147,7 @@ Three or four made-up figures on tiles, as on a dashboard, each a number and wha
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the dashboard's title |
+| `title` | 45 | the dashboard's title |
 | `number_1` | 10 | the first figure's number, with its unit if it has one |
 | `label_1` | 40 | what the first figure measures |
 | `number_2` | 10 | the second figure's number, with its unit if it has one |
@@ -169,13 +169,13 @@ A quiz question for the audience, with three or four options (A to D), which app
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `question` | 90 | the quiz question |
-| `option_a` | 50 | option A (without its letter) |
-| `option_b` | 50 | option B |
-| `option_c` | 50 | option C |
-| `option_d` | 50 | option D (or empty, for none) |
+| `question` | 70 | the quiz question, in one short sentence |
+| `option_a` | 36 | option A (without its letter), in a few words |
+| `option_b` | 36 | option B |
+| `option_c` | 36 | option C |
+| `option_d` | 36 | option D (or empty, for none) |
 | `answer` | 1 | the letter of the right option: `A`, `B`, `C`, `D` |
-| `explanation` | 90 | why that's the answer, shown with it (or empty, for none) |
+| `explanation` | 60 | why that's the answer, shown with it, in a few words (or empty, for none) |
 
 Images: none
 
@@ -189,10 +189,10 @@ A made-up social media post with a photo: who posted it, and what they wrote (ta
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title (or empty, for none) |
-| `author` | 30 | the made-up name of who posted it (never a real person) |
+| `title` | 45 | the slide's title (or empty, for none) |
+| `author` | 30 | the made-up name of who posted it: a real first name and a surname |
 | `handle` | 24 | their made-up username, without the @ |
-| `text` | 160 | the post: what they wrote, without hashtags or emoji |
+| `text` | 90 | the post: what they wrote, in one or two short sentences, without hashtags or emoji |
 
 Images: `photo`
 
@@ -207,8 +207,8 @@ A made-up news story with a photo, as breaking news on television or on a newspa
 | Text | At most | What to write |
 | --- | --- | --- |
 | `outlet` | 30 | the made-up name of the newspaper or the channel |
-| `headline` | 90 | the headline |
-| `subheadline` | 100 | a line under the headline, with more of the story (or empty, for none) |
+| `headline` | 70 | the headline |
+| `subheadline` | 70 | a line under the headline, with more of the story (or empty, for none) |
 
 Images: `photo`
 
@@ -222,7 +222,7 @@ A process of three to five steps, each leading to the next by an arrow, from the
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the process's title |
+| `title` | 45 | the process's title |
 | `step_1` | 40 | the first step |
 | `step_2` | 40 | the second step |
 | `step_3` | 40 | the third step (the last, the punchline, if there are no more) |
@@ -258,7 +258,7 @@ A fun fact: one absurd fact, stated as certain, under a heading such as 'Did you
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `fact` | 150 | the fact: one sentence, stated as certain, that the presenter has to back up |
+| `fact` | 100 | the fact: one short sentence, stated as certain, that the presenter has to back up |
 | `source` | 60 | a made-up, unreliable source for the fact (or empty, for none) |
 
 Images: `photo`
@@ -273,8 +273,8 @@ A dare, on a card: a real challenge for the presenter for the rest of the talk (
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `dare` | 130 | the challenge, said to the presenter, for the rest of the talk or the next few slides: an accent or a voice, a gesture on every slide, a word to work into every slide, a rule such as speaking only in questions; hard to keep up, harmless, and for the presenter alone (or empty, for none) |
-| `audience` | 130 | what the presenter has the whole audience do, said to them: a show of hands, a call and response (when the presenter says a word, everyone answers with another), the front row standing up, a sound everyone makes; harmless, fun to join in, and singling nobody out (or empty, for none) |
+| `dare` | 90 | the challenge, said to the presenter, for the rest of the talk or the next few slides: an accent or a voice, a gesture on every slide, a word to work into every slide, a rule such as speaking only in questions; hard to keep up, harmless, and for the presenter alone (or empty, for none) |
+| `audience` | 90 | what the presenter has the whole audience do, said to them: a show of hands, a call and response (when the presenter says a word, everyone answers with another), the front row standing up, a sound everyone makes; harmless, fun to join in, and singling nobody out (or empty, for none) |
 
 Images: none
 
@@ -284,16 +284,16 @@ Images: none
 
 ## `tier_list`
 
-A tier list: things ranked in tiers from S (the best) to F (the worst), one to three in a tier; the tiers fill one by one, a click each, from the worst up to the S tier, the punchline.
+A tier list: things ranked in tiers from S (the best) to F (the worst), one thing in a tier; the tiers fill one by one, a click each, from the worst up to the S tier, the punchline.
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the tier list's title |
-| `s_tier` | 70 | the S tier, the very best: one surprising thing, the punchline |
-| `a_tier` | 70 | the A tier: one to three things, separated by \| |
-| `b_tier` | 70 | the B tier: one to three things, separated by \| (or empty, for none) |
-| `c_tier` | 70 | the C tier: one to three things, separated by \| (or empty, for none) |
-| `f_tier` | 70 | the F tier, the worst: one to three things, separated by \| (or empty, for none) |
+| `title` | 45 | the tier list's title |
+| `s_tier` | 28 | the S tier, the very best: one surprising thing, the punchline |
+| `a_tier` | 28 | the A tier: one thing |
+| `b_tier` | 28 | the B tier: one thing (or empty, for none) |
+| `c_tier` | 28 | the C tier: one thing (or empty, for none) |
+| `f_tier` | 28 | the F tier, the worst: one thing (or empty, for none) |
 
 Images: none
 
@@ -307,7 +307,7 @@ A wall of text that nobody can read: dense points of jargon filling the slide, a
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title, as if it were all perfectly clear |
+| `title` | 45 | the slide's title, as if it were all perfectly clear |
 | `points` | 2600 | twelve to sixteen points of dense jargon, separated by \|, each a long sentence of fifteen to twenty-five words: the more the better, as nobody is meant to read them |
 | `highlight` | 110 | one more point, hidden among the others and highlighted on a click: the punchline, as dense as they are, but absurd |
 
@@ -323,16 +323,16 @@ Made-up reviews, with stars: two or three reviewers' ratings (one to five stars)
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 60 | the slide's title, such as what people are saying (or empty, for none) |
+| `title` | 45 | the slide's title, such as what people are saying (or empty, for none) |
 | `stars_1` | 1 | how many stars the first reviewer gives, from 1 to 5: `1`, `2`, `3`, `4`, `5` |
-| `review_1` | 110 | what the first reviewer wrote |
-| `reviewer_1` | 30 | who the first reviewer is: a made-up first name, and a detail (or empty, for none) |
+| `review_1` | 70 | what the first reviewer wrote, in one short sentence |
+| `reviewer_1` | 30 | who the first reviewer is: a real first name, a comma, and a detail (or empty, for none) |
 | `stars_2` | 1 | how many stars the second reviewer gives, from 1 to 5: `1`, `2`, `3`, `4`, `5` |
-| `review_2` | 110 | what the second reviewer wrote |
-| `reviewer_2` | 30 | who the second reviewer is: a made-up first name, and a detail (or empty, for none) |
+| `review_2` | 70 | what the second reviewer wrote, in one short sentence |
+| `reviewer_2` | 30 | who the second reviewer is: a real first name, a comma, and a detail (or empty, for none) |
 | `stars_3` | 1 | how many stars the third reviewer gives, from 1 to 5: `1`, `2`, `3`, `4`, `5` (or empty, for any) |
-| `review_3` | 110 | what the third reviewer wrote (or empty, for none) |
-| `reviewer_3` | 30 | who the third reviewer is: a made-up first name, and a detail (or empty, for none) |
+| `review_3` | 70 | what the third reviewer wrote, in one short sentence (or empty, for none) |
+| `reviewer_3` | 30 | who the third reviewer is: a real first name, a comma, and a detail (or empty, for none) |
 
 Images: none
 
@@ -342,20 +342,20 @@ Images: none
 
 ## `error_message`
 
-A fake error message, as if the talk itself crashed: a dialog with a title, an absurd message, an error code and two or three buttons, the last one the punchline (talkgenerator adds the warning sign).
+A fake error message, as if the talk itself crashed: a dialog with a title, a short, absurd message, maybe an error code, and two or three buttons, the last one the punchline (talkgenerator adds the warning sign).
 
 | Text | At most | What to write |
 | --- | --- | --- |
-| `title` | 30 | the dialog's title, as in its title bar (or empty, for none) |
-| `message` | 120 | the error message |
-| `code` | 24 | an error code, made up and absurdly precise (or empty, for none) |
-| `buttons` | 66 | two or three of the dialog's buttons, separated by \|, each at most 20 characters: the last one the punchline, an absurd choice of the talk's own |
+| `title` | 24 | the dialog's title, as in its title bar (or empty, for none) |
+| `message` | 60 | the error message, in a few words, as short as real ones are |
+| `code` | 16 | an error code, made up and absurdly precise (or empty, for none) |
+| `buttons` | 48 | two or three of the dialog's buttons, separated by \|, each at most 14 characters: the last one the punchline, an absurd choice of the talk's own |
 
 Images: none
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `terms-dialog-infomercial` | The terms and conditions, as a dialog everyone must accept before ordering: one absurd clause about the gadget, and buttons that all agree, the last one the punchline | the default; `title`: the dialog's title, such as 'Terms and conditions'; `message`: one absurd clause of the fine print, about the gadget; `code`: the clause's number, absurdly precise; `buttons`: two or three buttons, separated by \|, each at most 20 characters, every one of them agreeing: the last one the punchline; tags: error_message, fine_print |
+| `terms-dialog-infomercial` | The terms and conditions, as a dialog everyone must accept before ordering: one absurd clause about the gadget, and buttons that all agree, the last one the punchline | the default; `title`: the dialog's title, such as 'Terms and conditions'; `message`: one absurd clause of the fine print, about the gadget; `code`: the clause's number, absurdly precise; `buttons`: two or three buttons, separated by \|, each at most 14 characters, every one of them agreeing: the last one the punchline; tags: error_message, fine_print |
 
 ## `problem`
 

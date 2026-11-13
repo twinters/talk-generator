@@ -8,13 +8,13 @@
     "p < 0.06"
   ],
   "ranking_title": [
-    "Accuracy on the {seed.bare} benchmark (#p_value#)",
-    "{method} beats every baseline (#p_value#)",
+    "{seed.bare.cap} accuracy (#p_value#)",
+    "{method} beats all (#p_value#)",
     "Performance, by method (#p_value#)",
     "Our results (#p_value#)",
-    "How {method} compares (#p_value#)",
+    "{method}, compared (#p_value#)",
     "Main results, after removing the outliers",
-    "Results on the {seed.bare} dataset (#p_value#)"
+    "{seed.bare.cap} results (#p_value#)"
   ],
   "baseline": [
     "Random guessing",
@@ -119,11 +119,11 @@
     "p = 0.04999"
   ],
   "p_label": [
-    "the effect of {seed.generic} on everything, after we removed the outliers",
+    "the effect of {seed.generic}, no outliers",
     "statistically significant, after the fourth try",
-    "the chance that our results are a coincidence (allegedly)",
+    "the chance our results are a fluke (allegedly)",
     "significant at the 5% level, if you squint",
-    "our main finding about {seed.generic}, one-tailed",
+    "our finding on {seed.generic}, one-tailed",
     "the probability that Reviewer 2 is right",
     "the only number in this talk you need to remember"
   ],

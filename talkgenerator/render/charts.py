@@ -15,6 +15,7 @@ from typing import Any, Final
 from pptx.chart.data import CategoryChartData, XyChartData
 from pptx.dml.color import RGBColor
 from pptx.enum.chart import (
+    XL_AXIS_CROSSES,
     XL_CHART_TYPE,
     XL_LABEL_POSITION,
     XL_LEGEND_POSITION,
@@ -28,7 +29,7 @@ from pptx.oxml.ns import nsdecls, qn
 from pptx.text.text import Font
 from pptx.util import Pt
 
-from talkgenerator.design import fonts
+from talkgenerator.design import color, fonts
 from talkgenerator.models.deck import ChartReveal, ChartSeries, ChartSpec, ChartType, Trendline
 
 PPTX_CHART_TYPES: dict[ChartType, XL_CHART_TYPE] = {
@@ -336,7 +337,7 @@ def set_line_properties(chart, chart_data):
 
 def set_bar_properties(chart, chart_data):
     """A ranking: bars without numbers, from a line on the left, all grey but the last one, the punchline, in its
-    colour."""
+    colour; the first at the top and the punchline at the bottom, as they appear, a click each (D80)."""
     chart.has_legend = False
     value_axis = chart.value_axis
     value_axis.tick_label_position = XL_TICK_LABEL_POSITION.NONE
@@ -346,6 +347,10 @@ def set_bar_properties(chart, chart_data):
     category_axis = chart.category_axis
     _without_tick_marks(category_axis)
     category_axis.tick_labels.font.size = Pt(LABEL_SIZE)
+    # (from the top down: PowerPoint draws the first category at the bottom, unless its axis is reversed, which puts
+    # the value axis, and its title, at the top, unless that crosses it at its last category)
+    category_axis.reverse_order = True
+    category_axis.crosses = XL_AXIS_CROSSES.MAXIMUM
     plot = chart.plots[0]
     plot.gap_width = 60
     plot.vary_by_categories = False
@@ -429,6 +434,37 @@ def label_points(chart, spec: ChartSpec, look: ChartLook = CLASSIC_LOOK, width: 
             if abs(shift) > 0.001:
                 layout = f'<c:manualLayout><c:x val="{shift:.4f}"/><c:y val="0"/></c:manualLayout>'
                 dLbl.find(qn("c:tx")).addprevious(parse_xml(f"<c:layout {nsdecls('c')}>{layout}</c:layout>"))
+
+
+def name_bars(chart, spec: ChartSpec, look: ChartLook = CLASSIC_LOOK) -> None:
+    """Name a ranking's bars by themselves, when they appear a click each (D80): each bar's name as its data label,
+    which PowerPoint brings in with its bar, where the category axis's names are the chart's background, there from
+    the start (the punchline's too). A short bar has its name after it; a long one, the punchline's, inside it at its
+    start, bold, in a colour that reads on the bar."""
+    if spec.chart_type != "bar" or spec.reveal != "categories" or not spec.series:
+        return
+    chart.category_axis.tick_label_position = XL_TICK_LABEL_POSITION.NONE
+    values = spec.series[0].values
+    longest = max(values, default=0.0)
+    series = chart.plots[0].series[0]
+    on_bar = _readable_on(look.punchline, look.text, look.background)
+    for index, name in enumerate(spec.categories):
+        long = longest > 0 and values[index] > longest / 2
+        label = series.points[index].data_label
+        _write(label, name, bold=long)
+        label.position = XL_LABEL_POSITION.INSIDE_BASE if long else XL_LABEL_POSITION.OUTSIDE_END
+        label.text_frame.word_wrap = False
+        label._get_or_add_dLbl().get_or_add_txPr().find(qn("a:bodyPr")).set("wrap", "none")
+        if long:
+            for paragraph in label.text_frame.paragraphs:
+                for run in paragraph.runs:
+                    run.font.color.rgb = on_bar
+
+
+def _readable_on(fill: RGBColor, *choices: RGBColor) -> RGBColor:
+    """Whichever of the colours reads best on the fill (or white or black, if they read better still)."""
+    candidates = [*choices, RGBColor(0xFF, 0xFF, 0xFF), RGBColor(0x00, 0x00, 0x00)]
+    return max(candidates, key=lambda choice: color.contrast(f"#{choice}", f"#{fill}") + 0.5 * (choice in choices))
 
 
 def _name_shift(values: Sequence[float], index: int, name: float, gap: float) -> float:

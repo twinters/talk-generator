@@ -257,8 +257,10 @@ def test_a_ranking_is_won_by_its_punchline_by_far():
     assert spec.chart_type == "bar"
     assert spec.categories == ("Climate", "AI", "Asteroids", "My cat")
     values = spec.series[0].values
-    assert list(values[:-1]) == sorted(values[:-1]) and values[-1] > 2 * values[-2]
+    # (two or three that come to next to nothing, then the punchline's, far longer: D80)
+    assert list(values[:-1]) == sorted(values[:-1]) and values[-2] <= 0.15 * values[-1]
     assert spec.y_title == "Danger level"
+    assert spec.reveal == "categories" and spec.clicks() == 4  # (a bar a click, from the top down)
 
     _, drawn = _drawn(slide)
     assert drawn.value_axis.axis_title.text_frame.text == "Danger level"
@@ -268,9 +270,25 @@ def test_a_ranking_is_won_by_its_punchline_by_far():
     assert str(drawn.plots[0].series[0].format.fill.fore_color.rgb) == "808080"  # and the others grey
     assert not drawn.plots[0].vary_by_categories
     assert drawn.category_axis.major_tick_mark == XL_TICK_MARK.NONE
+    # The first bar at the top, and every bar named by itself, as its data label, which comes in with it: a short one
+    # after it, the punchline's long one inside it (where the axis's names would all be there from the start)
+    assert drawn.category_axis.reverse_order
+    assert drawn.category_axis.tick_label_position == XL_TICK_LABEL_POSITION.NONE
+    labels = [point.data_label for point in drawn.plots[0].series[0].points]
+    assert [label.text_frame.text for label in labels] == list(spec.categories)
+    assert [label.position for label in labels] == [XL_LABEL_POSITION.OUTSIDE_END] * 3 + [XL_LABEL_POSITION.INSIDE_BASE]
+    assert _chart_build(slide) == ["category"] * 4
 
     with pytest.raises(ValueError):
         KINDS["chart_bars"].build({**texts, "bars": "AI | My cat"}, {}, ENGLISH)
+
+
+def _chart_build(slide) -> list[str]:
+    """How the slide's chart builds as a .pptx animates it: the build step of each of its animation targets."""
+    deck = Deck(generator="test", seed=1, slides=(slide.to_deck_slide(),))
+    xml = render_pptx(deck).slides[0]._element
+    targets = [(target.get("bldStep"), target.get("categoryIdx")) for target in xml.xpath(".//p:timing//a:chart")]
+    return [step for step, _ in dict.fromkeys(targets)]  # (each effect names its target twice: its set and its wipe)
 
 
 def test_scores_between_a_rankings_names_are_left_out():
@@ -285,10 +303,11 @@ def test_the_classic_ranking(monkeypatch):
     monkeypatch.setattr(conceptnet, "get_weighted_related_words", lambda word, limit=50: related)
     monkeypatch.setattr(chart, "ranking_title_generator", lambda context: "What experts fear most")
     with random_util.use(random_util.Rng(6)):
-        title, chart_type, data, _ = chart.generate_ranking_bars({"topic": "cats", "seed": "cat"})
+        title, chart_type, data, _, _, _, reveal = chart.generate_ranking_bars({"topic": "cats", "seed": "cat"})
     labels = [category.label for category in data.categories]
-    assert (title, chart_type) == ("What experts fear most", XL_CHART_TYPE.BAR_CLUSTERED)
-    assert sorted(labels[:-1]) == ["dog", "mouse", "yarn"] and labels[-1] == "cat"  # "cat food" holds the seed
+    assert (title, chart_type, reveal) == ("What experts fear most", XL_CHART_TYPE.BAR_CLUSTERED, "categories")
+    # (two or three related things, then the seed: "cat food" holds the seed)
+    assert set(labels[:-1]) <= {"dog", "mouse", "yarn"} and len(labels) in (3, 4) and labels[-1] == "cat"
 
     monkeypatch.setattr(conceptnet, "get_weighted_related_words", lambda word, limit=50: [])
     assert chart.generate_ranking_bars({"topic": "cats", "seed": "cat"}) is None
@@ -432,7 +451,10 @@ def test_every_text_of_a_chart_reads_on_its_slide(kind, family):
     texts = [Font(properties) for properties in space.xpath(".//c:txPr//a:defRPr")]
     runs = [Font(run.get_or_add_rPr()) for run in space.xpath(".//a:r")]
     assert texts and (runs or kind == "column")
-    on_background = texts + (runs if kind != "doughnut" else [])  # (a doughnut's shares are on its slices)
+    # (a doughnut's shares are on its slices, and a ranking's long bar's name on its bar: D80)
+    on_bar = [Font(run.get_or_add_rPr()) for run in space.xpath(".//c:dLbl[c:dLblPos/@val='inBase']//a:r")]
+    on_background = texts + (runs if kind != "doughnut" else [])
+    on_background = [font for font in on_background if not any(font._rPr is bar._rPr for bar in on_bar)]
     for font in texts + runs:
         assert font.color.type is not None and font.name == font_name
     for font in on_background:

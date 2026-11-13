@@ -6,7 +6,7 @@
     "But wait! You also get this!",
     "Order today and this is yours too!",
     "Bonus! And we don't even know what it is!",
-    "Free with every {gadget}: this!"
+    "Free with any {gadget}: this!"
   ],
   "double_title": [
     "But wait, there's more!",
@@ -25,10 +25,10 @@
     "Twice!"
   ],
   "double_label": [
-    "a second {gadget}, for the price of one!",
-    "another {gadget}, for your neighbour!",
+    "a second {gadget}, free!",
+    "one {gadget} for your neighbour!",
     "one for you, one for the car!",
-    "one {gadget} for every room of the house!",
+    "one {gadget} for every room!",
     "a spare, in case the first one gets lonely!",
     "everything twice! Just pay separate shipping!"
   ],

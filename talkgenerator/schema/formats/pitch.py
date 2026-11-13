@@ -95,6 +95,7 @@ PITCH: Final = Format(
     arc=ARC,
     # (its closer invites the investors to talk, with a made-up contact line: D76)
     closer=Closer(said("lets_talk"), contact_line, presenter),
+    scene="startup office",
 )
 
 
