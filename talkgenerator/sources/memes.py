@@ -1,6 +1,6 @@
 """Memes with live captions: Imgflip's templates (talkgenerator.sources.imgflip), and where each has its captions.
 
-Imgflip lists its templates' pictures but not where their captions go, so `data/memes.json` has them for 25 of its
+Imgflip lists its templates' pictures but not where their captions go, so `data/memes.json` has them for 46 of its
 best-known templates, measured on Imgflip's own pictures: every caption's box (as fractions of the picture, from its
 top left corner), its style, and what it says (for the language model). A box is "impact" (white Impact with a black
 outline, in capitals, over anything) or "plain" (black text on the template's own even area: Drake's white panels,

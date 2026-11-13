@@ -1,5 +1,5 @@
 {
-  "source": "Imgflip's templates (https://imgflip.com/api), with caption boxes measured on its pictures on 2026-11-07",
+  "source": "Imgflip's templates (https://imgflip.com/api), with caption boxes measured on its pictures on 2026-11-07 (the first 25) and 2026-11-14",
   "templates": [
     {
       "id": "181913649",
@@ -764,6 +764,638 @@
           "h": 0.2,
           "style": "impact",
           "says": "the clever but useless solution"
+        }
+      ]
+    },
+    {
+      "id": "322841258",
+      "name": "Anakin Padme 4 Panel",
+      "url": "https://i.imgflip.com/5c7lwq.png",
+      "width": 768,
+      "height": 768,
+      "about": "Anakin tells Padme his plan; she smiles and asks a hopeful question, he stares back in silence, and she asks it again, less sure",
+      "boxes": [
+        {
+          "x": 0.02,
+          "y": 0.35,
+          "w": 0.46,
+          "h": 0.14,
+          "style": "impact",
+          "says": "what Anakin says he's going to do"
+        },
+        {
+          "x": 0.52,
+          "y": 0.35,
+          "w": 0.46,
+          "h": 0.14,
+          "style": "impact",
+          "says": "Padme's hopeful question about it, ending in 'right?'"
+        },
+        {
+          "x": 0.52,
+          "y": 0.85,
+          "w": 0.46,
+          "h": 0.14,
+          "style": "impact",
+          "says": "her question again, as his silence sinks in",
+          "same_as": 2
+        }
+      ]
+    },
+    {
+      "id": "27813981",
+      "name": "Hide the Pain Harold",
+      "url": "https://i.imgflip.com/gk5el.jpg",
+      "width": 480,
+      "height": 601,
+      "about": "an older man smiles at his laptop, with a pain in his eyes he tries to hide",
+      "boxes": [
+        {
+          "x": 0.03,
+          "y": 0.36,
+          "w": 0.94,
+          "h": 0.13,
+          "style": "impact",
+          "says": "what happens to him, or what he reads"
+        },
+        {
+          "x": 0.03,
+          "y": 0.86,
+          "w": 0.94,
+          "h": 0.13,
+          "style": "impact",
+          "says": "his brave reply, smiling through the pain"
+        }
+      ]
+    },
+    {
+      "id": "178591752",
+      "name": "Tuxedo Winnie The Pooh",
+      "url": "https://i.imgflip.com/2ybua0.png",
+      "width": 800,
+      "height": 582,
+      "about": "Winnie the Pooh in his plain red shirt by one thing, then in a tuxedo, refined, by the fancy name for it",
+      "boxes": [
+        {
+          "x": 0.45,
+          "y": 0.04,
+          "w": 0.52,
+          "h": 0.42,
+          "style": "plain",
+          "says": "the ordinary name for something",
+          "fill": "#ffffff"
+        },
+        {
+          "x": 0.45,
+          "y": 0.54,
+          "w": 0.52,
+          "h": 0.42,
+          "style": "plain",
+          "says": "the fancy, pretentious name for the same thing",
+          "fill": "#ffffff"
+        }
+      ]
+    },
+    {
+      "id": "180190441",
+      "name": "They're The Same Picture",
+      "url": "https://i.imgflip.com/2za3u1.jpg",
+      "width": 1363,
+      "height": 1524,
+      "about": "an office worker is asked to find the differences between two pictures, and says they're the same picture",
+      "boxes": [
+        {
+          "x": 0.14,
+          "y": 0.08,
+          "w": 0.28,
+          "h": 0.19,
+          "style": "plain",
+          "says": "the first picture: one thing",
+          "fill": "#ffffff"
+        },
+        {
+          "x": 0.58,
+          "y": 0.14,
+          "w": 0.32,
+          "h": 0.19,
+          "style": "plain",
+          "says": "the second picture: a thing said to be different, but really the same",
+          "fill": "#ffffff"
+        }
+      ]
+    },
+    {
+      "id": "80707627",
+      "name": "Sad Pablo Escobar",
+      "url": "https://i.imgflip.com/1c1uej.jpg",
+      "width": 720,
+      "height": 709,
+      "about": "a man waits, alone and sad, in three scenes: on a swing, at a table, by an empty pool",
+      "boxes": [
+        {
+          "x": 0.02,
+          "y": 0.36,
+          "w": 0.96,
+          "h": 0.12,
+          "style": "impact",
+          "says": "what he's waiting for, or lonely without"
+        },
+        {
+          "x": 0.01,
+          "y": 0.86,
+          "w": 0.48,
+          "h": 0.13,
+          "style": "impact",
+          "says": "a second sad moment"
+        },
+        {
+          "x": 0.51,
+          "y": 0.86,
+          "w": 0.48,
+          "h": 0.13,
+          "style": "impact",
+          "says": "a third sad moment"
+        }
+      ]
+    },
+    {
+      "id": "91538330",
+      "name": "X, X Everywhere",
+      "url": "https://i.imgflip.com/1ihzfe.jpg",
+      "width": 2118,
+      "height": 1440,
+      "about": "Buzz Lightyear points into the distance, his arm around a worried Woody: X, X everywhere",
+      "boxes": [
+        {
+          "x": 0.02,
+          "y": 0.02,
+          "w": 0.96,
+          "h": 0.17,
+          "style": "impact",
+          "says": "what Buzz points at, said once"
+        },
+        {
+          "x": 0.02,
+          "y": 0.81,
+          "w": 0.96,
+          "h": 0.17,
+          "style": "impact",
+          "says": "the same again, 'everywhere'"
+        }
+      ]
+    },
+    {
+      "id": "84341851",
+      "name": "Evil Kermit",
+      "url": "https://i.imgflip.com/1e7ql7.jpg",
+      "width": 700,
+      "height": 325,
+      "about": "Kermit faces his evil twin in a dark hood, who whispers a bad idea to him",
+      "boxes": [
+        {
+          "x": 0.01,
+          "y": 0.68,
+          "w": 0.46,
+          "h": 0.3,
+          "style": "impact",
+          "says": "Kermit: who's tempted, such as 'Me'"
+        },
+        {
+          "x": 0.52,
+          "y": 0.68,
+          "w": 0.46,
+          "h": 0.3,
+          "style": "impact",
+          "says": "the evil twin's tempting suggestion"
+        }
+      ]
+    },
+    {
+      "id": "155067746",
+      "name": "Surprised Pikachu",
+      "url": "https://i.imgflip.com/2kbn1e.jpg",
+      "width": 1893,
+      "height": 1893,
+      "about": "a short story in three lines above Pikachu's face, shocked at an outcome everyone saw coming",
+      "boxes": [
+        {
+          "x": 0.03,
+          "y": 0.01,
+          "w": 0.94,
+          "h": 0.12,
+          "style": "plain",
+          "says": "the first line: what someone does, as 'Me: ...'",
+          "fill": "#ffffff"
+        },
+        {
+          "x": 0.03,
+          "y": 0.14,
+          "w": 0.94,
+          "h": 0.12,
+          "style": "plain",
+          "says": "the second line: the obvious result",
+          "fill": "#ffffff"
+        },
+        {
+          "x": 0.03,
+          "y": 0.27,
+          "w": 0.94,
+          "h": 0.11,
+          "style": "plain",
+          "says": "the third line: who's surprised, such as 'Me:'",
+          "fill": "#ffffff"
+        }
+      ]
+    },
+    {
+      "id": "110133729",
+      "name": "spiderman pointing at spiderman",
+      "url": "https://i.imgflip.com/1tkjq9.jpg",
+      "width": 800,
+      "height": 450,
+      "about": "two identical Spider-Men point at each other, each accusing the other of being the copy",
+      "boxes": [
+        {
+          "x": 0.03,
+          "y": 0.76,
+          "w": 0.44,
+          "h": 0.22,
+          "style": "impact",
+          "says": "the one on the left"
+        },
+        {
+          "x": 0.53,
+          "y": 0.76,
+          "w": 0.44,
+          "h": 0.22,
+          "style": "impact",
+          "says": "the one on the right, just like the left"
+        }
+      ]
+    },
+    {
+      "id": "79132341",
+      "name": "Bike Fall",
+      "url": "https://i.imgflip.com/1b42wl.jpg",
+      "width": 500,
+      "height": 680,
+      "about": "a cyclist puts a stick in his own front wheel, falls, and lies on the ground blaming something else",
+      "boxes": [
+        {
+          "x": 0.04,
+          "y": 0.03,
+          "w": 0.88,
+          "h": 0.1,
+          "style": "impact",
+          "says": "who's riding along: a person or a group"
+        },
+        {
+          "x": 0.04,
+          "y": 0.41,
+          "w": 0.88,
+          "h": 0.1,
+          "style": "impact",
+          "says": "the stick: what they do to themselves"
+        },
+        {
+          "x": 0.04,
+          "y": 0.71,
+          "w": 0.88,
+          "h": 0.1,
+          "style": "impact",
+          "says": "who or what they blame for the fall"
+        }
+      ]
+    },
+    {
+      "id": "195515965",
+      "name": "Clown Applying Makeup",
+      "url": "https://i.imgflip.com/38el31.jpg",
+      "width": 750,
+      "height": 798,
+      "about": "a man puts on clown makeup in four steps, each a sillier step of the same bad idea",
+      "boxes": [
+        {
+          "x": 0.02,
+          "y": 0.02,
+          "w": 0.5,
+          "h": 0.21,
+          "style": "plain",
+          "says": "the first step of the bad idea, still reasonable",
+          "fill": "#ffffff"
+        },
+        {
+          "x": 0.02,
+          "y": 0.27,
+          "w": 0.5,
+          "h": 0.21,
+          "style": "plain",
+          "says": "the second step, sillier",
+          "fill": "#ffffff"
+        },
+        {
+          "x": 0.02,
+          "y": 0.52,
+          "w": 0.5,
+          "h": 0.21,
+          "style": "plain",
+          "says": "the third step, sillier still",
+          "fill": "#ffffff"
+        },
+        {
+          "x": 0.02,
+          "y": 0.77,
+          "w": 0.5,
+          "h": 0.21,
+          "style": "plain",
+          "says": "the last step: a full clown",
+          "fill": "#ffffff"
+        }
+      ]
+    },
+    {
+      "id": "77045868",
+      "name": "Pawn Stars Best I Can Do",
+      "url": "https://i.imgflip.com/19vcz0.jpg",
+      "width": 624,
+      "height": 352,
+      "about": "a pawn shop owner hears a seller's high asking price and offers far less: best I can do is...",
+      "boxes": [
+        {
+          "x": 0.02,
+          "y": 0.02,
+          "w": 0.96,
+          "h": 0.2,
+          "style": "impact",
+          "says": "what the seller asks for"
+        },
+        {
+          "x": 0.02,
+          "y": 0.78,
+          "w": 0.96,
+          "h": 0.2,
+          "style": "impact",
+          "says": "'Best I can do is...': the much smaller offer"
+        }
+      ]
+    },
+    {
+      "id": "28251713",
+      "name": "Oprah You Get A",
+      "url": "https://i.imgflip.com/gtj5t.jpg",
+      "width": 620,
+      "height": 465,
+      "about": "Oprah, arms wide, gives the same thing to every single person in her audience",
+      "boxes": [
+        {
+          "x": 0.02,
+          "y": 0.02,
+          "w": 0.96,
+          "h": 0.18,
+          "style": "impact",
+          "says": "'You get a ...!': what she gives"
+        },
+        {
+          "x": 0.02,
+          "y": 0.8,
+          "w": 0.96,
+          "h": 0.18,
+          "style": "impact",
+          "says": "'Everybody gets a ...!'"
+        }
+      ]
+    },
+    {
+      "id": "187102311",
+      "name": "Three-headed Dragon",
+      "url": "https://i.imgflip.com/33e92f.jpg",
+      "width": 680,
+      "height": 544,
+      "about": "a three-headed dragon: two heads fierce and serious, the third goofy, its tongue out",
+      "boxes": [
+        {
+          "x": 0.01,
+          "y": 0.74,
+          "w": 0.31,
+          "h": 0.24,
+          "style": "impact",
+          "says": "the first fierce head"
+        },
+        {
+          "x": 0.35,
+          "y": 0.74,
+          "w": 0.3,
+          "h": 0.24,
+          "style": "impact",
+          "says": "the second fierce head"
+        },
+        {
+          "x": 0.67,
+          "y": 0.74,
+          "w": 0.32,
+          "h": 0.24,
+          "style": "impact",
+          "says": "the goofy third head: the odd one out"
+        }
+      ]
+    },
+    {
+      "id": "145139900",
+      "name": "Scooby doo mask reveal",
+      "url": "https://i.imgflip.com/2eeunw.jpg",
+      "width": 720,
+      "height": 960,
+      "about": "Fred pulls the mask off a captured villain: who it seemed to be, and who it was all along",
+      "boxes": [
+        {
+          "x": 0.01,
+          "y": 0.36,
+          "w": 0.38,
+          "h": 0.13,
+          "style": "impact",
+          "says": "the mask: what it seemed to be"
+        },
+        {
+          "x": 0.6,
+          "y": 0.36,
+          "w": 0.38,
+          "h": 0.13,
+          "style": "impact",
+          "says": "who pulls the mask off: a person or a group"
+        },
+        {
+          "x": 0.01,
+          "y": 0.86,
+          "w": 0.42,
+          "h": 0.13,
+          "style": "impact",
+          "says": "who it really was all along"
+        }
+      ]
+    },
+    {
+      "id": "162372564",
+      "name": "Domino Effect",
+      "url": "https://i.imgflip.com/2oo7h0.jpg",
+      "width": 820,
+      "height": 565,
+      "about": "a man tips over the smallest domino of a row that ends in a giant one: a tiny cause, a huge effect",
+      "boxes": [
+        {
+          "x": 0.33,
+          "y": 0.86,
+          "w": 0.4,
+          "h": 0.12,
+          "style": "impact",
+          "says": "the tiny first domino: a small cause"
+        },
+        {
+          "x": 0.11,
+          "y": 0.1,
+          "w": 0.2,
+          "h": 0.55,
+          "style": "plain",
+          "says": "the giant last domino: its huge effect",
+          "fill": "#c0c8ca"
+        }
+      ]
+    },
+    {
+      "id": "133946291",
+      "name": "You know, I'm something of a scientist myself",
+      "url": "https://i.imgflip.com/27qxmb.jpg",
+      "width": 1200,
+      "height": 600,
+      "about": "a smug man after doing something small: 'You know, I'm something of a scientist myself'",
+      "boxes": [
+        {
+          "x": 0.02,
+          "y": 0.02,
+          "w": 0.96,
+          "h": 0.18,
+          "style": "impact",
+          "says": "the small thing he did"
+        },
+        {
+          "x": 0.02,
+          "y": 0.8,
+          "w": 0.96,
+          "h": 0.18,
+          "style": "impact",
+          "says": "his smug claim: 'You know, I'm something of a ... myself'"
+        }
+      ]
+    },
+    {
+      "id": "5496396",
+      "name": "Leonardo Dicaprio Cheers",
+      "url": "https://i.imgflip.com/39t1o.jpg",
+      "width": 600,
+      "height": 400,
+      "about": "Leonardo DiCaprio in a tuxedo raises his glass in a toast, with a knowing smile",
+      "boxes": [
+        {
+          "x": 0.02,
+          "y": 0.02,
+          "w": 0.96,
+          "h": 0.18,
+          "style": "impact",
+          "says": "the toast's start: 'Here's to...', or when he raises his glass"
+        },
+        {
+          "x": 0.02,
+          "y": 0.8,
+          "w": 0.96,
+          "h": 0.18,
+          "style": "impact",
+          "says": "the rest of the toast"
+        }
+      ]
+    },
+    {
+      "id": "104893621",
+      "name": "Grim Reaper Knocking Door",
+      "url": "https://i.imgflip.com/1qg8fp.jpg",
+      "width": 500,
+      "height": 312,
+      "about": "the Grim Reaper has been through two doors, with blood beneath them, and now knocks on a third",
+      "boxes": [
+        {
+          "x": 0.06,
+          "y": 0.2,
+          "w": 0.14,
+          "h": 0.3,
+          "style": "impact",
+          "says": "the first door: something already gone"
+        },
+        {
+          "x": 0.3,
+          "y": 0.15,
+          "w": 0.18,
+          "h": 0.3,
+          "style": "impact",
+          "says": "the second door: something else already gone"
+        },
+        {
+          "x": 0.5,
+          "y": 0.5,
+          "w": 0.2,
+          "h": 0.2,
+          "style": "impact",
+          "says": "the Grim Reaper: what ends them all"
+        },
+        {
+          "x": 0.71,
+          "y": 0.15,
+          "w": 0.19,
+          "h": 0.3,
+          "style": "impact",
+          "says": "the third door, where it knocks now: what's next"
+        }
+      ]
+    },
+    {
+      "id": "148909805",
+      "name": "Monkey Puppet",
+      "url": "https://i.imgflip.com/2gnnjh.jpg",
+      "width": 923,
+      "height": 768,
+      "about": "a puppet monkey glances awkwardly to the side, then looks away: caught in an awkward moment",
+      "boxes": [
+        {
+          "x": 0.03,
+          "y": 0.02,
+          "w": 0.94,
+          "h": 0.31,
+          "style": "plain",
+          "says": "the awkward situation, often starting with 'When...'",
+          "fill": "#ffffff"
+        }
+      ]
+    },
+    {
+      "id": "14371066",
+      "name": "Star Wars Yoda",
+      "url": "https://i.imgflip.com/8k0sa.jpg",
+      "width": 620,
+      "height": 714,
+      "about": "Yoda shares a wise lesson, in his odd word order",
+      "boxes": [
+        {
+          "x": 0.02,
+          "y": 0.02,
+          "w": 0.96,
+          "h": 0.16,
+          "style": "impact",
+          "says": "the start of Yoda's lesson, in his odd word order"
+        },
+        {
+          "x": 0.02,
+          "y": 0.82,
+          "w": 0.96,
+          "h": 0.16,
+          "style": "impact",
+          "says": "the end of his lesson"
         }
       ]
     }

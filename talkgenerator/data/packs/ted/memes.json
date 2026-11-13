@@ -229,5 +229,194 @@
     "Can't lose your {seed.bare}|If you never had any",
     "You can't be late for a talk on {seed.generic}|If you're the speaker",
     "Can't be bored by {seed.generic}|If you fall asleep first"
+  ],
+  "anakin_padme_4_panel": [
+    "I'm giving a talk about {seed.generic}|To make the world better, right?",
+    "I'm going to explain {seed.generic}|In under an hour, right?",
+    "I bought {seed.one}|For the whole family, right?",
+    "I'm writing a book about {seed.generic}|With a happy ending, right?",
+    "I've studied {seed.generic} for ten years|So you're an expert now, right?",
+    "I quit my job for {seed.generic}|You have a plan, right?",
+    "We're adopting {seed.one}|It's house-trained, right?"
+  ],
+  "hide_the_pain_harold": [
+    "When someone asks what you think of {seed.generic}|And you have to be polite",
+    "My talk about {seed.generic} got one question|It was about the font",
+    "Spent all weekend on {seed.generic}|Totally worth it",
+    "When the audience likes {related.generic}|More than {seed.generic}",
+    "Ten years researching {seed.generic}|My mum still thinks I sell insurance",
+    "Someone calls {seed.generic} boring|Smile and nod",
+    "My {seed.bare} plans fell through again|I'm fine, everything's fine"
+  ],
+  "tuxedo_winnie_the_pooh": [
+    "Liking {seed.generic}|A lifelong passion for {seed.generic}",
+    "Talking about {seed.generic}|Giving a keynote on {seed.generic}",
+    "{seed.generic.cap}|{seed.generic.cap}, but in French",
+    "Reading about {seed.generic}|Conducting independent research into {seed.generic}",
+    "A drawing of {seed.one}|A contemporary study of {seed.generic}",
+    "Buying {seed.one}|Investing in {seed.generic}",
+    "Chatting about {seed.generic}|Networking around {seed.generic}"
+  ],
+  "theyre_the_same_picture": [
+    "{seed.generic.cap}|{related.generic.cap}",
+    "{seed.generic.cap}|{seed.generic.cap}, but more expensive",
+    "Old {seed.bare}|New {seed.bare}",
+    "My talk about {seed.generic}|My last talk about {seed.generic}",
+    "{seed.generic.cap} in theory|{seed.generic.cap} in practice",
+    "Experts on {seed.generic}|People who read one article",
+    "{seed.generic.cap} on Monday|{seed.generic.cap} on Friday"
+  ],
+  "sad_pablo_escobar": [
+    "Waiting for someone to ask about {seed.generic}|Still waiting|Anyone?",
+    "Me after my talk about {seed.generic}|No questions|None at all",
+    "When the shop is out of {seed.generic}|At breakfast|At lunch",
+    "Me without {seed.generic}|At home|On holiday",
+    "Waiting for {seed.generic} to go viral|One like|My mum's",
+    "When nobody else cares about {seed.generic}|Not at work|Not at home",
+    "Me after the last fact about {seed.generic}|Nothing left|Only silence"
+  ],
+  "x_x_everywhere": [
+    "{seed.generic.cap}|{seed.generic.cap} everywhere",
+    "{related.generic.cap}|{related.generic.cap} everywhere",
+    "Facts about {seed.generic}|Facts about {seed.generic} everywhere",
+    "Opinions on {seed.generic}|Opinions everywhere",
+    "Slides|Slides about {seed.generic} everywhere",
+    "Experts|Experts on {seed.generic} everywhere",
+    "{seed.generic.cap}|In every corner of this talk"
+  ],
+  "evil_kermit": [
+    "Me|Talk about {seed.generic} again",
+    "Me at dinner|Bring up {seed.generic}",
+    "Me on a diet|Order the {seed.bare} cake",
+    "Me at a wedding|Give a speech about {seed.generic}",
+    "Me, saving money|Buy {seed.one}",
+    "Me at work|Read about {seed.generic} all day",
+    "Me|Add twenty more slides about {seed.generic}"
+  ],
+  "surprised_pikachu": [
+    "Me: talks about {seed.generic} for an hour|The audience: falls asleep|Me:",
+    "Me: leaves {seed.generic} on the table|The cat: knocks it all off|Me:",
+    "Me: brings {seed.generic} to a meeting|The meeting: now about {seed.generic}|Me:",
+    "Me: ignores {seed.generic}|Everyone else: ignores me|Me:",
+    "Me: searches for {seed.generic}|The internet: four million opinions|Me:",
+    "Me: buys {seed.one}|My wallet: empty|Me:",
+    "Me: puts {seed.generic} on every slide|The audience: asks about {seed.generic}|Me:"
+  ],
+  "spiderman_pointing_at_spiderman": [
+    "{seed.generic.cap}|{related.generic.cap}",
+    "Fans of {seed.generic}|Fans of {related.generic}",
+    "Me|My clone who loves {seed.generic}",
+    "My talk about {seed.generic}|Last year's talk about {seed.generic}",
+    "Experts on {seed.generic}|Fans of {seed.generic}",
+    "Me|The other speaker on {seed.generic}",
+    "Old {seed.bare}|New {seed.bare}"
+  ],
+  "bike_fall": [
+    "Me|Reading about {seed.generic} all night|Blaming the coffee",
+    "Me|Buying {seed.one} I don't need|Blaming the advertising",
+    "The presenter|Fifty slides about {seed.generic}|Blaming the time limit",
+    "Fans of {seed.generic}|Ignoring {related.generic}|Blaming {related.generic}",
+    "Me|Ignoring the manual|Blaming {seed.generic}",
+    "Scientists|Studying {seed.generic} too closely|Blaming the funding",
+    "Me|One more slide about {seed.generic}|Blaming the projector"
+  ],
+  "clown_applying_makeup": [
+    "Read one article about {seed.generic}|Then one more|Give a talk on {seed.generic}|I am the expert now",
+    "Buy {seed.one}|Buy another|Name them all|Write their biographies",
+    "Mention {seed.generic} at dinner|Bring a chart|Bring a projector|Nobody comes to dinner anymore",
+    "Liking {seed.generic}|Loving {seed.generic}|Living for {seed.generic}|Becoming {seed.one}",
+    "Explain {seed.generic} in five minutes|Ten minutes|One more slide|Forty minutes later",
+    "Ignore {related.generic}|Ignore everyone else|Only talk about {seed.generic}|Wonder why nobody calls",
+    "It's just {seed.one}|It's a small investment|It's an asset class|I've sold my house"
+  ],
+  "pawn_stars_best_i_can_do": [
+    "A whole talk about {seed.generic}?|Best I can do is one meme",
+    "Your full attention for {seed.generic}?|Best I can do is a nod",
+    "A lifetime supply of {seed.generic}?|Best I can do is one {seed.bare} sticker",
+    "Ten years of research on {seed.generic}?|Best I can do is a quick search",
+    "Applause for {seed.generic}?|Best I can do is a polite cough",
+    "An hour on {seed.generic}?|Best I can do is five minutes",
+    "Respect for {seed.generic}?|Best I can do is a like"
+  ],
+  "oprah_you_get_a": [
+    "You get {seed.one}!|Everybody gets {seed.one}!",
+    "You get a slide about {seed.generic}!|Everybody gets a slide about {seed.generic}!",
+    "You get a fact about {seed.generic}!|Everybody gets a fact!",
+    "You get {seed.generic}!|Everybody gets {seed.generic}!",
+    "You get an opinion on {seed.generic}!|Everybody gets an opinion!",
+    "You get {related.generic}!|And you get {seed.generic}!",
+    "You get a question about {seed.generic}!|Everybody gets homework!"
+  ],
+  "three_headed_dragon": [
+    "Physics|Chemistry|{seed.generic.cap}",
+    "Experts|Scientists|Me, who read about {seed.generic}",
+    "History|Philosophy|Facts about {seed.generic}",
+    "The data|The research|My feelings about {seed.generic}",
+    "Fans of {related.generic}|Fans of art|Fans of {seed.generic}",
+    "Serious talks|Serious slides|This talk about {seed.generic}",
+    "Sleep|Exercise|{seed.generic.cap}"
+  ],
+  "scooby_doo_mask_reveal": [
+    "{related.generic.cap}|Science|{seed.generic.cap}",
+    "A mystery|Me|{seed.generic.cap}, again",
+    "Modern art|The audience|{seed.generic.cap} in a frame",
+    "A new trend|Historians|{seed.generic.cap}",
+    "A brand-new idea|Experts|{seed.generic.cap}, from 1850",
+    "Today's talk|The audience|{seed.generic.cap}, as always",
+    "The secret ingredient|The chef|{seed.generic.cap}"
+  ],
+  "domino_effect": [
+    "Reading one article about {seed.generic}|Giving this talk",
+    "Buying {seed.one}|A house full of {seed.generic}",
+    "Mentioning {seed.generic} once|Every conversation since",
+    "One fact about {seed.generic}|My whole personality",
+    "{seed.generic.cap}|The rest of history",
+    "A tiny interest in {seed.generic}|A degree in {seed.generic}",
+    "One question about {seed.generic}|A two-hour answer"
+  ],
+  "you_know_im_something_of_a_scientist_myself": [
+    "Reads one article about {seed.generic}|You know, I'm something of an expert myself",
+    "Watches one video about {seed.generic}|You know, I'm something of a scientist myself",
+    "Owns {seed.one}|You know, I'm something of a collector myself",
+    "Makes one slide about {seed.generic}|You know, I'm something of a professor myself",
+    "Looks up {seed.generic} twice|You know, I'm something of a researcher myself",
+    "Talks about {seed.generic} at dinner|You know, I'm something of a TED speaker myself",
+    "Draws {seed.one}|You know, I'm something of an artist myself"
+  ],
+  "leonardo_dicaprio_cheers": [
+    "Here's to {seed.generic}|The best thing since sliced bread",
+    "To everyone who stayed|For the whole talk on {seed.generic}",
+    "Here's to the people|Who still talk about {seed.generic}",
+    "Cheers to {seed.generic}|Our sponsor tonight",
+    "To the one person|Who got my joke about {seed.generic}",
+    "Here's to {related.generic}|And to {seed.generic}, of course",
+    "When someone else|Brings up {seed.generic} first"
+  ],
+  "grim_reaper_knocking_door": [
+    "Letters|Phone calls|{seed.generic.cap}|Talking in person",
+    "Dessert|Snacks|My diet|{seed.generic.cap}",
+    "Dinosaurs|Mammoths|{related.generic.cap}|{seed.generic.cap}",
+    "My savings|My weekends|{seed.generic.cap}|My sleep",
+    "Small talk|Hobbies|{seed.generic.cap}|My social life",
+    "Plan A|Plan B|{seed.generic.cap}|Plan C",
+    "Cassettes|CDs|Streaming|{seed.generic.cap}"
+  ],
+  "monkey_puppet": [
+    "When someone asks who's an expert on {seed.generic}",
+    "When the talk on {seed.generic} asks for volunteers",
+    "When you said you loved {seed.generic} to impress someone",
+    "When someone finds your secret {seed.bare} collection",
+    "When your boss walks in and you're reading about {seed.generic}",
+    "When the teacher asks who did the homework on {seed.generic}",
+    "When you realise you've talked about {seed.generic} for an hour"
+  ],
+  "star_wars_yoda": [
+    "Love {seed.generic}, you must|Explain it, you cannot",
+    "Much to learn about {seed.generic}|You still have",
+    "Talk about {seed.generic}, I will|Stop me, you cannot",
+    "Fear leads to anger|Anger leads to {seed.generic}",
+    "Do or do not|There is no {seed.bare} plan",
+    "When nine hundred years old you reach|Still confusing, {seed.generic} will be",
+    "Read about {seed.generic}, you did|An expert, you are not"
   ]
 }
