@@ -1842,7 +1842,7 @@ and measures without judging (`measure.py`): the cuts each talk's texts got, and
   whose model wrote no slide is now asked once more (as it was for a topic found unsafe, or an answer in English):
   none in 30 came out English since, though a few English words still slip in ("the ask", "one more thing"). (English
   talks of the free models came out classic 3 times in 13 as well, but for them a classic talk is in their language,
-  as D25 has it, and asking again would hold the site's one slot for another two minutes: that's the user's call.)
+  as D25 has it, and asking again would hold the site's one slot for another two minutes: the user kept it so, 2026-11-13.)
 - *The wedding toast's best friend.* Its brief said the friend "has a first name that goes with anyone and is
   'they'", which a free model took for the name ("Quentin and They, Bathtime, 1998"): the name is the model's to
   choose now, never "they", and the toast speaks of them as "they".
