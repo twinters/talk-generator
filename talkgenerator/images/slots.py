@@ -43,6 +43,9 @@ class ImageSlot:
     backups: tuple[str, ...] = ()
     # Prefers a generated picture (docs/v5-plan.md, 10.5), in a talk that generates them: its stock photo stands in
     generate: bool = False
+    # And its picture comes first, where a talk's budget can't generate them all: the talk keeps a picture of its
+    # budget for each such slot it has (a book report's cover, whose made-up title only a generated one shows: D80)
+    generate_first: bool = False
 
     def __post_init__(self) -> None:
         for look in (self.aesthetic, *self.backups):

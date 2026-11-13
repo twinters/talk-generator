@@ -60,21 +60,21 @@
     "Pro: no ads, probably",
     "Premium: a human answers",
     "Plus: dark mode",
-    "Pro: unlimited {seed.generic}",
+    "Pro: unlimited, mostly",
     "Premium: the good stuff",
     "Pro: priority support",
-    "Plus: twice the {seed.bare}"
+    "Plus: 2x {seed.generic}"
   ],
   "tier_team": [
     "Team: for 2 to 2,000 people",
     "Business: invoices included",
     "Enterprise: a sales call",
-    "Teams: shared {seed.generic}",
+    "Teams: one login, shared",
     "Business: our CEO's number",
     "Agency: our name removed"
   ],
   "tier_punchline": [
-    "Enterprise: we come to your house",
+    "Enterprise: we come to your home",
     "Founders' friends: free forever",
     "Investors: a tour of our garage",
     "Platinum: the CEO's phone number",

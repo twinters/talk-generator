@@ -2,6 +2,8 @@
 This file contains structures that are helpful for certain content generators, but not general enough for generator_util
 """
 
+import re
+
 from talkgenerator.sources import conceptnet, goodreads, packs, reddit, text_generator, wikihow, wikiquote
 from talkgenerator.util import os_util, random_util
 from talkgenerator.util.generator_util import (
@@ -24,6 +26,20 @@ def create_tracery_generator(filename, main="origin"):
     return text_generator.TraceryTextGenerator(actual_file, main).generate
 
 
+def fit_quote(quote: str) -> bool:
+    """Whether a real quote may go on a slide: one that a slide may make light of, as a real fact must be (no death,
+    war, crime, faith, politics...: talkgenerator.facts.fit), and nothing of self-harm (D80: the prompt lab's judges
+    found a quote of a razor to the wrists on a wedding toast's slide)."""
+    from talkgenerator import facts  # (here: the facts draw on much that the quotes don't)
+
+    return facts.fit(quote) and not _SELF_HARM.search(quote)
+
+
+_SELF_HARM = re.compile(
+    r"\b(?:razors?|wrists?|bleed\w*|blood\w*|overdos\w*|noose|hang(?:ed|ing) (?:myself|herself|himself))\b", re.I
+)
+
+
 # GOODREAD QUOTES
 class GoodReadsQuoteGenerator:
     def __init__(self, max_quote_length):
@@ -31,7 +47,11 @@ class GoodReadsQuoteGenerator:
 
     def __call__(self, presentation_context):
         def generator(seed):
-            return [quote for quote in goodreads.search_quotes(seed, 50) if len(quote) <= self._max_quote_length]
+            return [
+                quote
+                for quote in goodreads.search_quotes(seed, 50)
+                if len(quote) <= self._max_quote_length and fit_quote(quote)
+            ]
 
         return FromListGenerator(SeededGenerator(generator))(presentation_context)
 
@@ -43,7 +63,11 @@ class WikiquoteQuoteGenerator:
 
     def __call__(self, presentation_context):
         def generator(seed):
-            return [quote for quote in wikiquote.search_quotes(seed) if len(quote) <= self._max_quote_length]
+            return [
+                quote
+                for quote in wikiquote.search_quotes(seed)
+                if len(quote) <= self._max_quote_length and fit_quote(quote)
+            ]
 
         return FromListGenerator(SeededGenerator(generator))(presentation_context)
 

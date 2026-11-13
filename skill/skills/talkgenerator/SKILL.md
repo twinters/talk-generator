@@ -138,8 +138,13 @@ that give the presenter something to work with, rather than finished jokes:
   audience laughs at the presenter making sense of it, not at puns on the slides.
 - **Leave gaps.** A good slide raises a question the presenter has to answer: an odd juxtaposition, a suspiciously
   specific claim, a chart that needs explaining. Don't explain the joke, or the image.
-- **Build one talk.** Give it a thesis and follow it. Later slides call back to earlier ones (a running gag, a
-  recurring character, a strange claim from before), and the conclusions call back to several of them.
+- **Build one talk.** Give it a thesis and follow it. A later slide may call back to an earlier one (a strange claim,
+  a thing from before), and the conclusions call back to a few of them; but nothing comes back on more than two
+  slides, and a made-up person who keeps turning up wears thin fast.
+- **Set up a pattern, then break it.** In a list (bars, flags, tiers, steps), the first things set the pattern and the
+  last breaks it: the punchline comes last, as the slide reveals its things a click at a time.
+- **Names that could be real.** A made-up person has a real first name and a surname that could be real, at most a
+  subtle nod to the topic ("Penn Quinn" for penguins, never "Pen Guin").
 - **Shape it like a talk.** A common arc: who the presenter is (an about-me slide), maybe an agenda, some history
   (a made-up historical figure, old photos, a timeline), the core (bold statements, contrasts such as Expectation
   and Reality, a three-step build-up, a quiz for the audience, a social media post or a news headline, a meme, a fun

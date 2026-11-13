@@ -4,7 +4,7 @@
   "version": 2,
   "versions": {
     "1": "2026-11-12: the first texts of nature documentaries, a part of the arc a grammar: the title, the opening shot, the habitat, the behaviour, the rare sighting, the ritual, the threat and the closing, and the free slides' quiz on the species and provocations (D79)",
-    "2": "2026-11-13: shorter texts for the lower field limits (D80): the opening and closing lines, the titles over the species, the hush dares, the threat's labels and the sighting's subheadlines; and the presenter's job on a line of its own under their name"
+    "2": "2026-11-13: shorter texts for the lower field limits (D80): the opening and closing lines, the titles over the species, the hush dares, the threat's labels and the sighting's subheadlines; and the presenter's job on a line of its own under their name; and shorter sighting headlines and subheadlines"
   },
   "slots": {
     "title.talk_title": {"variables": ["seed", "species"], "field": "title.title"},

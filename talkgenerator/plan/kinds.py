@@ -147,7 +147,7 @@ def _picture_slot(look: str, intent: str) -> ImageSlot:
 PATTERN_BREAK_ODDS: Final = 0.35  # of the lists' slides whose punchline breaks the pattern (a quarter of diagrams')
 # What the model writes for each way, after the field's own description (a list in one field: its last thing)
 _BREAKS: Final = {
-    "emoji": "a single emoji, nothing else",
+    "emoji": "a single emoji, nothing else: one that means something (a face, a thing), never a plain shape or colour",
     "short": "one to three words, shorter than the others",
     "number": "a word, a symbol or an emoji instead of a number",
     "off": "something that has nothing to do with the talk, in a few words",
@@ -1064,13 +1064,13 @@ PRESENTER_JOB: Final = TextField(
     "presenter_job", "the presenter's grand, made-up job, such as 'Professor of Applied Sock Theory'", 40
 )
 PRESENTER_NAME: Final = TextField("presenter_name", "a made-up name for the presenter", 40)
-AGENDA_ITEM: Final = 30  # how long an item of an agenda may be (they're written as one text)
+AGENDA_ITEM: Final = 36  # how long an item of an agenda may be (they're written as one text)
 
 
 def _figure(index: int, which: str, optional: bool = False) -> tuple[TextField, TextField]:
     return (
         TextField(f"number_{index}", f"the {which} figure's number, with its unit if it has one", 10, optional),
-        TextField(f"label_{index}", f"what the {which} figure measures", 40, optional),
+        TextField(f"label_{index}", f"what the {which} figure measures, in a few words", 32, optional),
     )
 
 
@@ -1102,7 +1102,7 @@ EQUATION_TERM: Final = 16
 def _review(index: int, which: str, optional: bool = False) -> tuple[TextField, TextField, TextField]:
     return (
         TextField(f"stars_{index}", f"how many stars the {which} reviewer gives, from 1 to 5", 1, optional, STARS),
-        TextField(f"review_{index}", f"what the {which} reviewer wrote, in one short sentence", 70, optional),
+        TextField(f"review_{index}", f"what the {which} reviewer wrote, in one short sentence", 60, optional),
         TextField(
             f"reviewer_{index}", f"who the {which} reviewer is: a real first name, a comma, and a detail", 30, True
         ),
@@ -1429,8 +1429,8 @@ KINDS: Final[dict[str, Kind]] = {
             "A made-up news story with a photo, as breaking news on television or on a newspaper's front page.",
             (
                 TextField("outlet", "the made-up name of the newspaper or the channel", 30),
-                TextField("headline", "the headline", 70),
-                TextField("subheadline", "a line under the headline, with more of the story", 70, optional=True),
+                TextField("headline", "the headline", 60),
+                TextField("subheadline", "a line under the headline, with more of the story", 50, optional=True),
             ),
             ("photo",),
             _news_headline,
@@ -1810,8 +1810,8 @@ KINDS: Final[dict[str, Kind]] = {
                 *(
                     TextField(
                         alignment,
-                        f"the {alignment.replace('_', ' ')} one, in a few words{_PUNCHLINE.get(alignment, '')}",
-                        32,
+                        f"the {alignment.replace('_', ' ')} one, a word or three{_PUNCHLINE.get(alignment, '')}",
+                        26,
                     )
                     for alignment in slides.ALIGNMENTS
                 ),

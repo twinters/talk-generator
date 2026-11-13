@@ -57,19 +57,19 @@
     "Gallery News Tonight"
   ],
   "headline": [
-    "Priceless {seed.bare} found in grandmother's attic",
+    "Priceless {seed.bare} found in grandma's attic",
     "Experts baffled by ancient {seed.bare} statue",
-    "Museum admits {seed.bare} exhibit upside down for 40 years",
-    "Ancient {seed.bare} statue turns out to be a lamp",
-    "Diggers find oldest {seed.bare}, ask for a second opinion",
-    "Local man finds {seed.one} in sofa, museum interested"
+    "{seed.bare.cap} exhibit upside down for 40 years",
+    "Ancient {seed.bare} statue is actually a lamp",
+    "Oldest {seed.bare} dug up, second opinion sought",
+    "Man finds {seed.one} in sofa, museum intrigued"
   ],
   "subheadline": [
-    "The museum says it is 'very excited' and 'a little worried'",
+    "Museum 'very excited' and 'a little worried'",
     "The finder has asked for a reward of one sandwich",
-    "Visitors queue around the block to see it, then leave quickly",
-    "Experts say it is either very old or from last Tuesday",
-    "The museum will show it behind three layers of glass, just in case",
+    "Visitors queue for hours, then leave quickly",
+    "Experts: it's either very old or from last Tuesday",
+    "Shown behind three layers of glass, just in case",
     "A spokesperson said only: 'Please stop calling.'"
   ]
 }

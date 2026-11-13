@@ -147,6 +147,20 @@ how to keep 4.x's talks. The [docs](https://github.com/twinters/talk-generator/t
   come up in half of the talks.
 - A talk has at most one of most kinds (memes and exhibits: two), and a list's things appear a click each, the
   punchline last.
+- Playable at a glance, for a presenter who has never seen the slides: fewer words on every slide (titles of a few
+  words, one thing a tier, three red flags, shorter posts, quizzes, reviews, facts and error messages, and the content
+  packs' texts shortened to match); a ranking's bars come a click each, from the top down, two or three tiny ones
+  and then the punchline's; "Quiz:" (or "Test voor jullie:", in the talk's language) before a quiz's question; an
+  agenda whose items come back on the slides they announce; and by the slide's number, a small ring for every click
+  of the slide, which fills on its click, so the presenter sees whether the next click brings more of the slide or
+  the next one. Green, orange and red flags, as a variation on red flags; a photo of the talk's world beside its title
+  (its format's or its persona's: a wedding toast's wedding, a detective's case); sections and dares over a picture;
+  a picture in every step of most processes; a trend's picture there from the start; strong image filters on
+  backdrops alone, so pictures keep their colours; names a real person could have (the name pack's examples too, such
+  as "Penn Quinn" for penguins), with their job on a line of its own; e-mail addresses at domains that read as made
+  up; shorter real quotes; a recurring character in one talk in five at most; and in a talk that generates pictures,
+  a book report's cover first, as only a generated cover shows its made-up title. The prompts were tuned in a prompt
+  lab (`scripts/prompt_lab`): talks Claude Opus wrote, judged blind and pairwise by Claude and GPT.
 
 ### Formats and personas
 

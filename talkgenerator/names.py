@@ -75,10 +75,11 @@ STYLES: Final[dict[str, Style]] = {
             PUN,
             "Pun names",
             "a pun on the topic, such as Prof. Anna Tomy for a talk on medicine",
-            "a made-up name for the presenter that could be a real person's, if an unlikely one: a real first name "
-            "(an unusual one is fine) and a surname that could be real, which together, read aloud, sound a little "
-            "like a word or phrase about the talk's topic; subtle, never words that are no names",
+            "a made-up name for the presenter that passes for a real person's at first glance: a real first name "
+            "(an unusual one is fine) and a surname that could be real, which only on a second look sound a little "
+            "like a word or phrase about the talk's topic; never words that are no names",
             "the word or phrase about the talk's topic that the presenter's name will sound like",
+            weight=0.6,
         ),
         Style(
             FUN_SURNAME,
@@ -98,7 +99,7 @@ STYLES: Final[dict[str, Style]] = {
             "still reads as a name; never the real name as it is, and never a dictator's or a criminal's",
             "the famous person whose name the presenter's name will bend, and the word about the talk's topic "
             "that goes into it",
-            weight=0.5,
+            weight=0.15,
         ),
         Style(CLASSIC, "Random names", "a first and a last name at random, as in 2019", "", default=False),
     )
@@ -425,16 +426,23 @@ def clean(value: Any, request: NameRequest | None = None) -> str | None:
     return name
 
 
+# Famous people whose names the pack's puns bent until D80 dropped those that no longer read as a name ("Sockrates"):
+# a name written as theirs is still no made-up name
+_ONCE_BENT: Final = ("Socrates", "Aristotle", "Pythagoras", "Cleopatra")
+
+
 @cache
 def _famous_names() -> tuple[tuple[str, ...], ...]:
-    """The real names of the famous people whose names the pack's famous-name puns bend, as words."""
+    """The real names of the famous people whose names the pack's famous-name puns bend, as words (and of those its
+    puns once bent)."""
     return tuple(
         sorted(
             {
                 tuple(_plain_words(original))
-                for entry in pack()
-                if entry.style == FAMOUS_PUN
-                for original in entry.plays_on
+                for original in (
+                    *(original for entry in pack() if entry.style == FAMOUS_PUN for original in entry.plays_on),
+                    *_ONCE_BENT,
+                )
                 if original
             }
         )

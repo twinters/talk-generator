@@ -326,7 +326,7 @@ def test_a_punchline_breaks_as_an_emoji_a_few_words_or_a_picture_in_its_place(br
     )
     emoji = next(recipe for recipe in broken if "a single emoji" in recipe.brief)
     assert emoji.hints["flag_3"] == (
-        "the third red flag, the punchline, in a few words: a single emoji, nothing else (the pattern break)"
+        "the third red flag, the punchline, in a few words: a single emoji, nothing else: one that means something (a face, a thing), never a plain shape or colour (the pattern break)"
     )
     # (the last red flag the slide has)
     flags = slide_generators.get("Red Flags").llm
@@ -343,7 +343,10 @@ def test_a_punchline_breaks_as_an_emoji_a_few_words_or_a_picture_in_its_place(br
     assert pictured == {"red_flags", "traffic_flags", "reviews", "org_chart", "tier_list", "alignment_chart"}
     _, broken = _broken("pyramid")
     assert broken and all(
-        recipe.hints["level_1"].endswith("a single emoji, nothing else (the pattern break)") for recipe in broken
+        recipe.hints["level_1"].endswith(
+            "a single emoji, nothing else: one that means something (a face, a thing), never a plain shape or colour (the pattern break)"
+        )
+        for recipe in broken
     )
 
 

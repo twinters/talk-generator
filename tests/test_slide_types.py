@@ -234,7 +234,11 @@ def _clicks(ppt_slide):
     namespaces = {"p": "http://schemas.openxmlformats.org/presentationml/2006/main"}
     steps = etree.XPath(".//p:cTn[@nodeType='mainSeq']/p:childTnLst/p:par", namespaces=namespaces)(timing)
     targets = etree.XPath(".//p:spTgt/@spid", namespaces=namespaces)
-    return [sorted({names[spid] for spid in targets(step)}) for step in steps]
+    # (without the build dots, which fill on every click by the slide's number: D80)
+    return [sorted({names[spid] for spid in targets(step)} - BUILD_DOTS) for step in steps]
+
+
+BUILD_DOTS = {f"build dot {number}" for number in range(1, 13)}
 
 
 @pytest.mark.parametrize("theme", [None, "clean keynote"], ids=["classic", "themed"])

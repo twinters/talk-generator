@@ -139,7 +139,24 @@ def draw_elements(ppt_slide: Slide, slide: DeckSlide, theme: Theme, *, images: I
             [drawn.get(f"content_{index}", []) + drawn.get(f"caption_{index}", []) for index in range(1, columns + 1)],
         )
     if clicks:
-        animation.reveal_clicks(ppt_slide, [clicks[number] for number in sorted(clicks)])
+        # (a chart's or a diagram's own clicks come first, as its own steps: what appears on one of those, such as a
+        # build dot, goes with it; the rest each on a click of its own, after them: D80)
+        own = max((_own_clicks(element) for element in slide.elements), default=0)
+        later = []
+        for number in sorted(clicks):
+            if number > own or not animation.join_click(ppt_slide, number, clicks[number]):
+                later.append(clicks[number])
+        if later:
+            animation.reveal_clicks(ppt_slide, later)
+
+
+def _own_clicks(element: Any) -> int:
+    """The clicks a chart or a diagram plays as its own steps (its series or categories, its punchline)."""
+    if isinstance(element, ChartElement):
+        return element.chart.clicks()
+    if isinstance(element, DiagramElement):
+        return 1 if element.diagram.reveal == "punchline" else 0
+    return 0
 
 
 # DRAWING

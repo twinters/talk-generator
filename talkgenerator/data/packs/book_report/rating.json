@@ -49,7 +49,7 @@
   ],
   "review_good": [
     "I didn't read it but the cover is great.",
-    "Best book on {seed.generic} I ever read. Also the only one.",
+    "Best book on {seed.generic} ever. Also my only one.",
     "It made me want my own {seed.bare}.",
     "Good book. I read it twice because I lost my place.",
     "My mum read it to me. She did all the voices.",
@@ -65,7 +65,7 @@
     "It was okay. The end was at the end.",
     "I fell asleep on page 3. Good pillow, though.",
     "The library wants it back.",
-    "There was no {seed.bare} on the cover. I checked twice.",
+    "No {seed.bare} on the cover. I checked twice.",
     "The pictures were nice but there weren't enough of them.",
     "Too long. I read the back instead.",
     "I wanted a dragon and there was no dragon."

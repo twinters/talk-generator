@@ -531,10 +531,11 @@ def test_a_themed_video_that_cant_be_downloaded_shows_its_poster_frame(served, c
     assert "as its poster frame" in caplog.text
 
 
-def test_a_video_gets_its_themes_filter_too(served):
+def test_a_video_behind_a_text_gets_its_themes_filter_too(served):
+    # (a theme's filter is for what's behind a slide's texts: D80)
     theme = themes.pick("clean keynote", random_util.Rng(1)).model_copy(update={"image_filter": "grayscale"})
 
-    _, (ppt_slide,) = _themed(slides.ImageSlide("Look at this", _big_gif()), theme=theme)
+    _, (ppt_slide,) = _themed(slides.LarqeQuoteSlide(None, "Look at this", _big_gif()), theme=theme)
 
     (movie,) = _movies(ppt_slide)
     assert movie._element.blipFill.blip.find(qn("a:grayscl")) is not None

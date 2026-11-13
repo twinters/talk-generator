@@ -12,20 +12,20 @@
   ],
   "target_label": [
     "of the revenue target",
-    "of the {seed.bare} target",
+    "of {seed.bare} KPIs",
     "of our quarterly goal",
     "of plan (the revised plan)",
     "of target, give or take",
     "of the sales target",
     "of last year's numbers",
-    "of the {seed.bare} budget"
+    "of the budget, by March"
   ],
   "count_label": [
-    "meetings about {seed.generic}",
+    "{seed.bare} meetings",
     "slides in this deck",
     "emails marked urgent",
     "hours in alignment meetings",
-    "new {seed.bare} initiatives",
+    "{seed.bare} pilots",
     "dashboards about dashboards",
     "action items, all open",
     "customers who called back",
@@ -45,7 +45,7 @@
   "punchline_label": [
     "people who read the last deck",
     "decisions made",
-    "meetings that could have been emails",
+    "meetings that could be emails",
     "customers who know what we do",
     "working printers",
     "clear owners",

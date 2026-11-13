@@ -973,76 +973,76 @@
     "Know your {seed.bare} alignment"
   ],
   "aligned_lawful_good": [
-    "Sharing {seed.generic}",
-    "Reusing {seed.generic}",
-    "Ironing {seed.generic}",
-    "Thanking {seed.generic}",
-    "Tidying {seed.generic}",
-    "{seed.bare.cap} manual"
+    "Shared equally",
+    "Rinsed and reused",
+    "Ironed and folded",
+    "Thanked in writing",
+    "Tidied away",
+    "Manual read twice"
   ],
   "aligned_neutral_good": [
-    "Praising {seed.generic}",
-    "{seed.generic.cap} for all",
-    "Hugging {seed.generic}",
-    "Lending {related.generic}",
-    "Tipping {seed.generic}",
-    "Saving {seed.generic}"
+    "Complimented, sincerely",
+    "For everyone",
+    "Hugged, gently",
+    "Lent to a friend",
+    "Tipped 20%",
+    "Saved for later"
   ],
   "aligned_chaotic_good": [
-    "Adopting {seed.generic}",
-    "Sneaking {seed.generic}",
-    "Cheering {seed.generic}",
-    "Freeing {seed.generic}",
-    "{seed.generic.cap} as DJ",
-    "Gifting {seed.generic}"
+    "Adopted on a whim",
+    "Smuggled into a cinema",
+    "Surprise party",
+    "Set free at dawn",
+    "Hired as the DJ",
+    "Gift-wrapped"
   ],
   "aligned_lawful_neutral": [
-    "Auditing {seed.generic}",
-    "Filing {seed.generic}",
-    "{seed.bare.cap} rulebook",
-    "Queueing {seed.generic}",
-    "Booking {seed.generic}",
-    "Stamping {related.generic}"
+    "Audited yearly",
+    "Filed by size",
+    "By the rulebook",
+    "Queued for, politely",
+    "Booked in advance",
+    "Stamped in triplicate"
   ],
   "aligned_true_neutral": [
-    "Just {seed.generic}",
-    "{seed.generic.cap}, I guess",
-    "Watching {seed.generic}",
-    "Lukewarm {seed.bare}",
+    "{seed.generic.cap}.",
+    "Fine, I guess",
+    "Watched from afar",
+    "Served lukewarm",
     "{related.generic.cap}",
-    "Noticing {seed.generic}"
+    "Noticed, eventually"
   ],
   "aligned_chaotic_neutral": [
-    "{seed.generic.cap} as a hat",
-    "Texting {seed.generic}",
-    "Gary the {seed.bare}",
-    "{seed.generic.cap}, 3 a.m.",
-    "{seed.generic.cap} in a tub",
-    "Amassing {related.generic}"
+    "Worn as a hat",
+    "Sent voice notes",
+    "Named Gary",
+    "At 3 a.m.",
+    "Kept in the bath",
+    "Collected in jars"
   ],
   "aligned_lawful_evil": [
-    "Taxing {seed.generic}",
-    "Renting {seed.generic}",
-    "Fining {seed.generic}",
-    "Billing {seed.generic}",
-    "{seed.generic.cap} (T&Cs)",
-    "{seed.generic.cap} Premium"
+    "Taxed at 40%",
+    "Rented out, monthly",
+    "Fined, with interest",
+    "Billed per minute",
+    "{seed.generic.cap}*",
+    "{seed.bare.cap}+"
   ],
   "aligned_neutral_evil": [
-    "Hoarding {seed.generic}",
-    "Stealing {seed.generic}",
-    "Spoiling {seed.generic}",
-    "Ignoring {seed.generic}",
-    "Scalping {seed.generic}",
-    "Blaming {related.generic}"
+    "Hoarded in a shed",
+    "Stolen, then denied",
+    "Licked first",
+    "Left on read",
+    "Resold at a markup",
+    "Blamed on the intern"
   ],
   "aligned_chaotic_evil": [
-    "Dumping {seed.generic}",
-    "Lying to {seed.generic}",
-    "Spamming {seed.generic}",
-    "Spoiler: {seed.generic}",
-    "{seed.generic.cap}, louder",
-    "{seed.generic.cap} in walls"
+    "Dumped by text",
+    "Taught to lie",
+    "Reply-all, forever",
+    "Spoilers in the chat",
+    "{seed.generic.upper}!",
+    "In the walls"
   ],
   "red_flags_title": [
     "Red flags",
@@ -1136,30 +1136,30 @@
     "Verified reviews of {seed.generic}"
   ],
   "review_glowing": [
-    "Changed my life. I think about {seed.generic} every morning.",
-    "Gave Mum {seed.one}. She hasn't called since. Worth it.",
+    "Changed my life. I think of {seed.generic} daily.",
+    "Gave Mum {seed.one}. No calls since. Worth it.",
     "Would recommend {seed.generic} to my worst enemy.",
-    "I doubted {seed.generic} at first. Now I have a tattoo.",
+    "I doubted {seed.generic}. Now I have a tattoo.",
     "Exactly as described. My neighbours are jealous.",
     "Arrived on time. Works as expected. Unsettling eye contact.",
     "My kids love it. My cat is suspicious.",
     "Better than {related.generic}. Worse than a good nap.",
     "Finally, someone takes {seed.generic} seriously.",
     "I cried twice. Once from joy, once from the instructions.",
-    "Gave {seed.generic} to my boss. Got promoted. Coincidence?",
+    "Gave my boss {seed.generic}. Promoted. Coincidence?",
     "Ten out of ten. Have already told everyone at the bus stop."
   ],
   "review_one_star": [
     "Cannot fly. Asked for a refund. It just stared at me.",
     "Not what I expected. I expected {related.generic}.",
     "One star. Would give zero, but the form won't let me.",
-    "Did not change my life. My life remains unchanged. Disappointed.",
-    "Arrived in a box marked '{related}'. Smelled of regret.",
-    "Partner left me for {seed.one}. Also, no instructions.",
+    "Didn't change my life. Life remains unchanged. Disappointed.",
+    "Box marked '{related}'. Smelled of regret.",
+    "Partner left me for {seed.one}. No manual.",
     "Overrated. Also, it bit me.",
     "I followed every step. Now I am {seed.one}.",
     "Do not read the reviews. Too late.",
-    "Tastes of {related.generic}. I ordered {seed.generic}."
+    "Tastes of {related.generic}. Not what I ordered."
   ],
   "review_short": [
     "Meh.",

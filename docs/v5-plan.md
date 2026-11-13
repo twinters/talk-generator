@@ -773,7 +773,7 @@ its seed picks among the switched-on ones (`name_styles=` on `generate_presentat
   "Greta Gosling" (a young goose) aren't.
 - **The talk's language.** The model writes the name in it, with wordplay that works in that language.
 - **Without a model** (none configured, the quota used up, a refusal, or a name that won't do), the name comes
-  from talkgenerator's own pack (`data/text-templates/presenter_names.json`, D34): 279 names by style and topic,
+  from talkgenerator's own pack (`data/text-templates/presenter_names.json`, D34): 273 names by style and topic,
   drafted with a language model, for the user to curate by hand. A talk whose topic matches an entry's words
   (singular or plural, phrases word for word) gets one in a switched-on style the pack has for it: puns for 642 of
   the 736 topics of `topics.txt`, fun surnames for 83, famous-name puns for 41. Other talks get a classic name,
@@ -1726,6 +1726,86 @@ as it is. Over 500 seeds of 10-slide talks a language model writes, each comes u
 talks, so memes weigh 7 now, from 5 (the user's word): they're in half of the talks again (50%). No persona
 weighs them yet: that's left to the work on personas and formats that follows, which reuses them (a court case's
 exhibits, a game show's picks).
+
+**Playable at a glance** (2026-11-13, D80), from the user's review of the talks as an improviser presents them:
+"it has to support funniness, so unexpected or funny visuals or punchlines, and preferably setting up a pattern and
+breaking it", and too much text, "which makes it harder for the presenter, who has to read it first". So:
+
+- *Less to read.* A slide's title has 45 characters (`kinds.TITLE`; a chart's question 60, a quiz's 70), a talk's 50,
+  asked for in two to seven words, and the presenter's job 40, on a line of its own under the name (the title slide's
+  text breaks there: PowerPoint gets a line break, the site and the previewer draw it as one). A tier holds one thing
+  (`slides.TIER_ITEMS`: the best, the first written), a red flag slide has three of them (`slides.RED_FLAGS`), of a few
+  words each (`kinds.FLAG`, 50), a post 90 characters, a quiz's options 36, a review 70, a statement 90, a fun fact
+  100 and one short sentence (the real facts' asks too: `facts._ASKS`), an alignment chart's cells 32, an agenda's
+  items 30; an error message has a message of a few words (60), a code a third of the time and half its weight (0.25).
+  The content packs' texts were shortened to the new lengths (TED 10, the others a version each), but for a real dad
+  joke a dare wraps and a real piece of advice a closing slide does (their slots keep limits of their own).
+- *The punchline last.* A ranking has three or four bars (`chart.RANKING_BARS`), two or three that come to next to
+  nothing and then the punchline's, and they come a click each from the top down (`ChartReveal` `"categories"`, a
+  chart's own clicks, `ChartSpec.clicks()`): in PowerPoint, a build by category, each bar named by its own data label
+  (the category axis's names are the chart's background, there from the start), the long one's inside it at its start;
+  on the site, bars that grow in from the left; the previewer draws them top down.
+- *Pictures from the start.* A trend's picture by its named point is there from the start: the odd picture is what
+  the presenter starts explaining.
+- *Cues for the presenter.* A quiz's question starts with a label in the talk's language ("Quiz:", "Pop quiz:", "Test
+  voor jullie:": `Language.quizzes`, picked by the question's letters, so no random stream moves), replacing one the
+  model wrote. And every slide with clicks has a small ring for each of them by its number, which fills on its click
+  (`engine.build_dots`: an empty ring left means the next click brings more of the slide, all full the next slide, and
+  the last ring the punchline), in the first free corner, in the muted colour made to show; shapes of the deck, so
+  PowerPoint, the previewer and the site all draw them (in PowerPoint a chart's or a diagram's own steps take theirs
+  along, `animation.join_click`, and a column slide's come with their columns).
+- *An agenda that comes back.* An agenda announces up to three later slides, spread over the talk, by their words, and
+  those slides pick its items up (`prompt.agenda_cues`, a `PlannedSlide.cue`, at both levels; a classic agenda's
+  items speak of the seeds of the slides after it).
+- *Variety.* Green, orange and red flags (`traffic_flags`, a type of its own with the red flags' layouts in three
+  colours, and their tag: one of the two kinds a talk), the red one the punchline.
+- *Pictures where they help.* A photo of the talk's world beside its title (`talkgenerator.title_pictures`: its
+  format's `Format.scene`, a wedding toast's wedding, else its persona's, a detective's; searched with the topic first,
+  from the talk's start, in the background), which the generic title layout puts on the right (`v5/title-picture`),
+  a newspaper's front page in place of two columns of type and a company's title slide on its panel; the families
+  whose own title layouts have no room give way to the generic one, whose title widens for a word too wide for it (a
+  Dutch compound in a brutalist's capitals), the photo giving way down to 400 pixels. A section divider (70% of the time) and a dare
+  (half) over a picture of what they're about (`v5/section-photo`, a dare's card over the shade). A process has a
+  picture in every step most of the time (`BoxPictures.every`, 60%), taller boxes with the picture over a caption.
+  And strong image filters (duotone, grayscale, sepia; black and white goes grey) are for backdrops alone
+  (`treatments.treatment(behind=)`): pictures of a slide's own keep their colours, with the theme's gentle touches.
+- *People.* A presenter's name could be a real person's: a real first name and a surname that could be real, at most
+  a subtle nod to the topic ("Penn Quinn" for penguins, the user's example, never "Pen Guin"); the styles weigh fun
+  surnames 1.5, puns 1 and famous names 0.5 (`Style.weight`). A post's author and a reviewer have real first names.
+  A recurring character in one talk in five (`prompt.RECURRING_CHARACTER_ODDS`), on two slides at most; the others'
+  callbacks are things and claims. A pitch's e-mail address is at a domain that reads as made up, in the talk's
+  language ("trapzo-is-echt-een-bedrijf.biz": `closers._SILLY_DOMAINS`).
+- *A layout bug.* A historical figure's quote no longer zig-zags into the corner opposite its portrait (the rows
+  layout is for two pictures).
+- *Generated pictures where they matter.* A slot can have its picture generated first (`ImageSlot.generate_first`):
+  a talk that generates pictures keeps a picture of its budget for each such slot its plan has
+  (`ImageGeneration.reserve`), so a book report's cover, whose made-up title only a generated picture shows, isn't
+  left without one by the slides before it (talkgenerator.com generates three a talk at most).
+- *The prompt lab* (`scripts/prompt_lab`, the user's idea, as for Improbotics, with about $50 of Claude to spend):
+  talks Claude Opus 5.5 writes (the default of a visitor's own Anthropic key on talkgenerator.com, at the Advanced
+  level) through talkgenerator's own code, with a stand-in picture for every slot (a talk in half a minute, about
+  $0.11), on 13 fixed setups (topics, formats, personas, one Dutch); judged blind and pairwise by Claude Opus 5.5 and
+  GPT-6.1 Sol, the order alternating, on five questions (reads at a glance, gives the presenter something to run
+  with, funny, free of machine tics, overall), with the tics each noticed; and measured (words on a slide, title
+  lengths, recurring names, real first names). Against v5 before this work, the new limits won 20 to 6 overall (25 to
+  1 at a glance, 25 to 1 free of tics), with 12.3 words on a slide on average where there were 14.4, at most 27 where
+  there were 35, and talk titles of 34 characters where there were 59; but they were funny no more often (15 to 11)
+  and some talks milder. The rules that followed (`prompt.SYSTEM_PROMPT`: short and specific, "one oddly specific
+  detail beats a general phrase"; don't finish the joke, nor recap it; a list sets up a pattern and breaks it last;
+  no stock formulas such as "Uber for X" or a title with a colon and a subtitle; pictures to explain rather than
+  literal ones; made-up people with names a real person could have) won 23 to 3 overall and 21 to 5 for funny, but
+  read less at a glance (4 to 21, 13.2 words a slide); fifteen words a slide at most, limits not targets, tighter
+  fields (an alignment chart's cells 26 characters, a review 60, a headline 60, a KPI's label 32, an agenda's item
+  36, as 30 cut a court case's charges) and conclusions that give an earlier slide a new twist rather than recap it
+  took them back to 12.2 words (18 to 3 at a glance) at about the same fun (12 to 14 overall, within the noise of 26
+  judgements). The judges' tics then: names that play on the topic (they flag every one; the user wants subtle ones),
+  Claude's favourite "Gary", real quotes that run long, and a pitch's "Uber for X". So the styles weigh realistic
+  surnames most, the name pack's examples, which the model copies, were curated to names a real person could have
+  (as "Penn Quinn"), and a real quote has 160 characters at most (100 for the short ones): that round won 15 to 11
+  overall and 16 to 10 for funny, at 12.2 words a slide. Its talks showed two more things: a real quote of
+  self-harm on a wedding toast's slide, which no real quote may be any more (`content_generator_structures.fit_quote`,
+  the facts' rules and more), and a blue square alone as a list's pattern break, where an emoji alone now has to mean
+  something (a face, a thing). The lab spent about $8 of Claude and $1 of OpenAI on these rounds.
 
 Variety per slide type comes from four axes, each sampled per slide with the talk's random generator:
 
@@ -2797,8 +2877,9 @@ content packs (the TED pack first, then one per format), and the checks (growing
 | D78 | Slides of a surprising picture that the presenter has to explain, with little or no text (the user's request of 2026-11-12, as improv suggestions and story cubes give a performer something to explain; section 8): **Exhibit A** (an odd picture as the evidence in a case, beside an evidence tag or under an evidence marker, with a made-up case number and, half the time, a note of a few words; the deck letters a talk's exhibits in turn, as it numbers sections, so a later one is Exhibit B, of the first one's case: two a talk at most), **Pick one** (two pictures without captions, under "Pick one:" or a heading of the slide's own, an "OR" between them), a **picture equation** (a thing plus another thing equals a third, on a click: each a picture or an emoji, the model writing every thing's emoji and the dice picking which are pictures too, so that a thing whose picture isn't found, or doesn't come within the slide's 8 seconds, D67, is its emoji), **What do you see?** (over a face in something, Reddit's pareidolia, in talks with fair use; or over an inkblot, which a slide without a picture is: its layout draws it, polygons and ellipses mirrored about a card's middle, by the slide's dice, a quarter of the time in `default` talks and always in `ted`) and a **before and after** (two unrelated pictures under "Before" and "After", an arrow between them, the after on a click). One to three pictures a slide, drawn with the deck's texts, pictures and shapes (D37), so talk-generator-web draws them as it is; talkgenerator's words in all eight languages. Each has a kind for plans and the language model (with what each picture's query searches for), classic texts in the TED pack (version 9: notes, headings, titles and questions) with pictures of the slide's seed and its related words, two layouts (an inkblot two of its own), and a weight in the TED-like formats' middle as the karaoke types have (0.7 to 1), but no persona's multipliers yet (the work on personas and formats that follows weighs them, and reuses the types in its formats): over 500 seeds of 10-slide talks a language model writes, each comes up in 9% to 12% of `default` talks and 11% to 18% of `ted` ones (40% and 54% of talks have one), and an Exhibit B in 0.2% (0.6% of `ted` talks); as they took memes down from 49% to 40% of talks, memes weigh 7 now, from 5 (`MEME_WEIGHT`, the user's word of 2026-11-12), which keeps them in half of the talks (50%, 0.64 a talk) (samples in talkgenerator-update's folder 44, made while personas still weighed the new types and memes weighed 5). A slide that stands in for another, or a spare, looks no picture up: its "What do you see?" is an inkblot and its equation emoji, so both are spare kinds too (D66: 15 kinds now). |
 | D79 | Six more formats and eight more personas (the user's "let's do all of them (unless some of them don't work out great)", 2026-11-12; sections 5.2 and 7): `infomercial`, `documentary` (a nature documentary), `court`, `museum`, `wedding` (a toast) and `book_report`, each an arc of parts on today's slide kinds with a content pack, a brief and hints, favourite personas and themes, and made-up names from the topic (a gadget, a Latin species, one harmless crime, a museum and its old master, the best friend who marries the topic, a book and its author); the personas `detective`, `infomercial_host`, `nature_narrator`, `museum_guide`, `best_man`, `game_show_host`, `alien_anthropologist` and `it_support`, the first five each the specialist of a new format. `FORMAT_WEIGHTS`: the TED-like talk 55 (was 20), each new format 1; specialists ×32 (×21 for the all-hands and the keynote), no multiplier under 0.7: 69% of talks TED-like over all 21 personas, 83% without one, a specialist's favourite in a third of their talks, every format about 1% with every persona (was 2%). A format named weights its specialist ×9. None dropped. Rebased onto D76 to D78: each new format has its closer, in all eight languages (an infomercial's "Call now!", a court case's "Court is adjourned", a book report's "The End", whose own last part went), the personas and the formats favour D77's families (a detective's and a court case's corkboard, IT support's 90s desktop, a consultant's spreadsheet...), a court case's evidence is D78's Exhibit A, and the personas weigh D78's slides (D78's own multipliers for the thirteen it knew, a game-show host's Pick one ×3). |
 
+| D80 | Talks are playable at a glance (the user's review of 2026-11-13; section 8): fewer words on every slide (titles 45 characters, a talk's 50 in two to seven words, one thing a tier, three red flags, shorter posts, quizzes, reviews, facts and error messages, the content packs shortened to match), the presenter's job on a line of its own; a ranking's bars a click each from the top down, tiny ones and then the punchline's (a category build, each bar named by its data label); a trend's picture there from the start; a quiz labelled as one in the talk's language; build dots by the slide's number, a ring a click that fills on its click, drawn as the deck's shapes by every renderer; an agenda that announces later slides, which pick its items up; green, orange and red flags; a photo of the talk's world beside its title; sections and dares over a picture; a picture in every step of most processes; strong filters on backdrops alone; names a real person could have; a recurring character in a fifth of the talks, on two slides at most; e-mail domains that read as made up. |
 D7 to D9, D13 and D15 to D26 were settled on 2026-11-05, D28 to D42 on 2026-11-07, D43 to D62 on 2026-11-08, D63
-to D69 on 2026-11-09, D70 to D73 on 2026-11-10, D74 on 2026-11-11, and D75 to D79 on 2026-11-12; the others
+to D69 on 2026-11-09, D70 to D73 on 2026-11-10, D74 on 2026-11-11, D75 to D79 on 2026-11-12, and D80 on 2026-11-13; the others
 follow from the design.
 
 ### Open questions

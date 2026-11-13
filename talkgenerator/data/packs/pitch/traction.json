@@ -62,7 +62,7 @@
   "kpi_share": [
     "growth, month over month",
     "growth since we pivoted",
-    "growth in {seed.bare} sales",
+    "{seed.bare} growth",
     "week-over-week growth",
     "growth since Tuesday",
     "growth in sign-ups",
@@ -78,7 +78,7 @@
     "pilot customers",
     "partnerships",
     "press mentions",
-    "{seed.bare} deals signed",
+    "{seed.bare} deals",
     "app downloads",
     "newsletter subscribers",
     "followers"

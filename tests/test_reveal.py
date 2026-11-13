@@ -136,8 +136,12 @@ def test_clicks_go_in_turn_when_a_layout_leaves_something_out(images):
     meme = slides.MemeSlide(_image("wide"), "One", "Two", "Three")
     (slide,) = _deck([meme], _theme("clean keynote")).slides
     assert slide.element("text_3") is None
-    assert sorted(e.appears_on_click for e in slide.elements if getattr(e, "appears_on_click", None)) == [1, 2]
+    clicked = [e for e in slide.elements if getattr(e, "appears_on_click", None) and not e.role.startswith("build ")]
+    assert sorted(e.appears_on_click for e in clicked) == [1, 2]
     assert reveal.clicks(slide) == 2
+    # (and a build dot for each click, by the slide's number, which fills on its click: D80)
+    dots = [e for e in slide.elements if e.role.startswith("build dot")]
+    assert [dot.appears_on_click for dot in dots] == [1, 2]
     gapped = [TextElement(role="a", text="A", appears_on_click=2), TextElement(role="b", text="B", appears_on_click=5)]
     assert [element.appears_on_click for element in engine._in_turn([*gapped])] == [1, 2]
 

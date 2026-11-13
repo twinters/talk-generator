@@ -10,23 +10,23 @@
     "Channel 7 News"
   ],
   "headline": [
-    "{topic.generic.cap} booked for {crime}",
-    "{topic.generic.cap} tried for {crime}",
+    "{topic.generic.cap} taken in for questioning",
+    "{topic.generic.cap} to face jury of peers",
     "Trial of the century: the People v. {topic.generic}",
     "Neighbours shocked: it was {topic.generic}",
     "{topic.generic.cap}: guilty, or just misunderstood?",
-    "{topic.generic.cap} held for {crime}",
-    "{crime.cap}: {topic.generic} suspected"
+    "Suspect held for {crime}",
+    "Police: {crime} 'no accident'"
   ],
   "subheadline": [
     "Neighbours 'not surprised'",
     "Police found the scene exactly as they feared",
-    "Trial begins today. The defendant denies everything.",
+    "Trial begins today. Defendant denies everything.",
     "Witnesses describe the scene as 'a bit much'",
     "The defence calls the charges 'a misunderstanding'",
     "Court sketch artist already overwhelmed",
     "Jurors asked to bring their own snacks",
-    "Experts call {crime} 'crime of the decade'"
+    "Experts call it 'crime of the decade'"
   ],
   "charges_title": [
     "The charges",

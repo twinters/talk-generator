@@ -196,6 +196,34 @@ def reveal_clicks(slide: Any, clicks: Sequence[Sequence[Any]]) -> None:
     _settle(slide)
 
 
+def join_click(slide: Any, number: int, shapes: Sequence[Any]) -> bool:
+    """Have the shapes appear, fading in, with the slide's number-th click (from 1) that its main sequence has already
+    (a chart's series or category, a diagram's punchline: the build dots that go with it, D80), rather than on a click
+    of their own. Whether it has that click (else nothing changes)."""
+    timing = _timing(slide)
+    steps = [
+        step
+        for step in _sequence(timing)
+        if step.find(f"./{qn('p:cTn')}/{qn('p:stCondLst')}/{qn('p:cond')}[@delay='indefinite']") is not None
+        and step.find(f"./{qn('p:cTn')}/{qn('p:stCondLst')}/{qn('p:cond')}[@evt='onBegin']") is None
+    ]
+    if not 0 < number <= len(steps) or not shapes:
+        return False
+    together = steps[number - 1].find(
+        f"./{qn('p:cTn')}/{qn('p:childTnLst')}/{qn('p:par')}/{qn('p:cTn')}/{qn('p:childTnLst')}"
+    )
+    if together is None:
+        return False
+    for shape in shapes:
+        spid = str(shape.shape_id)
+        group = _next_group(timing, spid)
+        together.append(_parsed(_FADE_IN.format(spid=spid, group=group, node="withEffect")))
+        if shape.element.tag == qn("p:sp"):
+            _builds(timing).append(_parsed(_SHAPE_BUILD.format(spid=spid, group=group)))
+    _settle(slide)
+    return True
+
+
 def reveal_columns(slide: Any, columns: Sequence[Sequence[Any]]) -> None:
     """Show the columns (each the shapes it's drawn with) click by click, as the 2019 template's column slides do: of
     two, the first is there from the start, and the second appears on the click as the first dims; of three, each

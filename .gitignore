@@ -147,3 +147,6 @@ installed-requirements.txt
 
 # Release notes staged by scripts/release.py
 .release-notes.md
+
+# The prompt lab's talks and judgements (scripts/prompt_lab)
+scripts/prompt_lab/work/

@@ -51,23 +51,23 @@
     "Closed the quarter with a team hug and a spreadsheet. Both were emotional."
   ],
   "review_good": [
-    "Exactly what I needed for {seed.generic}. Fast delivery.",
+    "Exactly what I needed for {seed.generic}. On time.",
     "Reliable, professional, and they always pick up the phone.",
-    "Would recommend {company} for {seed.generic}.",
+    "Would recommend {company} to anyone.",
     "Great value. My whole department uses it now.",
     "The account manager knows my name and my birthday.",
     "Changed how our office thinks about {seed.generic}.",
-    "Solid product. The onboarding took a while, but it was worth it.",
-    "Five stars. Everything I hoped for, and an invoice that adds up."
+    "Solid product. The onboarding took a while, but worth it.",
+    "Five stars. All I hoped for, and an invoice that adds up."
   ],
   "review_bad": [
     "I asked a simple question and got invited to a webinar.",
     "Ordered {seed.generic}, received a strategy deck.",
-    "Still waiting for someone to call me back. It's been a quarter.",
+    "Still waiting for them to call back. It's been a quarter.",
     "They sent me a survey about the survey.",
-    "One star. The invoice was the only thing that arrived on time.",
+    "One star. Only the invoice arrived on time.",
     "My order was escalated to a steering committee.",
-    "Support said they'd circle back. I've been circling since May."
+    "They said they'd circle back. I've been circling since May."
   ],
   "reviewer": [
     "Pat, procurement",

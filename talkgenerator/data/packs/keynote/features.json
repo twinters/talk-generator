@@ -44,16 +44,16 @@
     "18 h|of battery life",
     "0.3 mm|thinner than before",
     "120 Hz|of pure smoothness",
-    "1 TB|of storage for {seed.generic}",
+    "1 TB|of {seed.generic}",
     "3|colours, all of them grey",
     "12|new sensors",
     "99.9%|uptime, on a good day",
-    "5×|more {seed.bare} power"
+    "5×|{seed.bare} power"
   ],
   "spec_punchline": [
     "1|button, which does nothing",
     "0|ports",
-    "3|minutes of battery, in airplane mode",
+    "3|minutes of battery, on standby",
     "1|colour: beige",
     "2|days to charge",
     "0|idea what it does",

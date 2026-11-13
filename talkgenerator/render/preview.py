@@ -61,7 +61,7 @@ def slide_image(
         if shown <= 0:
             continue
         layer = canvas if shown >= 1 else Image.new("RGBA", canvas.size, (0, 0, 0, 0))
-        _element(layer, element, scale, images, slide.style or theme)
+        _element(layer, element, scale, images, slide.style or theme, step)
         if layer is not canvas:  # (dimmed)
             layer.putalpha(layer.getchannel("A").point([round(value * shown) for value in range(256)]))
             canvas.alpha_composite(layer)
@@ -71,13 +71,22 @@ def slide_image(
     return canvas.convert("RGB")
 
 
-def _element(canvas: Image.Image, element: Content, scale: float, images: ImageStore | None, theme: Theme) -> None:
+def _element(
+    canvas: Image.Image,
+    element: Content,
+    scale: float,
+    images: ImageStore | None,
+    theme: Theme,
+    step: int | None = None,
+) -> None:
     if isinstance(element, ShapeElement):
         _shape(canvas, element, scale)
     elif isinstance(element, ImageElement) and element.box is not None:
         _image(canvas, element, scale, images)
     elif isinstance(element, ChartElement) and element.box is not None:
-        _chart(canvas, element, scale, theme)
+        # (a ranking's bars as far as the step has shown them, a click each: D80)
+        shown = step if step is not None and element.chart.reveal == "categories" else None
+        _chart(canvas, element, scale, theme, shown)
     elif isinstance(element, DiagramElement) and element.box is not None and element.style is not None:
         _diagram(canvas, element, scale)
     elif isinstance(element, TextElement) and element.box is not None and element.style is not None:
@@ -422,8 +431,9 @@ def _warped(layer: Image.Image, area: tuple[float, float, float, float], warp: s
     return result
 
 
-def _chart(canvas: Image.Image, element: ChartElement, scale: float, theme: Theme) -> None:
-    """A sketch of the chart: its bars, lines, slices or points in the theme's colours, and its labels."""
+def _chart(canvas: Image.Image, element: ChartElement, scale: float, theme: Theme, shown: int | None = None) -> None:
+    """A sketch of the chart: its bars, lines, slices or points in the theme's colours, and its labels (of a ranking
+    whose bars come a click each, the first so many: shown)."""
     assert element.box is not None
     spec, palette = element.chart, theme.palette
     draw = ImageDraw.Draw(canvas)
@@ -515,6 +525,8 @@ def _chart(canvas: Image.Image, element: ChartElement, scale: float, theme: Them
     series_values = spec.series[0].values if spec.series else ()
     count = max(1, len(series_values))
     for index, value in enumerate(series_values):
+        if shown is not None and index >= shown:
+            continue
         fill = palette.accent_2 if spec.chart_type == "bar" and index == count - 1 else palette.accent
         if spec.chart_type == "bar":  # horizontal, the first category at the top (D80), each bar named by it
             height = (bottom - y0) / count

@@ -66,3 +66,6 @@ def _offline_tests_use_no_real_credentials(request, monkeypatch, tmp_path):
     # unless a test asks for them: see tests/test_less_text.py
     monkeypatch.setenv("DISABLE_PICTURE_FIRST", "1")
     monkeypatch.setenv("DISABLE_PATTERN_BREAKS", "1")
+    # And title slides without a photo of the talk's world (D80), whose search their tests don't fake, unless a test
+    # asks for one: see tests/test_playable.py
+    monkeypatch.setenv("DISABLE_TITLE_PICTURES", "1")

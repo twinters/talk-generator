@@ -75,7 +75,7 @@ Images: `image_1`, `image_2`
 | `two-captions-gifs` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | images: `image_1` neutral or meme-chaos, `image_2` gifs, else weird; tags: gif, multi_caption, two_captions |
 | `two-captions-weird-reddit` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | images: `image_1` weird, `image_2` meme-chaos; tags: multi_caption, reddit, two_captions |
 | `two-captions-weird` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | images: `image_1` meme-chaos, `image_2` meme-chaos; tags: multi_caption, reddit, two_captions |
-| `2-conclusions` | The talk's conclusions | `title`: a title for the conclusions, in a few words of your own; `caption_1`: a lesson from the talk in six words at most, calling back to an earlier slide by what it said (not by its number or key); `caption_2`: a lesson from the talk in six words at most, calling back to an earlier slide by what it said (not by its number or key); images: `image_1` neutral, `image_2` weird; tags: conclusion |
+| `2-conclusions` | The talk's conclusions | `title`: a title for the conclusions, in a few words of your own; `caption_1`: a lesson from the talk in six words at most, calling back to an earlier slide by what it said (not by its number or key): a new twist on it, never a recap; `caption_2`: a lesson from the talk in six words at most, calling back to an earlier slide by what it said (not by its number or key): a new twist on it, never a recap; images: `image_1` neutral, `image_2` weird; tags: conclusion |
 | `two-captions-copyright-free` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | the default; images: `image_2` photo or weird-stock; tags: multi_caption, two_captions |
 
 ## `three_columns`
@@ -96,7 +96,7 @@ Images: `image_1`, `image_2`, `image_3`
 | `about-me-location-job-weirdhobby` | About the presenter: where they come from, their job and their weird hobby | `title`: a title such as 'About me' or 'Who am I?'; `caption_1`: where the presenter comes from: a country, a city or a place; `caption_2`: the presenter's (possibly made-up) job; `caption_3`: the presenter's weird hobby; images: `image_1` country, `image_2` neutral, `image_3` meme-chaos (or generated, from its prompt, with an image generator set up); tags: about_me |
 | `about-me-location-book-weirdhobby` | About the presenter: where they come from, the book they wrote, and their weird hobby | `title`: a title such as 'About me' or 'Who am I?'; `caption_1`: where the presenter comes from: a country, a city or a place; `caption_2`: the title of a book the presenter wrote; `caption_3`: the presenter's weird hobby; images: `image_1` country, `image_2` book-covers (or generated, from its prompt, with an image generator set up), `image_3` meme-chaos (or generated, from its prompt, with an image generator set up); tags: about_me |
 | `three-captions-weird` | Three captioned images that build up, like 'Good, Better, Best' or three steps of a plan | images: `image_1` neutral or meme-chaos, `image_2` meme-chaos, `image_3` meme-chaos-still; tags: multi_caption, reddit, three_captions |
-| `3-conclusions` | The talk's conclusions | `title`: a title for the conclusions, in a few words of your own; `caption_1`: a lesson from the talk in six words at most, calling back to an earlier slide by what it said (not by its number or key); `caption_2`: a lesson from the talk in six words at most, calling back to an earlier slide by what it said (not by its number or key); `caption_3`: a lesson from the talk in six words at most, calling back to an earlier slide by what it said (not by its number or key); images: `image_1` neutral, `image_2` weird, `image_3` gifs, else weird; tags: conclusion |
+| `3-conclusions` | The talk's conclusions | `title`: a title for the conclusions, in a few words of your own; `caption_1`: a lesson from the talk in six words at most, calling back to an earlier slide by what it said (not by its number or key): a new twist on it, never a recap; `caption_2`: a lesson from the talk in six words at most, calling back to an earlier slide by what it said (not by its number or key): a new twist on it, never a recap; `caption_3`: a lesson from the talk in six words at most, calling back to an earlier slide by what it said (not by its number or key): a new twist on it, never a recap; images: `image_1` neutral, `image_2` weird, `image_3` gifs, else weird; tags: conclusion |
 | `three-captions-weird-crf` | Three captioned images that build up, like 'Good, Better, Best' or three steps of a plan | the default; images: `image_1` photo, `image_3` weird-stock; tags: multi_caption, three_captions |
 
 ## `history_quote`
@@ -276,13 +276,13 @@ Three or four made-up figures on tiles, as on a dashboard, each a number and wha
 | --- | --- | --- |
 | `title` | 45 | the dashboard's title |
 | `number_1` | 10 | the first figure's number, with its unit if it has one |
-| `label_1` | 40 | what the first figure measures |
+| `label_1` | 32 | what the first figure measures, in a few words |
 | `number_2` | 10 | the second figure's number, with its unit if it has one |
-| `label_2` | 40 | what the second figure measures |
+| `label_2` | 32 | what the second figure measures, in a few words |
 | `number_3` | 10 | the third figure's number, with its unit if it has one |
-| `label_3` | 40 | what the third figure measures |
+| `label_3` | 32 | what the third figure measures, in a few words |
 | `number_4` | 10 | the fourth figure's number, with its unit if it has one (or empty, for none) |
-| `label_4` | 40 | what the fourth figure measures (or empty, for none) |
+| `label_4` | 32 | what the fourth figure measures, in a few words (or empty, for none) |
 
 Images: `background`
 
@@ -334,8 +334,8 @@ A made-up news story with a photo, as breaking news on television or on a newspa
 | Text | At most | What to write |
 | --- | --- | --- |
 | `outlet` | 30 | the made-up name of the newspaper or the channel |
-| `headline` | 70 | the headline |
-| `subheadline` | 70 | a line under the headline, with more of the story (or empty, for none) |
+| `headline` | 60 | the headline |
+| `subheadline` | 50 | a line under the headline, with more of the story (or empty, for none) |
 
 Images: `photo`
 
@@ -350,7 +350,7 @@ The talk's agenda: three to five items it will cover, numbered, which appear one
 | Text | At most | What to write |
 | --- | --- | --- |
 | `title` | 40 | the agenda's title |
-| `items` | 150 | three to five items, separated by \|, each at most 30 characters |
+| `items` | 150 | three to five items, separated by \|, each at most 36 characters |
 
 Images: none
 
@@ -367,11 +367,11 @@ A section's divider, opening a new part of the talk: its title, under its number
 | `title` | 40 | the new section's title |
 | `subtitle` | 60 | a line under it (or empty, for none) |
 
-Images: none
+Images: `background`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `section-divider` | A section's divider, opening the next part of the talk | the default; `title`: the title of the part of the talk that starts here, without a number (the slide has it); tags: section |
+| `section-divider` | A section's divider, opening the next part of the talk | the default; `title`: the title of the part of the talk that starts here, without a number (the slide has it); images: `background` backdrop; tags: section |
 
 ## `questions`
 
@@ -568,11 +568,11 @@ A dare, on a card: a real challenge for the presenter for the rest of the talk (
 | `dare` | 90 | the challenge, said to the presenter, for the rest of the talk or the next few slides: an accent or a voice, a gesture on every slide, a word to work into every slide, a rule such as speaking only in questions; hard to keep up, harmless, and for the presenter alone (or empty, for none) |
 | `audience` | 90 | what the presenter has the whole audience do, said to them: a show of hands, a call and response (when the presenter says a word, everyone answers with another), the front row standing up, a sound everyone makes; harmless, fun to join in, and singling nobody out (or empty, for none) |
 
-Images: none
+Images: `background`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `dare` | A dare, halfway through the talk | the default; tags: dare |
+| `dare` | A dare, halfway through the talk | the default; images: `background` backdrop; tags: dare |
 
 ## `flowchart`
 
@@ -634,15 +634,15 @@ An alignment chart, as Dungeons & Dragons sorts characters: nine things in a gri
 | Text | At most | What to write |
 | --- | --- | --- |
 | `title` | 45 | the alignment chart's title |
-| `lawful_good` | 32 | the lawful good one, in a few words |
-| `neutral_good` | 32 | the neutral good one, in a few words |
-| `chaotic_good` | 32 | the chaotic good one, in a few words |
-| `lawful_neutral` | 32 | the lawful neutral one, in a few words |
-| `true_neutral` | 32 | the true neutral one, in a few words |
-| `chaotic_neutral` | 32 | the chaotic neutral one, in a few words |
-| `lawful_evil` | 32 | the lawful evil one, in a few words |
-| `neutral_evil` | 32 | the neutral evil one, in a few words |
-| `chaotic_evil` | 32 | the chaotic evil one, in a few words: the punchline |
+| `lawful_good` | 26 | the lawful good one, a word or three |
+| `neutral_good` | 26 | the neutral good one, a word or three |
+| `chaotic_good` | 26 | the chaotic good one, a word or three |
+| `lawful_neutral` | 26 | the lawful neutral one, a word or three |
+| `true_neutral` | 26 | the true neutral one, a word or three |
+| `chaotic_neutral` | 26 | the chaotic neutral one, a word or three |
+| `lawful_evil` | 26 | the lawful evil one, a word or three |
+| `neutral_evil` | 26 | the neutral evil one, a word or three |
+| `chaotic_evil` | 26 | the chaotic evil one, a word or three: the punchline |
 
 Images: none
 
@@ -692,13 +692,13 @@ Made-up reviews, with stars: two or three reviewers' ratings (one to five stars)
 | --- | --- | --- |
 | `title` | 45 | the slide's title, such as what people are saying (or empty, for none) |
 | `stars_1` | 1 | how many stars the first reviewer gives, from 1 to 5: `1`, `2`, `3`, `4`, `5` |
-| `review_1` | 70 | what the first reviewer wrote, in one short sentence |
+| `review_1` | 60 | what the first reviewer wrote, in one short sentence |
 | `reviewer_1` | 30 | who the first reviewer is: a real first name, a comma, and a detail (or empty, for none) |
 | `stars_2` | 1 | how many stars the second reviewer gives, from 1 to 5: `1`, `2`, `3`, `4`, `5` |
-| `review_2` | 70 | what the second reviewer wrote, in one short sentence |
+| `review_2` | 60 | what the second reviewer wrote, in one short sentence |
 | `reviewer_2` | 30 | who the second reviewer is: a real first name, a comma, and a detail (or empty, for none) |
 | `stars_3` | 1 | how many stars the third reviewer gives, from 1 to 5: `1`, `2`, `3`, `4`, `5` (or empty, for any) |
-| `review_3` | 70 | what the third reviewer wrote, in one short sentence (or empty, for none) |
+| `review_3` | 60 | what the third reviewer wrote, in one short sentence (or empty, for none) |
 | `reviewer_3` | 30 | who the third reviewer is: a real first name, a comma, and a detail (or empty, for none) |
 
 Images: none

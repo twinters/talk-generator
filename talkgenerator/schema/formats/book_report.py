@@ -127,8 +127,13 @@ def _subtitle(context: dict[str, Any]) -> str | None:
 # on it; an illustration of the topic without Reddit), the author's portrait, odd photos of the characters and of the
 # favourite part, and a calm backdrop behind what's said (a classic report's end calls back an earlier picture)
 _BACKDROP = cg.statement_backdrop_generator
+# (its picture first of a talk's generated ones: only a generated cover shows the made-up book's title, D80)
 _COVER = ImageSlot(
-    "the cover of the book the report is on", aesthetic="book-covers", generate=True, backups=("illustration",)
+    "the cover of the book the report is on",
+    aesthetic="book-covers",
+    generate=True,
+    generate_first=True,
+    backups=("illustration",),
 )
 _AUTHOR = ImageSlot("a portrait of the book's author", aesthetic="portrait", generate=True)
 _CHARACTER = ImageSlot("a photo of one of the book's characters", aesthetic="weird-stock")

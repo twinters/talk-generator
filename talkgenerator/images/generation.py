@@ -139,6 +139,7 @@ class Wish:
     subject: str
     look: str
     request: ImageRequest
+    first: bool = False  # (its slot's picture comes first: see ImageSlot.generate_first)
 
 
 @dataclass(frozen=True)
@@ -203,6 +204,7 @@ class ImageGeneration:
             logger.info("This talk generates no pictures: %s", self.refused)
         self.granted = 0  # pictures granted so far (generated, being generated, or failed)
         self._estimated = 0.0  # what the granted pictures cost at most, by list price
+        self._reserved = 0  # pictures kept for the slots whose pictures come first, not granted yet (D80)
         self._lock = threading.Lock()
         self._swaps = threading.Lock()  # (one swap at a time, and one update for whoever follows the talk)
         self._pool: ThreadPoolExecutor | None = None
@@ -264,7 +266,7 @@ class ImageGeneration:
             seed=rng.randrange(2**31) if self.generator.capabilities.seed else None,
             quality=self.quality,
         )
-        return Wish(name, reason, subject, look, request)
+        return Wish(name, reason, subject, look, request, bool(getattr(slot, "generate_first", False)))
 
     def fill(self, wishes: Sequence[Wish]) -> list[ImageData] | None:
         """The pictures, generated here and now if the budget grants all of them: for the slots of a slide whose
@@ -326,6 +328,13 @@ class ImageGeneration:
 
     # GRANTING AND GENERATING
 
+    def reserve(self, slots: Iterable[ImageSlot | Any]) -> None:
+        """Keep a picture of the budget for each of the slots whose pictures come first (ImageSlot.generate_first) and
+        that the talk would generate, as far as the budget goes: the other slots' pictures leave them room (D80)."""
+        first = sum(1 for slot in slots if getattr(slot, "generate_first", False) and self.prefers(slot))
+        with self._lock:
+            self._reserved = min(first, self.budget.max_images)
+
     def _grant(self, *wishes: Wish) -> bool:
         """Whether the budget allows the pictures, all of them (counting them, if it does): no more than its most
         pictures, and within its dollars by list price (whether the cache has the pictures or not, so the same seed
@@ -333,7 +342,9 @@ class ImageGeneration:
         costs = [self.generator.estimate_cost(wish.request) for wish in wishes]
         slots = ", ".join(wish.slot for wish in wishes)
         with self._lock:
-            if self._closed or self.granted + len(wishes) > self.budget.max_images:
+            firsts = sum(wish.first for wish in wishes)
+            kept = max(0, self._reserved - firsts)  # (what the slots whose pictures come first still need)
+            if self._closed or self.granted + len(wishes) + kept > self.budget.max_images:
                 return False
             limit = self.budget.max_cost_usd
             if limit is not None:
@@ -345,6 +356,7 @@ class ImageGeneration:
                     return False
             first = self.granted == 0
             self.granted += len(wishes)
+            self._reserved = kept
             self._estimated += sum(cost or 0.0 for cost in costs)
         if first:
             logger.info("Generating %s", self.estimate())

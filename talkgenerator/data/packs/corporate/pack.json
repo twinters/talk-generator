@@ -6,7 +6,7 @@
     "1": "2026-11-08: the first texts of all-hands meetings, a part of the arc a grammar: the title, the agenda, the KPIs against their targets, the wins, the roadmap, the org change, the synergies, the ask and Q&A (D59)",
     "2": "2026-11-09: the free slides' own provocations: a word or two over a full-screen picture, in the format's voice (D63)",
     "3": "2026-11-12: the Q&A's texts went: a talk's closer opens Q&A now, after its last slide and in its language (\"Questions?\", and back to work: D76)",
-    "4": "2026-11-13: shorter texts for the lower field limits (D80): the CEO's posts, the reviews, the KPIs' and the ask's labels and statements, and the roadmap's milestones; and the presenter's job on a line of its own under their name"
+    "4": "2026-11-13: shorter texts for the lower field limits (D80): the CEO's posts, the reviews, the KPIs' and the ask's labels and statements, and the roadmap's milestones; and the presenter's job on a line of its own under their name; and shorter KPI labels and reviews"
   },
   "slots": {
     "title.talk_title": {"variables": ["seed", "company"], "field": "title.title"},

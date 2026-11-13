@@ -340,13 +340,12 @@ def test_layouts_and_sizes_come_from_the_seed(images):
 
 
 def _pictured_punchlines(image):
-    """Lists whose punchline is a picture in its text's place (a pattern break, D73): red flags (four, which fit their
-    rows and their cards), reviews, an org chart's boss, a tier list's S tier and an alignment chart's chaotic evil;
-    and lists and diagrams whose punchline is an emoji alone."""
+    """Lists whose punchline is a picture in its text's place (a pattern break, D73): red flags and traffic-light flags
+    (three, in their rows and on their cards), reviews, an org chart's boss, a tier list's S tier and an alignment
+    chart's chaotic evil; and lists and diagrams whose punchline is an emoji alone."""
     return [
-        slides.RedFlagsSlide(
-            "Red flags", "Hates naps", "Owns a dog", "Says 'meow' wrong", "x", pictures={"flag_4": image}
-        ),
+        slides.RedFlagsSlide("Red flags", "Hates naps", "Owns a dog", "x", pictures={"flag_3": image}),
+        slides.TrafficFlagsSlide("Flags", "Brings tuna", "Hums at night", "x", pictures={"flag_3": image}),
         slides.ReviewsSlide(
             "What people say", "5", "Purrfect.", "Ann", "4", "Fine.", "Bo", "1", "", "Cy", pictures={"review_3": image}
         ),
@@ -356,7 +355,7 @@ def _pictured_punchlines(image):
         ),
         slides.AlignmentChartSlide("Cats", *_axes(), *SHORT_CELLS, pictures={"chaotic_evil": image}),
         # (and an emoji alone in a punchline's place, drawn as large as its box takes)
-        slides.RedFlagsSlide("Red flags", "Hates naps", "Owns a dog", "Is a dog", "🦖"),
+        slides.RedFlagsSlide("Red flags", "Hates naps", "Owns a dog", "🦖"),
         slides.ReviewsSlide("What people say", "5", "Purrfect.", "Ann", "4", "Fine.", "Bo", "1", "🙄", "Cy"),
         slides.OrgChartSlide("Who's in charge", "🤯", "Me", "The dog", "The vet"),
         slides.TierListSlide("Cat toys, ranked", "🦄", "Yarn | Laser", "Mouse", None, "Bed"),
@@ -423,6 +422,12 @@ def _runs(seed=1, theme=None):
         # (and, from D76, closers that ask a question: beside its huge mark, or as the title slide has its title; a
         # talk's closer comes once, after its last slide, but here a few of them try both of their layouts)
         *(academic.ACADEMIC.closer.slide(closers.Ending.of(presenter="Ann Example")) for _ in range(3)),
+        # (and, from D80, a section's divider and a dare over a picture of what they're about: over a picture, each
+        # fits one layout, so it comes before the one without, which then takes another)
+        slides.SectionSlide("The dark years", "In which the cat finds the laser pointer", background=wide),
+        slides.SectionSlide("The dark years", "In which the cat finds the laser pointer"),
+        slides.DareSlide("Challenge", "Present the next slide as a haiku.", background=wide),
+        slides.DareSlide("Challenge", "Present the next slide as a haiku."),
     ]
     slide_deck = SlideDeck(len(runs), title="Cats", topics=["cats"], seed=seed)
     for index, slide in enumerate(runs):

@@ -202,8 +202,8 @@ A made-up news story with a photo, as breaking news on television or on a newspa
 | Text | At most | What to write |
 | --- | --- | --- |
 | `outlet` | 30 | the made-up name of the newspaper or the channel |
-| `headline` | 70 | the headline |
-| `subheadline` | 70 | a line under the headline, with more of the story (or empty, for none) |
+| `headline` | 60 | the headline |
+| `subheadline` | 50 | a line under the headline, with more of the story (or empty, for none) |
 
 Images: `photo`
 
@@ -290,7 +290,7 @@ A dare, on a card: a real challenge for the presenter for the rest of the talk (
 | `dare` | 90 | the challenge, said to the presenter, for the rest of the talk or the next few slides: an accent or a voice, a gesture on every slide, a word to work into every slide, a rule such as speaking only in questions; hard to keep up, harmless, and for the presenter alone (or empty, for none) |
 | `audience` | 90 | what the presenter has the whole audience do, said to them: a show of hands, a call and response (when the presenter says a word, everyone answers with another), the front row standing up, a sound everyone makes; harmless, fun to join in, and singling nobody out (or empty, for none) |
 
-Images: none
+Images: `background`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |

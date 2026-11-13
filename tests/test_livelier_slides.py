@@ -16,7 +16,7 @@ from talkgenerator.design import engine, fonts, themes
 from talkgenerator.models.deck import DECORATION, ImageElement, TextElement
 from talkgenerator.models.plan import SlidePlan
 from talkgenerator.plan import languages, prompt
-from talkgenerator.plan.kinds import CALLBACK_LINE, KINDS, LAST_TIP
+from talkgenerator.plan.kinds import CALLBACK_LINE, KINDS, LAST_TIP, TextField
 from talkgenerator.plan.realize import clean_text, length_limit, realize
 from talkgenerator.render import shapes
 from talkgenerator.render.powerpoint import render_pptx
@@ -158,15 +158,20 @@ def test_a_variant_that_asks_for_emoji_gets_them_where_the_model_wrote_none():
         assert things["item_s_1"] == "🐦 Pigeons"
         assert things["item_a_1"] == ("🍞 Bread" if own else things["item_a_1"])  # (by its word, in English)
         listed = [value for key, value in things.items() if key.startswith("item_") and value]
-        assert len(listed) == 6 and all(emoji_util.runs(value)[0][1] for value in listed), listed
+        # (a tier's one thing, the first written: D80)
+        assert len(listed) == 5 and all(emoji_util.runs(value)[0][1] for value in listed), listed
     plain = next(variant for variant in recipe.variants if not variant.emoji and not variant.omit)
     unasked = dataclasses.replace(recipe, variants=(plain,)).varied(random_util.Rng(1))
     made = realize(SlidePlan(kind="tier_list", concept="pigeons", texts=texts), unasked, context, random_util.Rng(1), 0)
     assert made is not None and made[0].to_slide_dictionary()["item_a_1"] == "Bread"
 
 
+# A field of a list of things, as a tier's was before it held one thing (D80)
+LIST = TextField("things", "things, separated by |", 70)
+
+
 def test_a_list_is_cut_between_its_things_and_its_emoji_count_as_two_characters():
-    tier = next(text for text in KINDS["tier_list"].texts if text.name == "a_tier")
+    tier = LIST
     # (a free model's tier, cut in the middle of its last thing, left a bare emoji: "| 🦅")
     written = "💩 Pooping on wedding dresses | 🤯 Getting stuck in escalators | 🦅 Running from hawks"
     assert clean_text(written, tier) == "💩 Pooping on wedding dresses | 🤯 Getting stuck in escalators"
@@ -177,7 +182,7 @@ def test_a_list_is_cut_between_its_things_and_its_emoji_count_as_two_characters(
 
 
 def test_a_list_whose_model_wrote_other_bars_or_emoji_as_things_of_their_own_comes_out_whole():
-    tier = next(text for text in KINDS["tier_list"].texts if text.name == "a_tier")
+    tier = LIST
     # (a free model's tiers, 2026-11-09: box-drawing bars for its |, and its emoji as things of their own)
     written = "🏋️ │ Loving your boss │ ☕│ Buying good cheese │ 🧀│ Doing moderate exercise │ 🏃"
     assert clean_text(written, tier) == "🏋️ Loving your boss | ☕ Buying good cheese | 🧀 Doing moderate exercise"
@@ -259,7 +264,8 @@ def test_the_language_models_dares_are_challenges_audience_dares_and_now_and_the
     weight = sum(variant.weight for variant in recipe.variants)
     assert sum(variant.weight for variant in by_kind["audience"]) / weight == pytest.approx(0.4)
     jokes = [variant for variant in recipe.variants if variant.facts]
-    assert len(jokes) == 1 and jokes[0] in by_kind["presenter"]  # (the only one that may build on a dad joke)
+    # (the only one that may build on a dad joke, over a picture or not: D80)
+    assert len({variant.note for variant in jokes}) == 1 and all(joke in by_kind["presenter"] for joke in jokes)
     assert sum(variant.weight for variant in jokes) / weight == pytest.approx(0.2)
     pick = slide_schemas.slide_generators.get("Dare")
     for variant in recipe.variants:  # (a slide of a variant that takes no fact gets none, in a talk's request)

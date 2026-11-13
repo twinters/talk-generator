@@ -40,7 +40,7 @@ from talkgenerator.models.deck import (
     VennDiagram,
 )
 from talkgenerator.models.theme import TextEffect, Theme
-from talkgenerator.render import charts, diagrams  # (where a diagram's labels go, and a trend's points)
+from talkgenerator.render import charts, diagrams, reveal  # (where a diagram's labels go, a trend's points, clicks)
 from talkgenerator.sources import memes
 from talkgenerator.util import emoji_util, random_util
 
@@ -519,6 +519,7 @@ def lay_out_slide(
         style = _style(text, place, own, theme, colour, True)
         texts.append(TextElement(role=DECORATION, text=text, box=place, style=style, part_of=part_of))
     elements = _in_turn([*backdrop, *content, *placement.overlays, *texts])
+    elements += build_dots(slide, elements, theme, slide_background)  # (what's still to come on it: D80)
     # (a picture the layout had no room for, such as a diagram's box's, stays out, and its credit with it)
     left_out = [
         element.image
@@ -538,6 +539,100 @@ def lay_out_slide(
                 credit_line(credits, credits_prefix(slide)), theme, slide_background, elements
             ),
         }
+    )
+
+
+# BUILD DOTS (D80): a small ring for every click of a slide, which fills on its click, by the slide's number, so that
+# the presenter sees at a glance whether the next click brings more of the slide (an empty ring left) or the next slide
+# (every ring full, or none at all); and that the next one is the punchline, the last ring (the user, 2026-11-13: "a
+# visual indicator to know whether we're at the end of the slide or not, such as an empty or half-filled dot, the last
+# full"). They're shapes of the deck, so PowerPoint, the previewer and talk-generator-web all draw them.
+BUILD_DOT: Final = 16.0  # a ring's size, on the canvas
+_DOT_GAP: Final = 9.0
+_MOST_DOTS: Final = 12  # a slide of more clicks than this gets none (a row of them would be a pattern, not a hint)
+# Where the row goes, in order, the first that's free: left of where most families put the slide's number (at the
+# bottom right), at the bottom right, at the top right, at the bottom left and at the top left (its right end or its
+# left end, and its top)
+_DOT_ROWS: Final = (("right", 1688.0, 1042.0), ("right", 1824.0, 1042.0), ("right", 1824.0, 24.0))
+_DOT_ROWS_LEFT: Final = (("left", 96.0, 1042.0), ("left", 96.0, 24.0))
+_DOT_ROLE: Final = "build"
+
+
+def build_dots(
+    slide: DeckSlide, elements: Sequence[Content], theme: Theme, background: SlideBackground
+) -> list[ShapeElement]:
+    """The slide's build dots (see above): for each of its clicks (as it's laid out: the elements given), an empty ring
+    there from the start, and a dot that fills it on its click, in a column slide with its column (as part of its
+    content); none for a slide without clicks. In the first free row (clear of every text, picture, chart and diagram,
+    and of the decoration's small pieces), in the muted colour, as dark or light as it takes to show on what's behind."""
+    placed = slide.model_copy(update={"elements": tuple(elements)})
+    count = reveal.clicks(placed)
+    if not 0 < count <= _MOST_DOTS:
+        return []
+    width = count * BUILD_DOT + (count - 1) * _DOT_GAP
+    # (clear of the decoration's small pieces too, where that can be; else over them, as a family's number sits in its
+    # taskbar's tray: never over a text, a picture, a chart or a diagram)
+    row = None
+    for strict in (True, False):
+        taken = [
+            element.box
+            for element in elements
+            if element.box is not None and (_blocks_dots(element) if strict else not isinstance(element, ShapeElement))
+        ]
+        for side, x, y in (*_DOT_ROWS, *_DOT_ROWS_LEFT):
+            candidate = Box(x=x - width if side == "right" else x, y=y, w=width, h=BUILD_DOT)
+            if not any(_overlaps(_inset(candidate, -8), box) for box in taken):
+                row = candidate
+                break
+        if row is not None:
+            break
+    if row is None:
+        return []
+    ink = color.readable_on(theme.palette.muted, layers.behind(background, elements, row), 2.5)
+    columns = reveal.COLUMNS.get(slide.type, 0)
+    dots: list[ShapeElement] = []
+    rings: list[ShapeElement] = []
+    for index in range(1, count + 1):
+        box = Box(x=row.x + (index - 1) * (BUILD_DOT + _DOT_GAP), y=row.y, w=BUILD_DOT, h=BUILD_DOT)
+        rings.append(
+            ShapeElement(
+                role=f"{_DOT_ROLE} ring {index}",
+                shape="ellipse",
+                box=box,
+                color=ink,
+                filled=False,
+                outline=ink,
+                outline_width=2.5,
+            )
+        )
+        # (a column slide's click shows a column: the dot comes in with it, the first of two columns' being there)
+        column = index + 1 if columns == 2 else index
+        dots.append(
+            ShapeElement(
+                role=f"{_DOT_ROLE} dot {index}", shape="ellipse", box=box, color=ink, part_of=f"content_{column}"
+            )
+            if columns
+            else ShapeElement(
+                role=f"{_DOT_ROLE} dot {index}", shape="ellipse", box=box, color=ink, appears_on_click=index
+            )
+        )
+    return rings + dots
+
+
+def _blocks_dots(element: Content) -> bool:
+    """Whether the element is in the way of the build dots: a text (the slide's number too), a picture (but one behind
+    the whole slide), a chart, a diagram, or a small piece of decoration (a fixture: a sticky flag, a tray); not a
+    panel, a band or a shade over much of the slide."""
+    if isinstance(element, ShapeElement):
+        return element.opacity >= 0.2 and element.box.w * element.box.h < 0.1 * WIDTH * HEIGHT
+    if isinstance(element, ImageElement):
+        return element.box is not None and element.box != FULL
+    return True
+
+
+def _overlaps(box: Box, other: Box) -> bool:
+    return not (
+        box.x + box.w <= other.x or other.x + other.w <= box.x or box.y + box.h <= other.y or other.y + other.h <= box.y
     )
 
 
@@ -897,17 +992,40 @@ _GAP: Final = 48  # between columns
 # THE TITLE SLIDE'S PICTURE (D80): a photo of the talk's world beside its title, which says what kind of talk it is
 # (see talkgenerator.title_pictures); a family's own title layout keeps its design, and places it where it has room
 TITLE_PICTURE: Final = "title_picture"
+# The title beside the photo is this wide, and wider for a word that a wide font makes wider than that at its smallest
+# (a compound, as Dutch and German have them, in a brutalist's capitals): the photo, a square, gives way to it, down to
+# the smallest
+_TITLE_BESIDE: Final = 930
+_TITLE_PHOTO: Final = 700
+_TITLE_PHOTO_SMALLEST: Final = 400
+_TITLE_PHOTO_GAP: Final = 98
+
+
+def _widest_word(text: Content | None, spec: TextSpec, theme: Theme) -> float:
+    """How wide the text's widest word is at the spec's smallest size, in the theme's font for it (0 for no text)."""
+    if not isinstance(text, TextElement):
+        return 0.0
+    font = spec.font_name or (theme.fonts.heading if spec.font == "heading" else theme.fonts.body)
+    bold = (theme.fonts.heading_bold if spec.heading else False) or spec.bold
+    uppercase = spec.uppercase or (theme.fonts.heading_uppercase if spec.heading else False)
+    words = (text.text.upper() if uppercase else text.text).split()
+    return max((fonts.text_width(word, font, spec.smallest, bold) for word in words), default=0.0)
 
 
 def _title_beside_picture(roles: dict[str, Content], theme: Theme) -> Placement:
     """The title and who presents it on the left, flush left with the theme's decoration, and a photo of the talk's
     world on the right, framed as the theme frames its pictures."""
     placement = Placement("v5/title-picture")
-    title = Box(x=MARGIN, y=200, w=930, h=440)
+    widest = WIDTH - 2 * MARGIN - _TITLE_PHOTO_GAP - _TITLE_PHOTO_SMALLEST
+    needed = _widest_word(roles.get("title"), SPECS["left title"], theme) + 2 * fit.STEP
+    width = max(_TITLE_BESIDE, min(math.ceil(needed), widest))
+    side = min(_TITLE_PHOTO, WIDTH - 2 * MARGIN - _TITLE_PHOTO_GAP - width)
+    title = Box(x=MARGIN, y=200, w=width, h=440)
     placement.boxes["title"] = (title, "left title")
-    placement.boxes["subtitle"] = (Box(x=MARGIN, y=690, w=930, h=220), "left subtitle")
+    placement.boxes["subtitle"] = (Box(x=MARGIN, y=690, w=width, h=220), "left subtitle")
     placement.shapes += _decoration(_left_aligned(theme), title, gap=22)
-    placement.boxes[TITLE_PICTURE] = (Box(x=1124, y=190, w=700, h=700), "caption")
+    photo = Box(x=WIDTH - MARGIN - side, y=190 + (_TITLE_PHOTO - side) / 2, w=side, h=side)
+    placement.boxes[TITLE_PICTURE] = (photo, "caption")
     return placement
 
 
@@ -2646,6 +2764,14 @@ def _process_across(roles: dict[str, Content], theme: Theme) -> Placement:
     return placement
 
 
+def _down_steps(roles: dict[str, Content]) -> bool:
+    """Whether a process's steps may go down the slide: unless every one has a picture and they fit across, where
+    the pictures are large (beside a band going down, they're small)."""
+    steps = _numbered(roles, "step", 5)
+    every = bool(steps) and all(_has_picture(roles, f"step_{index}") for index in steps)
+    return not (every and _short_steps(roles))
+
+
 def _short_steps(roles: dict[str, Content]) -> bool:
     """Whether a process's steps can go side by side: three to five, each without a word too long for its box."""
     steps = [roles[f"step_{index}"] for index in _numbered(roles, "step", 5)]
@@ -4317,8 +4443,9 @@ _LAYOUTS: Final[dict[str, tuple[_Layout, ...]]] = {
         _Layout("v5/iceberg-side", _iceberg(side=True), 0.7, _beside_title),
     ),
     # (the talk formats')
+    # (a process with a picture in every step goes across, where its steps' words fit, its pictures large: D80)
     "process": (
-        _Layout("v5/process", _process_down),
+        _Layout("v5/process", _process_down, fits=_down_steps),
         _Layout("v5/process-across", _process_across, 1.5, _short_steps),
     ),
     "references": (

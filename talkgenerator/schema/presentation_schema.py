@@ -1617,6 +1617,10 @@ class PresentationSchema:
             )
         # (an agenda announces some of the slides after it, which pick its items up: D80)
         planned = prompt.agenda_cues(planned)
+        # (and a talk that generates pictures keeps some of its budget for the slots whose pictures come first: D80)
+        generation = image_context.current().generation
+        if generation is not None:
+            generation.reserve(source for slide in planned.values() for _, source in slide.recipe.slots())
         talk = _PlannedTalk(
             picks,
             planned,

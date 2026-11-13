@@ -63,8 +63,10 @@ def every_karaoke_type(image):
         slides.WallOfTextSlide("Key takeaways", "Ask the cat", "Continued on next slide", *POINTS[:6]),
         slides.AlignmentChartSlide("The cat alignment chart", *_axes(), *LONG_CELLS),
         slides.AlignmentChartSlide("Cats", *_axes(), *SHORT_CELLS),
-        slides.RedFlagsSlide("Red flags", "Hates naps", "Owns a dog", "Says 'meow' wrong", "Is a dog", "Two dogs"),
+        slides.RedFlagsSlide("Red flags", "Hates naps", "Owns a dog", "Says 'meow' wrong"),
         slides.RedFlagsSlide("Red flags in a cat person", "Hates naps", "Owns a dog", "Is a dog"),
+        slides.TrafficFlagsSlide("Flags in a cat person", "Brings tuna", "Hums at night", "Owns a dog"),
+        slides.TrafficFlagsSlide(None, "Naps", "Tuna", "Dogs"),
         slides.ReviewsSlide(
             "What people are saying", "5", "Purrfect.", "Ann, 34", "4", "Fine.", "Bo", "1", "Bit me.", "Cy"
         ),
@@ -90,6 +92,7 @@ def shortest_karaoke_types(image):
         slides.WallOfTextSlide("W", "H", "…", "A", "B", "C", "D", "E"),
         slides.AlignmentChartSlide(None, *_axes(), *"ABCDEFGHI"),
         slides.RedFlagsSlide(None, "A", "B", "C"),
+        slides.TrafficFlagsSlide(None, "A", "B", "C"),
         slides.ReviewsSlide(None, "1", "A", None, "5", "B", None),
         slides.ErrorMessageSlide(None, "A", None, "OK", "No"),
     ]
@@ -177,8 +180,9 @@ def test_every_layout_comes_up_and_needs_what_it_says(images):
         "v5/alignment-chart",
         "v5/alignment-chart-side",
     ]
-    assert fitting(slides.RedFlagsSlide("R", *"ABCDE")) == ["v5/red-flags"]  # (five flags: too many for cards)
-    assert fitting(slides.RedFlagsSlide("R", *"ABCD")) == ["v5/red-flags", "v5/red-flags-cards"]
+    # (three flags at most since D80, which both layouts take: a fourth and a fifth are left out)
+    assert fitting(slides.RedFlagsSlide("R", *"ABCDE")) == ["v5/red-flags", "v5/red-flags-cards"]
+    assert fitting(slides.TrafficFlagsSlide("T", *"ABC")) == ["v5/traffic-flags", "v5/traffic-flags-cards"]
     assert fitting(slides.ReviewsSlide(None, "5", "A", None, "1", "B", None)) == ["v5/reviews", "v5/reviews-rows"]
     assert fitting(slides.ErrorMessageSlide(None, "A", None, "OK", "No")) == [
         "v5/error-message",
@@ -258,7 +262,11 @@ def _clicks(ppt_slide):
     namespaces = {"p": "http://schemas.openxmlformats.org/presentationml/2006/main"}
     steps = etree.XPath(".//p:cTn[@nodeType='mainSeq']/p:childTnLst/p:par", namespaces=namespaces)(timing)
     targets = etree.XPath(".//p:spTgt/@spid", namespaces=namespaces)
-    return [sorted({names[spid] for spid in targets(step)}) for step in steps]
+    # (without the build dots, which fill on every click by the slide's number: D80)
+    return [sorted({names[spid] for spid in targets(step)} - BUILD_DOTS) for step in steps]
+
+
+BUILD_DOTS = {f"build dot {number}" for number in range(1, 13)}
 
 
 # WHAT A WALL OF TEXT, AN ALIGNMENT CHART, RED FLAGS, REVIEWS AND A FAKE ERROR MESSAGE SHOW

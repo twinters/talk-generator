@@ -511,7 +511,7 @@ def test_themed_columns_appear_click_by_click_too(images):
     picture (a theme's frame around it, its shadow, its tape: part_of)."""
     # (a frame whose middle isn't in its column's box, such as the rule between two columns or a plate's corner ticks,
     # goes by its name)
-    frames = {DECORATION, "divider"}
+    frames = {DECORATION, "divider", *(f"build dot {number}" for number in range(1, 4))}  # (and the build dots: D80)
     families = list(themes.FAMILIES)
     layouts = set()
     for seed in range(12):

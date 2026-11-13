@@ -166,13 +166,13 @@ Three or four made-up figures on tiles, as on a dashboard, each a number and wha
 | --- | --- | --- |
 | `title` | 45 | the dashboard's title |
 | `number_1` | 10 | the first figure's number, with its unit if it has one |
-| `label_1` | 40 | what the first figure measures |
+| `label_1` | 32 | what the first figure measures, in a few words |
 | `number_2` | 10 | the second figure's number, with its unit if it has one |
-| `label_2` | 40 | what the second figure measures |
+| `label_2` | 32 | what the second figure measures, in a few words |
 | `number_3` | 10 | the third figure's number, with its unit if it has one |
-| `label_3` | 40 | what the third figure measures |
+| `label_3` | 32 | what the third figure measures, in a few words |
 | `number_4` | 10 | the fourth figure's number, with its unit if it has one (or empty, for none) |
-| `label_4` | 40 | what the fourth figure measures (or empty, for none) |
+| `label_4` | 32 | what the fourth figure measures, in a few words (or empty, for none) |
 
 Images: `background`
 
@@ -322,13 +322,13 @@ Made-up reviews, with stars: two or three reviewers' ratings (one to five stars)
 | --- | --- | --- |
 | `title` | 45 | the slide's title, such as what people are saying (or empty, for none) |
 | `stars_1` | 1 | how many stars the first reviewer gives, from 1 to 5: `1`, `2`, `3`, `4`, `5` |
-| `review_1` | 70 | what the first reviewer wrote, in one short sentence |
+| `review_1` | 60 | what the first reviewer wrote, in one short sentence |
 | `reviewer_1` | 30 | who the first reviewer is: a real first name, a comma, and a detail (or empty, for none) |
 | `stars_2` | 1 | how many stars the second reviewer gives, from 1 to 5: `1`, `2`, `3`, `4`, `5` |
-| `review_2` | 70 | what the second reviewer wrote, in one short sentence |
+| `review_2` | 60 | what the second reviewer wrote, in one short sentence |
 | `reviewer_2` | 30 | who the second reviewer is: a real first name, a comma, and a detail (or empty, for none) |
 | `stars_3` | 1 | how many stars the third reviewer gives, from 1 to 5: `1`, `2`, `3`, `4`, `5` (or empty, for any) |
-| `review_3` | 70 | what the third reviewer wrote, in one short sentence (or empty, for none) |
+| `review_3` | 60 | what the third reviewer wrote, in one short sentence (or empty, for none) |
 | `reviewer_3` | 30 | who the third reviewer is: a real first name, a comma, and a detail (or empty, for none) |
 
 Images: none

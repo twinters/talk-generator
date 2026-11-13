@@ -105,13 +105,16 @@ def _folded(text: str) -> str:
 
 def _cut_list(text: str, length: int, language: str) -> str:
     """A list written as one text (its things separated by |) cut to its length between its things, keeping as many
-    of them as fit whole (or else its first thing, cut as a text is)."""
+    of them as fit whole (or else its first thing, whole if it's only a little too long, as a text that long would
+    be kept, or else cut as a text is: a tier's one thing, D80)."""
     things = [thing.strip() for thing in text.split("|") if thing.strip()]
     kept: list[str] = []
     for thing in things:
         if len(" | ".join([*kept, thing])) > length:
             break
         kept.append(thing)
+    if not kept and things and len(things[0]) <= length + max(4, length // 8):
+        return things[0]
     return " | ".join(kept) if kept else _cut(things[0] if things else text, length, language)
 
 

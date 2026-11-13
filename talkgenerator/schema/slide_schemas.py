@@ -80,7 +80,7 @@ _SEQUENCE_VARIANTS = (
 # as in "Your plants are not decorations—they")
 _CALLBACK = (
     "a lesson from the talk in six words at most, calling back to an earlier slide by what it said (not by its number "
-    "or key)"
+    "or key): a new twist on it, never a recap"
 )
 
 

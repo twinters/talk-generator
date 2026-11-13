@@ -48,7 +48,7 @@ from talkgenerator.render.powerpoint import render_pptx
 from talkgenerator.schema.presentation_schema import PresentationSchema
 from talkgenerator.schema.slide_topic_generators import IdentityTopicGenerator
 from talkgenerator.slide import powerpoint_slide_creator, slide_generator_types
-from talkgenerator.util import image_util
+from talkgenerator.util import image_util, random_util
 from talkgenerator.util.generator_util import StaticGenerator
 from tests.test_llm_talks import FakeModel
 
@@ -775,3 +775,19 @@ def test_the_estimate_says_what_a_talks_pictures_may_cost():
     )
     assert "for nothing" in str(generation.estimate(ComfyUIGenerator("sdxl"), ImageBudget(2)))
     assert generation.estimate("none").images == 0
+
+
+def test_a_slot_whose_picture_comes_first_keeps_a_picture_of_the_budget():
+    # (a book report's cover: only a generated one shows the made-up book's title, D80)
+    from talkgenerator.images.slots import ImageSlot
+
+    talk = generation.ImageGeneration(FakePainter(), ImageBudget(max_images=2))
+    cover = ImageSlot("a book's cover", aesthetic="book-covers", generate=True, generate_first=True)
+    other = ImageSlot("an odd photo", aesthetic="weird-stock", generate=True)
+    talk.reserve([cover, other])
+    rng = random_util.Rng(1)
+    wish = talk.wish(other, "photo", generation.FIRST, "a goose", rng)
+    first = talk.wish(cover, "cover", generation.FIRST, "a goose's memoir", rng)
+    assert wish is not None and first is not None and first.first and not wish.first
+    assert talk._grant(wish) and not talk._grant(wish)  # (the second would leave the cover none)
+    assert talk._grant(first) and not talk._grant(wish)

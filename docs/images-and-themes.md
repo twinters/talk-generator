@@ -205,10 +205,13 @@ number, a prompt) are numbers, symbols and code, so they suit a talk in any lang
 Every slide type has its layouts, and a slide never gets the layout of the slide before it when another one fits;
 some families have title and section slides of their own. Pictures get their theme's treatment, so that pictures
 from mixed sources share one look. Most stay as they are, or get a gentle tint: a slight warm or cool cast, a wash of
-the theme's paper or its accent. The strong filters are for the families made for them: grayscale in newspapers and
-Swiss posters, sepia on vintage paper, a duotone in a terminal's green or a cyanotype's blue now and then, black and
-white only for brutalist pictures in a box (never behind a slide's texts); neon's and dark minimal's only for the
-photos behind or across a whole slide. Frames, grain and a vignette come with some families, and some frame pictures
+the theme's paper or its accent. The strong filters are for the families made for them, and only for the photos
+behind a slide's texts, where a picture matters little (a statement's, a big number's): grayscale in newspapers and
+Swiss posters, sepia on vintage paper, a duotone in a terminal's green, a cyanotype's blue or neon's colours (black
+and white goes grey there); every other picture keeps its colours, so that funny pictures don't all look the same.
+A title slide shows a photo of the talk's world beside its title (its format's, a wedding toast's wedding, or its
+persona's), and a section divider and a dare now and then stand over a picture of what they're about. Frames, grain
+and a vignette come with some families, and some frame pictures
 their own way (a terminal's window, a sticker's border, tape). PowerPoint applies filters as picture effects, so the
 deck keeps the original picture ("Reset Picture" brings it back). Some families' headings get WordArt-style effects
 (1997 WordArt's rainbow, bent into a wave or an arch; neon's glow; brutalist's hard shadow), drawn as text effects,
@@ -223,8 +226,10 @@ computer has, at a size at which the texts fit in either.
 
 Slides animate as the 2019 template's do: two or three columns appear click by click, the one before dimming, a
 picture's frame with it. A slide of a list of things (figures, a quiz's options, levels, steps, an org chart's people,
-a tier list's tiers...) shows its things one by one, a click each, the punchline last, and a diagram's punchline
-appears on a click. A renderer that plays no clicks shows it all from the start;
+a tier list's tiers, a ranking's bars from the top down...) shows its things one by one, a click each, the
+punchline last, and a diagram's punchline appears on a click. By the slide's number, a small ring for every click
+fills on its click, so the presenter sees at a glance whether the next click brings more of the slide or the next
+one. A renderer that plays no clicks shows it all from the start;
 `talkgenerator.render.preview.steps_sheet(deck)` draws a deck's slides click by click.
 
 `talkgenerator check --theme random` checks themed talks, and also that their texts read on their backgrounds, fit

@@ -78,6 +78,7 @@ says what they cost.
 | `DISABLE_FACTS` | `1` switches the [real facts](language-models.md#real-facts) off |
 | `DISABLE_PICTURE_FIRST` | `1` keeps charts and diagrams as they are: without it, half of them try a picture first, in their place, under their title |
 | `DISABLE_PATTERN_BREAKS` | `1` keeps lists and diagrams as they are: without it, their punchline breaks the pattern now and then (an emoji alone, a few words, or a picture in its place) |
+| `DISABLE_TITLE_PICTURES` | `1` keeps title slides without a photo: without it, a talk's title slide shows a photo of its world beside its title (its format's or its persona's), searched from the talk's start |
 | `CONCEPTNET_API_URL` | A ConceptNet API of your own (*default: the public one, `https://api.conceptnet.io`*) |
 | `UNSPLASH_APP_NAME` | Your app's name at Unsplash, for the `utm_source` of the links to photographers (*default: `talkgenerator`*) |
 | `TALKGENERATOR_CACHE_DIR` | Where the cache of search answers goes (*default: your user cache folder*) |

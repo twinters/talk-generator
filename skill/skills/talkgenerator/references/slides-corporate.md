@@ -226,13 +226,13 @@ Three or four made-up figures on tiles, as on a dashboard, each a number and wha
 | --- | --- | --- |
 | `title` | 45 | the dashboard's title |
 | `number_1` | 10 | the first figure's number, with its unit if it has one |
-| `label_1` | 40 | what the first figure measures |
+| `label_1` | 32 | what the first figure measures, in a few words |
 | `number_2` | 10 | the second figure's number, with its unit if it has one |
-| `label_2` | 40 | what the second figure measures |
+| `label_2` | 32 | what the second figure measures, in a few words |
 | `number_3` | 10 | the third figure's number, with its unit if it has one |
-| `label_3` | 40 | what the third figure measures |
+| `label_3` | 32 | what the third figure measures, in a few words |
 | `number_4` | 10 | the fourth figure's number, with its unit if it has one (or empty, for none) |
-| `label_4` | 40 | what the fourth figure measures (or empty, for none) |
+| `label_4` | 32 | what the fourth figure measures, in a few words (or empty, for none) |
 
 Images: `background`
 
@@ -264,8 +264,8 @@ A made-up news story with a photo, as breaking news on television or on a newspa
 | Text | At most | What to write |
 | --- | --- | --- |
 | `outlet` | 30 | the made-up name of the newspaper or the channel |
-| `headline` | 70 | the headline |
-| `subheadline` | 70 | a line under the headline, with more of the story (or empty, for none) |
+| `headline` | 60 | the headline |
+| `subheadline` | 50 | a line under the headline, with more of the story (or empty, for none) |
 
 Images: `photo`
 
@@ -280,13 +280,13 @@ The talk's agenda: three to five items it will cover, numbered, which appear one
 | Text | At most | What to write |
 | --- | --- | --- |
 | `title` | 40 | the agenda's title |
-| `items` | 150 | three to five items, separated by \|, each at most 30 characters |
+| `items` | 150 | three to five items, separated by \|, each at most 36 characters |
 
 Images: none
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `agenda-corporate` | The all-hands' agenda: the parts it goes through, in order, from a welcome to Q&A | the default; `title`: the slide's title, as an all-hands deck's slide has it, such as 'Agenda'; `items`: three to five parts of the all-hands, in the order they come, separated by \|, each at most 30 characters; tags: agenda, agenda |
+| `agenda-corporate` | The all-hands' agenda: the parts it goes through, in order, from a welcome to Q&A | the default; `title`: the slide's title, as an all-hands deck's slide has it, such as 'Agenda'; `items`: three to five parts of the all-hands, in the order they come, separated by \|, each at most 36 characters; tags: agenda, agenda |
 
 ## `timeline`
 
@@ -501,15 +501,15 @@ An alignment chart, as Dungeons & Dragons sorts characters: nine things in a gri
 | Text | At most | What to write |
 | --- | --- | --- |
 | `title` | 45 | the alignment chart's title |
-| `lawful_good` | 32 | the lawful good one, in a few words |
-| `neutral_good` | 32 | the neutral good one, in a few words |
-| `chaotic_good` | 32 | the chaotic good one, in a few words |
-| `lawful_neutral` | 32 | the lawful neutral one, in a few words |
-| `true_neutral` | 32 | the true neutral one, in a few words |
-| `chaotic_neutral` | 32 | the chaotic neutral one, in a few words |
-| `lawful_evil` | 32 | the lawful evil one, in a few words |
-| `neutral_evil` | 32 | the neutral evil one, in a few words |
-| `chaotic_evil` | 32 | the chaotic evil one, in a few words: the punchline |
+| `lawful_good` | 26 | the lawful good one, a word or three |
+| `neutral_good` | 26 | the neutral good one, a word or three |
+| `chaotic_good` | 26 | the chaotic good one, a word or three |
+| `lawful_neutral` | 26 | the lawful neutral one, a word or three |
+| `true_neutral` | 26 | the true neutral one, a word or three |
+| `chaotic_neutral` | 26 | the chaotic neutral one, a word or three |
+| `lawful_evil` | 26 | the lawful evil one, a word or three |
+| `neutral_evil` | 26 | the neutral evil one, a word or three |
+| `chaotic_evil` | 26 | the chaotic evil one, a word or three: the punchline |
 
 Images: none
 
@@ -525,13 +525,13 @@ Made-up reviews, with stars: two or three reviewers' ratings (one to five stars)
 | --- | --- | --- |
 | `title` | 45 | the slide's title, such as what people are saying (or empty, for none) |
 | `stars_1` | 1 | how many stars the first reviewer gives, from 1 to 5: `1`, `2`, `3`, `4`, `5` |
-| `review_1` | 70 | what the first reviewer wrote, in one short sentence |
+| `review_1` | 60 | what the first reviewer wrote, in one short sentence |
 | `reviewer_1` | 30 | who the first reviewer is: a real first name, a comma, and a detail (or empty, for none) |
 | `stars_2` | 1 | how many stars the second reviewer gives, from 1 to 5: `1`, `2`, `3`, `4`, `5` |
-| `review_2` | 70 | what the second reviewer wrote, in one short sentence |
+| `review_2` | 60 | what the second reviewer wrote, in one short sentence |
 | `reviewer_2` | 30 | who the second reviewer is: a real first name, a comma, and a detail (or empty, for none) |
 | `stars_3` | 1 | how many stars the third reviewer gives, from 1 to 5: `1`, `2`, `3`, `4`, `5` (or empty, for any) |
-| `review_3` | 70 | what the third reviewer wrote, in one short sentence (or empty, for none) |
+| `review_3` | 60 | what the third reviewer wrote, in one short sentence (or empty, for none) |
 | `reviewer_3` | 30 | who the third reviewer is: a real first name, a comma, and a detail (or empty, for none) |
 
 Images: none

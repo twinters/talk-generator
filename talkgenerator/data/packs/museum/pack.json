@@ -4,7 +4,7 @@
   "version": 2,
   "versions": {
     "1": "2026-11-12: the first texts of museum tours, a part of the arc a grammar: the title, the welcome, the masterpiece, the artist, the eras, the artefact and the gift shop, and the free slides' provocations (D79)",
-    "2": "2026-11-13: shorter texts for the lower field limits (D80): the masterpiece's labels (a medium and a year now, not a painting's name and medium) and titles, the artefacts, the artist's life, facts and posts, the art movements (whose Post- and Neo-isms give way to a long topic), the gift shop and the welcome; and the presenter's job on a line of its own under their name"
+    "2": "2026-11-13: shorter texts for the lower field limits (D80): the masterpiece's labels (a medium and a year now, not a painting's name and medium) and titles, the artefacts, the artist's life, facts and posts, the art movements (whose Post- and Neo-isms give way to a long topic), the gift shop and the welcome; and the presenter's job on a line of its own under their name; and shorter artefact headlines and subheadlines, and gift shop labels"
   },
   "slots": {
     "title.talk_title": {"variables": ["seed", "museum", "artist"], "field": "title.title"},

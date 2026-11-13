@@ -229,13 +229,13 @@ Three or four made-up figures on tiles, as on a dashboard, each a number and wha
 | --- | --- | --- |
 | `title` | 45 | the dashboard's title |
 | `number_1` | 10 | the first figure's number, with its unit if it has one |
-| `label_1` | 40 | what the first figure measures |
+| `label_1` | 32 | what the first figure measures, in a few words |
 | `number_2` | 10 | the second figure's number, with its unit if it has one |
-| `label_2` | 40 | what the second figure measures |
+| `label_2` | 32 | what the second figure measures, in a few words |
 | `number_3` | 10 | the third figure's number, with its unit if it has one |
-| `label_3` | 40 | what the third figure measures |
+| `label_3` | 32 | what the third figure measures, in a few words |
 | `number_4` | 10 | the fourth figure's number, with its unit if it has one (or empty, for none) |
-| `label_4` | 40 | what the fourth figure measures (or empty, for none) |
+| `label_4` | 32 | what the fourth figure measures, in a few words (or empty, for none) |
 
 Images: `background`
 
@@ -268,8 +268,8 @@ A made-up news story with a photo, as breaking news on television or on a newspa
 | Text | At most | What to write |
 | --- | --- | --- |
 | `outlet` | 30 | the made-up name of the newspaper or the channel |
-| `headline` | 70 | the headline |
-| `subheadline` | 70 | a line under the headline, with more of the story (or empty, for none) |
+| `headline` | 60 | the headline |
+| `subheadline` | 50 | a line under the headline, with more of the story (or empty, for none) |
 
 Images: `photo`
 

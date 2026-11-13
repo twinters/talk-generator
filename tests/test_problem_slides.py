@@ -125,7 +125,8 @@ def test_a_problem_slide_is_drawn_with_texts_pictures_and_shapes(images):
         assert {"kicker", "problem", "detail", "kicker sticker"} <= set(roles), roles
         # (the sticker under its heading, the problem under the line, and only the line on a click)
         assert roles.index("kicker sticker") < roles.index("kicker")
-        assert [element.role for element in slide.elements if getattr(element, "appears_on_click", None)] == ["detail"]
+        clicked = [element.role for element in slide.elements if getattr(element, "appears_on_click", None)]
+        assert clicked == ["detail", "build dot 1"]  # (and its build dot: D80)
         assert check_design(deck) == [], (seed, picture, slide.layout)
     assert seen == {"v5/problem", "v5/problem-band", "v5/problem-split"}
 

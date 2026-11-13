@@ -106,7 +106,12 @@ class Lookup:
 
 
 def lookup(topic: str, talk_format: Format | None, persona: Persona | None, rng: random_util.Rng) -> Lookup | None:
-    """Start looking up the talk's title picture (see Lookup), if its format or persona has a world; else None."""
+    """Start looking up the talk's title picture (see Lookup), if its format or persona has a world; else None (and
+    with DISABLE_TITLE_PICTURES, as offline tests have it, whose searches they fake)."""
+    from talkgenerator import settings  # (here: it reads the environment's settings, which tests change)
+
+    if settings.is_source_disabled("TITLE_PICTURES"):
+        return None
     world = scene(talk_format, persona)
     if not world or not topic.strip():
         return None

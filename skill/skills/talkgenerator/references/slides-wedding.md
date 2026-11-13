@@ -278,7 +278,7 @@ A dare, on a card: a real challenge for the presenter for the rest of the talk (
 | `dare` | 90 | the challenge, said to the presenter, for the rest of the talk or the next few slides: an accent or a voice, a gesture on every slide, a word to work into every slide, a rule such as speaking only in questions; hard to keep up, harmless, and for the presenter alone (or empty, for none) |
 | `audience` | 90 | what the presenter has the whole audience do, said to them: a show of hands, a call and response (when the presenter says a word, everyone answers with another), the front row standing up, a sound everyone makes; harmless, fun to join in, and singling nobody out (or empty, for none) |
 
-Images: none
+Images: `background`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
@@ -309,13 +309,13 @@ Made-up reviews, with stars: two or three reviewers' ratings (one to five stars)
 | --- | --- | --- |
 | `title` | 45 | the slide's title, such as what people are saying (or empty, for none) |
 | `stars_1` | 1 | how many stars the first reviewer gives, from 1 to 5: `1`, `2`, `3`, `4`, `5` |
-| `review_1` | 70 | what the first reviewer wrote, in one short sentence |
+| `review_1` | 60 | what the first reviewer wrote, in one short sentence |
 | `reviewer_1` | 30 | who the first reviewer is: a real first name, a comma, and a detail (or empty, for none) |
 | `stars_2` | 1 | how many stars the second reviewer gives, from 1 to 5: `1`, `2`, `3`, `4`, `5` |
-| `review_2` | 70 | what the second reviewer wrote, in one short sentence |
+| `review_2` | 60 | what the second reviewer wrote, in one short sentence |
 | `reviewer_2` | 30 | who the second reviewer is: a real first name, a comma, and a detail (or empty, for none) |
 | `stars_3` | 1 | how many stars the third reviewer gives, from 1 to 5: `1`, `2`, `3`, `4`, `5` (or empty, for any) |
-| `review_3` | 70 | what the third reviewer wrote, in one short sentence (or empty, for none) |
+| `review_3` | 60 | what the third reviewer wrote, in one short sentence (or empty, for none) |
 | `reviewer_3` | 30 | who the third reviewer is: a real first name, a comma, and a detail (or empty, for none) |
 
 Images: none

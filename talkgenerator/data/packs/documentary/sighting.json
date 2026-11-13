@@ -22,20 +22,20 @@
   ],
   "headline": [
     "Rare {seed.bare} spotted near a car park",
-    "Scientists stunned by first footage of {seed.generic}",
-    "{species} seen for the first time in 40 years",
-    "Hiker waits nine months to photograph {seed.generic}",
+    "Scientists stunned by first {seed.bare} footage",
+    "First {species} sighting in 40 years",
+    "Hiker waits 9 months to photograph {seed.generic}",
     "Wild {seed.bare} found living in a library",
-    "Experts confirm: {species} has been watching us",
+    "Experts: {species} has been watching us",
     "Town celebrates as {species} returns"
   ],
   "subheadline": [
     "Experts urge the public not to make eye contact",
     "Camera crew 'very tired' but 'deeply moved'",
-    "Footage shows it doing almost nothing. Experts call it 'extraordinary'",
+    "It does almost nothing. Experts: 'extraordinary'",
     "Residents asked to keep their biscuits indoors",
-    "'It looked right at me,' says a ranger, still shaken",
-    "Sighting confirmed by two birdwatchers and a confused dog",
-    "Scientists hope to learn what it wants and why it wants our sandwiches"
+    "'It looked right at me,' says a shaken ranger",
+    "Confirmed by two birdwatchers and a confused dog",
+    "Scientists ask what it wants with our sandwiches"
   ]
 }

@@ -322,6 +322,7 @@ def test_the_required_roles_are_what_the_slide_classes_require():
         slides.WallOfTextSlide: "wall_of_text",
         slides.AlignmentChartSlide: "alignment_chart",
         slides.RedFlagsSlide: "red_flags",
+        slides.TrafficFlagsSlide: "traffic_flags",
         slides.ReviewsSlide: "reviews",
         slides.ErrorMessageSlide: "error_message",
         slides.ProblemSlide: "problem",

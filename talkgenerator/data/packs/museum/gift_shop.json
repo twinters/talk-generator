@@ -8,21 +8,21 @@
     "Today in the gift shop"
   ],
   "item": [
-    "A {seed.bare} tote bag",
+    "{seed.bare.cap} tote bag",
     "A pencil",
     "A postcard of a postcard",
     "A tea towel of the masterpiece",
-    "A {seed.bare} fridge magnet",
+    "{seed.bare.cap} magnet",
     "One (1) bookmark",
     "A very small umbrella",
     "The audio guide, to keep",
-    "A {seed.bare} snow globe"
+    "{seed.bare.cap} keyring"
   ],
   "item_punchline": [
-    "A replica of {seed.one}",
-    "The masterpiece itself (it's a copy)",
+    "{seed.bare.cap} replica",
+    "The masterpiece (it's a copy)",
     "Our guide, for an afternoon",
-    "Real {seed.bare}, no refunds",
+    "{seed.generic.cap}, as is",
     "The exit (it costs extra)",
     "A selfie with the guard",
     "The museum. Make an offer."
