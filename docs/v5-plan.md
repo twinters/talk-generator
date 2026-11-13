@@ -1829,6 +1829,8 @@ and measures without judging (`measure.py`): the cuts each talk's texts got, and
   whole up to what its slides held before (`TextField.room`, by kind and field in `kinds._ROOM`, v5 `4769664`'s
   lengths: a slide's title 60, a statement 140, a quote 160; a talk's title 60 and the presenter's job 56, which every
   title layout holds in every family, `test_the_longest_title_and_job_fit_every_title_layout`; an agenda's item 45;
+  an error dialog's button 20, or 14 for one word, as a compound that long fits no theme's button, and one cut ends
+  in an ellipsis without the talk's language's little words hanging, where the first live talk's was "Verkoop de";
   a meme's caption what its box holds at 30 pixels, as its captions shrink to 28, `Recipe.rooms`). A cut ends where a
   sentence, a clause or a comma does, if that keeps a third of the text ("Wim Fietsen", of a reviewer "Wim Fietsen,
   de enige die ooit een fiets repareerde..."); one between words, now rare, ends in an ellipsis, so that it reads as

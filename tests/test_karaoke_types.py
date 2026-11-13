@@ -16,7 +16,7 @@ from talkgenerator.design import engine, themes
 from talkgenerator.models import classic
 from talkgenerator.models.deck import ShapeElement, TextElement
 from talkgenerator.models.plan import SlidePlan
-from talkgenerator.plan import external, languages
+from talkgenerator.plan import external, kinds, languages
 from talkgenerator.plan.kinds import KINDS, Recipe
 from talkgenerator.plan.realize import length_limit, realize
 from talkgenerator.render import preview
@@ -111,8 +111,8 @@ def _longest(kind, word="Expectation"):
     if kind == "wall_of_text":  # (as many points as a wall takes, each 140 characters)
         point = " ".join([word] * 14)[:140].strip()
         texts["points"] = " | ".join([point] * slides.WALL_POINTS)
-    if kind == "error_message":  # (three buttons)
-        texts["buttons"] = " | ".join([word[:14]] * 3)
+    if kind == "error_message":  # (three buttons, each as long as one is kept whole: D80)
+        texts["buttons"] = " | ".join([" ".join([word] * 3)[: kinds.ERROR_BUTTON_ROOM].strip()] * 3)
     if kind == "tier_list":
         for name in ("a_tier", "b_tier", "c_tier", "f_tier"):
             limit = length_limit(next(text for text in KINDS[kind].texts if text.name == name))
@@ -465,7 +465,7 @@ def test_planned_slides_come_out_as_planned(images):
     buttons = "Retry|Ignore|Panic and run to the hills"  # (a button too long: cut, with no "to" left hanging)
     slide, _ = _realized("error_message", {"message": "Cats not found.", "buttons": buttons})
     content = slide.to_deck_slide()
-    assert [content.element(f"button_{index}").text for index in (1, 2, 3)] == ["Retry", "Ignore", "Panic and run"]
+    assert [content.element(f"button_{index}").text for index in (1, 2, 3)] == ["Retry", "Ignore", "Panic and run…"]
     reviews = {"stars_1": "5", "review_1": "Lovely.", "reviewer_1": "Ann", "stars_2": "1", "review_2": "Bit me."}
     slide, _ = _realized("reviews", reviews)
     assert slide.to_deck_slide().element("stars_2").text == "1/5"

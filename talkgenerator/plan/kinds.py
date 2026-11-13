@@ -900,7 +900,8 @@ def _reviews(texts: Mapping[str, str | None], images: Mapping[str, Any], languag
 
 
 def _error_message(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
-    buttons = [_button(button) for button in slides.listed_items(texts["buttons"], slides.ERROR_BUTTONS)]
+    little = _HANGING | _little_words(language)
+    buttons = [_button(button, little) for button in slides.listed_items(texts["buttons"], slides.ERROR_BUTTONS)]
     if len(buttons) < 2:
         raise ValueError("an error message needs two buttons or more")
     return slides.ErrorMessageSlide(texts.get("title"), texts["message"], texts.get("code"), *buttons)
@@ -950,20 +951,32 @@ def _before_after(texts: Mapping[str, str | None], images: Mapping[str, Any], la
     )
 
 
-def _button(text: str) -> str:
-    """A dialog's button as long as one may be: cut between words, without a little word left hanging at its end
-    ("Become the", of "Become the plant")."""
-    cut = _shortened(text, ERROR_BUTTON)
-    if cut == text:
+def _button(text: str, little: frozenset[str] | None = None) -> str:
+    """A dialog's button: whole, up to ERROR_BUTTON_ROOM (or ERROR_BUTTON for one word, as a compound that long fits
+    no theme's button), or else cut between words to that, without a little word of the talk's language left hanging
+    at its end ("Become the plant…", of "Become the plant and run away"; "Verkoop de fiets…", of a Dutch "Verkoop de
+    fiets en vlucht", D80), and with an ellipsis, so that it reads as meant."""
+    room = ERROR_BUTTON_ROOM if " " in text.strip() else ERROR_BUTTON
+    if len(text) <= room:
         return text
-    words = cut.split()
-    while len(words) > 1 and words[-1].lower() in _HANGING:
+    words = _shortened(text, room).split()
+    while len(words) > 1 and words[-1].lower().strip(".,;:!?") in (little or _HANGING):
         words.pop()
-    return " ".join(words)
+    return " ".join(words).rstrip(".,;:!?") + "…"
 
 
-# Little words a cut text shouldn't end on
+# Little words a cut text shouldn't end on (and the talk's language's: _little_words)
 _HANGING: Final = frozenset("a an the of to and or with for in on at by my your our their its from as".split())
+
+
+def _little_words(language: Language | None) -> frozenset[str]:
+    """The little words of the language (NLTK's list of them), or none where they can't be had."""
+    if language is None:
+        return frozenset()
+    try:
+        return language_util.stopwords(language.stopwords)
+    except (LookupError, OSError, ValueError):
+        return frozenset()
 
 
 def _shortened(text: str, length: int) -> str:
@@ -1098,6 +1111,7 @@ WALL_TEXT: Final = 2600  # how long a wall of text's points may be, together (th
 DARE: Final = 90  # how long a dare may be, for the presenter or for the audience
 CALLBACK: Final = 60  # how long the closing slide's note of which earlier picture it calls back to may be
 ERROR_BUTTON: Final = 14  # how long a fake error message's button may be (they're written as one text)
+ERROR_BUTTON_ROOM: Final = 20  # (and how long one is kept whole: as long as one could be before D80)
 # How long a problem slide's heading, its problem and the line under it may be (D69): a few words, which the user
 # found much funnier than a sentence or two (2026-11-10, D73)
 PROBLEM_KICKER: Final = 28
