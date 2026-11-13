@@ -23,11 +23,13 @@ from talkgenerator.models.theme import (
     BackgroundPattern,
     BackgroundStyle,
     Decoration,
+    EntranceEffect,
     FilterScope,
     Fonts,
     ImageFilter,
     ImageFrame,
     Motif,
+    Motion,
     Palette,
     PatternKind,
     TextEffect,
@@ -139,6 +141,11 @@ class Family:
     # Sets of decoration its members pick from instead of its motif alone (see Variant): a kindergarten's crayon
     # drawings, sticker book, school notebook or paper cut-outs, so that its decks differ more than by their colours
     variants: tuple[Variant, ...] = ()
+    # How much its members' slides move as they're presented (D82: see talkgenerator.design.entrances), each with how
+    # likely it is (a calm family's not at all, a family for laughs' often everything), and the entrance effects they
+    # use when they do
+    motion: tuple[tuple[Motion, float], ...] = (("none", 1.0),)
+    entrances: tuple[EntranceEffect, ...] = ()
     extreme: bool = False
     weight: float = 1.0  # how often the random mix picks it
     description: str = ""  # what its members look like, for a settings menu
@@ -149,6 +156,7 @@ FAMILIES: Final[dict[str, Family]] = {
     for family in (
         Family(
             "clean keynote",
+            motion=(("none", 1.0),),
             description="light and calm: a sans-serif, lots of room, a short accent bar over the titles",
             harmony="analogous",
             fonts=(("Calibri", "Calibri"), ("Arial", "Arial"), ("Trebuchet MS", "Calibri")),
@@ -163,6 +171,7 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "dark minimal",
+            motion=(("none", 1.0),),
             description="light text on a near-black background, a thin line by the titles, now and then grayscale "
             "backdrops",
             dark=True,
@@ -180,6 +189,8 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "corporate",
+            motion=(("none", 0.75), ("some", 0.25)),
+            entrances=("fly_in", "wipe", "zoom", "fade"),
             description="blues and greys, a band along the top, a slanted panel on its title slide, framed pictures "
             "with a cool cast",
             hues=(200, 230),
@@ -195,6 +206,7 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "academic",
+            motion=(("none", 1.0),),
             description="a lecture's slides: serif type, titles on a band, a row of dots counting the slides",
             hues=(35, 55),
             harmony="mono",
@@ -211,6 +223,8 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "startup",
+            motion=(("none", 0.4), ("some", 0.6)),
+            entrances=("zoom", "float_in", "rise_up", "grow_turn", "fly_in"),
             description="bold type, bright colours, soft blobs in the corners and rounded pictures",
             harmony="triadic",
             accent_saturation=(0.75, 0.95),
@@ -227,6 +241,8 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "vintage paper",
+            motion=(("none", 0.7), ("some", 0.3)),
+            entrances=("fade", "float_in", "swivel", "wipe"),
             description="parchment in an ornamented double frame, serif type, and sepia polaroids with soft grain",
             hues=(32, 48),
             harmony="mono",
@@ -248,6 +264,8 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "kids",
+            motion=(("none", 0.2), ("some", 0.6), ("lots", 0.2)),
+            entrances=("bounce", "drop", "pinwheel", "zoom", "boomerang", "grow_turn"),
             description="a kindergarten's, in bright colours on pastel paper: crayon drawings with bunting and a sun, "
             "a sticker book, a school notebook with doodles, or paper cut-outs",
             palettes=(
@@ -325,6 +343,8 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "brutalist",
+            motion=(("none", 0.4), ("some", 0.4), ("lots", 0.2)),
+            entrances=("fly_in", "zoom", "drop", "wipe", "flip"),
             description="loud colours, heavy capitals, thick black outlines, hard shadows and black-and-white "
             "backdrops",
             background_saturation=(0.0, 0.9),
@@ -344,6 +364,8 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "neon",
+            motion=(("none", 0.4), ("some", 0.5), ("lots", 0.1)),
+            entrances=("zoom", "spiral_in", "fly_in", "flip", "fade"),
             description="glowing headings in neon colours on a dark background, a striped sun and a grid floor on "
             "its big slides",
             dark=True,
@@ -366,6 +388,8 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "hacker terminal",
+            motion=(("none", 0.5), ("some", 0.5)),
+            entrances=("wipe", "fade", "fly_in"),
             description="green or amber phosphor on black, in a monospace font: a terminal window, scanlines, "
             "prompts and a status line",
             dark=True,
@@ -410,6 +434,8 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "blueprint",
+            motion=(("none", 0.6), ("some", 0.4)),
+            entrances=("wipe", "fade", "zoom"),
             description="white lines on a blueprint's blue grid, technical capitals, dimension lines, a title block "
             "and figure plates, with a red pencil's corrections",
             dark=True,
@@ -453,6 +479,8 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "chalkboard",
+            motion=(("none", 0.5), ("some", 0.5)),
+            entrances=("wipe", "fade", "float_in"),
             description="chalk on a dark green or slate board in a wooden frame: handwriting, chalk underlines, "
             "doodles, and pictures taped on",
             dark=True,
@@ -493,6 +521,8 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "newspaper",
+            motion=(("none", 0.4), ("some", 0.5), ("lots", 0.1)),
+            entrances=("pinwheel", "zoom", "fly_in", "drop"),
             description="a newspaper's front page: newsprint, a masthead with rules, bold serif headlines, red "
             "kickers and grayscale photos",
             palettes=(
@@ -531,6 +561,7 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "Swiss poster",
+            motion=(("none", 1.0),),
             description="the International Typographic Style: a grotesk flush left, a strict grid, black rules, "
             "one red block per slide, black-and-white photos",
             palettes=(
@@ -575,6 +606,8 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "sticky notes",
+            motion=(("none", 0.4), ("some", 0.6)),
+            entrances=("drop", "swivel", "fly_in", "boomerang", "rise_up"),
             description="a workshop on a whiteboard: marker headings, sticky notes with ideas scribbled on them and "
             "dot-vote stickers, pictures held up by magnets, a marker tray along the bottom",
             palettes=(  # (a whiteboard, its markers: Open Color's)
@@ -613,6 +646,8 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "90s desktop",
+            motion=(("none", 0.2), ("some", 0.5), ("lots", 0.3)),
+            entrances=("fly_in", "bounce", "spiral_in", "wipe", "swivel", "pinwheel"),
             description="a 1990s computer: the slide a bevelled grey window with a title bar, a taskbar with the "
             "slide's number in its tray, pictures in windows of their own, and big slides as a dialog box on the "
             "desktop, with icons and the mouse's pointer",
@@ -650,6 +685,8 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "corkboard",
+            motion=(("none", 0.4), ("some", 0.6)),
+            entrances=("drop", "swivel", "fly_in", "rise_up"),
             description="a corkboard in a wooden frame: the title on a pinned index card, pictures as polaroids, pinned "
             "or taped up, notes and a red string between pins",
             palettes=(  # (cork, and the board's pins)
@@ -688,6 +725,8 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "spreadsheet",
+            motion=(("none", 0.6), ("some", 0.4)),
+            entrances=("wipe", "fade", "fly_in"),
             description="a spreadsheet: a grid of cells with its columns' letters and its rows' numbers, the title a "
             "selected cell, pictures with selection handles, the slide's number on a sheet's tab",
             palettes=(
@@ -726,6 +765,8 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "Y2K",
+            motion=(("none", 0.2), ("some", 0.5), ("lots", 0.3)),
+            entrances=("spiral_in", "pinwheel", "zoom", "swivel", "flip", "bounce"),
             description="the year 2000's: chrome headings on pastel gradients, sparkles and glossy bubbles, a CD, "
             "pictures in white rounded frames, the slide's number on a glossy pill",
             hues=(170, 330),
@@ -745,6 +786,8 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "70s retro",
+            motion=(("none", 0.4), ("some", 0.5), ("lots", 0.1)),
+            entrances=("curve_up", "swivel", "float_in", "boomerang", "rise_up"),
             description="the 1970s: browns, oranges and mustard on cream, rounded stripes turning a corner, a sunset of "
             "stripes on the big slides, pictures as prints with round corners",
             palettes=(
@@ -783,6 +826,8 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "glossy magazine",
+            motion=(("none", 0.85), ("some", 0.15)),
+            entrances=("fade", "float_in", "rise_up"),
             description="a glossy magazine: big serif headlines, a page's folio, giant quotation marks by a quote, "
             "pictures on a block of colour, and an issue's roundel on the big slides",
             palettes=(
@@ -821,6 +866,8 @@ FAMILIES: Final[dict[str, Family]] = {
         # The extremes, for laughs
         Family(
             "1997 WordArt",
+            motion=(("none", 0.1), ("some", 0.4), ("lots", 0.5)),
+            entrances=("spiral_in", "pinwheel", "bounce", "boomerang", "flip", "swivel", "curve_up"),
             description="rainbow WordArt headings bent into waves and arches, on a loud gradient, with starbursts",
             background_saturation=(0.8, 1.0),
             background_lightness=(0.35, 0.55),
@@ -840,6 +887,8 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "Comic Sans everywhere",
+            motion=(("none", 0.1), ("some", 0.4), ("lots", 0.5)),
+            entrances=("bounce", "zoom", "drop", "flip", "boomerang", "fly_in"),
             description="Comic Sans, outlined, on solid shadows, everywhere: halftone dots, speech balloons and POW",
             harmony="triadic",
             background_saturation=(0.5, 0.8),
@@ -857,6 +906,8 @@ FAMILIES: Final[dict[str, Family]] = {
         ),
         Family(
             "clip-art corporate",
+            motion=(("none", 0.1), ("some", 0.4), ("lots", 0.5)),
+            entrances=("fly_in", "bounce", "spiral_in", "pinwheel", "swivel", "boomerang", "curve_up", "grow_turn"),
             description="a 1990s office deck: gradients, frames, soft shadows and a swoosh along the bottom",
             hues=(200, 220),
             background_saturation=(0.3, 0.5),
@@ -1059,6 +1110,9 @@ def member(family: Family) -> Theme:
         patterns = family.patterns if variant.patterns is None else variant.patterns
         pattern = _pattern(_weighted(patterns), theme.palette)
         tint, tint_opacity = _tint(_weighted(family.image_tints), theme.palette)
+    # How much its slides move, from a stream of its own too (D82), which takes nothing from the rest
+    with random_util.use(own.child("motion")):
+        motion = _weighted(family.motion) if family.entrances else "none"
     # And the open fonts after everything else, for the same reason: they take the place of the installed pair
     fonts = theme.fonts
     chance = OPEN_FONT_CHANCE if family.open_font_chance is None else family.open_font_chance
@@ -1084,6 +1138,8 @@ def member(family: Family) -> Theme:
             "motif_variant": motif_variant,
             "pattern": pattern,
             "fonts": fonts,
+            "motion": motion,
+            "entrances": family.entrances if motion != "none" else (),
         }
     )
 

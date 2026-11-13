@@ -523,7 +523,9 @@ def test_themed_columns_appear_click_by_click_too(images):
         for index, slide in enumerate((three_columns, two_columns)):
             slide.add_source("Test", "https://example.com")  # (a credits line, which stays as it is)
             slide_deck.add_slide(index, slide)
-        slide_deck.theme = themes.pick(families[seed % len(families)], random_util.Rng(seed))
+        # (in a theme that doesn't move: what comes in with an entrance effect has tests of its own, D82)
+        theme = themes.pick(families[seed % len(families)], random_util.Rng(seed))
+        slide_deck.theme = theme.model_copy(update={"motion": "none", "entrances": ()})
         deck = slide_deck.to_deck()
         output = io.BytesIO()
         render_pptx(deck, images=slide_deck.image_store()).save(output)

@@ -15,7 +15,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Final, Literal
 
-from talkgenerator.design import color, fit, fonts, geometry, layers, themes, treatments
+from talkgenerator.design import color, entrances, fit, fonts, geometry, layers, themes, treatments
 from talkgenerator.models import classic
 from talkgenerator.models.deck import (
     DECORATION,
@@ -527,7 +527,7 @@ def lay_out_slide(
         if isinstance(element, ImageElement) and element is not background and element.role not in placement.boxes
     ]
     credits = _without_credits_of(slide.credits, left_out)
-    return slide.model_copy(
+    laid_out = slide.model_copy(
         update={
             "layout": placement.layout,
             "elements": tuple(elements),
@@ -540,6 +540,9 @@ def lay_out_slide(
             ),
         }
     )
+    # (what comes in with an entrance effect, in a theme that moves: D82; from a stream of its own, which takes nothing
+    # from the layout's)
+    return entrances.assign(laid_out, theme, rng.child("entrances"))
 
 
 # BUILD DOTS (D80): a small ring for every click of a slide, which fills on its click, by the slide's number, so that

@@ -38,6 +38,7 @@ from talkgenerator.models.deck import (
     Deck,
     DeckSlide,
     DiagramElement,
+    Entrance,
     ImageElement,
     ImageTreatment,
     ShapeElement,
@@ -112,6 +113,8 @@ def draw_elements(ppt_slide: Slide, slide: DeckSlide, theme: Theme, *, images: I
     for with this too, on the template's blank slide.)"""
     drawn: dict[str, list[Any]] = {}  # the shapes each element is drawn with (and what belongs to it), by its role
     clicks: dict[int, list[Any]] = {}  # the shapes that appear on each click
+    entrances: dict[int, Entrance] = {}  # how shapes come in, by their ids, where they have an entrance effect (D82)
+    entering: list[tuple[Any, Entrance]] = []  # the shapes that come in so as the slide comes up
     for element in slide.elements:
         before = {shape.shape_id for shape in ppt_slide.shapes}
         try:
@@ -132,11 +135,18 @@ def draw_elements(ppt_slide: Slide, slide: DeckSlide, theme: Theme, *, images: I
         click = reveal.click_of(slide, element)
         if click:
             clicks.setdefault(click, []).extend(shapes)
+        entrance = getattr(element, "entrance", None)
+        if entrance is not None:
+            entrances.update(dict.fromkeys((shape.shape_id for shape in shapes), entrance))
+            column = reveal.column_of(slide, element)
+            if not click and (column is None or not reveal.column_click(slide, column)):
+                entering += [(shape, entrance) for shape in shapes]
     columns = reveal.COLUMNS.get(slide.type, 0)  # (click by click, as in the 2019 template: animation.reveal_columns)
     if columns:  # (each its picture or text, with what the picture's treatment lays on it, and its caption)
         animation.reveal_columns(
             ppt_slide,
             [drawn.get(f"content_{index}", []) + drawn.get(f"caption_{index}", []) for index in range(1, columns + 1)],
+            entrances,
         )
     if clicks:
         # (a chart's or a diagram's own clicks come first, as its own steps: what appears on one of those, such as a
@@ -144,10 +154,11 @@ def draw_elements(ppt_slide: Slide, slide: DeckSlide, theme: Theme, *, images: I
         own = max((_own_clicks(element) for element in slide.elements), default=0)
         later = []
         for number in sorted(clicks):
-            if number > own or not animation.join_click(ppt_slide, number, clicks[number]):
+            if number > own or not animation.join_click(ppt_slide, number, clicks[number], entrances):
                 later.append(clicks[number])
         if later:
-            animation.reveal_clicks(ppt_slide, later)
+            animation.reveal_clicks(ppt_slide, later, entrances)
+    animation.enter(ppt_slide, entering)  # (what comes in as the slide comes up, before its first click: D82)
 
 
 def _own_clicks(element: Any) -> int:

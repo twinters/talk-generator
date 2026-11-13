@@ -7,7 +7,9 @@ A slide can have several of these, each adding its clicks after those the slide 
   elements of a deck that appear on a click of their own (a quiz's answer);
 - columns that fade in click by click, the one before dimming, as the 2019 template's column slides have them (a
   themed deck's columns);
-- a layout's animation, copied onto a slide made from it (the 2019 template's columns, which appear click by click).
+- a layout's animation, copied onto a slide made from it (the 2019 template's columns, which appear click by click);
+- shapes that come in with one of PowerPoint's entrance effects (D82: talkgenerator.render.entrance_effects), as the
+  slide comes up, each after its delay, or on their click instead of fading in.
 And its videos play by themselves, looping and without sound, the way the gifs they stand in for do: as the effect
 that shows them plays, or as the slide comes up if they're there from the start.
 In the editor, and in viewers that don't play animations, everything simply shows, and a video shows its poster frame.
@@ -25,6 +27,9 @@ from typing import Any, Final, Literal
 from pptx.oxml import parse_xml
 from pptx.oxml.ns import nsdecls, qn
 
+from talkgenerator.models.deck import Entrance
+from talkgenerator.models.theme import EntranceEffect
+from talkgenerator.render.entrance_effects import TEMPLATES
 from talkgenerator.util import video_util
 
 # The main sequence: what happens on clicks, or by itself (time node 2, the first in the root's list)
@@ -93,18 +98,8 @@ _CATEGORY_BUILD: Final = (
 
 # SHAPES
 
-# The shape appears, fading in in half a second (PowerPoint's preset 10, "Fade")
-_FADE_IN: Final = (
-    '<p:par><p:cTn id="0" presetID="10" presetClass="entr" presetSubtype="0" fill="hold" grpId="{group}" '
-    'nodeType="{node}"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>'
-    '<p:set><p:cBhvr><p:cTn id="0" dur="1" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst></p:cTn>'
-    '<p:tgtEl><p:spTgt spid="{spid}"/></p:tgtEl>'
-    "<p:attrNameLst><p:attrName>style.visibility</p:attrName></p:attrNameLst></p:cBhvr>"
-    '<p:to><p:strVal val="visible"/></p:to></p:set>'
-    '<p:animEffect transition="in" filter="fade"><p:cBhvr><p:cTn id="0" dur="500"/>'
-    '<p:tgtEl><p:spTgt spid="{spid}"/></p:tgtEl></p:cBhvr></p:animEffect>'
-    "</p:childTnLst></p:cTn></p:par>"
-)
+# The shape appears, fading in in half a second (PowerPoint's preset 10, "Fade"), after its delay
+_FADE_IN: Final = TEMPLATES["fade"]
 
 # The shape dims to half its opacity until the slide ends (PowerPoint's preset 9, "Transparency"), as the 2019
 # template's columns do when the next one appears
@@ -122,15 +117,17 @@ _DIM: Final = (
 # How a shape with text builds for one of its effects: as one object, its text with it
 _SHAPE_BUILD: Final = '<p:bldP spid="{spid}" grpId="{group}" animBg="1"/>'
 
-Effect = Literal["appear", "dim"]
+# What happens to a shape in a step: it fades in (appear), dims, or comes in with an entrance effect (D82)
+Effect = Literal["appear", "dim"] | EntranceEffect
 _EFFECTS: Final[dict[str, str]] = {"appear": _FADE_IN, "dim": _DIM}
+_EFFECTS.update((effect, template) for effect, template in TEMPLATES.items())
 
 # VIDEOS
 
 # A video plays from its start (PowerPoint's "Play" media effect, preset 1), for as long as it lasts
 _PLAY: Final = (
     '<p:par><p:cTn id="0" presetID="1" presetClass="mediacall" presetSubtype="0" fill="hold" '
-    'nodeType="{node}"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>'
+    'nodeType="{node}"><p:stCondLst><p:cond delay="{delay}"/></p:stCondLst><p:childTnLst>'
     '<p:cmd type="call" cmd="playFrom(0.0)"><p:cBhvr><p:cTn id="0"{duration} fill="hold"/>'
     '<p:tgtEl><p:spTgt spid="{spid}"/></p:tgtEl></p:cBhvr></p:cmd>'
     "</p:childTnLst></p:cTn></p:par>"
@@ -183,57 +180,76 @@ def reveal_chart(slide: Any, chart_frame: Any, spec: Any) -> None:
 def reveal_shapes(slide: Any, shapes: Sequence[Any]) -> None:
     """Have the shapes appear together on a click, fading in."""
     if shapes:
-        _add_click(slide, [("appear", shape) for shape in shapes])
+        _add_click(slide, [("appear", shape, 0) for shape in shapes])
         _settle(slide)
 
 
-def reveal_clicks(slide: Any, clicks: Sequence[Sequence[Any]]) -> None:
+def reveal_clicks(slide: Any, clicks: Sequence[Sequence[Any]], entrances: Mapping[int, Entrance] | None = None) -> None:
     """Have each group of shapes appear on a click of its own, in order (the first group on the slide's next click),
-    fading in together: what a deck's elements that appear on a click are drawn with (such as a quiz's answer)."""
+    fading in together: what a deck's elements that appear on a click are drawn with (such as a quiz's answer). A
+    shape with an entrance (by its id: D82) comes in with its effect instead, after its delay."""
     for shapes in clicks:
         if shapes:
-            _add_click(slide, [("appear", shape) for shape in shapes])
+            _add_click(slide, [_entering(shape, entrances) for shape in shapes])
     _settle(slide)
 
 
-def join_click(slide: Any, number: int, shapes: Sequence[Any]) -> bool:
-    """Have the shapes appear, fading in, with the slide's number-th click (from 1) that its main sequence has already
-    (a chart's series or category, a diagram's punchline: the build dots that go with it, D80), rather than on a click
-    of their own. Whether it has that click (else nothing changes)."""
+def enter(slide: Any, entering: Sequence[tuple[Any, Entrance]]) -> None:
+    """Have the shapes come in as the slide comes up (D82), each with its entrance effect, after its delay (with each
+    other, before the slide's first click): in the step that starts the slide's main sequence by itself, the one its
+    videos that are there from the start play in, or a new one."""
+    if not entering:
+        return
+    timing = _timing(slide)
+    sequence = _sequence(timing)
+    step = sequence[0] if len(sequence) and _comes_up(sequence[0]) else None
+    if step is None:
+        step = _parsed(_STEP.format(start=_AS_THE_SLIDE_COMES_UP, effects=""))
+        sequence.insert(0, step)
+    together = _together(step)
+    for shape, entrance in entering:
+        node = "withEffect" if len(together) else "afterEffect"
+        _append(timing, together, entrance.effect, shape, node, entrance.delay)
+    _settle(slide)
+
+
+def join_click(slide: Any, number: int, shapes: Sequence[Any], entrances: Mapping[int, Entrance] | None = None) -> bool:
+    """Have the shapes appear, fading in (or with their entrance effects, by their ids: D82), with the slide's
+    number-th click (from 1) that its main sequence has already (a chart's series or category, a diagram's punchline:
+    the build dots that go with it, D80), rather than on a click of their own. Whether it has that click (else nothing
+    changes)."""
     timing = _timing(slide)
     steps = [
         step
         for step in _sequence(timing)
         if step.find(f"./{qn('p:cTn')}/{qn('p:stCondLst')}/{qn('p:cond')}[@delay='indefinite']") is not None
-        and step.find(f"./{qn('p:cTn')}/{qn('p:stCondLst')}/{qn('p:cond')}[@evt='onBegin']") is None
+        and not _comes_up(step)
     ]
     if not 0 < number <= len(steps) or not shapes:
         return False
-    together = steps[number - 1].find(
-        f"./{qn('p:cTn')}/{qn('p:childTnLst')}/{qn('p:par')}/{qn('p:cTn')}/{qn('p:childTnLst')}"
-    )
+    together = _together(steps[number - 1])
     if together is None:
         return False
     for shape in shapes:
-        spid = str(shape.shape_id)
-        group = _next_group(timing, spid)
-        together.append(_parsed(_FADE_IN.format(spid=spid, group=group, node="withEffect")))
-        if shape.element.tag == qn("p:sp"):
-            _builds(timing).append(_parsed(_SHAPE_BUILD.format(spid=spid, group=group)))
+        effect, _, delay = _entering(shape, entrances)
+        _append(timing, together, effect, shape, "withEffect", delay)
     _settle(slide)
     return True
 
 
-def reveal_columns(slide: Any, columns: Sequence[Sequence[Any]]) -> None:
+def reveal_columns(
+    slide: Any, columns: Sequence[Sequence[Any]], entrances: Mapping[int, Entrance] | None = None
+) -> None:
     """Show the columns (each the shapes it's drawn with) click by click, as the 2019 template's column slides do: of
     two, the first is there from the start, and the second appears on the click as the first dims; of three, each
-    appears on a click, the one before dimming. They fade in (where the template's appear at once)."""
+    appears on a click, the one before dimming. They fade in (where the template's appear at once), or come in with
+    their shapes' entrance effects (by their ids: D82)."""
     first = 1 if len(columns) == 2 else 0
     before: Sequence[Any] = columns[0] if first else ()
     for column in columns[first:]:
         if not column:
             continue  # (nothing to show: the one before stays as it is)
-        _add_click(slide, [("appear", shape) for shape in column] + [("dim", shape) for shape in before])
+        _add_click(slide, [_entering(shape, entrances) for shape in column] + [("dim", shape, 0) for shape in before])
         before = column
     _settle(slide)
 
@@ -318,20 +334,41 @@ def _builds(timing: Any) -> Any:
     return builds
 
 
-def _add_click(slide: Any, effects: Sequence[tuple[Effect, Any]]) -> None:
-    """Add a click to the end of the slide's main sequence, which does each effect to its shape: the first as the
-    click's own, the others with it."""
+def _add_click(slide: Any, effects: Sequence[tuple[Effect, Any, int]]) -> None:
+    """Add a click to the end of the slide's main sequence, which does each effect to its shape after its delay: the
+    first as the click's own, the others with it."""
     timing = _timing(slide)
     step = _parsed(_STEP.format(start=_ON_A_CLICK, effects=""))
     _sequence(timing).append(step)
-    together = step.find(f"./{qn('p:cTn')}/{qn('p:childTnLst')}/{qn('p:par')}/{qn('p:cTn')}/{qn('p:childTnLst')}")
-    for index, (effect, shape) in enumerate(effects):
-        spid = str(shape.shape_id)
-        group = _next_group(timing, spid)
-        node = "clickEffect" if index == 0 else "withEffect"
-        together.append(_parsed(_EFFECTS[effect].format(spid=spid, group=group, node=node)))
-        if shape.element.tag == qn("p:sp"):  # (a shape that can hold text; a picture builds as it is)
-            _builds(timing).append(_parsed(_SHAPE_BUILD.format(spid=spid, group=group)))
+    together = _together(step)
+    for index, (effect, shape, delay) in enumerate(effects):
+        _append(timing, together, effect, shape, "clickEffect" if index == 0 else "withEffect", delay)
+
+
+def _append(timing: Any, together: Any, effect: Effect, shape: Any, node: str, delay: int = 0) -> None:
+    """Add the effect on the shape to a group of effects that start together (after its delay, in milliseconds),
+    in a build group of its own."""
+    spid = str(shape.shape_id)
+    group = _next_group(timing, spid)
+    together.append(_parsed(_EFFECTS[effect].format(spid=spid, group=group, node=node, delay=delay)))
+    if shape.element.tag == qn("p:sp"):  # (a shape that can hold text; a picture builds as it is)
+        _builds(timing).append(_parsed(_SHAPE_BUILD.format(spid=spid, group=group)))
+
+
+def _entering(shape: Any, entrances: Mapping[int, Entrance] | None) -> tuple[Effect, Any, int]:
+    """How the shape comes in on its click: with its entrance effect after its delay, if it has one, or fading in."""
+    entrance = (entrances or {}).get(shape.shape_id)
+    return (entrance.effect, shape, entrance.delay) if entrance is not None else ("appear", shape, 0)
+
+
+def _together(step: Any) -> Any:
+    """The list of a step's first group of effects, which start together."""
+    return step.find(f"./{qn('p:cTn')}/{qn('p:childTnLst')}/{qn('p:par')}/{qn('p:cTn')}/{qn('p:childTnLst')}")
+
+
+def _comes_up(step: Any) -> bool:
+    """Whether the step starts by itself, as the slide comes up (rather than on a click)."""
+    return step.find(f"./{qn('p:cTn')}/{qn('p:stCondLst')}/{qn('p:cond')}[@evt='onBegin']") is not None
 
 
 def _next_group(timing: Any, spid: str) -> int:
@@ -387,14 +424,21 @@ def _play_where_they_appear(slide: Any, sequence: Any) -> None:
         if entrance is None:
             from_the_start.append((spid, duration))
             continue
-        play = _PLAY.format(node="withEffect", duration=duration, spid=spid)
+        start = entrance.find(f"./{qn('p:stCondLst')}/{qn('p:cond')}")
+        delay = start.get("delay", "0") if start is not None else "0"  # (as late as the effect: D82)
+        play = _PLAY.format(node="withEffect", duration=duration, spid=spid, delay=delay)
         entrance.getparent().addnext(_parsed(play))  # (in the group of the effect that shows it)
     if from_the_start:
-        effects = "".join(
-            _PLAY.format(node="afterEffect" if number == 0 else "withEffect", duration=duration, spid=spid)
-            for number, (spid, duration) in enumerate(from_the_start)
-        )
-        sequence.insert(0, _parsed(_STEP.format(start=_AS_THE_SLIDE_COMES_UP, effects=effects)))
+        if len(sequence) and _comes_up(sequence[0]):  # (with what comes in as the slide comes up: D82)
+            together = _together(sequence[0])
+            for spid, duration in from_the_start:
+                together.append(_parsed(_PLAY.format(node="withEffect", duration=duration, spid=spid, delay=0)))
+        else:
+            effects = "".join(
+                _PLAY.format(node="afterEffect" if number == 0 else "withEffect", duration=duration, spid=spid, delay=0)
+                for number, (spid, duration) in enumerate(from_the_start)
+            )
+            sequence.insert(0, _parsed(_STEP.format(start=_AS_THE_SLIDE_COMES_UP, effects=effects)))
     root = sequence.getparent().getparent().getparent()  # (the main sequence's seq, in the root's list)
     for video in videos:
         root.append(_parsed(_MEDIA.format(spid=video.xpath("./p:nvPicPr/p:cNvPr/@id")[0])))

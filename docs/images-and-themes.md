@@ -158,6 +158,11 @@ decoration and its layouts.
   every slide's): a talk whose seed picks one of them keeps its theme, and the others get one of them, the persona's
   favourites still weighting them.
 - `--theme chaos` gives every slide a theme of its own, and `--style_chaos 0.3` does that for about a third of them.
+- A theme can move: its slides' texts and pictures come in with PowerPoint's entrance effects (fade, wipe, zoom,
+  fly in, bounce, spiral in, pinwheel, boomerang, drop, flip and more) as the slides are presented, in PowerPoint
+  and on talkgenerator.com. The serious families never move; the others now and then (every other slide, a thing
+  or two), and the ones for laughs often everything, one thing after the other. The seed picks how much, with the
+  rest of the theme.
 - `TALKGENERATOR_THEME` sets the look of talks that don't ask for one, such as `classic` to keep the 2019 template.
 - A plan can have a `theme` too, which `talkgenerator render --theme` overrides.
 
