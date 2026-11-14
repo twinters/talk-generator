@@ -8,7 +8,8 @@ A slide has a type and a layout. Its content is a list of elements, each with a 
 put ("title", "caption_1", "content_1", ...), so a layout or theme can change without changing the content. A text,
 picture or shape can appear on a click of its slide instead of with it (`appears_on_click`), such as a quiz's answer:
 a renderer that plays no clicks shows it from the start. A shape or text of a theme's decoration that belongs to an
-element (a frame around a picture) names it (`part_of`), and appears with it.
+element (a frame around a picture) names it (`part_of`), and appears with it. In a theme that moves (D83), an element
+can come in with one of PowerPoint's entrance effects (`entrance`), as its slide comes up or on its click.
 
 A talk's deck ends with its closer (D76): a slide after its last, outside the slides it asked for, which says that the
 talk is over in its language, look and format ("Thank you!", "Questions?", "Let's talk"...). It's marked (`closer`),
@@ -26,7 +27,7 @@ from typing import Annotated, Any, Final, Literal
 from pydantic import Field
 
 from talkgenerator.models.base import Data as _Data
-from talkgenerator.models.theme import BackgroundPattern, ImageFilter, ImageFrame, TextEffect, Theme
+from talkgenerator.models.theme import BackgroundPattern, EntranceEffect, ImageFilter, ImageFrame, TextEffect, Theme
 from talkgenerator.models.usage import Usage
 
 DECK_VERSION: Final = 1
@@ -162,6 +163,36 @@ class ImageAsset(_Data):
 # The click of its slide on which an element appears (the first is 1), when it isn't there from the start: a quiz's
 # answer, say, or the next of a row of figures. Elements with the same click appear together, fading in
 AppearsOnClick = Annotated[int | None, Field(ge=1)]
+# How long each entrance effect takes, in milliseconds, as PowerPoint plays it (its own durations for them)
+ENTRANCE_DURATIONS: Final[dict[str, int]] = {
+    "fade": 500,
+    "wipe": 500,
+    "float_in": 1000,
+    "rise_up": 1000,
+    "zoom": 500,
+    "fly_in": 500,
+    "grow_turn": 1000,
+    "swivel": 2000,
+    "boomerang": 1000,
+    "curve_up": 1000,
+    "drop": 1000,
+    "bounce": 2000,
+    "spiral_in": 1000,
+    "pinwheel": 2000,
+    "flip": 1000,
+}
+
+
+class Entrance(_Data):
+    """How an element comes in as its slide is presented (D83): with one of PowerPoint's entrance effects, this many
+    milliseconds after the slide comes up, or after the click it appears on (or its column comes in on). Where it's
+    shown without clicks (the editor, a preview), it's simply there. An element without one is there from the start,
+    or fades in on its click."""
+
+    effect: EntranceEffect
+    delay: int = Field(default=0, ge=0)
+
+
 # The role of the element that a shape or a text of a theme's decoration belongs to (a frame around a picture, the
 # picture's shadow or the tape on it, the name on its window): it appears when that element does (on its click, or
 # with its column), and dims with it
@@ -175,6 +206,7 @@ class TextElement(_Data):
     box: Box | None = None
     style: TextStyle | None = None
     appears_on_click: AppearsOnClick = None
+    entrance: Entrance | None = None
     part_of: PartOf = None
 
 
@@ -206,6 +238,7 @@ class ImageElement(_Data):
     border: str | None = None  # a frame around the image, in this colour ("#rrggbb")
     treatment: ImageTreatment | None = None  # (in a themed deck)
     appears_on_click: AppearsOnClick = None
+    entrance: Entrance | None = None
 
 
 # A line fitted through a scatter chart's series by least squares, as PowerPoint's trendlines are: a straight one, or
@@ -275,6 +308,7 @@ class ShapeElement(_Data):
     outline: str | None = None
     outline_width: float = 0.0  # (in canvas pixels)
     appears_on_click: AppearsOnClick = None
+    entrance: Entrance | None = None
     part_of: PartOf = None
 
 

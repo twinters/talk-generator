@@ -90,6 +90,9 @@ how to keep 4.x's talks. The [docs](https://github.com/twinters/talk-generator/t
   PowerPoint shows them where they aren't installed.
 - Slides animate: two or three columns appear click by click, a list one thing a click with its punchline last, and
   what belongs to a picture (its frame, its tape) comes in with it.
+- Themes can move, for laughs: fifteen of PowerPoint's entrance effects (bounce, spiral in, pinwheel, boomerang,
+  drop, flip, fly in, zoom...), written as PowerPoint writes them. The serious families never move, most now and
+  then, and the ones for laughs often bring in everything on every slide, one thing after the other.
 - `talkgenerator.render.preview` draws decks as pictures (contact sheets, and slides click by click), and
   `talkgenerator.design.themes.catalog()` lists the themes for a settings menu.
 
