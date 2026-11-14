@@ -256,6 +256,9 @@ how to keep 4.x's talks. The [docs](https://github.com/twinters/talk-generator/t
 - `parallel` can be a number (at most that many slides at once), a PowerPoint's pictures are downloaded four at a
   time, a host that times out isn't asked again, and a search service that takes more than 8 seconds is skipped for
   5 minutes.
+- A planned slide's pictures are searched for at the same time, each with a random stream of its own (the same seed
+  still gives the same talk), so a slide of two or three pictures takes about as long as its slowest search instead
+  of all of them in a row.
 
 ### Checks
 

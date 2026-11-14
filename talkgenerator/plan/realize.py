@@ -3,19 +3,31 @@
 Realizing a slide only depends on its plan, its recipe, its presentation context and the attempt's random stream,
 never on the other slides: so slides can be realized in parallel, in any order, and a talk still comes out the same
 (the schema settles them in order, and rejects one that repeats what the slides before it used).
+
+A slide's pictures are searched for all at once, each with a random stream of its own, so they come out the same
+whichever search is done first: a slide of three pictures takes about as long as its slowest search, not as the three
+one after another (searches are nearly all of a picture slide's time, as measured on 2026-11-14). Then, in the slots'
+order, a picture that's one of the slide's pictures before it (or nearly) is searched for again without them, as it
+would be one after another.
 """
 
 from __future__ import annotations
 
+import contextvars
+import functools
 import logging
 import re
-from collections.abc import Callable
+import threading
+from collections.abc import Callable, Sequence
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Final
+from typing import Any, Final, TypeVar
 
 from talkgenerator import facts
 from talkgenerator.checks.deck import leftovers_in, real_politics, without_key_references
 from talkgenerator.datastructures.image_data import ImageData
+from talkgenerator.images import analysis
 from talkgenerator.images import context as image_context
 from talkgenerator.images.generation import FALLBACK, FIRST, Wish
 from talkgenerator.images.slots import ImageSlot
@@ -32,6 +44,12 @@ logger = logging.getLogger("talkgenerator")
 # The first attempt searches with the plan's queries, the second tries other images for them, and the last searches
 # for the slide's concept for the images whose queries find nothing
 ATTEMPTS: Final = 3
+
+# How many pictures of the slides being realized are searched for at the same time, in threads of their own (besides
+# the one that realizes each slide): never in the image finder's, which a search waits for (see _at_once)
+SEARCH_THREADS: Final = 12
+
+_T = TypeVar("_T")
 
 _QUOTE_MARKS: Final = "\"'“”‘’«»"
 # Bars that look like the | that separates a list's things, which a free model wrote instead of it (a box drawing's)
@@ -320,12 +338,35 @@ def realize(
         unfound: list[Wish] = []  # the pictures to generate, as their slots found none (on the last try)
         # (the pictures of a diagram's boxes: a box without one, when nothing is found, still makes the slide)
         optional = set(recipe.optional_slots())
-        for slot, source in recipe.slots():
-            # (what the recipe has it search for, such as a meme's template, or the plan's query)
-            query = recipe.queries.get(slot) or plan.images.get(slot, "").strip()
-            local = _local_image(query, local_images)
-            if local is not None:
-                queries[slot], images[slot] = query, ImageData(local).found_with(query)
+        slots = list(recipe.slots())
+        # (what the recipe has each slot search for, such as a meme's template, or the plan's query)
+        asked = {slot: recipe.queries.get(slot) or plan.images.get(slot, "").strip() for slot, _ in slots}
+        local = {slot: _local_image(asked[slot], local_images) for slot, _ in slots}
+
+        def look_for(slot: str, source: ImageSlot | ContentSource, avoid: list[ImageData]) -> _Search:
+            return _search(
+                slot,
+                source,
+                asked[slot] or concept,
+                concept,
+                presentation_context,
+                avoid,
+                rng.child("attempt", attempt, "picture", slot),
+                behind=slot in kind.optional_images,
+                required=slot not in optional,
+                last=last,
+                own_query=slot in recipe.queries,
+            )
+
+        # The pictures that are looked up (none out of time), all at once: see the module's documentation
+        looked_up = [(slot, source) for slot, source in slots if local[slot] is None] if spare_pictures is None else []
+        at_once = _at_once([functools.partial(look_for, slot, source, []) for slot, source in looked_up])
+        searched = dict(zip((slot for slot, _ in looked_up), at_once, strict=True))
+        for slot, source in slots:
+            query = asked[slot]
+            path = local[slot]
+            if path is not None:
+                queries[slot], images[slot] = query, ImageData(path).found_with(query)
                 continue
             queries[slot] = query or concept
             # (not one of the slide's other images, nor nearly)
@@ -338,25 +379,17 @@ def realize(
                     return None
                 images[slot] = found
                 continue
-            with generator_util.as_planned():  # searched as written, among the best results
-                found = _find(source, queries[slot], presentation_context, others)
+            searching = searched[slot]
+            if isinstance(source, ImageSlot) and _repeats(searching.found, others):
+                # (found at the same time as the slide's pictures before it, it's one of them, or nearly: searched
+                # for again without them, as it is when they come first)
+                searching = look_for(slot, source, others)
+            for problem in searching.problems:
+                _note(problems, problem)
+            found, queries[slot] = searching.found, searching.query
             if found is None and behind:
-                # (a picture the slide can do without, such as one behind its big number: searched for its concept at
-                # once, and else left out, on any try, so the slide comes without it rather than not at all)
-                if queries[slot] != concept and slot not in recipe.queries:
-                    queries[slot] = concept
-                    with generator_util.as_planned():
-                        found = _find(source, concept, presentation_context, others)
-                if found is None:
-                    images[slot] = None
-                    continue
-            if found is None and slot not in optional:
-                _note(problems, f"{slot}: no image found for {queries[slot]!r}")
-                # (a query of the recipe's own stays: a meme's captions are for its template, and no other)
-                if last and queries[slot] != concept and slot not in recipe.queries:
-                    queries[slot] = concept
-                    with generator_util.as_planned():
-                        found = _find(source, concept, presentation_context, others)
+                images[slot] = None
+                continue
             wish = None
             if generation is not None and isinstance(source, ImageSlot):
                 look = talk.look(source.aesthetic)
@@ -439,6 +472,77 @@ def _find(
     if isinstance(source, ImageSlot):
         return source.find(query, avoid=others)
     return source({**presentation_context, "seed": query})
+
+
+@dataclass(frozen=True)
+class _Search:
+    """What a slot's search found (None for nothing), the query that found it, and what went wrong on the way."""
+
+    found: Any
+    query: str
+    problems: tuple[str, ...] = ()
+
+
+def _search(
+    slot: str,
+    source: ImageSlot | ContentSource,
+    query: str,
+    concept: str,
+    presentation_context: dict[str, Any],
+    avoid: list[ImageData],
+    stream: random_util.Rng,
+    *,
+    behind: bool,
+    required: bool,
+    last: bool,
+    own_query: bool,
+) -> _Search:
+    """A slot's picture, searched as written (among the best results) with its query and its own random stream, not one
+    of those to avoid (nor nearly). One the slide can do without (behind, such as the picture behind a big number) is
+    searched for with the slide's concept at once when its query finds none, and else left out, on any try, so the slide
+    comes without it rather than not at all; one it needs is searched for with the concept on the last try. A query of
+    the recipe's own (own_query) stays: a meme's captions are for its template, and no other."""
+    problems: list[str] = []
+    with random_util.use(stream), generator_util.as_planned():
+        found = _find(source, query, presentation_context, avoid)
+        if found is None and behind:
+            if query != concept and not own_query:
+                query = concept
+                found = _find(source, concept, presentation_context, avoid)
+        elif found is None and required:
+            problems.append(f"{slot}: no image found for {query!r}")
+            if last and query != concept and not own_query:
+                query = concept
+                found = _find(source, concept, presentation_context, avoid)
+    return _Search(found, query, tuple(problems))
+
+
+def _repeats(found: Any, others: Sequence[ImageData]) -> bool:
+    """Whether a picture is one of the others, or nearly (as an image slot avoids them: see finder._pick)."""
+    return isinstance(found, ImageData) and any(
+        found == other or analysis.near_duplicates(found.analysis, other.analysis) for other in others
+    )
+
+
+_pool: ThreadPoolExecutor | None = None
+_pool_lock = threading.Lock()
+
+
+def _at_once(tasks: Sequence[Callable[[], _T]]) -> list[_T]:
+    """What the tasks give, in their order: run at the same time, each in a copy of this context (its random stream, how
+    images are found and checked, the talk's pictures), the first here and the others in threads of their own
+    (SEARCH_THREADS). Not in the image finder's, whose threads a search waits for: there, searches that wait for each
+    other could take up every thread."""
+    if len(tasks) <= 1:
+        return [contextvars.copy_context().run(task) for task in tasks]
+    global _pool
+    with _pool_lock:
+        if _pool is None:
+            _pool = ThreadPoolExecutor(max_workers=SEARCH_THREADS, thread_name_prefix="picture search")
+        pool = _pool
+    futures = [pool.submit(contextvars.copy_context().run, task) for task in tasks[1:]]
+    first = contextvars.copy_context().run(tasks[0])
+    return [first, *(future.result() for future in futures)]
 
 
 def _local_image(query: str, folder: Path | None) -> str | None:

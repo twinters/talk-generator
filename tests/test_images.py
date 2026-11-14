@@ -563,6 +563,75 @@ def test_the_slides_own_images_are_avoided_and_nearly_the_same_ones_too(look, mo
         assert "gray" in second.get_image_url()
 
 
+def _two_pictures():
+    from talkgenerator.models.plan import SlidePlan
+
+    return SlidePlan(
+        kind="two_columns",
+        concept="owls",
+        texts={"title": "Owls", "caption_1": "Before", "caption_2": "After"},
+        images={"image_1": "an owl", "image_2": "a barn owl"},
+    )
+
+
+def _realized_pictures(recipe, seed=1):
+    from talkgenerator.plan import realize
+
+    made = realize.realize(_two_pictures(), recipe, {"seed": "owls"}, random_util.Rng(seed), 0)
+    assert made is not None
+    return [image for image in made[1] if isinstance(image, ImageData)]
+
+
+def test_a_planned_slides_pictures_are_searched_for_at_the_same_time(look, monkeypatch):
+    meeting = threading.Barrier(2, timeout=5)  # (one after another, the first search would wait for the other in vain)
+
+    def meet(search):
+        meeting.wait()
+        return [(1.0, _image(search.query.replace(" ", "_")))]  # (no thumbnail: nothing nearly the same)
+
+    monkeypatch.setitem(
+        catalog.SOURCES, "fake-m", catalog.Source("fake-m", "", frozenset({"stock"}), meet, lambda: True)
+    )
+    look("fake", [SourceUse("fake-m")])
+    recipe = Recipe("two_columns", (ImageSlot(aesthetic="fake"), ImageSlot(aesthetic="fake")))
+    assert [image.get_image_url() for image in _realized_pictures(recipe)] == [
+        "https://images/an_owl.jpg",
+        "https://images/a_barn_owl.jpg",
+    ]
+
+
+def test_a_planned_slides_pictures_are_the_same_whichever_search_comes_back_first(sources, look):
+    sources("fake-a", slow=True, count=8)  # (each search takes a random while)
+    look("fake", [SourceUse("fake-a")])
+    recipe = Recipe("two_columns", (ImageSlot(aesthetic="fake"), ImageSlot(aesthetic="fake")))
+
+    def urls(seed):
+        return tuple(image.get_image_url() for image in _realized_pictures(recipe, seed))
+
+    for seed in range(3):
+        assert len({urls(seed) for _ in range(4)}) == 1
+    assert len({urls(seed) for seed in range(6)}) > 1  # (the seed decides them)
+
+
+def test_a_planned_slides_picture_thats_one_of_its_others_is_searched_for_again(look, monkeypatch):
+    def twins(search):  # (whatever the query: two nearly the same, and another one)
+        return [
+            (1.0, _image("one", "colourful-5")),
+            (1.0, _image("two", "colourful-5")),
+            (1.0, _image("gray", "gray-1")),
+        ]
+
+    monkeypatch.setitem(
+        catalog.SOURCES, "fake-t", catalog.Source("fake-t", "", frozenset({"stock"}), twins, lambda: True)
+    )
+    look("fake", [SourceUse("fake-t")])
+    recipe = Recipe("two_columns", (ImageSlot(aesthetic="fake"), ImageSlot(aesthetic="fake")))
+    for seed in range(8):  # (searched at once, the two find the same picture or its twin on most seeds)
+        first, second = _realized_pictures(recipe, seed)
+        assert first != second
+        assert not analysis.near_duplicates(first.analysis, second.analysis)
+
+
 def test_a_format_can_have_looks_of_its_own(sources, look, slot_schema):
     sources("fake-a")
     sources("fake-b")
