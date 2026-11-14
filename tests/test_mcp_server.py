@@ -359,7 +359,8 @@ def test_a_talk_the_model_doesnt_write_says_so(schema, server, monkeypatch):
     monkeypatch.setenv("TALKGENERATOR_LLM", "fake")
     report = _answer(_call(server, "generate_talk", {"topic": "cats", "slides": 4, "language": "nl"}))
     assert report["language_model"] == "fake:model"
-    assert report["usage"]["failed_requests"] == 1
+    # Two: a talk in another language than English asks once more when the model wrote none of its slides (D80)
+    assert report["usage"]["failed_requests"] == 2
     assert report["notes"] == [
         "the language model wrote none of the slides, so the talk is classic (the server's log says why)",
         "talks in other languages than English need slides a language model wrote, and this one has none, so it's in "
