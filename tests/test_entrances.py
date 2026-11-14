@@ -153,6 +153,16 @@ def test_with_lots_of_motion_every_thing_comes_in_the_title_first(images):
             assert title.entrance.delay == 0, slide.type
 
 
+def test_a_title_slide_stays_still_even_with_lots_of_motion(images):
+    made = [slides.TitleSlide("Cats", "Dr. Whiskers", _image("wide")), slides.ImageSlide("Look", _image("wide"))]
+    deck = _deck(made, _theme("lots"), seed=2)
+
+    title_slide, after = deck.slides
+    assert title_slide.type == "title" and title_slide.element("title") is not None
+    assert not any(_moves(element) for element in title_slide.elements)
+    assert any(_moves(element) for element in after.elements)
+
+
 def test_a_clicks_things_come_in_together_with_one_effect(images):
     deck = _deck(_slides(), _theme("lots"), seed=2)
 

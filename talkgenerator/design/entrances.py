@@ -12,6 +12,9 @@ window, which come in with it, as one); or a click's worth of things, which come
 its tile, the next column of a column slide). A photo behind the whole slide, the theme's decoration, the build dots,
 charts and diagrams (whose own clicks reveal them) stay as they are. Every element of a thing gets its entrance, so
 renderers have nothing to work out: PowerPoint plays them (talkgenerator.render.animation), talk-generator-web too.
+
+A title slide stays still, whatever its theme: it's up as the talk loads, and the presenter should have the time to take
+in what the talk is about (the user, 2026-11-14).
 """
 
 from __future__ import annotations
@@ -41,11 +44,12 @@ STAGGER: Final = 400
 MOST_STAGGER: Final = 1600
 _BUILD: Final = "build "  # (the build dots' roles: see talkgenerator.design.engine.build_dots)
 _FIRST: Final = ("title", "statement", "number")  # (the roles that come in first, where everything does)
+TITLE: Final = "title"  # (the title slide's type: it stays still)
 
 
 def assign(slide: DeckSlide, theme: Theme, rng: random_util.Rng) -> DeckSlide:
     """The laid-out slide with its elements' entrances, as its theme's motion has them (none: the slide as it is)."""
-    if theme.motion == "none" or not theme.entrances:
+    if theme.motion == "none" or not theme.entrances or slide.type == TITLE:
         return slide
     from_the_start, on_clicks = _things(slide)
     if not from_the_start and not on_clicks:
