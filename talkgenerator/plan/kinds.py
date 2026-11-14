@@ -755,12 +755,28 @@ def _process(texts: Mapping[str, str | None], images: Mapping[str, Any], languag
 
 def _references(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
     # (a picture of one of the works, a book's cover or a paper's figure, as its recipe searches for it)
-    works = [_shortened(part.strip(), AGENDA_ITEM_ROOM) for part in (texts["items"] or "").split("|") if part.strip()]
+    works = [_work(part) for part in (texts["items"] or "").split("|") if _work(part)]
     if len(works) < 3:
         raise ValueError("references need three works or more")
     return slides.ReferencesSlide(
         texts.get("title"), *works[: slides.REFERENCES], figure=images.get("figure"), caption=texts.get("caption")
     )
+
+
+# A number in front of a work, which some models write on a references slide that numbers its works itself ("[1]
+# Verhoeven et al. (1987)" after the slide's own [1]: the user's review, 2026-11-14, D82)
+_CITED_NUMBER: Final = re.compile(r"^(?:\[\s*\d{1,2}\s*\]|\(\s*\d{1,2}\s*\)|\d{1,2}\s*[.):])\s*")
+
+
+def _work(text: str) -> str:
+    """One of a references slide's works, without a number of its own in front (the slide gives it one), and a work
+    too long for its place cut after its year in brackets rather than in the middle of its journal's name: "Verhoeven
+    et al. (1987)", not "Verhoeven et al. (1987) Tijdschrift voor" (D82)."""
+    work = _CITED_NUMBER.sub("", text.strip()).strip()
+    if len(work) <= AGENDA_ITEM_ROOM:
+        return work
+    year = work.rfind(")", 0, AGENDA_ITEM_ROOM)
+    return work[: year + 1] if year > 0 else _shortened(work, AGENDA_ITEM_ROOM)
 
 
 def _meme(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
@@ -1677,15 +1693,15 @@ KINDS: Final[dict[str, Kind]] = {
         ),
         Kind(
             "references",
-            "A talk's references, as an academic talk ends with them: three to five made-up works it cites, numbered, "
-            "which appear one by one, a click each; and a picture of one of them, if it has one (a book's cover, or a "
+            "A talk's references, as an academic talk ends with them: three to five made-up works it cites, which the slide "
+            "numbers itself ([1], [2]...) and which appear one by one, a click each; and a picture of one of them, if it has one (a book's cover, or a "
             "figure from a paper), with a caption that says which, on the click after them.",
             (
                 TextField("title", "the slide's title", 40),
                 TextField(
                     "items",
                     f"three to five made-up works the talk cites, separated by |, each at most {AGENDA_ITEM} "
-                    "characters",
+                    "characters, without a number in front",
                     260,
                 ),
                 TextField(

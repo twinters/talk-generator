@@ -327,7 +327,8 @@ def check_arc(deck: Deck, expected_slides: int | None = None) -> list[Finding]:
     """A talk of a format with an arc (a pitch, an academic talk: see talkgenerator.schema.formats) goes through the
     parts that a talk of its length keeps, in their order, as its slides' notes say who made them: a warning for a
     part it misses (when none of the part's slide generators could make its slide, one of the format's other slides
-    stands in), and for a part that comes before one it should follow."""
+    stands in, unless the part lets them take its slide now and then), and for a part that comes before one it should
+    follow."""
     from talkgenerator.plan.external import recipe_id  # (here: the checks don't need them otherwise)
     from talkgenerator.schema.presentation_schema_types import schemas
 
@@ -363,7 +364,8 @@ def check_arc(deck: Deck, expected_slides: int | None = None) -> list[Finding]:
             )
     parts = {part for _, part in seen}
     for part in arc.kept(expected_slides or deck.counted()):
-        if part not in parts:
+        # (but a part whose slide the format's other slides may take: D82's references)
+        if part not in parts and not arc.part(part).others:
             findings.append(Finding("arc", "warning", f"it has no slide of its {part.replace('_', ' ')} part"))
     return findings
 

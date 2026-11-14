@@ -77,6 +77,16 @@ def _part_of(generator_data, arc):
     return next((tag for tag in generator_data.get_tags() if tag in arc.names()), None)
 
 
+def _kept(arc, num_slides, parts):
+    """Every slide's part as the arc lays a talk out, but a part whose slide the format's other slides may take now
+    and then (D82's references) where they took it."""
+    laid_out = arc.layout(num_slides)[1:]
+    return [
+        None if part is not None and arc.part(part).others and got is None else part
+        for part, got in zip(laid_out, parts, strict=True)
+    ]
+
+
 # THE ARCS
 
 
@@ -227,6 +237,11 @@ def test_a_parts_slide_generators_weigh_in_on_its_slides_and_the_others_on_the_f
         3 * PART_WEIGHT,
         3 * STAND_IN,
     ]
+    # (a part whose slide the others take now and then, D82: an academic talk's references)
+    shared = Arc((Part("first", rank=1, others=0.1), Part("last", rank=0)))
+    assert [Free(shared, 3)(slide_nr, 5) for slide_nr in (1, 4)] == [pytest.approx(3 * 0.1 * PART_WEIGHT), 3 * STAND_IN]
+    with pytest.raises(ValueError):
+        Part("first", others=-1)
     with pytest.raises(ValueError):
         InPart(arc, "middle")
     with pytest.raises(ValueError):
@@ -245,7 +260,7 @@ def test_every_persona_keeps_the_formats_arc(name):
                 picks = schema._pick_generators(num_slides, random_util.Rng(seed), "en", persona)
                 assert picks[0] is not None and "title" in picks[0].get_tags()
                 parts = [_part_of(pick, arc) if pick is not None else "?" for pick in picks[1:]]
-                assert parts == list(arc.layout(num_slides)[1:]), (persona, num_slides, seed)
+                assert parts == _kept(arc, num_slides, parts), (persona, num_slides, seed)
 
 
 @pytest.mark.parametrize("name", FORMATS)
@@ -261,7 +276,7 @@ def test_a_formats_arc_needs_no_image_that_is_fair_use(name):
                 with image_context.for_talk(image_context.ImageContext(licenses.policy(policy))):
                     picks = schema._pick_generators(num_slides, random_util.Rng(seed), "en", None)
                 parts = [_part_of(pick, arc) if pick is not None else "?" for pick in picks[1:]]
-                assert parts == list(arc.layout(num_slides)[1:]), (policy, num_slides, seed)
+                assert parts == _kept(arc, num_slides, parts), (policy, num_slides, seed)
 
 
 def test_a_persona_still_moves_a_parts_slides_between_its_kinds():

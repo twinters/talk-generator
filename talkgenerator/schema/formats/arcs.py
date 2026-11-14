@@ -36,17 +36,23 @@ class Part:
     """A part of an arc: its name ("problem"), the fewest and the most slides it has in a talk that keeps it, and its
     rank (a short talk keeps the parts of the lowest ranks, and a long one gives them more slides first); and the
     shortest talk that keeps it, if it waits for a long one (D63's parts of text: an all-hands' agenda waits for a talk
-    of eleven slides, and kept waiting once "Questions?" left the arcs, D76, which would have made room for it)."""
+    of eleven slides, and kept waiting once "Questions?" left the arcs, D76, which would have made room for it). And how
+    much the format's other slides weigh in its slides, against what they weigh in a free slide, if they're to take its
+    place now and then (an academic talk's references, which the user found too often: D82), not only stand in for it.
+    """
 
     name: str
     fewest: int = 1
     most: int = 1
     rank: int = 0
     shortest: int = 0  # (slides, the title slide counted)
+    others: float = 0.0
 
     def __post_init__(self) -> None:
         if not 1 <= self.fewest <= self.most:
             raise ValueError(f"part {self.name!r} needs at least one slide, and at most as many as it needs")
+        if self.others < 0:
+            raise ValueError(f"the other slides weigh nothing or more in part {self.name!r}: not {self.others}")
 
 
 @dataclass(frozen=True)
@@ -74,6 +80,9 @@ class Arc:
     def layout(self, num_slides: int) -> tuple[str | None, ...]:
         """Every slide's part, by its number (from 0): None for the title slide (the first) and for free slides."""
         return _layout(self, num_slides)
+
+    def part(self, name: str) -> Part:
+        return next(part for part in self.parts if part.name == name)
 
     def part_of(self, slide_nr: int, num_slides: int) -> str | None:
         """The part a slide is in (None for the title slide, a free slide, or a slide the talk hasn't)."""
@@ -143,7 +152,8 @@ class InPart:
 class Free:
     """The weight of one of the format's other slide generators (a meme, a gif, a quote...) for a slide: its own
     (times PART_WEIGHT) in the free slides, a sliver of it in the parts' slides (where it stands in for a part's slide
-    that none of the part's generators can make), and none on the title slide."""
+    that none of the part's generators can make), or the share the part gives the others (Part.others), and none on the
+    title slide."""
 
     def __init__(self, arc: Arc, weight: float = 1.0):
         self.arc, self.weight = arc, weight
@@ -151,4 +161,7 @@ class Free:
     def __call__(self, slide_nr: int, num_slides: int) -> float:
         if slide_nr <= 0 or slide_nr >= num_slides:
             return 0.0
-        return PART_WEIGHT * self.weight if self.arc.part_of(slide_nr, num_slides) is None else STAND_IN * self.weight
+        part = self.arc.part_of(slide_nr, num_slides)
+        if part is None:
+            return PART_WEIGHT * self.weight
+        return max(STAND_IN, PART_WEIGHT * self.arc.part(part).others) * self.weight

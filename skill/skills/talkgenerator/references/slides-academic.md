@@ -362,20 +362,20 @@ Images: none
 
 ## `references`
 
-A talk's references, as an academic talk ends with them: three to five made-up works it cites, numbered, which appear one by one, a click each; and a picture of one of them, if it has one (a book's cover, or a figure from a paper), with a caption that says which, on the click after them.
+A talk's references, as an academic talk ends with them: three to five made-up works it cites, which the slide numbers itself ([1], [2]...) and which appear one by one, a click each; and a picture of one of them, if it has one (a book's cover, or a figure from a paper), with a caption that says which, on the click after them.
 
 | Text | At most | What to write |
 | --- | --- | --- |
 | `title` | 40 | the slide's title |
-| `items` | 260 | three to five made-up works the talk cites, separated by \|, each at most 36 characters |
+| `items` | 260 | three to five made-up works the talk cites, separated by \|, each at most 36 characters, without a number in front |
 | `caption` | 30 | which of the works the picture is of, by its number in the list, such as 'Cover of [2]' (or empty, for none) |
 
 Images: `figure`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `references-academic` | The references: three to five made-up works that the talk cites, in a citation style | the default; `title`: the slide's title, as a conference talk's slide has it, such as 'References'; `items`: three to five short made-up references, each an author 'et al.', a year in brackets and a journal of two or three words (no paper's title), separated by \|, each at most 36 characters; `caption`: which work it's the cover of, by its number in the list, such as 'Cover of [2]'; images: `figure` book-covers, else museum, else illustration (or generated, from its prompt, with an image generator set up); tags: references |
-| `references-figure-academic` | The references: three to five made-up works that the talk cites, in a citation style | `title`: the slide's title, as a conference talk's slide has it, such as 'References'; `items`: three to five short made-up references, each an author 'et al.', a year in brackets and a journal of two or three words (no paper's title), separated by \|, each at most 36 characters; `caption`: which work the figure is from, by its number in the list, such as '[3], Fig. 2'; images: `figure` bad-charts, else museum, else illustration; tags: references |
+| `references-academic` | The references: three to five made-up works that the talk cites, in a citation style | the default; `title`: the slide's title, as a conference talk's slide has it, such as 'References'; `items`: three to five short made-up references, each an author 'et al.', a year in brackets and a journal of two or three words (no paper's title), without a number in front (the slide numbers them), separated by \|, each at most 36 characters; `caption`: which work it's the cover of, by its number in the list, such as 'Cover of [2]'; images: `figure` book-covers, else museum, else illustration (or generated, from its prompt, with an image generator set up); tags: references |
+| `references-figure-academic` | The references: three to five made-up works that the talk cites, in a citation style | `title`: the slide's title, as a conference talk's slide has it, such as 'References'; `items`: three to five short made-up references, each an author 'et al.', a year in brackets and a journal of two or three words (no paper's title), without a number in front (the slide numbers them), separated by \|, each at most 36 characters; `caption`: which work the figure is from, by its number in the list, such as '[3], Fig. 2'; images: `figure` bad-charts, else museum, else illustration; tags: references |
 
 ## `meme`
 

@@ -60,6 +60,10 @@ PACK: Final = "academic"
 # talks "pretty boring with mostly boring text and a lot of superfluous slides"; D69: its motivation first, its why,
 # kept by every talk of two slides or more, as good academic talks explain their problem first, the user said; D76:
 # no "Questions?" among its slides, as its closer asks for them, and the outline and acknowledgements still wait)
+# How much the format's other slides (memes, real charts, gifs...) weigh in the references' slide, against what they
+# weigh in a free slide: about one talk in three ends with one of them rather than the references (the user found the
+# references too often, 2026-11-14, D82: every academic talk of seven slides or more ended with them)
+REFERENCES_OTHERS: Final = 0.1
 ARC: Final = Arc(
     (
         Part("motivation", rank=1),
@@ -70,7 +74,7 @@ ARC: Final = Arc(
         Part("limitations", rank=4),
         Part("future_work", rank=7),
         Part("acknowledgements", rank=9, shortest=13),
-        Part("references", rank=5),
+        Part("references", rank=5, others=REFERENCES_OTHERS),
     ),
     free=0.25,
 )
@@ -472,7 +476,8 @@ def _references_recipe(picture: ImageSlot, note: str, caption: str) -> Recipe:
         hints={
             "title": _TITLE_HINT + ", such as 'References'",
             "items": "three to five short made-up references, each an author 'et al.', a year in brackets and a "
-            f"journal of two or three words (no paper's title), {_LIST}",
+            f"journal of two or three words (no paper's title), without a number in front (the slide numbers them), "
+            f"{_LIST}",
             "caption": caption,
         },
         variants=(

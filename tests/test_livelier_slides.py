@@ -414,6 +414,32 @@ def test_references_list_their_works_and_show_a_picture_of_one(images):
         KINDS["references"].build({"title": "References", "items": "One | Two", "caption": None}, {}, languages.ENGLISH)
 
 
+def test_references_number_their_works_once_and_cut_a_long_one_after_its_year():
+    # (the user's review, 2026-11-14, D82: "[1] [1] Verhoeven et al. (1987) Tijdschrift voor", a model's own numbers
+    # after the slide's, and a journal's name cut in its middle)
+    works = (
+        "[1] Verhoeven et al. (1987) Tijdschrift voor Duivenkunde | 2. De Graaf et al. (2007) Pleinstudies"
+        " | (3) Mulder et al. (2012) Broodkruimelkunde | 4) 42 Duiven (2019) | Bakker et al., een heel lang"
+        " tijdschrift zonder jaartal erin"
+    )
+    slide = KINDS["references"].build({"title": "Literatuur", "items": works}, {}, languages.ENGLISH).to_deck_slide()
+    assert [slide.element(f"item_{index}").text for index in range(1, 6)] == [
+        "Verhoeven et al. (1987)",
+        "De Graaf et al. (2007) Pleinstudies",
+        "Mulder et al. (2012) Broodkruimelkunde",
+        "42 Duiven (2019)",
+        "Bakker et al., een heel lang tijdschrift",
+    ]
+
+
+def test_an_academic_talk_ends_with_its_references_about_two_times_in_three():
+    slot = academic.ARC.layout(10).index("references")
+    weights = {generator.name: generator.get_weight_for(slot, 10) for generator in academic.GENERATORS}
+    references = sum(weight for name, weight in weights.items() if name.startswith("References"))
+    assert 0.6 <= references / sum(weights.values()) <= 0.75  # (the others: memes, real charts, gifs...)
+    assert academic.ARC.kept(10)[-1] == "references"  # (still the arc's last part)
+
+
 def test_an_academic_talks_references_show_a_cover_or_a_figure_most_of_the_time(images):
     for rule in ("references.cover_caption", "references.figure_caption"):
         content = academic._references(lambda context: _image("tall"), rule)
