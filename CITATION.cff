@@ -11,7 +11,7 @@ authors:
   - given-names: Kory W.
     family-names: Mathewson
 version: 5.0.0
-date-released: "2026-11-05"
+date-released: "2026-11-15"
 license: MIT
 repository-code: "https://github.com/twinters/talk-generator"
 url: "https://talkgenerator.com"

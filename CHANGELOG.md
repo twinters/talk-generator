@@ -8,6 +8,8 @@ and the project follows [Semantic Versioning](https://semver.org/).
 
 <!-- Add changes here as you merge them; release.py moves them under the new version at release time. -->
 
+## [5.0.0] - 2026-11-15
+
 talkgenerator 5 brings the 2019 generator up to date. Language models write the talks (OpenRouter's free models, at
 no cost), Claude can write them too, and talks come in themes, formats and personas, with more than thirty new kinds
 of slides. Every talk is a deck, plain JSON data that the PowerPoint is drawn from and that streams into the browser
@@ -392,7 +394,8 @@ Historical snapshot of the version accompanying the paper *"Automatically Genera
 Engaging Presentation Slide Decks"* (Winters & Mathewson, EvoMUSART 2019). Preserved
 as the `Alpha` git tag; it isn't on PyPI and isn't maintained for current Python.
 
-[Unreleased]: https://github.com/twinters/talk-generator/compare/v4.0.1...HEAD
+[Unreleased]: https://github.com/twinters/talk-generator/compare/v5.0.0...HEAD
+[5.0.0]: https://github.com/twinters/talk-generator/releases/tag/v5.0.0
 [4.0.1]: https://github.com/twinters/talk-generator/releases/tag/v4.0.1
 [4.0.0]: https://github.com/twinters/talk-generator/compare/Alpha...v4.0.0
 [2.1.4]: https://pypi.org/project/talkgenerator/2.1.4/
