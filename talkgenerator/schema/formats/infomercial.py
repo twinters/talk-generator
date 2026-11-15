@@ -425,7 +425,6 @@ def _part(
 _TITLE_HINT = "the slide's title, as an infomercial shouts it: a few words, with an exclamation mark"
 _FEW_WORDS = "in two to five words"
 _SHOUTED = "in a few words, with an exclamation mark"
-_LABEL = "what the number is, without the number itself"
 _SMALL_PRINT = "the small print, such as shipping and handling, or empty for none"
 _PRICED = pictured((), "background", BIG_NUMBER_PICTURES)
 

@@ -48,10 +48,6 @@ def register(name: str, factory: ProviderFactory) -> None:
     _FACTORIES[name] = factory
 
 
-def names() -> list[str]:
-    return list(_FACTORIES)
-
-
 def provider_from_spec(spec: str) -> TextProvider:
     """The provider a spec stands for: its name, and what the provider needs after a colon (such as a model)."""
     name, _, argument = spec.strip().partition(":")

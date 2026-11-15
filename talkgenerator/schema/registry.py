@@ -52,9 +52,6 @@ class Registry(Generic[T]):
         """All items of the given groups, in that order."""
         return [item for group in groups for item in self.group(group)]
 
-    def group_names(self) -> list[str]:
-        return list(self._groups)
-
     def names(self) -> list[str]:
         return list(self._items)
 

@@ -35,21 +35,6 @@ def planned() -> bool:
     return _AS_PLANNED.get()
 
 
-def fullname(o):
-    # o.__module__ + "." + o.__class__.__qualname__ is an example in
-    # this context of H.L. Mencken's "neat, plausible, and wrong."
-    # Python makes no guarantees as to whether the __module__ special
-    # attribute is defined, so we take a more circumspect approach.
-    # Alas, the module name is explicitly excluded from __qualname__
-    # in Python 3.
-
-    module = o.__class__.__module__
-    if module is None or module == str.__class__.__module__:
-        return o.__class__.__name__  # Avoid reporting __builtin__
-    else:
-        return module + "." + o.__class__.__name__
-
-
 class Generator:
     def __call__(self, seed: str):
         raise NotImplementedError(str(self) + " has not provided an implementation for the generator")
@@ -62,19 +47,6 @@ class PrefixedGenerator(Generator):
 
     def __call__(self, seed: str):
         return self._generator(seed if planned() else self._prefix + " " + seed)
-
-
-class PrefixedPresentationContextGenerator(Generator):
-    def __init__(self, prefix: str, generator):
-        self._prefix = prefix
-        self._generator = generator
-
-    def __call__(self, presentation_context):
-        if planned():
-            return self._generator(presentation_context)
-        presentation_context = dict(presentation_context)
-        presentation_context["seed"] = self._prefix + " " + presentation_context["seed"]
-        return self._generator(presentation_context)
 
 
 class CombinedGenerator(Generator):
@@ -165,38 +137,12 @@ class SeededGenerator(Generator):
         return self._simple_generator(presentation_context["seed"])
 
 
-class UnseededGenerator(Generator):
-    def __init__(self, simple_generator):
-        self._simple_generator = simple_generator
-
-    def __call__(self, seed):
-        presentation_context = {"seed": seed}
-        return self._simple_generator(presentation_context)
-
-
 class NoneGenerator(Generator):
     def __init__(self):
         pass
 
     def __call__(self, presentation_context):
         return None
-
-
-class IdentityGenerator(Generator):
-    def __init__(self, input_word):
-        self._input_word = input_word
-
-    def __call__(self, presentation_context):
-        return self._input_word
-
-
-class TitledIdentityGenerator(Generator):
-    def __init__(self, input_word):
-        self._input_word = input_word
-
-    def __call__(self, presentation_context):
-        if self._input_word:
-            return self._input_word.title()
 
 
 class StaticGenerator(Generator):
@@ -213,10 +159,6 @@ class FromListGenerator(Generator):
 
     def __call__(self, presentation_context):
         return random_util.choice_optional(self._list_generator(presentation_context))
-
-
-seeded_identity_generator = SeededGenerator(IdentityGenerator)
-seeded_titled_identity_generator = SeededGenerator(TitledIdentityGenerator)
 
 
 class ExternalImageListGenerator(Generator):
@@ -272,17 +214,6 @@ class ExternalImageListGenerator(Generator):
         return None
 
 
-class BackupGenerator(Generator):
-    def __init__(self, *generator_list):
-        self._generator_list = generator_list
-
-    def __call__(self, context):
-        for generator in self._generator_list:
-            generated = generator(context)
-            if generated:
-                return generated
-
-
 class WeightedGenerator(Generator):
     def __init__(self, weighted_list_creator):
         self._weighted_list_creator = weighted_list_creator
@@ -323,19 +254,6 @@ class WalkingGenerator(Generator):
                 history.add(current)
 
         return current
-
-
-class ImageGenerator(Generator):
-    def __call__(self, seed: str) -> ImageData:
-        raise NotImplementedError("Not implemented image generator")
-
-
-class UnsourcedImageGenerator(ImageGenerator):
-    def __init__(self, image_url_generator: Callable[[str], str]):
-        self._image_url_generator = image_url_generator
-
-    def __call__(self, seed: str) -> ImageData:
-        return ImageData(image_url=self._image_url_generator(seed))
 
 
 class RelatedMappingGenerator(Generator):

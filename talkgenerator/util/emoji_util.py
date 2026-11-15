@@ -94,7 +94,3 @@ def room(text: str) -> int:
 def plain(text: str) -> str:
     """The text without its emoji (and what joins them)."""
     return "".join(part for part, emoji in runs(text) if not emoji)
-
-
-def has_emoji(text: str) -> bool:
-    return count(text) > 0

@@ -1698,28 +1698,6 @@ conclusion_slide_generators_copyright_free = _register(
     ],
 )
 
-all_slide_generators = (
-    title_slide_generators
-    + about_me_slide_generators
-    + history_slide_generators
-    + single_image_slide_generators
-    + statement_slide_generators
-    + captioned_images_slide_generators
-    + chart_slide_generators
-    + diagram_slide_generators
-    + number_slide_generators
-    + quiz_slide_generators
-    + mockup_slide_generators
-    + meme_slide_generators
-    + fun_fact_slide_generators
-    + problem_slide_generators
-    + karaoke_slide_generators
-    + picture_prompt_slide_generators
-    + structure_slide_generators
-    + native_diagram_slide_generators
-    + conclusion_slide_generators
-)
-
 # SPARE SLIDES: what a streamed talk shows while its next slide isn't in yet, when a presenter catches up with the
 # making (see talkgenerator.generator.stream_talk's spares): slide types drawn without pictures, from the TED pack's
 # templates and the words ConceptNet (or Datamuse) relates to the topic. Timed on 26 topics (docs/v5-plan.md, D66, has

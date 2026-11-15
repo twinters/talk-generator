@@ -55,9 +55,6 @@ class AbstractTextGenerator:
     def generate(self, variables_dictionary):
         raise NotImplementedError()
 
-    def generate_with_seed(self, seed):
-        return self.generate({"seed": seed})
-
 
 class TemplatedTextGenerator(AbstractTextGenerator):
     def __init__(self, template_file=None, templates_list=None, rules=None):
@@ -137,10 +134,6 @@ def new_tracery_grammar(rules):
     grammar = tracery.Grammar(rules)
     grammar.add_modifiers(base_english)
     return grammar
-
-
-def get_tracery_grammar(grammar_path):
-    return new_tracery_grammar(load_tracery_rules(grammar_path))
 
 
 def can_format_with(template, variables_dictionary):

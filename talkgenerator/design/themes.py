@@ -125,7 +125,7 @@ class Family:
     filter_scope: FilterScope = "all"
     image_frames: tuple[tuple[ImageFrame, float], ...] = (("none", 1.0),)
     image_grain: float = 0.0
-    grain: float = 0.14  # (GRAIN; SOFT_GRAIN for a family whose grain is soft)
+    grain: float = GRAIN  # (SOFT_GRAIN for a family whose grain is soft)
     image_vignette: float = 0.0
     image_tints: tuple[tuple[Tint, float], ...] = (("none", 1.0),)
     # WordArt-style effects on its headings: which kind, and the chance that a member has them
