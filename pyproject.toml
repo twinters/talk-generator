@@ -73,6 +73,12 @@ dev = [
     "types-requests>=2.33.0.20261030",
 ]
 
+[tool.uv]
+# The lock leaves Python 3.11.0 to 3.11.4 out: no fixed soupsieve supports them (3.0.2 and up need 3.11.5, and 2.10,
+# the newest they can have, has three advisories of 2026-11-13). pip still installs talkgenerator there, with that
+# soupsieve, whose CSS selectors talkgenerator never uses; CI's 3.11 is the latest patch.
+environments = ["python_full_version >= '3.11.5'"]
+
 [tool.setuptools.packages.find]
 include = ["talkgenerator*"]
 
