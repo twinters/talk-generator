@@ -1258,15 +1258,19 @@ def _tint(kind: Tint, palette: Palette) -> tuple[str | None, float]:
 def _heading_effect(kind: HeadingEffect, theme: Theme) -> TextEffect | None:
     """A family's kind of heading effect, in the member's colours. A heading reads on what's behind it (the
     background, and the bands behind titles on photos), by its fill or by its outline: an outline that reads on the
-    background, around a fill that reads on the outline (see talkgenerator.checks.design)."""
+    background, around a fill that reads on the outline (see talkgenerator.checks.design; the engine makes an outline
+    that reads by itself as thick as a meme's, and one as light or as dark as its letters black or white)."""
     palette = theme.palette
     backgrounds = [palette.background, palette.surface, *([theme.gradient_to] if theme.gradient_to else [])]
     if kind == "wordart":  # a rainbow in a black or white outline, with a drop shadow, bent into a WordArt shape
-        outline = max(("#1a1a1a", "#ffffff"), key=lambda extreme: color.worst_contrast(extreme, backgrounds))
+        # The rainbow reads on the background by itself: light on a dark one, in a black outline, or dark on a light
+        # one, in a white outline (an outline as light as its letters only fattens them, and a thin one can't carry a
+        # heading alone)
+        light = color.worst_contrast("#ffffff", backgrounds) >= color.worst_contrast("#000000", backgrounds)
+        outline = "#1a1a1a" if light else "#ffffff"
         hue = color.to_hsl(palette.accent)[0]
         rainbow = tuple(
-            color.readable_on(color.hsl(hue + turn, 0.95, 0.55), [outline], color.BODY_CONTRAST)
-            for turn in (0, 70, 140)
+            _shade_toward(color.hsl(hue + turn, 0.95, 0.55), backgrounds, outline, light) for turn in (0, 70, 140)
         )
         return TextEffect(
             fill=rainbow,
@@ -1304,6 +1308,20 @@ def _heading_effect(kind: HeadingEffect, theme: Theme) -> TextEffect | None:
             fill=(tinted, palette.text), shadow="#000000", shadow_offset=(5, 5), shadow_blur=6, shadow_opacity=0.45
         )
     return None
+
+
+def _shade_toward(colour: str, backgrounds: list[str], outline: str, lighter: bool) -> str:
+    """The colour, or the nearest lighter (or darker) shade of it, that reads as large text on every one of the
+    backgrounds and on the outline around it; else white (or black)."""
+    hue, saturation, lightness = color.to_hsl(colour)
+    for step in range(21):
+        shade = color.hsl(hue, saturation, lightness + (step if lighter else -step) * 0.05)
+        if (
+            color.worst_contrast(shade, backgrounds) >= color.LARGE_TEXT_CONTRAST
+            and color.contrast(shade, outline) >= color.BODY_CONTRAST
+        ):
+            return shade
+    return "#ffffff" if lighter else "#000000"
 
 
 def _weighted(choices: tuple[tuple[T, float], ...]) -> T:

@@ -68,6 +68,7 @@ SHADE: Final = "#000000"
 SHADE_OPACITY: Final = 0.55
 BAND_OPACITY: Final = 0.85  # of the bands behind texts on a full-screen picture
 LIGHT_TEXT: Final = "#ffffff"
+OUTLINES: Final = ("#1a1a1a", "#ffffff")  # (a heading's outline, where its theme's doesn't stand out on its letters)
 # How opaque a diagram's circles are (where they overlap, their colours mix), and its quadrants (as in the template)
 DIAGRAM_OPACITY: Final = {"venn": 0.45, "matrix": 0.2}
 # Lines, such as a matrix's axes, need less contrast than texts to be seen (WCAG's 3 for graphics)
@@ -820,17 +821,20 @@ def _style(
         "light": LIGHT_TEXT,
         "accent": theme.palette.accent,
     }
+    text_colour = colour or colors[spec.color]
     effect = theme.heading_effect if spec.heading and spec.effect and not plain else None
     if effect is not None and (
         spec.on_photo or spec.on_fill or on_fill
     ):  # (its colour reads there; a gradient may not)
         effect = effect.model_copy(update={"fill": ()})
+    if effect is not None:
+        effect = _outlined(effect, text_colour, fitted.size, _backgrounds(theme))
     if spec.outline:  # (an outline a twelfth of the text's size, as memes have it)
         effect = TextEffect(outline=spec.outline, outline_width=max(2.0, round(fitted.size / 12, 1)))
     return TextStyle(
         font=font,
         size=fitted.size,
-        color=colour or colors[spec.color],
+        color=text_colour,
         bold=bold,
         italic=spec.italic,
         uppercase=uppercase,
@@ -838,6 +842,26 @@ def _style(
         anchor=spec.anchor,
         effect=effect,
     )
+
+
+def _outlined(effect: TextEffect, colour: str, size: float, backgrounds: Sequence[str]) -> TextEffect:
+    """A heading effect's outline, as it reads around the heading's letters (its gradient's colours, or its colour):
+    black or white, whichever stands out on them, where the theme's outline is as light (or as dark) as they are
+    (white letters in a white outline on a photo's band, say, would only get fatter); and a twelfth of the text's
+    size, as memes have it, where the letters don't read on the slide's background by themselves (chrome on a pastel
+    background), so the heading reads by its outline."""
+    if not effect.outline or effect.outline_width <= 0:
+        return effect
+    letters = effect.fill or (colour,)
+    outline = effect.outline
+    if min(color.contrast(letter, outline) for letter in letters) < color.LARGE_TEXT_CONTRAST:
+        outline = max(OUTLINES, key=lambda extreme: min(color.contrast(letter, extreme) for letter in letters))
+    width = effect.outline_width
+    if effect.fill and min(color.worst_contrast(letter, backgrounds) for letter in letters) < color.LARGE_TEXT_CONTRAST:
+        width = max(width, round(size / 12, 1))
+    if (outline, width) == (effect.outline, effect.outline_width):
+        return effect
+    return effect.model_copy(update={"outline": outline, "outline_width": width})
 
 
 def text_lines(text: str, box: Box, spec: str | TextSpec, theme: Theme) -> tuple[TextStyle, list[Box]]:

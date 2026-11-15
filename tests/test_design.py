@@ -1106,13 +1106,48 @@ def test_neon_headings_glow(images):
 
 @pytest.mark.slow
 def test_an_outlined_heading_reads_by_its_outline(images):
-    theme = _wordart()
+    theme = themes.pick("Y2K", random_util.Rng(1))
     deck = _runs(theme=theme).to_deck()
     assert [finding for finding in check_design(deck) if finding.check == "contrast"] == []
-    # Without its outline, a rainbow doesn't read on WordArt's loud backgrounds
+    # Without its outline, chrome doesn't read on Y2K's pastel backgrounds
     effect = theme.heading_effect.model_copy(update={"outline": None, "outline_width": 0.0})
     bare = _runs(theme=theme.model_copy(update={"heading_effect": effect})).to_deck()
     assert any(finding.check == "contrast" for finding in check_design(bare))
+
+
+@pytest.mark.parametrize("family", ["1997 WordArt", "Y2K"])
+def test_outlined_headings_stand_out_from_their_outlines(images, family):
+    # White letters in a white outline (on a photo's band, or a statement over a photo) only got fatter, and a thin
+    # outline around chrome as light as its pastel background read as hollow letters: an outline stands out on the
+    # letters it's around, and where they don't read on the background by themselves, it's as thick as a meme's
+    for seed in range(8):
+        theme = themes.pick(family, random_util.Rng(seed))
+        slide_deck = SlideDeck(3, seed=1)
+        slide_deck.add_slide(0, slides.ImageSlide("Meet the SockMate 3000!", _image("wide")))
+        slide_deck.add_slide(1, slides.FullImageSlide("But wait! Free socks!", _image("wide")))
+        slide_deck.add_slide(2, slides.LarqeQuoteSlide(None, "Call now!", background_image=_image("wide")))
+        slide_deck.theme = theme
+        deck = slide_deck.to_deck()
+        headings = [
+            element.style
+            for slide in deck.slides
+            for element in slide.elements
+            if isinstance(element, TextElement) and element.style.effect is not None and element.style.effect.outline
+        ]
+        assert len(headings) == 3
+        for style in headings:
+            effect = style.effect
+            letters = effect.fill or (style.color,)
+            assert all(color.contrast(letter, effect.outline) >= color.LARGE_TEXT_CONTRAST for letter in letters)
+            # (a gradient is on the slide's background; on a photo, a heading has a colour that reads there)
+            backgrounds = engine._backgrounds(theme)
+            if effect.fill and min(color.worst_contrast(letter, backgrounds) for letter in letters) < 3:
+                assert effect.outline_width >= style.size / 12 - 0.1
+        if family == "1997 WordArt":  # (its rainbow reads by itself, light on a dark gradient or dark on a light one)
+            assert all(
+                color.worst_contrast(stop, engine._backgrounds(theme)) >= color.LARGE_TEXT_CONTRAST
+                for stop in theme.heading_effect.fill
+            )
 
 
 @pytest.mark.parametrize("seed", range(4))

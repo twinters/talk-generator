@@ -343,23 +343,25 @@ def _with_effect(
     for left, y, line in placed:
         pen.text((left, y), line, fill=255, font=font)
     layer = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
-    if effect.glow and effect.glow_radius > 0:
-        radius = max(1, round(effect.glow_radius * scale))
-        glow = mask.filter(ImageFilter.MaxFilter(2 * (radius // 2) + 1)).filter(ImageFilter.GaussianBlur(radius / 2))
-        _paint(layer, glow, effect.glow, 0.6)
-    if effect.shadow:
-        right, down = (round(value * scale) for value in effect.shadow_offset)
-        shadow = Image.new("L", canvas.size, 0)
-        shadow.paste(mask, (right, down))
-        if effect.shadow_blur > 0:
-            shadow = shadow.filter(ImageFilter.GaussianBlur(effect.shadow_blur * scale))
-        _paint(layer, shadow, effect.shadow, effect.shadow_opacity)
+    stroke = None
     if effect.outline and effect.outline_width > 0:
         stroke = Image.new("L", canvas.size, 0)
         width = max(1, round(effect.outline_width * scale))
         outline_pen = ImageDraw.Draw(stroke)
         for left, y, line in placed:
             outline_pen.text((left, y), line, fill=255, font=font, stroke_width=width, stroke_fill=255)
+    if effect.glow and effect.glow_radius > 0:
+        radius = max(1, round(effect.glow_radius * scale))
+        glow = mask.filter(ImageFilter.MaxFilter(2 * (radius // 2) + 1)).filter(ImageFilter.GaussianBlur(radius / 2))
+        _paint(layer, glow, effect.glow, 0.6)
+    if effect.shadow:  # (of the outlined letters, as PowerPoint casts it)
+        right, down = (round(value * scale) for value in effect.shadow_offset)
+        shadow = Image.new("L", canvas.size, 0)
+        shadow.paste(stroke if stroke is not None else mask, (right, down))
+        if effect.shadow_blur > 0:
+            shadow = shadow.filter(ImageFilter.GaussianBlur(effect.shadow_blur * scale))
+        _paint(layer, shadow, effect.shadow, effect.shadow_opacity)
+    if stroke is not None and effect.outline:
         _paint(layer, stroke, effect.outline, 1.0)
     if effect.fill:
         top = placed[0][1]
