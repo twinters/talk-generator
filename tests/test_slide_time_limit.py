@@ -27,7 +27,7 @@ from talkgenerator.plan.kinds import Recipe
 from talkgenerator.schema import presentation_schema
 from talkgenerator.schema.presentation_schema import PresentationSchema, _Clock, _photo_slots, _SparePictures
 from talkgenerator.schema.slide_topic_generators import IdentityTopicGenerator
-from talkgenerator.slide import powerpoint_slide_creator, slide_generator_types
+from talkgenerator.slide import slide_generator_types
 from talkgenerator.util import random_util
 from talkgenerator.util.generator_util import CombinedGenerator, NoneGenerator
 from tests.test_llm_talks import FakeModel, _classic_chart
@@ -69,7 +69,6 @@ def _spare_generators():
 
 def _schema(generators, max_allowed_tags=None):
     return PresentationSchema(
-        powerpoint_slide_creator.create_new_powerpoint,
         seed_generator=IdentityTopicGenerator,
         title_generator=lambda context: "A classic title about " + context["seed"],
         slide_generators=generators,

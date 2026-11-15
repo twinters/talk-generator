@@ -315,5 +315,5 @@ def get_source_name(submission: Any) -> str:
     author = data.get("author")
     subreddit = data.get("subreddit_name_prefixed") or "Reddit"
     if author is not None and getattr(author, "name", None):
-        return "u/{} (on {})".format(author.name, subreddit)
-    return "Reddit ({})".format(subreddit)
+        return f"u/{author.name} (on {subreddit})"
+    return f"Reddit ({subreddit})"

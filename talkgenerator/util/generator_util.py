@@ -9,14 +9,14 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Final
 
-from talkgenerator.datastructures.image_data import ImageData
-from talkgenerator.util import image_util, random_util
+from talkgenerator.util import random_util
 
 logger = logging.getLogger("talkgenerator")
 
 # While the images of a planned slide are searched (see as_planned), searches go as written: generators that rewrite a
-# search (with a prefix, a related word, a walk) pass it on unchanged, random fallbacks step aside, and image lists
-# pick among their best results instead of all of them. The classic generator keeps its surprises.
+# search (with a related word, a walk) pass it on unchanged, random fallbacks step aside, and the image finder picks
+# among a source's best results (TOP_RESULTS of them) instead of all of them. The classic generator keeps its
+# surprises.
 _AS_PLANNED: ContextVar[bool] = ContextVar("talkgenerator_as_planned", default=False)
 TOP_RESULTS: Final = 5
 
@@ -40,15 +40,6 @@ class Generator:
         raise NotImplementedError(str(self) + " has not provided an implementation for the generator")
 
 
-class PrefixedGenerator(Generator):
-    def __init__(self, prefix: str, generator: Callable[[str], Any]):
-        self._prefix = prefix
-        self._generator = generator
-
-    def __call__(self, seed: str):
-        return self._generator(seed if planned() else self._prefix + " " + seed)
-
-
 class CombinedGenerator(Generator):
     """One of its generators, picked by weight, and when that one gives nothing (a source that failed, say), another
     one of the rest. A NoneGenerator among them gives none on purpose: when it's picked, there's none (a slide
@@ -65,15 +56,15 @@ class CombinedGenerator(Generator):
     def __call__(self, seed: str | dict[str, str]):
         logger.debug("Calling generator_util.CombinedGenerator")
         current_weighted_generators = list(self._weighted_generators)
-        logger.debug("current_weighted_generators: {}".format(current_weighted_generators))
+        logger.debug(f"current_weighted_generators: {current_weighted_generators}")
         while len(current_weighted_generators) > 0:
             generator = random_util.weighted_random(current_weighted_generators)
             if generator is None or isinstance(generator, NoneGenerator):
                 return None
-            logger.debug("current generator: {}".format(generator))
-            logger.debug("generator seed: {}".format(seed))
+            logger.debug(f"current generator: {generator}")
+            logger.debug(f"generator seed: {seed}")
             generated = generator(seed)
-            logger.debug("generated: {}".format(generated))
+            logger.debug(f"generated: {generated}")
             if generated is not None:
                 return generated
             _remove_object_from_weighted_list(current_weighted_generators, generator)
@@ -132,8 +123,8 @@ class SeededGenerator(Generator):
 
     def __call__(self, presentation_context):
         logger.debug("Calling generator_util.SeededGenerator")
-        logger.debug("presentation_context: {}".format(presentation_context))
-        logger.debug("self._simple_generator: {}".format(self._simple_generator))
+        logger.debug(f"presentation_context: {presentation_context}")
+        logger.debug(f"self._simple_generator: {self._simple_generator}")
         return self._simple_generator(presentation_context["seed"])
 
 
@@ -159,59 +150,6 @@ class FromListGenerator(Generator):
 
     def __call__(self, presentation_context):
         return random_util.choice_optional(self._list_generator(presentation_context))
-
-
-class ExternalImageListGenerator(Generator):
-    """Picks a random image from a list of candidates (optionally weighted by (weight, image) pairs).
-
-    With check_image_validness, candidates are downloaded and checked first, so that dead links
-    and "image removed" placeholders are skipped instead of ending up as holes in the deck.
-    """
-
-    max_attempts = 8
-
-    def __init__(
-        self,
-        image_generator,
-        check_image_validness=True,
-        weighted=False,
-    ):
-        self._image_generator = image_generator
-        self._check_image_validness = check_image_validness
-        self._weighted = weighted
-
-    def __call__(self, presentation_context) -> ImageData | None:
-        images = self._image_generator(presentation_context)
-        if not images:
-            return None
-        # Work on a copy: the list may come straight out of a cache
-        candidates = list(images)
-
-        for _ in range(self.max_attempts):
-            if self._weighted:
-                candidates = [entry for entry in candidates if entry[0] > 0]
-            if not candidates:
-                return None
-            # For a plan, among the best results (the search's first ones) that are left
-            pool = candidates[:TOP_RESULTS] if planned() else candidates
-            if self._weighted:
-                entry = random_util.choices(pool, weights=[entry[0] for entry in pool])[0]
-                chosen = entry[1]
-            else:
-                entry = chosen = random_util.choice(pool)
-            candidates.remove(entry)
-
-            if isinstance(chosen, str):
-                chosen_image = ImageData(image_url=chosen)
-            elif isinstance(chosen, ImageData):
-                chosen_image = chosen
-            else:
-                logger.warning("Invalid image input for external image generator: %r", chosen)
-                continue
-
-            if not self._check_image_validness or image_util.check_image(chosen_image):
-                return chosen_image
-        return None
 
 
 class WeightedGenerator(Generator):

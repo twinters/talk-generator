@@ -34,7 +34,7 @@ from talkgenerator.render import charts
 from talkgenerator.schema import slide_schemas
 from talkgenerator.schema.presentation_schema import PresentationSchema
 from talkgenerator.schema.slide_topic_generators import IdentityTopicGenerator
-from talkgenerator.slide import powerpoint_slide_creator, slide_generator_types
+from talkgenerator.slide import slide_generator_types
 from talkgenerator.util import image_util, random_util
 from talkgenerator.util.generator_util import NoneGenerator, StaticGenerator
 
@@ -90,7 +90,6 @@ def fake_schema():
         )
 
     return PresentationSchema(
-        powerpoint_slide_creator.create_new_powerpoint,
         seed_generator=IdentityTopicGenerator,
         title_generator=lambda context: "A classic title about " + context["seed"],
         slide_generators=[
@@ -527,7 +526,6 @@ def test_a_dutch_talk_gets_no_slides_that_find_english_texts(monkeypatch):
         llm=Recipe("statement", images=(_photos,), texts_from={"text": lambda context: "An English quote"}),
     )
     schema = PresentationSchema(
-        powerpoint_slide_creator.create_new_powerpoint,
         seed_generator=IdentityTopicGenerator,
         title_generator=lambda context: "A classic title",
         slide_generators=[*fake.slide_generators, quote],

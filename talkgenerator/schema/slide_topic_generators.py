@@ -108,7 +108,7 @@ class SideTrackingTopicGenerator(SlideSeedGenerator):
         for index in range(num_slides):
             if seeds[index] is None:
                 seeds[index], steps[index], alternatives[index] = self._wander(seeds, steps, index)
-        logger.info("SideTrackingTopicGenerator concept seeds: {}".format(seeds))
+        logger.info(f"SideTrackingTopicGenerator concept seeds: {seeds}")
 
         self._seeds: list[str] = [seed or topics[0] for seed in seeds]
         self._alternatives = alternatives
@@ -183,7 +183,7 @@ def _things(word: str, taken: Sequence[str]) -> list[tuple[float, str]]:
             if things:
                 return things
     except Exception as e:
-        logger.info("Conceptnet related words failing: {}".format(e))
+        logger.info(f"Conceptnet related words failing: {e}")
     return []
 
 

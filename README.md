@@ -167,7 +167,7 @@ its place once it's made after all; and with `progress=True`, it says how far th
 
 ## Tests
 
-Tests live in `tests/`. Many of them talk to the live APIs, and are marked as `network` tests:
+Tests live in `tests/`. A few dozen of them talk to the live APIs, and are marked as `network` tests:
 
 ```sh
 uv run pytest                     # everything (tests needing missing API keys are skipped)
@@ -178,7 +178,7 @@ uv run ruff check . && uv run ruff format --check .
 uv run mypy                       # type checking
 ```
 
-The `slow` tests draw whole decks in every theme family, or sweep every template: about 200 of the offline tests, and
+The `slow` tests draw whole decks in every theme family, or sweep every template: about 500 of the 3,000 offline tests, and
 most of their time (over an hour on one core). Run them, or the files of what you change, before you merge.
 
 Type checking is gradual: mypy checks the whole package, and the modules listed under `[[tool.mypy.overrides]]` in `pyproject.toml` must be fully annotated.

@@ -23,7 +23,7 @@ from talkgenerator.schema.formats import (
 from talkgenerator.schema.presentation_schema import PresentationSchema
 from talkgenerator.schema.registry import Registry
 from talkgenerator.schema.slide_schemas import SPARE_GENERATORS, default_max_allowed_tags, slide_generators
-from talkgenerator.slide import powerpoint_slide_creator, slide_generator_types
+from talkgenerator.slide import slide_generator_types
 from talkgenerator.util import random_util
 
 if TYPE_CHECKING:
@@ -76,7 +76,6 @@ COPYRIGHT_FREE_GROUPS = (
 presentation_schema = schemas.register(
     "default",
     PresentationSchema(
-        powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
         seed_generator=slide_topic_generators.SideTrackingTopicGenerator,
         title_generator=cg.talk_title_generator,
         title_candidates=(cg.wikihow_title_generator,),
@@ -93,7 +92,6 @@ interview_max_allowed_tags["about_me"] = 0
 interview_schema = schemas.register(
     "interview",
     PresentationSchema(
-        powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
         seed_generator=slide_topic_generators.SideTrackingTopicGenerator,
         title_generator=cg.talk_title_generator,
         title_candidates=(cg.wikihow_title_generator,),
@@ -119,7 +117,6 @@ _test_sourcing_slide_generator = slide_generators.register(
 test_schema = schemas.register(
     "test",
     PresentationSchema(
-        powerpoint_slide_creator.create_new_powerpoint,
         title_generator=cg.talk_title_generator,
         title_candidates=(cg.wikihow_title_generator,),
         seed_generator=slide_topic_generators.IdentityTopicGenerator,
@@ -133,7 +130,6 @@ ted_schema = schemas.register(
     "ted",
     PresentationSchema(
         license_policy="open",
-        powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
         seed_generator=lambda topics, num_slides: slide_topic_generators.SideTrackingTopicGenerator(
             topics=topics, num_slides=num_slides, topic_return_period_range=range(2, 4)
         ),
@@ -187,8 +183,6 @@ ted_schema = schemas.register(
             "diagram": 0.2,
             "two_captions": 0.3,
             "three_captions": 0.2,
-            "multi_captions": 0.3,
-            "gif": 0.5,
             "quote": 0.2,
             "statement": 0.2,
         },
@@ -211,7 +205,6 @@ def _wandering(topics, num_slides):
 pitch_schema = schemas.register(
     "pitch",
     PresentationSchema(
-        powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
         seed_generator=_wandering,
         title_generator=pitch.title_generator,
         slide_generators=slide_generators.group("pitch"),
@@ -223,7 +216,6 @@ pitch_schema = schemas.register(
 academic_schema = schemas.register(
     "academic",
     PresentationSchema(
-        powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
         seed_generator=_wandering,
         title_generator=academic.title_generator,
         slide_generators=slide_generators.group("academic"),
@@ -235,7 +227,6 @@ academic_schema = schemas.register(
 corporate_schema = schemas.register(
     "corporate",
     PresentationSchema(
-        powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
         seed_generator=_wandering,
         title_generator=corporate.title_generator,
         slide_generators=slide_generators.group("corporate"),
@@ -247,7 +238,6 @@ corporate_schema = schemas.register(
 keynote_schema = schemas.register(
     "keynote",
     PresentationSchema(
-        powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
         seed_generator=_wandering,
         title_generator=keynote.title_generator,
         slide_generators=slide_generators.group("keynote"),
@@ -260,7 +250,6 @@ keynote_schema = schemas.register(
 infomercial_schema = schemas.register(
     "infomercial",
     PresentationSchema(
-        powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
         seed_generator=_wandering,
         title_generator=infomercial.title_generator,
         slide_generators=slide_generators.group("infomercial"),
@@ -272,7 +261,6 @@ infomercial_schema = schemas.register(
 documentary_schema = schemas.register(
     "documentary",
     PresentationSchema(
-        powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
         seed_generator=_wandering,
         title_generator=documentary.title_generator,
         slide_generators=slide_generators.group("documentary"),
@@ -284,7 +272,6 @@ documentary_schema = schemas.register(
 court_schema = schemas.register(
     "court",
     PresentationSchema(
-        powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
         seed_generator=_wandering,
         title_generator=court.title_generator,
         slide_generators=slide_generators.group("court"),
@@ -296,7 +283,6 @@ court_schema = schemas.register(
 museum_schema = schemas.register(
     "museum",
     PresentationSchema(
-        powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
         seed_generator=_wandering,
         title_generator=museum.title_generator,
         slide_generators=slide_generators.group("museum"),
@@ -308,7 +294,6 @@ museum_schema = schemas.register(
 wedding_schema = schemas.register(
     "wedding",
     PresentationSchema(
-        powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
         seed_generator=_wandering,
         title_generator=wedding.title_generator,
         slide_generators=slide_generators.group("wedding"),
@@ -320,7 +305,6 @@ wedding_schema = schemas.register(
 book_report_schema = schemas.register(
     "book_report",
     PresentationSchema(
-        powerpoint_creator=powerpoint_slide_creator.create_new_powerpoint,
         seed_generator=_wandering,
         title_generator=book_report.title_generator,
         slide_generators=slide_generators.group("book_report"),

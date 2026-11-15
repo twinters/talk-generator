@@ -1,13 +1,14 @@
 # talk-generator v5: design and roadmap
 
-Status: approved on 2026-11-05 ([section 17](#17-decisions-and-open-questions) lists the decisions). Milestones 1
-to 7 are done, and so is milestone 8 but for its week on the site; 5.0.0 is next ([section 16](#16-milestones)).
-Nothing ships until 5.0.0.
+Status: released as talkgenerator 5.0.0 on 2026-11-15. This is the design that v5 was built from, approved on
+2026-11-05 and kept as the record of its decisions ([section 17](#17-decisions-and-open-questions)), which the code
+refers to by their numbers (D1, D2, ...). It reads as it was written, before the release: the other documents in
+this folder say what talkgenerator does now.
 
 v4.0.0 is the modernized version of the 2019 generator from the EvoMUSART paper. v5 brings it up to 2026
 standards: LLM-written talks, generated images, more sources, themes and talk formats, and slides that stream
-into the browser on talkgenerator.com. The 4.x line stays on `master` and keeps powering talkgenerator.com
-until 5.0 is ready.
+into the browser on talkgenerator.com. The 4.x line stayed on `master` and kept powering talkgenerator.com
+until 5.0 was ready.
 
 ## Contents
 

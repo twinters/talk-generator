@@ -36,10 +36,10 @@ class SlideGenerator(metaclass=ABCMeta):
         content (say, an image that no source could deliver), so that it's tried again or another kind of
         slide takes its place instead of leaving a hole in the deck."""
         logger.debug("slide_generator_types.generate_slide")
-        logger.debug("presentation_context: {}".format(presentation_context))
-        logger.debug("self._slide_content_generator: {}".format(self._slide_content_generator))
+        logger.debug(f"presentation_context: {presentation_context}")
+        logger.debug(f"self._slide_content_generator: {self._slide_content_generator}")
         generated = self._slide_content_generator(presentation_context)
-        logger.debug("generated: {}".format(generated))
+        logger.debug(f"generated: {generated}")
         # (a diagram's pictures, after its other arguments, go to the slide by name: they're among what it's made of)
         pictures: dict[str, ImageData] = {}
         if isinstance(generated, tuple | list) and generated and isinstance(generated[-1], slides.Pictures):
@@ -258,24 +258,24 @@ class TwoImagesAndTupledCaptions(SlideGenerator):
     def __call__(self, presentation_context):
         logger.debug("Calling TwoImagesAndTupledCaptions")
         logger.debug("**********************************")
-        logger.debug("presentation_context: {}".format(presentation_context))
-        logger.debug("captions_generator: {}".format(self._captions_generator))
-        logger.debug("original_image_size: {}".format(self._original_image_size))
+        logger.debug(f"presentation_context: {presentation_context}")
+        logger.debug(f"captions_generator: {self._captions_generator}")
+        logger.debug(f"original_image_size: {self._original_image_size}")
 
         generated_tuple = self._captions_generator(presentation_context)
-        logger.debug("generated_tuple: {}".format(generated_tuple))
+        logger.debug(f"generated_tuple: {generated_tuple}")
 
-        logger.debug("title_generator: {}".format(self._title_generator))
+        logger.debug(f"title_generator: {self._title_generator}")
         _title = self._title_generator(presentation_context)
-        logger.debug("_title: {}".format(_title))
+        logger.debug(f"_title: {_title}")
 
-        logger.debug("image_1_generator: {}".format(self._image_1_generator))
+        logger.debug(f"image_1_generator: {self._image_1_generator}")
         _image1 = self._image_1_generator(presentation_context)
-        logger.debug("_image1: {}".format(_image1))
+        logger.debug(f"_image1: {_image1}")
 
-        logger.debug("image_2_generator: {}".format(self._image_2_generator))
+        logger.debug(f"image_2_generator: {self._image_2_generator}")
         _image2 = self._image_2_generator(presentation_context)
-        logger.debug("_image2: {}".format(_image2))
+        logger.debug(f"_image2: {_image2}")
 
         return (
             _title,

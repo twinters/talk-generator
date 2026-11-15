@@ -24,7 +24,7 @@ that it runs this repository's workflow, so no API token needs to be stored anyw
 Releases are cut from `master`. Everything up to the push is one command:
 
 ```sh
-uv run python scripts/release.py bump patch    # or: minor | major | an explicit 4.2.0
+uv run python scripts/release.py bump patch    # or: minor | major | an explicit 5.1.0
 ```
 
 It first checks that there are no uncommitted changes, that `master` isn't behind GitHub,
@@ -50,7 +50,7 @@ PyPI never accepts the same version twice, so a fix after a release needs a new 
 
 ## Branches
 
-`master` is the released 4.x line: fixes and Dependabot updates land there, and every
-release is a tag on it. Bigger work, like the v5 overhaul, happens on its own branch and
-merges into `master` when it's ready to ship. talkgenerator.com stays stable because it
-pins a released version from PyPI, not because of a branch.
+`master` is the released line: fixes and Dependabot updates land there, and every
+release is a tag on it. Bigger work happens on its own branch and merges into `master`
+when it's ready to ship. talkgenerator.com stays stable because it pins the talkgenerator
+it runs (a release from PyPI, or a commit of `master`), not because of a branch.

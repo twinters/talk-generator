@@ -42,7 +42,7 @@ from talkgenerator.models.events import SlideReady, SlideUpdated, TalkFinished
 from talkgenerator.plan.kinds import Recipe
 from talkgenerator.schema.presentation_schema import PresentationSchema
 from talkgenerator.schema.slide_topic_generators import IdentityTopicGenerator
-from talkgenerator.slide import powerpoint_slide_creator, slide_generator_types
+from talkgenerator.slide import slide_generator_types
 from talkgenerator.util import generator_util, image_util, random_util
 from talkgenerator.util.generator_util import StaticGenerator
 from tests.test_llm_talks import FakeModel
@@ -150,7 +150,6 @@ def _schema(with_gifs=False):
     )
     generators = [title, slide("Photo", PHOTO, 2)] + ([slide("Gif", GIF, 2)] if with_gifs else [])
     return PresentationSchema(
-        powerpoint_slide_creator.create_new_powerpoint,
         seed_generator=IdentityTopicGenerator,
         title_generator=lambda context: "Talking about " + context["seed"],
         slide_generators=generators,

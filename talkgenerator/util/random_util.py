@@ -109,10 +109,6 @@ def choice(seq: Sequence[T]) -> T:
     return current().choice(seq)
 
 
-def choices(population: Sequence[T], weights: Sequence[float] | None = None, *, k: int = 1) -> list[T]:
-    return current().choices(population, weights, k=k)
-
-
 def sample(population: Sequence[T], k: int) -> list[T]:
     return current().sample(population, k)
 

@@ -1,6 +1,6 @@
 name: Release
 
-# Publishing a GitHub release (tag v<version>, e.g. v4.0.0) builds the package and uploads it to PyPI.
+# Publishing a GitHub release (tag v<version>, e.g. v5.0.0) builds the package and uploads it to PyPI.
 # Running the workflow by hand is a dry run that uploads to TestPyPI instead.
 # Uploads use PyPI's trusted publishing: no API tokens are stored anywhere. See RELEASING.md.
 

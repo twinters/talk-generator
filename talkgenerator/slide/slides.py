@@ -10,7 +10,6 @@ from talkgenerator.models import deck as model
 from talkgenerator.plan.languages import ENGLISH, Language
 from talkgenerator.render import charts
 from talkgenerator.render.powerpoint import render_slide
-from talkgenerator.slide import powerpoint_slide_creator
 from talkgenerator.sources import memes
 from talkgenerator.util import image_util, os_util, random_util
 
@@ -24,9 +23,8 @@ class Slide:
     # The arguments a slide can't do without: without them, the slide would show an empty frame (or no slide at all)
     required_arguments: tuple[str, ...] = ()
 
-    def __init__(self, type_name: str, ppt_slide_creator, arguments: dict):
+    def __init__(self, type_name: str, arguments: dict):
         self._type_name = type_name
-        self._ppt_slide_creator = ppt_slide_creator
         self._arguments = arguments
         self._note = ""
         self._sources: list[str] = []
@@ -224,7 +222,6 @@ class TitleSlide(Slide):
     def __init__(self, title: str, subtitle: str | None, picture: ImageData | None = None):
         super().__init__(
             type_name="title",
-            ppt_slide_creator=powerpoint_slide_creator.create_title_slide,
             arguments={"title": title, "subtitle": subtitle, "picture": picture},
         )
 
@@ -242,7 +239,6 @@ class LarqeQuoteSlide(Slide):
     def __init__(self, title: str | None, text: str, background_image=None):
         super().__init__(
             type_name="large_quote",
-            ppt_slide_creator=powerpoint_slide_creator.create_large_quote_slide,
             arguments={
                 "title": title,
                 "text": text,
@@ -257,7 +253,6 @@ class ImageSlide(Slide):
     def __init__(self, title=None, image_url=None, original_image_size=True):
         super().__init__(
             type_name="image",
-            ppt_slide_creator=powerpoint_slide_creator.create_image_slide,
             arguments={
                 "title": title,
                 "image_url": image_url,
@@ -272,7 +267,6 @@ class FullImageSlide(Slide):
     def __init__(self, title=None, image_url=None, original_image_size=True):
         super().__init__(
             type_name="full_image",
-            ppt_slide_creator=powerpoint_slide_creator.create_full_image_slide,
             arguments={
                 "title": title,
                 "image_url": image_url,
@@ -295,7 +289,6 @@ class TwoColumnImageSlide(Slide):
     ):
         super().__init__(
             type_name="two_column_image",
-            ppt_slide_creator=powerpoint_slide_creator.create_two_column_images_slide,
             arguments={
                 "title": title,
                 "caption_1": caption_1,
@@ -323,7 +316,6 @@ class ThreeColumnImageSlide(Slide):
     ):
         super().__init__(
             type_name="three_column_image",
-            ppt_slide_creator=powerpoint_slide_creator.create_three_column_images_slide,
             arguments={
                 "title": title,
                 "caption_1": caption_1,
@@ -358,7 +350,6 @@ class ChartSlide(Slide):
         point_picture = point_picture or (pictures or {}).get("event")
         super().__init__(
             type_name="chart",
-            ppt_slide_creator=powerpoint_slide_creator.create_chart_slide,
             arguments={
                 "title": title,
                 "chart_type": chart_type,
@@ -465,7 +456,6 @@ class DiagramSlide(Slide):
                 arguments[picture_role(box)] = picture
         super().__init__(
             type_name="diagram",
-            ppt_slide_creator=powerpoint_slide_creator.create_diagram_slide,
             arguments=arguments,
         )
 
@@ -540,7 +530,7 @@ class BigNumberSlide(DrawnSlide):
         background: ImageData | None = None,
     ):
         arguments = {"background": background, "title": title, "number": number, "label": label, "source": source}
-        super().__init__("big_number", None, arguments)
+        super().__init__("big_number", arguments)
 
 
 class KpiSlide(DrawnSlide):
@@ -568,7 +558,7 @@ class KpiSlide(DrawnSlide):
         for index, (number, label) in enumerate(figures, 1):
             arguments[f"number_{index}"] = number if index < 4 or fourth else None
             arguments[f"label_{index}"] = label if index < 4 or fourth else None
-        super().__init__("kpi", None, arguments)
+        super().__init__("kpi", arguments)
 
     def clicks(self) -> dict[str, int]:
         return self._one_by_one(*((f"number_{index}", f"label_{index}") for index in range(1, 5)))
@@ -601,7 +591,7 @@ class QuizSlide(DrawnSlide):
         known = letter in LETTERS and bool(options[LETTERS.index(letter)])
         arguments["answer"] = letter if known else None
         arguments["explanation"] = explanation
-        super().__init__("quiz", None, arguments)
+        super().__init__("quiz", arguments)
 
     def clicks(self) -> dict[str, int]:
         options = [(f"letter_{index}", f"option_{index}") for index in range(1, 5)]
@@ -680,7 +670,7 @@ class SocialPostSlide(DrawnSlide):
             "photo": photo,
             "stats": f"{count(likes)} {language.likes} · {count(shares)} {language.shares}",
         }
-        super().__init__("social_post", None, arguments)
+        super().__init__("social_post", arguments)
 
 
 class NewsHeadlineSlide(DrawnSlide):
@@ -704,7 +694,7 @@ class NewsHeadlineSlide(DrawnSlide):
             "headline": headline,
             "subheadline": subheadline,
         }
-        super().__init__("news_headline", None, arguments)
+        super().__init__("news_headline", arguments)
 
 
 class AgendaSlide(DrawnSlide):
@@ -719,7 +709,7 @@ class AgendaSlide(DrawnSlide):
             item = listed[index - 1] if index <= len(listed) else None
             arguments[f"number_{index}"] = str(index) if item else None
             arguments[f"item_{index}"] = item
-        super().__init__("agenda", None, arguments)
+        super().__init__("agenda", arguments)
 
     def clicks(self) -> dict[str, int]:
         return self._one_by_one(*((f"number_{index}", f"item_{index}") for index in range(1, 6)))
@@ -739,7 +729,7 @@ class SectionSlide(DrawnSlide):
         background: ImageData | None = None,
     ):
         arguments = {"background": background, "kicker": kicker, "title": title, "subtitle": subtitle}
-        super().__init__("section", None, arguments)
+        super().__init__("section", arguments)
 
     def number(self, number: int) -> None:
         """Give the section its number, as its slide shows it ("02"), unless it has a kicker of its own."""
@@ -766,7 +756,7 @@ class QuestionsSlide(DrawnSlide):
         pick: float = 0.0,
         line_needs_picture: bool = False,
     ):
-        super().__init__("questions", None, {"photo": photo, "title": title, "subtitle": subtitle, "mark": "?"})
+        super().__init__("questions", {"photo": photo, "title": title, "subtitle": subtitle, "mark": "?"})
         self.callback = callback
         self._pick = pick
         self._line_needs_picture = line_needs_picture
@@ -817,9 +807,7 @@ class CloserSlide(DrawnSlide):
     required_arguments = ("title",)
 
     def __init__(self, title: str | None, subtitle: str | None = None, note: str | None = None, mark: bool = False):
-        super().__init__(
-            "closer", None, {"title": title, "subtitle": subtitle, "note": note, "mark": "?" if mark else None}
-        )
+        super().__init__("closer", {"title": title, "subtitle": subtitle, "note": note, "mark": "?" if mark else None})
 
     def to_deck_slide(self) -> model.DeckSlide:
         return super().to_deck_slide().model_copy(update={"closer": True})
@@ -897,7 +885,7 @@ class TimelineSlide(DrawnSlide):
         for index in range(1, 6):
             date, event = moments[index - 1] if index <= len(moments) else (None, None)
             arguments[f"date_{index}"], arguments[f"event_{index}"] = date, event
-        super().__init__("timeline", None, arguments)
+        super().__init__("timeline", arguments)
 
     def clicks(self) -> dict[str, int]:
         return self._one_by_one(*((f"date_{index}", f"event_{index}") for index in range(1, 6)))
@@ -910,7 +898,7 @@ class PyramidSlide(DrawnSlide):
     required_arguments = ("level_1", "level_2", "level_3")
 
     def __init__(self, title: str | None, *levels: str | None, pictures: Mapping[str, ImageData | None] | None = None):
-        super().__init__("pyramid", None, {"title": title, **_listed("level", 4, levels, pictures)})
+        super().__init__("pyramid", {"title": title, **_listed("level", 4, levels, pictures)})
 
     def clicks(self) -> dict[str, int]:
         return self._one_by_one(*(_with_its_picture(f"level_{index}") for index in range(4, 0, -1)))
@@ -928,7 +916,7 @@ class FunnelSlide(DrawnSlide):
     required_arguments = ("stage_1", "stage_2", "stage_3")
 
     def __init__(self, title: str | None, *stages: str | None, pictures: Mapping[str, ImageData | None] | None = None):
-        super().__init__("funnel", None, {"title": title, **_listed("stage", 5, stages, pictures)})
+        super().__init__("funnel", {"title": title, **_listed("stage", 5, stages, pictures)})
 
     def clicks(self) -> dict[str, int]:
         return self._one_by_one(*(_with_its_picture(f"stage_{index}") for index in range(1, 6)))
@@ -941,7 +929,7 @@ class CycleSlide(DrawnSlide):
     required_arguments = ("step_1", "step_2", "step_3")
 
     def __init__(self, title: str | None, *steps: str | None, pictures: Mapping[str, ImageData | None] | None = None):
-        super().__init__("cycle", None, {"title": title, **_listed("step", 5, steps, pictures)})
+        super().__init__("cycle", {"title": title, **_listed("step", 5, steps, pictures)})
 
     def clicks(self) -> dict[str, int]:
         return self._one_by_one(*(_with_its_picture(f"step_{index}") for index in range(1, 6)))
@@ -965,7 +953,7 @@ class OrgChartSlide(DrawnSlide):
         arguments: dict[str, Any] = {"title": title, "boss": None if picture is not None else boss}
         if picture is not None:
             arguments[picture_role("boss")] = picture
-        super().__init__("org_chart", None, {**arguments, **_listed("report", 4, reports)})
+        super().__init__("org_chart", {**arguments, **_listed("report", 4, reports)})
 
     def clicks(self) -> dict[str, int]:
         return self._one_by_one(*((f"report_{index}",) for index in range(1, 5)), _or_its_picture("boss"))
@@ -985,7 +973,7 @@ class IcebergSlide(DrawnSlide):
         pictures: Mapping[str, ImageData | None] | None = None,
     ):
         arguments = {"title": title, "tip": tip, **_listed("hidden", 3, hidden, pictures)}
-        super().__init__("iceberg", None, _with_pictures(arguments, ("tip",), pictures))
+        super().__init__("iceberg", _with_pictures(arguments, ("tip",), pictures))
 
     def clicks(self) -> dict[str, int]:
         return self._one_by_one(*(_with_its_picture(f"hidden_{index}") for index in range(1, 4)))
@@ -999,7 +987,7 @@ class ProcessSlide(DrawnSlide):
     required_arguments = ("step_1", "step_2", "step_3")
 
     def __init__(self, title: str | None, *steps: str | None, pictures: Mapping[str, ImageData | None] | None = None):
-        super().__init__("process", None, {"title": title, **_listed("step", 5, steps, pictures)})
+        super().__init__("process", {"title": title, **_listed("step", 5, steps, pictures)})
 
     def clicks(self) -> dict[str, int]:
         return self._one_by_one(*(_with_its_picture(f"step_{index}") for index in range(1, 6)))
@@ -1026,7 +1014,7 @@ class ReferencesSlide(DrawnSlide):
             arguments[f"item_{index}"] = work
         arguments["figure"] = figure
         arguments["caption"] = caption if figure is not None else None
-        super().__init__("references", None, arguments)
+        super().__init__("references", arguments)
 
     def clicks(self) -> dict[str, int]:
         works = ((f"number_{index}", f"item_{index}") for index in range(1, REFERENCES + 1))
@@ -1040,7 +1028,7 @@ class FunFactSlide(DrawnSlide):
     required_arguments = ("kicker", "fact")
 
     def __init__(self, kicker: str | None, fact: str | None, source: str | None = None, photo: ImageData | None = None):
-        super().__init__("fun_fact", None, {"kicker": kicker, "fact": fact, "source": source, "photo": photo})
+        super().__init__("fun_fact", {"kicker": kicker, "fact": fact, "source": source, "photo": photo})
 
 
 class ProblemSlide(DrawnSlide):
@@ -1060,7 +1048,7 @@ class ProblemSlide(DrawnSlide):
         photo: ImageData | None = None,
     ):
         arguments = {"background": background, "photo": photo, "kicker": kicker, "problem": problem, "detail": detail}
-        super().__init__("problem", None, arguments)
+        super().__init__("problem", arguments)
 
     def clicks(self) -> dict[str, int]:
         return self._one_by_one(("detail",))
@@ -1085,7 +1073,7 @@ class AcronymSlide(DrawnSlide):
             word = listed[index - 1] if index <= len(listed) else None
             arguments[f"letter_{index}"] = word[0].upper() if word else None
             arguments[f"word_{index}"] = word
-        super().__init__("acronym", None, arguments)
+        super().__init__("acronym", arguments)
 
     def clicks(self) -> dict[str, int]:
         return self._one_by_one(*((f"word_{index}",) for index in range(1, ACRONYM_LETTERS + 1)))
@@ -1098,7 +1086,7 @@ class DareSlide(DrawnSlide):
     required_arguments = ("kicker", "dare")
 
     def __init__(self, kicker: str | None, dare: str | None, background: ImageData | None = None):
-        super().__init__("dare", None, {"background": background, "kicker": kicker, "dare": dare})
+        super().__init__("dare", {"background": background, "kicker": kicker, "dare": dare})
 
 
 class FlowchartSlide(DrawnSlide):
@@ -1128,7 +1116,7 @@ class FlowchartSlide(DrawnSlide):
             "no_step": no_step,
             "end": end,
         }
-        super().__init__("flowchart", None, _with_pictures(arguments, FLOWCHART_BOXES, pictures))
+        super().__init__("flowchart", _with_pictures(arguments, FLOWCHART_BOXES, pictures))
 
     def clicks(self) -> dict[str, int]:
         steps = (("yes", *_with_its_picture("yes_step")), ("no", *_with_its_picture("no_step")))
@@ -1164,7 +1152,7 @@ class TierListSlide(DrawnSlide):
                 arguments[f"item_{key}_{index}"] = things[index - 1] if index <= len(things) else None
             if picture is not None:
                 arguments[picture_role(f"item_{key}_1")] = picture
-        super().__init__("tier_list", None, arguments)
+        super().__init__("tier_list", arguments)
 
     def clicks(self) -> dict[str, int]:
         tiers = [tier.lower() for tier in reversed(TIERS)]  # (the worst first)
@@ -1216,7 +1204,7 @@ class WallOfTextSlide(DrawnSlide):
         bullet = classic.SUB_BULLET if bullets[at] else classic.TOP_BULLET
         arguments["highlight"] = bullet + highlighted if highlighted else None
         arguments["continued"] = continued
-        super().__init__("wall_of_text", None, arguments)
+        super().__init__("wall_of_text", arguments)
 
 
 # An alignment chart's cells, in reading order: lawful to chaotic across, good to evil down
@@ -1249,7 +1237,7 @@ class AlignmentChartSlide(DrawnSlide):
             arguments[alignment] = cell.strip() if cell and cell.strip() and picture is None else None
             if picture is not None:
                 arguments[picture_role(alignment)] = picture
-        super().__init__("alignment_chart", None, arguments)
+        super().__init__("alignment_chart", arguments)
 
     def clicks(self) -> dict[str, int]:
         return self._one_by_one(*(_or_its_picture(alignment) for alignment in ALIGNMENTS))
@@ -1267,7 +1255,7 @@ class RedFlagsSlide(DrawnSlide):
 
     def __init__(self, title: str | None, *flags: str | None, pictures: Mapping[str, ImageData | None] | None = None):
         # (a flag may be a picture in its words' place, as the list's pattern break: the last one's, D73)
-        super().__init__(self.type, None, {"title": title, **_instead("flag", RED_FLAGS, flags, pictures)})
+        super().__init__(self.type, {"title": title, **_instead("flag", RED_FLAGS, flags, pictures)})
 
     def clicks(self) -> dict[str, int]:
         return self._one_by_one(*(_or_its_picture(f"flag_{index}") for index in range(1, RED_FLAGS + 1)))
@@ -1330,7 +1318,7 @@ class ReviewsSlide(DrawnSlide):
             arguments[f"reviewer_{index}"] = f"— {given_reviewer}" if there and given_reviewer else None
             if picture is not None:
                 arguments[picture_role(f"review_{index}")] = picture
-        super().__init__("reviews", None, arguments)
+        super().__init__("reviews", arguments)
 
     def clicks(self) -> dict[str, int]:
         return self._one_by_one(
@@ -1354,7 +1342,7 @@ class ErrorMessageSlide(DrawnSlide):
     def __init__(self, title: str | None, message: str | None, code: str | None, *buttons: str | None):
         arguments: dict[str, str | None] = {"title": title, "icon": "!", "message": message, "code": code}
         arguments.update(_listed("button", ERROR_BUTTONS, buttons))
-        super().__init__("error_message", None, arguments)
+        super().__init__("error_message", arguments)
 
 
 # SLIDES OF A PICTURE TO EXPLAIN (docs/v5-plan.md, D78): a surprising picture the presenter has to explain, with little
@@ -1386,7 +1374,7 @@ class ExhibitSlide(DrawnSlide):
     def __init__(self, exhibit: str, case: str | None, picture: ImageData | None, note: str | None = None):
         self._exhibit = exhibit  # (the word before the letter: "Exhibit", "Bewijsstuk")
         arguments = {"picture": picture, "letter": "A", "label": f"{exhibit} A", "case": case, "note": note}
-        super().__init__("exhibit", None, arguments)
+        super().__init__("exhibit", arguments)
 
     @property
     def case(self) -> str | None:
@@ -1414,7 +1402,7 @@ class PickOneSlide(DrawnSlide):
         self, title: str | None, picture_1: ImageData | None, picture_2: ImageData | None, either_or: str = "OR"
     ):
         arguments = {"picture_1": picture_1, "picture_2": picture_2, "title": title, "or": either_or}
-        super().__init__("pick_one", None, arguments)
+        super().__init__("pick_one", arguments)
 
 
 class EquationSlide(DrawnSlide):
@@ -1438,7 +1426,7 @@ class EquationSlide(DrawnSlide):
             arguments[thing] = None if picture is not None else text
             arguments[picture_role(thing)] = picture
         arguments.update({"plus": "+", "equals": "="})
-        super().__init__("equation", None, arguments)
+        super().__init__("equation", arguments)
 
     def clicks(self) -> dict[str, int]:
         return self._one_by_one(("equals", "result", picture_role("result")))
@@ -1452,7 +1440,7 @@ class WhatDoYouSeeSlide(DrawnSlide):
     required_arguments = ("question",)
 
     def __init__(self, question: str | None, picture: ImageData | None = None):
-        super().__init__("what_do_you_see", None, {"picture": picture, "question": question})
+        super().__init__("what_do_you_see", {"picture": picture, "question": question})
 
 
 class BeforeAfterSlide(DrawnSlide):
@@ -1477,7 +1465,7 @@ class BeforeAfterSlide(DrawnSlide):
             "after_picture": after_picture,
             "after": after,
         }
-        super().__init__("before_after", None, arguments)
+        super().__init__("before_after", arguments)
 
     def clicks(self) -> dict[str, int]:
         return self._one_by_one(("after", "after_picture"))
@@ -1495,7 +1483,7 @@ class MemeSlide(DrawnSlide):
     def __init__(self, template: ImageData | None, *texts: str | None):
         # (in the template's order: a caption belongs to its box, even next to an empty one)
         captions = {f"text_{index}": texts[index - 1] if index <= len(texts) else None for index in range(1, 5)}
-        super().__init__("meme", None, {"template": template, **captions})
+        super().__init__("meme", {"template": template, **captions})
 
     def clicks(self) -> dict[str, int]:
         clicks = self._one_by_one(*((f"text_{index}",) for index in range(1, 5)))

@@ -5,7 +5,6 @@ from types import SimpleNamespace
 import pytest
 
 from talkgenerator.datastructures.image_data import VideoCopy
-from talkgenerator.schema.content_generator_structures import RedditImageSearcher
 from talkgenerator.sources import reddit
 from talkgenerator.util import http_util
 
@@ -255,7 +254,7 @@ def test_a_gif_search_gives_the_gifs_with_their_video_copies(subreddit):
 def test_reddits_images_know_their_video_copies(subreddit):
     subreddit(_big_gif_post())
 
-    (image,) = RedditImageSearcher("gifs", animated=True)("cats")
+    (image,) = (reddit.image_data(found) for found in reddit.search_images("gifs", "cats", animated=True))
 
     assert image.get_image_url() == "https://i.redd.it/big.gif"
     assert image.video == VideoCopy(

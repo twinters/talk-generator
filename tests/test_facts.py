@@ -33,7 +33,7 @@ from talkgenerator.plan.kinds import Recipe
 from talkgenerator.plan.languages import ENGLISH
 from talkgenerator.schema.presentation_schema import PresentationSchema
 from talkgenerator.schema.slide_topic_generators import IdentityTopicGenerator
-from talkgenerator.slide import powerpoint_slide_creator, slide_generator_types, slides
+from talkgenerator.slide import slide_generator_types, slides
 from talkgenerator.sources import flavour, opentdb, packs, slide_texts, wikipedia
 from talkgenerator.util import http_util, random_util
 from tests.test_slide_types import related as related  # fake ConceptNet (a fixture)
@@ -592,7 +592,6 @@ def fact_schema(with_facts: bool = True) -> PresentationSchema:
         ),
     ]
     return PresentationSchema(
-        powerpoint_slide_creator.create_new_powerpoint,
         seed_generator=IdentityTopicGenerator,
         title_generator=lambda context: "A classic title",
         slide_generators=[title, closing, *(builders if with_facts else [])],
@@ -1108,7 +1107,6 @@ def dare_schema() -> PresentationSchema:
         llm=Recipe("title"),
     )
     return PresentationSchema(
-        powerpoint_slide_creator.create_new_powerpoint,
         seed_generator=IdentityTopicGenerator,
         title_generator=lambda context: "A classic title",
         slide_generators=[
