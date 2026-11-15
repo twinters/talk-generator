@@ -504,6 +504,7 @@
       "width": 580,
       "height": 282,
       "about": "a dog sits calmly in a room on fire, saying 'This is fine'",
+      "at_once": true,
       "boxes": [
         {
           "x": 0.02,
@@ -863,6 +864,7 @@
       "width": 1363,
       "height": 1524,
       "about": "an office worker is asked to find the differences between two pictures, and says they're the same picture",
+      "at_once": true,
       "boxes": [
         {
           "x": 0.14,
@@ -977,6 +979,7 @@
       "width": 1893,
       "height": 1893,
       "about": "a short story in three lines above Pikachu's face, shocked at an outcome everyone saw coming",
+      "at_once": true,
       "boxes": [
         {
           "x": 0.03,

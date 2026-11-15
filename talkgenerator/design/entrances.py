@@ -14,7 +14,10 @@ charts and diagrams (whose own clicks reveal them) stay as they are. Every eleme
 renderers have nothing to work out: PowerPoint plays them (talkgenerator.render.animation), talk-generator-web too.
 
 A title slide stays still, whatever its theme: it's up as the talk loads, and the presenter should have the time to take
-in what the talk is about (the user, 2026-11-14).
+in what the talk is about (the user, 2026-11-14). So does a meme whose captions are all on it from the start (a lone
+caption, or a template whose picture already shows how it ends): it's shown as it is, with its text on it, as the
+user asked on 2026-11-15, when This Is Fine's captions came in after its picture, whose dog already says it. (A meme
+whose captions come a click each still comes in, its captions on their clicks.)
 """
 
 from __future__ import annotations
@@ -45,11 +48,12 @@ MOST_STAGGER: Final = 1600
 _BUILD: Final = "build "  # (the build dots' roles: see talkgenerator.design.engine.build_dots)
 _FIRST: Final = ("title", "statement", "number")  # (the roles that come in first, where everything does)
 TITLE: Final = "title"  # (the title slide's type: it stays still)
+MEME: Final = "meme"  # (a meme's type: shown whole, it stays still)
 
 
 def assign(slide: DeckSlide, theme: Theme, rng: random_util.Rng) -> DeckSlide:
     """The laid-out slide with its elements' entrances, as its theme's motion has them (none: the slide as it is)."""
-    if theme.motion == "none" or not theme.entrances or slide.type == TITLE:
+    if theme.motion == "none" or not theme.entrances or slide.type == TITLE or _shown_whole(slide):
         return slide
     from_the_start, on_clicks = _things(slide)
     if not from_the_start and not on_clicks:
@@ -115,6 +119,11 @@ def _things(slide: DeckSlide) -> tuple[list[list[int]], list[list[int]]]:
         ]
         from_the_start.append([lead, *followers])
     return from_the_start, [clicks[click] for click in sorted(clicks)]
+
+
+def _shown_whole(slide: DeckSlide) -> bool:
+    """Whether the slide is a meme whose captions are all on it from the start."""
+    return slide.type == MEME and not any(reveal.click_of(slide, element) for element in slide.elements)
 
 
 def _moves(element: Content) -> bool:

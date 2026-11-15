@@ -8,6 +8,15 @@ and the project follows [Semantic Versioning](https://semver.org/).
 
 <!-- Add changes here as you merge them; release.py moves them under the new version at release time. -->
 
+### Changed
+
+- Useless facts come from a pool of 500 a week instead of 12, so the same few no longer come back talk after talk,
+  and only English talks get them: a fun fact in another language builds on the topic's Wikipedia article instead,
+  as useless facts are English trivia, often about English words.
+- A meme whose picture already shows how it ends (This Is Fine, They're The Same Picture, Surprised Pikachu) has all
+  its captions from the start instead of a click each, and a meme whose captions are all there from the start stays
+  still in a theme that moves.
+
 ## [5.0.0] - 2026-11-15
 
 talkgenerator 5 brings the 2019 generator up to date. Language models write the talks (OpenRouter's free models, at

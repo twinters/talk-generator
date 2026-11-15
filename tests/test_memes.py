@@ -30,6 +30,7 @@ from tests.test_deck import _jpeg
 FAMILIES = list(themes.FAMILIES)
 TEMPLATES = list(memes.templates().values())
 DRAKE, GRU = memes.template("Drake Hotline Bling"), memes.template("Gru's Plan")
+THIS_IS_FINE = memes.template("This Is Fine")
 RECIPE = meme_slide_generators[0].llm
 
 
@@ -107,6 +108,31 @@ def test_gru_s_fourth_board_repeats_the_third():
     assert GRU.texts(["Learn", "Teach", "Oops"]) == ["Learn", "Teach", "Oops", "Oops"]
     with pytest.raises(ValueError):
         GRU.texts(["Learn", "Teach", ""])
+
+
+def test_a_template_whose_picture_shows_how_it_ends_has_its_captions_from_the_start():
+    # (one by one, This Is Fine's captions came after its punchline, which its dog already says: the user, 2026-11-15)
+    at_once = {template.name for template in TEMPLATES if template.at_once}
+    assert at_once == {"This Is Fine", "They're The Same Picture", "Surprised Pikachu"}
+    for template in (THIS_IS_FINE, memes.template("Surprised Pikachu")):
+        slide = _meme(template).to_deck_slide()
+        assert slide.element("text_2") is not None
+        assert [element.role for element in slide.elements if element.appears_on_click] == [], template.name
+    drake = _meme(DRAKE).to_deck_slide()  # (the others' come a click each, the punchline last)
+    assert [drake.element(f"text_{number}").appears_on_click for number in (1, 2)] == [1, 2]
+
+
+def test_a_meme_shown_whole_stays_still_in_a_theme_that_moves(pictures):
+    # (its captions on it from the start, This Is Fine's or a lone one: coming in after its picture, they came after
+    # what the picture shows already, and a plain caption's label before the picture)
+    family = "1997 WordArt"
+    moving = _theme(family).model_copy(update={"motion": "lots", "entrances": themes.FAMILIES[family].entrances})
+    made = [_meme(THIS_IS_FINE), _meme(memes.template("Change My Mind")), _meme(DRAKE)]
+    fine, alone, drake = _deck(made, moving).slides
+    for slide in (fine, alone):
+        assert slide.element("text_1") is not None and slide.layout == "v5/meme"
+        assert [element.role for element in slide.elements if getattr(element, "entrance", None)] == []
+    assert all(drake.element(f"text_{number}").entrance is not None for number in (1, 2))  # (on their clicks)
 
 
 def test_templates_by_id_name_or_picture():

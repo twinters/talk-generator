@@ -11,6 +11,7 @@ from talkgenerator.plan.languages import ENGLISH, Language
 from talkgenerator.render import charts
 from talkgenerator.render.powerpoint import render_slide
 from talkgenerator.slide import powerpoint_slide_creator
+from talkgenerator.sources import memes
 from talkgenerator.util import image_util, os_util, random_util
 
 if TYPE_CHECKING:
@@ -1485,7 +1486,9 @@ class BeforeAfterSlide(DrawnSlide):
 class MemeSlide(DrawnSlide):
     """A meme: a template's picture (one of Imgflip's, see talkgenerator.sources.memes), with its captions as texts on
     it, each in the box the template has for it (a box that repeats another's caption gets it too). Of two captions
-    or more, each appears on a click of its own, in the template's order, the last one the punchline."""
+    or more, each appears on a click of its own, in the template's order, the last one the punchline; but on a
+    template whose picture already shows how it ends (This Is Fine's dog, saying it), they're all there from the
+    start."""
 
     required_arguments = ("template", "text_1")
 
@@ -1496,4 +1499,11 @@ class MemeSlide(DrawnSlide):
 
     def clicks(self) -> dict[str, int]:
         clicks = self._one_by_one(*((f"text_{index}",) for index in range(1, 5)))
-        return clicks if len(clicks) > 1 else {}
+        return clicks if len(clicks) > 1 and not self._at_once() else {}
+
+    def _at_once(self) -> bool:
+        picture = self._arguments.get("template")
+        if not isinstance(picture, ImageData):
+            return False
+        template = memes.of_picture(picture.get_image_url(), picture.get_source_url())
+        return template is not None and template.at_once

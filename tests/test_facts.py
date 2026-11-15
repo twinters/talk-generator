@@ -984,9 +984,27 @@ def test_a_year_lists_its_lively_events_first(web):
 
 
 def test_a_useless_fact_comes_by_its_number_in_the_weeks_pool(web):
-    found = flavour.useless_fact(14)
-    assert web.asked("uselessfacts.jsph.pl")[0] == {"language": "en", "i": 2}  # (14 of a pool of 12)
+    found = flavour.useless_fact(flavour.POOL + 2)
+    assert web.asked("uselessfacts.jsph.pl")[0] == {"language": "en", "i": 2}  # (the numbers go round the pool)
     assert (found.text, found.source) == (USELESS[2], "Useless Facts")
+    # (hundreds a week: of 12, the same few came back talk after talk, the user found on 2026-11-15)
+    assert flavour.POOL >= 300
+
+
+def test_a_useless_fact_reads_as_written_or_not_at_all(monkeypatch):
+    # (the API's own texts: backticks for apostrophes, and characters lost in a few, 3 of 60 answers on 2026-11-15)
+    answers = iter(
+        [
+            {"text": "If a rooster can`t fully extend its neck, it can`t crow.", "language": "en"},
+            {
+                "text": "\ufffdThe sixth sick sheik\ufffds sixth sheep\ufffds sick\ufffd is a tongue twister.",
+                "language": "en",
+            },
+        ]
+    )
+    monkeypatch.setattr(http_util, "search_json", lambda *args, **kwargs: next(answers))
+    assert flavour.useless_fact(1).text == "If a rooster can't fully extend its neck, it can't crow."
+    assert flavour.useless_fact(2) is None
 
 
 def test_dad_jokes_are_about_a_whole_word_or_from_a_page(web):
@@ -1040,14 +1058,16 @@ def test_a_dare_gets_a_dad_joke_and_the_closing_slide_a_piece_of_advice(web):
     assert given[9].fact.license is None  # (their sites state none)
 
 
-def test_a_talk_in_another_language_gets_no_dad_joke_or_advice(web):
-    # (which its slides would say word for word, in English: a free model put "Sing in the shower." on a German talk's
-    # closing slide, also when asked for it translated)
+def test_a_talk_in_another_language_gets_no_useless_fact_dad_joke_or_advice(web):
+    # (jokes and advice its slides would say word for word, in English: a free model put "Sing in the shower." on a
+    # German talk's closing slide, also when asked for it translated; and useless facts are English trivia, many about
+    # English words: "Dreamt" ending in "mt" made little sense in a Dutch talk, the user found on 2026-11-15)
     slides = [(3, "fun_fact"), (6, "dare"), (9, "questions")]
-    english = facts.look_up("penguins", "en", DAY, frozenset(use for _, use in slides))
     german = facts.look_up("penguins", "de", DAY, frozenset(use for _, use in slides))
-    assert {candidate.flavour for candidate in english.candidates} >= {"joke", "advice"}
-    assert {candidate.flavour for candidate in german.candidates} <= {"", "useless"}
+    assert web.asked("uselessfacts.jsph.pl") == []
+    english = facts.look_up("penguins", "en", DAY, frozenset(use for _, use in slides))
+    assert {candidate.flavour for candidate in english.candidates} >= {"useless", "joke", "advice"}
+    assert {candidate.flavour for candidate in german.candidates} <= {""}  # (its fun fact: the topic's article's)
     assert set(facts.assign(german, slides, random_util.Rng(1))) <= {3}
 
 

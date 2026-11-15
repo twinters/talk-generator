@@ -34,8 +34,11 @@ fun fact may build on a random useless fact instead ("25% of a human's bones are
 presenter to tell a real dad joke (about the topic, if there's one: a groan they have to deliver), and the closing
 slide's line under its title can be a real piece of advice. They pass the facts' checks and some of their own (no
 insults, drink or faiths), and name no living person (the articles their capitalised words would be). A talk in another
-language than English gets no dad jokes or advice, which its slides would say word for word, in English: a free model
-put "Sing in the shower." on a German talk's closing slide (2026-11-09), also when asked for it translated.
+language than English gets none: no dad jokes or advice, which its slides would say word for word, in English (a free
+model put "Sing in the shower." on a German talk's closing slide, 2026-11-09, also when asked for it translated), and
+no useless facts, English trivia that's often about English words or America ("'Dreamt' is the only English word that
+ends in the letters 'mt'" made little sense in a Dutch talk, the user found on 2026-11-15): its fun facts build on its
+topic's article.
 
 A problem slide (D69) that's on a real problem's angle may start from a real how-to about the topic that people look
 up on wikiHow ("How to Stop a Goose Attack"): a flavour text too, which an English talk gets, the problem-like ones
@@ -387,13 +390,16 @@ def look_up(
     do (useless facts for a fun fact, dad jokes for a dare, advice for the closing slide), none about a living person."""
     if not on():
         return EMPTY
-    if language != languages.ENGLISH.code:
+    english = language == languages.ENGLISH.code
+    if not english:
         uses = uses - _FLAVOUR_USES  # (no dad jokes or advice, which a slide says word for word, in English)
     started = time.monotonic()
     asking = _asking()
     wiki = wikipedia.available() and bool(uses & _WIKIPEDIA_USES)
     found = asking.submit(wikipedia.article, topic, language) if wiki else None
-    useless = [asking.submit(flavour.useless_fact, number) for number in draws.useless] if "fun_fact" in uses else []
+    # (and no useless facts, English trivia, for another language's fun fact: its topic's article's instead)
+    trivia = "fun_fact" in uses and english
+    useless = [asking.submit(flavour.useless_fact, number) for number in draws.useless] if trivia else []
     joking = asking.submit(_jokes_about, topic, draws.joke_page) if "dare" in uses else None
     advising = [asking.submit(flavour.advice, number) for number in draws.advice] if "questions" in uses else []
     fixing = asking.submit(howtos, topic) if "problem" in uses else None

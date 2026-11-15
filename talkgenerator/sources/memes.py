@@ -5,7 +5,10 @@ best-known templates, measured on Imgflip's own pictures: every caption's box (a
 top left corner), its style, and what it says (for the language model). A box is "impact" (white Impact with a black
 outline, in capitals, over anything) or "plain" (black text on the template's own even area: Drake's white panels,
 Gru's boards), whose colour the box keeps (`fill`), so a layout can put it under the text where the picture has it.
-A box may repeat another's caption (`same_as`): Gru's fourth board is his third, read again.
+A box may repeat another's caption (`same_as`): Gru's fourth board is his third, read again. A template whose picture
+already shows how it ends (`at_once`: This Is Fine's dog, saying it) has its captions on it from the start, all at
+once, where the others' come a click each, the punchline last: one by one, they'd come after the punchline (the user,
+2026-11-15).
 
 A meme slide is the template's picture with its captions as texts on it (talkgenerator.design.engine lays them out):
 deck elements every renderer draws already. The language model writes the captions, for a template the talk's dice
@@ -58,6 +61,8 @@ class MemeTemplate:
     boxes: tuple[CaptionBox, ...]
     # Its captions for classic talks, about the slide's topic ({seed}, {related}): the TED content pack's
     classic: tuple[tuple[str, ...], ...]
+    # Whether its captions are all on it from the start (its picture already shows how it ends), not a click each
+    at_once: bool = False
 
     @property
     def captions(self) -> int:
@@ -131,6 +136,7 @@ def templates() -> dict[str, MemeTemplate]:
             about=str(entry["about"]),
             boxes=tuple(_box(box) for box in entry["boxes"]),
             classic=_classic(str(entry["name"])),
+            at_once=bool(entry.get("at_once")),
         )
         found[template.id] = template
     return found

@@ -5,7 +5,8 @@ public site on 2026-11-08. A slide that shows one credits its site.
 
 Every answer is cached (see http_util.CACHE_EXPIRY), so that a talk made again gets the same texts: a useless fact is
 one of a pool of POOL a week (the API answers at random, and the cache keeps one answer per number of the pool, which
-the API ignores), a dad joke comes from a search for a word (a whole word: the API matches "cat" in "catholic") or else
+the API ignores; a pool of hundreds, as one of 12 brought the same few back talk after talk, the user found on
+2026-11-15), a dad joke comes from a search for a word (a whole word: the API matches "cat" in "catholic") or else
 from one of the pages of all of them, and an advice slip goes by its number. A source that fails is skipped for a while
 (its cooldown), and gives nothing.
 """
@@ -26,7 +27,7 @@ USELESS_FACTS: Final = "https://uselessfacts.jsph.pl/api/v2/facts/random"
 DAD_JOKES: Final = "https://icanhazdadjoke.com/search"
 ADVICE: Final = "https://api.adviceslip.com/advice/{number}"
 TIMEOUT: Final = 4.0
-POOL: Final = 12  # useless facts a week
+POOL: Final = 500  # useless facts a week (of the API's hundreds: 58 different ones in 60 answers on 2026-11-15)
 JOKES_A_PAGE: Final = 30  # (the most the search gives at once)
 JOKE_PAGES: Final = 24  # (744 jokes on 2026-11-08: 25 pages of 30, the last not full)
 ADVICE_SLIPS: Final = 224  # (numbered from 1; 225 isn't there)
@@ -51,7 +52,8 @@ def available(name: str) -> bool:
 
 
 def _clean(text: Any) -> str:
-    return " ".join(str(text or "").replace("’", "'").replace("‘", "'").split())
+    # (the useless facts' apostrophes are often backticks: "can`t")
+    return " ".join(str(text or "").replace("’", "'").replace("‘", "'").replace("`", "'").split())
 
 
 def useless_fact(number: int) -> Flavour | None:
@@ -64,7 +66,8 @@ def useless_fact(number: int) -> Flavour | None:
         return None
     text = _clean(data.get("text"))
     url = str(data.get("permalink") or "https://uselessfacts.jsph.pl")
-    return Flavour(text, "Useless Facts", url) if text else None
+    # (none whose characters the API lost: "�The sixth sick sheik�s sixth sheep�s sick�")
+    return Flavour(text, "Useless Facts", url) if text and "\ufffd" not in text else None
 
 
 def dad_jokes(word: str | None = None, page: int = 1) -> list[Flavour]:

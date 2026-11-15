@@ -58,7 +58,7 @@ deck lists every fact a talk got (`facts`).
 The facts come from the cache, or else within eight seconds of the talk's start, while its slides are picked: a talk
 whose facts come later, or whose sources are down, goes without them. Classic talks get some too: half of their fun
 facts are a real one about the slide's word, with a twist, and half of their quizzes a real question from
-[Open Trivia DB](https://opentdb.com). Flavour texts join them: a fun fact may build on a random
+[Open Trivia DB](https://opentdb.com). In English talks, flavour texts join them: a fun fact may build on a random
 [useless fact](https://uselessfacts.jsph.pl), a dare dares the presenter to tell a real
 [dad joke](https://icanhazdadjoke.com) about the topic, and a problem slide on a real problem's angle (the talk's
 why, early on) starts from a real how-to about the topic that people look up on [wikiHow](https://www.wikihow.com)
