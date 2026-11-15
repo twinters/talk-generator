@@ -32,12 +32,12 @@ from functools import cache
 from typing import Any, Final
 
 from talkgenerator.closers import Closer
-from talkgenerator.datastructures.slide_generator_data import SlideGeneratorData
+from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
 from talkgenerator.plan.kinds import KINDS, PROBLEM_ANGLES, PROBLEM_BEHIND, Recipe, box_picture_slot
 from talkgenerator.plan.languages import ENGLISH
 from talkgenerator.schema import content_generators as cg
-from talkgenerator.schema.formats.arcs import Arc, Free
+from talkgenerator.schema.formats.arcs import Arc, Free, InPart
 from talkgenerator.slide import slide_generator_types, slides
 from talkgenerator.sources import packs
 
@@ -240,6 +240,197 @@ def provocation(
 def maybe(chance: float, value: str | None) -> str | None:
     """The value, that share of the time (from the current random stream)."""
     return value if random_util.random() < chance else None
+
+
+# WHAT THE FORMATS HAVE IN COMMON: the slide generators and the classic contents that several formats have, each the
+# same but for the rules of its pack that its texts come from. A format's module names the rules, and keeps the
+# contents that only it has. Each draws from the current random stream in a fixed order (its texts, then its
+# pictures), which a talk's seed depends on.
+
+# What a format's templates may use, from a slide's presentation context (a module's _variables), and what finds a
+# picture for it (an image slot, or a mix of them)
+Variables = Callable[[dict[str, Any]], dict[str, Any]]
+Picture = Callable[[dict[str, Any]], Any]
+
+
+def variables_of(context: Mapping[str, Any], **named: Callable[[str], str]) -> dict[str, Any]:
+    """What a pack's templates may use: the slide's seed, the talk's topic, the presenter and the title, and under
+    each given name what its function makes of the talk's topic (or of the seed, without one): a made-up name that's
+    the same on every slide of a talk, such as a pitch's startup or a keynote's product."""
+    found = {key: context[key] for key in ("seed", "topic", "presenter", "title") if context.get(key)}
+    topic = str(context.get("topic") or context["seed"])
+    for name, make in named.items():
+        found[name] = make(topic)
+    return found
+
+
+def items(prefix: str, texts: list[str]) -> dict[str, str | None]:
+    """A list's texts by the fields of a kind of slide that has a list: caption_1, caption_2, ..."""
+    return {f"{prefix}_{index}": item for index, item in enumerate(texts, 1)}
+
+
+def title_slide(
+    format_name: str, title: Callable[[dict[str, Any]], str | None], variables: Variables, named: str
+) -> SlideGeneratorData:
+    """A format's title slide ("Title slide (<named>)"): the talk's title (the format's classic one, for a talk that
+    has none yet) over a subtitle of its pack's (title.subtitle)."""
+
+    def titled(context: dict[str, Any]) -> str | None:
+        return context["title"] if context.get("title") is not None else title(context)
+
+    def subtitle(context: dict[str, Any]) -> str | None:
+        return text(format_name, "title.subtitle", variables(context))
+
+    return SlideGeneratorData(
+        slide_generator_types.TitleSlideGenerator.of(titled, subtitle),
+        allowed_repeated_elements=3,
+        weight_function=PeakedWeight((0,), 100000, 0),
+        tags=["title"],
+        name=f"Title slide ({named})",
+        llm=Recipe("title"),
+    )
+
+
+def part_slide(
+    arc: Arc,
+    named: str,
+    part: str,
+    weight: float,
+    kind: str,
+    content: Any,
+    tags: list[str],
+    name: str,
+    recipe: Recipe,
+    repeats: int = 2,
+) -> SlideGeneratorData:
+    """A slide generator of one of a format's arc's parts ("<name> (<named>)"): its slides are of the kind, classic
+    ones from the content. A format's module binds its arc and its name (`_part = partial(part_slide, ARC, "Pitch")`)."""
+    return SlideGeneratorData(
+        KindSlideGenerator(kind, content),
+        weight_function=InPart(arc, part, weight),
+        retries=3,
+        allowed_repeated_elements=repeats,
+        tags=[part, *tags],
+        name=f"{name} ({named})",
+        llm=recipe,
+    )
+
+
+def one_text(format_name: str, variables: Variables, rule: str, field: str, **pictures: Picture) -> Content:
+    """A classic slide of one text, the rule's, as the kind's text field, and a picture for each of the kind's image
+    fields given: a statement over a calm photo (`"text", background=...`), a title on a photo that fills the slide
+    (`"title", image=...`), or what the audience is asked to do, without a picture (`"audience"`)."""
+
+    def content(context: dict[str, Any]) -> Made | None:
+        filled = text(format_name, rule, variables(context))
+        if not filled:
+            return None
+        return {field: filled}, {name: picture(context) for name, picture in pictures.items()}
+
+    return content
+
+
+def big_number(
+    format_name: str, variables: Variables, title: str, number: str, label: str, source: str, cited: float
+) -> Content:
+    """A classic big number: one of the pack's numbers (the number rule's templates, as they are) over what it counts
+    (the label's), under a title, with its source that share of the time (cited), and a picture behind it now and then
+    (BIG_NUMBER_PICTURES)."""
+
+    def content(context: dict[str, Any]) -> Made | None:
+        filled = variables(context)
+        counted = text(format_name, label, filled)
+        if not counted:
+            return None
+        return {
+            "title": text(format_name, title, filled),
+            "number": random_util.choice(words(format_name, number)),
+            "label": counted,
+            "source": maybe(cited, text(format_name, source, filled)),
+        }, behind(context, BIG_NUMBER_PICTURES)
+
+    return content
+
+
+def three_captions(
+    format_name: str, variables: Variables, title: str, caption: str, punchline: str, slot: ImageSlot
+) -> Content:
+    """Three classic captions, each under a photo of the slot's: two different ones of the caption's rule and the
+    punchline, under a title."""
+
+    def content(context: dict[str, Any]) -> Made | None:
+        filled = variables(context)
+        captions = different(format_name, caption, filled, 2)
+        last = text(format_name, punchline, filled)
+        if len(captions) < 2 or not last:
+            return None
+        texts = {"title": text(format_name, title, filled), **items("caption", [*captions, last])}
+        return texts, {f"image_{index}": photo for index, photo in enumerate(photos(slot, context, 3), 1)}
+
+    return content
+
+
+def steps(format_name: str, variables: Variables, title: str, first: str, step: str, last: str) -> Content:
+    """A classic process of three to five steps: the first one's rule, different ones of the step's, and the last
+    one's (the punchline), under a title."""
+
+    def content(context: dict[str, Any]) -> Made | None:
+        filled = variables(context)
+        count = random_util.randint(3, 5)
+        start, end = text(format_name, first, filled), text(format_name, last, filled)
+        middle = different(format_name, step, filled, count - 2)
+        heading = text(format_name, title, filled)
+        if not heading or not start or not end or len(middle) < count - 2:
+            return None
+        return {"title": heading, **items("step", [start, *middle, end])}, {}
+
+    return content
+
+
+def timeline(
+    format_name: str, variables: Variables, title: str, event: str, punchline: str, when: str, most: int = 5
+) -> Content:
+    """A classic timeline of three to `most` moments: different events of the event's rule and the punchline last,
+    each at one of the pack's dates (the when rule's templates, which are in order: the soonest first), under a
+    title."""
+
+    def content(context: dict[str, Any]) -> Made | None:
+        filled = variables(context)
+        count = random_util.randint(3, most)
+        events = different(format_name, event, filled, count - 1)
+        last, heading = text(format_name, punchline, filled), text(format_name, title, filled)
+        if not heading or not last or len(events) < count - 1:
+            return None
+        known = words(format_name, when)
+        dates = [known[index] for index in sorted(random_util.sample(range(len(known)), count))]
+        texts: dict[str, str | None] = {"title": heading}
+        for index, (date, happened) in enumerate(zip(dates, [*events, last], strict=True), 1):
+            texts[f"date_{index}"], texts[f"event_{index}"] = date, happened
+        return texts, {}
+
+    return content
+
+
+def error_dialog(
+    format_name: str, variables: Variables, title: str, message: str, code: str, button: str, punchline: str
+) -> Content:
+    """A classic error message: the message's rule, with a title and a code most of the time, and one or two different
+    buttons of the button's rule before the punchline's."""
+
+    def content(context: dict[str, Any]) -> Made | None:
+        filled = variables(context)
+        buttons = different(format_name, button, filled, random_util.randint(1, 2))
+        last, said = text(format_name, punchline, filled), text(format_name, message, filled)
+        if not said or not last or not buttons:
+            return None
+        return {
+            "title": maybe(0.8, text(format_name, title, filled)),
+            "message": said,
+            "code": maybe(0.8, text(format_name, code, filled)),
+            "buttons": " | ".join([*buttons, last]),
+        }, {}
+
+    return content
 
 
 # THE PROBLEM SLIDE (docs/v5-plan.md, D69): a classic one, from a pack's rules of problems (a pitch's in its "problem"

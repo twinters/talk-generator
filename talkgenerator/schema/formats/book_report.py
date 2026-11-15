@@ -20,10 +20,10 @@ Comic Sans' more often.
 
 from __future__ import annotations
 
+from functools import partial
 from typing import Any, Final
 
 from talkgenerator.closers import Closer, presenter, said
-from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
 from talkgenerator.plan.kinds import Recipe, Variant, pictured
 from talkgenerator.schema import content_generators as cg
@@ -31,21 +31,27 @@ from talkgenerator.schema.formats import (
     BIG_NUMBER_PICTURES,
     KPI_PICTURES,
     Format,
-    KindSlideGenerator,
     Made,
     author,
     behind,
+    big_number,
     book,
     different,
+    items,
     maybe,
-    photos,
+    one_text,
+    part_slide,
     provocation,
+    steps,
     text,
-    words,
+    three_captions,
+    timeline,
+    title_slide,
+    variables_of,
 )
-from talkgenerator.schema.formats.arcs import Arc, Free, InPart, Part
+from talkgenerator.schema.formats.arcs import Arc, Free, Part
 from talkgenerator.schema.slide_schemas import default_max_allowed_tags, slide_generators
-from talkgenerator.slide import slide_generator_types, slides
+from talkgenerator.slide import slides
 from talkgenerator.util import random_util
 
 PACK: Final = "book_report"
@@ -96,14 +102,7 @@ BOOK_REPORT: Final = Format(
 def _variables(context: dict[str, Any]) -> dict[str, Any]:
     """What the pack's templates may use: the slide's seed, the talk's topic, the presenter and the title, and the
     made-up title and author of the book the report is on."""
-    variables = {key: context[key] for key in ("seed", "topic", "presenter", "title") if context.get(key)}
-    topic = str(context.get("topic") or context["seed"])
-    variables["book"], variables["author"] = book(topic), author(topic)
-    return variables
-
-
-def _items(prefix: str, texts: list[str]) -> dict[str, str | None]:
-    return {f"{prefix}_{index}": item for index, item in enumerate(texts, 1)}
+    return variables_of(context, book=book, author=author)
 
 
 # THE TITLE SLIDE: the book the report is on, and who reports on it
@@ -113,14 +112,6 @@ def title_generator(context: dict[str, Any]) -> str | None:
     """A classic book report's title, about the seed (the talk's topic)."""
     topic = str(context["seed"])
     return text(PACK, "title.talk_title", {**context, "book": book(topic), "author": author(topic)})
-
-
-def _title_if_not_generated(context: dict[str, Any]) -> str | None:
-    return context["title"] if context.get("title") is not None else title_generator(context)
-
-
-def _subtitle(context: dict[str, Any]) -> str | None:
-    return text(PACK, "title.subtitle", _variables(context))
 
 
 # Images: the book's cover (a book cover from Reddit, real or fake, or one that prefers to be generated, with its title
@@ -143,16 +134,8 @@ _FAVOURITE = ImageSlot(
 
 
 # THE BOOK: its cover, in one photo or full-bleed, or the book in numbers
-
-
-def _cover(context: dict[str, Any]) -> Made | None:
-    title = text(PACK, "book.cover_title", _variables(context))
-    return ({"title": title}, {"image": _COVER(context)}) if title else None
-
-
-def _cover_full(context: dict[str, Any]) -> Made | None:
-    title = text(PACK, "book.cover_full_title", _variables(context))
-    return ({"title": title}, {"image": _COVER(context)}) if title else None
+_cover = one_text(PACK, _variables, "book.cover_title", "title", image=_COVER)
+_cover_full = one_text(PACK, _variables, "book.cover_full_title", "title", image=_COVER)
 
 
 def _in_numbers(context: dict[str, Any]) -> Made | None:
@@ -181,25 +164,18 @@ def _author_fact(context: dict[str, Any]) -> Made | None:
     return texts, {"photo": _AUTHOR(context)}
 
 
-def _author_photo(context: dict[str, Any]) -> Made | None:
-    title = text(PACK, "author.author_title", _variables(context))
-    return ({"title": title}, {"image": _AUTHOR(context)}) if title else None
+_author_photo = one_text(PACK, _variables, "author.author_title", "title", image=_AUTHOR)
 
 
 # THE MAIN CHARACTERS: three photos, or who's who
-
-
-def _characters(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    characters = different(PACK, "characters.character", variables, 2)
-    punchline = text(PACK, "characters.character_punchline", variables)
-    if len(characters) < 2 or not punchline:
-        return None
-    texts = {
-        "title": text(PACK, "characters.characters_title", variables),
-        **_items("caption", [*characters, punchline]),
-    }
-    return texts, {f"image_{index}": photo for index, photo in enumerate(photos(_CHARACTER, context, 3), 1)}
+_characters = three_captions(
+    PACK,
+    _variables,
+    "characters.characters_title",
+    "characters.character",
+    "characters.character_punchline",
+    _CHARACTER,
+)
 
 
 def _whos_who(context: dict[str, Any]) -> Made | None:
@@ -208,21 +184,11 @@ def _whos_who(context: dict[str, Any]) -> Made | None:
     title, boss = text(PACK, "characters.org_title", variables), text(PACK, "characters.boss", variables)
     if not title or not boss or len(characters) < 2:
         return None
-    return {"title": title, "boss": boss, **_items("report", characters)}, {}
+    return {"title": title, "boss": boss, **items("report", characters)}, {}
 
 
 # WHAT HAPPENS: in steps, how exciting it is page by page, or page by page
-
-
-def _what_happens(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    count = random_util.randint(3, 5)
-    first, last = text(PACK, "plot.plot_first", variables), text(PACK, "plot.plot_last", variables)
-    middle = different(PACK, "plot.plot_step", variables, count - 2)
-    title = text(PACK, "plot.process_title", variables)
-    if not title or not first or not last or len(middle) < count - 2:
-        return None
-    return {"title": title, **_items("step", [first, *middle, last])}, {}
+_what_happens = steps(PACK, _variables, "plot.process_title", "plot.plot_first", "plot.plot_step", "plot.plot_last")
 
 
 def _excitement(context: dict[str, Any]) -> Made | None:
@@ -243,40 +209,18 @@ def _excitement(context: dict[str, Any]) -> Made | None:
     }, {}
 
 
-def _page_by_page(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    count = random_util.randint(3, 5)
-    moments = different(PACK, "plot.timeline_event", variables, count - 1)
-    punchline, title = text(PACK, "plot.timeline_punchline", variables), text(PACK, "plot.timeline_title", variables)
-    if not title or not punchline or len(moments) < count - 1:
-        return None
-    known = words(PACK, "plot.page")  # (the first pages first)
-    pages = [known[index] for index in sorted(random_util.sample(range(len(known)), count))]
-    texts: dict[str, str | None] = {"title": title}
-    for index, (page, moment) in enumerate(zip(pages, [*moments, punchline], strict=True), 1):
-        texts[f"date_{index}"], texts[f"event_{index}"] = page, moment
-    return texts, {}
+_page_by_page = timeline(
+    PACK, _variables, "plot.timeline_title", "plot.timeline_event", "plot.timeline_punchline", "plot.page"
+)
 
 
 # THE FAVOURITE PART: an odd photo of it, or said over a photo
-
-
-def _favourite(context: dict[str, Any]) -> Made | None:
-    title = text(PACK, "favourite.favourite_title", _variables(context))
-    return ({"title": title}, {"image": _FAVOURITE(context)}) if title else None
-
-
-def _favourite_said(context: dict[str, Any]) -> Made | None:
-    said = text(PACK, "favourite.favourite_statement", _variables(context))
-    return ({"text": said}, {"background": _BACKDROP(context)}) if said else None
+_favourite = one_text(PACK, _variables, "favourite.favourite_title", "title", image=_FAVOURITE)
+_favourite_said = one_text(PACK, _variables, "favourite.favourite_statement", "text", background=_BACKDROP)
 
 
 # THE MORAL OF THE STORY: said over a photo, or a quiz for the class
-
-
-def _moral(context: dict[str, Any]) -> Made | None:
-    moral = text(PACK, "moral.moral", _variables(context))
-    return ({"text": moral}, {"background": _BACKDROP(context)}) if moral else None
+_moral = one_text(PACK, _variables, "moral.moral", "text", background=_BACKDROP)
 
 
 def _what_we_learned(context: dict[str, Any]) -> Made | None:
@@ -299,19 +243,9 @@ def _what_we_learned(context: dict[str, Any]) -> Made | None:
 
 
 # THE RATING: one big score, or what the class said
-
-
-def _rating(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    label = text(PACK, "rating.rating_label", variables)
-    if not label:
-        return None
-    return {
-        "title": text(PACK, "rating.rating_title", variables),
-        "number": random_util.choice(words(PACK, "rating.score")),
-        "label": label,
-        "source": maybe(0.7, text(PACK, "rating.rating_source", variables)),
-    }, behind(context, BIG_NUMBER_PICTURES)
+_rating = big_number(
+    PACK, _variables, "rating.rating_title", "rating.score", "rating.rating_label", "rating.rating_source", 0.7
+)
 
 
 def _class_reviews(context: dict[str, Any]) -> Made | None:
@@ -332,26 +266,7 @@ def _class_reviews(context: dict[str, Any]) -> Made | None:
 # THE SLIDE GENERATORS
 
 
-def _part(
-    part: str,
-    weight: float,
-    kind: str,
-    content: Any,
-    tags: list[str],
-    name: str,
-    recipe: Recipe,
-    repeats: int = 2,
-) -> SlideGeneratorData:
-    """A slide generator of one of the arc's parts: its slides are of the kind, classic ones from the content."""
-    return SlideGeneratorData(
-        KindSlideGenerator(kind, content),
-        weight_function=InPart(ARC, part, weight),
-        retries=3,
-        allowed_repeated_elements=repeats,
-        tags=[part, *tags],
-        name=f"{name} (Book Report)",
-        llm=recipe,
-    )
+_part = partial(part_slide, ARC, "Book Report")
 
 
 _TITLE_HINT = "the slide's title, as a pupil's book report has it: a few plain words"
@@ -359,14 +274,7 @@ _FEW_WORDS = "in two to five words"
 _PUPIL = "in a pupil's short, earnest sentences"
 
 _GENERATORS: Final = [
-    SlideGeneratorData(
-        slide_generator_types.TitleSlideGenerator.of(_title_if_not_generated, _subtitle),
-        allowed_repeated_elements=3,
-        weight_function=PeakedWeight((0,), 100000, 0),
-        tags=["title"],
-        name="Title slide (Book Report)",
-        llm=Recipe("title"),
-    ),
+    title_slide(PACK, title_generator, _variables, "Book Report"),
     # The book
     _part(
         "book",

@@ -23,10 +23,10 @@ game-show host a little more often, a startup founder and an influencer too; its
 
 from __future__ import annotations
 
+from functools import partial
 from typing import Any, Final
 
 from talkgenerator.closers import Closer, presenter, said
-from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
 from talkgenerator.plan.kinds import ERROR_BUTTON, Recipe, Variant, pictured, problem_variants
 from talkgenerator.schema import content_generators as cg
@@ -34,21 +34,27 @@ from talkgenerator.schema.formats import (
     BIG_NUMBER_PICTURES,
     KPI_PICTURES,
     Format,
-    KindSlideGenerator,
     Made,
     behind,
+    big_number,
     different,
+    error_dialog,
     gadget,
     maybe,
+    one_text,
+    part_slide,
     photos,
     problem,
     provocation,
+    steps,
     text,
+    three_captions,
+    title_slide,
+    variables_of,
     words,
 )
-from talkgenerator.schema.formats.arcs import Arc, Free, InPart, Part
+from talkgenerator.schema.formats.arcs import Arc, Free, Part
 from talkgenerator.schema.slide_schemas import default_max_allowed_tags, slide_generators
-from talkgenerator.slide import slide_generator_types
 from talkgenerator.util import random_util
 
 PACK: Final = "infomercial"
@@ -108,13 +114,7 @@ INFOMERCIAL: Final = Format(
 def _variables(context: dict[str, Any]) -> dict[str, Any]:
     """What the pack's templates may use: the slide's seed, the talk's topic, its gadget's name, the presenter and the
     title."""
-    variables = {key: context[key] for key in ("seed", "topic", "presenter", "title") if context.get(key)}
-    variables["gadget"] = gadget(str(context.get("topic") or context["seed"]))
-    return variables
-
-
-def _items(prefix: str, texts: list[str]) -> dict[str, str | None]:
-    return {f"{prefix}_{index}": item for index, item in enumerate(texts, 1)}
+    return variables_of(context, gadget=gadget)
 
 
 # THE TITLE SLIDE: the gadget's name and its promise, and who sells it
@@ -123,14 +123,6 @@ def _items(prefix: str, texts: list[str]) -> dict[str, str | None]:
 def title_generator(context: dict[str, Any]) -> str | None:
     """A classic infomercial's title, about the seed (the talk's topic)."""
     return text(PACK, "title.talk_title", {**context, "gadget": gadget(str(context["seed"]))})
-
-
-def _title_if_not_generated(context: dict[str, Any]) -> str | None:
-    return context["title"] if context.get("title") is not None else title_generator(context)
-
-
-def _subtitle(context: dict[str, Any]) -> str | None:
-    return text(PACK, "title.subtitle", _variables(context))
 
 
 # Images: a calm backdrop behind a statement, someone failing at something everyday (generated, in a talk that
@@ -182,46 +174,19 @@ def _problem(context: dict[str, Any]) -> Made | None:
     return problem(PACK, _PROBLEMS, _variables(context), context, (_BACKDROP, _FAIL), _ANGLES)
 
 
-def _better_way(context: dict[str, Any]) -> Made | None:
-    title = text(PACK, "problem.better_way", _variables(context))
-    return ({"title": title}, {"image": _FAIL(context)}) if title else None
+_better_way = one_text(PACK, _variables, "problem.better_way", "title", image=_FAIL)
 
 
 # THE GADGET: in one photo, or full-bleed
-
-
-def _introducing(context: dict[str, Any]) -> Made | None:
-    title = text(PACK, "product.introducing", _variables(context))
-    return ({"title": title}, {"image": _GADGET(context)}) if title else None
-
-
-def _as_seen_on_tv(context: dict[str, Any]) -> Made | None:
-    title = text(PACK, "product.as_seen", _variables(context))
-    return ({"title": title}, {"image": _GADGET(context)}) if title else None
+_introducing = one_text(PACK, _variables, "product.introducing", "title", image=_GADGET)
+_as_seen_on_tv = one_text(PACK, _variables, "product.as_seen", "title", image=_GADGET)
 
 
 # THE DEMONSTRATION: three photos of all it does, how it works, or the old way and the new
-
-
-def _it_does_it_all(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    features = different(PACK, "demo.feature", variables, 2)
-    punchline = text(PACK, "demo.feature_punchline", variables)
-    if len(features) < 2 or not punchline:
-        return None
-    texts = {"title": text(PACK, "demo.features_title", variables), **_items("caption", [*features, punchline])}
-    return texts, {f"image_{index}": photo for index, photo in enumerate(photos(_DOES, context, 3), 1)}
-
-
-def _how_it_works(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    count = random_util.randint(3, 5)
-    first, last = text(PACK, "demo.how_first", variables), text(PACK, "demo.how_last", variables)
-    middle = different(PACK, "demo.how_step", variables, count - 2)
-    title = text(PACK, "demo.how_title", variables)
-    if not title or not first or not last or len(middle) < count - 2:
-        return None
-    return {"title": title, **_items("step", [first, *middle, last])}, {}
+_it_does_it_all = three_captions(
+    PACK, _variables, "demo.features_title", "demo.feature", "demo.feature_punchline", _DOES
+)
+_how_it_works = steps(PACK, _variables, "demo.how_title", "demo.how_first", "demo.how_step", "demo.how_last")
 
 
 def _old_way_new_way(context: dict[str, Any]) -> Made | None:
@@ -297,18 +262,15 @@ def _terms(context: dict[str, Any]) -> Made | None:
     return {"title": title, "points": " | ".join(points), "highlight": highlight}, {}
 
 
-def _terms_dialog(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    buttons = different(PACK, "fine_print.agree", variables, random_util.randint(1, 2))
-    punchline, message = text(PACK, "fine_print.agree_punchline", variables), text(PACK, "fine_print.clause", variables)
-    if not message or not punchline or not buttons:
-        return None
-    return {
-        "title": maybe(0.8, text(PACK, "fine_print.dialog_title", variables)),
-        "message": message,
-        "code": maybe(0.8, text(PACK, "fine_print.clause_code", variables)),
-        "buttons": " | ".join([*buttons, punchline]),
-    }, {}
+_terms_dialog = error_dialog(
+    PACK,
+    _variables,
+    "fine_print.dialog_title",
+    "fine_print.clause",
+    "fine_print.clause_code",
+    "fine_print.agree",
+    "fine_print.agree_punchline",
+)
 
 
 # THE PRICE: prices that drop tile by tile, or one big price
@@ -332,94 +294,43 @@ def _price_drop(context: dict[str, Any]) -> Made | None:
     return texts, behind(context, KPI_PICTURES)
 
 
-def _big_price(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    label = text(PACK, "price.big_label", variables)
-    if not label:
-        return None
-    return {
-        "title": text(PACK, "price.big_title", variables),
-        "number": random_util.choice(words(PACK, "price.big_price")),
-        "label": label,
-        "source": maybe(0.8, text(PACK, "price.big_source", variables)),
-    }, behind(context, BIG_NUMBER_PICTURES)
+_big_price = big_number(
+    PACK, _variables, "price.big_title", "price.big_price", "price.big_label", "price.big_source", 0.8
+)
 
 
 # BUT WAIT, THERE'S MORE: a free bonus, twice the offer, or the words alone
-
-
-def _bonus(context: dict[str, Any]) -> Made | None:
-    title = text(PACK, "but_wait.bonus_title", _variables(context))
-    return ({"title": title}, {"image": _BONUS(context)}) if title else None
-
-
-def _double(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    label = text(PACK, "but_wait.double_label", variables)
-    if not label:
-        return None
-    return {
-        "title": text(PACK, "but_wait.double_title", variables),
-        "number": random_util.choice(words(PACK, "but_wait.double_number")),
-        "label": label,
-        "source": maybe(0.7, text(PACK, "but_wait.double_source", variables)),
-    }, behind(context, BIG_NUMBER_PICTURES)
-
-
-def _theres_more(context: dict[str, Any]) -> Made | None:
-    said = text(PACK, "but_wait.more", _variables(context))
-    return ({"text": said}, {"background": _BACKDROP(context)}) if said else None
+_bonus = one_text(PACK, _variables, "but_wait.bonus_title", "title", image=_BONUS)
+_double = big_number(
+    PACK,
+    _variables,
+    "but_wait.double_title",
+    "but_wait.double_number",
+    "but_wait.double_label",
+    "but_wait.double_source",
+    0.7,
+)
+_theres_more = one_text(PACK, _variables, "but_wait.more", "text", background=_BACKDROP)
 
 
 # THE CALL TO ORDER NOW: over a photo of the operators, a big phone number, or the audience ordering at once
-
-
-def _call_now(context: dict[str, Any]) -> Made | None:
-    said = text(PACK, "call_now.call_now", _variables(context))
-    return ({"text": said}, {"background": _OPERATORS(context)}) if said else None
-
-
-def _phone_number(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    label = text(PACK, "call_now.phone_label", variables)
-    if not label:
-        return None
-    return {
-        "title": text(PACK, "call_now.phone_title", variables),
-        "number": random_util.choice(words(PACK, "call_now.phone_number")),
-        "label": label,
-        "source": maybe(0.8, text(PACK, "call_now.phone_source", variables)),
-    }, behind(context, BIG_NUMBER_PICTURES)
-
-
-def _order_now(context: dict[str, Any]) -> Made | None:
-    order = text(PACK, "call_now.order", _variables(context))
-    return ({"audience": order}, {}) if order else None
+_call_now = one_text(PACK, _variables, "call_now.call_now", "text", background=_OPERATORS)
+_phone_number = big_number(
+    PACK,
+    _variables,
+    "call_now.phone_title",
+    "call_now.phone_number",
+    "call_now.phone_label",
+    "call_now.phone_source",
+    0.8,
+)
+_order_now = one_text(PACK, _variables, "call_now.order", "audience")
 
 
 # THE SLIDE GENERATORS
 
 
-def _part(
-    part: str,
-    weight: float,
-    kind: str,
-    content: Any,
-    tags: list[str],
-    name: str,
-    recipe: Recipe,
-    repeats: int = 2,
-) -> SlideGeneratorData:
-    """A slide generator of one of the arc's parts: its slides are of the kind, classic ones from the content."""
-    return SlideGeneratorData(
-        KindSlideGenerator(kind, content),
-        weight_function=InPart(ARC, part, weight),
-        retries=3,
-        allowed_repeated_elements=repeats,
-        tags=[part, *tags],
-        name=f"{name} (Infomercial)",
-        llm=recipe,
-    )
+_part = partial(part_slide, ARC, "Infomercial")
 
 
 _TITLE_HINT = "the slide's title, as an infomercial shouts it: a few words, with an exclamation mark"
@@ -429,14 +340,7 @@ _SMALL_PRINT = "the small print, such as shipping and handling, or empty for non
 _PRICED = pictured((), "background", BIG_NUMBER_PICTURES)
 
 _GENERATORS: Final = [
-    SlideGeneratorData(
-        slide_generator_types.TitleSlideGenerator.of(_title_if_not_generated, _subtitle),
-        allowed_repeated_elements=3,
-        weight_function=PeakedWeight((0,), 100000, 0),
-        tags=["title"],
-        name="Title slide (Infomercial)",
-        llm=Recipe("title"),
-    ),
+    title_slide(PACK, title_generator, _variables, "Infomercial"),
     # The problem
     # (D69: the problem slide, an infomercial's "Tired of this?", most of the time)
     _part(

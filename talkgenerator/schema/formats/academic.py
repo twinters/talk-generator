@@ -19,10 +19,10 @@ medieval historian and a time traveller a little more often; its themes are the 
 
 from __future__ import annotations
 
+from functools import partial
 from typing import Any, Final
 
 from talkgenerator.closers import Closer, presenter, said
-from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
 from talkgenerator.plan.kinds import (
     AGENDA_ITEM,
@@ -36,21 +36,26 @@ from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema.formats import (
     BIG_NUMBER_PICTURES,
     Format,
-    KindSlideGenerator,
     Made,
-    behind,
+    big_number,
     different,
+    items,
     maybe,
     method,
+    one_text,
+    part_slide,
     photos,
     problem,
     provocation,
+    steps,
     text,
+    timeline,
+    title_slide,
+    variables_of,
     words,
 )
-from talkgenerator.schema.formats.arcs import Arc, Free, InPart, Part
+from talkgenerator.schema.formats.arcs import Arc, Free, Part
 from talkgenerator.schema.slide_schemas import default_max_allowed_tags, slide_generators
-from talkgenerator.slide import slide_generator_types
 from talkgenerator.util import random_util
 
 PACK: Final = "academic"
@@ -115,9 +120,7 @@ ACADEMIC: Final = Format(
 def _variables(context: dict[str, Any]) -> dict[str, Any]:
     """What the pack's templates may use: the slide's seed, the talk's topic, its method's name, the presenter and the
     title."""
-    variables = {key: context[key] for key in ("seed", "topic", "presenter", "title") if context.get(key)}
-    variables["method"] = method(str(context.get("topic") or context["seed"]))
-    return variables
+    return variables_of(context, method=method)
 
 
 # THE TITLE SLIDE: a paper's title, and who presents it, with their affiliation
@@ -126,14 +129,6 @@ def _variables(context: dict[str, Any]) -> dict[str, Any]:
 def title_generator(context: dict[str, Any]) -> str | None:
     """A classic academic talk's title, about the seed (the talk's topic)."""
     return text(PACK, "title.talk_title", {**context, "method": method(str(context["seed"]))})
-
-
-def _title_if_not_generated(context: dict[str, Any]) -> str | None:
-    return context["title"] if context.get("title") is not None else title_generator(context)
-
-
-def _subtitle(context: dict[str, Any]) -> str | None:
-    return text(PACK, "title.subtitle", _variables(context))
 
 
 # Images: a calm backdrop behind a statement (D63: calm photos mixed with the backdrop look), an odd photo of the
@@ -159,10 +154,6 @@ _PUZZLE = ImageSlot(
 )
 
 
-def _items(prefix: str, texts: list[str]) -> dict[str, str | None]:
-    return {f"{prefix}_{index}": item for index, item in enumerate(texts, 1)}
-
-
 # THE MOTIVATION: the problem slide (D69), or the research question over a photo
 
 # (a puzzle: typical and weird ones a little more often than the other angles)
@@ -181,9 +172,7 @@ def _motivation(context: dict[str, Any]) -> Made | None:
     return problem(PACK, _PROBLEMS, _variables(context), context, (_BACKDROP, _PUZZLE), _ANGLES)
 
 
-def _research_question(context: dict[str, Any]) -> Made | None:
-    question = text(PACK, "motivation.research_question", _variables(context))
-    return ({"text": question}, {"background": _BACKDROP(context)}) if question else None
+_research_question = one_text(PACK, _variables, "motivation.research_question", "text", background=_BACKDROP)
 
 
 # THE OUTLINE
@@ -208,7 +197,7 @@ def _related_venn(context: dict[str, Any]) -> Made | None:
     title, overlap = text(PACK, "related.venn_title", variables), text(PACK, "related.overlap", variables)
     if not title or not overlap or len(fields) < 2:
         return None
-    return {"title": title, **_items("circle", fields), "overlap": overlap}, {}
+    return {"title": title, **items("circle", fields), "overlap": overlap}, {}
 
 
 def _related_matrix(context: dict[str, Any]) -> Made | None:
@@ -251,27 +240,9 @@ def _related_timeline(context: dict[str, Any]) -> Made | None:
 
 
 # THE METHOD: a diagram of its steps, its equation, or its setup
-
-
-def _method(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    count = random_util.randint(3, 5)
-    first, last = text(PACK, "method.step_first", variables), text(PACK, "method.step_last", variables)
-    middle = different(PACK, "method.step", variables, count - 2)
-    title = text(PACK, "method.method_title", variables)
-    if not title or not first or not last or len(middle) < count - 2:
-        return None
-    return {"title": title, **_items("step", [first, *middle, last])}, {}
-
-
-def _equation(context: dict[str, Any]) -> Made | None:
-    equation = text(PACK, "method.equation", _variables(context))
-    return ({"text": equation}, {"background": _BACKDROP(context)}) if equation else None
-
-
-def _setup(context: dict[str, Any]) -> Made | None:
-    title = text(PACK, "method.setup_title", _variables(context))
-    return ({"title": title}, {"image": _SETUP(context)}) if title else None
+_method = steps(PACK, _variables, "method.method_title", "method.step_first", "method.step", "method.step_last")
+_equation = one_text(PACK, _variables, "method.equation", "text", background=_BACKDROP)
+_setup = one_text(PACK, _variables, "method.setup_title", "title", image=_SETUP)
 
 
 # THE RESULTS: charts with suspicious p-values, or one p-value as a big number
@@ -319,17 +290,9 @@ def _results_trend(context: dict[str, Any]) -> Made | None:
     }, {}
 
 
-def _p_value(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    label = text(PACK, "results.p_label", variables)
-    if not label:
-        return None
-    return {
-        "title": text(PACK, "results.p_title", variables),
-        "number": random_util.choice(words(PACK, "results.p_number")),
-        "label": label,
-        "source": maybe(0.8, text(PACK, "results.p_source", variables)),
-    }, behind(context, BIG_NUMBER_PICTURES)
+_p_value = big_number(
+    PACK, _variables, "results.p_title", "results.p_number", "results.p_label", "results.p_source", 0.8
+)
 
 
 # THE LIMITATIONS, AND FUTURE WORK
@@ -341,27 +304,13 @@ def _limitations_iceberg(context: dict[str, Any]) -> Made | None:
     title, tip = text(PACK, "limitations.limitations_title", variables), text(PACK, "limitations.tip", variables)
     if not title or not tip or len(hidden) < 2:
         return None
-    return {"title": title, "tip": tip, **_items("hidden", hidden)}, {}
+    return {"title": title, "tip": tip, **items("hidden", hidden)}, {}
 
 
-def _limitations_statement(context: dict[str, Any]) -> Made | None:
-    admission = text(PACK, "limitations.admission", _variables(context))
-    return ({"text": admission}, {"background": _BACKDROP(context)}) if admission else None
-
-
-def _future_timeline(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    count = random_util.randint(3, 5)
-    steps = different(PACK, "future.future_step", variables, count - 1)
-    punchline, title = text(PACK, "future.future_punchline", variables), text(PACK, "future.future_title", variables)
-    if not title or not punchline or len(steps) < count - 1:
-        return None
-    known = words(PACK, "future.future_when")  # (soonest first)
-    dates = [known[index] for index in sorted(random_util.sample(range(len(known)), count))]
-    texts: dict[str, str | None] = {"title": title}
-    for index, (date, event) in enumerate(zip(dates, [*steps, punchline], strict=True), 1):
-        texts[f"date_{index}"], texts[f"event_{index}"] = date, event
-    return texts, {}
+_limitations_statement = one_text(PACK, _variables, "limitations.admission", "text", background=_BACKDROP)
+_future_timeline = timeline(
+    PACK, _variables, "future.future_title", "future.future_step", "future.future_punchline", "future.future_when"
+)
 
 
 def _future_cycle(context: dict[str, Any]) -> Made | None:
@@ -370,7 +319,7 @@ def _future_cycle(context: dict[str, Any]) -> Made | None:
     title = text(PACK, "future.cycle_title", variables)
     if not title or len(steps) < 3:
         return None
-    return {"title": title, **_items("step", steps)}, {}
+    return {"title": title, **items("step", steps)}, {}
 
 
 def _future_flowchart(context: dict[str, Any]) -> Made | None:
@@ -394,7 +343,7 @@ def _thanks(context: dict[str, Any]) -> Made | None:
     thanked = (text(PACK, "thanks.three_thanks", variables) or "").split("|")
     if len(thanked) != 3:
         return None
-    texts = {"title": text(PACK, "thanks.thanks_title", variables), **_items("caption", [t.strip() for t in thanked])}
+    texts = {"title": text(PACK, "thanks.thanks_title", variables), **items("caption", [t.strip() for t in thanked])}
     return texts, {f"image_{index}": photo for index, photo in enumerate(photos(_THANKED, context, 3), 1)}
 
 
@@ -436,26 +385,7 @@ _PICTURED: Final = 0.8  # of the references that show a picture of one of the wo
 # THE SLIDE GENERATORS
 
 
-def _part(
-    part: str,
-    weight: float,
-    kind: str,
-    content: Any,
-    tags: list[str],
-    name: str,
-    recipe: Recipe,
-    repeats: int = 2,
-) -> SlideGeneratorData:
-    """A slide generator of one of the arc's parts: its slides are of the kind, classic ones from the content."""
-    return SlideGeneratorData(
-        KindSlideGenerator(kind, content),
-        weight_function=InPart(ARC, part, weight),
-        retries=3,
-        allowed_repeated_elements=repeats,
-        tags=[part, *tags],
-        name=f"{name} (Academic)",
-        llm=recipe,
-    )
+_part = partial(part_slide, ARC, "Academic")
 
 
 _TITLE_HINT = "the slide's title, as a conference talk's slide has it"
@@ -488,14 +418,7 @@ def _references_recipe(picture: ImageSlot, note: str, caption: str) -> Recipe:
 
 
 _GENERATORS: Final = [
-    SlideGeneratorData(
-        slide_generator_types.TitleSlideGenerator.of(_title_if_not_generated, _subtitle),
-        allowed_repeated_elements=3,
-        weight_function=PeakedWeight((0,), 100000, 0),
-        tags=["title"],
-        name="Title slide (Academic)",
-        llm=Recipe("title"),
-    ),
+    title_slide(PACK, title_generator, _variables, "Academic"),
     # The motivation (D69: the problem slide, four times in five)
     _part(
         "motivation",

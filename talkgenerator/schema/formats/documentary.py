@@ -23,10 +23,11 @@ often, and clean keynotes.
 
 from __future__ import annotations
 
+from functools import partial
 from typing import Any, Final
 
 from talkgenerator.closers import Closer, presenter, said
-from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
+from talkgenerator.datastructures.slide_generator_data import SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
 from talkgenerator.plan.kinds import Recipe, Variant, pictured
 from talkgenerator.schema import content_generators as cg
@@ -35,18 +36,22 @@ from talkgenerator.schema.formats import (
     Format,
     KindSlideGenerator,
     Made,
-    behind,
+    big_number,
     different,
+    items,
     maybe,
+    one_text,
+    part_slide,
     photos,
     provocation,
     species,
+    steps,
     text,
-    words,
+    title_slide,
+    variables_of,
 )
-from talkgenerator.schema.formats.arcs import Arc, Free, InPart, Part
+from talkgenerator.schema.formats.arcs import Arc, Free, Part
 from talkgenerator.schema.slide_schemas import default_max_allowed_tags, slide_generators
-from talkgenerator.slide import slide_generator_types
 from talkgenerator.util import random_util
 
 PACK: Final = "documentary"
@@ -96,13 +101,7 @@ DOCUMENTARY: Final = Format(
 def _variables(context: dict[str, Any]) -> dict[str, Any]:
     """What the pack's templates may use: the slide's seed, the talk's topic, its species' made-up name, the presenter
     and the title."""
-    variables = {key: context[key] for key in ("seed", "topic", "presenter", "title") if context.get(key)}
-    variables["species"] = species(str(context.get("topic") or context["seed"]))
-    return variables
-
-
-def _items(prefix: str, texts: list[str]) -> dict[str, str | None]:
-    return {f"{prefix}_{index}": item for index, item in enumerate(texts, 1)}
+    return variables_of(context, species=species)
 
 
 # THE TITLE SLIDE: the documentary's title, and who narrates or filmed it
@@ -111,14 +110,6 @@ def _items(prefix: str, texts: list[str]) -> dict[str, str | None]:
 def title_generator(context: dict[str, Any]) -> str | None:
     """A classic documentary's title, about the seed (the talk's topic)."""
     return text(PACK, "title.talk_title", {**context, "species": species(str(context["seed"]))})
-
-
-def _title_if_not_generated(context: dict[str, Any]) -> str | None:
-    return context["title"] if context.get("title") is not None else title_generator(context)
-
-
-def _subtitle(context: dict[str, Any]) -> str | None:
-    return text(PACK, "title.subtitle", _variables(context))
 
 
 # Images: a sweeping landscape for the opening shot (the sky and earth pictures people are proud of, else stock photos),
@@ -144,24 +135,12 @@ _SUNSET = ImageSlot("the topic at sunset, as a nature documentary's last shot", 
 
 
 # THE OPENING: a landscape under a hushed first line, or a grand line over a calm photo
-
-
-def _opening_shot(context: dict[str, Any]) -> Made | None:
-    title = text(PACK, "opening.dawn", _variables(context))
-    return ({"title": title}, {"image": _LANDSCAPE(context)}) if title else None
-
-
-def _opening_line(context: dict[str, Any]) -> Made | None:
-    line = text(PACK, "opening.planet", _variables(context))
-    return ({"text": line}, {"background": _BACKDROP(context)}) if line else None
+_opening_shot = one_text(PACK, _variables, "opening.dawn", "title", image=_LANDSCAPE)
+_opening_line = one_text(PACK, _variables, "opening.planet", "text", background=_BACKDROP)
 
 
 # THE HABITAT: one photo under its name, where it's found as a pie chart, or a fact about how it lives
-
-
-def _habitat(context: dict[str, Any]) -> Made | None:
-    title = text(PACK, "habitat.home_title", _variables(context))
-    return ({"title": title}, {"image": _HABITAT(context)}) if title else None
+_habitat = one_text(PACK, _variables, "habitat.home_title", "title", image=_HABITAT)
 
 
 def _range(context: dict[str, Any]) -> Made | None:
@@ -200,7 +179,7 @@ def _behaviour(context: dict[str, Any]) -> Made | None:
     ][:2]
     if len(doing) < 2:
         return None
-    texts = {"title": title, **_items("caption", [*doing, punchline])}
+    texts = {"title": title, **items("caption", [*doing, punchline])}
     return texts, {f"image_{index}": photo for index, photo in enumerate(photos(_WILD, context, 3), 1)}
 
 
@@ -220,15 +199,11 @@ def _day(context: dict[str, Any]) -> Made | None:
     title = text(PACK, "behaviour.cycle_title", variables)
     if not title or len(steps) < 3:
         return None
-    return {"title": title, **_items("step", steps)}, {}
+    return {"title": title, **items("step", steps)}, {}
 
 
 # THE RARE SIGHTING: an odd photo, full-bleed, or the news of it
-
-
-def _rare_sighting(context: dict[str, Any]) -> Made | None:
-    title = text(PACK, "sighting.rare", _variables(context))
-    return ({"title": title}, {"image": _SIGHTING(context)}) if title else None
+_rare_sighting = one_text(PACK, _variables, "sighting.rare", "title", image=_SIGHTING)
 
 
 def _sighting_news(context: dict[str, Any]) -> Made | None:
@@ -244,38 +219,14 @@ def _sighting_news(context: dict[str, Any]) -> Made | None:
 
 
 # THE RITUAL: an ancient ritual in an odd photo, or its courtship dance, step by step
-
-
-def _ritual(context: dict[str, Any]) -> Made | None:
-    title = text(PACK, "ritual.ancient", _variables(context))
-    return ({"title": title}, {"image": _RITUAL(context)}) if title else None
-
-
-def _dance(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    count = random_util.randint(3, 5)
-    first, last = text(PACK, "ritual.dance_first", variables), text(PACK, "ritual.dance_last", variables)
-    middle = different(PACK, "ritual.dance_step", variables, count - 2)
-    title = text(PACK, "ritual.dance_title", variables)
-    if not title or not first or not last or len(middle) < count - 2:
-        return None
-    return {"title": title, **_items("step", [first, *middle, last])}, {}
+_ritual = one_text(PACK, _variables, "ritual.ancient", "title", image=_RITUAL)
+_dance = steps(PACK, _variables, "ritual.dance_title", "ritual.dance_first", "ritual.dance_step", "ritual.dance_last")
 
 
 # THE THREAT: how few are left, its numbers falling, or an everyday danger told as a grave one
-
-
-def _left(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    label = text(PACK, "threat.left_label", variables)
-    if not label:
-        return None
-    return {
-        "title": text(PACK, "threat.left_title", variables),
-        "number": random_util.choice(words(PACK, "threat.left_number")),
-        "label": label,
-        "source": maybe(0.7, text(PACK, "threat.left_source", variables)),
-    }, behind(context, BIG_NUMBER_PICTURES)
+_left = big_number(
+    PACK, _variables, "threat.left_title", "threat.left_number", "threat.left_label", "threat.left_source", 0.7
+)
 
 
 def _fewer(context: dict[str, Any]) -> Made | None:
@@ -293,29 +244,15 @@ def _fewer(context: dict[str, Any]) -> Made | None:
     }, {}
 
 
-def _danger(context: dict[str, Any]) -> Made | None:
-    line = text(PACK, "threat.danger", _variables(context))
-    return ({"text": line}, {"background": _BACKDROP(context)}) if line else None
+_danger = one_text(PACK, _variables, "threat.danger", "text", background=_BACKDROP)
 
 
 # THE CLOSING: a reflection over a calm photo, the last shot at sunset, or the room hushed
-
-
-def _reflection(context: dict[str, Any]) -> Made | None:
-    line = text(PACK, "closing.reflection", _variables(context))
-    return ({"text": line}, {"background": _BACKDROP(context)}) if line else None
-
-
-def _farewell(context: dict[str, Any]) -> Made | None:
-    title = text(PACK, "closing.farewell", _variables(context))
-    return ({"title": title}, {"image": _SUNSET(context)}) if title else None
-
-
-def _hush(context: dict[str, Any]) -> Made | None:
-    """The room, hushed: everyone keeps very still, as the species might be watching (it needs no picture of its own,
-    so the documentary always has a way to end)."""
-    said = text(PACK, "closing.hush", _variables(context))
-    return ({"audience": said}, {}) if said else None
+_reflection = one_text(PACK, _variables, "closing.reflection", "text", background=_BACKDROP)
+_farewell = one_text(PACK, _variables, "closing.farewell", "title", image=_SUNSET)
+# (the room, hushed: everyone keeps very still, as the species might be watching; it needs no picture of its own, so
+# the documentary always has a way to end)
+_hush = one_text(PACK, _variables, "closing.hush", "audience")
 
 
 # A FREE SLIDE OF ITS OWN: a quiz on the species, of one of these kinds (each with its question, its options and why)
@@ -341,26 +278,7 @@ def _spot_the_species(context: dict[str, Any]) -> Made | None:
 # THE SLIDE GENERATORS
 
 
-def _part(
-    part: str,
-    weight: float,
-    kind: str,
-    content: Any,
-    tags: list[str],
-    name: str,
-    recipe: Recipe,
-    repeats: int = 2,
-) -> SlideGeneratorData:
-    """A slide generator of one of the arc's parts: its slides are of the kind, classic ones from the content."""
-    return SlideGeneratorData(
-        KindSlideGenerator(kind, content),
-        weight_function=InPart(ARC, part, weight),
-        retries=3,
-        allowed_repeated_elements=repeats,
-        tags=[part, *tags],
-        name=f"{name} (Documentary)",
-        llm=recipe,
-    )
+_part = partial(part_slide, ARC, "Documentary")
 
 
 _TITLE_HINT = "the slide's title, as a nature documentary's caption has it: a few words"
@@ -368,14 +286,7 @@ _HUSHED = "in a few words, as the narrator would whisper them"
 _FEW_WORDS = "in one to three words"
 
 _GENERATORS: Final = [
-    SlideGeneratorData(
-        slide_generator_types.TitleSlideGenerator.of(_title_if_not_generated, _subtitle),
-        allowed_repeated_elements=3,
-        weight_function=PeakedWeight((0,), 100000, 0),
-        tags=["title"],
-        name="Title slide (Documentary)",
-        llm=Recipe("title"),
-    ),
+    title_slide(PACK, title_generator, _variables, "Documentary"),
     # The opening
     _part(
         "opening",

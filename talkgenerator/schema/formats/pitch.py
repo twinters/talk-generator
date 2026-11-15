@@ -17,10 +17,10 @@ motivational speaker a little more often; its themes are the startup family's mo
 
 from __future__ import annotations
 
+from functools import partial
 from typing import Any, Final
 
 from talkgenerator.closers import Closer, contact_line, presenter, said
-from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
 from talkgenerator.plan.kinds import Recipe, Variant, matrix_landscape, pictured, problem_variants
 from talkgenerator.schema import content_generators as cg
@@ -28,21 +28,25 @@ from talkgenerator.schema.formats import (
     BIG_NUMBER_PICTURES,
     KPI_PICTURES,
     Format,
-    KindSlideGenerator,
     Made,
     behind,
+    big_number,
     different,
     maybe,
+    one_text,
+    part_slide,
     photos,
     problem,
     provocation,
     startup,
     text,
+    timeline,
+    title_slide,
+    variables_of,
     words,
 )
-from talkgenerator.schema.formats.arcs import Arc, Free, InPart, Part
+from talkgenerator.schema.formats.arcs import Arc, Free, Part
 from talkgenerator.schema.slide_schemas import default_max_allowed_tags, slide_generators
-from talkgenerator.slide import slide_generator_types
 from talkgenerator.util import random_util
 
 PACK: Final = "pitch"
@@ -102,9 +106,7 @@ PITCH: Final = Format(
 def _variables(context: dict[str, Any]) -> dict[str, Any]:
     """What the pack's templates may use: the slide's seed, the talk's topic, its startup's name, the presenter and
     the title."""
-    variables = {key: context[key] for key in ("seed", "topic", "presenter", "title") if context.get(key)}
-    variables["startup"] = startup(str(context.get("topic") or context["seed"]))
-    return variables
+    return variables_of(context, startup=startup)
 
 
 # THE TITLE SLIDE: the startup's name and its promise, and who pitches it
@@ -113,14 +115,6 @@ def _variables(context: dict[str, Any]) -> dict[str, Any]:
 def title_generator(context: dict[str, Any]) -> str | None:
     """A classic pitch's title, about the seed (the talk's topic)."""
     return text(PACK, "title.talk_title", {**context, "startup": startup(str(context["seed"]))})
-
-
-def _title_if_not_generated(context: dict[str, Any]) -> str | None:
-    return context["title"] if context.get("title") is not None else title_generator(context)
-
-
-def _subtitle(context: dict[str, Any]) -> str | None:
-    return text(PACK, "title.subtitle", _variables(context))
 
 
 # Images: a calm backdrop behind a statement, the product, life before and after it, and the team's people
@@ -175,9 +169,7 @@ def _problem(context: dict[str, Any]) -> Made | None:
     return problem(PACK, _PROBLEMS, _variables(context), context, (_BACKDROP, _PAIN), _ANGLES)
 
 
-def _problem_statement(context: dict[str, Any]) -> Made | None:
-    statement = text(PACK, "problem.problem_statement", _variables(context))
-    return ({"text": statement}, {"background": _BACKDROP(context)}) if statement else None
+_problem_statement = one_text(PACK, _variables, "problem.problem_statement", "text", background=_BACKDROP)
 
 
 def _problem_number(context: dict[str, Any]) -> Made | None:
@@ -195,11 +187,7 @@ def _problem_number(context: dict[str, Any]) -> Made | None:
 
 
 # THE SOLUTION
-
-
-def _solution(context: dict[str, Any]) -> Made | None:
-    title = text(PACK, "solution.solution_title", _variables(context))
-    return ({"title": title}, {"image": _PRODUCT(context)}) if title else None
+_solution = one_text(PACK, _variables, "solution.solution_title", "title", image=_PRODUCT)
 
 
 def _before_and_after(context: dict[str, Any]) -> Made | None:
@@ -238,17 +226,15 @@ def _market_funnel(context: dict[str, Any]) -> Made | None:
     return {"title": title, **{f"stage_{index}": stage for index, stage in enumerate(stages, 1)}}, {}
 
 
-def _market_number(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    label = text(PACK, "market.market_label", variables)
-    if not label:
-        return None
-    return {
-        "title": text(PACK, "market.market_number_title", variables),
-        "number": random_util.choice(words(PACK, "market.market_amount")),
-        "label": label,
-        "source": maybe(0.8, text(PACK, "market.market_source", variables)),
-    }, behind(context, BIG_NUMBER_PICTURES)
+_market_number = big_number(
+    PACK,
+    _variables,
+    "market.market_number_title",
+    "market.market_amount",
+    "market.market_label",
+    "market.market_source",
+    0.8,
+)
 
 
 # THE BUSINESS MODEL: pricing tiers, a flywheel, or where the money comes from
@@ -419,60 +405,16 @@ def _org_chart(context: dict[str, Any]) -> Made | None:
 
 
 # THE ROADMAP, THE ASK AND THE CLOSING
-
-
-def _roadmap(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    count = random_util.randint(3, 5)
-    milestones = different(PACK, "roadmap.milestone", variables, count - 1)
-    punchline = text(PACK, "roadmap.roadmap_punchline", variables)
-    title = text(PACK, "roadmap.roadmap_title", variables)
-    if not title or not punchline or len(milestones) < count - 1:
-        return None
-    known = words(PACK, "roadmap.when")  # (soonest first)
-    dates = [known[index] for index in sorted(random_util.sample(range(len(known)), count))]
-    texts: dict[str, str | None] = {"title": title}
-    for index, (date, event) in enumerate(zip(dates, [*milestones, punchline], strict=True), 1):
-        texts[f"date_{index}"], texts[f"event_{index}"] = date, event
-    return texts, {}
-
-
-def _ask(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    label = text(PACK, "ask.ask_label", variables)
-    if not label:
-        return None
-    return {
-        "title": text(PACK, "ask.ask_title", variables),
-        "number": random_util.choice(words(PACK, "ask.amount")),
-        "label": label,
-        "source": maybe(0.8, text(PACK, "ask.ask_source", variables)),
-    }, behind(context, BIG_NUMBER_PICTURES)
+_roadmap = timeline(
+    PACK, _variables, "roadmap.roadmap_title", "roadmap.milestone", "roadmap.roadmap_punchline", "roadmap.when"
+)
+_ask = big_number(PACK, _variables, "ask.ask_title", "ask.amount", "ask.ask_label", "ask.ask_source", 0.8)
 
 
 # THE SLIDE GENERATORS
 
 
-def _part(
-    part: str,
-    weight: float,
-    kind: str,
-    content: Any,
-    tags: list[str],
-    name: str,
-    recipe: Recipe,
-    repeats: int = 2,
-) -> SlideGeneratorData:
-    """A slide generator of one of the arc's parts: its slides are of the kind, classic ones from the content."""
-    return SlideGeneratorData(
-        KindSlideGenerator(kind, content),
-        weight_function=InPart(ARC, part, weight),
-        retries=3,
-        allowed_repeated_elements=repeats,
-        tags=[part, *tags],
-        name=f"{name} (Pitch)",
-        llm=recipe,
-    )
+_part = partial(part_slide, ARC, "Pitch")
 
 
 _TITLE_HINT = "the slide's title, as a pitch deck's slide has it"
@@ -492,14 +434,7 @@ _GOOD_ENDS = {
 }
 
 _GENERATORS: Final = [
-    SlideGeneratorData(
-        slide_generator_types.TitleSlideGenerator.of(_title_if_not_generated, _subtitle),
-        allowed_repeated_elements=3,
-        weight_function=PeakedWeight((0,), 100000, 0),
-        tags=["title"],
-        name="Title slide (Pitch)",
-        llm=Recipe("title"),
-    ),
+    title_slide(PACK, title_generator, _variables, "Pitch"),
     # The problem
     # (D69: the problem slide, the pitch's why, three in four pitches' first; a long pitch's second problem slide is
     # one of the others)
