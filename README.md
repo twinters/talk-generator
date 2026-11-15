@@ -11,9 +11,27 @@ In such games, the actors have to present an unseen presentation slide deck, but
 
 Try out this generator on our online platform: [talkgenerator.com](https://talkgenerator.com/).
 
-### Example
+### Examples
 
-![Automatically Generated](https://media.giphy.com/media/MXXe522nIAA9JZjExI/giphy.gif)
+Four talks talkgenerator made, click by click.
+
+**Land On Your Feet, Then Deny It**: a TED-like talk by a former athlete, in the glossy magazine theme
+
+![Slides of "Land On Your Feet, Then Deny It"](https://raw.githubusercontent.com/twinters/talk-generator/master/docs/images/examples/cats.gif)
+
+**Why I Joined a Penguin Cult**: a TED-like talk by a disgraced professor, in the chalkboard theme
+
+![Slides of "Why I Joined a Penguin Cult"](https://raw.githubusercontent.com/twinters/talk-generator/master/docs/images/examples/penguin-cult.gif)
+
+**The People v. Pineapple: Cold Case Solved**: a court case argued by a detective, in the vintage paper theme
+
+![Slides of "The People v. Pineapple: Cold Case Solved"](https://raw.githubusercontent.com/twinters/talk-generator/master/docs/images/examples/pineapple-court.gif)
+
+**SockMaster 3000: Never Lose a Sole Mate!**: a late-night infomercial, in the neon theme
+
+![Slides of "SockMaster 3000: Never Lose a Sole Mate!"](https://raw.githubusercontent.com/twinters/talk-generator/master/docs/images/examples/socks-infomercial.gif)
+
+Claude Sonnet wrote them. The pictures' [credits](https://github.com/twinters/talk-generator/blob/master/docs/images/examples/CREDITS.md).
 
 ## Install
 
