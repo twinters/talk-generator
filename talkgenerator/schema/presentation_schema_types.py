@@ -72,8 +72,16 @@ COPYRIGHT_FREE_GROUPS = (
     "conclusion_copyright_free",
 )
 
+
+def _wandering(topics, num_slides):
+    """The topics of a talk's slides that wander from its topic and come back to it every two or three slides."""
+    return slide_topic_generators.SideTrackingTopicGenerator(
+        topics=topics, num_slides=num_slides, topic_return_period_range=range(2, 4)
+    )
+
+
 # Default schema: all kinds of slides, images from every source
-presentation_schema = schemas.register(
+schemas.register(
     "default",
     PresentationSchema(
         seed_generator=slide_topic_generators.SideTrackingTopicGenerator,
@@ -86,23 +94,20 @@ presentation_schema = schemas.register(
 )
 
 # Interview schema: no "about me" slides
-interview_max_allowed_tags = default_max_allowed_tags.copy()
-interview_max_allowed_tags["about_me"] = 0
-
-interview_schema = schemas.register(
+schemas.register(
     "interview",
     PresentationSchema(
         seed_generator=slide_topic_generators.SideTrackingTopicGenerator,
         title_generator=cg.talk_title_generator,
         title_candidates=(cg.wikihow_title_generator,),
         slide_generators=slide_generators.groups(*DEFAULT_GROUPS),
-        max_allowed_tags=interview_max_allowed_tags,
+        max_allowed_tags={**default_max_allowed_tags, "about_me": 0},
         spare_generators=SPARE_GENERATORS,
     ),
 )
 
 # Test schema: for testing purposes
-_test_sourcing_slide_generator = slide_generators.register(
+slide_generators.register(
     "Test sourcing",
     SlideGeneratorData(
         slide_generator_types.ImageSlideGenerator.of(cg.inspiration_title_generator, cg.generate_unsplash_image),
@@ -114,7 +119,7 @@ _test_sourcing_slide_generator = slide_generators.register(
     group="test",
 )
 
-test_schema = schemas.register(
+schemas.register(
     "test",
     PresentationSchema(
         title_generator=cg.talk_title_generator,
@@ -126,193 +131,48 @@ test_schema = schemas.register(
 
 # TED schema: only images from sources that allow reuse, by its slide generators (as in v4) and its license policy:
 # everything but fair use (see talkgenerator.images.licenses)
-ted_schema = schemas.register(
+schemas.register(
     "ted",
     PresentationSchema(
         license_policy="open",
-        seed_generator=lambda topics, num_slides: slide_topic_generators.SideTrackingTopicGenerator(
-            topics=topics, num_slides=num_slides, topic_return_period_range=range(2, 4)
-        ),
+        seed_generator=_wandering,
         title_generator=cg.talk_ted_title_generator,
         title_candidates=(cg.wikihow_title_generator,),
         slide_generators=slide_generators.groups(*COPYRIGHT_FREE_GROUPS),
-        max_allowed_tags={
-            # Absolute maxima
-            "title": 1,
-            "history": 1,
-            "anecdote": 1,
-            "location_chart": 1,
-            "trend_chart": 1,
-            "bar_chart": 1,
-            "venn_diagram": 1,
-            "matrix_diagram": 1,
-            "chart": 1,
-            "deep": 2,
-            "big_number": 1,
-            "kpi": 1,
-            "quiz": 1,
-            "social_post": 1,
-            "news": 1,
-            "fun_fact": 1,
-            "problem_slide": 1,
-            "acronym": 1,
-            "dare": 1,
-            "flowchart": 1,
-            "tier_list": 1,
-            "wall_of_text": 1,
-            "alignment_chart": 1,
-            "red_flags": 1,
-            "traffic_flags": 1,
-            "reviews": 1,
-            "error_message": 1,
-            "exhibit": 2,
-            "pick_one": 1,
-            "equation": 1,
-            "what_do_you_see": 1,
-            "before_after": 1,
-            "agenda": 1,
-            "questions": 1,
-            "timeline": 1,
-            "pyramid": 1,
-            "funnel": 1,
-            "cycle": 1,
-            "org_chart": 1,
-            "iceberg": 1,
-            # Relative (procentual) maxima
-            "section": 0.1,
-            "diagram": 0.2,
-            "two_captions": 0.3,
-            "three_captions": 0.2,
-            "quote": 0.2,
-            "statement": 0.2,
-        },
+        # (the default's caps, but one chart at most, two captions on three slides in ten, and two deep questions)
+        max_allowed_tags={**default_max_allowed_tags, "chart": 1, "two_captions": 0.3, "deep": 2},
         spare_generators=SPARE_GENERATORS,
     ),
 )
-
-
-def _wandering(topics, num_slides):
-    """The topics of a talk's slides that wander from its topic and come back to it every two or three slides."""
-    return slide_topic_generators.SideTrackingTopicGenerator(
-        topics=topics, num_slides=num_slides, topic_return_period_range=range(2, 4)
-    )
-
 
 # TALK FORMATS BEYOND THE TED-LIKE TALKS (docs/v5-plan.md, section 7; see talkgenerator.schema.formats): each its arc
 # of slides, its content pack, its brief for the language model, and its favourite personas and themes. Their images
 # come from every source, as the default schema's do; their arcs' slides need none that's fair use, so they work with
 # the open license policy too.
-pitch_schema = schemas.register(
-    "pitch",
-    PresentationSchema(
-        seed_generator=_wandering,
-        title_generator=pitch.title_generator,
-        slide_generators=slide_generators.group("pitch"),
-        max_allowed_tags=pitch.CAPS,
-        format=pitch.PITCH,
-        spare_generators=SPARE_GENERATORS,
-    ),
-)
-academic_schema = schemas.register(
-    "academic",
-    PresentationSchema(
-        seed_generator=_wandering,
-        title_generator=academic.title_generator,
-        slide_generators=slide_generators.group("academic"),
-        max_allowed_tags=academic.CAPS,
-        format=academic.ACADEMIC,
-        spare_generators=SPARE_GENERATORS,
-    ),
-)
-corporate_schema = schemas.register(
-    "corporate",
-    PresentationSchema(
-        seed_generator=_wandering,
-        title_generator=corporate.title_generator,
-        slide_generators=slide_generators.group("corporate"),
-        max_allowed_tags=corporate.CAPS,
-        format=corporate.CORPORATE,
-        spare_generators=SPARE_GENERATORS,
-    ),
-)
-keynote_schema = schemas.register(
-    "keynote",
-    PresentationSchema(
-        seed_generator=_wandering,
-        title_generator=keynote.title_generator,
-        slide_generators=slide_generators.group("keynote"),
-        max_allowed_tags=keynote.CAPS,
-        format=keynote.KEYNOTE,
-        spare_generators=SPARE_GENERATORS,
-    ),
-)
-# (D79: six more, each with a specialist persona but the book report)
-infomercial_schema = schemas.register(
-    "infomercial",
-    PresentationSchema(
-        seed_generator=_wandering,
-        title_generator=infomercial.title_generator,
-        slide_generators=slide_generators.group("infomercial"),
-        max_allowed_tags=infomercial.CAPS,
-        format=infomercial.INFOMERCIAL,
-        spare_generators=SPARE_GENERATORS,
-    ),
-)
-documentary_schema = schemas.register(
-    "documentary",
-    PresentationSchema(
-        seed_generator=_wandering,
-        title_generator=documentary.title_generator,
-        slide_generators=slide_generators.group("documentary"),
-        max_allowed_tags=documentary.CAPS,
-        format=documentary.DOCUMENTARY,
-        spare_generators=SPARE_GENERATORS,
-    ),
-)
-court_schema = schemas.register(
-    "court",
-    PresentationSchema(
-        seed_generator=_wandering,
-        title_generator=court.title_generator,
-        slide_generators=slide_generators.group("court"),
-        max_allowed_tags=court.CAPS,
-        format=court.COURT,
-        spare_generators=SPARE_GENERATORS,
-    ),
-)
-museum_schema = schemas.register(
-    "museum",
-    PresentationSchema(
-        seed_generator=_wandering,
-        title_generator=museum.title_generator,
-        slide_generators=slide_generators.group("museum"),
-        max_allowed_tags=museum.CAPS,
-        format=museum.MUSEUM,
-        spare_generators=SPARE_GENERATORS,
-    ),
-)
-wedding_schema = schemas.register(
-    "wedding",
-    PresentationSchema(
-        seed_generator=_wandering,
-        title_generator=wedding.title_generator,
-        slide_generators=slide_generators.group("wedding"),
-        max_allowed_tags=wedding.CAPS,
-        format=wedding.WEDDING,
-        spare_generators=SPARE_GENERATORS,
-    ),
-)
-book_report_schema = schemas.register(
-    "book_report",
-    PresentationSchema(
-        seed_generator=_wandering,
-        title_generator=book_report.title_generator,
-        slide_generators=slide_generators.group("book_report"),
-        max_allowed_tags=book_report.CAPS,
-        format=book_report.BOOK_REPORT,
-        spare_generators=SPARE_GENERATORS,
-    ),
-)
+# (the last six are D79's, each with a specialist persona but the book report)
+for _module, _format in (
+    (pitch, pitch.PITCH),
+    (academic, academic.ACADEMIC),
+    (corporate, corporate.CORPORATE),
+    (keynote, keynote.KEYNOTE),
+    (infomercial, infomercial.INFOMERCIAL),
+    (documentary, documentary.DOCUMENTARY),
+    (court, court.COURT),
+    (museum, museum.MUSEUM),
+    (wedding, wedding.WEDDING),
+    (book_report, book_report.BOOK_REPORT),
+):
+    schemas.register(
+        _module.PACK,
+        PresentationSchema(
+            seed_generator=_wandering,
+            title_generator=_module.title_generator,
+            slide_generators=slide_generators.group(_module.PACK),
+            max_allowed_tags=_module.CAPS,
+            format=_format,
+            spare_generators=SPARE_GENERATORS,
+        ),
+    )
 
 
 # THE FORMAT A TALK'S SEED PICKS (decisions D61 and D63): a talk that leaves its format to its seed (schema "random")
