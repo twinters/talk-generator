@@ -94,15 +94,13 @@ class KindSlideGenerator(slide_generator_types.SlideGenerator):
     the kind's builder, as a planned slide is from the language model's. None when the content repeats too much of
     what the talk used already, or the slide misses something (its builder turns it down, or it lacks an image)."""
 
+    slide_type = slides.Slide
+
     def __init__(self, kind: str, content: Content):
         if kind not in KINDS:
             raise ValueError(f"there's no slide kind {kind!r}")
         super().__init__(content)
         self.kind = kind
-
-    @property
-    def slide_type(self) -> type[slides.Slide]:
-        return slides.Slide
 
     def generate_slide(self, presentation_context: dict[str, Any], used: Any) -> tuple[slides.Slide, list] | None:
         made = self._slide_content_generator(presentation_context)

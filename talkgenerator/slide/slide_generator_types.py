@@ -1,5 +1,4 @@
 import logging
-from abc import ABCMeta, abstractmethod
 from collections.abc import Callable
 from typing import Any
 
@@ -11,22 +10,18 @@ from talkgenerator.util import generator_util
 logger = logging.getLogger("talkgenerator")
 
 
-class SlideGenerator(metaclass=ABCMeta):
-    """Generating Slide objects using a list of generators"""
+class SlideGenerator:
+    """Makes slides of one Slide class (slide_type) from a content generator: a function of the presentation context
+    that gives the class's arguments, in their order."""
+
+    slide_type: Callable[..., slides.Slide]
 
     def __init__(self, slide_content_generator):
-        """The given content_providers is a function that when called,
-        generates all of the arguments for the slide creator"""
         self._slide_content_generator = slide_content_generator
-
-    @property
-    @abstractmethod
-    def slide_type(self):
-        """The function converting it to a Slide object"""
-        pass
 
     @classmethod
     def of(cls, *generators):
+        """From a generator of each of the Slide class's arguments, in their order."""
         return cls(CombinedSlideGenerator(*generators))
 
     def generate_slide(self, presentation_context, used) -> tuple[slides.Slide, list] | None:
@@ -63,87 +58,65 @@ class SlideGenerator(metaclass=ABCMeta):
         return slide, generated
 
 
+# The last argument of the Slide classes that show images: that they're shown whole (original_image_size). v4's slide
+# generators made it with the rest of a slide's content, and none ever turned it off; it stays among what a slide
+# generates, as a slide's notes list that.
+_WHOLE = generator_util.StaticGenerator(True)
+
+
 class TitleSlideGenerator(SlideGenerator):
-    def __init__(self, slide_content_generator):
-        super().__init__(slide_content_generator)
+    slide_type = slides.TitleSlide
 
     @classmethod
     def of(cls, title_generator, subtitle_generator):
         return cls(CombinedSlideGenerator(title_generator, subtitle_generator))
 
-    @property
-    def slide_type(self):
-        return slides.TitleSlide
-
 
 class LarqeQuoteSlideGenerator(SlideGenerator):
-    def __init__(self, slide_content_generator):
-        super().__init__(slide_content_generator)
+    slide_type = slides.LarqeQuoteSlide
 
     @classmethod
     def of(cls, title_generator, text_generator, background_image_generator):
         return cls(CombinedSlideGenerator(title_generator, text_generator, background_image_generator))
 
-    @property
-    def slide_type(self):
-        return slides.LarqeQuoteSlide
-
 
 class ImageSlideGenerator(SlideGenerator):
-    def __init__(self, slide_content_generator):
-        super().__init__(slide_content_generator)
+    slide_type = slides.ImageSlide
 
     @classmethod
-    def of(cls, title_generator, image_generator=None, original_image_size=True):
-        return cls(
-            CombinedSlideGenerator(
-                title_generator,
-                image_generator,
-                generator_util.StaticGenerator(original_image_size),
-            )
-        )
+    def of(cls, title_generator, image_generator=None):
+        return cls(CombinedSlideGenerator(title_generator, image_generator, _WHOLE))
 
     @classmethod
-    def of_tupled_captioned_image(cls, tuple_1_generator, original_image_size=True):
-        return cls(TupledCaptionedImageGenerator(tuple_1_generator, original_image_size))
-
-    @property
-    def slide_type(self):
-        return slides.ImageSlide
-
-
-class TupledCaptionedImageGenerator:
-    def __init__(self, tuple_1_generator, original_image_size=True):
-        self._tuple_1_generator = tuple_1_generator
-        self._original_image_size = original_image_size
-
-    def __call__(self, presentation_context):
-        generated_tuple_1 = self._tuple_1_generator(presentation_context)
-        return generated_tuple_1[0], generated_tuple_1[1], self._original_image_size
+    def of_tupled_captioned_image(cls, tuple_generator):
+        """From one generator of its (title, image) tuple."""
+        return cls(_tupled_captioned_images(None, tuple_generator))
 
 
 class FullImageSlideGenerator(SlideGenerator):
-    def __init__(self, slide_content_generator):
-        super().__init__(slide_content_generator)
+    slide_type = slides.FullImageSlide
 
     @classmethod
-    def of(cls, title_generator, image_generator=None, original_image_size=True):
-        return cls(
-            CombinedSlideGenerator(
-                title_generator,
-                image_generator,
-                generator_util.StaticGenerator(original_image_size),
-            )
-        )
-
-    @property
-    def slide_type(self):
-        return slides.FullImageSlide
+    def of(cls, title_generator, image_generator=None):
+        return cls(CombinedSlideGenerator(title_generator, image_generator, _WHOLE))
 
 
-class TwoColumnImageSlideGenerator(SlideGenerator):
-    def __init__(self, slide_content_generator):
-        super().__init__(slide_content_generator)
+class _ColumnsSlideGenerator(SlideGenerator):
+    """A slide of columns, each a caption over an image (or a text)."""
+
+    @classmethod
+    def of_tupled_captioned_images(cls, title_generator, *tuple_generators):
+        """From a generator of its title, and one of each column's (caption, image) tuple."""
+        return cls(_tupled_captioned_images(title_generator, *tuple_generators))
+
+    @classmethod
+    def of_images_and_tupled_captions(cls, title_generator, captions_generator, *image_generators):
+        """From a generator of its title, one of all its columns' captions, and one of each column's image."""
+        return cls(_images_and_tupled_captions(title_generator, captions_generator, *image_generators))
+
+
+class TwoColumnImageSlideGenerator(_ColumnsSlideGenerator):
+    slide_type = slides.TwoColumnImageSlide
 
     @classmethod
     def of(
@@ -153,7 +126,6 @@ class TwoColumnImageSlideGenerator(SlideGenerator):
         image_or_text_1_generator,
         caption_2_generator,
         image_or_text_2_generator,
-        original_image_size=True,
     ):
         return cls(
             CombinedSlideGenerator(
@@ -162,138 +134,13 @@ class TwoColumnImageSlideGenerator(SlideGenerator):
                 image_or_text_1_generator,
                 caption_2_generator,
                 image_or_text_2_generator,
-                generator_util.StaticGenerator(original_image_size),
+                _WHOLE,
             )
         )
 
-    @classmethod
-    def of_tupled_captioned_images(
-        cls,
-        title_generator,
-        tuple_1_generator,
-        tuple_2_generator,
-        original_image_size=True,
-    ):
-        return cls(
-            TwoTupledCaptionedImagesGenerator(
-                title_generator,
-                tuple_1_generator,
-                tuple_2_generator,
-                original_image_size,
-            )
-        )
 
-    @classmethod
-    def of_images_and_tupled_captions(
-        cls,
-        title_generator,
-        captions_generator,
-        image_1_generator,
-        image_2_generator,
-        original_image_size=True,
-    ):
-        return cls(
-            TwoImagesAndTupledCaptions(
-                title_generator,
-                captions_generator,
-                image_1_generator,
-                image_2_generator,
-                original_image_size,
-            )
-        )
-
-    @property
-    def slide_type(self):
-        return slides.TwoColumnImageSlide
-
-
-class TwoTupledCaptionedImagesGenerator(SlideGenerator):
-    def __init__(
-        self,
-        title_generator,
-        tuple_1_generator,
-        tuple_2_generator,
-        original_image_size=True,
-    ):
-        super().__init__(self)
-        self._title_generator = title_generator
-        self._tuple_1_generator = tuple_1_generator
-        self._tuple_2_generator = tuple_2_generator
-        self._original_image_size = original_image_size
-
-    def __call__(self, presentation_context):
-        generated_tuple_1 = self._tuple_1_generator(presentation_context)
-        generated_tuple_2 = self._tuple_2_generator(presentation_context)
-        return (
-            self._title_generator(presentation_context),
-            generated_tuple_1[0],
-            generated_tuple_1[1],
-            (generated_tuple_2[0]),
-            generated_tuple_2[1],
-            self._original_image_size,
-        )
-
-    @property
-    def slide_type(self):
-        return slides.TwoColumnImageSlide
-
-
-class TwoImagesAndTupledCaptions(SlideGenerator):
-    def __init__(
-        self,
-        title_generator,
-        captions_generator,
-        image_1_generator,
-        image_2_generator,
-        original_image_size=True,
-    ):
-        super().__init__(self)
-        logger.debug("initializing TwoImagesAndTupledCaptions")
-        self._title_generator = title_generator
-        self._captions_generator = captions_generator
-        self._image_1_generator = image_1_generator
-        self._image_2_generator = image_2_generator
-        self._original_image_size = original_image_size
-
-    def __call__(self, presentation_context):
-        logger.debug("Calling TwoImagesAndTupledCaptions")
-        logger.debug("**********************************")
-        logger.debug(f"presentation_context: {presentation_context}")
-        logger.debug(f"captions_generator: {self._captions_generator}")
-        logger.debug(f"original_image_size: {self._original_image_size}")
-
-        generated_tuple = self._captions_generator(presentation_context)
-        logger.debug(f"generated_tuple: {generated_tuple}")
-
-        logger.debug(f"title_generator: {self._title_generator}")
-        _title = self._title_generator(presentation_context)
-        logger.debug(f"_title: {_title}")
-
-        logger.debug(f"image_1_generator: {self._image_1_generator}")
-        _image1 = self._image_1_generator(presentation_context)
-        logger.debug(f"_image1: {_image1}")
-
-        logger.debug(f"image_2_generator: {self._image_2_generator}")
-        _image2 = self._image_2_generator(presentation_context)
-        logger.debug(f"_image2: {_image2}")
-
-        return (
-            _title,
-            generated_tuple[0],
-            _image1,
-            generated_tuple[1],
-            _image2,
-            self._original_image_size,
-        )
-
-    @property
-    def slide_type(self):
-        return slides.TwoColumnImageSlide
-
-
-class ThreeColumnImageSlideGenerator(SlideGenerator):
-    def __init__(self, slide_content_generator):
-        super().__init__(slide_content_generator)
+class ThreeColumnImageSlideGenerator(_ColumnsSlideGenerator):
+    slide_type = slides.ThreeColumnImageSlide
 
     @classmethod
     def of(
@@ -305,7 +152,6 @@ class ThreeColumnImageSlideGenerator(SlideGenerator):
         image_or_text_2_generator,
         caption_3_generator,
         image_or_text_3_generator,
-        original_image_size=True,
     ):
         return cls(
             CombinedSlideGenerator(
@@ -316,159 +162,49 @@ class ThreeColumnImageSlideGenerator(SlideGenerator):
                 image_or_text_2_generator,
                 caption_3_generator,
                 image_or_text_3_generator,
-                generator_util.StaticGenerator(original_image_size),
+                _WHOLE,
             )
         )
 
-    @classmethod
-    def of_tupled_captioned_images(
-        cls,
-        title_generator,
-        tuple_1_generator,
-        tuple_2_generator,
-        tuple_3_generator,
-        original_image_size=True,
-    ):
-        return cls(
-            ThreeTupledCaptionedImagesGenerator(
-                title_generator,
-                tuple_1_generator,
-                tuple_2_generator,
-                tuple_3_generator,
-                original_image_size,
-            )
-        )
 
-    @classmethod
-    def of_images_and_tupled_captions(
-        cls,
-        title_generator,
-        captions_generator,
-        image_1_generator,
-        image_2_generator,
-        image_3_generator,
-        original_image_size=True,
-    ):
-        return cls(
-            ThreeImagesAndTupledCaptions(
-                title_generator,
-                captions_generator,
-                image_1_generator,
-                image_2_generator,
-                image_3_generator,
-                original_image_size,
-            )
-        )
+def _tupled_captioned_images(title_generator, *tuple_generators):
+    """The content of a slide whose captions and images come together, a (caption, image) tuple from one generator
+    each (an "about me" slide's hobby and its picture): the tuples first, then the title (none without a title
+    generator: a slide of one image, whose caption is its title), as v4 made them."""
 
-    @property
-    def slide_type(self):
-        return slides.ThreeColumnImageSlide
+    def content(presentation_context):
+        tuples = [generator(presentation_context) for generator in tuple_generators]
+        title = [title_generator(presentation_context)] if title_generator is not None else []
+        return (*title, *(element for made in tuples for element in (made[0], made[1])), True)
+
+    return content
 
 
-class ThreeTupledCaptionedImagesGenerator(SlideGenerator):
-    def __init__(
-        self,
-        title_generator,
-        tuple_1_generator,
-        tuple_2_generator,
-        tuple_3_generator,
-        original_image_size=True,
-    ):
-        super().__init__(self)
-        self._title_generator = title_generator
-        self._tuple_1_generator = tuple_1_generator
-        self._tuple_2_generator = tuple_2_generator
-        self._tuple_3_generator = tuple_3_generator
-        self._original_image_size = original_image_size
+def _images_and_tupled_captions(title_generator, captions_generator, *image_generators):
+    """The content of a slide of columns whose captions come together, from one generator (the parts of one line,
+    such as an expectation and the reality), over an image each: the captions first, then the title, then the
+    images, as v4 made them."""
 
-    def __call__(self, presentation_context):
-        generated_tuple_1 = self._tuple_1_generator(presentation_context)
-        generated_tuple_2 = self._tuple_2_generator(presentation_context)
-        generated_tuple_3 = self._tuple_3_generator(presentation_context)
-        return (
-            self._title_generator(presentation_context),
-            generated_tuple_1[0],
-            generated_tuple_1[1],
-            (generated_tuple_2[0]),
-            generated_tuple_2[1],
-            generated_tuple_3[0],
-            generated_tuple_3[1],
-            self._original_image_size,
-        )
+    def content(presentation_context):
+        captions = captions_generator(presentation_context)
+        title = title_generator(presentation_context)
+        images = [generator(presentation_context) for generator in image_generators]
+        return (title, *(element for index, image in enumerate(images) for element in (captions[index], image)), True)
 
-    @property
-    def slide_type(self):
-        return slides.ThreeColumnImageSlide
-
-
-class ThreeImagesAndTupledCaptions(SlideGenerator):
-    def __init__(
-        self,
-        title_generator,
-        captions_generator,
-        image_1_generator,
-        image_2_generator,
-        image_3_generator,
-        original_image_size=True,
-    ):
-        super().__init__(self)
-        self._title_generator = title_generator
-        self._captions_generator = captions_generator
-        self._image_1_generator = image_1_generator
-        self._image_2_generator = image_2_generator
-        self._image_3_generator = image_3_generator
-        self._original_image_size = original_image_size
-
-    def __call__(self, presentation_context):
-        generated_tuple = self._captions_generator(presentation_context)
-        return (
-            self._title_generator(presentation_context),
-            generated_tuple[0],
-            self._image_1_generator(presentation_context),
-            generated_tuple[1],
-            self._image_2_generator(presentation_context),
-            generated_tuple[2],
-            self._image_3_generator(presentation_context),
-            self._original_image_size,
-        )
-
-    @property
-    def slide_type(self):
-        return slides.ThreeColumnImageSlide
+    return content
 
 
 class ChartSlideGenerator(SlideGenerator):
-    def __init__(self, slide_content_generator):
-        super().__init__(slide_content_generator)
+    """A chart, from a generator of its title, its type, its data and what else its Slide class takes (see
+    talkgenerator.sources.chart)."""
 
-    @classmethod
-    def of(
-        cls,
-        title_generator,
-        chart_type_generator,
-        chart_data_generator,
-        chart_modifier=None,
-    ):
-        return cls(
-            CombinedSlideGenerator(
-                title_generator,
-                chart_type_generator,
-                chart_data_generator,
-                generator_util.StaticGenerator(chart_modifier),
-            )
-        )
-
-    @property
-    def slide_type(self):
-        return slides.ChartSlide
+    slide_type = slides.ChartSlide
 
 
 class DiagramSlideGenerator(SlideGenerator):
     """A diagram drawn as shapes (a Venn diagram, a 2×2 matrix), from a generator of its title and its diagram."""
 
-    @property
-    def slide_type(self):
-        return slides.DiagramSlide
+    slide_type = slides.DiagramSlide
 
 
 class DrawnSlideGenerator(SlideGenerator):
@@ -477,11 +213,7 @@ class DrawnSlideGenerator(SlideGenerator):
 
     def __init__(self, slide_content_generator, slide_class: type[slides.DrawnSlide]):
         super().__init__(slide_content_generator)
-        self._slide_class = slide_class
-
-    @property
-    def slide_type(self):
-        return self._slide_class
+        self.slide_type = slide_class
 
 
 class PictureFirstSlideGenerator:
@@ -529,11 +261,9 @@ class PictureFirstSlideGenerator:
 
 class CombinedSlideGenerator:
     def __init__(self, *generators):
-        # print("CombinedGenerator:", self, generators)
         self._generators = generators
 
     def __call__(self, presentation_context):
-        # print("CombinedGenerator:", self)
         return [
             content_generator(presentation_context) if content_generator else None
             for content_generator in self._generators

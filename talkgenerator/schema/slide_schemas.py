@@ -1616,7 +1616,7 @@ conclusion_slide_generators = _register(
     "conclusion",
     [
         SlideGeneratorData(
-            slide_generator_types.TwoImagesAndTupledCaptions(
+            slide_generator_types.TwoColumnImageSlideGenerator.of_images_and_tupled_captions(
                 cg.conclusion_title_generator,
                 cg.conclusion_two_captions_tuple_generator,
                 cg.neutral_image_generator,
@@ -1634,7 +1634,7 @@ conclusion_slide_generators = _register(
             ),
         ),
         SlideGeneratorData(
-            slide_generator_types.ThreeImagesAndTupledCaptions(
+            slide_generator_types.ThreeColumnImageSlideGenerator.of_images_and_tupled_captions(
                 cg.conclusion_title_generator,
                 cg.conclusion_three_captions_tuple_generator,
                 cg.neutral_image_generator,
@@ -1659,7 +1659,7 @@ conclusion_slide_generators_copyright_free = _register(
     "conclusion_copyright_free",
     [
         SlideGeneratorData(
-            slide_generator_types.TwoImagesAndTupledCaptions(
+            slide_generator_types.TwoColumnImageSlideGenerator.of_images_and_tupled_captions(
                 cg.conclusion_title_generator,
                 cg.conclusion_two_captions_tuple_generator,
                 cg.copyright_free_generator,
@@ -1677,7 +1677,7 @@ conclusion_slide_generators_copyright_free = _register(
             ),
         ),
         SlideGeneratorData(
-            slide_generator_types.ThreeImagesAndTupledCaptions(
+            slide_generator_types.ThreeColumnImageSlideGenerator.of_images_and_tupled_captions(
                 cg.conclusion_title_generator,
                 cg.conclusion_three_captions_tuple_generator,
                 cg.copyright_free_generator,
