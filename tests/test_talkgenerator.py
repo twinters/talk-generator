@@ -37,7 +37,7 @@ def test_serial(tmp_path):
     ppt, _, output_file = generator.generate_presentation_using_cli_arguments(
         _cli_args(tmp_path, "--parallel", "false")
     )
-    assert len(ppt.slides) == 3
+    assert len(ppt.slides) == 3 + 1  # (and its closer after them, D76)
     assert output_file.startswith(str(tmp_path))
 
 
@@ -45,7 +45,7 @@ def test_parallel_multiple_topics(tmp_path):
     ppt, _, _ = generator.generate_presentation_using_cli_arguments(
         _cli_args(tmp_path, "--topic", "cat, dog, bread, house", "--num_slides", "6")
     )
-    assert len(ppt.slides) == 6
+    assert len(ppt.slides) == 6 + 1  # (and its closer)
 
 
 def test_to_dictionary():
@@ -59,7 +59,8 @@ def test_to_dictionary():
     )
     with pytest.warns(DeprecationWarning, match="to_deck"):
         slides_dict = slide_deck.to_slide_deck_dictionary()
-    assert len(slides_dict) == 3
+    # The three slides it asked for, and its closer after them (D76)
+    assert [slide.get("closer") for slide in slides_dict] == [None, None, None, True]
 
 
 @requires_keys(
