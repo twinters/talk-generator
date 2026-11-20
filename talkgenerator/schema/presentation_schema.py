@@ -2882,6 +2882,41 @@ class PresentationSchema:
             return None
         return worked_out.slide, worked_out.generated_elements, worked_out.generator, slide_nr
 
+    def another_slide(
+        self,
+        slide_nr: int,
+        num_slides: int,
+        talk_context: Mapping[str, Any],
+        rng: random_util.Rng,
+        used_elements: Collection[Any] = (),
+        persona: Persona | None = None,
+    ) -> slides.Slide | None:
+        """Another slide for the slide_nr-th place (from 0) of a talk of num_slides slides, made again after the talk
+        (see talkgenerator.generator.regenerate_slide): about a word of the talk's topics, which this schema's seed
+        generator picks for that place as it picks its slides' words, from rng (the slide's own word isn't kept); of a
+        kind this schema has for that place, as the persona weighs them, picked and made as a classic slide is (another
+        kind if one fails); and repeating none of the used elements' pictures, nor more of their texts than its kind
+        allows. In a talk in another language than English (talk_context's language), whose classic slides would be
+        English, it's a picture of that word without text instead (see _picture_slide). talk_context is what a talk's
+        slides are made with: its topic, topics, presenter, title and language. None if no slide comes out."""
+        topics = list(talk_context["topics"])
+        language = str(talk_context.get("language") or "en")
+        with random_util.use(rng.child("topics")), slide_topic_generators.wandering_in(language):
+            seed_generator = self._seed_generator(topics, num_slides)
+        with random_util.use(rng.child("slide", slide_nr, "topic")):
+            seed = seed_generator.get_seed(slide_nr)
+        logger.info("Making slide %s again, about %r", slide_nr + 1, seed)
+        # (no agenda's announcements: the slides after it are made already)
+        context = {**create_slide_presentation_context(dict(talk_context), seed), "later": ()}
+        state = _DeckState(set(used_elements))
+        if language != "en":
+            picture = self._picture_slide(slide_nr, str(seed), context, rng.child("picture"), state)
+            return picture.slide if picture is not None else None
+        worked_out = self._work_out_slide(
+            slide_nr, num_slides, context, rng.child("slide", slide_nr), state, {}, generate=True, persona=persona
+        )
+        return worked_out.slide if isinstance(worked_out, _WorkedOutSlide) else None
+
     def _select_generator(self, slide_nr, total_slides, prohibited_generators, persona: Persona | None = None):
         """Select a generator for a certain slide number (by weight, as the persona weighs them)"""
         _selected_generator = random_util.weighted_random(

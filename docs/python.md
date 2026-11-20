@@ -217,6 +217,22 @@ and `deck_version` changes whenever the format changes in a way older readers ca
 talkgenerator.com works this way: `stream_talk` streams a talk into the browser, which draws its slides from their
 deck form, and the PowerPoint is drawn from the saved deck when someone downloads it.
 
+### Making one slide again: `regenerate_slide`
+
+`generator.regenerate_slide(deck, index)` makes another slide for a finished deck's `index`-th place (from 0), for
+whoever shows the talk and doesn't want that one: a live show's operator, say. It's a classic slide, made in a few
+seconds without a language model: of a kind the talk's format has for that place, as its persona favours them, about a
+word of the talk's topic, laid out in the slide's theme and numbered as the old one ("3/8"). It repeats none of the
+deck's pictures. In a talk in another language than English, it's a picture of that word without text, as classic
+slides are English. The title slide and the closer are the talk's own: they can't be made again.
+
+```python
+from talkgenerator import generator
+
+slide = generator.regenerate_slide(deck, 3)
+deck = deck.model_copy(update={"slides": (*deck.slides[:3], slide, *deck.slides[4:])})
+```
+
 ## Plans: `render_plan`
 
 A talk plan (`talkgenerator.models.plan.TalkPlan`) is a talk written outside talkgenerator, by Claude through the

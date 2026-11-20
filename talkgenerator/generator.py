@@ -7,6 +7,7 @@ import subprocess
 import sys
 import threading
 import warnings
+from collections import Counter
 from collections.abc import Callable, Iterable, Iterator
 from typing import Any, Final
 
@@ -14,6 +15,7 @@ from pptx.presentation import Presentation
 
 from talkgenerator import names, runtime_checker, settings, titles
 from talkgenerator import personas as talk_personas
+from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.design import engine, themes
 from talkgenerator.images import context as image_context
 from talkgenerator.images import generation as image_generation
@@ -23,7 +25,7 @@ from talkgenerator.images.generators import ImageGenerator
 from talkgenerator.llm.base import TextProvider
 from talkgenerator.llm.ledger import Budget, Ledger, MeteredProvider
 from talkgenerator.llm.providers import NoneProvider, from_settings, provider_from_spec
-from talkgenerator.models.deck import Deck, DeckSlide
+from talkgenerator.models.deck import DECORATION, Deck, DeckSlide
 from talkgenerator.models.events import (
     SlideEarly,
     SlideReady,
@@ -670,6 +672,96 @@ def stream_talk(
         following.cancelled.set()  # (stops the talk, if it isn't done)
     if failures:
         raise failures[0]
+
+
+def regenerate_slide(deck: Deck, index: int, int_seed: int | None = None) -> DeckSlide:
+    """Another slide in place of the deck's index-th (from 0), for whoever shows the talk and doesn't want that one (a
+    live show's operator, say: talkgenerator.com's show mode). It takes a few seconds and no language model.
+
+    It's a classic slide of a kind the talk's format (its schema_name) has for that place, as the talk's persona weighs
+    them, about a word of the talk's topic, which the format's seed generator picks as it picks its slides' words (the
+    old slide's own word isn't in the deck); in a talk in another language than English, whose classic slides would be
+    English, a picture of that word without text, as a slide a language model didn't write becomes. Its pictures are
+    found by the talk's license policy and theme, and it repeats none of the deck's pictures (the old slide's neither),
+    nor more of its texts than its kind allows. Images are probed rather than downloaded, as in stream_talk: a browser
+    that shows the slide loads them itself.
+
+    It's laid out in the old slide's theme (the deck's, or its own in a chaos deck) and numbered as that slide ("3/8"),
+    in a layout of its own: the slides around it stay as they are. A classic deck's slide (the 2019 template) isn't
+    laid out, as its slides aren't. The talk's title slide and its closer (D76) can't be made again, as they're the
+    talk's own (a ValueError), nor a slide the deck doesn't have (an IndexError); a RuntimeError when no slide comes out
+    (every kind of slide failed, its sources out of reach, say). The same int_seed gives the same slide, as long as the
+    sources give the same answers."""
+    slides = deck.slides
+    if not 0 <= index < len(slides):
+        raise IndexError(f"The deck has no slide {index + 1}: it has {len(slides)}")
+    old = slides[index]
+    if old.closer:
+        raise ValueError("The closer can't be made again: it's the talk's own end")
+    if old.type == "title":
+        raise ValueError("The title slide can't be made again: it's the talk's own")
+    try:
+        presentation_schema = get_schema(deck.schema_name or "default")
+    except KeyError:
+        presentation_schema = get_schema("default")  # (a format this talkgenerator doesn't have)
+    persona = None
+    if deck.persona is not None:
+        try:
+            persona = talk_personas.persona(deck.persona.name)
+        except ValueError:
+            persona = None  # (a persona this talkgenerator doesn't have)
+    rng = random_util.Rng(int_seed)
+    topics = list(deck.topics) or [DEFAULT_PRESENTATION_TOPIC]
+    total = deck.counted()  # (the slides its numbers count, "7/12": all but the closer)
+    talk = {
+        "topic": topics[0],
+        "topics": topics,
+        "presenter": deck.presenter,
+        "title": deck.title,
+        "language": deck.language,
+    }
+    persona_looks = persona.looks if persona is not None else {}
+    images = image_context.ImageContext(
+        licenses.policy(deck.license_policy),
+        palette(deck.style),
+        presentation_schema.looks,
+        persona_looks=persona_looks,
+    )
+    with image_util.probing(), image_context.for_talk(images):
+        made = presentation_schema.another_slide(index, total, talk, rng, _used_elements(deck), persona)
+    if made is None:
+        raise RuntimeError(f"No slide came out in place of slide {index + 1}")
+    made.add_note(f"Made again, in place of slide {index + 1}")
+    for image in made.image_store().values():  # (a picture shown is a picture used, as in stream_talk)
+        image.mark_used()
+    deck_slide = made.to_deck_slide()
+    theme = old.style or deck.style
+    if theme is None:
+        return deck_slide
+    before = slides[:index]
+    return engine.lay_out_slide(
+        deck_slide,
+        theme,
+        rng.child("layout", index),
+        own_style=old.style is not None,
+        previous=before[-1].layout if before else None,
+        used=Counter(slide.layout for slide in before),
+        number=index,
+        total=total,
+    )
+
+
+def _used_elements(deck: Deck) -> set[Any]:
+    """What the deck's slides show, for a slide made again not to repeat it: their pictures (by their address, as a
+    talk's slides tell theirs apart) and their texts, but the decoration's (a slide's number)."""
+    used: set[Any] = set()
+    for slide in deck.slides:
+        for element in slide.elements:
+            if element.kind == "image":
+                used.add(ImageData(element.image.url))
+            elif element.kind == "text" and element.role != DECORATION:
+                used.add(element.text)
+    return used
 
 
 class _Following:
