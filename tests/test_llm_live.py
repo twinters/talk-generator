@@ -24,7 +24,7 @@ def test_openrouters_free_models_write_a_talk():
     )
     deck = slide_deck.to_deck()
     assert (deck.usage.requests, deck.usage.cost_usd) == (1, 0)
-    assert len(deck.slides) == SLIDES
+    assert len(deck.slides) == SLIDES + 1  # (and its closer after them, D76)
     assert [finding for finding in check_deck(deck, SLIDES) if finding.severity == "error"] == []
     if not deck.usage.failed_requests:  # free models are rate limited at busy times: the talk is classic then
         assert any("Planned:" in slide.notes for slide in deck.slides)
