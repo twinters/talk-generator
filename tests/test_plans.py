@@ -353,35 +353,25 @@ def test_a_plans_queries_are_searched_as_written():
     from talkgenerator.util import generator_util
 
     searched = []
-    prefixed = generator_util.PrefixedGenerator("funny", searched.append)
     related = generator_util.RelatedMappingGenerator(lambda seed: "harassment", searched.append)
-    prefixed("office plant")
     related("workplace")
     with generator_util.as_planned():
-        prefixed("office plant")
         related("workplace")
-    assert searched == ["funny office plant", "harassment", "office plant", "workplace"]
+    assert searched == ["harassment", "workplace"]
 
 
-def test_a_plans_images_come_from_the_best_results():
-    from talkgenerator.util import generator_util, random_util
-
-    results = [f"https://example.com/{rank}.jpg" for rank in range(40)]
-    pick = generator_util.ExternalImageListGenerator(lambda seed: results, check_image_validness=False)
-    with generator_util.as_planned():
-        picked = set()
-        for seed in range(30):
-            with random_util.use(random_util.Rng(seed)):
-                picked.add(pick("owls").get_image_url())
-    assert picked <= set(results[: generator_util.TOP_RESULTS])
-
-
-def test_a_plan_gets_no_random_reddit_post_instead_of_what_it_asked_for():
-    from talkgenerator.schema.content_generator_structures import RedditImageGenerator
+def test_a_plan_gets_no_random_reddit_post_instead_of_what_it_asked_for(monkeypatch):
+    from talkgenerator.images import catalog
+    from talkgenerator.sources import reddit
     from talkgenerator.util import generator_util
 
+    asked = []
+    monkeypatch.setattr(reddit, "search_images", lambda subreddits, query, animated=False: asked.append(query))
+    search = catalog.source("reddit:weird").search
+    assert search(catalog.Search("owls")) == []  # (a classic search that finds none asks for the hot posts too)
     with generator_util.as_planned():
-        assert RedditImageGenerator("pics").generate_random({"seed": "owls"}) is None
+        assert search(catalog.Search("owls")) == []
+    assert asked == ["owls", None, "owls"]
 
 
 def test_a_plan_can_name_its_format(schema, tmp_path, capsys):

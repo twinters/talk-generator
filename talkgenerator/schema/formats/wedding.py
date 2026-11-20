@@ -22,28 +22,31 @@ retiree and a motivational speaker a little more often; its themes are vintage p
 
 from __future__ import annotations
 
+from functools import partial
 from typing import Any, Final
 
 from talkgenerator.closers import Closer, presenter, said
-from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
 from talkgenerator.plan.kinds import Recipe, Variant
 from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema.formats import (
     Format,
-    KindSlideGenerator,
     Made,
     different,
     friend,
+    items,
     maybe,
+    one_text,
+    part_slide,
     photos,
     provocation,
     text,
+    three_captions,
+    title_slide,
     words,
 )
-from talkgenerator.schema.formats.arcs import Arc, Free, InPart, Part
+from talkgenerator.schema.formats.arcs import Arc, Free, Part
 from talkgenerator.schema.slide_schemas import default_max_allowed_tags, slide_generators
-from talkgenerator.slide import slide_generator_types
 from talkgenerator.util import language_util, random_util
 
 PACK: Final = "wedding"
@@ -103,10 +106,6 @@ def _variables(context: dict[str, Any]) -> dict[str, Any]:
     return variables
 
 
-def _items(prefix: str, texts: list[str]) -> dict[str, str | None]:
-    return {f"{prefix}_{index}": item for index, item in enumerate(texts, 1)}
-
-
 _LONGEST_PARTNER: Final = 28  # (characters of the topic's name in a Venn diagram's circle, or on a ranking's bar)
 
 
@@ -125,14 +124,6 @@ def _partner(topic: str) -> str:
 def title_generator(context: dict[str, Any]) -> str | None:
     """A classic toast's title, about the seed (the talk's topic, the one the best friend marries)."""
     return text(PACK, "title.talk_title", {**context, "friend": friend(str(context["seed"]))})
-
-
-def _title_if_not_generated(context: dict[str, Any]) -> str | None:
-    return context["title"] if context.get("title") is not None else title_generator(context)
-
-
-def _subtitle(context: dict[str, Any]) -> str | None:
-    return text(PACK, "title.subtitle", _variables(context))
 
 
 # Images: old photos of the two friends (or of whatever the slide is about, which the speaker explains), a portrait for
@@ -157,11 +148,7 @@ _BACKDROP = cg.statement_backdrop_generator
 
 
 # WHO THE SPEAKER IS: an old photo of the two, the best friend then and now, or a statement
-
-
-def _old_photo(context: dict[str, Any]) -> Made | None:
-    title = text(PACK, "intro.old_photo_title", _variables(context))
-    return ({"title": title}, {"image": _OLD(context)}) if title else None
+_old_photo = one_text(PACK, _variables, "intro.old_photo_title", "title", image=_OLD)
 
 
 def _then_and_now(context: dict[str, Any]) -> Made | None:
@@ -178,9 +165,7 @@ def _then_and_now(context: dict[str, Any]) -> Made | None:
     return texts, {"image_1": then, "image_2": photos(_FRIEND, context, 1, avoid=[then])[0]}
 
 
-def _who_am_i(context: dict[str, Any]) -> Made | None:
-    said = text(PACK, "intro.who_am_i", _variables(context))
-    return ({"text": said}, {"background": _BACKDROP(context)}) if said else None
+_who_am_i = one_text(PACK, _variables, "intro.who_am_i", "text", background=_BACKDROP)
 
 
 # HOW THEY MET: the day they met, their love story as a timeline, or the best friend's happiness since
@@ -227,11 +212,7 @@ def _happiness(context: dict[str, Any]) -> Made | None:
 
 
 # THE STORY: the incident, full-bleed, the red flags everyone ignored, or a post from that night
-
-
-def _incident(context: dict[str, Any]) -> Made | None:
-    title = text(PACK, "story.incident_title", _variables(context))
-    return ({"title": title}, {"image": _INCIDENT(context)}) if title else None
+_incident = one_text(PACK, _variables, "story.incident_title", "title", image=_INCIDENT)
 
 
 def _red_flags(context: dict[str, Any]) -> Made | None:
@@ -241,7 +222,7 @@ def _red_flags(context: dict[str, Any]) -> Made | None:
     title, punchline = text(PACK, "story.flags_title", variables), text(PACK, "story.flag_punchline", variables)
     if not title or not punchline or len(flags) < count - 1:
         return None
-    return {"title": title, **_items("flag", [*flags, punchline])}, {}
+    return {"title": title, **items("flag", [*flags, punchline])}, {}
 
 
 def _handle(name: str, topic: str, smitten: bool) -> str:
@@ -280,7 +261,7 @@ def _perfect_match(context: dict[str, Any]) -> Made | None:
     if not title or not overlap:
         return None
     circles = [variables["friend"], _partner(_topic(context)), *([third] if third else [])]
-    return {"title": title, **_items("circle", circles), "overlap": overlap}, {}
+    return {"title": title, **items("circle", circles), "overlap": overlap}, {}
 
 
 def _side_by_side(context: dict[str, Any]) -> Made | None:
@@ -311,21 +292,8 @@ def _great_loves(context: dict[str, Any]) -> Made | None:
 
 
 # THE ADVICE: three photos of it, a statement over a backdrop, or the pyramid of a happy marriage
-
-
-def _advice(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    tips = different(PACK, "advice.tip", variables, 2)
-    punchline = text(PACK, "advice.tip_punchline", variables)
-    if len(tips) < 2 or not punchline:
-        return None
-    texts = {"title": text(PACK, "advice.advice_title", variables), **_items("caption", [*tips, punchline])}
-    return texts, {f"image_{index}": photo for index, photo in enumerate(photos(_ADVICE, context, 3), 1)}
-
-
-def _marriage_is(context: dict[str, Any]) -> Made | None:
-    said = text(PACK, "advice.marriage_is", _variables(context))
-    return ({"text": said}, {"background": _BACKDROP(context)}) if said else None
+_advice = three_captions(PACK, _variables, "advice.advice_title", "advice.tip", "advice.tip_punchline", _ADVICE)
+_marriage_is = one_text(PACK, _variables, "advice.marriage_is", "text", background=_BACKDROP)
 
 
 def _pyramid(context: dict[str, Any]) -> Made | None:
@@ -334,50 +302,19 @@ def _pyramid(context: dict[str, Any]) -> Made | None:
     title, top = text(PACK, "advice.pyramid_title", variables), text(PACK, "advice.pyramid_top", variables)
     if not title or not top or len(levels) < 2:
         return None
-    return {"title": title, **_items("level", [top, *levels])}, {}
+    return {"title": title, **items("level", [top, *levels])}, {}
 
 
 # THE TOAST: the whole room raises their glasses, the toast over a backdrop, or "To the happy couple!"
-
-
-def _raise_your_glasses(context: dict[str, Any]) -> Made | None:
-    said = text(PACK, "toast.audience", _variables(context))
-    return ({"audience": said}, {}) if said else None
-
-
-def _toast(context: dict[str, Any]) -> Made | None:
-    said = text(PACK, "toast.toast", _variables(context))
-    return ({"text": said}, {"background": _BACKDROP(context)}) if said else None
-
-
-def _happy_couple(context: dict[str, Any]) -> Made | None:
-    title = text(PACK, "toast.couple_title", _variables(context))
-    return ({"title": title}, {"image": _COUPLE(context)}) if title else None
+_raise_your_glasses = one_text(PACK, _variables, "toast.audience", "audience")
+_toast = one_text(PACK, _variables, "toast.toast", "text", background=_BACKDROP)
+_happy_couple = one_text(PACK, _variables, "toast.couple_title", "title", image=_COUPLE)
 
 
 # THE SLIDE GENERATORS
 
 
-def _part(
-    part: str,
-    weight: float,
-    kind: str,
-    content: Any,
-    tags: list[str],
-    name: str,
-    recipe: Recipe,
-    repeats: int = 2,
-) -> SlideGeneratorData:
-    """A slide generator of one of the arc's parts: its slides are of the kind, classic ones from the content."""
-    return SlideGeneratorData(
-        KindSlideGenerator(kind, content),
-        weight_function=InPart(ARC, part, weight),
-        retries=3,
-        allowed_repeated_elements=repeats,
-        tags=[part, *tags],
-        name=f"{name} (Wedding)",
-        llm=recipe,
-    )
+_part = partial(part_slide, ARC, "Wedding")
 
 
 _TITLE_HINT = "the slide's title, as a wedding toast's slide has it: a few words"
@@ -386,14 +323,7 @@ _PARTNER_HINT = "the one the best friend marries: the topic, by its name"
 _FEW_WORDS = "in a few words"
 
 _GENERATORS: Final = [
-    SlideGeneratorData(
-        slide_generator_types.TitleSlideGenerator.of(_title_if_not_generated, _subtitle),
-        allowed_repeated_elements=3,
-        weight_function=PeakedWeight((0,), 100000, 0),
-        tags=["title"],
-        name="Title slide (Wedding)",
-        llm=Recipe("title"),
-    ),
+    title_slide(PACK, title_generator, _variables, "Wedding"),
     # Who the speaker is
     _part(
         "intro",

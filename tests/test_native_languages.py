@@ -19,7 +19,6 @@ from talkgenerator.plan.kinds import Recipe
 from talkgenerator.schema import slide_topic_generators
 from talkgenerator.schema.presentation_schema import PresentationSchema
 from talkgenerator.schema.slide_topic_generators import SideTrackingTopicGenerator, wandering_in
-from talkgenerator.slide import powerpoint_slide_creator
 from talkgenerator.sources import conceptnet, wikipedia
 from talkgenerator.util import random_util
 from tests.test_llm_talks import NUM_SLIDES, FakeModel, fake_schema
@@ -236,7 +235,6 @@ def wandering_schema(monkeypatch):
     """The fake schema of the LLM talk tests, with seeds that wander."""
     fake = fake_schema()
     schema = PresentationSchema(
-        powerpoint_slide_creator.create_new_powerpoint,
         seed_generator=SideTrackingTopicGenerator,
         title_generator=lambda context: "A classic title about " + context["seed"],
         slide_generators=fake.slide_generators,

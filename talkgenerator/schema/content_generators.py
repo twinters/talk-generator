@@ -1,5 +1,3 @@
-from collections.abc import Collection
-
 from talkgenerator.images.slots import ImageSlot
 from talkgenerator.schema.content_generator_structures import (
     ConceptNetMapper,
@@ -18,7 +16,6 @@ from talkgenerator.util.generator_util import (
     InspiredTupleGenerator,
     MappedGenerator,
     NoneGenerator,
-    PrefixedGenerator,
     SeededGenerator,
     TupledGenerator,
 )
@@ -123,18 +120,13 @@ conclusion_three_captions_tuple_generator = SplitCaptionsGenerator(_PACK.tracery
 inspirobot_image_generator = ImageSlot("an inspirational poster, made by InspiroBot", aesthetic="inspirobot")
 
 # GIFS
-reddit_gif_generator = ImageSlot("a gif from Reddit", aesthetic="gifs", sources=("reddit:gifs",))
-giphy_gif_generator = ImageSlot("a gif from GIPHY", aesthetic="gifs", sources=("giphy",))
 combined_gif_generator = ImageSlot("a gif", aesthetic="gifs")
 
 # MEMES WITH LIVE CAPTIONS: Imgflip's templates, whose captions talkgenerator writes on them (talkgenerator.sources.memes)
 meme_template_generator = ImageSlot("a meme template, captioned live", aesthetic="meme-templates", sources=("imgflip",))
 
-# REDDIT, AND SHITPOSTBOT
+# MEMES
 meme_reddit_image_generator = ImageSlot("a meme", aesthetic="memes")
-weird_reddit_image_generator = ImageSlot("a weird picture from Reddit", aesthetic="weird", sources=("reddit:weird",))
-neutral_reddit_image_generator = ImageSlot("a photo or artwork from Reddit", aesthetic="pictures")
-shitpostbot_image_generator = ImageSlot("one of ShitpostBot's images", aesthetic="weird", sources=("shitpostbot",))
 
 weird_punchline_static_image_generator = ImageSlot(
     "a weird picture or meme, as a punchline", aesthetic="meme-chaos-still"
@@ -143,22 +135,6 @@ weird_punchline_image_generator = ImageSlot("a weird picture, gif or meme, as a 
 
 # STOCK PHOTOS
 generate_unsplash_image = ImageSlot("a photo from Unsplash", sources=("unsplash", "unsplash-random"))
-generate_unsplash_image_from_word = generate_unsplash_image.from_word
-generate_random_unsplash_image = ImageSlot("a random photo from Unsplash", sources=("unsplash-random",))
-generate_random_unsplash_image_from_word = generate_random_unsplash_image.from_word
-generate_pixabay_image = ImageSlot("a photo from Pixabay", sources=("pixabay",))
-generate_pixabay_image_from_word = generate_pixabay_image.from_word
-generate_pexels_image = ImageSlot("a photo from Pexels", sources=("pexels",))
-generate_pexels_image_from_word = generate_pexels_image.from_word
-generate_openverse_image = ImageSlot("an openly licensed photo", sources=("openverse",))
-generate_openverse_image_from_word = generate_openverse_image.from_word
-
-# OLD PHOTOS AND ARTWORKS (public domain and openly licensed)
-generate_historic_photo_from_word = ImageSlot(
-    "an old photograph", aesthetic="vintage", sources=("wikimedia",)
-).from_word
-generate_artwork_from_word = ImageSlot("an artwork", aesthetic="museum", sources=("art-institute",)).from_word
-generate_portrait_artwork_from_word = PrefixedGenerator("portrait", generate_artwork_from_word)
 
 # COPYRIGHT FREE (no fair use: the stock sites, and openly licensed photos now and then)
 copyright_free_generator = ImageSlot("a photo of the slide's topic", aesthetic="photo")
@@ -166,7 +142,6 @@ copyright_free_generator_from_word = copyright_free_generator.from_word
 
 # Behind a slide's big text: a calm landscape photo (v4 took Pixabay's horizontal photos)
 generate_horizontal_pixabay_image = ImageSlot("a calm photo behind the slide's text", aesthetic="calm-backdrop")
-generate_horizontal_pixabay_image_from_word = generate_horizontal_pixabay_image.from_word
 
 # Behind a big number or KPI tiles (D63), if one is found: a picture of what they're about, from one of many sources
 backdrop_generator = ImageSlot("a picture of what the slide's figures are about, behind them", aesthetic="backdrop")
@@ -183,18 +158,6 @@ statement_backdrop_generator = CombinedGenerator((2, generate_horizontal_pixabay
 
 copyright_free_related_generator_from_word = ConceptNetMapper(copyright_free_generator_from_word)
 copyright_free_related_generator = SeededGenerator(copyright_free_related_generator_from_word)
-
-
-def copyright_free_prefixed_generator(prefixes: str | Collection[str]):
-    return SeededGenerator(copyright_free_prefixed_generator_from_word(prefixes))
-
-
-def copyright_free_prefixed_generator_from_word(prefixes: str | Collection[str]):
-    if isinstance(prefixes, str):
-        return PrefixedGenerator(prefixes, copyright_free_generator_from_word)
-    generators = [(1, PrefixedGenerator(p, copyright_free_generator_from_word)) for p in prefixes]
-    return CombinedGenerator(*generators)
-
 
 weird_copyright_free_generator = ImageSlot("a weird or funny stock photo", aesthetic="weird-stock")
 # The closing slide's picture to end on, a funny one (docs/v5-plan.md, D65): generated, in a talk that generates them

@@ -46,7 +46,6 @@ logger = logging.getLogger("talkgenerator")
 
 TOPIC: Final = "topic"
 TITLE: Final = "title"
-READINGS: Final = (TOPIC, TITLE)
 # The ways a talk's classic titles go to the language model, for a short input, which the talk's dice pick by weight:
 # as titles to pick ("options"), as inspiration for its own ("inspiration"), or not at all ("none", which saves the
 # wikiHow search before the request too). The user liked the titles of all three, in a live comparison (2026-11-07)

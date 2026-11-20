@@ -53,14 +53,6 @@ def add_noise_to_point(max_noise_ratio, datapoint):
     return max(0, datapoint + (datapoint * random_util.uniform(-max_noise_ratio, max_noise_ratio)))
 
 
-def add_gaussian_noise_to_multidim_points(max_noise_ratio, datapoints):
-    return [_add_gaussian_noise_to_multidim_point(max_noise_ratio, point) for point in datapoints]
-
-
-def _add_gaussian_noise_to_multidim_point(max_noise_ratio, datapoint):
-    return [value * random_util.gauss(1, max_noise_ratio) for value in datapoint]
-
-
 def normalise_data(datapoints):
     total_sum = sum(datapoints)
     return [datapoint / total_sum for datapoint in datapoints]
@@ -69,40 +61,6 @@ def normalise_data(datapoints):
 def is_too_similar_for_axes(word1, word2):
     """Checks if the words contain each other"""
     return word1 in word2 or word2 in word1
-
-
-def create_interesting_curve_function():
-    # Build an optional list
-
-    # random small integer
-    a = random_util.uniform(-10, 10)
-    _b = random_util.uniform(0.001, 10)
-
-    # random relative
-    _r = random_util.uniform(0, 1)
-
-    interesting_functions = [
-        lambda x: a * x,
-        lambda x: a / x,
-        lambda x: a + x,
-        lambda x: a - x,
-        # lambda x: min(float(5e8), float(a ** math.log(x))),
-        # lambda x: min(float(5e8), float(x ** math.log(a))),
-        lambda x: math.sin(x),
-    ]
-
-    chosen = random_util.choice(interesting_functions)
-
-    # Add chance of adding another function
-    # random_number = random_util.uniform(0, 1)
-    # if random_number < 0.4:
-    #     chosen = lambda x: random_util.choice(interesting_functions)(chosen(x))
-    # elif random_number < 0.8:
-    #     chosen = lambda x: random_util.choice(interesting_functions)(x) * chosen(x)
-    # else:
-    #     chosen = lambda x: random_util.choice(interesting_functions)(x) + chosen(x)
-
-    return chosen
 
 
 # DATA SET CREATION
@@ -119,14 +77,6 @@ def create_equal_data_with_outlier_end(size, noise_factor, normal_min, normal_ma
     datapoints = add_noise_to_points(noise_factor, datapoints)
 
     return datapoints
-
-
-def generate_random_x(lower_bound, upper_bound, number):
-    return [random_util.uniform(lower_bound, upper_bound) for _ in range(number)]
-
-
-def generate_y(xs, function):
-    return [(x, function(x)) for x in xs]
 
 
 # CHART TYPES PROPERTIES SETTING

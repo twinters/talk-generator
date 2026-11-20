@@ -24,7 +24,7 @@ from talkgenerator.render import charts
 from talkgenerator.schema import presentation_schema
 from talkgenerator.schema.presentation_schema import PresentationSchema
 from talkgenerator.schema.slide_topic_generators import IdentityTopicGenerator
-from talkgenerator.slide import powerpoint_slide_creator, slide_generator_types
+from talkgenerator.slide import slide_generator_types
 from talkgenerator.sources import text_generator
 from talkgenerator.util import random_util
 
@@ -81,7 +81,6 @@ def fake_schema():
         name="Title slide",
     )
     return PresentationSchema(
-        powerpoint_slide_creator.create_new_powerpoint,
         seed_generator=IdentityTopicGenerator,  # a random one of the topics for every slide
         title_generator=lambda context: (
             random_util.choice(["In praise of", "Rethinking", "The end of"]) + " " + context["seed"]

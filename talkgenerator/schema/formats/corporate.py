@@ -20,10 +20,10 @@ motivational speaker and a life coach a little more often; its themes are the co
 
 from __future__ import annotations
 
+from functools import partial
 from typing import Any, Final
 
 from talkgenerator.closers import Closer, presenter, said
-from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
 from talkgenerator.plan.kinds import AGENDA_ITEM, Recipe, Variant, matrix_landscape, pictured
 from talkgenerator.schema import content_generators as cg
@@ -31,20 +31,27 @@ from talkgenerator.schema.formats import (
     BIG_NUMBER_PICTURES,
     KPI_PICTURES,
     Format,
-    KindSlideGenerator,
     Made,
     behind,
+    big_number,
     company,
     different,
+    items,
     maybe,
+    one_text,
+    part_slide,
     photos,
     provocation,
+    steps,
     text,
+    three_captions,
+    timeline,
+    title_slide,
+    variables_of,
     words,
 )
-from talkgenerator.schema.formats.arcs import Arc, Free, InPart, Part
+from talkgenerator.schema.formats.arcs import Arc, Free, Part
 from talkgenerator.schema.slide_schemas import default_max_allowed_tags, slide_generators
-from talkgenerator.slide import slide_generator_types
 from talkgenerator.sources import slide_texts
 from talkgenerator.util import random_util
 
@@ -104,13 +111,7 @@ CORPORATE: Final = Format(
 def _variables(context: dict[str, Any]) -> dict[str, Any]:
     """What the pack's templates may use: the slide's seed, the talk's topic, its company's name, the presenter and
     the title."""
-    variables = {key: context[key] for key in ("seed", "topic", "presenter", "title") if context.get(key)}
-    variables["company"] = company(str(context.get("topic") or context["seed"]))
-    return variables
-
-
-def _items(prefix: str, texts: list[str]) -> dict[str, str | None]:
-    return {f"{prefix}_{index}": item for index, item in enumerate(texts, 1)}
+    return variables_of(context, company=company)
 
 
 # THE TITLE SLIDE: the quarter and its slogan, and who presents it
@@ -119,14 +120,6 @@ def _items(prefix: str, texts: list[str]) -> dict[str, str | None]:
 def title_generator(context: dict[str, Any]) -> str | None:
     """A classic all-hands' title, about the seed (the talk's topic)."""
     return text(PACK, "title.talk_title", {**context, "company": company(str(context["seed"]))})
-
-
-def _title_if_not_generated(context: dict[str, Any]) -> str | None:
-    return context["title"] if context.get("title") is not None else title_generator(context)
-
-
-def _subtitle(context: dict[str, Any]) -> str | None:
-    return text(PACK, "title.subtitle", _variables(context))
 
 
 # Images: a calm backdrop behind a statement, office photos of the wins and of the company before its reorganisation
@@ -263,20 +256,11 @@ def _pipeline(context: dict[str, Any]) -> Made | None:
     for _ in middle:
         numbers.append(max(2, numbers[-1] // random_util.randint(4, 12)))
     stages = [f"{number:,} {stage}" for number, stage in zip(numbers, [top, *middle], strict=True)] + [bottom]
-    return {"title": title, **_items("stage", stages)}, {}
+    return {"title": title, **items("stage", stages)}, {}
 
 
 # THE QUARTER'S WINS: three photos, the CEO's post, or customers' reviews
-
-
-def _three_wins(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    wins = different(PACK, "wins.win", variables, 2)
-    punchline = text(PACK, "wins.win_punchline", variables)
-    if len(wins) < 2 or not punchline:
-        return None
-    texts = {"title": text(PACK, "wins.wins_title", variables), **_items("caption", [*wins, punchline])}
-    return texts, {f"image_{index}": photo for index, photo in enumerate(photos(_WIN, context, 3), 1)}
+_three_wins = three_captions(PACK, _variables, "wins.wins_title", "wins.win", "wins.win_punchline", _WIN)
 
 
 def _handle(author: str, name: str) -> str:
@@ -317,33 +301,12 @@ def _reviews(context: dict[str, Any]) -> Made | None:
 
 
 # THE ROADMAP: a timeline, the new process, or the planning cycle
-
-
-def _roadmap(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    count = random_util.randint(3, 5)
-    milestones = different(PACK, "roadmap.milestone", variables, count - 1)
-    punchline = text(PACK, "roadmap.roadmap_punchline", variables)
-    title = text(PACK, "roadmap.roadmap_title", variables)
-    if not title or not punchline or len(milestones) < count - 1:
-        return None
-    known = words(PACK, "roadmap.when")  # (soonest first)
-    dates = [known[index] for index in sorted(random_util.sample(range(len(known)), count))]
-    texts: dict[str, str | None] = {"title": title}
-    for index, (date, event) in enumerate(zip(dates, [*milestones, punchline], strict=True), 1):
-        texts[f"date_{index}"], texts[f"event_{index}"] = date, event
-    return texts, {}
-
-
-def _new_process(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    count = random_util.randint(3, 5)
-    first, last = text(PACK, "roadmap.process_first", variables), text(PACK, "roadmap.process_last", variables)
-    middle = different(PACK, "roadmap.process_step", variables, count - 2)
-    title = text(PACK, "roadmap.process_title", variables)
-    if not title or not first or not last or len(middle) < count - 2:
-        return None
-    return {"title": title, **_items("step", [first, *middle, last])}, {}
+_roadmap = timeline(
+    PACK, _variables, "roadmap.roadmap_title", "roadmap.milestone", "roadmap.roadmap_punchline", "roadmap.when"
+)
+_new_process = steps(
+    PACK, _variables, "roadmap.process_title", "roadmap.process_first", "roadmap.process_step", "roadmap.process_last"
+)
 
 
 def _planning_cycle(context: dict[str, Any]) -> Made | None:
@@ -352,7 +315,7 @@ def _planning_cycle(context: dict[str, Any]) -> Made | None:
     title = text(PACK, "roadmap.cycle_title", variables)
     if not title or len(steps) < 3:
         return None
-    return {"title": title, **_items("step", steps)}, {}
+    return {"title": title, **items("step", steps)}, {}
 
 
 # THE ORG CHANGE: the new org chart, the new hierarchy, or the company before and after
@@ -364,7 +327,7 @@ def _new_structure(context: dict[str, Any]) -> Made | None:
     title, boss = text(PACK, "org.org_title", variables), text(PACK, "org.boss", variables)
     if not title or not boss or len(teams) < 2:
         return None
-    return {"title": title, "boss": boss, **_items("report", teams)}, {}
+    return {"title": title, "boss": boss, **items("report", teams)}, {}
 
 
 def _hierarchy(context: dict[str, Any]) -> Made | None:
@@ -376,7 +339,7 @@ def _hierarchy(context: dict[str, Any]) -> Made | None:
     title = text(PACK, "org.pyramid_title", variables)
     if not title or not all(levels):
         return None
-    return {"title": title, **_items("level", [str(level) for level in levels])}, {}
+    return {"title": title, **items("level", [str(level) for level in levels])}, {}
 
 
 def _before_and_after(context: dict[str, Any]) -> Made | None:
@@ -399,7 +362,7 @@ def _synergies(context: dict[str, Any]) -> Made | None:
     title, overlap = text(PACK, "synergies.venn_title", variables), text(PACK, "synergies.overlap", variables)
     if not title or not overlap or len(circles) < 2:
         return None
-    return {"title": title, **_items("circle", circles), "overlap": overlap}, {}
+    return {"title": title, **items("circle", circles), "overlap": overlap}, {}
 
 
 def _priorities(context: dict[str, Any]) -> Made | None:
@@ -427,49 +390,14 @@ def _priorities(context: dict[str, Any]) -> Made | None:
 
 
 # THE ASK
-
-
-def _ask_statement(context: dict[str, Any]) -> Made | None:
-    statement = text(PACK, "ask.ask_statement", _variables(context))
-    return ({"text": statement}, {"background": _BACKDROP(context)}) if statement else None
-
-
-def _ask_number(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    label = text(PACK, "ask.ask_label", variables)
-    if not label:
-        return None
-    return {
-        "title": text(PACK, "ask.ask_title", variables),
-        "number": random_util.choice(words(PACK, "ask.ask_number")),
-        "label": label,
-        "source": maybe(0.8, text(PACK, "ask.ask_source", variables)),
-    }, behind(context, BIG_NUMBER_PICTURES)
+_ask_statement = one_text(PACK, _variables, "ask.ask_statement", "text", background=_BACKDROP)
+_ask_number = big_number(PACK, _variables, "ask.ask_title", "ask.ask_number", "ask.ask_label", "ask.ask_source", 0.8)
 
 
 # THE SLIDE GENERATORS
 
 
-def _part(
-    part: str,
-    weight: float,
-    kind: str,
-    content: Any,
-    tags: list[str],
-    name: str,
-    recipe: Recipe,
-    repeats: int = 2,
-) -> SlideGeneratorData:
-    """A slide generator of one of the arc's parts: its slides are of the kind, classic ones from the content."""
-    return SlideGeneratorData(
-        KindSlideGenerator(kind, content),
-        weight_function=InPart(ARC, part, weight),
-        retries=3,
-        allowed_repeated_elements=repeats,
-        tags=[part, *tags],
-        name=f"{name} (Corporate)",
-        llm=recipe,
-    )
+_part = partial(part_slide, ARC, "Corporate")
 
 
 _TITLE_HINT = "the slide's title, as an all-hands deck's slide has it"
@@ -490,14 +418,7 @@ _ENDS = {
 }
 
 _GENERATORS: Final = [
-    SlideGeneratorData(
-        slide_generator_types.TitleSlideGenerator.of(_title_if_not_generated, _subtitle),
-        allowed_repeated_elements=3,
-        weight_function=PeakedWeight((0,), 100000, 0),
-        tags=["title"],
-        name="Title slide (Corporate)",
-        llm=Recipe("title"),
-    ),
+    title_slide(PACK, title_generator, _variables, "Corporate"),
     # The agenda, or an executive summary
     _part(
         "agenda",

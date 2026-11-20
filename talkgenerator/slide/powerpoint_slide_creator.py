@@ -34,13 +34,7 @@ SOURCES_PLACEHOLDER = 10
 # Layouts index in template
 LAYOUT_TITLE_SLIDE = 0
 LAYOUT_TITLE_AND_CONTENT = 1
-LAYOUT_SECTION_HEADER = 2
-LAYOUT_TWO_CONTENT = 3
-LAYOUT_TWO_TITLE_AND_CONTENT = 4
-LAYOUT_TITLE_ONLY = 5
 LAYOUT_BLANK = 6
-LAYOUT_CONTENT_CAPTION = 7
-LAYOUT_PICTURE_CAPTION = 8
 LAYOUT_FULL_PICTURE = 11
 LAYOUT_TITLE_AND_PICTURE = 12
 LAYOUT_LARGE_QUOTE = 13
@@ -180,11 +174,6 @@ def _add_image_or_text(slide, placeholder_id, image_url_or_text, original_image_
         return _add_image(slide, placeholder_id, image_url_or_text, original_image_size)
     else:
         return _add_text(slide, placeholder_id, image_url_or_text)
-
-
-def _print_all_placeholders(slide):
-    for shape in slide.placeholders:
-        print("%d %s" % (shape.placeholder_format.idx, shape.name))
 
 
 # A slide's number of the deck's ("7/12"): small and grey, in the template's bottom right corner (where its picture

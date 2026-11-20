@@ -89,7 +89,7 @@ from talkgenerator.plan.stream import ObjectReader
 from talkgenerator.render.powerpoint import render_pptx
 from talkgenerator.schema import slide_topic_generators
 from talkgenerator.schema.slide_topic_generators import SlideSeedGenerator
-from talkgenerator.slide import slide_generator_types, slides
+from talkgenerator.slide import powerpoint_slide_creator, slide_generator_types, slides
 from talkgenerator.slide.slide_deck import SlideDeck
 from talkgenerator.util import generator_util, image_util, random_util
 
@@ -1171,12 +1171,10 @@ class PresentationSchema:
 
     def __init__(
         self,
-        powerpoint_creator,
         seed_generator: Callable[[list[str], int], SlideSeedGenerator],
         title_generator,
         slide_generators: list[SlideGeneratorData],
         max_allowed_tags=None,
-        ignore_weights=False,
         title_candidates: Sequence[titles.TitleGenerator] = (),
         license_policy: str = licenses.DEFAULT,
         looks: Mapping[str, str] | None = None,
@@ -1197,7 +1195,6 @@ class PresentationSchema:
         talkgenerator.schema.slide_schemas.SPARE_GENERATORS). Without them, a talk in English has no spares."""
         self.format = format
         self.spare_generators: tuple[tuple[SlideGeneratorData, float], ...] = tuple(spare_generators)
-        self._powerpoint_creator = powerpoint_creator
         # The license classes its talks' images may have, unless a talk says otherwise (see talkgenerator.images.licenses)
         self.license_policy = licenses.policy(license_policy).name
         # Its own looks for the looks its slides ask for, such as "corporate-stock" for "photo" (see
@@ -1214,7 +1211,6 @@ class PresentationSchema:
         if max_allowed_tags is None:
             max_allowed_tags = {}
         self._max_allowed_tags = max_allowed_tags
-        self._ignore_weights = ignore_weights
         self._title_generator = title_generator
         self._title_candidates = tuple(title_candidates)
 
@@ -1294,7 +1290,7 @@ class PresentationSchema:
         # "renovation"), and its slides on the topic have it as typed
         with random_util.use(rng.child("topics")), slide_topic_generators.wandering_in(language):
             seed_generator = self._seed_generator(topics, num_slides)
-        logger.info("Seed generator: {}".format(seed_generator))
+        logger.info(f"Seed generator: {seed_generator}")
         seeds = []
         for slide_nr in range(num_slides):
             with random_util.use(rng.child("slide", slide_nr, "topic")):
@@ -1364,7 +1360,7 @@ class PresentationSchema:
                 talk.wait_for_spine()
             if naming is not None:
                 presenter = naming.name(*(talk.presenter_name if talk is not None else ()))
-                logger.info("Presenter: {}".format(presenter))
+                logger.info(f"Presenter: {presenter}")
             # The title: what was typed when it reads as one, or else the model's, or else a classic one
             reading = None
             if titling is not None:
@@ -1375,7 +1371,7 @@ class PresentationSchema:
                 title = talk.title
             if not title:
                 title = self._title(topics, rng, persona)
-            logger.info("Generate talk title: {}".format(title))
+            logger.info(f"Generate talk title: {title}")
 
             # A talk in another language needs the language model's slides: the classic ones are English
             planned = talk is not None and talk.wait_for_a_plan()
@@ -1403,7 +1399,7 @@ class PresentationSchema:
             slide_deck.topic_or_title = reading
             if persona is not None:  # (with the angle the language model was given, for a talk it writes)
                 slide_deck.persona = persona.record(persona.angle(rng) if planned else None)
-            logger.info("Slide deck: {}".format(slide_deck))
+            logger.info(f"Slide deck: {slide_deck}")
             if progress is not None:
                 progress.started(slide_deck)
                 slide_deck.listener = progress.settled
@@ -1507,7 +1503,7 @@ class PresentationSchema:
         """The deck as a PowerPoint presentation: in the classic template, or (with a theme) drawn as shapes."""
         if slide_deck.theme is not None:
             return render_pptx(slide_deck.to_deck(), debug_notes=debug_notes, images=slide_deck.image_store())
-        presentation = self._powerpoint_creator()
+        presentation = powerpoint_slide_creator.create_new_powerpoint()
         slide_deck.save_to_powerpoint(presentation, debug_notes=debug_notes)
         return presentation
 
@@ -2832,8 +2828,8 @@ class PresentationSchema:
     ) -> _Result:
         """Run the slide generator for a slide (or what label says it's for, in the logs: "spare 1", say)."""
         seed = presentation_context["seed"]
-        what = label or "slide {}".format(slide_nr + 1)
-        logger.info("* Generating {} about {} using {} *".format(what, seed, generator))
+        what = label or f"slide {slide_nr + 1}"
+        logger.info(f"* Generating {what} about {seed} using {generator} *")
         start_time = time.time()
         with random_util.use(rng):
             try:
@@ -2845,11 +2841,9 @@ class PresentationSchema:
                 result = None
         seconds = round(time.time() - start_time, 2)
         if result:
-            logger.info(
-                "* Finished generating {} about {} using {} in {} seconds *".format(what, seed, generator, seconds)
-            )
+            logger.info(f"* Finished generating {what} about {seed} using {generator} in {seconds} seconds *")
             return result
-        logger.info("Failed to generate after {} seconds using: {}".format(seconds, generator))
+        logger.info(f"Failed to generate after {seconds} seconds using: {generator}")
         return None
 
     @classmethod
@@ -2873,7 +2867,7 @@ class PresentationSchema:
     ):
         """Generate one slide on its own, given the elements used so far, the way generating a talk does.
         Returns (slide, generated_elements, slide_generator, slide_nr), or None if no slide generator succeeded."""
-        logger.debug("presentation_schema.generate_slide: {}".format(slide_nr))
+        logger.debug(f"presentation_schema.generate_slide: {slide_nr}")
         worked_out = self._work_out_slide(
             slide_nr,
             num_slides,
@@ -2888,16 +2882,47 @@ class PresentationSchema:
             return None
         return worked_out.slide, worked_out.generated_elements, worked_out.generator, slide_nr
 
+    def another_slide(
+        self,
+        slide_nr: int,
+        num_slides: int,
+        talk_context: Mapping[str, Any],
+        rng: random_util.Rng,
+        used_elements: Collection[Any] = (),
+        persona: Persona | None = None,
+    ) -> slides.Slide | None:
+        """Another slide for the slide_nr-th place (from 0) of a talk of num_slides slides, made again after the talk
+        (see talkgenerator.generator.regenerate_slide): about a word of the talk's topics, which this schema's seed
+        generator picks for that place as it picks its slides' words, from rng (the slide's own word isn't kept); of a
+        kind this schema has for that place, as the persona weighs them, picked and made as a classic slide is (another
+        kind if one fails); and repeating none of the used elements' pictures, nor more of their texts than its kind
+        allows. In a talk in another language than English (talk_context's language), whose classic slides would be
+        English, it's a picture of that word without text instead (see _picture_slide). talk_context is what a talk's
+        slides are made with: its topic, topics, presenter, title and language. None if no slide comes out."""
+        topics = list(talk_context["topics"])
+        language = str(talk_context.get("language") or "en")
+        with random_util.use(rng.child("topics")), slide_topic_generators.wandering_in(language):
+            seed_generator = self._seed_generator(topics, num_slides)
+        with random_util.use(rng.child("slide", slide_nr, "topic")):
+            seed = seed_generator.get_seed(slide_nr)
+        logger.info("Making slide %s again, about %r", slide_nr + 1, seed)
+        # (no agenda's announcements: the slides after it are made already)
+        context = {**create_slide_presentation_context(dict(talk_context), seed), "later": ()}
+        state = _DeckState(set(used_elements))
+        if language != "en":
+            picture = self._picture_slide(slide_nr, str(seed), context, rng.child("picture"), state)
+            return picture.slide if picture is not None else None
+        worked_out = self._work_out_slide(
+            slide_nr, num_slides, context, rng.child("slide", slide_nr), state, {}, generate=True, persona=persona
+        )
+        return worked_out.slide if isinstance(worked_out, _WorkedOutSlide) else None
+
     def _select_generator(self, slide_nr, total_slides, prohibited_generators, persona: Persona | None = None):
         """Select a generator for a certain slide number (by weight, as the persona weighs them)"""
-        if self._ignore_weights:
-            return random_util.choice_optional(
-                [generator for generator in self._slide_generators if generator not in prohibited_generators]
-            )
         _selected_generator = random_util.weighted_random(
             self._get_weighted_generators_for_slide_nr(slide_nr, total_slides, prohibited_generators, persona)
         )
-        logger.debug("_selected_generator: {}".format(_selected_generator))
+        logger.debug(f"_selected_generator: {_selected_generator}")
         return _selected_generator
 
     def _get_weighted_generators_for_slide_nr(

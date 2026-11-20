@@ -1,7 +1,7 @@
 name: Live API canary
 
 # Every week, run the tests that talk to the real APIs and websites, so we hear about a source
-# that died or changed (like ConceptNet, PhraseFinder or Reddit's search) before the decks degrade.
+# that died or changed (like ConceptNet or Reddit's search) before the decks degrade.
 # API keys come from repository secrets; tests whose keys aren't configured are skipped.
 
 on:

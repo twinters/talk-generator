@@ -123,7 +123,6 @@ def test_another_kind_of_slide_takes_the_place_of_one_that_misses_images(images)
         name="Photo",
     )
     schema = PresentationSchema(
-        powerpoint_slide_creator.create_new_powerpoint,
         seed_generator=None,
         title_generator=None,
         slide_generators=[broken, working],

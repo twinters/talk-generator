@@ -4,21 +4,13 @@ This file contains structures that are helpful for certain content generators, b
 
 import re
 
-from talkgenerator.sources import conceptnet, goodreads, packs, reddit, text_generator, wikihow, wikiquote
+from talkgenerator.sources import conceptnet, goodreads, packs, text_generator, wikihow, wikiquote
 from talkgenerator.util import os_util, random_util
 from talkgenerator.util.generator_util import (
-    BackupGenerator,
-    ExternalImageListGenerator,
     FromListGenerator,
     RelatedMappingGenerator,
     SeededGenerator,
-    planned,
 )
-
-
-def create_templated_text_generator(filename):
-    actual_file = os_util.to_actual_file(filename)
-    return text_generator.TemplatedTextGenerator(actual_file).generate
 
 
 def create_tracery_generator(filename, main="origin"):
@@ -70,44 +62,6 @@ class WikiquoteQuoteGenerator:
             ]
 
         return FromListGenerator(SeededGenerator(generator))(presentation_context)
-
-
-# REDDIT
-
-
-def create_reddit_image_generator(*name, animated: bool = False):
-    """Images from the subreddits; with animated, only gifs (images that move)."""
-    reddit_generator = RedditImageGenerator("+".join(name), animated)
-    return BackupGenerator(reddit_generator.generate, reddit_generator.generate_random)
-
-
-class RedditImageSearcher:
-    def __init__(self, subreddit: str, animated: bool = False):
-        self._subreddit = subreddit
-        self._animated = animated
-
-    def __call__(self, seed: str):
-        results = reddit.search_images(self._subreddit, str(seed or ""), animated=self._animated)
-        if not results:
-            return None
-        return [reddit.image_data(image) for image in results]
-
-
-class RedditImageGenerator:
-    def __init__(self, subreddit: str, animated: bool = False):
-        self._subreddit = subreddit
-
-        self._generate = ExternalImageListGenerator(
-            SeededGenerator(RedditImageSearcher(self._subreddit, animated)),
-        )
-
-    def generate(self, presentation_context):
-        return self._generate(presentation_context)
-
-    def generate_random(self, _):
-        if planned():  # a plan asked for something: a random post isn't it
-            return None
-        return self.generate({"seed": ""})
 
 
 # ABOUT ME

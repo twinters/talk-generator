@@ -2,7 +2,6 @@ import unittest
 
 import pytest
 
-from talkgenerator.schema.content_generator_structures import RedditImageSearcher
 from talkgenerator.sources import reddit
 from tests.support import requires_keys
 
@@ -16,13 +15,13 @@ class RedditTest(unittest.TestCase):
         self.assertTrue(len(result) > 0)
 
     def test_reddit_simple(self):
-        images = RedditImageSearcher("memes")("cat")
+        images = [reddit.image_data(image) for image in reddit.search_images("memes", "cat")]
         self.assertTrue(len(images) > 0)
         sources = [image.get_source() for image in images if image.get_source() is not None]
         self.assertTrue(len(sources) > 0)
 
     def test_reddit_without_query_uses_hot_posts(self):
-        images = RedditImageSearcher("gifs")("")
+        images = reddit.search_images("gifs", "")
         self.assertTrue(len(images) > 0)
 
 

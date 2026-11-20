@@ -25,29 +25,32 @@ minimal ones.
 
 from __future__ import annotations
 
+from functools import partial
 from typing import Any, Final
 
 from talkgenerator.closers import Closer, presenter, said
-from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.plan.kinds import AGENDA_ITEM, ERROR_BUTTON, Recipe, pictured
 from talkgenerator.schema import content_generators as cg
 from talkgenerator.schema.formats import (
     BIG_NUMBER_PICTURES,
     Format,
-    KindSlideGenerator,
     Made,
     behind,
     crime,
     different,
+    error_dialog,
+    items,
     maybe,
-    photos,
+    one_text,
+    part_slide,
     provocation,
     text,
+    three_captions,
+    title_slide,
     words,
 )
 from talkgenerator.schema.formats.arcs import Arc, Free, InPart, Part
 from talkgenerator.schema.slide_schemas import default_max_allowed_tags, slide_generators
-from talkgenerator.slide import slide_generator_types
 from talkgenerator.sources import text_generator
 from talkgenerator.util import random_util
 
@@ -107,24 +110,12 @@ def _variables(context: dict[str, Any]) -> dict[str, Any]:
     return variables
 
 
-def _items(prefix: str, texts: list[str]) -> dict[str, str | None]:
-    return {f"{prefix}_{index}": item for index, item in enumerate(texts, 1)}
-
-
 # THE TITLE SLIDE: the case, and who argues it
 
 
 def title_generator(context: dict[str, Any]) -> str | None:
     """A classic court case's title, about the seed (the talk's topic)."""
     return text(PACK, "title.talk_title", context)
-
-
-def _title_if_not_generated(context: dict[str, Any]) -> str | None:
-    return context["title"] if context.get("title") is not None else title_generator(context)
-
-
-def _subtitle(context: dict[str, Any]) -> str | None:
-    return text(PACK, "title.subtitle", _variables(context))
 
 
 # Images: a calm backdrop behind what's said in court, a photo of the defendant (and of the witnesses, and the one in
@@ -161,9 +152,7 @@ def _charges(context: dict[str, Any]) -> Made | None:
     return {"title": title, "items": " | ".join([first, *counts, punchline])}, {}
 
 
-def _the_people(context: dict[str, Any]) -> Made | None:
-    statement = text(PACK, "charges.case_statement", _variables(context))
-    return ({"text": statement}, {"background": _BACKDROP(context)}) if statement else None
+_the_people = one_text(PACK, _variables, "charges.case_statement", "text", background=_BACKDROP)
 
 
 # THE EVIDENCE: D78's Exhibit A (an odd picture beside its evidence tag; Exhibit B on a second slide), or the
@@ -207,14 +196,9 @@ def _witness_post(context: dict[str, Any]) -> Made | None:
     return texts, {"photo": photo}
 
 
-def _witnesses(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    witnesses = different(PACK, "witness.witness", variables, 2)
-    punchline = text(PACK, "witness.witness_punchline", variables)
-    if len(witnesses) < 2 or not punchline:
-        return None
-    texts = {"title": text(PACK, "witness.witnesses_title", variables), **_items("caption", [*witnesses, punchline])}
-    return texts, {f"image_{index}": photo for index, photo in enumerate(photos(_PHOTO, context, 3), 1)}
+_witnesses = three_captions(
+    PACK, _variables, "witness.witnesses_title", "witness.witness", "witness.witness_punchline", _PHOTO
+)
 
 
 def _quiz(context: dict[str, Any]) -> Made | None:
@@ -274,44 +258,19 @@ def _alibi_check(context: dict[str, Any]) -> Made | None:
     return {"title": maybe(0.6, text(PACK, "alibi.flow_title", variables)), **texts}, {}
 
 
-def _alibi_not_found(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    buttons = different(PACK, "alibi.button", variables, random_util.randint(1, 2))
-    punchline, message = text(PACK, "alibi.button_punchline", variables), text(PACK, "alibi.error", variables)
-    if not message or not punchline or not buttons:
-        return None
-    return {
-        "title": maybe(0.8, text(PACK, "alibi.error_title", variables)),
-        "message": message,
-        "code": maybe(0.8, text(PACK, "alibi.error_code", variables)),
-        "buttons": " | ".join([*buttons, punchline]),
-    }, {}
+_alibi_not_found = error_dialog(
+    PACK, _variables, "alibi.error_title", "alibi.error", "alibi.error_code", "alibi.button", "alibi.button_punchline"
+)
 
 
 # AN OBJECTION: shouted under a dramatic photo, or said over a calm one
-
-
-def _objection(context: dict[str, Any]) -> Made | None:
-    title = text(PACK, "objection.objection_title", _variables(context))
-    return ({"title": title}, {"image": _DRAMATIC(context)}) if title else None
-
-
-def _objection_statement(context: dict[str, Any]) -> Made | None:
-    said = text(PACK, "objection.objection_statement", _variables(context))
-    return ({"text": said}, {"background": _BACKDROP(context)}) if said else None
+_objection = one_text(PACK, _variables, "objection.objection_title", "title", image=_DRAMATIC)
+_objection_statement = one_text(PACK, _variables, "objection.objection_statement", "text", background=_BACKDROP)
 
 
 # THE CLOSING ARGUMENT: to the jury, the defendant's face, or the signs of guilt where they meet
-
-
-def _closing_argument(context: dict[str, Any]) -> Made | None:
-    argument = text(PACK, "closing.closing_statement", _variables(context))
-    return ({"text": argument}, {"background": _BACKDROP(context)}) if argument else None
-
-
-def _this_face(context: dict[str, Any]) -> Made | None:
-    title = text(PACK, "closing.face_title", _variables(context))
-    return ({"title": title}, {"image": _PHOTO(context)}) if title else None
+_closing_argument = one_text(PACK, _variables, "closing.closing_statement", "text", background=_BACKDROP)
+_this_face = one_text(PACK, _variables, "closing.face_title", "title", image=_PHOTO)
 
 
 def _signs_of_guilt(context: dict[str, Any]) -> Made | None:
@@ -320,7 +279,7 @@ def _signs_of_guilt(context: dict[str, Any]) -> Made | None:
     title, overlap = text(PACK, "closing.venn_title", variables), text(PACK, "closing.venn_overlap", variables)
     if not title or not overlap or len(circles) < 2:
         return None
-    return {"title": title, **_items("circle", circles), "overlap": overlap}, {}
+    return {"title": title, **items("circle", circles), "overlap": overlap}, {}
 
 
 # THE VERDICT: the jury's pie chart, one big number, or the audience as the jury
@@ -345,34 +304,13 @@ def _verdict(context: dict[str, Any]) -> Made | None:
     }, behind(context, BIG_NUMBER_PICTURES)
 
 
-def _the_jury(context: dict[str, Any]) -> Made | None:
-    said = text(PACK, "verdict.jury", _variables(context))
-    return ({"audience": said}, {}) if said else None
+_the_jury = one_text(PACK, _variables, "verdict.jury", "audience")
 
 
 # THE SLIDE GENERATORS
 
 
-def _part(
-    part: str,
-    weight: float,
-    kind: str,
-    content: Any,
-    tags: list[str],
-    name: str,
-    recipe: Recipe,
-    repeats: int = 2,
-) -> SlideGeneratorData:
-    """A slide generator of one of the arc's parts: its slides are of the kind, classic ones from the content."""
-    return SlideGeneratorData(
-        KindSlideGenerator(kind, content),
-        weight_function=InPart(ARC, part, weight),
-        retries=3,
-        allowed_repeated_elements=repeats,
-        tags=[part, *tags],
-        name=f"{name} (Court)",
-        llm=recipe,
-    )
+_part = partial(part_slide, ARC, "Court")
 
 
 _TITLE_HINT = "the slide's title, as a courtroom drama's slide has it"
@@ -380,14 +318,7 @@ _FEW_WORDS = "in two to four words"
 _PETTY = "a harmless, petty crime (never violence, weapons or anyone hurt)"
 
 _GENERATORS: Final = [
-    SlideGeneratorData(
-        slide_generator_types.TitleSlideGenerator.of(_title_if_not_generated, _subtitle),
-        allowed_repeated_elements=3,
-        weight_function=PeakedWeight((0,), 100000, 0),
-        tags=["title"],
-        name="Title slide (Court)",
-        llm=Recipe("title"),
-    ),
+    title_slide(PACK, title_generator, _variables, "Court"),
     # The charges
     _part(
         "charges",

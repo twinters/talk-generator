@@ -28,7 +28,7 @@ from talkgenerator.models.deck import Deck, DeckSlide, ImageAsset, ImageElement,
 from talkgenerator.plan.kinds import Recipe, Variant
 from talkgenerator.schema.presentation_schema import PresentationSchema
 from talkgenerator.schema.slide_topic_generators import IdentityTopicGenerator
-from talkgenerator.slide import powerpoint_slide_creator, slide_generator_types, slides
+from talkgenerator.slide import slide_generator_types, slides
 from talkgenerator.util import generator_util, image_util, random_util
 from talkgenerator.util.generator_util import StaticGenerator
 
@@ -639,14 +639,13 @@ def test_a_format_can_have_looks_of_its_own(sources, look, slot_schema):
     look("corporate", [SourceUse("fake-b")])
     assert "fake-b" in _find(ImageSlot(aesthetic="plain"), looks={"plain": "corporate"}).get_image_url()
     assert PresentationSchema(
-        powerpoint_slide_creator.create_new_powerpoint,
         seed_generator=IdentityTopicGenerator,
         title_generator=lambda context_: "",
         slide_generators=[],
         looks={"photo": "corporate-stock"},
     ).looks == {"photo": "corporate-stock"}
     with pytest.raises(ValueError, match="no look"):
-        PresentationSchema(None, IdentityTopicGenerator, None, [], looks={"photo": "glossy"})
+        PresentationSchema(IdentityTopicGenerator, None, [], looks={"photo": "glossy"})
 
 
 def test_a_persona_s_favourite_look_goes_first_and_the_slot_s_own_look_after(sources, look):
@@ -779,7 +778,6 @@ def _slot_schema():
         name="Title slide",
     )
     return PresentationSchema(
-        powerpoint_slide_creator.create_new_powerpoint,
         seed_generator=IdentityTopicGenerator,
         title_generator=lambda context_: "Talking about " + context_["seed"],
         slide_generators=[

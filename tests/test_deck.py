@@ -113,15 +113,27 @@ _V4_STYLES = {
 }
 
 
+_V4_CREATORS = {
+    "title": powerpoint_slide_creator.create_title_slide,
+    "large_quote": powerpoint_slide_creator.create_large_quote_slide,
+    "image": powerpoint_slide_creator.create_image_slide,
+    "full_image": powerpoint_slide_creator.create_full_image_slide,
+    "two_column_image": powerpoint_slide_creator.create_two_column_images_slide,
+    "three_column_image": powerpoint_slide_creator.create_three_column_images_slide,
+    "chart": powerpoint_slide_creator.create_chart_slide,
+}
+
+
 def _draw_like_v4(slide, presentation):
-    """What Slide.create_powerpoint_slide did in v4: call the slide's creator with its arguments, then credit it."""
+    """What Slide.create_powerpoint_slide did in v4: call the slide type's creator with its arguments, then credit
+    it."""
     arguments = dict(slide._arguments)
     if slide.type_name == "chart":
         arguments["chart_modifier"] = _V4_STYLES[arguments["chart_type"]]
         # (axis titles, animations, named points, fitted lines and a picture by a point: v5's)
         for v5_only in ("x_title", "y_title", "reveal", "point_labels", "trendlines", "point_picture"):
             arguments.pop(v5_only, None)
-    ppt_slide = slide._ppt_slide_creator(presentation, **arguments)
+    ppt_slide = _V4_CREATORS[slide.type_name](presentation, **arguments)
     if slide._credits:
         powerpoint_slide_creator.add_sources_note(ppt_slide, slide._credits)
     powerpoint_slide_creator.remove_empty_placeholders(ppt_slide)

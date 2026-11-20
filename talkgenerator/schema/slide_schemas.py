@@ -1616,7 +1616,7 @@ conclusion_slide_generators = _register(
     "conclusion",
     [
         SlideGeneratorData(
-            slide_generator_types.TwoImagesAndTupledCaptions(
+            slide_generator_types.TwoColumnImageSlideGenerator.of_images_and_tupled_captions(
                 cg.conclusion_title_generator,
                 cg.conclusion_two_captions_tuple_generator,
                 cg.neutral_image_generator,
@@ -1634,7 +1634,7 @@ conclusion_slide_generators = _register(
             ),
         ),
         SlideGeneratorData(
-            slide_generator_types.ThreeImagesAndTupledCaptions(
+            slide_generator_types.ThreeColumnImageSlideGenerator.of_images_and_tupled_captions(
                 cg.conclusion_title_generator,
                 cg.conclusion_three_captions_tuple_generator,
                 cg.neutral_image_generator,
@@ -1659,7 +1659,7 @@ conclusion_slide_generators_copyright_free = _register(
     "conclusion_copyright_free",
     [
         SlideGeneratorData(
-            slide_generator_types.TwoImagesAndTupledCaptions(
+            slide_generator_types.TwoColumnImageSlideGenerator.of_images_and_tupled_captions(
                 cg.conclusion_title_generator,
                 cg.conclusion_two_captions_tuple_generator,
                 cg.copyright_free_generator,
@@ -1677,7 +1677,7 @@ conclusion_slide_generators_copyright_free = _register(
             ),
         ),
         SlideGeneratorData(
-            slide_generator_types.ThreeImagesAndTupledCaptions(
+            slide_generator_types.ThreeColumnImageSlideGenerator.of_images_and_tupled_captions(
                 cg.conclusion_title_generator,
                 cg.conclusion_three_captions_tuple_generator,
                 cg.copyright_free_generator,
@@ -1696,28 +1696,6 @@ conclusion_slide_generators_copyright_free = _register(
             ),
         ),
     ],
-)
-
-all_slide_generators = (
-    title_slide_generators
-    + about_me_slide_generators
-    + history_slide_generators
-    + single_image_slide_generators
-    + statement_slide_generators
-    + captioned_images_slide_generators
-    + chart_slide_generators
-    + diagram_slide_generators
-    + number_slide_generators
-    + quiz_slide_generators
-    + mockup_slide_generators
-    + meme_slide_generators
-    + fun_fact_slide_generators
-    + problem_slide_generators
-    + karaoke_slide_generators
-    + picture_prompt_slide_generators
-    + structure_slide_generators
-    + native_diagram_slide_generators
-    + conclusion_slide_generators
 )
 
 # SPARE SLIDES: what a streamed talk shows while its next slide isn't in yet, when a presenter catches up with the
@@ -1799,9 +1777,7 @@ default_max_allowed_tags = {
     "diagram": 0.2,
     "two_captions": 0.2,
     "three_captions": 0.2,
-    "multi_captions": 0.3,
     "gif": 0.5,
-    "weird": 0.5,
     "quote": 0.2,
     "statement": 0.2,
     "chart": 0.3,

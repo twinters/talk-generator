@@ -160,7 +160,7 @@ class SlideDeck:
     def save_to_powerpoint(self, prs_template, debug_notes: bool = False):
         """Add the slides to the presentation, drawn from the deck (see to_deck). Returns the PowerPoint slides."""
         if not self.is_complete():
-            logger.error("ERROR: SOME SLIDES WERE NOT GENERATED: {}".format(self._slides))
+            logger.error(f"ERROR: SOME SLIDES WERE NOT GENERATED: {self._slides}")
             self._slides = [slide for slide in self._slides if slide is not None]
         deck = self.to_deck()
         images = self.image_store()  # (after the deck, which settles how its images show: as a video, say)
@@ -235,7 +235,7 @@ class SlideDeck:
     def get_structured_data(self):
         """Return slide deck as structured data for alternative presentation"""
         if not self.is_complete():
-            logger.error("ERROR: SOME SLIDES WERE NOT GENERATED: {}".format(self._slides))
+            logger.error(f"ERROR: SOME SLIDES WERE NOT GENERATED: {self._slides}")
             self._slides = [slide for slide in self._slides if slide is not None]
         return [slide for slide in self._slides]
 

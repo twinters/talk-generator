@@ -206,7 +206,7 @@ def _set_pie_label_positions(chart, series, chart_data, label_position):
     for i in range(len(chart_data.categories)):
         point = series.points[i]
         value = series.values[i]
-        _write(point.data_label, "{} ({:.0%})".format(chart_data.categories[i].label, value))
+        _write(point.data_label, f"{chart_data.categories[i].label} ({value:.0%})")
         if label_position:
             point.data_label.position = label_position
 
@@ -253,7 +253,7 @@ def set_doughnut_properties(chart, chart_data):
         series = chart.series[0]
         chart.plots[0].has_data_labels = True
         for i in range(len(chart_data.categories)):
-            _write(series.points[i].data_label, "{:.0%}".format(series.values[i]), bold=True)
+            _write(series.points[i].data_label, f"{series.values[i]:.0%}", bold=True)
         chart.has_legend = True
         legend = chart.legend
         legend.position = XL_LEGEND_POSITION.RIGHT

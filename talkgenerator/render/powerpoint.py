@@ -290,4 +290,4 @@ def _finish(ppt_slide: Slide, slide: DeckSlide, debug_notes: bool) -> None:
         creator.remove_empty_placeholders(ppt_slide)
         creator.animate_like_layout(ppt_slide)  # (after: only the shapes the slide keeps are animated)
     except (AttributeError, KeyError) as e:
-        logger.error("Error while finishing slide: {}".format(e))
+        logger.error(f"Error while finishing slide: {e}")

@@ -9,14 +9,14 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Final
 
-from talkgenerator.datastructures.image_data import ImageData
-from talkgenerator.util import image_util, random_util
+from talkgenerator.util import random_util
 
 logger = logging.getLogger("talkgenerator")
 
 # While the images of a planned slide are searched (see as_planned), searches go as written: generators that rewrite a
-# search (with a prefix, a related word, a walk) pass it on unchanged, random fallbacks step aside, and image lists
-# pick among their best results instead of all of them. The classic generator keeps its surprises.
+# search (with a related word, a walk) pass it on unchanged, random fallbacks step aside, and the image finder picks
+# among a source's best results (TOP_RESULTS of them) instead of all of them. The classic generator keeps its
+# surprises.
 _AS_PLANNED: ContextVar[bool] = ContextVar("talkgenerator_as_planned", default=False)
 TOP_RESULTS: Final = 5
 
@@ -35,46 +35,9 @@ def planned() -> bool:
     return _AS_PLANNED.get()
 
 
-def fullname(o):
-    # o.__module__ + "." + o.__class__.__qualname__ is an example in
-    # this context of H.L. Mencken's "neat, plausible, and wrong."
-    # Python makes no guarantees as to whether the __module__ special
-    # attribute is defined, so we take a more circumspect approach.
-    # Alas, the module name is explicitly excluded from __qualname__
-    # in Python 3.
-
-    module = o.__class__.__module__
-    if module is None or module == str.__class__.__module__:
-        return o.__class__.__name__  # Avoid reporting __builtin__
-    else:
-        return module + "." + o.__class__.__name__
-
-
 class Generator:
     def __call__(self, seed: str):
         raise NotImplementedError(str(self) + " has not provided an implementation for the generator")
-
-
-class PrefixedGenerator(Generator):
-    def __init__(self, prefix: str, generator: Callable[[str], Any]):
-        self._prefix = prefix
-        self._generator = generator
-
-    def __call__(self, seed: str):
-        return self._generator(seed if planned() else self._prefix + " " + seed)
-
-
-class PrefixedPresentationContextGenerator(Generator):
-    def __init__(self, prefix: str, generator):
-        self._prefix = prefix
-        self._generator = generator
-
-    def __call__(self, presentation_context):
-        if planned():
-            return self._generator(presentation_context)
-        presentation_context = dict(presentation_context)
-        presentation_context["seed"] = self._prefix + " " + presentation_context["seed"]
-        return self._generator(presentation_context)
 
 
 class CombinedGenerator(Generator):
@@ -93,15 +56,15 @@ class CombinedGenerator(Generator):
     def __call__(self, seed: str | dict[str, str]):
         logger.debug("Calling generator_util.CombinedGenerator")
         current_weighted_generators = list(self._weighted_generators)
-        logger.debug("current_weighted_generators: {}".format(current_weighted_generators))
+        logger.debug(f"current_weighted_generators: {current_weighted_generators}")
         while len(current_weighted_generators) > 0:
             generator = random_util.weighted_random(current_weighted_generators)
             if generator is None or isinstance(generator, NoneGenerator):
                 return None
-            logger.debug("current generator: {}".format(generator))
-            logger.debug("generator seed: {}".format(seed))
+            logger.debug(f"current generator: {generator}")
+            logger.debug(f"generator seed: {seed}")
             generated = generator(seed)
-            logger.debug("generated: {}".format(generated))
+            logger.debug(f"generated: {generated}")
             if generated is not None:
                 return generated
             _remove_object_from_weighted_list(current_weighted_generators, generator)
@@ -160,18 +123,9 @@ class SeededGenerator(Generator):
 
     def __call__(self, presentation_context):
         logger.debug("Calling generator_util.SeededGenerator")
-        logger.debug("presentation_context: {}".format(presentation_context))
-        logger.debug("self._simple_generator: {}".format(self._simple_generator))
+        logger.debug(f"presentation_context: {presentation_context}")
+        logger.debug(f"self._simple_generator: {self._simple_generator}")
         return self._simple_generator(presentation_context["seed"])
-
-
-class UnseededGenerator(Generator):
-    def __init__(self, simple_generator):
-        self._simple_generator = simple_generator
-
-    def __call__(self, seed):
-        presentation_context = {"seed": seed}
-        return self._simple_generator(presentation_context)
 
 
 class NoneGenerator(Generator):
@@ -180,23 +134,6 @@ class NoneGenerator(Generator):
 
     def __call__(self, presentation_context):
         return None
-
-
-class IdentityGenerator(Generator):
-    def __init__(self, input_word):
-        self._input_word = input_word
-
-    def __call__(self, presentation_context):
-        return self._input_word
-
-
-class TitledIdentityGenerator(Generator):
-    def __init__(self, input_word):
-        self._input_word = input_word
-
-    def __call__(self, presentation_context):
-        if self._input_word:
-            return self._input_word.title()
 
 
 class StaticGenerator(Generator):
@@ -213,74 +150,6 @@ class FromListGenerator(Generator):
 
     def __call__(self, presentation_context):
         return random_util.choice_optional(self._list_generator(presentation_context))
-
-
-seeded_identity_generator = SeededGenerator(IdentityGenerator)
-seeded_titled_identity_generator = SeededGenerator(TitledIdentityGenerator)
-
-
-class ExternalImageListGenerator(Generator):
-    """Picks a random image from a list of candidates (optionally weighted by (weight, image) pairs).
-
-    With check_image_validness, candidates are downloaded and checked first, so that dead links
-    and "image removed" placeholders are skipped instead of ending up as holes in the deck.
-    """
-
-    max_attempts = 8
-
-    def __init__(
-        self,
-        image_generator,
-        check_image_validness=True,
-        weighted=False,
-    ):
-        self._image_generator = image_generator
-        self._check_image_validness = check_image_validness
-        self._weighted = weighted
-
-    def __call__(self, presentation_context) -> ImageData | None:
-        images = self._image_generator(presentation_context)
-        if not images:
-            return None
-        # Work on a copy: the list may come straight out of a cache
-        candidates = list(images)
-
-        for _ in range(self.max_attempts):
-            if self._weighted:
-                candidates = [entry for entry in candidates if entry[0] > 0]
-            if not candidates:
-                return None
-            # For a plan, among the best results (the search's first ones) that are left
-            pool = candidates[:TOP_RESULTS] if planned() else candidates
-            if self._weighted:
-                entry = random_util.choices(pool, weights=[entry[0] for entry in pool])[0]
-                chosen = entry[1]
-            else:
-                entry = chosen = random_util.choice(pool)
-            candidates.remove(entry)
-
-            if isinstance(chosen, str):
-                chosen_image = ImageData(image_url=chosen)
-            elif isinstance(chosen, ImageData):
-                chosen_image = chosen
-            else:
-                logger.warning("Invalid image input for external image generator: %r", chosen)
-                continue
-
-            if not self._check_image_validness or image_util.check_image(chosen_image):
-                return chosen_image
-        return None
-
-
-class BackupGenerator(Generator):
-    def __init__(self, *generator_list):
-        self._generator_list = generator_list
-
-    def __call__(self, context):
-        for generator in self._generator_list:
-            generated = generator(context)
-            if generated:
-                return generated
 
 
 class WeightedGenerator(Generator):
@@ -323,19 +192,6 @@ class WalkingGenerator(Generator):
                 history.add(current)
 
         return current
-
-
-class ImageGenerator(Generator):
-    def __call__(self, seed: str) -> ImageData:
-        raise NotImplementedError("Not implemented image generator")
-
-
-class UnsourcedImageGenerator(ImageGenerator):
-    def __init__(self, image_url_generator: Callable[[str], str]):
-        self._image_url_generator = image_url_generator
-
-    def __call__(self, seed: str) -> ImageData:
-        return ImageData(image_url=self._image_url_generator(seed))
 
 
 class RelatedMappingGenerator(Generator):

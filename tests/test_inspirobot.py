@@ -14,7 +14,7 @@ from talkgenerator.datastructures.slide_generator_data import ConstantWeightFunc
 from talkgenerator.schema.presentation_schema import PresentationSchema
 from talkgenerator.schema.slide_schemas import slide_generators
 from talkgenerator.schema.slide_topic_generators import IdentityTopicGenerator
-from talkgenerator.slide import powerpoint_slide_creator, slide_generator_types
+from talkgenerator.slide import slide_generator_types
 from talkgenerator.sources import inspirobot
 from talkgenerator.util import http_util, image_util, random_util
 
@@ -77,7 +77,6 @@ def _talk_json(int_seed, parallel):
         name="Numbers",
     )
     schema = PresentationSchema(
-        powerpoint_slide_creator.create_new_powerpoint,
         seed_generator=IdentityTopicGenerator,
         title_generator=lambda context: "Inspired by " + context["seed"],
         slide_generators=[title_slide, slide_generators.get("Inspirobot"), numbers],

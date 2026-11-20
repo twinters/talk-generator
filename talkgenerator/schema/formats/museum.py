@@ -25,10 +25,10 @@ and clean keynotes more often.
 
 from __future__ import annotations
 
+from functools import partial
 from typing import Any, Final
 
 from talkgenerator.closers import Closer, presenter, said
-from talkgenerator.datastructures.slide_generator_data import PeakedWeight, SlideGeneratorData
 from talkgenerator.images.slots import ImageSlot
 from talkgenerator.plan.kinds import AGENDA_ITEM, Recipe, Variant, pictured
 from talkgenerator.schema import content_generators as cg
@@ -36,21 +36,26 @@ from talkgenerator.schema.formats import (
     BIG_NUMBER_PICTURES,
     KPI_PICTURES,
     Format,
-    KindSlideGenerator,
     Made,
     artist,
     behind,
     different,
+    items,
     maybe,
     museum_name,
+    one_text,
+    part_slide,
     photos,
     provocation,
     text,
+    three_captions,
+    title_slide,
+    variables_of,
     words,
 )
-from talkgenerator.schema.formats.arcs import Arc, Free, InPart, Part
+from talkgenerator.schema.formats.arcs import Arc, Free, Part
 from talkgenerator.schema.slide_schemas import default_max_allowed_tags, slide_generators
-from talkgenerator.slide import slide_generator_types, slides
+from talkgenerator.slide import slides
 from talkgenerator.util import random_util
 
 PACK: Final = "museum"
@@ -106,15 +111,7 @@ MUSEUM: Final = Format(
 def _variables(context: dict[str, Any]) -> dict[str, Any]:
     """What the pack's templates may use: the slide's seed, the talk's topic, the presenter, the title, and the
     museum's and its old master's made-up names."""
-    variables = {key: context[key] for key in ("seed", "topic", "presenter", "title") if context.get(key)}
-    topic = str(context.get("topic") or context["seed"])
-    variables["museum"] = museum_name(topic)
-    variables["artist"] = artist(topic)
-    return variables
-
-
-def _items(prefix: str, texts: list[str]) -> dict[str, str | None]:
-    return {f"{prefix}_{index}": item for index, item in enumerate(texts, 1)}
+    return variables_of(context, museum=museum_name, artist=artist)
 
 
 def _year() -> str:
@@ -129,14 +126,6 @@ def title_generator(context: dict[str, Any]) -> str | None:
     """A classic tour's title, about the seed (the talk's topic)."""
     topic = str(context["seed"])
     return text(PACK, "title.talk_title", {**context, "museum": museum_name(topic), "artist": artist(topic)})
-
-
-def _title_if_not_generated(context: dict[str, Any]) -> str | None:
-    return context["title"] if context.get("title") is not None else title_generator(context)
-
-
-def _subtitle(context: dict[str, Any]) -> str | None:
-    return text(PACK, "title.subtitle", _variables(context))
 
 
 # Images: the museum's hall, the topic's paintings and works of art from museums' collections (public domain), a
@@ -174,11 +163,7 @@ _SOUVENIR = ImageSlot(
 
 
 # THE WELCOME: the museum's hall, full-bleed, the house rules, or the tour's stops
-
-
-def _welcome(context: dict[str, Any]) -> Made | None:
-    title = text(PACK, "welcome.welcome_title", _variables(context))
-    return ({"title": title}, {"image": _HALL(context)}) if title else None
+_welcome = one_text(PACK, _variables, "welcome.welcome_title", "title", image=_HALL)
 
 
 def _house_rules(context: dict[str, Any]) -> Made | None:
@@ -297,7 +282,7 @@ def _periods(context: dict[str, Any]) -> Made | None:
         return None
     texts = {
         "title": maybe(0.8, text(PACK, "eras.periods_title", variables)),
-        **_items("caption", [*periods, punchline]),
+        **items("caption", [*periods, punchline]),
     }
     return texts, {f"image_{index}": work for index, work in enumerate(photos(_ARTWORK, context, 3), 1)}
 
@@ -329,7 +314,7 @@ def _hierarchy(context: dict[str, Any]) -> Made | None:
     title = text(PACK, "eras.pyramid_title", variables)
     if not title or not top or not base or not levels:
         return None
-    return {"title": title, **_items("level", [top, *levels, base])}, {}
+    return {"title": title, **items("level", [top, *levels, base])}, {}
 
 
 # THE ARTEFACT: an odd object behind glass, a quiz on what it was for, or the news of its discovery
@@ -403,39 +388,15 @@ def _one_price(context: dict[str, Any]) -> Made | None:
     }, behind(context, BIG_NUMBER_PICTURES)
 
 
-def _souvenirs(context: dict[str, Any]) -> Made | None:
-    variables = _variables(context)
-    souvenirs = different(PACK, "gift_shop.souvenir", variables, 2)
-    punchline = text(PACK, "gift_shop.souvenir_punchline", variables)
-    if len(souvenirs) < 2 or not punchline:
-        return None
-    texts = {"title": text(PACK, "gift_shop.souvenirs_title", variables), **_items("caption", [*souvenirs, punchline])}
-    return texts, {f"image_{index}": photo for index, photo in enumerate(photos(_SOUVENIR, context, 3), 1)}
+_souvenirs = three_captions(
+    PACK, _variables, "gift_shop.souvenirs_title", "gift_shop.souvenir", "gift_shop.souvenir_punchline", _SOUVENIR
+)
 
 
 # THE SLIDE GENERATORS
 
 
-def _part(
-    part: str,
-    weight: float,
-    kind: str,
-    content: Any,
-    tags: list[str],
-    name: str,
-    recipe: Recipe,
-    repeats: int = 2,
-) -> SlideGeneratorData:
-    """A slide generator of one of the arc's parts: its slides are of the kind, classic ones from the content."""
-    return SlideGeneratorData(
-        KindSlideGenerator(kind, content),
-        weight_function=InPart(ARC, part, weight),
-        retries=3,
-        allowed_repeated_elements=repeats,
-        tags=[part, *tags],
-        name=f"{name} (Museum)",
-        llm=recipe,
-    )
+_part = partial(part_slide, ARC, "Museum")
 
 
 _TITLE_HINT = "the slide's title, as a museum's sign or its guide would say it: a few words"
@@ -444,14 +405,7 @@ _LABEL = "what the price buys, without the price itself, in a few words"
 _PRICE = "the price, with its currency, such as '€45'"
 
 _GENERATORS: Final = [
-    SlideGeneratorData(
-        slide_generator_types.TitleSlideGenerator.of(_title_if_not_generated, _subtitle),
-        allowed_repeated_elements=3,
-        weight_function=PeakedWeight((0,), 100000, 0),
-        tags=["title"],
-        name="Title slide (Museum)",
-        llm=Recipe("title"),
-    ),
+    title_slide(PACK, title_generator, _variables, "Museum"),
     # The welcome
     _part(
         "welcome",

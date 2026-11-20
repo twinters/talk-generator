@@ -60,14 +60,6 @@ def available() -> bool:
     return get_pixabay_session() is not None
 
 
-def search_horizontal(query: str) -> list[ImageData]:
-    return search_photos(query, orientation="horizontal")
-
-
-def search_vertical(query: str) -> list[ImageData]:
-    return search_photos(query, orientation="vertical")
-
-
 def search_photos(
     query: str | None, orientation: str = "all", colors: str | None = None, image_type: str = "photo"
 ) -> list[ImageData]:

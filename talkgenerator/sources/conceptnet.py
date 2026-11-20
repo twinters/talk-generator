@@ -234,10 +234,8 @@ def get_weighted_antonyms(word):
 
 # Weighted
 weighted_location_generator = generator_util.WeightedGenerator(get_weighted_related_locations)
-weighted_antonym_generator = generator_util.WeightedGenerator(get_weighted_antonyms)
 weighted_related_word_generator = generator_util.WeightedGenerator(get_weighted_related_words)
 
 # Unweighted
-unweighted_location_generator = generator_util.UnweightedGenerator(get_weighted_related_locations)
 unweighted_antonym_generator = generator_util.UnweightedGenerator(get_weighted_antonyms)
 unweighted_related_word_generator = generator_util.UnweightedGenerator(get_weighted_related_words)

@@ -7,6 +7,7 @@ import subprocess
 import sys
 import threading
 import warnings
+from collections import Counter
 from collections.abc import Callable, Iterable, Iterator
 from typing import Any, Final
 
@@ -14,6 +15,7 @@ from pptx.presentation import Presentation
 
 from talkgenerator import names, runtime_checker, settings, titles
 from talkgenerator import personas as talk_personas
+from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.design import engine, themes
 from talkgenerator.images import context as image_context
 from talkgenerator.images import generation as image_generation
@@ -23,7 +25,7 @@ from talkgenerator.images.generators import ImageGenerator
 from talkgenerator.llm.base import TextProvider
 from talkgenerator.llm.ledger import Budget, Ledger, MeteredProvider
 from talkgenerator.llm.providers import NoneProvider, from_settings, provider_from_spec
-from talkgenerator.models.deck import Deck, DeckSlide
+from talkgenerator.models.deck import DECORATION, Deck, DeckSlide
 from talkgenerator.models.events import (
     SlideEarly,
     SlideReady,
@@ -70,7 +72,7 @@ def generate_presentation_using_cli_arguments(args) -> tuple[Presentation | None
 
     # Print status details
     logger.info("******************************************")
-    logger.info("Making {} slide talk on: {}".format(args.num_slides, args.topic))
+    logger.info(f"Making {args.num_slides} slide talk on: {args.topic}")
 
     return _generate_presentation(
         schema=args.schema,
@@ -260,8 +262,8 @@ def _generate_presentation(
     llm_level is how much the language model does (see talkgenerator.plan.outline): "basic", one request a talk, in
     which it writes every slide from the word the talk's dice give it; or "advanced", as it first plans the talk (its
     thesis, a running gag, and every slide's word, among those the dice offer, or one of its own, and its idea: the
-    point it makes, what a chart measures or a diagram compares), and writes every slide in a request of its own as
-    soon as its idea is in, in parallel. None is the one TALKGENERATOR_LLM_LEVEL names, or else advanced on a model of
+    point it makes, what a chart measures or a diagram compares), and writes its slides as their ideas come in, a few
+    at a time, in parallel requests. None is the one TALKGENERATOR_LLM_LEVEL names, or else advanced on a model of
     your own that costs (Claude, OpenAI's, Gemini's, your ChatGPT plan's, OpenRouter's paid ones) and basic on the
     free ones.
     Classic talks have none; the deck says which level its slides were written at (llm_level: advanced only when the
@@ -354,7 +356,7 @@ def _generate_presentation(
 
     # The talk's random choices all come from its seed (a random one if none is given), see random_util
     rng = random_util.Rng(int_seed)
-    logger.info("Presentation seed: {} (pass it as int_seed to make this talk again)".format(rng.root_seed))
+    logger.info(f"Presentation seed: {rng.root_seed} (pass it as int_seed to make this talk again)")
 
     # Who presents it: a persona its seed picks among those it allows (a format beyond the TED-like talks it asks for
     # has its favourites: a startup founder pitches more often), unless it names one, or none (see
@@ -366,7 +368,7 @@ def _generate_presentation(
     picked = persona is None or persona.strip().lower() == talk_personas.RANDOM
     among = f", one of the {len(allowed)} it allows" if picked and len(allowed) < len(talk_personas.PERSONAS) else ""
     if chosen_persona is not None:
-        logger.info("Persona: {} ({}){}".format(chosen_persona.label, chosen_persona.voice, among))
+        logger.info(f"Persona: {chosen_persona.label} ({chosen_persona.voice}){among}")
     else:
         logger.info("Persona: none (the format's own talk)")
 
@@ -377,7 +379,7 @@ def _generate_presentation(
         among_formats = (
             f", one of the {len(format_names)} it allows" if len(format_names) < len(allowed_formats()) else ""
         )
-        logger.info("Format: {} (the talk's seed picked it, as its persona favours{})".format(schema, among_formats))
+        logger.info(f"Format: {schema} (the talk's seed picked it, as its persona favours{among_formats})")
     presentation_schema = named if named is not None else get_schema(schema)
     talk_format = presentation_schema.format
     policy = licenses.policy(license_policy if license_policy is not None else presentation_schema.license_policy)
@@ -395,9 +397,9 @@ def _generate_presentation(
         allows = ""
         if theme == themes.RANDOM and families is not None and families != themes.families(extreme_themes):
             allows = f", of one of the {len(families)} families it allows"
-        logger.info("Theme: {}{}".format(chosen_theme.name, allows))
+        logger.info(f"Theme: {chosen_theme.name}{allows}")
 
-    logger.info("Presentation schema: {}".format(presentation_schema))
+    logger.info(f"Presentation schema: {presentation_schema}")
     logger.info("License policy: {} ({})".format(policy.name, ", ".join(sorted(policy.classes))))
 
     if typed:  # (its topics, before a language model reads it: by talkgenerator's guess)
@@ -411,17 +413,17 @@ def _generate_presentation(
     else:
         topics = [part.strip() for part in topic.split(",")]
 
-    logger.info("Presentation topics: {}".format(topics))
-    logger.info("Presentation num_slides: {}".format(slides))
+    logger.info(f"Presentation topics: {topics}")
+    logger.info(f"Presentation num_slides: {slides}")
     logger.info(
         "Presentation presenter: {}".format(presenter or "made up ({})".format(", ".join(chosen_styles) or "classic"))
     )
-    logger.info("Presentation title: {}".format(title))
+    logger.info(f"Presentation title: {title}")
     if typed:
-        logger.info("Presentation topic or title: {}".format(typed))
-    logger.info("Presentation parallel: {}".format(parallel))
-    logger.info("Presentation int_seed: {}".format(int_seed))
-    logger.info("Presentation save_ppt: {}".format(save_ppt))
+        logger.info(f"Presentation topic or title: {typed}")
+    logger.info(f"Presentation parallel: {parallel}")
+    logger.info(f"Presentation int_seed: {int_seed}")
+    logger.info(f"Presentation save_ppt: {save_ppt}")
 
     # The language model that writes the talk, if any; every request it gets is written down in the talk's ledger
     provider = _language_model(llm)
@@ -429,7 +431,7 @@ def _generate_presentation(
     # How much it does: as asked, or TALKGENERATOR_LLM_LEVEL says, or else Advanced on a model of your own that costs
     level = outline.level(llm_level, provider)
     if provider is not None:
-        logger.info("Language model: {} ({} level)".format(provider.id, level))
+        logger.info(f"Language model: {provider.id} ({level} level)")
     elif language != "en":
         logger.warning("Talks in other languages than English need a language model: this one is in English")
 
@@ -437,18 +439,16 @@ def _generate_presentation(
     # slides a language model writes, whose texts say what a picture is to show
     generation = image_generation.for_talk(image_generator, image_budget, policy, ledger, topics, presenter)
     if generation is not None and provider is None:
-        logger.info("Classic talks generate no pictures: {} isn't asked".format(generation.generator.id))
+        logger.info(f"Classic talks generate no pictures: {generation.generator.id} isn't asked")
         generation = None
     if generation is not None:
-        logger.info(
-            "Image generator: {} (this talk may generate {})".format(generation.generator.id, generation.estimate())
-        )
+        logger.info(f"Image generator: {generation.generator.id} (this talk may generate {generation.estimate()})")
 
     # A vision model that picks its pictures among their candidates, if it's asked for: for the slides a language
     # model writes, whose image queries say what a picture is to show, in one request once they're settled
     picking = vision.for_talk(vision_pick, provider, ledger, budget, rng.child("vision pick"), presenter)
     if picking is not None:
-        logger.info("Vision pick: {}".format(picking.id))
+        logger.info(f"Vision pick: {picking.id}")
 
     # Generate the presentation object, finding its images by its license policy, theme and format
     # (with the persona's favourite looks, searched first for the looks they have one for)
@@ -497,13 +497,13 @@ def _generate_presentation(
         logger.info(ledger.summary())
 
     logger.info("**************************")
-    logger.info("Presentation generated: {}".format(presentation))
-    logger.info("Slide deck generated: {}".format(slide_deck))
+    logger.info(f"Presentation generated: {presentation}")
+    logger.info(f"Slide deck generated: {slide_deck}")
 
     cleaned_topics = ",".join(topics).replace(" ", "").replace(",", "_")
     file_name = "".join(e for e in cleaned_topics if e.isalnum() or e == "_")
 
-    logger.info("Slide deck structured data: {}".format(slide_deck.get_structured_data()))
+    logger.info(f"Slide deck structured data: {slide_deck.get_structured_data()}")
 
     # Save presentation
     presentation_file = None
@@ -672,6 +672,96 @@ def stream_talk(
         following.cancelled.set()  # (stops the talk, if it isn't done)
     if failures:
         raise failures[0]
+
+
+def regenerate_slide(deck: Deck, index: int, int_seed: int | None = None) -> DeckSlide:
+    """Another slide in place of the deck's index-th (from 0), for whoever shows the talk and doesn't want that one (a
+    live show's operator, say: talkgenerator.com's show mode). It takes a few seconds and no language model.
+
+    It's a classic slide of a kind the talk's format (its schema_name) has for that place, as the talk's persona weighs
+    them, about a word of the talk's topic, which the format's seed generator picks as it picks its slides' words (the
+    old slide's own word isn't in the deck); in a talk in another language than English, whose classic slides would be
+    English, a picture of that word without text, as a slide a language model didn't write becomes. Its pictures are
+    found by the talk's license policy and theme, and it repeats none of the deck's pictures (the old slide's neither),
+    nor more of its texts than its kind allows. Images are probed rather than downloaded, as in stream_talk: a browser
+    that shows the slide loads them itself.
+
+    It's laid out in the old slide's theme (the deck's, or its own in a chaos deck) and numbered as that slide ("3/8"),
+    in a layout of its own: the slides around it stay as they are. A classic deck's slide (the 2019 template) isn't
+    laid out, as its slides aren't. The talk's title slide and its closer (D76) can't be made again, as they're the
+    talk's own (a ValueError), nor a slide the deck doesn't have (an IndexError); a RuntimeError when no slide comes out
+    (every kind of slide failed, its sources out of reach, say). The same int_seed gives the same slide, as long as the
+    sources give the same answers."""
+    slides = deck.slides
+    if not 0 <= index < len(slides):
+        raise IndexError(f"The deck has no slide {index + 1}: it has {len(slides)}")
+    old = slides[index]
+    if old.closer:
+        raise ValueError("The closer can't be made again: it's the talk's own end")
+    if old.type == "title":
+        raise ValueError("The title slide can't be made again: it's the talk's own")
+    try:
+        presentation_schema = get_schema(deck.schema_name or "default")
+    except KeyError:
+        presentation_schema = get_schema("default")  # (a format this talkgenerator doesn't have)
+    persona = None
+    if deck.persona is not None:
+        try:
+            persona = talk_personas.persona(deck.persona.name)
+        except ValueError:
+            persona = None  # (a persona this talkgenerator doesn't have)
+    rng = random_util.Rng(int_seed)
+    topics = list(deck.topics) or [DEFAULT_PRESENTATION_TOPIC]
+    total = deck.counted()  # (the slides its numbers count, "7/12": all but the closer)
+    talk = {
+        "topic": topics[0],
+        "topics": topics,
+        "presenter": deck.presenter,
+        "title": deck.title,
+        "language": deck.language,
+    }
+    persona_looks = persona.looks if persona is not None else {}
+    images = image_context.ImageContext(
+        licenses.policy(deck.license_policy),
+        palette(deck.style),
+        presentation_schema.looks,
+        persona_looks=persona_looks,
+    )
+    with image_util.probing(), image_context.for_talk(images):
+        made = presentation_schema.another_slide(index, total, talk, rng, _used_elements(deck), persona)
+    if made is None:
+        raise RuntimeError(f"No slide came out in place of slide {index + 1}")
+    made.add_note(f"Made again, in place of slide {index + 1}")
+    for image in made.image_store().values():  # (a picture shown is a picture used, as in stream_talk)
+        image.mark_used()
+    deck_slide = made.to_deck_slide()
+    theme = old.style or deck.style
+    if theme is None:
+        return deck_slide
+    before = slides[:index]
+    return engine.lay_out_slide(
+        deck_slide,
+        theme,
+        rng.child("layout", index),
+        own_style=old.style is not None,
+        previous=before[-1].layout if before else None,
+        used=Counter(slide.layout for slide in before),
+        number=index,
+        total=total,
+    )
+
+
+def _used_elements(deck: Deck) -> set[Any]:
+    """What the deck's slides show, for a slide made again not to repeat it: their pictures (by their address, as a
+    talk's slides tell theirs apart) and their texts, but the decoration's (a slide's number)."""
+    used: set[Any] = set()
+    for slide in deck.slides:
+        for element in slide.elements:
+            if element.kind == "image":
+                used.add(ImageData(element.image.url))
+            elif element.kind == "text" and element.role != DECORATION:
+                used.add(element.text)
+    return used
 
 
 class _Following:
@@ -955,7 +1045,7 @@ def save_deck_to_json(deck: Deck, output_folder: str, file_name: str, next_to: s
         path = _unused_path(pathlib.Path(output_folder), file_name, ".json")
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(deck.to_json(), encoding="utf-8")
-    logger.info("Saved the deck as JSON to {}".format(path))
+    logger.info(f"Saved the deck as JSON to {path}")
     return str(path)
 
 
@@ -984,7 +1074,7 @@ def save_presentation_to_pptx(output_folder: str, file_name: str, prs, index=0) 
 
     try:
         prs.save(fp)
-        logger.info("Saved talk to {}".format(fp))
+        logger.info(f"Saved talk to {fp}")
         return fp
     except PermissionError:
         return save_presentation_to_pptx(output_folder, file_name, prs, index + 1)
@@ -1201,7 +1291,7 @@ def get_argument_parser():
         "--parallel",
         default=True,
         type=str2bool,
-        help=("Generated powerpoint will generate in parallel " + "faster but drops some conditions)"),
+        help="Makes the slides at the same time, which is faster; the talk comes out the same either way",
     )
     parser.add_argument(
         "--print_logs",
@@ -1254,7 +1344,7 @@ def get_argument_parser():
         choices=outline.LEVELS,
         help="How much the language model does: basic (one request a talk: it writes every slide from the word the "
         "talk's dice give it) or advanced (it first plans the talk, its thesis, a running gag and every slide's word "
-        "and idea, and writes every slide in a request of its own as soon as its idea is in, in parallel: cleverer "
+        "and idea, and writes its slides as their ideas come in, a few at a time, in parallel requests: cleverer "
         "talks, as fast, for more requests) (default: TALKGENERATOR_LLM_LEVEL's, or else advanced on a model of your "
         "own that costs and basic on free models)",
     )

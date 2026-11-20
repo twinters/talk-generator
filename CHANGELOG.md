@@ -8,6 +8,12 @@ and the project follows [Semantic Versioning](https://semver.org/).
 
 <!-- Add changes here as you merge them; release.py moves them under the new version at release time. -->
 
+### Added
+
+- `generator.regenerate_slide(deck, index)` makes another slide for a finished talk's place, in a few seconds and
+  without a language model, laid out in the slide's theme and numbered as the old one: for a live show's operator who
+  doesn't want a slide (talkgenerator.com's show mode). The title slide and the closer can't be made again.
+
 ### Changed
 
 - Useless facts come from a pool of 500 a week instead of 12, so the same few no longer come back talk after talk,

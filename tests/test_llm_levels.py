@@ -411,7 +411,7 @@ def quotes(seeds, monkeypatch):
     from talkgenerator.datastructures.slide_generator_data import ConstantWeightFunction, SlideGeneratorData
     from talkgenerator.plan.kinds import Recipe
     from talkgenerator.schema.presentation_schema import PresentationSchema
-    from talkgenerator.slide import powerpoint_slide_creator, slide_generator_types
+    from talkgenerator.slide import slide_generator_types
     from talkgenerator.util.generator_util import NoneGenerator, StaticGenerator
     from tests.test_llm_talks import _photo, _photos
 
@@ -429,7 +429,6 @@ def quotes(seeds, monkeypatch):
         llm=Recipe("statement", images=(_photos,), texts_from={"text": real_quotes}),
     )
     schema = PresentationSchema(
-        powerpoint_slide_creator.create_new_powerpoint,
         seed_generator=_Seeds,
         title_generator=lambda context: "A classic title",
         slide_generators=[*seeds.slide_generators, quote],
