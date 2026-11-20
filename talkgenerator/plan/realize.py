@@ -76,6 +76,42 @@ _WORD: Final = re.compile(r"(?<=\s)\S+")
 # A backslash before a quote mark, as some models escape one where their JSON needn't (what\'s)
 _STRAY_ESCAPE: Final = re.compile(r"\\(?=['\"’])")
 
+# TACKED-ON TAGS (docs/v5-plan.md, D85): what models add to the end of a line to make it funny, the jokes the user
+# found most tiresome ("adds a lot of words at the end like 'twice' or ', on a Tuesday', as if that's a joke",
+# 2026-11-21). The prompt asks for none; in an English talk, these go where a model wrote one anyway: a count, a hedge,
+# a day or 3 a.m. after a comma or in brackets ("Independent thinker, allegedly"), the same as a fragment of its own
+# after a sentence ("Wore them under tights. Twice."), and a day at the very end ("Waited four hours on a Tuesday"),
+# as long as a few words are left ("Yes, twice", a chart's funny answer, stays)
+_DAY: Final = r"(?:mon|tues|wednes|thurs|fri|satur|sun)day"
+_TAG: Final = (
+    r"(?:twice|thrice|again|allegedly|apparently|reportedly|supposedly|probably|somehow|technically"
+    rf"|(?:on|every) (?:a )?{_DAY}s?|at 3 ?a\.?m\.?)"
+)
+_FRAGMENT_TAG: Final = re.compile(rf"(?<=[.!?…])\s+{_TAG}[.!?…]*$", re.IGNORECASE)
+_CLAUSE_TAG: Final = re.compile(rf"\s*(?:,\s*{_TAG}|\(\s*{_TAG}\s*\))(?P<end>[.!?…]*)$", re.IGNORECASE)
+_DAY_TAG: Final = re.compile(rf"\s+on a {_DAY}(?P<end>[.!?…]*)$", re.IGNORECASE)  # (not "closed on Sundays")
+# How many words a text keeps at least, for its tag to go (and for a day at its very end, which needs no comma)
+_UNTAGGED_WORDS: Final = 2
+_UNDAYED_WORDS: Final = 3
+_WORDS: Final = re.compile(r"\w+")
+
+
+def untagged(text: str, language: str = languages.ENGLISH.code) -> str:
+    """The text without a tag tacked on to its end to make it funny (see _TAG: "twice", ", allegedly", "on a
+    Tuesday"), in an English talk: each of a list's things (separated by |) on its own. The text as it is in
+    another language, or when what's left would be too short to say anything."""
+    if language != languages.ENGLISH.code:
+        return text
+    if "|" in text:
+        parts = text.split("|")
+        cleaned = [untagged(part.strip()) for part in parts]
+        return text if cleaned == [part.strip() for part in parts] else " | ".join(cleaned)
+    for pattern, fewest in ((_FRAGMENT_TAG, _UNTAGGED_WORDS), (_CLAUSE_TAG, _UNTAGGED_WORDS), (_DAY_TAG, _UNDAYED_WORDS)):
+        shorter = pattern.sub(lambda found: found.groupdict().get("end") or "", text).rstrip()
+        if shorter != text and len(_WORDS.findall(shorter)) >= fewest:
+            return untagged(shorter, language)  # (a tag before it too: "Late, again, on a Tuesday")
+    return text
+
 
 def length_limit(text_field: TextField) -> int:
     """How long a text of the field may be before it's cut: a little longer than the field's length (by an eighth,
@@ -88,7 +124,8 @@ def length_limit(text_field: TextField) -> int:
 
 def clean_text(value: Any, text_field: TextField, language: str = "en") -> str | None:
     """The text as it goes on a slide: on one line, without wrapping quote marks or brackets that name a slide by its
-    key in the model's answer ("(from slide_03)"), and cut to the field's length when it's longer than its
+    key in the model's answer ("(from slide_03)"), in an English talk without a tag tacked on to its end to make it
+    funny (", allegedly", "on a Tuesday": see untagged), and cut to the field's length when it's longer than its
     length_limit (between words, and not after a little word of its language, such as "the"; a list, between its
     things; a presenter's job only where a phrase of it ends, or else not at all: see TextField.phrases), or the
     option it names when the field is a choice. Its emoji count as two characters each, however many
@@ -104,6 +141,7 @@ def clean_text(value: Any, text_field: TextField, language: str = "en") -> str |
         return None
     if "|" in text:
         text = _folded(text)
+    text = untagged(text, language)
     extra = len(text) - emoji_util.room(text)  # (the characters its emoji are written with, beyond their room)
     if len(text) > length_limit(text_field) + extra:
         if text_field.phrases:  # (a presenter's job: where a phrase of it ends, or not at all, D81)
