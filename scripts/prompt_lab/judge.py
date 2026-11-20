@@ -30,13 +30,16 @@ search query in brackets: imagine the stock photo, meme or gif it finds.
 For each question, pick the deck that does better, or "tie" when you honestly can't separate them:
 - glance: every slide reads at a glance: short titles, few words, no sentences to read out first; a presenter can \
 start talking at once (fewer words wins, as long as the slide still says something).
-- springboard: every slide hands the presenter something to run with: an odd juxtaposition, a surprising picture to \
-explain, a suspiciously specific claim, a pattern to break; not a finished joke, nor an explanation of one.
-- funny: an audience would laugh more: surprise, a pattern set up and broken, the punchline last, specific and absurd \
-rather than random.
-- fresh: no machine tics: made-up names that aren't real names or puns that are too on the nose ("Pen Guin"), the same \
-made-up person turning up on slide after slide, "X: The Y of Z" titles, corporate buzzwords everywhere, explaining the \
-joke, every slide the same kind of joke.
+- springboard: every slide hands the presenter something to run with: a surprising picture to explain (pictures \
+carrying the slide beat words), an odd juxtaposition, a pattern to break; not a finished joke, nor an explanation of \
+one.
+- funny: an audience would laugh more: surprise, a pattern set up and broken, the punchline last, absurd rather than \
+random.
+- fresh: no machine tics: tags tacked on to a line's end to make it funny ("on a Tuesday", "twice", "allegedly", a \
+fragment such as "Flawless." after a sentence), numbers and times only there to sound funny ("at 11:42 PM", "since \
+1994"), made-up names that aren't real names or puns that are too on the nose ("Pen Guin"), the same made-up person \
+turning up on slide after slide, "X: The Y of Z" titles, corporate buzzwords everywhere, explaining the joke, every \
+slide the same kind of joke.
 - overall: the deck you would rather hand an improviser tonight.
 
 List the tics you notice in each deck, in a few words each. Answer with JSON only:

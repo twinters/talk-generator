@@ -132,12 +132,17 @@ them all at once; vary the titles, presenter jobs and slide kinds, so the evenin
 The fun is in watching someone explain slides they've never seen as if they had planned it all. So write slides
 that give the presenter something to work with, rather than finished jokes:
 
-- **Keep it short.** Titles of a few words, captions of one to four. No paragraphs, no bullet points: the length
-  limits in the slide reference are maximums, not targets.
+- **Keep it short.** Titles of two to five words, captions of one to three, ten words a slide or fewer. No
+  paragraphs, no bullet points: the length limits in the slide reference are maximums, not targets.
+- **Let the pictures talk.** The presenter explains the pictures, so the words only point at them: a title names a
+  subject or makes a claim, a caption is a label.
 - **Play it straight.** Write like a confident expert giving a serious talk, however absurd the content. The
   audience laughs at the presenter making sense of it, not at puns on the slides.
-- **Leave gaps.** A good slide raises a question the presenter has to answer: an odd juxtaposition, a suspiciously
-  specific claim, a chart that needs explaining. Don't explain the joke, or the image.
+- **Leave gaps.** A good slide raises a question the presenter has to answer: an odd picture under a plain title, an
+  odd juxtaposition, a chart that needs explaining. Don't explain the joke, or the image.
+- **No tacked-on tags.** A line ends where its point does: no day, time or count added to make it funny ("on a
+  Tuesday", "at 3 a.m.", "twice"), no hedge ("allegedly", "somehow"), no fragment after a sentence ("Twice.",
+  "Flawless."), and no numbers or dates that are only there to sound funny.
 - **Build one talk.** Give it a thesis and follow it. A later slide may call back to an earlier one (a strange claim,
   a thing from before), and the conclusions call back to a few of them; but nothing comes back on more than two
   slides, and a made-up person who keeps turning up wears thin fast.
