@@ -268,7 +268,8 @@ def _problems(picks):
 
 @pytest.mark.parametrize(
     ("schema_name", "slide", "fewest", "most"),
-    [("pitch", 2, 0.62, 0.82), ("academic", 2, 0.7, 0.88), ("default", 3, 0.16, 0.32), ("ted", 3, 0.24, 0.42)],
+    # (an academic talk's a little more often since D85, as the slides of words it could open on instead count for half)
+    [("pitch", 2, 0.62, 0.82), ("academic", 2, 0.7, 0.92), ("default", 3, 0.16, 0.32), ("ted", 3, 0.24, 0.42)],
 )
 def test_most_pitches_and_academic_talks_open_on_their_problem_and_some_ted_like_talks(
     schema_name, slide, fewest, most

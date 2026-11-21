@@ -208,12 +208,24 @@ def _slots(pack: packs.Pack) -> Iterator[tuple[packs.Slot, str]]:
                 yield slot, f"{grammar}.{rule}"
 
 
+# The fields whose length D85 lowered for the language model (captions, a post, a big number's label and source), at
+# the lengths the packs' classic texts were written for, which they keep until they're shortened too
+_BEFORE_D85: dict[str, int] = {
+    **dict.fromkeys(("two_columns.caption_1", "two_columns.caption_2"), 40),
+    **dict.fromkeys(("three_columns.caption_1", "three_columns.caption_2", "three_columns.caption_3"), 40),
+    "social_post.text": 90,
+    "big_number.label": 50,
+    "big_number.source": 60,
+}
+
+
 def _limit(slot: packs.Slot) -> int:
     if slot.limit is not None:
         return slot.limit
     assert slot.field is not None, slot
     kind, name = slot.field.split(".")
-    return next(text.max_length for text in KINDS[kind].texts if text.name == name)
+    asked = next(text.max_length for text in KINDS[kind].texts if text.name == name)
+    return max(asked, _BEFORE_D85.get(slot.field, 0))
 
 
 def _references(template: str) -> list[str]:

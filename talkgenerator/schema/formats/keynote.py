@@ -382,7 +382,7 @@ _GENERATORS: Final = [
             "image",
             (_PRODUCT,),
             brief="The reveal: the product, in one photo, under a title that introduces it by its made-up name",
-            hints={"title": "a title that introduces the product by its made-up name, such as 'Introducing ...'"},
+            hints={"title": "a title that introduces the product by its made-up name, starting with 'Introducing'"},
         ),
     ),
     _part(

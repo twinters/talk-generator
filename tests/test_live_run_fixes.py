@@ -147,7 +147,8 @@ def test_the_longest_historical_figures_title_fits_a_brutalist_theme(images):
 
 def test_a_cut_ends_where_a_clause_does():
     caption = KINDS["two_columns"].texts[1]
-    assert caption.name == "caption_1" and caption.max_length == 40
+    # (asked for in 24 characters since D85, and cut at the 40 its slides hold)
+    assert caption.name == "caption_1" and (caption.max_length, caption.room) == (24, 40)
     cases = {
         # (free models' conclusions, cut at 40 characters, read "Your plants are not decorations—they")
         "Your plants are not decorations—they're coworkers with feelings": "Your plants are not decorations",
@@ -181,7 +182,8 @@ def test_the_model_is_asked_for_conclusions_of_a_few_words():
     conclusions = next(generator for generator in slide_schemas.conclusion_slide_generators if generator.llm)
     assert conclusions.llm is not None
     hint = prompt.field_description(conclusions.llm, conclusions.llm.written_fields()[1])
-    assert "six words at most" in hint and "at most 40 characters" in hint
+    # (four words in a caption's 24 characters since D85: six before, in 40)
+    assert "four words at most" in hint and "at most 24 characters" in hint
 
 
 # QUIZZES

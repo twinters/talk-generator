@@ -165,6 +165,9 @@ def test_every_new_layout_comes_up_and_needs_what_it_says(images):
     pictured = [slides.QuestionsSlide("Questions?", "Remember this one?", _image("wide")) for _ in range(3)]
     # (a section over a picture of what it's about: D80)
     pictured += [slides.SectionSlide("The dark years", "In which the cat sleeps", None, _image("wide"))]
+    # (a quiz whose options are pictures: D85)
+    four = {f"option_{index}": _image("wide") for index in range(1, 5)}
+    pictured += [slides.QuizSlide("Which one?", "A", "B", "C", "D", "B", pictures=four)]
     for seed in range(12):
         made = [*runs_of_new_types(_image("wide")), *pictured]  # (a closing slide with a picture to end on: D65)
         seen |= {slide.layout for slide in _deck(made, _theme(seed=seed), seed).slides}
@@ -183,6 +186,7 @@ def test_every_new_layout_comes_up_and_needs_what_it_says(images):
     pictured = slides.BigNumberSlide(None, "3.2 million", "hairballs", None, _image("wide"))
     assert fitting(pictured) == ["v5/big-number", "v5/big-number-band"]
     assert fitting(slides.QuizSlide("Why?", "A", "B", "C", None, "A")) == ["v5/quiz-list"]
+    assert fitting(slides.QuizSlide("Why?", "A", "B", "C", None, "A", pictures=four)) == ["v5/quiz-pictures"]
     assert fitting(slides.KpiSlide("KPIs", "1", "A", "2", "B", "3", "C")) == ["v5/kpi-rows", "v5/kpi-tiles"]
     assert "v5/kpi-grid" not in fitting(slides.KpiSlide("K", "1", "A", "2", "B", "3", "C", "1,000,000,000", "D"))
     assert fitting(slides.SocialPostSlide(None, "Ann", "ann", "Hi", None)) == ["v5/post"]

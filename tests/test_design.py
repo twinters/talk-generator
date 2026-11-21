@@ -439,10 +439,31 @@ def _d80_slides(image):
     ]
 
 
+def _d85_slides(wide, tall):
+    """D85's lists of pictures: quizzes whose options are pictures (four, three, and four of which one found none and
+    shows its words), and a tier list, red flags, an alignment chart and reviews that are all pictures."""
+    four = {f"option_{index}": picture for index, picture in enumerate((wide, tall, wide, tall), 1)}
+    # (the quizzes apart: a quiz of pictures fits one layout)
+    return [
+        slides.QuizSlide("Which one is the cat?", "A", "B", "C", "D", "C", "It purrs", pictures=four),
+        slides.TierListSlide(
+            "Cat toys, ranked", "a", "b", "c", "d", "e", pictures={f"{tier}_tier": wide for tier in "sabcf"}
+        ),
+        slides.QuizSlide("Which one?", "A", "B", "C", None, "A", pictures={**four, "option_4": None}),
+        slides.RedFlagsSlide("Flags", "a", "b", "c", pictures={f"flag_{index}": tall for index in (1, 2, 3)}),
+        slides.QuizSlide("Which?", "A", "B", "C", "A sofa, probably", "D", pictures={**four, "option_4": None}),
+        slides.AlignmentChartSlide("Cats", *_axes(), *"abcdefghi", pictures=dict.fromkeys(slides.ALIGNMENTS, wide)),
+        slides.ReviewsSlide(
+            "Said", "5", "a", "Ann", "4", "b", "Bob", "1", "c", "Cy", pictures={f"review_{i}": wide for i in (1, 2, 3)}
+        ),
+    ]
+
+
 def _d80_runs(seed=1, theme=None):
-    """A deck of D80's slides, twice: one of its own, as _runs's slides would number past 199 with them, wider than
-    some families' corners hold."""
-    return _slide_deck_of([*_d80_slides(_image("wide")), *_d80_slides(_image("wide"))], seed, theme)
+    """A deck of D80's slides, twice, and D85's: one of its own, as _runs's slides would number past 199 with them,
+    wider than some families' corners hold."""
+    wide, tall = _image("wide"), _image("tall")
+    return _slide_deck_of([*_d80_slides(wide), *_d80_slides(wide), *_d85_slides(wide, tall)], seed, theme)
 
 
 def _slide_deck_of(made, seed, theme):

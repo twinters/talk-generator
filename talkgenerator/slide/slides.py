@@ -566,7 +566,8 @@ class KpiSlide(DrawnSlide):
 
 class QuizSlide(DrawnSlide):
     """A quiz: a question, and three or four options (A to D), appearing one by one, a click each; on the click
-    after them, the answer (the letter of the right option) and its explanation, if any."""
+    after them, the answer (the letter of the right option) and its explanation, if any. An option may be a picture
+    in its words' place (by its number: "option_2"), as a quiz's options are pictures now and then (D85)."""
 
     required_arguments = ("question", "option_1", "option_2", "option_3", "answer")
 
@@ -580,12 +581,16 @@ class QuizSlide(DrawnSlide):
         answer: str | None,
         explanation: str | None = None,
         language: Language = ENGLISH,
+        pictures: Mapping[str, ImageData | None] | None = None,
     ):
         options = (option_1, option_2, option_3, option_4)
-        arguments: dict[str, str | None] = {"question": quiz_question(question, language)}
-        for index, option in enumerate(options, 1):
+        shown = [(pictures or {}).get(f"option_{index}") if option else None for index, option in enumerate(options, 1)]
+        arguments: dict[str, Any] = {"question": quiz_question(question, language)}
+        for index, (option, picture) in enumerate(zip(options, shown, strict=True), 1):
             arguments[f"letter_{index}"] = LETTERS[index - 1] if option else None
-            arguments[f"option_{index}"] = option
+            arguments[f"option_{index}"] = option if picture is None else None
+            if picture is not None:
+                arguments[picture_role(f"option_{index}")] = picture
         # (the answer is the letter of one of the options, or none: then the slide misses it)
         letter = (answer or "").strip()[:1].upper()
         known = letter in LETTERS and bool(options[LETTERS.index(letter)])
@@ -594,7 +599,7 @@ class QuizSlide(DrawnSlide):
         super().__init__("quiz", arguments)
 
     def clicks(self) -> dict[str, int]:
-        options = [(f"letter_{index}", f"option_{index}") for index in range(1, 5)]
+        options = [(f"letter_{index}", *_or_its_picture(f"option_{index}")) for index in range(1, 5)]
         return self._one_by_one(*options, ("answer", "explanation"))
 
 

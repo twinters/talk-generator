@@ -76,8 +76,9 @@ says what they cost.
 | `TALKGENERATOR_THEME` | The look of talks that don't ask for one, as `--theme` takes it (*default: `random`*); `classic` keeps the 2019 template |
 | `DISABLE_<SOURCE>` | `1` switches a source off: `REDDIT`, `UNSPLASH`, `PIXABAY`, `PEXELS`, `GIPHY`, `OPENVERSE`, `WIKIMEDIA_COMMONS`, `ART_INSTITUTE`, `WIKIHOW`, `WIKIQUOTE`, `SHITPOSTBOT`, `INSPIROBOT`, `MET`, `CLEVELAND`, `WELLCOME`, `NASA`, `SMITHSONIAN`, `FLAGS`, `IMGFLIP`, `CONCEPTNET`, `WIKIPEDIA`, `OPENTDB` (Open Trivia DB), `USELESS_FACTS`, `DAD_JOKES` or `ADVICE_SLIPS` (the flavour texts), such as `DISABLE_WIKIHOW=1` |
 | `DISABLE_FACTS` | `1` switches the [real facts](language-models.md#real-facts) off |
-| `DISABLE_PICTURE_FIRST` | `1` keeps charts and diagrams as they are: without it, half of them try a picture first, in their place, under their title |
+| `DISABLE_PICTURE_FIRST` | `1` keeps charts and diagrams as they are: without it, three in four of them try a picture first, in their place, under their title |
 | `DISABLE_PATTERN_BREAKS` | `1` keeps lists and diagrams as they are: without it, their punchline breaks the pattern now and then (an emoji alone, a few words, or a picture in its place) |
+| `DISABLE_PICTURED_LISTS` | `1` keeps lists in words: without it, in a talk a language model writes, every thing of a list is a picture in its words' place now and then (a quiz's options, a tier list's tiers, red flags, an alignment chart's cells, reviews) |
 | `DISABLE_TITLE_PICTURES` | `1` keeps title slides without a photo: without it, a talk's title slide shows a photo of its world beside its title (its format's or its persona's), searched from the talk's start |
 | `CONCEPTNET_API_URL` | A ConceptNet API of your own (*default: the public one, `https://api.conceptnet.io`*) |
 | `UNSPLASH_APP_NAME` | Your app's name at Unsplash, for the `utm_source` of the links to photographers (*default: `talkgenerator`*) |

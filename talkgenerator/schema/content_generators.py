@@ -93,8 +93,8 @@ wikihow_bold_statement_generator = generate_wikihow_bold_statement
 anecdote_prompt_generator = _PACK.templates("statements.anecdote")
 
 # QUOTES: mostly Goodreads, with Wikiquote for variety and as a backup when one of them fails; shorter since D80, as a
-# presenter reads a quote at a glance (the judges of the prompt lab found the long ones "wordy" and "random")
-quote_generator = CombinedGenerator((3, GoodReadsQuoteGenerator(160)), (1, WikiquoteQuoteGenerator(160)))
+# presenter reads a quote at a glance (the judges of the prompt lab found the long ones "wordy" and "random"), and 100
+# characters at most everywhere since D85 (a statement's and a historical figure's were 160)
 short_quote_generator = CombinedGenerator((3, GoodReadsQuoteGenerator(100)), (1, WikiquoteQuoteGenerator(100)))
 
 # DOUBLE CAPTIONS

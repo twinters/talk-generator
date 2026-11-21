@@ -79,8 +79,8 @@ Two captioned images side by side.
 | Text | At most | What to write |
 | --- | --- | --- |
 | `title` | 45 | the slide's title (or empty, for none) |
-| `caption_1` | 40 | the left caption |
-| `caption_2` | 40 | the right caption |
+| `caption_1` | 24 | the left caption |
+| `caption_2` | 24 | the right caption |
 
 Images: `image_1`, `image_2`
 
@@ -97,9 +97,9 @@ Three captioned images side by side.
 | Text | At most | What to write |
 | --- | --- | --- |
 | `title` | 45 | the slide's title (or empty, for none) |
-| `caption_1` | 40 | the left caption |
-| `caption_2` | 40 | the middle caption |
-| `caption_3` | 40 | the right caption |
+| `caption_1` | 24 | the left caption |
+| `caption_2` | 24 | the middle caption |
+| `caption_3` | 24 | the right caption |
 
 Images: `image_1`, `image_2`, `image_3`
 
@@ -187,7 +187,7 @@ A made-up social media post with a photo: who posted it, and what they wrote (ta
 | `title` | 45 | the slide's title (or empty, for none) |
 | `author` | 30 | the made-up name of who posted it: a real first name and a surname |
 | `handle` | 24 | their made-up username, without the @ |
-| `text` | 90 | the post: what they wrote, in one or two short sentences, without hashtags or emoji |
+| `text` | 60 | the post: what they wrote, in one short sentence, without hashtags or emoji |
 
 Images: `photo`
 

@@ -57,6 +57,9 @@ _LEFTOVERS: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"<(?:built-in method|bound method|function|lambda)\b"), "Python code"),
     (re.compile(r"\b(?:ImageData|ChartData|XyChartData|DeckSlide)\("), "a Python object"),
     (re.compile(_SLIDE_KEY, re.IGNORECASE), "a slide's key in the language model's answer"),
+    # (an example's gap that a free model copied, as in "Don't we all secretly want to ...?" or "The time I ...", D85;
+    # not an ellipsis at a word's end, as in "But why...?")
+    (re.compile(r"(?<=\s)(?:\.\.\.|…)\s*[?!]?$"), "a placeholder of an example"),
 )
 # A word followed by None, as in "About None": a template variable that was None. (Not "None of us were ready")
 _NONE = re.compile(r"\S\s+None\b|^None$")

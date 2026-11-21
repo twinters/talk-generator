@@ -52,7 +52,8 @@ class Search:
     classes: frozenset[LicenseClass] = frozenset()
 
 
-# The candidates a search found, in the order of its results, each with its weight (for ShitpostBot: its rating)
+# The candidates a search found, in the order of its results, each with its weight (for ShitpostBot: its rating; for
+# Reddit: by its upvotes, D85)
 Found = list[tuple[float, ImageData]]
 
 
@@ -185,7 +186,8 @@ def _reddit(flavour: profiles.Flavour) -> Callable[[Search], Found]:
         found = reddit.search_images(subreddits, search.query, animated=flavour.animated)
         if not found and not planned():  # (as v4: the hot posts, for a classic search that found none)
             found = reddit.search_images(subreddits, None, animated=flavour.animated)
-        return _plain([reddit.image_data(image) for image in found or ()])
+        # (the upvoted ones more likely: D85)
+        return [(reddit.upvoted(image), reddit.image_data(image)) for image in found or ()]
 
     return search
 

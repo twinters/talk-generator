@@ -57,7 +57,8 @@ among the candidates.
 Flavour packs are looks of weird content from curated sets of subreddits: `cursed`, `wholesome`, `bad-charts`,
 `medieval`, `liminal`, `retro-futurism`, `accidental-art`, `pareidolia` and `corporate-cringe`, among others. Reddit's
 NSFW mark and the finder's filters keep them safe for work, and so does a post's title that says what Reddit didn't
-mark ("naked", "topless"). `talkgenerator formats --looks` lists every look, and
+mark ("naked", "topless"). Of the posts a search finds most relevant, the more upvoted ones' pictures are picked
+more often. `talkgenerator formats --looks` lists every look, and
 `talkgenerator formats --details` names the looks of every recipe's images.
 
 A talk's persona (`--persona`) has favourite looks for some of the looks slides ask for, which are searched first: a

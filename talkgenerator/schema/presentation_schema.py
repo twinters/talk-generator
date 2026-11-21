@@ -70,6 +70,7 @@ from talkgenerator.plan.kinds import (
     Recipe,
     picture_version,
     pictures_first,
+    wordiness,
 )
 from talkgenerator.plan.outline import (
     ADVANCED,
@@ -2928,14 +2929,16 @@ class PresentationSchema:
     def _get_weighted_generators_for_slide_nr(
         self, slide_nr, total_slides, prohibited_generators, persona: Persona | None = None
     ):
-        """Every generator that's allowed, with its weight for the slide: its own, times the persona's multiplier for
-        its tags (see talkgenerator.personas.Persona.weight)."""
+        """Every generator that's allowed, with its weight for the slide: its own, half of it for a kind of slide that's
+        mostly words (D85: see talkgenerator.plan.kinds.wordiness), times the persona's multiplier for its tags (see
+        talkgenerator.personas.Persona.weight)."""
         weighted_generators = []
         for i in range(len(self._slide_generators)):
             generator = self._slide_generators[i]
             if generator in prohibited_generators:
                 continue
             weight = generator.get_weight_for(slide_nr, total_slides)
+            weight *= wordiness(generator.llm.kind if generator.llm is not None else None)
             if persona is not None:
                 weight *= persona.weight(generator.get_tags())
             weighted_generators.append((weight, generator))

@@ -80,7 +80,7 @@ _SEQUENCE_VARIANTS = (
 # (from slide_03)": the slide's key in its answer; and lessons as whole sentences, which a caption's 40 characters cut,
 # as in "Your plants are not decorations—they")
 _CALLBACK = (
-    "a lesson from the talk in six words at most, calling back to an earlier slide by what it said (not by its number "
+    "a lesson from the talk in four words at most, calling back to an earlier slide by what it said (not by its number "
     "or key): a new twist on it, never a recap"
 )
 
@@ -210,7 +210,7 @@ history_slide_generators = _register(
                 cg.historical_name_generator,
                 cg.vintage_person_generator,
                 NoneGenerator(),
-                cg.quote_generator,
+                cg.short_quote_generator,
             ),
             weight_function=PeakedWeight((2, 3), 20, 0.3),
             allowed_repeated_elements=0,
@@ -379,19 +379,23 @@ _BOLD_STATEMENT = Recipe(
     "statement",
     (cg.statement_backdrop_generator,),
     brief="A bold statement over a photo",
-    hints={"text": "a bold claim or question about the concept, such as 'Don't we all secretly want to ...?'"},
+    hints={
+        "text": "a bold claim about the concept, or a question that dares the audience to admit something about it, in a "
+        "few words"
+    },
 )
 _REAL_QUOTE = Recipe(
     "statement",
     (cg.statement_backdrop_generator,),
     brief=_REAL_QUOTE_BRIEF,
-    texts_from={"text": cg.quote_generator},
+    # (real quotes of 100 characters at most, a short sentence or two: D85)
+    texts_from={"text": cg.short_quote_generator},
 )
 _ANECDOTE = Recipe(
     "statement",
     (cg.statement_backdrop_generator,),
     brief="A personal anecdote the presenter now has to tell",
-    hints={"text": "the title of the anecdote, such as 'The time I ...'"},
+    hints={"text": "the title of the anecdote: a few words that start with 'The time I' and say what happened"},
 )
 
 statement_slide_generators = _register(
@@ -423,7 +427,7 @@ statement_slide_generators = _register(
         SlideGeneratorData(
             slide_generator_types.LarqeQuoteSlideGenerator.of(
                 title_generator=NoneGenerator(),
-                text_generator=cg.quote_generator,
+                text_generator=cg.short_quote_generator,
                 background_image_generator=cg.statement_backdrop_generator,
             ),
             weight_function=ConstantWeightFunction(1),
@@ -461,7 +465,7 @@ statement_slide_generators_copyright_free = _register(
         SlideGeneratorData(
             slide_generator_types.LarqeQuoteSlideGenerator.of(
                 title_generator=NoneGenerator(),
-                text_generator=cg.quote_generator,
+                text_generator=cg.short_quote_generator,
                 background_image_generator=cg.statement_backdrop_generator,
             ),
             tags=["quote", "statement"],
@@ -624,7 +628,7 @@ own_chart_generators = _register(
                 "chart_categories",
                 brief="Where the concept is found",
                 hints={
-                    "question": "a question such as 'Where do we find ...?'",
+                    "question": "a question that starts with 'Where' and asks where something is found",
                     "categories": "two to five places, separated by |",
                 },
             ),
@@ -640,7 +644,7 @@ own_chart_generators = _register(
                 "chart_categories",
                 brief="What the concept is like",
                 hints={
-                    "question": "a question such as 'What are ... like?'",
+                    "question": "a question that starts with 'What' and asks what something is like",
                     "categories": "two to five properties, separated by |",
                 },
             ),

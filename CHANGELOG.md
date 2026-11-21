@@ -13,9 +13,26 @@ and the project follows [Semantic Versioning](https://semver.org/).
 - `generator.regenerate_slide(deck, index)` makes another slide for a finished talk's place, in a few seconds and
   without a language model, laid out in the slide's theme and numbered as the old one: for a live show's operator who
   doesn't want a slide (talkgenerator.com's show mode). The title slide and the closer can't be made again.
+- Lists of pictures: in a talk a language model writes, about half the time, a quiz's options are four pictures to
+  guess from, in a layout of their own, and a tier list's tiers, red flags, an alignment chart's nine cells and reviews
+  are all pictures in their words' place. The language model writes a picture query for every one of them, from the thing's words, and a thing whose
+  picture isn't found keeps its words. `DISABLE_PICTURED_LISTS=1` keeps lists in words.
 
 ### Changed
 
+- Fewer words and more pictures. The language model is asked for ten words a slide or fewer, captions of one to
+  three words, and to let the pictures carry the slide; it's no longer asked for "oddly specific" details, which came
+  out as tags tacked on to a line to make it funny ("twice", ", on a Tuesday", "allegedly"). It's told to write none,
+  and in English talks the ones it writes anyway are taken off. Slides that are mostly words (statements, fun facts,
+  acronyms, walls of text, error messages, agendas) come up half as often, charts and diagrams are a picture in their
+  place three times in four instead of half the time. Captions, a conclusion's lessons, a post's text and a big
+  number's label and source are asked for in fewer words, and real quotes are 100 characters at most.
+- Of the relevant posts a Reddit search finds, the more upvoted ones' pictures are picked more often.
+
+### Fixed
+
+- A language model no longer copies an example's gap onto a slide ("Don't we all secretly want to ...?"): the
+  examples have no gaps any more, and a text that ends in one is left out.
 - Useless facts come from a pool of 500 a week instead of 12, so the same few no longer come back talk after talk,
   and only English talks get them: a fun fact in another language builds on the topic's Wikipedia article instead,
   as useless facts are English trivia, often about English words.

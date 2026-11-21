@@ -34,9 +34,9 @@ Images: `background`
 | --- | --- | --- |
 | `full-screen-pixabay-deep` | A deep question over a photo | `text`: a short, deep question, such as 'But... why?'; images: `background` calm-backdrop or backdrop; tags: deep, full_image |
 | `full-screen-pixabay-quote` | A real quote over a photo (talkgenerator finds the quote, about the concept) | images: `background` calm-backdrop or backdrop; finds its `text` itself (don't write one); tags: full_image, quote |
-| `wikihow-bold-statement-crf` | A bold statement over a photo | the default; `text`: a bold claim or question about the concept, such as 'Don't we all secretly want to ...?'; images: `background` calm-backdrop or backdrop; tags: bold_statement, statement |
+| `wikihow-bold-statement-crf` | A bold statement over a photo | the default; `text`: a bold claim about the concept, or a question that dares the audience to admit something about it, in a few words; images: `background` calm-backdrop or backdrop; tags: bold_statement, statement |
 | `quote-crf` | A real quote over a photo (talkgenerator finds the quote, about the concept) | images: `background` calm-backdrop or backdrop; finds its `text` itself (don't write one); tags: quote, statement |
-| `anecdote-crf` | A personal anecdote the presenter now has to tell | `text`: the title of the anecdote, such as 'The time I ...'; images: `background` calm-backdrop or backdrop; tags: anecdote |
+| `anecdote-crf` | A personal anecdote the presenter now has to tell | `text`: the title of the anecdote: a few words that start with 'The time I' and say what happened; images: `background` calm-backdrop or backdrop; tags: anecdote |
 
 ## `two_columns`
 
@@ -45,8 +45,8 @@ Two captioned images side by side.
 | Text | At most | What to write |
 | --- | --- | --- |
 | `title` | 45 | the slide's title (or empty, for none) |
-| `caption_1` | 40 | the left caption |
-| `caption_2` | 40 | the right caption |
+| `caption_1` | 24 | the left caption |
+| `caption_2` | 24 | the right caption |
 
 Images: `image_1`, `image_2`
 
@@ -54,7 +54,7 @@ Images: `image_1`, `image_2`
 | --- | --- | --- |
 | `two-history-pictures-crf` | Two old photos from the history of the slide's concept | `title`: a title about the concept's history; `caption_1`: a moment from long ago; `caption_2`: a later moment; images: `image_1` vintage (or generated, from its prompt, with an image generator set up), `image_2` vintage (or generated, from its prompt, with an image generator set up); tags: history, two_images |
 | `two-captions-copyright-free` | Two captioned images that contrast or compare: two sides, two eras, or two kinds of one thing | the default; images: `image_2` photo or weird-stock; tags: multi_caption, two_captions |
-| `2-conclusions-crf` | The talk's conclusions | `title`: a title for the conclusions, in a few words of your own; `caption_1`: a lesson from the talk in six words at most, calling back to an earlier slide by what it said (not by its number or key): a new twist on it, never a recap; `caption_2`: a lesson from the talk in six words at most, calling back to an earlier slide by what it said (not by its number or key): a new twist on it, never a recap; images: `image_1` photo, `image_2` weird-stock; tags: conclusion |
+| `2-conclusions-crf` | The talk's conclusions | `title`: a title for the conclusions, in a few words of your own; `caption_1`: a lesson from the talk in four words at most, calling back to an earlier slide by what it said (not by its number or key): a new twist on it, never a recap; `caption_2`: a lesson from the talk in four words at most, calling back to an earlier slide by what it said (not by its number or key): a new twist on it, never a recap; images: `image_1` photo, `image_2` weird-stock; tags: conclusion |
 
 ## `three_columns`
 
@@ -63,16 +63,16 @@ Three captioned images side by side.
 | Text | At most | What to write |
 | --- | --- | --- |
 | `title` | 45 | the slide's title (or empty, for none) |
-| `caption_1` | 40 | the left caption |
-| `caption_2` | 40 | the middle caption |
-| `caption_3` | 40 | the right caption |
+| `caption_1` | 24 | the left caption |
+| `caption_2` | 24 | the middle caption |
+| `caption_3` | 24 | the right caption |
 
 Images: `image_1`, `image_2`, `image_3`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
 | `three-captions-weird-crf` | Three captioned images that build up, like 'Good, Better, Best' or three steps of a plan | the default; images: `image_1` photo, `image_3` weird-stock; tags: multi_caption, three_captions |
-| `3-conclusions-crf` | The talk's conclusions | `title`: a title for the conclusions, in a few words of your own; `caption_1`: a lesson from the talk in six words at most, calling back to an earlier slide by what it said (not by its number or key): a new twist on it, never a recap; `caption_2`: a lesson from the talk in six words at most, calling back to an earlier slide by what it said (not by its number or key): a new twist on it, never a recap; `caption_3`: a lesson from the talk in six words at most, calling back to an earlier slide by what it said (not by its number or key): a new twist on it, never a recap; images: `image_1` photo, `image_3` weird-stock; tags: conclusion |
+| `3-conclusions-crf` | The talk's conclusions | `title`: a title for the conclusions, in a few words of your own; `caption_1`: a lesson from the talk in four words at most, calling back to an earlier slide by what it said (not by its number or key): a new twist on it, never a recap; `caption_2`: a lesson from the talk in four words at most, calling back to an earlier slide by what it said (not by its number or key): a new twist on it, never a recap; `caption_3`: a lesson from the talk in four words at most, calling back to an earlier slide by what it said (not by its number or key): a new twist on it, never a recap; images: `image_1` photo, `image_3` weird-stock; tags: conclusion |
 
 ## `history_quote`
 
@@ -118,8 +118,8 @@ Images: none
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `location-chart` | Where the concept is found | `question`: a question such as 'Where do we find ...?'; `categories`: two to five places, separated by \|; tags: chart, location_chart, pie_chart |
-| `property-chart` | What the concept is like | the default; `question`: a question such as 'What are ... like?'; `categories`: two to five properties, separated by \|; tags: chart, pie_chart, property_chart |
+| `location-chart` | Where the concept is found | `question`: a question that starts with 'Where' and asks where something is found; `categories`: two to five places, separated by \|; tags: chart, location_chart, pie_chart |
+| `property-chart` | What the concept is like | the default; `question`: a question that starts with 'What' and asks what something is like; `categories`: two to five properties, separated by \|; tags: chart, pie_chart, property_chart |
 
 ## `chart_correlation`
 
@@ -233,8 +233,8 @@ A big, made-up number, with what it counts under it: a figure the presenter has 
 | --- | --- | --- |
 | `title` | 45 | the slide's title (or empty, for none) |
 | `number` | 12 | the big number, with its unit if it has one: a percentage, an amount or a count |
-| `label` | 50 | what the number counts or measures, in a few words |
-| `source` | 60 | a made-up, unreliable source for the number (or empty, for none) |
+| `label` | 32 | what the number counts or measures, in a few words |
+| `source` | 32 | a made-up, unreliable source for the number, in a few words (or empty, for none) |
 
 Images: `background`
 
@@ -293,7 +293,7 @@ A made-up social media post with a photo: who posted it, and what they wrote (ta
 | `title` | 45 | the slide's title (or empty, for none) |
 | `author` | 30 | the made-up name of who posted it: a real first name and a surname |
 | `handle` | 24 | their made-up username, without the @ |
-| `text` | 90 | the post: what they wrote, in one or two short sentences, without hashtags or emoji |
+| `text` | 60 | the post: what they wrote, in one short sentence, without hashtags or emoji |
 
 Images: `photo`
 

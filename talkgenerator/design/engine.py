@@ -1927,7 +1927,7 @@ def _answer(roles: dict[str, Content]) -> int | None:
     if not isinstance(answer, TextElement):
         return None
     index = "ABCD".find(answer.text.strip()[:1].upper()) + 1
-    return index if index and f"option_{index}" in roles else None
+    return index if index and index in _numbered(roles, "option", 4) else None  # (its words, or its picture: D85)
 
 
 def _highlight(theme: Theme) -> tuple[str, float]:
@@ -2036,6 +2036,75 @@ def _quiz_tiles(roles: dict[str, Content], theme: Theme) -> Placement:
         placement.colors[f"option_{index}"] = on_tile
     if stamp is not None:
         _stamp(placement, roles, theme, stamp)
+    if "explanation" in roles:
+        placement.boxes["explanation"] = (_EXPLANATION, "explanation")
+    return placement
+
+
+# A quiz whose options are pictures (D85): the diameter of an option's letter's badge, on its picture's top left
+# corner, and of the answer's stamp, on the right one's top right corner
+_QUIZ_BADGE: Final = 96.0
+_QUIZ_STAMP: Final = 150.0
+
+
+def _option_pictures(roles: dict[str, Content]) -> bool:
+    """Whether a quiz has an option that's a picture in its words' place (D85)."""
+    return any(_has_picture(roles, f"option_{index}") for index in range(1, 5))
+
+
+def _quiz_pictures(roles: dict[str, Content], theme: Theme) -> Placement:
+    """The question as the title, and the options side by side, as large as they fit: each a picture in its words'
+    place (or its words on a tile, where it found none), with its letter on a badge on its top left corner. With the
+    answer (on a click): a frame in the theme's second accent around the right option, the answer's letter on a stamp
+    on its top right corner, and the explanation under them (D85)."""
+    palette = theme.palette
+    placement = Placement("v5/quiz-pictures")
+    top = _with_title(placement, roles, theme) + 40
+    bottom = _EXPLANATION.y - 36 if "explanation" in roles else _CONTENT_BOTTOM
+    options = _numbered(roles, "option", 4)
+    gap = 48.0
+    width = (WIDTH - 2 * MARGIN - gap * (len(options) - 1)) / len(options)
+    height = min(bottom - top, width)
+    y = top + (bottom - top - height) / 2
+    right = _answer(roles)
+    click = _click(roles, "answer")
+    accent, on_accent = palette.accent, _on([palette.accent], theme, color.LARGE_TEXT_CONTRAST)
+    for position, index in enumerate(options):
+        x = MARGIN + position * (width + gap)
+        cell = Box(x=x, y=y, w=width, h=height)
+        role = f"option_{index}"
+        if index == right:  # (a frame: a bigger tile behind the right one)
+            frame = _inset(cell, -14)
+            placement.shapes.append(
+                ShapeElement(role="right answer", box=frame, color=palette.accent_2, appears_on_click=click)
+            )
+            stamp = Box(x=x + width - _QUIZ_STAMP - 16, y=y + 16, w=_QUIZ_STAMP, h=_QUIZ_STAMP)
+            placement.overlays.append(
+                ShapeElement(role="stamp", shape="ellipse", box=stamp, color=palette.accent_2, appears_on_click=click)
+            )
+            placement.boxes["answer"] = (_inset(stamp, stamp.w * 0.2), "stamp")
+            placement.colors["answer"] = _on([palette.accent_2], theme, color.LARGE_TEXT_CONTRAST)
+        if role not in roles:  # (its picture, filling its cell)
+            placement.boxes[_picture_role(role)] = (cell, "caption")
+            placement.cover.add(_picture_role(role))
+        else:  # (its words, on a tile that comes with them)
+            placement.shapes.append(
+                ShapeElement(
+                    role=f"tile_{index}", box=cell, color=palette.surface, appears_on_click=_item_click(roles, role)
+                )
+            )
+            words = Box(x=x + 28, y=y + _QUIZ_BADGE + 40, w=width - 56, h=height - _QUIZ_BADGE - 68)
+            placement.boxes[role] = (words, "tile option")
+            placement.colors[role] = _on([palette.surface], theme)
+        badge = Box(x=x + 16, y=y + 16, w=_QUIZ_BADGE, h=_QUIZ_BADGE)
+        letter = f"letter_{index}"
+        placement.overlays.append(
+            ShapeElement(
+                role=f"{letter} badge", shape="ellipse", box=badge, color=accent, appears_on_click=_click(roles, letter)
+            )
+        )
+        placement.boxes[letter] = (_inset(badge, badge.w * 0.16), "badge")
+        placement.colors[letter] = on_accent
     if "explanation" in roles:
         placement.boxes["explanation"] = (_EXPLANATION, "explanation")
     return placement
@@ -3752,6 +3821,16 @@ def _at_most(prefix: str, most: int) -> Callable[[dict[str, Content]], bool]:
     return few
 
 
+def _in_words(prefix: str) -> Callable[[dict[str, Content]], bool]:
+    """Whether a slide's list is words, but for a picture in its punchline's place at most (D73): a list of pictures
+    (D85) needs a layout with room for them, such as red flags on cards, each picture as large as its card takes."""
+
+    def words(roles: dict[str, Content]) -> bool:
+        return sum(1 for role in roles if role.startswith(f"{prefix}_") and role.endswith("_picture")) <= 1
+
+    return words
+
+
 # A review's stars: gold, and grey where it falls short of five
 _GOLD: Final = "#f5b301"
 
@@ -4413,8 +4492,10 @@ _LAYOUTS: Final[dict[str, tuple[_Layout, ...]]] = {
         _Layout("v5/kpi-grid", _kpi_grid, 0.8, _four_short_figures),
     ),
     "quiz": (
-        _Layout("v5/quiz-list", _quiz_list),
-        _Layout("v5/quiz-tiles", _quiz_tiles, 0.9, _has("option_4")),
+        # (a quiz whose options are pictures has a layout of its own, with room for them: D85)
+        _Layout("v5/quiz-list", _quiz_list, fits=lambda roles: not _option_pictures(roles)),
+        _Layout("v5/quiz-tiles", _quiz_tiles, 0.9, lambda roles: "option_4" in roles and not _option_pictures(roles)),
+        _Layout("v5/quiz-pictures", _quiz_pictures, fits=_option_pictures),
     ),
     "social_post": (
         _Layout("v5/post", _post(photo_left=False)),
@@ -4521,12 +4602,13 @@ _LAYOUTS: Final[dict[str, tuple[_Layout, ...]]] = {
         _Layout("v5/alignment-chart", _alignment_chart(side=False)),
         _Layout("v5/alignment-chart-side", _alignment_chart(side=True), 0.6, _short_cells(28)),
     ),
+    # (flags that are all pictures go on cards, where the pictures have room: D85)
     "red_flags": (
-        _Layout("v5/red-flags", _red_flags),
+        _Layout("v5/red-flags", _red_flags, fits=_in_words("flag")),
         _Layout("v5/red-flags-cards", _red_flags_cards, 0.9, _at_most("flag", 4)),
     ),
     "traffic_flags": (
-        _Layout("v5/traffic-flags", _traffic_flags),
+        _Layout("v5/traffic-flags", _traffic_flags, fits=_in_words("flag")),
         _Layout("v5/traffic-flags-cards", _traffic_flags_cards, 0.9),
     ),
     "reviews": (

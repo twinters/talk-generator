@@ -120,9 +120,22 @@ def box_picture_slot() -> ImageSlot:
 # PICTURES FIRST (docs/v5-plan.md, D73): a chart or a diagram, which shows a lot of text, is a picture in its place now
 # and then, under its title, when one is found in time: as many charts and diagrams are too wordy for a presenter who
 # sees them for the first time. Its text version is what it is when none is found, and what stands in for it, in a talk
-# with a time limit per slide, until its picture comes
-PICTURE_FIRST_ODDS: Final = 0.5  # of the charts and diagrams that try a picture first
+# with a time limit per slide, until its picture comes. Three in four of them since D85 (half before), so that more of
+# a talk's slides are pictures to explain
+PICTURE_FIRST_ODDS: Final = 0.75  # of the charts and diagrams that try a picture first
 PICTURE: Final = "picture"  # the image slot of a slide's picture, which the language model writes a query for
+
+# WORDY SLIDES LESS OFTEN (D85): the kinds of slide that are mostly words (a statement, a fun fact, an acronym, a wall
+# of text, an error message, an agenda) count for this much of their weight when a talk's dice pick its slides, in
+# every format: pictures and lists of pictures come up more often in their place
+WORDY_KINDS: Final = frozenset({"statement", "fun_fact", "acronym", "wall_of_text", "error_message", "agenda"})
+WORDY_WEIGHT: Final = 0.5
+
+
+def wordiness(kind: str | None) -> float:
+    """What a slide generator of the kind of slide counts for, of its weight, when a talk's dice pick its slides:
+    WORDY_WEIGHT for the kinds that are mostly words, else all of it."""
+    return WORDY_WEIGHT if kind in WORDY_KINDS else 1.0
 
 
 @dataclass(frozen=True)
@@ -198,6 +211,41 @@ def pattern_breaks() -> bool:
     return not settings.is_source_disabled("PATTERN_BREAKS")
 
 
+# LISTS OF PICTURES (docs/v5-plan.md, D85): now and then, every thing of a list is a picture in its words' place: a
+# quiz's options, a tier list's tiers, red flags, an alignment chart's cells, reviews, as pictures give the presenter
+# more to explain than words to read. The model writes every thing's words, as ever (they stay where no picture is
+# found), and a query for its picture, from an angle the presenter has to explain; a slide whose list is pictures
+# breaks no pattern otherwise (its pictures are the surprise)
+PICTURED_ODDS: Final = 0.55
+
+
+@dataclass(frozen=True)
+class PicturedItems:
+    """Every thing of a kind's list a picture in its words' place, that share of the time (odds): its things' text
+    fields, each with what it is for the language model ("option A"), and what they are, for the slide's brief ("its
+    options")."""
+
+    items: Mapping[str, str]
+    which: str
+    odds: float = PICTURED_ODDS
+
+
+# What the model writes to search for a list's thing's picture
+_PICTURED_QUERY: Final = (
+    "an image search query for a picture that takes the place of {item}'s words: something concrete that shows it, "
+    "from an odd angle that the presenter has to explain (not a picture of the words), in two to six plain English "
+    "words"
+)
+
+
+def pictured_lists() -> bool:
+    """Whether lists are pictures now and then: unless DISABLE_PICTURED_LISTS says they aren't (as offline tests do,
+    whose slides' texts they check as they were)."""
+    from talkgenerator import settings
+
+    return not settings.is_source_disabled("PICTURED_LISTS")
+
+
 _CHART_PICTURE: Final = PictureFirst(
     "bad-charts",
     "a real chart from the internet, under the title of the chart it takes the place of",
@@ -253,6 +301,8 @@ class Kind:
     picture_first: PictureFirst | None = None
     # How it breaks its pattern now and then, in its punchline: a list's or a diagram's (D73)
     pattern_break: PatternBreak | None = None
+    # The things of its list that are all pictures now and then, in their words' place (D85)
+    pictured: PicturedItems | None = None
 
 
 # A v4 content generator: a presentation context (with the "seed" to search for) in, an image (or None) out
@@ -338,9 +388,11 @@ class Recipe:
         kind's, if it has none of its own): not one whose queries are in avoid, while there are others (a meme's
         template that the talk has already). And, for a diagram whose kind has pictures in its boxes, the boxes that
         get one, from a stream of their own (none, most of the time); for a list or a diagram, whether its punchline
-        breaks the pattern, and how (see PatternBreak); and for a chart or a diagram, whether it tries a picture first,
-        in its place (see PictureFirst), each from a stream of its own too."""
-        varied = self._varied(rng, avoid)._broken(rng.child("pattern break"))
+        breaks the pattern, and how (see PatternBreak), unless its things are all pictures (see PicturedItems); and for
+        a chart or a diagram, whether it tries a picture first, in its place (see PictureFirst), each from a stream of
+        its own too."""
+        varied = self._varied(rng, avoid)
+        varied = varied._pictured(rng.child("pictured items")) or varied._broken(rng.child("pattern break"))
         first = KINDS[self.kind].picture_first
         if first is None or not pictures_first():
             return varied
@@ -354,6 +406,29 @@ class Recipe:
             hints={**varied.hints, f"{PICTURE}_query": first.query},
             picture_first=True,
             variants=(),
+        )
+
+    def _pictured(self, rng: random_util.Rng) -> Recipe | None:
+        """The recipe with every thing of its list a picture in its words' place (see PicturedItems), that share of
+        the time: an optional picture each, searched with a query the model writes, its words where none is found.
+        None when its things stay words, or its kind's list has none (or its recipe takes their words from elsewhere)."""
+        pictured = KINDS[self.kind].pictured
+        if pictured is None or not pictured_lists():
+            return None
+        with random_util.use(rng):
+            if random_util.random() >= pictured.odds:
+                return None
+        items = [item for item in pictured.items if item not in self.omit and item not in self.texts_from]
+        if not items:
+            return None
+        brief = (self.brief or KINDS[self.kind].description).rstrip(".")
+        queries = {f"{item}_picture_query": _PICTURED_QUERY.format(item=pictured.items[item]) for item in items}
+        return dataclasses.replace(
+            self,
+            brief=f"{brief}, {pictured.which} shown as pictures in their words' place: a few words each, which stay "
+            "where no picture is found, and a picture query for each",
+            hints={**self.hints, **queries},
+            pictures=(*(box for box in self.pictures if box not in items), *items),
         )
 
     def _broken(self, rng: random_util.Rng) -> Recipe:
@@ -670,7 +745,14 @@ def _quiz(texts: Mapping[str, str | None], images: Mapping[str, Any], language: 
         if len(named) == 1 and named[0] != slides.LETTERS.index(answer):
             answer = slides.LETTERS[named[0]]
     first, second, third, fourth = options
-    return slides.QuizSlide(texts["question"], first, second, third, fourth, answer, explanation, language)
+    # (its options may be pictures in their words' place: D85)
+    boxed = _box_pictures(images)
+    pictures = {
+        f"option_{index}": boxed.get(f"option_{letter.lower()}") for index, letter in enumerate(slides.LETTERS, 1)
+    }
+    return slides.QuizSlide(
+        texts["question"], first, second, third, fourth, answer, explanation, language, pictures=pictures
+    )
 
 
 def _social_post(texts: Mapping[str, str | None], images: Mapping[str, Any], language: Language) -> slides.Slide:
@@ -1095,6 +1177,9 @@ _SPELLED: Final = re.compile(r"^[A-Za-z]\s*[-–—:.)=]\s+")  # an acronym's wo
 # How long a slide's words may be, so that the presenter, who has to read them first, takes them in at a glance: a
 # slide's title, a tier's one thing, a red flag and a quiz's option
 TITLE: Final = 45
+# A caption under a picture (two or three of them side by side): one to three words since D85, as the pictures carry
+# the slide (40 before; a text that long is kept whole: see _ROOM)
+CAPTION: Final = 24
 TIER: Final = 28
 FLAG: Final = 50
 QUIZ_OPTION: Final = 36
@@ -1202,8 +1287,8 @@ KINDS: Final[dict[str, Kind]] = {
             "Two captioned images side by side.",
             (
                 _OPTIONAL_TITLE,
-                TextField("caption_1", "the left caption", 40),
-                TextField("caption_2", "the right caption", 40),
+                TextField("caption_1", "the left caption", CAPTION),
+                TextField("caption_2", "the right caption", CAPTION),
             ),
             ("image_1", "image_2"),
             _two_columns,
@@ -1213,9 +1298,9 @@ KINDS: Final[dict[str, Kind]] = {
             "Three captioned images side by side.",
             (
                 _OPTIONAL_TITLE,
-                TextField("caption_1", "the left caption", 40),
-                TextField("caption_2", "the middle caption", 40),
-                TextField("caption_3", "the right caption", 40),
+                TextField("caption_1", "the left caption", CAPTION),
+                TextField("caption_2", "the middle caption", CAPTION),
+                TextField("caption_3", "the right caption", CAPTION),
             ),
             ("image_1", "image_2", "image_3"),
             _three_columns,
@@ -1421,8 +1506,8 @@ KINDS: Final[dict[str, Kind]] = {
                 TextField(
                     "number", "the big number, with its unit if it has one: a percentage, an amount or a count", 12
                 ),
-                TextField("label", "what the number counts or measures, in a few words", 50),
-                TextField("source", "a made-up, unreliable source for the number", 60, optional=True),
+                TextField("label", "what the number counts or measures, in a few words", 32),
+                TextField("source", "a made-up, unreliable source for the number, in a few words", 32, optional=True),
             ),
             ("background",),
             _big_number,
@@ -1460,6 +1545,10 @@ KINDS: Final[dict[str, Kind]] = {
             ),
             (),
             _quiz,
+            # (four pictures to guess from, searched for from the options' words)
+            pictured=PicturedItems(
+                {f"option_{letter.lower()}": f"option {letter}" for letter in slides.LETTERS}, "its options"
+            ),
         ),
         Kind(
             "social_post",
@@ -1469,9 +1558,7 @@ KINDS: Final[dict[str, Kind]] = {
                 _OPTIONAL_TITLE,
                 TextField("author", "the made-up name of who posted it: a real first name and a surname", 30),
                 TextField("handle", "their made-up username, without the @", 24),
-                TextField(
-                    "text", "the post: what they wrote, in one or two short sentences, without hashtags or emoji", 90
-                ),
+                TextField("text", "the post: what they wrote, in one short sentence, without hashtags or emoji", 60),
             ),
             ("photo",),
             _social_post,
@@ -1828,6 +1915,10 @@ KINDS: Final[dict[str, Kind]] = {
             (),
             _tier_list,
             pattern_break=PatternBreak(("s_tier",), {"emoji": 1.0, "picture": 1.3}, "the S tier"),
+            pictured=PicturedItems(
+                {f"{tier}_tier": f"the {tier.upper()} tier's thing" for tier in ("s", "a", "b", "c", "f")},
+                "its tiers' things",
+            ),
         ),
         Kind(
             "wall_of_text",
@@ -1871,6 +1962,12 @@ KINDS: Final[dict[str, Kind]] = {
             (),
             _alignment_chart,
             pattern_break=PatternBreak(("chaotic_evil",), {"emoji": 1.0, "picture": 1.3}, "chaotic evil"),
+            # (nine pictures to search for: less often than the other lists)
+            pictured=PicturedItems(
+                {alignment: f"the {alignment.replace('_', ' ')} one" for alignment in slides.ALIGNMENTS},
+                "its nine things",
+                odds=0.4,
+            ),
         ),
         Kind(
             "red_flags",
@@ -1889,6 +1986,13 @@ KINDS: Final[dict[str, Kind]] = {
             (),
             _red_flags,
             pattern_break=PatternBreak(_FLAGS, _LIST_BREAKS, "the last red flag"),
+            pictured=PicturedItems(
+                {
+                    f"flag_{index}": f"the {which} red flag"
+                    for index, which in enumerate(("first", "second", "third"), 1)
+                },
+                "its red flags",
+            ),
         ),
         # (a variation on red flags: a green, an orange and a red flag)
         Kind(
@@ -1905,6 +2009,9 @@ KINDS: Final[dict[str, Kind]] = {
             (),
             _traffic_flags,
             pattern_break=PatternBreak(("red_flag",), _LIST_BREAKS, "the red flag"),
+            pictured=PicturedItems(
+                {f"{colour}_flag": f"the {colour} flag" for colour in ("green", "orange", "red")}, "its flags"
+            ),
         ),
         Kind(
             "reviews",
@@ -1921,6 +2028,15 @@ KINDS: Final[dict[str, Kind]] = {
             (),
             _reviews,
             pattern_break=PatternBreak(("review_3", "review_2"), _LIST_BREAKS, "the last review"),
+            # (a picture the reviewer posted, in place of what they wrote)
+            pictured=PicturedItems(
+                {
+                    f"review_{index}": f"the {which} review"
+                    for index, which in enumerate(("first", "second", "third"), 1)
+                },
+                "its reviews",
+                odds=0.45,
+            ),
         ),
         Kind(
             "error_message",
@@ -2053,15 +2169,15 @@ KINDS: Final[dict[str, Kind]] = {
 }
 
 
-# How long the texts of the fields that D80 asked for less of could be before (2026-11-13: v5 at 4769664), by kind and
-# field: their slides' layouts hold that much in every theme, so a text that long is kept whole, and one longer still
-# is cut (see TextField.room; traffic-light flags are red flags in three colours)
+# How long the texts of the fields that D80 asked for less of could be before (2026-11-13: v5 at 4769664), and D85 (the
+# captions under pictures), by kind and field: their slides' layouts hold that much in every theme, so a text that long
+# is kept whole, and one longer still is cut (see TextField.room; traffic-light flags are red flags in three colours)
 _ROOM: Final[Mapping[str, Mapping[str, int]]] = {
     "image": {"title": 60},
     "full_image": {"title": 60},
     "statement": {"text": 140},
-    "two_columns": {"title": 60},
-    "three_columns": {"title": 60},
+    "two_columns": {"title": 60, "caption_1": 40, "caption_2": 40},
+    "three_columns": {"title": 60, "caption_1": 40, "caption_2": 40, "caption_3": 40},
     "history_quote": {"title": 60, "name": 60, "quote": 160},
     "chart_yes_no": {"question": 90},
     "chart_categories": {"question": 90, "categories": 120},
@@ -2069,7 +2185,7 @@ _ROOM: Final[Mapping[str, Mapping[str, int]]] = {
     "chart_bars": {"title": 90, "bars": 160},
     "venn": {"title": 60},
     "matrix": {"title": 60},
-    "big_number": {"title": 60, "label": 90},
+    "big_number": {"title": 60, "label": 90, "source": 60},
     "kpi": {"title": 60, "label_1": 40, "label_2": 40, "label_3": 40, "label_4": 40},
     "quiz": {"question": 90, "option_a": 50, "option_b": 50, "option_c": 50, "option_d": 50, "explanation": 90},
     "social_post": {"title": 60, "text": 160},

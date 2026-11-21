@@ -84,7 +84,12 @@ CLASSIC_ROLES: Final[dict[str, dict[str, str]]] = {
     },
     "quiz": {
         "question": "title",
-        **{f"{part}_{number}": f"{part}_{number}" for number in range(1, 5) for part in ("letter", "option")},
+        # (an option may be a picture in its words' place: D85)
+        **{
+            role: role
+            for number in range(1, 5)
+            for role in (f"letter_{number}", f"option_{number}", f"option_{number}_picture")
+        },
         "answer": "answer",
         "explanation": "explanation",
     },

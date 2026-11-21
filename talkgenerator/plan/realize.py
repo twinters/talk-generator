@@ -83,7 +83,8 @@ _STRAY_ESCAPE: Final = re.compile(r"\\(?=['\"’])")
 # long as a few words are left ("Yes, twice", a chart's funny answer, stays)
 _DAY: Final = r"(?:mon|tues|wednes|thurs|fri|satur|sun)day"
 _TAG: Final = (
-    r"(?:twice|thrice|again|allegedly|apparently|reportedly|supposedly|probably|somehow|technically"
+    r"(?:twice|thrice|again|allegedly|apparently|reportedly|supposedly|probably|somehow|technically|obviously|honestly"
+    r"|frankly"
     rf"|(?:on|every) (?:a )?{_DAY}s?|at 3 ?a\.?m\.?)"
 )
 _FRAGMENT_TAG: Final = re.compile(rf"(?<=[.!?…])\s+{_TAG}[.!?…]*$", re.IGNORECASE)
@@ -105,7 +106,11 @@ def untagged(text: str, language: str = languages.ENGLISH.code) -> str:
         parts = text.split("|")
         cleaned = [untagged(part.strip()) for part in parts]
         return text if cleaned == [part.strip() for part in parts] else " | ".join(cleaned)
-    for pattern, fewest in ((_FRAGMENT_TAG, _UNTAGGED_WORDS), (_CLAUSE_TAG, _UNTAGGED_WORDS), (_DAY_TAG, _UNDAYED_WORDS)):
+    for pattern, fewest in (
+        (_FRAGMENT_TAG, _UNTAGGED_WORDS),
+        (_CLAUSE_TAG, _UNTAGGED_WORDS),
+        (_DAY_TAG, _UNDAYED_WORDS),
+    ):
         shorter = pattern.sub(lambda found: found.groupdict().get("end") or "", text).rstrip()
         if shorter != text and len(_WORDS.findall(shorter)) >= fewest:
             return untagged(shorter, language)  # (a tag before it too: "Late, again, on a Tuesday")

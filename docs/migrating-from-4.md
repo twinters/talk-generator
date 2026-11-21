@@ -40,7 +40,8 @@ Seven things changed, and five of them can be set back, to come as close to 4.x'
 | Who presents it | nobody in particular | a persona the talk's seed picks (a startup founder, a medieval historian...), whose kinds of slides come up more often, and whose own titles half of the classic titles are | `--persona none` |
 | Real facts | none | half of a classic talk's fun facts and quizzes are real (Wikipedia's, Open Trivia DB's), and some of its dares and closing lines a real dad joke or piece of advice, credited on the slide | `DISABLE_FACTS=1` |
 | Slide numbers | none | slides are numbered ("7/12"), small, in a corner | |
-| Charts and diagrams | always drawn | half of them try a picture first, in their place, under their title (a real chart from the internet, a weird picture), and are drawn when none is found | `DISABLE_PICTURE_FIRST=1` |
+| Charts and diagrams | always drawn | three in four of them try a picture first, in their place, under their title (a real chart from the internet, a weird picture), and are drawn when none is found | `DISABLE_PICTURE_FIRST=1` |
+| Lists (a quiz's options, tiers, red flags, an alignment chart, reviews) | words | in a talk a language model writes, about half of them are all pictures in their words' place, each searched for from its words, and a thing whose picture isn't found keeps its words | `DISABLE_PICTURED_LISTS=1` |
 | The slides | v4's slide types | more than thirty more (big numbers, quizzes, timelines, memes with live captions, tier lists, fake error messages...), and texts from the TED content pack, in a TED talk's voice and about four times as many as 4.x had | |
 
 Classic slides look as they did, and their images come from about the same sources, with a few changes: history

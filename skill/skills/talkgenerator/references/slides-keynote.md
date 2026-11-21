@@ -35,7 +35,7 @@ Images: `image`
 
 | Recipe | What it's for | Notes |
 | --- | --- | --- |
-| `introducing-keynote` | The reveal: the product, in one photo, under a title that introduces it by its made-up name | the default; `title`: a title that introduces the product by its made-up name, such as 'Introducing ...'; images: `image` product-shot (or generated, from its prompt, with an image generator set up); tags: reveal, single_image |
+| `introducing-keynote` | The reveal: the product, in one photo, under a title that introduces it by its made-up name | the default; `title`: a title that introduces the product by its made-up name, starting with 'Introducing'; images: `image` product-shot (or generated, from its prompt, with an image generator set up); tags: reveal, single_image |
 
 ## `full_image`
 
@@ -84,8 +84,8 @@ Two captioned images side by side.
 | Text | At most | What to write |
 | --- | --- | --- |
 | `title` | 45 | the slide's title (or empty, for none) |
-| `caption_1` | 40 | the left caption |
-| `caption_2` | 40 | the right caption |
+| `caption_1` | 24 | the left caption |
+| `caption_2` | 24 | the right caption |
 
 Images: `image_1`, `image_2`
 
@@ -100,9 +100,9 @@ Three captioned images side by side.
 | Text | At most | What to write |
 | --- | --- | --- |
 | `title` | 45 | the slide's title (or empty, for none) |
-| `caption_1` | 40 | the left caption |
-| `caption_2` | 40 | the middle caption |
-| `caption_3` | 40 | the right caption |
+| `caption_1` | 24 | the left caption |
+| `caption_2` | 24 | the middle caption |
+| `caption_3` | 24 | the right caption |
 
 Images: `image_1`, `image_2`, `image_3`
 
@@ -168,8 +168,8 @@ A big, made-up number, with what it counts under it: a figure the presenter has 
 | --- | --- | --- |
 | `title` | 45 | the slide's title (or empty, for none) |
 | `number` | 12 | the big number, with its unit if it has one: a percentage, an amount or a count |
-| `label` | 50 | what the number counts or measures, in a few words |
-| `source` | 60 | a made-up, unreliable source for the number (or empty, for none) |
+| `label` | 32 | what the number counts or measures, in a few words |
+| `source` | 32 | a made-up, unreliable source for the number, in a few words (or empty, for none) |
 
 Images: `background`
 
@@ -210,7 +210,7 @@ A made-up social media post with a photo: who posted it, and what they wrote (ta
 | `title` | 45 | the slide's title (or empty, for none) |
 | `author` | 30 | the made-up name of who posted it: a real first name and a surname |
 | `handle` | 24 | their made-up username, without the @ |
-| `text` | 90 | the post: what they wrote, in one or two short sentences, without hashtags or emoji |
+| `text` | 60 | the post: what they wrote, in one short sentence, without hashtags or emoji |
 
 Images: `photo`
 

@@ -71,7 +71,7 @@ Images: `background`
 | `limitations-statement-academic` | The study's main limitation, admitted in one short sentence over a photo, as if it were minor | `text`: the limitation, admitted as if it were minor, in ten words at most; images: `background` calm-backdrop or backdrop; tags: limitations, statement |
 | `quote-academic` | A real quote over a photo (talkgenerator finds the quote, about the concept) | images: `background` calm-backdrop or backdrop; finds its `text` itself (don't write one); tags: quote, statement |
 | `full-screen-pixabay-deep-academic` | A deep question over a photo | `text`: a short, deep question, such as 'But... why?'; images: `background` calm-backdrop or backdrop; tags: deep, full_image |
-| `wikihow-bold-statement-academic` | A bold statement over a photo | `text`: a bold claim or question about the concept, such as 'Don't we all secretly want to ...?'; images: `background` calm-backdrop or backdrop; tags: bold_statement, statement |
+| `wikihow-bold-statement-academic` | A bold statement over a photo | `text`: a bold claim about the concept, or a question that dares the audience to admit something about it, in a few words; images: `background` calm-backdrop or backdrop; tags: bold_statement, statement |
 
 ## `two_columns`
 
@@ -80,8 +80,8 @@ Two captioned images side by side.
 | Text | At most | What to write |
 | --- | --- | --- |
 | `title` | 45 | the slide's title (or empty, for none) |
-| `caption_1` | 40 | the left caption |
-| `caption_2` | 40 | the right caption |
+| `caption_1` | 24 | the left caption |
+| `caption_2` | 24 | the right caption |
 
 Images: `image_1`, `image_2`
 
@@ -96,9 +96,9 @@ Three captioned images side by side.
 | Text | At most | What to write |
 | --- | --- | --- |
 | `title` | 45 | the slide's title (or empty, for none) |
-| `caption_1` | 40 | the left caption |
-| `caption_2` | 40 | the middle caption |
-| `caption_3` | 40 | the right caption |
+| `caption_1` | 24 | the left caption |
+| `caption_2` | 24 | the middle caption |
+| `caption_3` | 24 | the right caption |
 
 Images: `image_1`, `image_2`, `image_3`
 
@@ -234,8 +234,8 @@ A big, made-up number, with what it counts under it: a figure the presenter has 
 | --- | --- | --- |
 | `title` | 45 | the slide's title (or empty, for none) |
 | `number` | 12 | the big number, with its unit if it has one: a percentage, an amount or a count |
-| `label` | 50 | what the number counts or measures, in a few words |
-| `source` | 60 | a made-up, unreliable source for the number (or empty, for none) |
+| `label` | 32 | what the number counts or measures, in a few words |
+| `source` | 32 | a made-up, unreliable source for the number, in a few words (or empty, for none) |
 
 Images: `background`
 

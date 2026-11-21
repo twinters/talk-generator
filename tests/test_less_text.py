@@ -58,7 +58,7 @@ def pictures_first(monkeypatch):
 # WHICH SLIDES TRY A PICTURE FIRST
 
 
-def test_about_half_of_the_charts_and_diagrams_try_a_picture_first(monkeypatch):
+def test_three_in_four_charts_and_diagrams_try_a_picture_first(monkeypatch):
     monkeypatch.delenv("DISABLE_PICTURE_FIRST", raising=False)
     pictured = [kind for kind, made in KINDS.items() if made.picture_first is not None]
     assert {"chart_trend", "chart_bars", "chart_yes_no", "venn", "matrix", "pyramid", "process", "timeline"} <= set(
@@ -66,7 +66,7 @@ def test_about_half_of_the_charts_and_diagrams_try_a_picture_first(monkeypatch):
     )
     assert not {"big_number", "kpi", "quiz", "reviews", "image", "two_columns"} & set(pictured)
     tried = [Recipe("chart_trend").varied(random_util.Rng(seed)).picture_first for seed in range(400)]
-    assert 0.42 < sum(tried) / len(tried) < 0.58
+    assert 0.67 < sum(tried) / len(tried) < 0.83  # (half of them before D85)
     assert not any(Recipe("quiz").varied(random_util.Rng(seed)).picture_first for seed in range(50))
     # (from a stream of its own: the variant's draw is as it was)
     for seed in range(20):

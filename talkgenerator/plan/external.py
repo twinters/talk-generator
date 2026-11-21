@@ -221,7 +221,9 @@ def plan_warnings(slide: SlidePlan, recipe: Recipe) -> list[str]:
                 + ("talkgenerator picked one" if text_field.optional else "the slide can't be made")
             )
         elif len(" ".join(value.split())) > length_limit(text_field):
-            warnings.append(f"{name} has more than {text_field.max_length} characters, so it was cut off")
+            # (the length it's cut at: its room, where its slides hold more than the model is asked for)
+            longest = max(text_field.max_length, text_field.room)
+            warnings.append(f"{name} has more than {longest} characters, so it was cut off")
     for slot, query in slide.images.items():
         if slot not in kind.images:
             warnings.append(f"{kind.name} slides have no image {slot!r}; they have {_listed(kind.images)}")

@@ -10,6 +10,7 @@ A gif comes with Reddit's mp4 copy of it, which plays in its place when the gif 
 
 import html
 import logging
+import math
 import re
 import threading
 from functools import lru_cache
@@ -68,6 +69,7 @@ class RedditImage(NamedTuple):
     thumbnail_url: str | None = None
     size: tuple[int, int] | None = None
     title: str | None = None
+    score: int = 0  # its post's upvotes (less its downvotes), as Reddit says (D85: see upvoted)
 
 
 def _has_credentials() -> bool:
@@ -134,6 +136,7 @@ def _search_reddit(name: str, query: str, sort: str, limit: int, animated: bool)
             video_url, poster_url = get_video_copy(submission) or (None, None)
             credit, post_url = get_source_name(submission), get_post_url(submission)
             thumbnail_url, size = get_preview(submission)
+            score = vars(submission).get("score")
             images.append(
                 RedditImage(
                     image_url,
@@ -144,9 +147,17 @@ def _search_reddit(name: str, query: str, sort: str, limit: int, animated: bool)
                     thumbnail_url,
                     size,
                     title if isinstance(title, str) else None,
+                    score if isinstance(score, int) else 0,
                 )
             )
     return tuple(images)
+
+
+def upvoted(image: RedditImage) -> float:
+    """How likely a post's picture is to be picked among the ones a search found (relevant ones, best first: see
+    talkgenerator.images.finder), by its upvotes: 1 for a post nobody upvoted, 2 for 10, 3 for 100, 5 for 10,000 (D85:
+    the pictures people found interesting, more often)."""
+    return 1.0 + math.log10(1 + max(image.score, 0))
 
 
 def image_data(image: RedditImage) -> ImageData:
