@@ -132,7 +132,7 @@ def test_the_catalog_lists_every_persona():
 
 
 def test_a_retiree_s_old_job_is_one_the_talk_s_dice_pick():
-    # (a retired lighthouse keeper's talks were all about the lighthouse: the user, 2026-11-09, "why not retired person?")
+    # (a retired lighthouse keeper's talks were all about the lighthouse)
     retiree = personas.PERSONAS["retiree"]
     lived = [personas.pick("retiree", random_util.Rng(seed)) for seed in range(200)]
     assert lived == [
@@ -392,8 +392,8 @@ def test_the_persona_says_how_the_presenter_goes_by(schema):
 
 @pytest.mark.slow
 def test_the_persona_s_name_styles_come_up_more_often():
-    # (more often than without the persona; but names that could be a real person's still come first, as the user
-    # asked on 2026-11-13, D80: a historian's famous-name puns twice as often, not more often than the others)
+    # (more often than without the persona; but names that could be a real person's still come first, D80: a historian's
+    # famous-name puns twice as often, not more often than the others)
     historian = personas.persona("medieval_historian")
 
     def asked(nudge):
@@ -621,10 +621,10 @@ def test_personas_favour_formats_a_talk_s_seed_can_pick():
 
 
 def test_most_talks_are_ted_like_and_a_specialist_s_favourite_format_comes_next():
-    # (decision D63: the user asked for more TED-like talks after reviewing 35, so with every persona most talks are
-    # TED-like, and a specialist's favourite format comes second, in about two of their talks in five; a third since
-    # D79, which brought five specialists more and ten formats beside the TED-like talk, and every format keeps about
-    # one talk in a hundred with every persona: "some chance for all possibilities", as the user asked for D61)
+    # (decision D63: more TED-like talks, so with every persona most talks are TED-like, and a specialist's favourite
+    # format comes second, in about two of their talks in five; a third since D79, which brought five specialists more
+    # and ten formats beside the TED-like talk, and every format keeps about one talk in a hundred with every persona:
+    # some chance for every format, D61)
     for name, persona in personas.PERSONAS.items():
         odds = schema_types.format_odds(persona)
         assert sum(odds.values()) == pytest.approx(1)
@@ -663,7 +663,7 @@ def test_across_the_personas_most_talks_are_ted_like_and_pitches_and_academic_ta
     # (the other ten formats share the rest since D79: each about three talks in a hundred, the book report, which has
     # no specialist, two)
     assert all(0.015 < share < 0.12 for name, share in shares.items() if name != "default"), shares
-    # (the user found pitches and academic talks the most boring: they're rarer than all-hands and keynotes)
+    # (pitches and academic talks are the most boring: they're rarer than all-hands and keynotes)
     assert max(shares["pitch"], shares["academic"]) < min(shares["corporate"], shares["keynote"]), shares
 
 

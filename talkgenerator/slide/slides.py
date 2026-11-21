@@ -600,9 +600,9 @@ class QuizSlide(DrawnSlide):
 
 def quiz_question(question: str | None, language: Language = ENGLISH) -> str | None:
     """A quiz's question as its slide shows it: after a label in the talk's language that says it's a quiz ("Quiz:",
-    "Pop quiz:", "Test voor jullie:"), so that the presenter knows at a glance what the slide is (the user's report of
-    2026-11-13); in place of a label the question had. The label is picked by the question's own letters, which keeps
-    the talk's random streams as they were. A text that carries the fact it shows keeps it (a real quiz question)."""
+    "Pop quiz:", "Test voor jullie:"), so that the presenter knows at a glance what the slide is; in place of a label
+    the question had. The label is picked by the question's own letters, which keeps the talk's random streams as they
+    were. A text that carries the fact it shows keeps it (a real quiz question)."""
     if not question or not question.strip():
         return question
     bare = _QUIZ_LABEL.sub("", question.strip(), count=1).strip() or question.strip()
@@ -1262,9 +1262,8 @@ class RedFlagsSlide(DrawnSlide):
 
 
 class TrafficFlagsSlide(RedFlagsSlide):
-    """A green flag, an orange flag and a red flag about something (the user's variation on red flags, 2026-11-13):
-    a good sign, a doubtful one and an alarming one, the punchline, each beside a flag of its colour, appearing one by
-    one, a click each."""
+    """A green flag, an orange flag and a red flag about something (a variation on red flags): a good sign, a doubtful
+    one and an alarming one, the punchline, each beside a flag of its colour, appearing one by one, a click each."""
 
     type = "traffic_flags"
 

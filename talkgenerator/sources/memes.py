@@ -7,8 +7,7 @@ outline, in capitals, over anything) or "plain" (black text on the template's ow
 Gru's boards), whose colour the box keeps (`fill`), so a layout can put it under the text where the picture has it.
 A box may repeat another's caption (`same_as`): Gru's fourth board is his third, read again. A template whose picture
 already shows how it ends (`at_once`: This Is Fine's dog, saying it) has its captions on it from the start, all at
-once, where the others' come a click each, the punchline last: one by one, they'd come after the punchline (the user,
-2026-11-15).
+once, where the others' come a click each, the punchline last: one by one, they'd come after the punchline.
 
 A meme slide is the template's picture with its captions as texts on it (talkgenerator.design.engine lays them out):
 deck elements every renderer draws already. The language model writes the captions, for a template the talk's dice

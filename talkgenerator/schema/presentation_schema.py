@@ -382,7 +382,7 @@ def _title_slide(
             and not named[len(presenter) : len(presenter) + 1].isalnum()
         ):
             job = named[len(presenter) :].lstrip(" ,;:-–—") or None
-    # (the job on a line of its own, under the name: more readable than after a comma, the user found, D80)
+    # (the job on a line of its own, under the name: more readable than after a comma, D80)
     subtitle = "\n".join(part for part in (f"{by} {presenter}" if presenter else "", job or "") if part) or None
     slide = slides.TitleSlide(title, subtitle)
     slide.set_note(f"Planned: the title slide\nThesis: {thesis!r}")

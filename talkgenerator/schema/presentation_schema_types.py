@@ -179,14 +179,14 @@ for _module, _format in (
 # gets one of these, by these weights times its persona's multipliers (talkgenerator.personas.Persona.formats), so a
 # startup founder pitches and a disgraced professor gives academic talks far more often than the others do (about two
 # talks in five; half of theirs are TED-like still), and every format keeps some chance with every persona. Most talks
-# are TED-like: 7 in 10 over all the personas, 8 in 10 without one, as the user asked after reviewing 35 talks
-# (2026-11-09), with the pitch and the academic talk the rarest. Not ted: that's the TED-like talk with copyright-free
-# images only, which is a choice of license rather than of format: a talk asks for those images with license_policy
-# "open", whatever format its seed picks (the formats' arcs need no image that's fair use). Nor interview and test.
-# With D79's six formats and eight personas (five of them specialists), the TED-like talk weighs 55 (it was 20), so
-# that 7 talks in 10 stay TED-like over all 21 personas and 8 in 10 without one, the specialists' multipliers are ×32
-# (×21 for the all-hands' and the keynote's), so their favourite still comes second, in about a third of their talks,
-# and every format keeps about 1% with every persona: the other ten formats share three talks in ten.
+# are TED-like: 7 in 10 over all the personas, 8 in 10 without one, with the pitch and the academic talk the rarest. Not
+# ted: that's the TED-like talk with copyright-free images only, which is a choice of license rather than of format: a
+# talk asks for those images with license_policy "open", whatever format its seed picks (the formats' arcs need no image
+# that's fair use). Nor interview and test. With D79's six formats and eight personas (five of them specialists), the
+# TED-like talk weighs 55 (it was 20), so that 7 talks in 10 stay TED-like over all 21 personas and 8 in 10 without one,
+# the specialists' multipliers are ×32 (×21 for the all-hands' and the keynote's), so their favourite still comes
+# second, in about a third of their talks, and every format keeps about 1% with every persona: the other ten formats
+# share three talks in ten.
 RANDOM: Final = "random"
 FORMAT_WEIGHTS: Final[dict[str, float]] = {
     "default": 55,

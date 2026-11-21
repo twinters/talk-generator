@@ -165,12 +165,11 @@ def generate_big_number(presentation_context: dict[str, Any]) -> tuple[str | Non
     return title, _figure(kind), label, _maybe(0.7, _template("numbers.big_number_source")(variables))
 
 
-# How often a classic big number and KPI tiles have a picture of their seed behind them, when one is found (D63: the
-# user found slides of text boring)
+# How often a classic big number and KPI tiles have a picture of their seed behind them, when one is found (D63: slides
+# of text are boring)
 BIG_NUMBER_PICTURES: Final = 0.75
 KPI_PICTURES: Final = 0.5
-# Slides of big text alone get a picture of what they're about behind them now and then (D80, the user's "slides that
-# just have big text would better have a random relevant background"): sections and dares
+# Slides of big text alone get a picture of what they're about behind them now and then (D80): sections and dares
 SECTION_PICTURES: Final = 0.7
 DARE_PICTURES: Final = 0.5
 
@@ -448,12 +447,11 @@ def generate_section(presentation_context: dict[str, Any]) -> tuple[str, str | N
 
 def questions(picture: ImageSource) -> Callable[[dict[str, Any]], tuple[Any, ...] | None]:
     """A generator of closing slides (QuestionsSlide's arguments): a question to the audience, and one of three ways
-    to end on, as many of each (from the user's look at the closing slides of 2026-11-09, D65): a funny picture from
-    the image source, with a disclaimer under it half the time; a callback to an earlier slide's picture (which the
-    deck gives it), with a line that says so ("Remember this one?"); or a last tip under it. A last tip is a real
-    piece of advice some of the time (with the advice slips on: see talkgenerator.facts.real_advice), credited ("One
-    last thing: ..."), else one of the TED pack's tips, or a disclaimer about the answers. A closing slide whose
-    picture can't be found gets a last tip instead."""
+    to end on, as many of each (D65): a funny picture from the image source, with a disclaimer under it half the time; a
+    callback to an earlier slide's picture (which the deck gives it), with a line that says so ("Remember this one?");
+    or a last tip under it. A last tip is a real piece of advice some of the time (with the advice slips on: see
+    talkgenerator.facts.real_advice), credited ("One last thing: ..."), else one of the TED pack's tips, or a disclaimer
+    about the answers. A closing slide whose picture can't be found gets a last tip instead."""
 
     @_unless_sensitive
     def generate(presentation_context: dict[str, Any]) -> tuple[Any, ...] | None:
@@ -898,7 +896,7 @@ def generate_alignment_chart(presentation_context: dict[str, Any]) -> tuple[Any,
 def generate_red_flags(presentation_context: dict[str, Any]) -> tuple[str | None, ...] | None:
     """Red flags about the seed: a title, two warning signs about it and words related to it, and a last one, the
     punchline, which breaks their pattern now and then (PATTERN_BREAK): a few words. Three in all, which read at a
-    glance (the user, 2026-11-13: "better just three red flags")."""
+    glance."""
     related = related_words(presentation_context["seed"])
     title = _template("karaoke.red_flags_title")(_context(presentation_context))
     flags = _different("karaoke.red_flag", presentation_context, related, 2)

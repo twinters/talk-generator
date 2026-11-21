@@ -50,9 +50,9 @@ def treatment(theme: Theme, framed: bool, behind: bool = False) -> ImageTreatmen
     """How the theme treats a picture (in a box, if framed, else over a whole slide or half of it, where it gets no
     frame), or None if it leaves it as it is. A picture behind a slide's texts (behind: a backdrop) gets the theme's
     filter, a strong one too (a duotone, grayscale, sepia; black and white is too harsh behind texts, and goes grey);
-    every other picture keeps its colours (D80: the user found the strong filters made many pictures "samey", and
-    wanted them only where a picture matters little, such as a backdrop), with the theme's gentle touches (its tint,
-    grain, vignette and frame). A polaroid's tilt comes from the current random stream."""
+    every other picture keeps its colours (D80: the strong filters made many pictures look the same, so they're only
+    where a picture matters little, such as a backdrop), with the theme's gentle touches (its tint, grain, vignette and
+    frame). A polaroid's tilt comes from the current random stream."""
     frame = theme.image_frame if framed else "none"
     image_filter = theme.image_filter if behind else "none"
     if image_filter == "black and white":  # (too harsh behind a slide's texts)

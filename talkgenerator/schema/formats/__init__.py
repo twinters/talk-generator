@@ -209,9 +209,8 @@ def provocation(
     """A free slide of the format's own (D63): a striking or weird picture of the slide's topic filling it (the
     backdrop look's: stock photos most often, now and then a weird one from Reddit, a space photograph, an old one or
     a painting), with a provocative word or two over it, in the format's voice (its pack's free.provocation: "Disrupt."
-    in a pitch, "Peer reviewed." in an academic talk), as the user asked for "more odds on random full-slide images
-    ... with like random provoking (relevant?) word" after reviewing 35 talks. Named "Provocation (<named>)", tagged
-    provocation (a format's caps keep it to one slide in ten)."""
+    in a pitch, "Peer reviewed." in an academic talk), for more full-slide pictures. Named "Provocation (<named>)",
+    tagged provocation (a format's caps keep it to one slide in ten)."""
     image = cg.provocation_image_generator
 
     def content(context: dict[str, Any]) -> Made | None:

@@ -73,8 +73,8 @@ SETUPS: list[dict[str, Any]] = [
         "language": "nl",
     },
 ]
-# Talks in Dutch (2026-11-13: the user found the site's free models writing English in a Dutch talk now and then), of
-# every format, by personas that fit them
+# Talks in Dutch (the site's free models wrote English in a Dutch talk now and then), of every format, by personas that
+# fit them
 NL_SETUPS: list[dict[str, Any]] = [
     {"id": "nl-regen-influencer", "topic": "regen", "schema": "default", "persona": "influencer", "seed": 21},
     {"id": "nl-fietsen-pitch", "topic": "fietsen", "schema": "pitch", "persona": "startup_founder", "seed": 22},

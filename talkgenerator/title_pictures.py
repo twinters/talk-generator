@@ -1,7 +1,6 @@
 """The title slide's picture (docs/v5-plan.md, D80): a photo of the talk's world beside its title, so that the first
-slide already says what kind of talk it is, for the presenter and the audience alike (the user, 2026-11-13: "some first
-slides should hint at what kind of slideshow it is, or which persona: a wedding talk would better have a wedding
-picture there already").
+slide already says what kind of talk it is, for the presenter and the audience alike (a wedding talk with a wedding
+picture there already).
 
 A talk's world is its format's (a wedding toast's wedding, a court case's courtroom), or else its persona's (a
 detective's, a kindergarten teacher's classroom): a few plain English words, a scene, which the picture is searched for
@@ -37,9 +36,9 @@ logger = logging.getLogger("talkgenerator")
 
 DEADLINE: Final = 8.0  # seconds from the talk's start that its title slide waits for its picture, at most
 
-# A photo of one grown-up beside the title passes for the presenter (D81: the user found a keynote speaker's portrait
-# on a keynote's title slide, "then it looks like the presenter isn't the person presenting"), but a couple, a class or
-# a crowd is a scene of the talk's world (a wedding's couple). Who a description is of: one of these first, ...
+# A photo of one grown-up beside the title passes for the presenter (D81: a keynote speaker's portrait on a keynote's
+# title slide looks as if someone else were presenting), but a couple, a class or a crowd is a scene of the talk's world
+# (a wedding's couple). Who a description is of: one of these first, ...
 _ONE: Final = (
     r"man|woman|person|guy|lady(?! justice)|gentleman|male|female|businessman|businesswoman|businessperson|"
     r"business professional|speaker|presenter|lecturer|professor|teacher|student|doctor|scientist|researcher|"

@@ -56,8 +56,8 @@ _CONTRAST = "Two captioned images that contrast or compare: two sides, two eras,
 _SEQUENCE = "Three captioned images that build up, like 'Good, Better, Best' or three steps of a plan"
 _CONCLUSIONS_TITLE = "a title for the conclusions, in a few words of your own"
 # The third of three captioned pictures in a row breaks the pattern of the first two most of the time, as 2019's talks
-# had a weird picture last, which the user remembered as usual (2026-11-10, D73: a list's other pattern breaks are its
-# kind's, see talkgenerator.plan.kinds.PatternBreak)
+# usually had a weird picture last (D73: a list's other pattern breaks are its kind's, see
+# talkgenerator.plan.kinds.PatternBreak)
 _THIRD_BREAKS = (
     "with the third one breaking the pattern of the first two: an unexpected picture, under a caption that doesn't "
     "follow theirs"
@@ -800,7 +800,7 @@ def _drawn(content, slide_class, weight, tags, name, recipe, repeats=2) -> Slide
 
 
 # FIGURES: over a picture of what they're about, if one is found (three big numbers in four, and half the KPI tiles:
-# D63, as the user found slides of text boring), from one of many sources (the backdrop look's)
+# D63, as slides of text are boring), from one of many sources (the backdrop look's)
 number_slide_generators = _register(
     "numbers",
     [
@@ -905,11 +905,11 @@ mockup_slide_generators_copyright_free = _register(
 
 # MEMES WITH LIVE CAPTIONS: one of Imgflip's templates, with captions of the talk's own in its boxes (see
 # talkgenerator.sources.memes): the dice pick the template, and the language model writes what each box says (or, in
-# a classic talk, the template's own sentences about the slide's topic). The user loves them (2026-11-07), so they
-# weigh seven times what the other middle slides weigh (four until the user asked for more of them, D63; five until
-# the pictures to explain shared the middle of a talk, D78, which the user wanted them to keep their half of the talks
-# against): half of all 10-slide talks have one (one in five did at first), and a talk has two at most (caption_meme),
-# and two memes of any kind in ten slides, Reddit's too (meme)
+# a classic talk, the template's own sentences about the slide's topic). They're among the funniest slides, so they
+# weigh seven times what the other middle slides weigh (four until D63 asked for more of them; five until the pictures
+# to explain shared the middle of a talk, D78, against which they keep their half of the talks): half of all 10-slide
+# talks have one (one in five did at first), and a talk has two at most (caption_meme), and two memes of any kind in ten
+# slides, Reddit's too (meme)
 _MEME_BRIEF = "A meme about the concept"
 MEME_WEIGHT = 7
 MEME_ROOM_SIZE = 30  # (the font size, in canvas pixels, at which a box's room is how long a caption is kept whole)
@@ -1095,9 +1095,8 @@ karaoke_slide_generators = _register(
                 "dare",
                 (cg.words_backdrop_generator,),
                 brief="A dare, halfway through the talk",
-                # (a real challenge for the presenter, or the audience joining in, from the user's look at the dares of
-                # 2026-11-09, D65; and in an English talk, now and then a real dad joke to tell: see
-                # talkgenerator.facts)
+                # (a real challenge for the presenter, or the audience joining in, D65; and in an English talk, now and
+                # then a real dad joke to tell: see talkgenerator.facts)
                 variants=pictured(
                     (
                         Variant(
@@ -1221,7 +1220,7 @@ karaoke_slide_generators = _register(
                 "something around it is trouble, each more alarming than the last",
             ),
         ),
-        # (the user's variation, 2026-11-13: a green, an orange and a red flag; one of the two kinds a talk, at most)
+        # (a variation: a green, an orange and a red flag; one of the two kinds a talk, at most)
         _drawn(
             slide_texts.broken(
                 slide_texts.generate_traffic_flags,
@@ -1285,12 +1284,12 @@ karaoke_slide_generators = _register(
 )
 
 # SLIDES OF A PICTURE TO EXPLAIN (docs/v5-plan.md, D78): a surprising picture that the presenter has to explain, with
-# little or no text, as improv suggestions and story cubes give a performer something to explain (the user's request
-# of 2026-11-12): Exhibit A, two pictures to pick one of, a picture equation, a picture to see something in (a face in
-# something: pareidolia, or an inkblot), and a before and after. One to three pictures a slide, as a slide has 8 seconds
-# on talkgenerator.com before something stands in for it (D67); an equation's things are emoji where their pictures
-# aren't found in time, and "What do you see?" an inkblot. Talks without fair use (ted) have no pareidolia, which only
-# Reddit has: their "What do you see?" is an inkblot
+# little or no text, as improv suggestions and story cubes give a performer something to explain: Exhibit A, two
+# pictures to pick one of, a picture equation, a picture to see something in (a face in something: pareidolia, or an
+# inkblot), and a before and after. One to three pictures a slide, as a slide has 8 seconds on talkgenerator.com before
+# something stands in for it (D67); an equation's things are emoji where their pictures aren't found in time, and "What
+# do you see?" an inkblot. Talks without fair use (ted) have no pareidolia, which only Reddit has: their "What do you
+# see?" is an inkblot
 _ODD_PICTURE = ImageSlot("an odd picture, as the evidence in a case", aesthetic="weird-stock", generate=True)
 _OPTION = ImageSlot("one of two things for the audience to pick from", aesthetic="weird-stock")
 _THING = ImageSlot("a thing in a picture equation", aesthetic="photo")

@@ -10,8 +10,8 @@ are liquid") or its title ("Why I Joined a Penguin Cult"). In a talk a language 
   that talkgenerator can fix itself (see polished).
 - Anything shorter is the talk's topic, or a premise, on which the model builds a title of its own, funnier and more
   specific than what was typed ("The French Revolution" deserves better than itself; a premise keeps its words). (The
-  user's call, 2026-11-07, after the free models proved unreliable at telling a topic from a title themselves.) The
-  talk's dice pick how the classic titles go with it (see CLASSIC_TITLE_WAYS).
+  free models proved unreliable at telling a topic from a title themselves.) The talk's dice pick how the classic
+  titles go with it (see CLASSIC_TITLE_WAYS).
 
 A talk without a language model, or whose model writes no title, goes by talkgenerator's guess (see guess): what reads
 as a title stays as typed (polished), and a topic gets the classic title.
@@ -48,7 +48,7 @@ TOPIC: Final = "topic"
 TITLE: Final = "title"
 # The ways a talk's classic titles go to the language model, for a short input, which the talk's dice pick by weight:
 # as titles to pick ("options"), as inspiration for its own ("inspiration"), or not at all ("none", which saves the
-# wikiHow search before the request too). The user liked the titles of all three, in a live comparison (2026-11-07)
+# wikiHow search before the request too). All three gave good titles in a live comparison, so they weigh the same
 CLASSIC_TITLE_WAYS: Final[tuple[tuple[str, float], ...]] = (("options", 1.0), ("inspiration", 1.0), ("none", 1.0))
 
 # How titles start, as words in lower case: in English, and in the other languages talks can be in (what's typed for

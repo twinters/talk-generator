@@ -828,8 +828,8 @@ _GENERATORS: Final = [
 # part's generators can make): memes, gifs, press, a secret sauce, a bold statement, a fun fact, an anecdote, and full-
 # screen photos, which a talk may have any number of (so that the free slides of a long one, without fair use too,
 # never run out of slides)
-# (D63: memes, gifs, Reddit's weird pictures and full-screen pictures more often, and fewer slides of text, as the user
-# found pitches text-heavy; and the pitch's own provocations, a word over a full-screen picture: "Disrupt.")
+# (D63: memes, gifs, Reddit's weird pictures and full-screen pictures more often, and fewer slides of text, as pitches
+# were text-heavy; and the pitch's own provocations, a word over a full-screen picture: "Disrupt.")
 _OTHERS: Final = {
     "Meme": 3,
     "Full Screen Gif": 1.2,

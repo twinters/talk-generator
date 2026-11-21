@@ -8,13 +8,13 @@ the Galapagos penguin, lives at the equator" becomes a fun fact about why. A sli
 article (CC BY-SA 4.0).
 
 Slides that put two moments of history side by side (two old photos, a timeline) get a coincidence first (D73, in
-place of D60's events of the day the talk is made on, which the user found confusing, and the same in talk after
-talk): a moment of the topic's history (a sentence of its article with its year, the lead's or else the rest's) and
-something else that happened the same year, from the year's article ("1886"), which the slide puts side by side as if
-one caused the other: "In 1886, Karl Benz patented the motor car" and "1886: Coca-Cola is first sold in Atlanta". Its
-slide credits both articles. A made-up figure's quote and a fun fact, which would say both in one sentence, get one
-real thing (D80: the user found such sentences really weird, a riddle for the presenter to read first), and a quote
-puts it in its title, so that the quote is the figure's line alone.
+place of D60's events of the day the talk is made on, which were confusing, and the same in talk after talk): a moment
+of the topic's history (a sentence of its article with its year, the lead's or else the rest's) and something else that
+happened the same year, from the year's article ("1886"), which the slide puts side by side as if one caused the other:
+"In 1886, Karl Benz patented the motor car" and "1886: Coca-Cola is first sold in Atlanta". Its slide credits both
+articles. A made-up figure's quote and a fun fact, which would say both in one sentence, get one real thing (D80: such
+sentences are weird, a riddle for the presenter to read first), and a quote puts it in its title, so that the quote is
+the figure's line alone.
 
 No fact about a living person goes on a slide: none for a topic that is one (English Wikipedia's "Category:Living
 people"), and none that names one (an article its sentence names, of the articles the lead links to, or a name a
@@ -29,16 +29,15 @@ that came too late from the cache). The deck records every fact it was given (De
 license, and its slide. With the same answers, the same seed gives the same deck, also when facts came too late: in a
 block of http_util.same_answers (`talkgenerator check`), a talk made again gets the facts the first one got.
 
-Flavour texts too (talkgenerator.sources.flavour), from three small free APIs that the user allowed on 2026-11-08: a
-fun fact may build on a random useless fact instead ("25% of a human's bones are in its feet"), a dare dares the
-presenter to tell a real dad joke (about the topic, if there's one: a groan they have to deliver), and the closing
-slide's line under its title can be a real piece of advice. They pass the facts' checks and some of their own (no
-insults, drink or faiths), and name no living person (the articles their capitalised words would be). A talk in another
-language than English gets none: no dad jokes or advice, which its slides would say word for word, in English (a free
-model put "Sing in the shower." on a German talk's closing slide, 2026-11-09, also when asked for it translated), and
-no useless facts, English trivia that's often about English words or America ("'Dreamt' is the only English word that
-ends in the letters 'mt'" made little sense in a Dutch talk, the user found on 2026-11-15): its fun facts build on its
-topic's article.
+Flavour texts too (talkgenerator.sources.flavour), from three small free APIs: a fun fact may build on a random useless
+fact instead ("25% of a human's bones are in its feet"), a dare dares the presenter to tell a real dad joke (about the
+topic, if there's one: a groan they have to deliver), and the closing slide's line under its title can be a real piece
+of advice. They pass the facts' checks and some of their own (no insults, drink or faiths), and name no living person
+(the articles their capitalised words would be). A talk in another language than English gets none: no dad jokes or
+advice, which its slides would say word for word, in English (a free model put "Sing in the shower." on a German talk's
+closing slide, 2026-11-09, also when asked for it translated), and no useless facts, English trivia that's often about
+English words or America ("'Dreamt' is the only English word that ends in the letters 'mt'" made little sense in a Dutch
+talk): its fun facts build on its topic's article.
 
 A problem slide (D69) that's on a real problem's angle may start from a real how-to about the topic that people look
 up on wikiHow ("How to Stop a Goose Attack"): a flavour text too, which an English talk gets, the problem-like ones

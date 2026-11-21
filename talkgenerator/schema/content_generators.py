@@ -152,8 +152,8 @@ words_backdrop_generator = ImageSlot("a picture of what the slide's words are ab
 provocation_image_generator = ImageSlot(
     "a striking or weird picture of the slide's topic, filling the slide", aesthetic="backdrop"
 )
-# And behind a statement: a calm photo most often, else a picture from one of the backdrop's many sources (D63: the
-# user asked for pictures from "multiple different generators" behind slides of text)
+# And behind a statement: a calm photo most often, else a picture from one of the backdrop's many sources (D63: pictures
+# from many different sources behind slides of text)
 statement_backdrop_generator = CombinedGenerator((2, generate_horizontal_pixabay_image), (1, backdrop_generator))
 
 copyright_free_related_generator_from_word = ConceptNetMapper(copyright_free_generator_from_word)

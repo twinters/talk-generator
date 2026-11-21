@@ -548,9 +548,8 @@ def lay_out_slide(
 
 # BUILD DOTS (D80): a small ring for every click of a slide, which fills on its click, by the slide's number, so that
 # the presenter sees at a glance whether the next click brings more of the slide (an empty ring left) or the next slide
-# (every ring full, or none at all); and that the next one is the punchline, the last ring (the user, 2026-11-13: "a
-# visual indicator to know whether we're at the end of the slide or not, such as an empty or half-filled dot, the last
-# full"). They're shapes of the deck, so PowerPoint, the previewer and talk-generator-web all draw them.
+# (every ring full, or none at all); and that the next one is the punchline, the last ring. They're shapes of the deck,
+# so PowerPoint, the previewer and talk-generator-web all draw them.
 BUILD_DOT: Final = 16.0  # a ring's size, on the canvas
 _DOT_GAP: Final = 9.0
 _MOST_DOTS: Final = 12  # a slide of more clicks than this gets none (a row of them would be a pattern, not a hint)
@@ -1235,8 +1234,7 @@ def _rows(roles: dict[str, Content], theme: Theme) -> Placement:
 
 def _pictures_both(roles: dict[str, Content]) -> bool:
     """Whether both of a two-column slide's contents are pictures: a zig-zag of rows leaves a quote beside a historical
-    figure's portrait in the opposite corner, under a caption box that stays empty (the user's report of 2026-11-13: "a
-    photo of a historical person top left and the quote bottom right, with a lot of odd empty space"; D80)."""
+    figure's portrait in the opposite corner, under a caption box that stays empty, with a lot of odd space (D80)."""
     return all(isinstance(roles.get(f"content_{index}"), ImageElement) for index in (1, 2))
 
 
@@ -1680,10 +1678,10 @@ def _left_aligned(theme: Theme) -> Theme:
     return theme.model_copy(update={"title_align": "left"})
 
 
-# A big number or KPI tiles over a picture of what they're about (D63: the user found slides of text boring): the
-# picture behind everything under a statement's shade, and the texts that aren't on a tile of their own light, as they
-# read on it whatever the picture is; or on a band across it; or the picture filling the slide's right side, and the
-# texts beside it on the theme's background
+# A big number or KPI tiles over a picture of what they're about (D63: slides of text are boring): the picture behind
+# everything under a statement's shade, and the texts that aren't on a tile of their own light, as they read on it
+# whatever the picture is; or on a band across it; or the picture filling the slide's right side, and the texts beside
+# it on the theme's background
 _SHADED: Final = tuple(color.mix(extreme, SHADE, SHADE_OPACITY) for extreme in ("#000000", "#ffffff"))
 _SIDE_PHOTO: Final = 820  # the width of a picture that fills a slide's right side
 

@@ -1,4 +1,4 @@
-"""Offline tests of talks with less text and more surprise (docs/v5-plan.md, D73: the user's feedback of 2026-11-10).
+"""Offline tests of talks with less text and more surprise (docs/v5-plan.md, D73).
 
 Charts and diagrams try a picture first, now and then, in their place (a real chart from the internet for a chart, a
 weird picture for a diagram), under their title: a slide is that picture when one is found (in its time, in a talk with

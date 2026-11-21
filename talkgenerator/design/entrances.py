@@ -4,8 +4,8 @@ presented, with which effect, and when.
 A theme moves as much as its family has it (`Theme.motion`, see talkgenerator.design.themes): a calm one not at all
 (its elements are there from the start, and those that appear on a click fade in, as before), one with some motion now
 and then (every other slide, one of its things comes in with one of the theme's effects, or two), and one for laughs,
-with lots of it, everything on every slide, one after the other: the title first, then the pictures and the texts. The
-user's idea (2026-11-13): "exaggerated animations often get a laugh too".
+with lots of it (overdone animation gets a laugh too), everything on every slide, one after the other: the title first,
+then the pictures and the texts.
 
 What comes in is a slide's thing: a text, or a picture with what belongs to it (a frame, a tint, the name on its
 window, which come in with it, as one); or a click's worth of things, which come in together on it (a quiz's answer on
@@ -14,10 +14,10 @@ charts and diagrams (whose own clicks reveal them) stay as they are. Every eleme
 renderers have nothing to work out: PowerPoint plays them (talkgenerator.render.animation), talk-generator-web too.
 
 A title slide stays still, whatever its theme: it's up as the talk loads, and the presenter should have the time to take
-in what the talk is about (the user, 2026-11-14). So does a meme whose captions are all on it from the start (a lone
-caption, or a template whose picture already shows how it ends): it's shown as it is, with its text on it, as the
-user asked on 2026-11-15, when This Is Fine's captions came in after its picture, whose dog already says it. (A meme
-whose captions come a click each still comes in, its captions on their clicks.)
+in what the talk is about. So does a meme whose captions are all on it from the start (a lone caption, or a template
+whose picture already shows how it ends): it's shown as it is, with its text on it (This Is Fine's captions came in
+after its picture, whose dog already says it). (A meme whose captions come a click each still comes in, its captions on
+their clicks.)
 """
 
 from __future__ import annotations

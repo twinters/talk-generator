@@ -1,14 +1,12 @@
 """Flavour texts, real facts' lighter side (see talkgenerator.facts, docs/v5-plan.md D60): random useless facts
 (https://uselessfacts.jsph.pl), dad jokes (https://icanhazdadjoke.com) and advice slips (https://api.adviceslip.com),
-from three small free APIs without keys. Their sites state no license for their texts; the user allowed them on the
-public site on 2026-11-08. A slide that shows one credits its site.
+from three small free APIs without keys. A slide that shows one credits its site.
 
 Every answer is cached (see http_util.CACHE_EXPIRY), so that a talk made again gets the same texts: a useless fact is
 one of a pool of POOL a week (the API answers at random, and the cache keeps one answer per number of the pool, which
-the API ignores; a pool of hundreds, as one of 12 brought the same few back talk after talk, the user found on
-2026-11-15), a dad joke comes from a search for a word (a whole word: the API matches "cat" in "catholic") or else
-from one of the pages of all of them, and an advice slip goes by its number. A source that fails is skipped for a while
-(its cooldown), and gives nothing.
+the API ignores; a pool of hundreds, as one of 12 brought the same few back talk after talk), a dad joke comes from a
+search for a word (a whole word: the API matches "cat" in "catholic") or else from one of the pages of all of them, and
+an advice slip goes by its number. A source that fails is skipped for a while (its cooldown), and gives nothing.
 """
 
 from __future__ import annotations

@@ -352,10 +352,10 @@ _BLOCKED_PHRASES: Final = (
     ("vladimir", "putin"),
 )
 # Famous living people, whose names models reach for in puns. A presenter's name may pun on them ("Umbrella Chomsky",
-# "Taylor Swiftly": the user, 2026-11-08, "I'm fine with that"), but never be their real name as it is (see
-# _real_living_name), and a generated picture never shows them (see real_person). A name with an asterisk is theirs
-# alone, and a text with it names them, whatever its other words ("Umbrella Chomsky", "Oprah Windfrey"): no classic
-# name has it (but Trump, as the blocklist had it), nor is it a word that a fun surname could be (a gosling is a young goose, "streep" a Dutch stripe, "stallone" an Italian
+# "Taylor Swiftly"), but never be their real name as it is (see _real_living_name), and a generated picture never shows
+# them (see real_person). A name with an asterisk is theirs alone, and a text with it names them, whatever its other
+# words ("Umbrella Chomsky", "Oprah Windfrey"): no classic name has it (but Trump, as the blocklist had it), nor is it a
+# word that a fun surname could be (a gosling is a young goose, "streep" a Dutch stripe, "stallone" an Italian
 # stallion). Their other names are ordinary ones ("Swift", "Gates"), which only count together, the first name before
 # the surname, as they are or with one of them bent ("Taylor Swiftly", "Gordon Hamsay", "Tailor Swift": see
 # _living_person), so "Dr. Emma Swift" stays

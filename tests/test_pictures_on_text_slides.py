@@ -1,7 +1,7 @@
-"""Offline tests of decision D63, after the user reviewed 35 talks (2026-11-09): pictures behind and beside slides of
-text (big numbers and KPI tiles over a picture, statements over a backdrop from a mix of sources), the varied backdrop
-look, more of Reddit's weird pictures and of the live-caption memes, the formats' free slides and provocations, and a
-pitch's product shown off (searched as a gadget, or generated as a product shot)."""
+"""Offline tests of decision D63: pictures behind and beside slides of text (big numbers and KPI tiles over a picture,
+statements over a backdrop from a mix of sources), the varied backdrop look, more of Reddit's weird pictures and of the
+live-caption memes, the formats' free slides and provocations, and a pitch's product shown off (searched as a gadget, or
+generated as a product shot)."""
 
 from __future__ import annotations
 

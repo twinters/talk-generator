@@ -263,7 +263,7 @@ PROFILES: Final[dict[str, Profile]] = {
             "or an odd old print",
             (
                 *_STOCK,
-                # (more of Reddit's weird pictures, as the user asked after reviewing 35 talks: D63)
+                # (more of Reddit's weird pictures: D63)
                 SourceUse(reddit("weird"), 1.2, modifiers=_PLAIN),
                 SourceUse("nasa", 0.3, modifiers=_PLAIN),
                 SourceUse("wellcome", 0.3, modifiers=_PLAIN),
@@ -426,7 +426,7 @@ PROFILES: Final[dict[str, Profile]] = {
             fallback="photo",
         ),
         # (Reddit's weird pictures and memes more often than ShitpostBot's random images, which are about nothing in
-        # particular, as the user asked after reviewing 35 talks: D63)
+        # particular: D63)
         Profile(
             "meme-chaos",
             "weird pictures, ShitpostBot's images, gifs and memes",

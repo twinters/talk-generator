@@ -61,13 +61,13 @@ from talkgenerator.util import random_util
 PACK: Final = "academic"
 
 # (D63: a quarter of its slides are free, for memes, real charts from the internet and weird pictures, and its outline
-# and acknowledgements, lists of text, wait for a talk of eleven slides or more: the user found ten-slide academic
-# talks "pretty boring with mostly boring text and a lot of superfluous slides"; D69: its motivation first, its why,
-# kept by every talk of two slides or more, as good academic talks explain their problem first, the user said; D76:
-# no "Questions?" among its slides, as its closer asks for them, and the outline and acknowledgements still wait)
+# and acknowledgements, lists of text, wait for a talk of eleven slides or more, as ten-slide academic talks had mostly
+# boring text and superfluous slides; D69: its motivation first, its why, kept by every talk of two slides or more, as
+# good academic talks explain their problem first; D76: no "Questions?" among its slides, as its closer asks for them,
+# and the outline and acknowledgements still wait)
 # How much the format's other slides (memes, real charts, gifs...) weigh in the references' slide, against what they
-# weigh in a free slide: about one talk in three ends with one of them rather than the references (the user found the
-# references too often, 2026-11-14, D82: every academic talk of seven slides or more ended with them)
+# weigh in a free slide: about one talk in three ends with one of them rather than the references (D82: the references
+# came too often, as every academic talk of seven slides or more ended with them)
 REFERENCES_OTHERS: Final = 0.1
 ARC: Final = Arc(
     (
@@ -767,7 +767,7 @@ _GENERATORS: Final = [
         ),
         repeats=3,
     ),
-    # (a picture of one of them, most of the time: the user found plain references boring, 2026-11-09, D65)
+    # (a picture of one of them, most of the time, as plain references are boring: D65)
     _part(
         "references",
         1.2,
@@ -802,8 +802,8 @@ _GENERATORS: Final = [
 # part's generators can make): real charts from the internet, quotes, fun facts, a quiz, a meme, and deep questions
 # over photos, which a talk may have any number of (so that the free slides of a long one never run out of slides)
 # (D63: memes, real charts from the internet, gifs and Reddit's weird pictures more often, and fewer slides of text, as
-# the user found academic talks "pretty boring with mostly boring text"; and the talk's own provocations, a word over a
-# full-screen picture: "Peer reviewed.")
+# academic talks had mostly boring text; and the talk's own provocations, a word over a full-screen picture: "Peer
+# reviewed.")
 _OTHERS: Final = {
     "Reddit Chart": 1.5,
     "Quote": 0.6,

@@ -76,12 +76,11 @@ _WORD: Final = re.compile(r"(?<=\s)\S+")
 # A backslash before a quote mark, as some models escape one where their JSON needn't (what\'s)
 _STRAY_ESCAPE: Final = re.compile(r"\\(?=['\"’])")
 
-# TACKED-ON TAGS (docs/v5-plan.md, D85): what models add to the end of a line to make it funny, the jokes the user
-# found most tiresome ("adds a lot of words at the end like 'twice' or ', on a Tuesday', as if that's a joke",
-# 2026-11-21). The prompt asks for none; in an English talk, these go where a model wrote one anyway: a count, a hedge,
+# TACKED-ON TAGS (docs/v5-plan.md, D85): what models add to the end of a line to make it funny, the most tiresome of
+# their jokes. The prompt asks for none; in an English talk, these go where a model wrote one anyway: a count, a hedge,
 # a day or 3 a.m. after a comma or in brackets ("Independent thinker, allegedly"), the same as a fragment of its own
-# after a sentence ("Wore them under tights. Twice."), and a day at the very end ("Waited four hours on a Tuesday"),
-# as long as a few words are left ("Yes, twice", a chart's funny answer, stays)
+# after a sentence ("Wore them under tights. Twice."), and a day at the very end ("Waited four hours on a Tuesday"), as
+# long as a few words are left ("Yes, twice", a chart's funny answer, stays)
 _DAY: Final = r"(?:mon|tues|wednes|thurs|fri|satur|sun)day"
 _TAG: Final = (
     r"(?:twice|thrice|again|allegedly|apparently|reportedly|supposedly|probably|somehow|technically"
@@ -116,8 +115,8 @@ def untagged(text: str, language: str = languages.ENGLISH.code) -> str:
 def length_limit(text_field: TextField) -> int:
     """How long a text of the field may be before it's cut: a little longer than the field's length (by an eighth,
     or at least four characters), as a few characters too many rarely spoil a slide, and a phrase cut off always
-    does; or than its room, where its slides hold more than the model is asked for (TextField.room: D80 asked for
-    less, and the user would rather have a text a little long than cut off mid-sentence)."""
+    does; or than its room, where its slides hold more than the model is asked for (TextField.room: D80 asked for less,
+    and a text a little long is better than one cut off mid-sentence)."""
     longest = max(text_field.max_length, text_field.room)
     return longest + max(4, longest // 8)
 
@@ -225,10 +224,10 @@ def _cut(text: str, length: int, language: str) -> str:
     or else after a comma, if that keeps a third ("Professor of Serenity Studies", of a long affiliation; "Wim Fietsen",
     of "Wim Fietsen, de enige die ooit een fiets repareerde met een broodjespunt"), or else between words, without the
     little words and punctuation that a cut leaves hanging at its end (as in "Cats were the true scholars of the"),
-    and with an ellipsis, so that it reads as meant (D80: the user finds a text cut off mid-sentence worse than one
-    that's too long, which TextField.room makes rare); and each of them before a bracket it would leave open, if that
-    keeps a third of it ("Kaito Tanaka", of "Kaito Tanaka (Head of Temporal Planning)"; "Arctic Expansion", of "Arctic
-    Expansion (High Impact, Low Urgency)")."""
+    and with an ellipsis, so that it reads as meant (D80: a text cut off mid-sentence is worse than one that's too long,
+    which TextField.room makes rare); and each of them before a bracket it would leave open, if that keeps a third of it
+    ("Kaito Tanaka", of "Kaito Tanaka (Head of Temporal Planning)"; "Arctic Expansion", of "Arctic Expansion (High
+    Impact, Low Urgency)")."""
     head = text[: length + 1]
     little = _little_words(language)
     ends = [end.start() + (1 if end.group(0) in ".!?" else 0) for end in _CLAUSE_END.finditer(head)]

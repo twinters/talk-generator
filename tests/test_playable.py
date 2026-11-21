@@ -142,7 +142,7 @@ def test_a_talks_world_is_its_formats_or_else_its_personas():
 
 
 def test_a_title_photo_of_one_person_is_left_out_but_a_couple_or_a_crowd_is_not():
-    # (one grown-up beside the title passes for the presenter: D81, the user's keynote speaker; the descriptions are
+    # (one grown-up beside the title passes for the presenter: D81, a keynote speaker's portrait; the descriptions are
     # Pexels' captions and Pixabay's tags, as found for the talks' worlds)
     alone = title_pictures.alone
     assert title_pictures.SLOT.unwanted is alone

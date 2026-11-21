@@ -38,7 +38,7 @@ class Part:
     shortest talk that keeps it, if it waits for a long one (D63's parts of text: an all-hands' agenda waits for a talk
     of eleven slides, and kept waiting once "Questions?" left the arcs, D76, which would have made room for it). And how
     much the format's other slides weigh in its slides, against what they weigh in a free slide, if they're to take its
-    place now and then (an academic talk's references, which the user found too often: D82), not only stand in for it.
+    place now and then (an academic talk's references, which came too often: D82), not only stand in for it.
     """
 
     name: str
@@ -60,7 +60,7 @@ class Arc:
     parts: tuple[Part, ...]
     # The share of a talk's slides (but its first and its last) that are free slides whatever its parts: the format's
     # memes, gifs and pictures, before its parts get theirs (decision D63: with every slide in a part, a ten-slide pitch
-    # or academic talk had none, and the user found them text-heavy and dull). Rounded down: none in a short talk
+    # or academic talk had none, and was text-heavy and dull). Rounded down: none in a short talk
     free: float = 0.0
 
     def __post_init__(self) -> None:

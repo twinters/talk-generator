@@ -201,7 +201,7 @@ def test_a_name_that_wont_do_is_turned_down(written):
     ],
 )
 def test_a_pun_on_a_famous_living_person_goes_but_is_never_drawn(written):
-    # (the user, 2026-11-08, "I'm fine with that": docs/v5-plan.md, section 5.10)
+    # (docs/v5-plan.md, section 5.10)
     assert names.clean(written) == written
     assert names.real_person(f"a portrait of {written} in the rain") is not None  # (not in a generated picture)
 
@@ -257,7 +257,7 @@ def test_every_ordinary_name_goes_on_a_title_slide():
 
 
 def test_a_famous_name_pun_is_asked_for_on_anyone_famous_but_a_dictator_or_a_criminal():
-    # (from history or today: the user, 2026-11-08, "I'm fine with that")
+    # (from history or today)
     asked = names.STYLES["famous_pun"].asked
     assert "one famous person that everyone knows, from history or today" in asked
     assert "never the real name as it is, and never a dictator's or a criminal's" in asked

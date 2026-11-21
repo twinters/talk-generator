@@ -1,6 +1,5 @@
-"""Offline tests of decision D69 (docs/v5-plan.md): the problem slide, a talk's why, early on, as the user found that
-"what makes a good pitch and a good academic deck is typically that they explain the WHY / problem really well in the
-beginning" (2026-11-09).
+"""Offline tests of decision D69 (docs/v5-plan.md): the problem slide, a talk's why, early on, as a good pitch or
+academic deck explains its why, its problem, well at the start.
 
 A problem slide has a short heading on a sticker, the problem in big words, and a line under it that makes it hit
 home, which appears on a click; a picture of it behind it, or one beside it that shows it (generated, in a talk that

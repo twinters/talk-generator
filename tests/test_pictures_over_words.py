@@ -1,6 +1,5 @@
-"""Pictures over words (docs/v5-plan.md, D85): the user's review of 2026-11-21, "way too many words and too little
-images to explain and too many bad jokes", as the models tacked tags on to their lines to make them funny ("twice",
-", on a Tuesday")."""
+"""Pictures over words (docs/v5-plan.md, D85): fewer words, more pictures to explain and fewer bad jokes, as the models
+tacked tags on to their lines to make them funny ("twice", ", on a Tuesday")."""
 
 import pytest
 

@@ -1,11 +1,11 @@
 """The closer (docs/v5-plan.md, D76): the slide after a talk's last, which says that the talk is over, in its language,
 its look and its format's kind, outside the slides it asked for.
 
-The user found the end of a talk on talkgenerator.com unclear (2026-11-12): only the corner of the presentation said
-"8 / 8", and going on did nothing. And academic talks and all-hands spent one of their slides on "Questions?" (pitches
-too, and a TED-like talk now and then), which their closer says now, so that every slide a talk asks for is one of its
-content. A talk's deck marks its closer (DeckSlide.closer), and its slides' numbers ("7/12") don't count it:
-talkgenerator.com shows "The end" where its number would be, and lowers its curtain once the presenter goes on from it.
+The end of a talk on talkgenerator.com was unclear: only the corner of the presentation said "8 / 8", and going on did
+nothing. And academic talks and all-hands spent one of their slides on "Questions?" (pitches too, and a TED-like talk
+now and then), which their closer says now, so that every slide a talk asks for is one of its content. A talk's deck
+marks its closer (DeckSlide.closer), and its slides' numbers ("7/12") don't count it: talkgenerator.com shows "The end"
+where its number would be, and lowers its curtain once the presenter goes on from it.
 
 A format's closer is a Closer, which its Format names (closer=...); a format without one gets the TED-like talk's
 (DEFAULT). The formats' closers:
@@ -55,9 +55,8 @@ from talkgenerator.slide.slides import CloserSlide
 _NAME_WORDS: Final = 3
 _NAME_LENGTH: Final = 24
 # A domain that a startup's name has already ("Penguin.ai"), else it gets one
-# A made-up e-mail address's domain, which reads as made up (the user, 2026-11-13: "when we show an e-mail address,
-# better see that the domain isn't real; maybe an over-the-top silly website name"; D80): the startup's name with words
-# that no real company's domain has, in the talk's language, one picked by the name's letters
+# A made-up e-mail address's domain, which reads as made up (D80): the startup's name with words that no real company's
+# domain has, in the talk's language, one picked by the name's letters
 _SILLY_DOMAINS: Final[dict[str, tuple[str, ...]]] = {
     "en": (
         "{company}-is-a-real-company.biz",

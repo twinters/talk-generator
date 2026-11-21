@@ -747,7 +747,7 @@ def test_a_cut_at_a_comma_or_a_clause_leaves_no_bracket_open_either():
 
 
 def test_a_presenters_job_is_kept_whole_or_ends_where_a_phrase_does_without_an_ellipsis():
-    # (the user, of talkgenerator.com's title slides: a job cut off with "…" is dumb; D81)
+    # (on talkgenerator.com's title slides, a job cut off with "…" reads as a mistake; D81)
     from talkgenerator.plan.kinds import PRESENTER_JOB
 
     whole = "Hoofdrondleider van de Verzameling Buitenaardse Voorwerpen en Andere Ongeïdentificeerde Zaken"  # (95)

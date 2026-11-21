@@ -36,7 +36,7 @@ def axis_titles(presentation_context: dict[str, Any]) -> tuple[str | None, str |
 def claimed(title: str, x_title: str | None, y_title: str | None, presentation_context: dict[str, Any]) -> str:
     """A classic chart's title: where its axes have titles, which say what it compares, a claim of what it shows ("The
     data doesn't lie") rather than the two things again; else the title that names them, for the presenter to explain
-    (the user's look at the sample talks, 2026-11-10: D73)."""
+    (D73)."""
     if not x_title and not y_title:
         return title
     return chart_claim_generator(presentation_context) or title
@@ -472,8 +472,7 @@ def trend_boxes(generated: tuple[Any, ...]) -> dict[str, str]:
 
 
 # RANKINGS: bars, the last of which, the punchline, wins by far. They come a click each, from the top down: two or
-# three that come to next to nothing, then the punchline's, far longer (the user, 2026-11-13: "better 2-3 things of
-# nothing, and then at the bottom the biggest bar with a punchline, nicely animated"; D80)
+# three that come to next to nothing, then the punchline's, far longer (D80)
 RANKING_BARS = 4  # the most bars a ranking has
 
 

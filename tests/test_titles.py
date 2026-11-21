@@ -333,7 +333,7 @@ def _wanted(rng):
 
 
 def test_the_talk_s_dice_pick_how_the_classic_titles_go():
-    # (As titles to pick, as inspiration only, or not at all: the user liked the titles all three gave)
+    # (As titles to pick, as inspiration only, or not at all: all three gave good titles)
     generators = [_counting("classic", [])]
     ways = {}
     for seed in range(60):

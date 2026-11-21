@@ -314,9 +314,8 @@ def header(
     ]
 
 
-# RUNNING GAGS (D80): a made-up person who keeps coming back, now and then, on two slides at most (the user, 2026-11-13:
-# "many talks have a character they cite who comes back later, but we do that a bit too much": a sourdough talk had its
-# Gerald on five of its ten slides)
+# RUNNING GAGS (D80): a made-up person who keeps coming back, now and then, on two slides at most (many talks had one,
+# who came back too often: a sourdough talk had its Gerald on five of its ten slides)
 RECURRING_CHARACTER_ODDS: Final = 0.2
 
 
@@ -376,7 +375,7 @@ def slide_lines(
 
 
 # AGENDA (D80): an agenda's items announce slides of the talk, which pick them up, so that what the agenda promises comes
-# back (the user, 2026-11-13: "there are overview slides of 'what we'll do', but those topics never come back")
+# back (it never did before)
 AGENDA_KIND: Final = "agenda"
 ANNOUNCED: Final = 3  # how many slides an agenda announces, at most
 # The kinds of slide an agenda doesn't announce: what isn't a slide of the talk's matter

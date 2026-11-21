@@ -46,7 +46,7 @@ class TextField:
     options: tuple[str, ...] = ()  # the words it can be, when it's a choice (such as how a trend line goes)
     # How long a text may be before it's cut, when that's more than the model is asked for (max_length): what the
     # field's slides held before D80 asked for less (see _ROOM), as a text cut off mid-sentence is worse than one that's
-    # a little long (the user, 2026-11-13). See talkgenerator.plan.realize.length_limit
+    # a little long. See talkgenerator.plan.realize.length_limit
     room: int = 0
     # Whether a text longer than that is only ever cut where a phrase of it ends, without an ellipsis, or else left
     # out: a presenter's job (D81: "Hoofdrondleider van de Verzameling Buitenaardse…" reads as a mistake)
@@ -93,7 +93,7 @@ class BoxPictures:
     most: int = 2
     aside: str = ""  # what else the model is told of a slide with pictures (a matrix's: where its dot goes)
     # The share of slides that have a picture in every box they have, each appearing with its box (D80: a process's
-    # every step, the user's "each step should reveal a picture, or be one")
+    # every step, which reveals a picture or is one)
     every: float = 0.0
 
     @staticmethod
@@ -118,9 +118,9 @@ def box_picture_slot() -> ImageSlot:
 
 
 # PICTURES FIRST (docs/v5-plan.md, D73): a chart or a diagram, which shows a lot of text, is a picture in its place now
-# and then, under its title, when one is found in time: as the user found many charts and diagrams too wordy for a
-# presenter who sees them for the first time (2026-11-10). Its text version is what it is when none is found, and what
-# stands in for it, in a talk with a time limit per slide, until its picture comes
+# and then, under its title, when one is found in time: as many charts and diagrams are too wordy for a presenter who
+# sees them for the first time. Its text version is what it is when none is found, and what stands in for it, in a talk
+# with a time limit per slide, until its picture comes
 PICTURE_FIRST_ODDS: Final = 0.5  # of the charts and diagrams that try a picture first
 PICTURE: Final = "picture"  # the image slot of a slide's picture, which the language model writes a query for
 
@@ -151,8 +151,8 @@ def _picture_slot(look: str, intent: str) -> ImageSlot:
 # PATTERN BREAKS (docs/v5-plan.md, D73): a slide that lists things, or a diagram with a punchline, breaks its pattern
 # now and then in its punchline, its last thing: an emoji alone, a few words where the others are sentences, or a
 # picture in its place (in the kinds whose layouts show one: red flags, reviews, an org chart's boss, a tier list's S
-# tier and an alignment chart's chaotic evil), as 2019's talks put a weird picture in the last of three columns: the
-# user missed "playing with the unexpected" (2026-11-10)
+# tier and an alignment chart's chaotic evil), as 2019's talks put a weird picture in the last of three columns, for a
+# surprise
 PATTERN_BREAK_ODDS: Final = 0.35  # of the lists' slides whose punchline breaks the pattern (a quarter of diagrams')
 # What the model writes for each way, after the field's own description (a list in one field: its last thing)
 _BREAKS: Final = {
@@ -507,7 +507,7 @@ def _chart_categories(texts: Mapping[str, str | None], images: Mapping[str, Any]
 
 
 # A chart's title that only says what it compares ("Coffee vs. productivity", "Naps versus genius: the data"), which is
-# what its axes are for (the user's look at the sample talks, 2026-11-10: D73)
+# what its axes are for (D73)
 _VERSUS: Final = re.compile(
     r"^\s*(?P<first>[^:]+?)\s+(?:vs\.?|versus|v\.)\s+(?P<second>[^:]+?)\s*[.!]?\s*(?::\s*(?P<rest>.*))?$",
     re.IGNORECASE,
@@ -764,7 +764,7 @@ def _references(texts: Mapping[str, str | None], images: Mapping[str, Any], lang
 
 
 # A number in front of a work, which some models write on a references slide that numbers its works itself ("[1]
-# Verhoeven et al. (1987)" after the slide's own [1]: the user's review, 2026-11-14, D82)
+# Verhoeven et al. (1987)" after the slide's own [1]: D82)
 _CITED_NUMBER: Final = re.compile(r"^(?:\[\s*\d{1,2}\s*\]|\(\s*\d{1,2}\s*\)|\d{1,2}\s*[.):])\s*")
 
 
@@ -1092,9 +1092,8 @@ _NOT_VERSUS: Final = (
 _NUMBER: Final = re.compile(r"[-+]?\d+(?:[.,]\d+)?\s*%?")
 _LETTERED: Final = re.compile(r"^\(?[A-Da-d]\s*[).:]\s*")  # a quiz option's own letter, as in "A) Yes"
 _SPELLED: Final = re.compile(r"^[A-Za-z]\s*[-–—:.)=]\s+")  # an acronym's word's own letter, as in "S - Synergy"
-# How long a slide's words may be, so that the presenter takes them in at a glance (the user, 2026-11-13: "too much
-# text makes it harder for the presenter, who has to read it first"): a slide's title, a tier's one thing, a red
-# flag and a quiz's option
+# How long a slide's words may be, so that the presenter, who has to read them first, takes them in at a glance: a
+# slide's title, a tier's one thing, a red flag and a quiz's option
 TITLE: Final = 45
 TIER: Final = 28
 FLAG: Final = 50
@@ -1138,8 +1137,8 @@ DARE: Final = 90  # how long a dare may be, for the presenter or for the audienc
 CALLBACK: Final = 60  # how long the closing slide's note of which earlier picture it calls back to may be
 ERROR_BUTTON: Final = 14  # how long a fake error message's button may be (they're written as one text)
 ERROR_BUTTON_ROOM: Final = 20  # (and how long one is kept whole: as long as one could be before D80)
-# How long a problem slide's heading, its problem and the line under it may be (D69): a few words, which the user
-# found much funnier than a sentence or two (2026-11-10, D73)
+# How long a problem slide's heading, its problem and the line under it may be (D69): a few words, much funnier than a
+# sentence or two (D73)
 PROBLEM_KICKER: Final = 28
 PROBLEM_TEXT: Final = 60
 PROBLEM_DETAIL: Final = 60
@@ -1412,7 +1411,7 @@ KINDS: Final[dict[str, Kind]] = {
             pattern_break=PatternBreak(("dot",), {"emoji": 1.0}, "the dot", _DIAGRAM_ODDS),
         ),
         # Milestone 6's slide types (docs/v5-plan.md, section 8), drawn as texts on shapes
-        # (D63: with a picture behind it, or beside it, if one is found: the user found slides of text boring)
+        # (D63: with a picture behind it, or beside it, if one is found, as slides of text are boring)
         Kind(
             "big_number",
             "A big, made-up number, with what it counts under it: a figure the presenter has to explain; over a "
@@ -1891,7 +1890,7 @@ KINDS: Final[dict[str, Kind]] = {
             _red_flags,
             pattern_break=PatternBreak(_FLAGS, _LIST_BREAKS, "the last red flag"),
         ),
-        # (the user's variation on red flags, 2026-11-13: a green, an orange and a red flag)
+        # (a variation on red flags: a green, an orange and a red flag)
         Kind(
             "traffic_flags",
             "A green flag, an orange flag and a red flag, as in dating advice: a good sign, a doubtful one and an "

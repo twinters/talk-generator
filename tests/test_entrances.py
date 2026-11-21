@@ -93,7 +93,7 @@ def test_every_family_moves_as_much_as_it_says_with_effects_of_its_own():
         assert sum(weight for _, weight in family.motion) == pytest.approx(1.0), name
         assert (family.entrances == ()) == all(motion == "none" for motion, _ in family.motion), name
         assert set(family.entrances) <= set(EFFECTS)
-    assert {"clean keynote", "dark minimal", "academic", "Swiss poster"} <= set(CALM)  # (the user's: "serious ones")
+    assert {"clean keynote", "dark minimal", "academic", "Swiss poster"} <= set(CALM)  # (the serious ones)
     for extreme in (family for family in themes.FAMILIES.values() if family.extreme):
         assert dict(extreme.motion)["lots"] >= 0.5  # (for laughs: everything moves in half of them)
 

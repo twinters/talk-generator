@@ -986,7 +986,7 @@ def test_a_useless_fact_comes_by_its_number_in_the_weeks_pool(web):
     found = flavour.useless_fact(flavour.POOL + 2)
     assert web.asked("uselessfacts.jsph.pl")[0] == {"language": "en", "i": 2}  # (the numbers go round the pool)
     assert (found.text, found.source) == (USELESS[2], "Useless Facts")
-    # (hundreds a week: of 12, the same few came back talk after talk, the user found on 2026-11-15)
+    # (hundreds a week: of 12, the same few came back talk after talk)
     assert flavour.POOL >= 300
 
 
@@ -1060,7 +1060,7 @@ def test_a_dare_gets_a_dad_joke_and_the_closing_slide_a_piece_of_advice(web):
 def test_a_talk_in_another_language_gets_no_useless_fact_dad_joke_or_advice(web):
     # (jokes and advice its slides would say word for word, in English: a free model put "Sing in the shower." on a
     # German talk's closing slide, also when asked for it translated; and useless facts are English trivia, many about
-    # English words: "Dreamt" ending in "mt" made little sense in a Dutch talk, the user found on 2026-11-15)
+    # English words: "Dreamt" ending in "mt" made little sense in a Dutch talk)
     slides = [(3, "fun_fact"), (6, "dare"), (9, "questions")]
     german = facts.look_up("penguins", "de", DAY, frozenset(use for _, use in slides))
     assert web.asked("uselessfacts.jsph.pl") == []

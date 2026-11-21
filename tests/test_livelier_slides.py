@@ -1,8 +1,7 @@
 """Offline tests of livelier dares, closing slides and references, emoji in lists, and slide numbers (docs/v5-plan.md,
-D65), from the user's look at 35 sample talks (2026-11-09): dares that are real challenges for the presenter or for the
-whole audience, closing slides that end on a funny picture, a last tip or a callback to an earlier slide's picture,
-references with a picture of one of the works, emoji in front of a list's things now and then, and every slide
-numbered of the deck's ("7/12")."""
+D65): dares that are real challenges for the presenter or for the whole audience, closing slides that end on a funny
+picture, a last tip or a callback to an earlier slide's picture, references with a picture of one of the works, emoji in
+front of a list's things now and then, and every slide numbered of the deck's ("7/12")."""
 
 import dataclasses
 import re
@@ -76,7 +75,7 @@ def test_every_family_numbers_its_slides_of_the_decks(images, family):
 
 
 def test_a_padded_number_pads_its_total_too():
-    # (the user, 2026-11-10: "03/8" put a 0 before the number but not before the total; "either one")
+    # ("03/8" put a 0 before the number but not before the total)
     from talkgenerator.design import motifs
 
     eight = dataclasses.make_dataclass("Scene", [("number", int), ("total", int)])(2, 8)
@@ -415,8 +414,8 @@ def test_references_list_their_works_and_show_a_picture_of_one(images):
 
 
 def test_references_number_their_works_once_and_cut_a_long_one_after_its_year():
-    # (the user's review, 2026-11-14, D82: "[1] [1] Verhoeven et al. (1987) Tijdschrift voor", a model's own numbers
-    # after the slide's, and a journal's name cut in its middle)
+    # (D82: "[1] [1] Verhoeven et al. (1987) Tijdschrift voor", a model's own numbers after the slide's, and a journal's
+    # name cut in its middle)
     works = (
         "[1] Verhoeven et al. (1987) Tijdschrift voor Duivenkunde | 2. De Graaf et al. (2007) Pleinstudies"
         " | (3) Mulder et al. (2012) Broodkruimelkunde | 4) 42 Duiven (2019) | Bakker et al., een heel lang"

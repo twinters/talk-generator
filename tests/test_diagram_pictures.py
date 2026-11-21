@@ -343,7 +343,7 @@ def test_a_trend_has_a_picture_by_its_named_point_now_and_then():
 
 @pytest.mark.parametrize("second_line", ["", "My cat"])
 def test_the_picture_is_there_from_the_start(second_line, picture):
-    # (the odd picture is what the presenter starts explaining: the user found it came too late at the end, D80)
+    # (the odd picture is what the presenter starts explaining: at the end, it came too late, D80)
     slide = _trend({"event_picture": picture()}, second_line=second_line).to_deck_slide()
     shown = slide.element("point_picture")
     assert isinstance(shown, ImageElement) and shown.appears_on_click is None

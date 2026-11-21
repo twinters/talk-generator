@@ -111,7 +111,7 @@ def test_gru_s_fourth_board_repeats_the_third():
 
 
 def test_a_template_whose_picture_shows_how_it_ends_has_its_captions_from_the_start():
-    # (one by one, This Is Fine's captions came after its punchline, which its dog already says: the user, 2026-11-15)
+    # (one by one, This Is Fine's captions came after its punchline, which its dog already says)
     at_once = {template.name for template in TEMPLATES if template.at_once}
     assert at_once == {"This Is Fine", "They're The Same Picture", "Surprised Pikachu"}
     for template in (THIS_IS_FINE, memes.template("Surprised Pikachu")):
@@ -403,9 +403,9 @@ def test_memes_are_in_talks_that_allow_fair_use_twice_at_most():
 
 
 def test_memes_come_up_in_most_talks_but_never_all_over_them():
-    # (the user loves them: seven times the weight of the other middle slides, from the third slide to the one before
-    # the conclusions; four until the user asked for more of them after reviewing 35 talks, D63, and five until the
-    # pictures to explain shared the middle of a talk, D78, as the user wanted memes to keep their half of the talks)
+    # (seven times the weight of the other middle slides, from the third slide to the one before the conclusions; four
+    # until D63 asked for more of them, and five until the pictures to explain shared the middle of a talk, D78, as
+    # memes keep their half of the talks)
     default = get_schema("default")
     by_name = {generator.name: generator for generator in default.slide_generators}
     meme, quiz = by_name["Meme"], by_name["Quiz"]

@@ -624,7 +624,7 @@ def test_black_and_white_never_goes_behind_a_slides_texts_and_greys_a_backdrop_i
 
 
 def test_a_strong_filter_is_for_backdrops_alone_and_pictures_keep_their_colours():
-    # (the user found the strong filters made many pictures "samey": D80)
+    # (the strong filters made many pictures look the same: D80)
     for scope in ("backdrops", "all"):
         theme = _theme("neon").model_copy(update={"image_filter": "duotone", "image_filter_scope": scope})
         assert treatments.treatment(theme, framed=False, behind=True).filter == "duotone"

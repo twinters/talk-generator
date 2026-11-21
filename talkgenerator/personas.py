@@ -667,8 +667,8 @@ PERSONAS: Final[dict[str, Persona]] = {
             looks={"weird": "wholesome", "neutral": "places"},
             formats={"academic": 0.7, "keynote": 2, "corporate": 0.7, "wedding": 2.5},
         ),
-        # (a retired lighthouse keeper until 2026-11-09, whose every talk was about the lighthouse: the user's "why not
-        # retired person?" Its old job is one of its pasts now, which the dice pick)
+        # (a retired lighthouse keeper until 2026-11-09, whose every talk was about the lighthouse: a retiree now, whose
+        # old job is one of its pasts, which the dice pick)
         Persona(
             "retiree",
             "Retiree",

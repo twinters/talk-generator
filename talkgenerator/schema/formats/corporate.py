@@ -58,8 +58,8 @@ from talkgenerator.util import random_util
 PACK: Final = "corporate"
 
 # (D63: a quarter of its slides are free, for memes, pictures and the like, and its agenda, a list of text, waits for
-# a talk of eleven slides or more: the user found all-hands decks too textual; D76: no Q&A among its slides, as its
-# closer opens it, and the agenda still waits)
+# a talk of eleven slides or more, as all-hands decks were too textual; D76: no Q&A among its slides, as its closer
+# opens it, and the agenda still waits)
 ARC: Final = Arc(
     (
         Part("agenda", rank=7, shortest=11),
@@ -807,8 +807,8 @@ _GENERATORS: Final = [
 # part's generators can make): inspirational quotes and posters, the company's values as an acronym, news, an
 # alignment chart, a tier list, a meme, a fun fact, a fake error message, and full-screen photos, which a talk may
 # have any number of (so that the free slides of a long one, without fair use too, never run out of slides)
-# (D63: memes, full-screen pictures and Reddit's weird pictures more often, and fewer slides of text, as the user found
-# all-hands decks too textual; and the all-hands' own provocations, a word over a full-screen picture: "Synergy.")
+# (D63: memes, full-screen pictures and Reddit's weird pictures more often, and fewer slides of text, as all-hands decks
+# were too textual; and the all-hands' own provocations, a word over a full-screen picture: "Synergy.")
 _OTHERS: Final = {
     "Quote": 0.6,
     "Acronym": 0.8,
