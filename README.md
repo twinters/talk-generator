@@ -163,7 +163,7 @@ its place once it's made after all; and with `progress=True`, it says how far th
 - [Use it with Claude](https://github.com/twinters/talk-generator/blob/master/docs/use-with-claude.md): the Skill and the MCP server
 - [Using it from Python](https://github.com/twinters/talk-generator/blob/master/docs/python.md): streamed talks, decks and plans
 - [Migrating from 4.x](https://github.com/twinters/talk-generator/blob/master/docs/migrating-from-4.md)
-- [The changelog](https://github.com/twinters/talk-generator/blob/master/CHANGELOG.md), and [the plan for version 5](https://github.com/twinters/talk-generator/blob/master/docs/v5-plan.md)
+- [The changelog](https://github.com/twinters/talk-generator/blob/master/CHANGELOG.md), and [how version 5 is designed](https://github.com/twinters/talk-generator/blob/master/docs/v5-plan.md)
 
 ## Tests
 
