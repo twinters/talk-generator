@@ -733,7 +733,7 @@ def test_the_prompt_asks_for_callbacks_by_what_a_slide_said():
     planned = [prompt.PlannedSlide(2, conclusions[0].name, conclusions[0].llm, "cat")]
     request = prompt.talk_request(["cat"], planned, random_util.Rng(1))
     assert (
-        "- caption_1: a lesson from the talk in six words at most, calling back to an earlier slide by what it said"
+        "- caption_1: a lesson from the talk in four words at most, calling back to an earlier slide by what it said"
         in (request.messages[0].content)
     )
     assert "the keys of your answer (such as slide_03)" in request.system
