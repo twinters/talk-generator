@@ -505,8 +505,8 @@ the time; a box goes without when its picture isn't found or doesn't fit. A tren
 point half the time (`point_picture`). `charts.trend_plot` puts the plot where talk-generator-web draws it, and a
 PowerPoint chart with such a picture has its plot pinned there: change them together.
 
-**Pictures first and pattern breaks** (D73). Half of the charts and diagrams try a picture in their place, under their
-title (`Kind.picture_first`, `PICTURE_FIRST_ODDS`): a real chart from the internet or a weird picture, found with the
+**Pictures first and pattern breaks** (D73, D85). Three in four charts and diagrams try a picture in their place, under
+their title (`Kind.picture_first`, `PICTURE_FIRST_ODDS`): a real chart from the internet or a weird picture, found with the
 model's `picture_query` or a classic slide's seed (`PictureFirstSlideGenerator`). Without one, the slide is its
 `text_version`, which also stands in until the picture comes when slides have a time limit (D67). A chart's title says
 what it shows, never "X vs Y": what it compares goes on the axes (`kinds.axes_from_title`). And a list's or diagram's
@@ -528,6 +528,22 @@ inkblot that the layout draws from the slide's dice; and before and after, two u
   fewer, pictures that carry the slide, and lists that set up a pattern and break it last. It asks for no tags tacked on
   to a line, and in an English talk `realize.untagged` takes off those a model adds anyway, such as "twice",
   ", allegedly" or "on a Tuesday" (D85).
+- Lists of pictures (D85): in a talk a language model writes, a quiz's options, a tier list's tiers, red and traffic
+  flags, an alignment chart's cells and reviews are all pictures in their words' place about half the time
+  (`kinds.PicturedItems`, the kind's `pictured`; an alignment chart's nine 40% of the time, reviews 45%). The model
+  writes every thing's words and a query for its picture (`<field>_picture_query`); a thing whose picture isn't found
+  keeps its words, and such a list breaks no pattern besides. A quiz of pictures has a layout of its own
+  (`v5/quiz-pictures`), and flags of pictures go on cards (`engine._in_words`). `DISABLE_PICTURED_LISTS` keeps lists
+  in words.
+- The kinds of slide that are mostly words (statements, fun facts, acronyms, walls of text, error messages, agendas:
+  `kinds.WORDY_KINDS`) count for half their weight when a talk's dice pick its slides, in every format
+  (`kinds.wordiness`). Captions are asked for in 24 characters (`kinds.CAPTION`), a conclusion's lessons in four words,
+  a post in one short sentence of 60 characters and a big number's label and source in 32 each; the content packs'
+  classic texts keep the lengths they were written for. Of 10-slide TED-like talks, about seven content slides in ten
+  are pictures (full-screen or captioned ones, memes, gifs, pictures to explain, charts and diagrams that are a
+  picture, lists of pictures).
+- No hint gives an example with a gap to fill, which a model copies as it is, and a text that ends in such a gap
+  ("The time I ...") is a leftover, as template code is (`checks.deck.leftovers_in`).
 - A text is kept whole up to what its slides hold (`TextField.room`, `kinds._ROOM`). A longer one is cut where a
   sentence, a clause or a comma ends, if that keeps a third of it, else between words with an ellipsis; a presenter's
   job only where a phrase ends, or not at all (`TextField.phrases`, D81).
@@ -537,7 +553,8 @@ inkblot that the layout draws from the slide's dice; and before and after, two u
 - A quiz's question starts with a label in the talk's language (`Language.quizzes`). A made-up person recurs in one
   talk in five, on two slides at most (`prompt.RECURRING_CHARACTER_ODDS`).
 - A picture whose description speaks of nudity, sex or gore stays out (`safety.unsafe_description`). A real quote has
-  160 characters at most and nothing of self-harm (`content_generator_structures.fit_quote`). In an English talk, a
+  100 characters at most (`content_generators.short_quote_generator`, D85) and nothing of self-harm
+  (`content_generator_structures.fit_quote`). In an English talk, a
   model's text about real-world politics that the talk isn't about is left out (`checks.deck.real_politics`). A talk in
   another language whose model wrote no slide is asked once more, so that it doesn't come out classic, in English.
 - A slot can have its picture generated first (`ImageSlot.generate_first`), with some of the talk's budget kept for it
@@ -989,7 +1006,7 @@ The code refers to these decisions by number; numbers that no longer apply are l
 | D82 | An academic talk's references carry no number of their own beside the slide's, a long work is cut after its year, and other slides take their place in about a third of the talks (`Part.others`). |
 | D83 | For laughs, a theme moves not at all, some or lots (`Family.motion`), with its family's PowerPoint entrance effects (`talkgenerator.render.entrance_effects`), from a stream of its own so nothing else changes. |
 | D84 | Useless facts come from a week's pool of 500 (`flavour.POOL`), in English talks only; a meme whose picture shows how it ends (`at_once` in `data/memes.json`) has its captions from the start, and stays still. |
-| D85 | The prompt and the Skill ask for ten words a slide or fewer, so the pictures carry it, and for no tags tacked on to make a line funny; in English talks, a tag a model adds anyway goes (`realize.untagged`). |
+| D85 | The prompt and the Skill ask for ten words a slide or fewer, so the pictures carry it, and for no tags tacked on to make a line funny; in English talks, a tag a model adds anyway goes (`realize.untagged`). A quiz's options, a tier list's tiers, flags, an alignment chart's cells and reviews are all pictures about half the time (`kinds.PicturedItems`; a quiz of pictures in `v5/quiz-pictures`); the kinds that are mostly words count for half their weight (`kinds.wordiness`); charts and diagrams try a picture first three times in four; captions, lessons, posts and a big number's label and source are asked for in fewer words, and real quotes are 100 characters; no hint has a gap to copy; of a Reddit search's posts, the more upvoted ones' pictures are picked more often (`reddit.upvoted`). |
 
 ## 18. Sources
 
