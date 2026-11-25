@@ -210,6 +210,7 @@ module = [
     "talkgenerator.util.os_util",
     "talkgenerator.util.random_util",
     "talkgenerator.util.scraper_util",
+    "talkgenerator.util.threads",
     "talkgenerator.util.video_util",
 ]
 disallow_untyped_defs = true

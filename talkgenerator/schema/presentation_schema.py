@@ -42,7 +42,6 @@ import time
 from collections.abc import Callable, Collection, Mapping, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, field
-from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, Protocol
 
@@ -93,6 +92,7 @@ from talkgenerator.schema.slide_topic_generators import SlideSeedGenerator
 from talkgenerator.slide import powerpoint_slide_creator, slide_generator_types, slides
 from talkgenerator.slide.slide_deck import SlideDeck
 from talkgenerator.util import generator_util, image_util, random_util
+from talkgenerator.util.threads import Pool
 
 if TYPE_CHECKING:
     from talkgenerator.images.generation import ImageGeneration
@@ -540,7 +540,7 @@ class _PlannedTalk:
     spine: dict[str, Any] = field(default_factory=dict)
     plans: dict[int, SlidePlan] = field(default_factory=dict)
     first_attempts: dict[int, _Outcome] = field(default_factory=dict)
-    pool: ThreadPool | None = None
+    pool: Pool | None = None
     language: str = "en"
     facts: tuple[Fact, ...] = ()  # the real facts its request gave its slides (see talkgenerator.facts)
     answering: threading.Thread | None = None  # (the answer coming in, while the talk streams)
@@ -699,7 +699,7 @@ class _PlannedTalk:
                 # its first attempt starts apart from the pool, see attempt)
                 first = self._started.then(functools.partial(_first_attempt, realize_it))
                 outcome = self.first_attempts[slide_nr] = _Outcome()
-                self.pool.apply_async(outcome.deliver, (first, slide_nr))
+                self.pool.submit(outcome.deliver, first, slide_nr)
 
     def wait_for_spine(self) -> None:
         """Wait for the spine of the answer (its title, the presenter's job and name, its thesis), all of it, or the
@@ -847,9 +847,7 @@ class _PlannedTalk:
             self.answering.join()
         self.answering = None
         if self.pool is not None:
-            self.pool.close()
-            if not self.cancelled.is_set() and not self.abandoned:
-                self.pool.join()
+            self.pool.shutdown(wait=not self.cancelled.is_set() and not self.abandoned)
             self.pool = None
 
 
@@ -1635,7 +1633,7 @@ class PresentationSchema:
         talk.tell()  # (it's asked)
         at_once = slides_at_once(parallel, len(planned), most=8)
         if at_once > 1:
-            talk.pool = ThreadPool(processes=at_once)
+            talk.pool = Pool(at_once, "planned slides")
 
         def answer() -> None:
             try:
@@ -2559,7 +2557,7 @@ class PresentationSchema:
         first_tries: dict[int, tuple[_Result, list[str]]] = {}
         at_once = slides_at_once(parallel, len(makeable), most=8)
         if at_once > 1:
-            with ThreadPool(processes=at_once) as pool:
+            with Pool(at_once, "slides") as pool:
                 first_try = image_util.carry(lambda index: attempt(index, 0))
                 first_tries = dict(zip(makeable, pool.map(first_try, makeable), strict=True))
 
@@ -2665,7 +2663,7 @@ class PresentationSchema:
         while slide_nr < num_slides:
             at_once = slides_at_once(parallel, num_slides - slide_nr)
             in_parallel = at_once > 1
-            pool: ThreadPool | None = None
+            pool: Pool | None = None
             # (each remaining slide's work in this round, once it's done: delivered by the pool's thread itself, also
             # after the round, when the pool is terminated, for a slide that ran out of time to come after all)
             working: dict[int, _Outcome] = {}
@@ -2673,12 +2671,12 @@ class PresentationSchema:
             if in_parallel:
                 remaining = list(range(slide_nr, num_slides))
                 logger.info("Generating slides %s in parallel, %s at once", [nr + 1 for nr in remaining], at_once)
-                pool = ThreadPool(processes=at_once)
+                pool = Pool(at_once, "slides")
                 work = image_util.carry(functools.partial(work_out, at_state=state.copy(), generate=True))
                 working = {nr: _Outcome() for nr in remaining}
                 deliver = started.then(functools.partial(_deliver, working, work))
                 for nr in remaining:  # (started in order)
-                    pool.apply_async(deliver, (nr,))
+                    pool.submit(deliver, nr)
             try:
                 # Settle the slides in order, as generating them one by one would: each once its work is done
                 while slide_nr < num_slides:
@@ -2711,14 +2709,13 @@ class PresentationSchema:
                 if pool is not None:
                     # (the slides it hasn't started on are dropped, and its threads finish the others by themselves:
                     # nothing waits for what they find)
-                    pool.terminate()
+                    pool.shutdown(wait=False, cancel_futures=True)
                 raise
             if pool is not None:
-                # The slides this round hasn't started on are dropped (the next round works them out, knowing more)
-                pool.terminate()
-                if seconds is None:
-                    pool.join()  # (and the ones it's working out are waited for: the next round reuses what they found)
-                else:
+                # The slides this round hasn't started on are dropped (the next round works them out, knowing more),
+                # and the ones it's working out are waited for: the next round reuses what they found
+                pool.shutdown(wait=seconds is None, cancel_futures=True)
+                if seconds is not None:
                     # (with a time limit, nothing waits for them: the next round goes on from what they found so far,
                     # and they go on by themselves, where it doesn't look)
                     for nr, under_way in working.items():

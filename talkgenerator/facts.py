@@ -60,7 +60,7 @@ import re
 import threading
 import time
 from collections.abc import Callable, Iterable, Sequence
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Executor
 from dataclasses import dataclass
 from typing import Final
 from urllib.parse import unquote
@@ -70,7 +70,7 @@ from talkgenerator.datastructures.image_data import CreditPart
 from talkgenerator.models.deck import Fact
 from talkgenerator.plan import languages
 from talkgenerator.sources import flavour, opentdb, wikipedia
-from talkgenerator.util import http_util, language_util, random_util
+from talkgenerator.util import http_util, language_util, random_util, threads
 
 logger = logging.getLogger("talkgenerator")
 
@@ -321,19 +321,19 @@ class Gathering:
         return self._sheet
 
 
-_asked: ThreadPoolExecutor | None = None
+_asked: threads.Pool | None = None
 _asked_lock = threading.Lock()
 
 
-def _asking() -> ThreadPoolExecutor:
-    """The threads that ask the sources for talks' facts: kept from one talk to the next, so that their sessions (and
-    connections, until a server closes them: see http_util.close_idle_connections) are too, as http_util's sessions
-    are a thread's. A new thread's first request costs a session and a connection (and on a busy computer, measured
+def _asking() -> threads.Pool:
+    """The threads that ask the sources for talks' facts: kept from one talk to the next, while one comes within a
+    minute (see talkgenerator.util.threads), so that their sessions (and connections, until a server closes them: see
+    http_util.close_idle_connections) are too, as http_util's sessions are a thread's. A new thread's first request costs a session and a connection (and on a busy computer, measured
     on 2026-11-08 with twenty Python processes at work, six to nine seconds). Its tasks never wait for one another."""
     global _asked
     with _asked_lock:
         if _asked is None:
-            _asked = ThreadPoolExecutor(max_workers=8, thread_name_prefix="facts")
+            _asked = threads.Pool(8, "facts")
         return _asked
 
 
@@ -524,7 +524,7 @@ def coincidence_candidates(
     lead: Sequence[Candidate],
     topic: str,
     this_year: int,
-    asking: ThreadPoolExecutor | None = None,
+    asking: Executor | None = None,
     years: list[int] | None = None,
 ) -> list[Candidate]:
     """A topic's coincidences: each moment of its history (a sentence of its lead that dates something, or else of the

@@ -18,13 +18,12 @@ import logging
 import re
 import threading
 from collections.abc import Iterable
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import Any, Final
 from urllib.parse import quote
 
 from talkgenerator import settings
-from talkgenerator.util import http_util
+from talkgenerator.util import http_util, threads
 
 logger = logging.getLogger("talkgenerator")
 
@@ -51,17 +50,17 @@ MONTHS: Final = (
 )
 
 _cooldown = http_util.Cooldown("Wikipedia")
-_links: ThreadPoolExecutor | None = None
+_links: threads.Pool | None = None
 _links_lock = threading.Lock()
 
 
-def _linking() -> ThreadPoolExecutor:
+def _linking() -> threads.Pool:
     """The threads that ask for articles' lead links while the articles are looked up: kept from one article to the
-    next, with their sessions and connections (see talkgenerator.facts._asking). Their tasks wait for nothing."""
+    next, while one comes within a minute, with their sessions and connections (see talkgenerator.facts._asking). Their tasks wait for nothing."""
     global _links
     with _links_lock:
         if _links is None:
-            _links = ThreadPoolExecutor(max_workers=4, thread_name_prefix="wikipedia")
+            _links = threads.Pool(4, "wikipedia")
         return _links
 
 

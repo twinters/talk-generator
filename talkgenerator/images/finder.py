@@ -33,7 +33,6 @@ import functools
 import logging
 import threading
 from collections.abc import Callable, Collection, Sequence
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import Final, TypeVar
 
@@ -43,7 +42,7 @@ from talkgenerator.images.analysis import Area
 from talkgenerator.images.profiles import Preferences, Profile, SourceUse
 from talkgenerator.images.slots import ImageSlot
 from talkgenerator.models.deck import ImageAnalysis
-from talkgenerator.util import generator_util, image_util, random_util
+from talkgenerator.util import generator_util, image_util, random_util, threads
 
 logger = logging.getLogger("talkgenerator")
 
@@ -53,7 +52,7 @@ PALETTE_LOOKS: Final = 3  # candidates looked at in a themed talk, for colours t
 # those without a thumbnail, or on another slide)
 RUNNERS_UP: Final = 6
 _THREADS: Final = 16
-_pool: ThreadPoolExecutor | None = None
+_pool: threads.Pool | None = None
 _pool_lock = threading.Lock()
 
 _T = TypeVar("_T")
@@ -396,11 +395,11 @@ def _colors_fit(candidate: _Candidate, prefers: Preferences | None, palette: Seq
 # RUNNING THINGS AT ONCE
 
 
-def _executor() -> ThreadPoolExecutor:
+def _executor() -> threads.Pool:
     global _pool
     with _pool_lock:
         if _pool is None:
-            _pool = ThreadPoolExecutor(max_workers=_THREADS, thread_name_prefix="image finder")
+            _pool = threads.Pool(_THREADS, "image finder")
         return _pool
 
 

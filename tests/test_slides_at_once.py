@@ -47,12 +47,12 @@ def test_a_few_slides_at_once_give_the_talk_made_one_by_one(int_seed, at_once):
 def test_a_round_has_as_many_threads_as_slides_it_makes_at_once(monkeypatch):
     rounds = []
 
-    class CountingPool(presentation_schema.ThreadPool):
-        def __init__(self, *args, **kwargs):
-            rounds.append(kwargs.get("processes"))
-            super().__init__(*args, **kwargs)
+    class CountingPool(presentation_schema.Pool):
+        def __init__(self, most, name, **kwargs):
+            rounds.append(most)
+            super().__init__(most, name, **kwargs)
 
-    monkeypatch.setattr(presentation_schema, "ThreadPool", CountingPool)
+    monkeypatch.setattr(presentation_schema, "Pool", CountingPool)
     for int_seed in SEEDS:
         talk_json(int_seed, parallel=2)
     assert rounds and set(rounds) == {2}

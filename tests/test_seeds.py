@@ -121,12 +121,12 @@ def pool_rounds(monkeypatch):
     """Count the rounds of parallel generation."""
     rounds = []
 
-    class CountingPool(presentation_schema.ThreadPool):
-        def __init__(self, *args, **kwargs):
-            rounds.append(kwargs.get("processes"))
-            super().__init__(*args, **kwargs)
+    class CountingPool(presentation_schema.Pool):
+        def __init__(self, most, name, **kwargs):
+            rounds.append(most)
+            super().__init__(most, name, **kwargs)
 
-    monkeypatch.setattr(presentation_schema, "ThreadPool", CountingPool)
+    monkeypatch.setattr(presentation_schema, "Pool", CountingPool)
     return rounds
 
 

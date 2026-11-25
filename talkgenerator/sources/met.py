@@ -10,14 +10,13 @@ before (see talkgenerator.images.catalog).
 from __future__ import annotations
 
 import logging
-from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Final
 
 from talkgenerator import settings
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.images import licenses
 from talkgenerator.models.deck import DisplayPolicy, LicenseClass
-from talkgenerator.util import http_util
+from talkgenerator.util import http_util, threads
 
 logger = logging.getLogger("talkgenerator")
 
@@ -41,7 +40,7 @@ _TIMEOUT = 10
 _EARLIEST, _LATEST = -5000, 2100  # (a range needs both of its ends)
 
 _cooldown = http_util.Cooldown("The Met")
-_objects = ThreadPoolExecutor(max_workers=4, thread_name_prefix="the Met")
+_objects = threads.Pool(4, "the Met")
 
 
 def available() -> bool:

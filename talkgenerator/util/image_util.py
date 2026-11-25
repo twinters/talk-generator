@@ -22,7 +22,6 @@ import struct
 import threading
 from collections import OrderedDict
 from collections.abc import Callable, Iterable, Iterator, Mapping
-from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from functools import lru_cache, partial
 from pathlib import Path
@@ -33,7 +32,7 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 
 from talkgenerator.datastructures.image_data import ImageData
 from talkgenerator.images import context as image_context
-from talkgenerator.util import http_util, os_util, video_util
+from talkgenerator.util import http_util, os_util, threads, video_util
 
 logger = logging.getLogger("talkgenerator")
 
@@ -74,7 +73,7 @@ PROBE_TIMEOUT = 8
 _preparing = threading.BoundedSemaphore(1)
 # The downloads a PowerPoint's pictures are fetched in at the same time (see fetch_all)
 FETCHES_AT_ONCE = 4
-_fetching: ThreadPoolExecutor | None = None
+_fetching: threads.Pool | None = None
 
 # How images are checked while slides are made: downloaded whole, or probed (see probing)
 _checks: contextvars.ContextVar[str] = contextvars.ContextVar("image_checks", default="download")
@@ -148,8 +147,8 @@ def fetch_all(images: Iterable[str] | Mapping[str, int | None], videos: Iterable
             task()
         return
     with _cache_lock:
-        if _fetching is None:  # (threads that stay: their connections to the image hosts stay open for the next deck)
-            _fetching = ThreadPoolExecutor(max_workers=FETCHES_AT_ONCE, thread_name_prefix="image fetch")
+        if _fetching is None:  # (threads that stay a while: their connections to the image hosts, for the next deck)
+            _fetching = threads.Pool(FETCHES_AT_ONCE, "image fetch")
         pool = _fetching
     for future in [pool.submit(task) for task in tasks]:
         future.result()

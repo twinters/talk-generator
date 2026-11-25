@@ -19,7 +19,6 @@ import logging
 import re
 import threading
 from collections.abc import Callable, Sequence
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Final, TypeVar
@@ -37,7 +36,7 @@ from talkgenerator.plan import languages
 from talkgenerator.plan.kinds import KINDS, ContentSource, Recipe, TextField
 from talkgenerator.slide.slides import Slide
 from talkgenerator.sources import emoji
-from talkgenerator.util import emoji_util, generator_util, language_util, os_util, random_util
+from talkgenerator.util import emoji_util, generator_util, language_util, os_util, random_util, threads
 
 logger = logging.getLogger("talkgenerator")
 
@@ -566,7 +565,7 @@ def _repeats(found: Any, others: Sequence[ImageData]) -> bool:
     )
 
 
-_pool: ThreadPoolExecutor | None = None
+_pool: threads.Pool | None = None
 _pool_lock = threading.Lock()
 
 
@@ -580,7 +579,7 @@ def _at_once(tasks: Sequence[Callable[[], _T]]) -> list[_T]:
     global _pool
     with _pool_lock:
         if _pool is None:
-            _pool = ThreadPoolExecutor(max_workers=SEARCH_THREADS, thread_name_prefix="picture search")
+            _pool = threads.Pool(SEARCH_THREADS, "picture search")
         pool = _pool
     futures = [pool.submit(contextvars.copy_context().run, task) for task in tasks[1:]]
     first = contextvars.copy_context().run(tasks[0])
