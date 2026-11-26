@@ -71,6 +71,7 @@ def test_a_language_whose_list_isnt_kept_has_the_others_forgotten_after_a_quiet_
     # (wordfreq keeps a language's whole list once it's asked a word of it: 58 MB for German, 254 MB for the eight)
     word_frequency.forget_word_lists()
     word_frequency._zipf_frequency.cache_clear()  # (so that every word below is asked of wordfreq)
+    monkeypatch.setattr(wordfreq, "_wf_cache", {})  # (and of its lists: it keeps answers too, earlier tests')
     assert _lists() == 0
     word_frequency.get_frequency("fiets", "nl")
     word_frequency.get_frequency("bicicleta", "pt")  # (right after a Dutch word: no reason to forget Dutch's list)
