@@ -1,3 +1,5 @@
+import wordfreq
+
 from talkgenerator.sources import word_frequency
 
 
@@ -55,3 +57,36 @@ def test_misspellings_in_the_talks_language_are_still_fixed():
     assert word_frequency.fix_spelling("Varför jag gick med i en pingvinsekt", "sv") == (
         "Varför jag gick med i en pingvinsekt"
     )
+
+
+# THE WORD LISTS IT KEEPS
+
+
+def _lists() -> int:
+    """How many languages' word lists wordfreq keeps (their frequencies and most frequent words come from them)."""
+    return wordfreq.get_frequency_list.cache_info().currsize
+
+
+def test_a_language_whose_list_isnt_kept_has_the_others_forgotten_after_a_quiet_while(monkeypatch):
+    # (wordfreq keeps a language's whole list once it's asked a word of it: 58 MB for German, 254 MB for the eight)
+    word_frequency.forget_word_lists()
+    word_frequency._zipf_frequency.cache_clear()  # (so that every word below is asked of wordfreq)
+    assert _lists() == 0
+    word_frequency.get_frequency("fiets", "nl")
+    word_frequency.get_frequency("bicicleta", "pt")  # (right after a Dutch word: no reason to forget Dutch's list)
+    assert _lists() == 2
+    monkeypatch.setattr(word_frequency, "QUIET_SECONDS", -1.0)  # (as if a while went by)
+    word_frequency.get_frequency("bicycle")  # (English words are no reason to forget the others)
+    assert _lists() == 3
+    assert word_frequency.get_frequency("cykel", "sv") > 0
+    assert _lists() == 1  # (Swedish's alone)
+    assert word_frequency.get_frequency("hond", "nl") > 0  # (and a list that went comes back)
+    assert _lists() == 1
+
+
+def test_forgotten_word_lists_come_back_for_spelling_fixes():
+    assert word_frequency.fix_spelling("pingvner", "sv") == "pingviner"
+    word_frequency.forget_word_lists()
+    assert _lists() == 0
+    assert word_frequency.fix_spelling("pingvner", "sv") == "pingviner"  # (Swedish's most frequent words, again)
+    assert _lists() == 2  # (and English's, which a word may be in too)

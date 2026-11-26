@@ -6,10 +6,13 @@ whose domain no longer exists.
 
 import difflib
 import re
+import threading
+import time
 import unicodedata
 from functools import cache, lru_cache
 from typing import Final
 
+import wordfreq
 from wordfreq import top_n_list, zipf_frequency
 
 from talkgenerator.plan.languages import LANGUAGES
@@ -22,12 +25,54 @@ _LEAST_LIKENESS = 0.85  # (difflib's ratio: "pengiun" is 0.86 like "penguin", "z
 _RARE = 2.5
 _MORE_FREQUENT = 2.0
 
+# wordfreq keeps a language's whole word list once it's asked a word of it, for as long as the process runs: on Linux,
+# 27 MB for English or Dutch, 58 MB for German, 254 MB for the eight languages a talk can be in, which a server that
+# makes talks in all of them would hold for good. So a word of a language whose list isn't kept has wordfreq forget
+# them all first (forget_word_lists), unless a word of one of them was asked in the last QUIET_SECONDS: talks in one
+# language after another keep English's list and one other's (85 MB at most), and a list that went comes back the next
+# time a word of its language is asked (in 0.3 to 2 s).
+QUIET_SECONDS = 60.0
+_asked: dict[str, float] = {}  # the languages besides English whose lists may be kept, and when each was last asked
+_asked_lock = threading.Lock()
 
-@lru_cache(maxsize=4096)
+
 def get_frequency(word: str, language: str = "en") -> float:
     """Frequency of a word in the language (English by default) on the Zipf scale: about 7 for "the", 3 for rare
     words, 0 if unknown."""
+    _asking(language)
+    return _zipf_frequency(word, language)
+
+
+@lru_cache(maxsize=4096)
+def _zipf_frequency(word: str, language: str) -> float:
     return zipf_frequency(word, language)
+
+
+def _asking(language: str) -> None:
+    """Note that wordfreq is asked a word of the language: when its list isn't among those it may keep, and no word of
+    theirs was asked in the last QUIET_SECONDS, it forgets them all first."""
+    if language == "en":  # (every talk asks English words: they're no reason to forget the other lists)
+        return
+    now = time.monotonic()
+    with _asked_lock:
+        if language not in _asked and _asked and now - max(_asked.values()) > QUIET_SECONDS:
+            _forget()
+        _asked[language] = now
+
+
+def forget_word_lists() -> None:
+    """Have wordfreq forget the word lists it keeps, of every language (see QUIET_SECONDS), and this module the words it
+    took from them. A list comes back the next time a word of its language is asked."""
+    with _asked_lock:
+        _forget()
+
+
+def _forget() -> None:
+    for cached in (wordfreq.get_frequency_list, wordfreq.get_frequency_dict, top_n_list, _known_words, _known_set):
+        cache_clear = getattr(cached, "cache_clear", None)  # (a wordfreq that doesn't cache its lists keeps none)
+        if cache_clear is not None:
+            cache_clear()
+    _asked.clear()
 
 
 def _frequency(word: str, language: str) -> float:
@@ -196,6 +241,7 @@ def _edits(word: str) -> set[str]:
 
 @cache
 def _known_words(language: str) -> tuple[str, ...]:
+    _asking(language)
     return tuple(word for word in top_n_list(language, _KNOWN_WORDS) if word.isalpha())
 
 
